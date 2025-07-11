@@ -2,23 +2,58 @@
 
 use strict;
 use warnings;
-use Test::Corpus qw(run_test_file);
+
 use Getopt::Long;
+use Test::Corpus qw(run_test_file);
+use Test::Corpus::Fuzzer qw(generate_datetime_tests);
+use Data::Dumper;
 
 my ($module, $method, $file);
+my $fuzz       = 0;
+my $fuzz_count = 10;
+
 GetOptions(
     'module=s' => \$module,
     'method=s' => \$method,
     'file=s'   => \$file,
-) or die "Usage: $0 --module=Module --method=method --file=path.yml\n";
+    'fuzz'     => \$fuzz,
+    'count=i'  => \$fuzz_count,
+) or die <<"USAGE";
+Usage:
+  $0 --module=Module::Name --method=method_name [--file=corpus.yml]
+  $0 --module=Module::Name --method=method_name --fuzz [--count=N]
 
-die "Missing required args\n" unless $module && $method && $file;
+Examples:
+  $0 --module=DateTime --method=new --file=corpus/DateTime/new.yml
+  $0 --module=DateTime --method=new --fuzz --count=5
+USAGE
 
-my $results = run_test_file($module, $method, $file);
+die "Must specify --module and --method\n" unless $module && $method;
+die "Must use either --file or --fuzz\n"   unless $file || $fuzz;
 
+my $results;
+
+if ($fuzz) {
+    if ($module eq 'DateTime' && $method eq 'new') {
+        my $tests = generate_datetime_tests($fuzz_count);
+        require Test::Corpus;
+        $results = Test::Corpus::run_test_file($module, $method, $tests);
+    } else {
+        die "Fuzzing not yet supported for $module->$method\n";
+    }
+} else {
+    $results = run_test_file($module, $method, $file);
+}
+
+# Print results
+print "\n== Test Results ==\n";
 for my $r (@$results) {
-    printf "[%s] %s\n", $r->{status}, $r->{input} ? join(", ", %{$r->{input}}) : '';
-    print "  Expected: $r->{expect}\n" if $r->{expect};
-    print "  Got:      $r->{got}\n"     if $r->{got};
-    print "  Error:    $r->{error}\n"   if $r->{error};
+    my $status = uc($r->{status});
+    my $input  = join(", ", map { "$_=$r->{input}{$_}" } sort keys %{ $r->{input} || {} });
+
+    print "[$status] $input\n";
+    print "  Expected: $r->{expect}\n" if exists $r->{expect};
+    print "  Got:      $r->{got}\n"     if exists $r->{got};
+    print "  Error:    $r->{error}\n"   if exists $r->{error};
+    print "\n";
 }
