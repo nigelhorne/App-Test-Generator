@@ -44,14 +44,12 @@ if ($error) {
     }
 } else {
     if ($case->{expect_fail}) {
-        # We expected a failure, but it succeeded — that's a problem
         push @$results, {
             status => 'fail',
             input  => $input,
             error  => 'Expected failure but got success'
         };
-    }
-    elsif ($case->{expect_result}) {
+    } elsif ($case->{expect_result}) {
         my $got = (blessed($obj) && $obj->can('iso8601')) ? $obj->iso8601 : "$obj";
         push @$results, {
             status => $got eq $case->{expect_result} ? 'pass' : 'fail',
@@ -63,6 +61,7 @@ if ($error) {
         push @$results, { status => 'pass', input => $input };
     }
 }
+
         
     }
 
