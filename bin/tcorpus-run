@@ -37,13 +37,14 @@ if ($fuzz) {
     if ($module eq 'DateTime' && $method eq 'new') {
         my $tests = generate_datetime_tests($fuzz_count);
         require Test::Corpus;
-        $results = Test::Corpus::run_test_file($module, $method, $tests);
+        $results = Test::Corpus::run_test_cases($module, $method, $tests);
     } else {
         die "Fuzzing not yet supported for $module->$method\n";
     }
 } else {
     $results = run_test_file($module, $method, $file);
 }
+
 
 # Print results
 print "\n== Test Results ==\n";

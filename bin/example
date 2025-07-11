@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 
+# Run against corpus file
 perl -Ilib bin/tcorpus-run --module=DateTime --method=new --file=corpus/DateTime/new.yml
+
+# Run with fuzzer
+perl -Ilib bin/tcorpus-run --module=DateTime --method=new --fuzz --count=5

@@ -31,11 +31,12 @@ sub generate_datetime_tests {
         };
 
         # Try to guess if this should succeed
-        if ($m < 1 || $m > 12 || $d < 1 || $d > 31) {
-            $case->{expect_fail} = 1;
-        } elsif ($m == 2 && $d == 29 && !is_leap($y)) {
-            $case->{expect_fail} = 1;
-        }
+if ($m < 1 || $m > 12 || $d < 1 || $d > 31) {
+    $case->{expect_fail} = 1;
+} elsif ($m == 2 && $d == 29 && !is_leap($y)) {
+    $case->{expect_fail} = 1;
+}
+	
 
         push @tests, $case;
     }
