@@ -20,32 +20,33 @@ my $methods = $data->{methods} or die 'No methods found in config';
 
 # Output test script
 print <<~"END_HEADER";
-    #!/usr/bin/env perl
-    use strict;
-    use warnings;
-    use Test::Most;
-    use $module;
+	#!/usr/bin/env perl
+	use strict;
+	use warnings;
+	use Test::Most;
+	use $module;
 
-    my \$obj = $module->new();
+	my \$obj = $module->new();
 
 END_HEADER
 
 foreach my $method (sort keys %$methods) {
-    my $cases = $methods->{$method};
+	my $cases = $methods->{$method};
 
-    foreach my $expected (sort keys %$cases) {
-        my @input = @{$cases->{$expected}};
-        my $input_str = join(", ", map { _quote($_) } @input);
-        my $expected_str = _quote($expected);
-        print "is(\$obj->$method($input_str), $expected_str, '$method(@input) returns $expected');\n";
+	foreach my $expected (sort keys %$cases) {
+		my @input = @{$cases->{$expected}};
+		my $input_str = join(", ", map { _quote($_) } @input);
+		my $expected_str = _quote($expected);
+		print "is(\$obj->$method($input_str), $expected_str, '$method(@input) returns $expected');\n";
 	}
 
-    print "\n";
+	print "\n";
 }
 
 print "done_testing();\n";
 
 sub _quote {
-    my ($val) = @_;
-    return defined $val && $val =~ /^\d+(\.\d+)?$/ ? $val : "'" . $val . "'";
+	my $val = $_[0];
+
+	return defined $val && $val =~ /^\d+(\.\d+)?$/ ? $val : "'" . $val . "'";
 }
