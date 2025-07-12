@@ -1,11 +1,13 @@
 #!/usr/bin/env perl
+
 use strict;
 use warnings;
-use YAML::XS qw(LoadFile);
-use File::Basename;
-use Data::Dumper;
 
-die "Usage: $0 class-config.yml\n" unless @ARGV == 1;
+use Data::Dumper;
+use File::Basename;
+use YAML::XS qw(LoadFile);
+
+die "Usage: $0 class-config.yml" unless @ARGV == 1;
 
 my $config_file = shift;
 my $data = LoadFile($config_file);
@@ -14,8 +16,7 @@ my $data = LoadFile($config_file);
 (my $module = basename($config_file)) =~ s/\.ya?ml$//;
 $module =~ s/-/::/g;
 
-my $methods = $data->{methods}
-  or die "No methods found in config";
+my $methods = $data->{methods} or die 'No methods found in config';
 
 # Output test script
 print <<~"END_HEADER";
