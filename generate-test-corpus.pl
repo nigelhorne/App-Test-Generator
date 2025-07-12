@@ -37,7 +37,7 @@ foreach my $method (sort keys %$methods) {
         my $input_str = join(", ", map { _quote($_) } @input);
         my $expected_str = _quote($expected);
         print "is(\$obj->$method($input_str), $expected_str, '$method(@input) returns $expected');\n";
-    }
+	}
 
     print "\n";
 }
