@@ -49,13 +49,12 @@ my $output_code = render_hash(\%output);
 my $new_code    = $new ? render_args($new) : '';
 
 # Switch between OO and functional invocation
-my $setup_code;
+my $setup_code = "use_ok('$module');";
 my $call_code;
 if ($new) {
-    $setup_code = "my \$obj = new_ok('$module' => { $new_code });";
+    $setup_code .= "\nmy \$obj = new_ok('$module' => { $new_code });";
     $call_code  = "\$result = \$obj->$function(\\%params);";
 } else {
-    $setup_code = "use_ok('$module');";
     $call_code  = "\$result = $module\::$function(\\%params);";
 }
 
