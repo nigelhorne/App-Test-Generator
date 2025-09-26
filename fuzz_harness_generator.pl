@@ -8,7 +8,7 @@ use File::Slurp qw(write_file);
 use YAML::XS qw(LoadFile);
 
 # --- Load configuration safely (require so config can use 'our' variables) ---
-my $conf_file = shift or die "Usage: $0 fuzz.conf\n";
+my $conf_file = shift or die "Usage: $0 fuzz.conf";
 
 {
     my $abs = $conf_file;
@@ -352,15 +352,19 @@ C<My-Widget.conf> -> C<My::Widget>.
 
 =head1 EXAMPLES
 
+=head2 Math::Simple::add()
+
 Functional fuzz + Perl corpus + seed:
 
-    our %input = ( a => { type => 'Int' }, b => { type => 'Int' } );
-    our %output = ( result => { type => 'Int' } );
     our $module = 'Math::Simple';
     our $function = 'add';
+    our %input = ( a => { type => 'Int' }, b => { type => 'Int' } );
+    our %output = ( result => { type => 'Int' } );
     our %cases = ( '3' => [1,2], '0' => [0,0] );
     our $seed = 12345;
     our $iterations = 100;
+
+=head2 Adding YAML file to generate tests
 
 OO fuzz + YAML corpus + edge cases:
 
@@ -373,7 +377,7 @@ OO fuzz + YAML corpus + edge cases:
     our %type_edge_cases = ( Str => [ \"\\0", "\x{FFFD}" ] );
     our $seed = 999;
 
-=head2 YAML Corpus Example (t/corpus.yml)
+=head3 YAML Corpus Example (t/corpus.yml)
 
 A YAML mapping of expected -> args array:
 
