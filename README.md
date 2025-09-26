@@ -1,152 +1,89 @@
-# Perl Corpus Generator for Class Testing
+# NAME
 
-This repository provides a **Perl-based test corpus generator** that uses a YAML configuration file to define expected behavior for methods in a class.
-It auto-generates a `.t` test script using `Test::Most` for robust unit testing.
+fuzz\_harness\_generator - Generate a fuzzing Test::Most harness for Perl modules
 
-The YAML config drives the test coverage, making it easy to verify class behavior without writing repetitive test code manually.
+# SYNOPSIS
 
----
+        perl fuzz_harness_generator.pl fuzz.conf
 
-## Features
+Generates a `t/fuzz.t` test script that fuzzes the given module using
+[Params::Get](https://metacpan.org/pod/Params%3A%3AGet), [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict), and [Return::Set](https://metacpan.org/pod/Return%3A%3ASet).
 
-- Accepts a `.yml` configuration file listing:
-  - The class/module to test (inferred from filename)
-  - Methods and their input/output expectations
-- Automatically generates Perl test scripts using `Test::Most`
-- Supports both string and numeric return values
-- Encourages test-driven development for small classes and CPAN modules
+# DESCRIPTION
 
----
+This script reads a configuration file (Perl code) which must define:
 
-## Directory Structure
+- `%input`
 
-```
-.
-├── generate-test-corpus.pl     # Main generator script
-├── Class-Simple.yml            # Example YAML configuration
-├── generate                    # How to run the script
-```
+    A hash describing input parameters accepted by the function or method under test.
 
----
+- `%output`
 
-## Prerequisites
+    A hash describing output parameters returned by the function or method.
 
-Ensure you have the following Perl modules installed:
+- `$module`
 
-- `YAML::XS`
-- `Test::Most`
-- Your target module (e.g., `Class::Simple` and subclass)
+    The name of the Perl module to test.
 
-Install dependencies via CPAN:
+- `$function`
 
-```bash
-cpan YAML::XS Test::Most Class::Simple
-```
+    The function or method to test. Defaults to `run`.
 
----
+- `$new` (optional)
 
-## Writing a YAML Config
+    If provided, the harness will instantiate the module with
+    `new_ok($module => \%args)` and then call the method `$function`
+    on the created object.
 
-The YAML file defines method tests. The filename determines the module:
+    If omitted, the harness will call the function directly as
+    `$module::$function()`.
 
-> `my-greeting.yml` → module `My::Greeting`
+# CONFIGURATION EXAMPLE
 
-### Example: `my-greeting.yml`
+Functional style:
 
-```yaml
-methods:
-  greet:
-    "Hello, John":
-      - { name: "John" }
-    "Hello, Alice":
-      - { name: "Alice" }
-    "Hello, World":
-      - {}
-```
+        %input = (
+                name => { type => 'Str' },
+                age  => { type => 'Int', optional => 1 },
+        );
 
-In this case, we assume the constructor `->new($args)` takes a hashref, and `greet()` returns a string.
+        %output = (
+                success => { type => 'Bool' },
+        );
 
----
+        $module   = 'My::Lib';
+        $function = 'process';
 
-## Example Class (`My::Greeting`)
+OO style:
 
-```perl
-package My::Greeting;
-use base 'Class::Simple';
+        %input = (
+                query => { type => 'Str' },
+        );
 
-sub init {
-    my ($self, $args) = @_;
-    $self->{name} = $args->{name} // 'World';
-}
+        %output = (
+                result => { type => 'Str' },
+        );
 
-sub greet {
-    my $self = shift;
-    return "Hello, $self->{name}";
-}
+        $module   = 'My::Widget';
+        $function = 'search';
+        $new      = { api_key => 'ABC123', verbose => 1 };
 
-1;
-```
+# OUTPUT
 
-Save as: `My/Greeting.pm`
+The script writes a new test file to `t/fuzz.t`. This file will:
 
----
+- Validate inputs with [Params::Get](https://metacpan.org/pod/Params%3A%3AGet) and [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict)
+- Generate random fuzz cases including edge cases
+- Call the module function or method under test
+- Validate outputs using [Return::Set](https://metacpan.org/pod/Return%3A%3ASet)
 
-## Usage
+# SEE ALSO
 
-### Step 1: Generate a test file
+[Test::Most](https://metacpan.org/pod/Test%3A%3AMost),  
+[Params::Get](https://metacpan.org/pod/Params%3A%3AGet),  
+[Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict),  
+[Return::Set](https://metacpan.org/pod/Return%3A%3ASet)
 
-```bash
-perl generate-test-corpus.pl my-greeting.yml > test-my-greeting.t
-```
+# AUTHOR
 
-This creates a standard `.t` file ready for use with `prove`.
-
-### Step 2: Run the tests
-
-```bash
-prove -l test-my-greeting.t
-```
-
----
-
-## Generator Script Overview
-
-The script:
-- Infers module name from config filename (e.g., `My::Greeting`)
-- Loads test cases from YAML
-- Uses the `new()` constructor with the given arguments
-- Calls each method with input(s) and checks output via `is()`
-
----
-
-## Advanced Features (Roadmap Ideas)
-
-- Support for class methods (no object)
-- Support for exception tests
-- Deep comparison (`is_deeply`) for structured output
-- Output TAP or JUnit formats
-- Plugin for test corpus expansion from live data
-
----
-
-## Test Philosophy
-
-This framework encourages data-driven tests and can be adapted for:
-
-- CPAN module verification
-- Fuzzing or corpus-based testing
-- Regression test generation
-- Teaching/testable example libraries
-
----
-
-## License
-
-GPL-2
-
----
-
-## Author
-
-Created by Nigel Horne
-Inspired by real-world CPAN module testing needs.
+Nigel Horne
