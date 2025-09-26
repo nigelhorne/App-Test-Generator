@@ -96,6 +96,8 @@ use Return::Set qw(set_return);
 
 $setup_code
 
+diag("$module test case created by https://github.com/nigelhorne/Test-Corpus");
+
 my %input  = (
 $input_code
 );
