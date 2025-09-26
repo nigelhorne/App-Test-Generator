@@ -2,14 +2,25 @@
 use strict;
 use warnings;
 use File::Slurp qw(write_file);
+use File::Basename qw(basename);
 
-my $conf = do $ARGV[0] or die "Usage: $0 fuzz.conf\n";
+my $conf_file = $ARGV[0] or die "Usage: $0 fuzz.conf\n";
+my $conf = do $conf_file or die "Could not read $conf_file: $@\n";
 
 our (%input, %output, $module, $function);
 %input    = %input    if %input;
 %output   = %output   if %output;
-$module   ||= 'Unknown::Module';
 $function ||= 'run';
+
+# --- Guess module name if not provided ---
+unless ($module) {
+    my $base = basename($conf_file, '.conf');
+    if ($base =~ /^[A-Z]/) {  # looks like a module name
+        $module = join('::', split /-/, $base);
+    } else {
+        $module = 'Unknown::Module';
+    }
+}
 
 # Render input/output hashes into Perl code safely
 sub render_hash {
