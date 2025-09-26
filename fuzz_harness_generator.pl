@@ -3,18 +3,26 @@
 use strict;
 use warnings;
 
-use File::Basename qw(basename);
 use File::Slurp qw(write_file);
+use File::Basename qw(basename);
+use YAML::XS qw(LoadFile);
 
+# --- Load configuration safely ---
 my $conf_file = shift or die "Usage: $0 fuzz.conf\n";
-my $conf = do $conf_file or die "Failed to load $conf_file: $! $@\n";
 
+# Require the conf file instead of do to avoid scalar/hash conflicts
+{
+    # ensure the conf file is a valid Perl file
+    my $abs_conf = $conf_file;
+    $abs_conf = "./$abs_conf" unless $abs_conf =~ m{^/};
+    require $abs_conf;
+}
+
+# --- Global variables from conf ---
 our (%input, %output, $module, $function, $new, %cases);
-%input    = %input    if %input;
-%output   = %output   if %output;
-%cases    = %cases    if %cases;
+
 $function ||= 'run';
-$new      = $new      if $new;
+$new      = $new if defined $new;
 
 # Guess module name from config file if not set
 if (!$module) {
@@ -23,7 +31,22 @@ if (!$module) {
     $module = $guess || 'Unknown::Module';
 }
 
-# Render input/output hashes into Perl code safely
+# Declare optional YAML corpus variable
+our $yaml_cases;
+
+# --- YAML corpus support ---
+my %yaml_corpus_data;
+if (defined $yaml_cases && -f $yaml_cases) {
+    my $yaml_data = LoadFile($yaml_cases);
+    if ($yaml_data && ref($yaml_data) eq 'HASH') {
+        %yaml_corpus_data = %$yaml_data;
+    }
+}
+
+# Merge Perl %cases and YAML corpus safely
+my %all_cases = (%cases, %yaml_corpus_data);
+
+# --- Helpers ---
 sub render_hash {
     my ($href) = @_;
     return join(",\n", map {
@@ -38,25 +61,23 @@ sub render_hash {
     } sort keys %$href);
 }
 
-# Render args to new if provided
 sub render_args {
     my ($href) = @_;
     return '' unless $href && %$href;
     return join(", ", map { "'$_' => '$href->{$_}'" } sort keys %$href);
 }
 
-# Quote helper for static corpus
 sub _quote {
     my $val = shift;
     return 'undef' unless defined $val;
     return $val =~ /^\d+(\.\d+)?$/ ? $val : "'$val'";
 }
 
+# --- Prepare code fragments ---
 my $input_code  = render_hash(\%input);
 my $output_code = render_hash(\%output);
 my $new_code    = $new ? render_args($new) : '';
 
-# Always load the module
 my $setup_code = "use_ok('$module');";
 my $call_code;
 if ($new) {
@@ -66,24 +87,26 @@ if ($new) {
     $call_code  = "\$result = $module\::$function(\\%params);";
 }
 
-# Static corpus block if %cases is provided
+# --- Static corpus code ---
 my $corpus_code = '';
-if (%cases) {
+if (%all_cases) {
     $corpus_code = "\n# --- Static Corpus Tests ---\n";
-    foreach my $expected (sort keys %cases) {
-        my @inputs = @{ $cases{$expected} };
-        my $input_str = join(", ", map { _quote($_) } @inputs);
+    for my $expected (sort keys %all_cases) {
+        my $inputs = $all_cases{$expected};
+        next unless $inputs && ref $inputs eq 'ARRAY';
+        my $input_str = join(", ", map { _quote($_) } @$inputs);
         my $expected_str = _quote($expected);
         if ($new) {
             $corpus_code .= "is(\$obj->$function($input_str), $expected_str, "
-                          . "'$function(@inputs) returns $expected_str');\n";
+                          . "'$function(@$inputs) returns $expected_str');\n";
         } else {
             $corpus_code .= "is($module\::$function($input_str), $expected_str, "
-                          . "'$function(@inputs) returns $expected_str');\n";
+                          . "'$function(@$inputs) returns $expected_str');\n";
         }
     }
 }
 
+# --- Generate fuzzing test file ---
 my $test = <<"TEST";
 #!/usr/bin/env perl
 
@@ -107,11 +130,7 @@ $output_code
 );
 
 # --- Fuzzer ---
-sub rand_str {
-    my \$len = shift || int(rand(10)) + 1;
-    join '', map { chr(97 + int(rand(26))) } 1..\$len;
-}
-
+sub rand_str { join '', map { chr(97 + int(rand(26))) } 1..(shift||int(rand(10))+1) }
 sub rand_int { int(rand(200)) - 100 }
 sub rand_bool { rand() > 0.5 ? 1 : 0 }
 sub rand_num { rand() * 200 - 100 }
@@ -122,31 +141,17 @@ sub fuzz_inputs {
         my %case;
         foreach my \$field (keys %input) {
             my \$type = \$input{\$field}{type} || 'Str';
-            if (\$type eq 'Str') {
-                \$case{\$field} = rand_str();
-            }
-            elsif (\$type eq 'Int') {
-                \$case{\$field} = rand_int();
-            }
-            elsif (\$type eq 'Bool') {
-                \$case{\$field} = rand_bool();
-            }
-            elsif (\$type eq 'Num') {
-                \$case{\$field} = rand_num();
-            }
-            else {
-                \$case{\$field} = undef;
-            }
+            if (\$type eq 'Str') { \$case{\$field} = rand_str(); }
+            elsif (\$type eq 'Int') { \$case{\$field} = rand_int(); }
+            elsif (\$type eq 'Bool') { \$case{\$field} = rand_bool(); }
+            elsif (\$type eq 'Num') { \$case{\$field} = rand_num(); }
+            else { \$case{\$field} = undef; }
 
-            # Randomly drop optional fields
-            if (\$input{\$field}{optional} && rand() < 0.3) {
-                delete \$case{\$field};
-            }
+            delete \$case{\$field} if \$input{\$field}{optional} && rand() < 0.3;
         }
         push \@cases, \\%case;
     }
 
-    # Edge cases
     push \@cases, {};
     push \@cases, { map { \$_ => undef } keys %input };
 
@@ -176,7 +181,7 @@ __END__
 
 =head1 NAME
 
-fuzz_harness_generator - Generate a fuzzing and static Test::Most harness for Perl modules
+fuzz_harness_generator - Generate fuzzing + static YAML/Perl corpus Test::Most harness
 
 =head1 SYNOPSIS
 
@@ -184,74 +189,90 @@ fuzz_harness_generator - Generate a fuzzing and static Test::Most harness for Pe
 
 =head1 DESCRIPTION
 
-This script generates C<t/fuzz.t>, which combines:
+Generates C<t/fuzz.t> combining:
 
 =over 4
 
-=item * A fuzzing harness using L<Params::Get>, L<Params::Validate::Strict>, and L<Return::Set>
+=item * Randomized fuzzing of inputs (with edge cases)
 
-=item * An optional static test corpus with deterministic C<is(...)> checks
+=item * Optional static corpus tests from Perl C<%cases> or YAML file (C<yaml_cases> key)
+
+=item * Functional or OO mode (via C<$new>)
 
 =back
 
 =head1 CONFIGURATION
 
-The configuration file (Perl code) may define:
+Perl config may define:
 
 =over 4
 
-=item * C<%input> - Input parameters (types, optional)
+=item * C<%input> - input params with types, optional fields
 
-=item * C<%output> - Output parameters
+=item * C<%output> - output param types
 
-=item * C<$module> - Module name (guessed from config filename if not set)
+=item * C<$module> - module name (guessed from file if missing)
 
-=item * C<$function> - Function/method to test (default: C<run>)
+=item * C<$function> - function/method under test
 
-=item * C<$new> - If set, args for C<new()>; enables OO mode
+=item * C<$new> - args for C<new()>, enables OO mode
 
-=item * C<%cases> - Optional static regression tests.
-Keys are expected return values, values are arrayrefs of input arguments.
+=item * C<%cases> - optional Perl static corpus: keys are expected outputs, values are arrayrefs of input args
+
+=item * C<yaml_cases> - optional YAML file with same format as %cases
 
 =back
 
 =head1 EXAMPLES
 
-Functional fuzz + corpus:
+Functional fuzz + Perl corpus:
 
-    %input = (
+    our %input = (
         name => { type => 'Str' },
         age  => { type => 'Int', optional => 1 },
     );
 
-    %output = (
+    our %output = (
         success => { type => 'Bool' },
     );
 
-    $module   = 'My::Lib';
-    $function = 'process';
+    our $module   = 'My::Lib';
+    our $function = 'process';
 
-    %cases = (
+    our %cases = (
         '1' => [ 'Alice', 30 ],
         '0' => [ 'Bob' ],
     );
 
-OO fuzz + corpus:
+OO fuzz + YAML corpus:
 
-    %input = (
+    our %input = (
         query => { type => 'Str' },
     );
 
-    %output = (
+    our %output = (
         result => { type => 'Str' },
     );
 
-    $function = 'search';
-    $new      = { api_key => 'ABC123' };
+    our $function    = 'search';
+    our $new         = { api_key => 'ABC123' };
+    our $yaml_cases  = 't/corpus.yml';
+
+=head2 YAML Corpus Example (t/corpus.yml)
+
+The YAML corpus is a simple mapping of expected output => array of input values:
+
+    "success":
+      - "Alice"
+      - 30
+    "failure":
+      - "Bob"
+
+This would correspond to Perl equivalent:
 
     %cases = (
-        'ok'   => [ 'ping' ],
-        'fail' => [ '' ],
+        'success' => [ 'Alice', 30 ],
+        'failure' => [ 'Bob' ],
     );
 
 =head1 OUTPUT
@@ -260,9 +281,9 @@ Generates C<t/fuzz.t> with:
 
 =over 4
 
-=item * Fuzzing tests of randomized inputs + edge cases
+=item * Fuzzing tests (randomized + edge cases)
 
-=item * Static corpus tests for regression
+=item * Static regression tests from Perl/YAML corpus
 
 =back
 
