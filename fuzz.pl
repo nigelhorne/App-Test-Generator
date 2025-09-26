@@ -3,7 +3,6 @@ use strict;
 use warnings;
 use File::Slurp qw(write_file);
 
-# Load conf file
 my $conf = do $ARGV[0] or die "Usage: $0 fuzz.conf\n";
 
 our (%input, %output, $module, $function);
@@ -12,21 +11,42 @@ our (%input, %output, $module, $function);
 $module   ||= 'Unknown::Module';
 $function ||= 'run';
 
+# Render input/output hashes into Perl code safely
+sub render_hash {
+    my ($href) = @_;
+    return join(",\n", map {
+        my $k = $_;
+        my $def = $href->{$k} || {};
+        my @pairs;
+        for my $subk (keys %$def) {
+            next unless defined $def->{$subk};
+            push @pairs, "$subk => '$def->{$subk}'";
+        }
+        "    '$k' => { " . join(", ", @pairs) . " }"
+    } sort keys %$href);
+}
+
+my $input_code  = render_hash(\%input);
+my $output_code = render_hash(\%output);
+
 my $test = <<"TEST";
+#!/usr/bin/env perl
+
 use strict;
 use warnings;
 use Test::Most;
-use Params::Get qw(get);
-use Params::Validate::Strict qw(validate);
-use Returns::Set qw(returns);
-use $module;
+use Params::Get qw(get_params);
+use Params::Validate::Strict qw(validate_strict);
+use Return::Set qw(set_return);
+
+use_ok('$module');
 
 my %input  = (
-@{[ join(",\n", map { "    '$_' => { " . join(", ", map { "\$_ => '$input{$_}{\$_}'" } keys %{$input{$_}}) . " }" } keys %input) ]}
+$input_code
 );
 
 my %output = (
-@{[ join(",\n", map { "    '$_' => { " . join(", ", map { "\$_ => '$output{$_}{\$_}'" } keys %{$output{$_}}) . " }" } keys %output) ]}
+$output_code
 );
 
 # --- Fuzzer ---
@@ -35,17 +55,13 @@ sub rand_str {
     join '', map { chr(97 + int(rand(26))) } 1..\$len;
 }
 
-sub rand_int {
-    return int(rand(200)) - 100; # range: -100..99
-}
-
-sub rand_bool {
-    return rand() > 0.5 ? 1 : 0;
-}
+sub rand_int { int(rand(200)) - 100 }
+sub rand_bool { rand() > 0.5 ? 1 : 0 }
+sub rand_num { rand() * 200 - 100 }
 
 sub fuzz_inputs {
     my \@cases;
-    for (1..50) {  # number of fuzz iterations
+    for (1..50) {
         my %case;
         foreach my \$field (keys %input) {
             my \$type = \$input{\$field}{type} || 'Str';
@@ -59,21 +75,21 @@ sub fuzz_inputs {
                 \$case{\$field} = rand_bool();
             }
             elsif (\$type eq 'Num') {
-                \$case{\$field} = rand() * 200 - 100;
+                \$case{\$field} = rand_num();
             }
             else {
-                \$case{\$field} = undef; # unknown types → force edge
+                \$case{\$field} = undef;
             }
 
-            # Occasionally remove optional fields
+            # Randomly drop optional fields
             if (\$input{\$field}{optional} && rand() < 0.3) {
                 delete \$case{\$field};
             }
         }
-        push \@cases, \%case;
+        push \@cases, \\%case;
     }
 
-    # Add edge cases
+    # Edge cases
     push \@cases, {};
     push \@cases, { map { \$_ => undef } keys %input };
 
@@ -82,17 +98,17 @@ sub fuzz_inputs {
 
 foreach my \$case (\@{fuzz_inputs()}) {
     my %params;
-    lives_ok { %params = get(\\%input, \%{\$case}) } 'Params::Get input check';
-    lives_ok { validate(\\%input, %params) } 'Params::Validate::Strict input check';
+    lives_ok { %params = get_params(\\%input, \%\$case) } 'Params::Get input check';
+    lives_ok { validate_strict(\\%input, %params) } 'Params::Validate::Strict input check';
 
     my \$result;
     lives_ok { \$result = $module\::$function(\\%params) } 'function call survives';
 
-    lives_ok { returns(\\%output, \$result) } 'output validated';
+    lives_ok { set_return(\\%output, \$result) } 'output validated';
 }
 
 done_testing;
 TEST
 
 write_file("t/fuzz.t", $test);
-print "Generated t/fuzz.t for $module::$function with fuzzing support\n";
+print "Generated t/fuzz.t for $module\::$function with fuzzing support\n";
