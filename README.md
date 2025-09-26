@@ -76,15 +76,19 @@ Recognized items:
 
 # EXAMPLES
 
+## Math::Simple::add()
+
 Functional fuzz + Perl corpus + seed:
 
-    our %input = ( a => { type => 'Int' }, b => { type => 'Int' } );
-    our %output = ( result => { type => 'Int' } );
     our $module = 'Math::Simple';
     our $function = 'add';
+    our %input = ( a => { type => 'Int' }, b => { type => 'Int' } );
+    our %output = ( result => { type => 'Int' } );
     our %cases = ( '3' => [1,2], '0' => [0,0] );
     our $seed = 12345;
     our $iterations = 100;
+
+## Adding YAML file to generate tests
 
 OO fuzz + YAML corpus + edge cases:
 
@@ -97,7 +101,7 @@ OO fuzz + YAML corpus + edge cases:
     our %type_edge_cases = ( Str => [ \"\\0", "\x{FFFD}" ] );
     our $seed = 999;
 
-## YAML Corpus Example (t/corpus.yml)
+### YAML Corpus Example (t/corpus.yml)
 
 A YAML mapping of expected -> args array:
 
