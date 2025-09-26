@@ -7,7 +7,7 @@ use File::Basename qw(basename);
 my $conf_file = $ARGV[0] or die "Usage: $0 fuzz.conf\n";
 my $conf = do $conf_file or die "Could not read $conf_file: $@\n";
 
-our (%input, %output, $module, $function);
+our (%input, %output, $module, $function, $new);
 %input    = %input    if %input;
 %output   = %output   if %output;
 $function ||= 'run';
@@ -15,7 +15,7 @@ $function ||= 'run';
 # --- Guess module name if not provided ---
 unless ($module) {
     my $base = basename($conf_file, '.conf');
-    if ($base =~ /^[A-Z]/) {  # looks like a module name
+    if ($base =~ /^[A-Z]/) {
         $module = join('::', split /-/, $base);
     } else {
         $module = 'Unknown::Module';
@@ -39,6 +39,21 @@ sub render_hash {
 
 my $input_code  = render_hash(\%input);
 my $output_code = render_hash(\%output);
+
+# --- Generate call code depending on $new ---
+my $call_code;
+if ($new) {
+    # Build args for new_ok
+    my $new_args = join(", ", map { defined $new->{$_} ? "'$_' => '$new->{$_}'" : () } keys %$new);
+    $call_code = <<"CALL";
+    state \$obj = new_ok('$module', [ { $new_args } ], 'object created');
+    lives_ok { \$result = \$obj->$function(\\%params) } 'method call survives';
+CALL
+} else {
+    $call_code = <<"CALL";
+    lives_ok { \$result = $module\::$function(\\%params) } 'function call survives';
+CALL
+}
 
 my $test = <<"TEST";
 #!/usr/bin/env perl
@@ -113,8 +128,7 @@ foreach my \$case (\@{fuzz_inputs()}) {
     lives_ok { validate_strict(\\%input, %params) } 'Params::Validate::Strict input check';
 
     my \$result;
-    lives_ok { \$result = $module\::$function(\\%params) } 'function call survives';
-
+$call_code
     lives_ok { set_return(\\%output, \$result) } 'output validated';
 }
 
