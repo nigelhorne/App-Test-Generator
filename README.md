@@ -4,7 +4,7 @@ fuzz\_harness\_generator - Generate a fuzzing Test::Most harness for Perl module
 
 # SYNOPSIS
 
-        perl fuzz_harness_generator.pl fuzz.conf
+    perl fuzz_harness_generator.pl fuzz.conf
 
 Generates a `t/fuzz.t` test script that fuzzes the given module using
 [Params::Get](https://metacpan.org/pod/Params%3A%3AGet), [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict), and [Return::Set](https://metacpan.org/pod/Return%3A%3ASet).
@@ -23,7 +23,8 @@ This script reads a configuration file (Perl code) which must define:
 
 - `$module`
 
-    The name of the Perl module to test.
+    The name of the Perl module to test. If not provided, it is guessed from
+    the configuration file name (`My-Module.conf` → `My::Module`).
 
 - `$function`
 
@@ -38,35 +39,37 @@ This script reads a configuration file (Perl code) which must define:
     If omitted, the harness will call the function directly as
     `$module::$function()`.
 
-# CONFIGURATION EXAMPLE
+# CONFIGURATION EXAMPLES
 
 Functional style:
 
-        %input = (
-                name => { type => 'Str' },
-                age  => { type => 'Int', optional => 1 },
-        );
+    %input = (
+        name => { type => 'Str' },
+        age  => { type => 'Int', optional => 1 },
+    );
 
-        %output = (
-                success => { type => 'Bool' },
-        );
+    %output = (
+        success => { type => 'Bool' },
+    );
 
-        $module   = 'My::Lib';
-        $function = 'process';
+    $module   = 'My::Lib';
+    $function = 'process';
 
-OO style:
+OO style (with guessing from file name):
 
-        %input = (
-                query => { type => 'Str' },
-        );
+    # File: My-Widget.conf
 
-        %output = (
-                result => { type => 'Str' },
-        );
+    %input = (
+        query => { type => 'Str' },
+    );
 
-        $module   = 'My::Widget';
-        $function = 'search';
-        $new      = { api_key => 'ABC123', verbose => 1 };
+    %output = (
+        result => { type => 'Str' },
+    );
+
+    # $module guessed as My::Widget
+    $function = 'search';
+    $new      = { api_key => 'ABC123', verbose => 1 };
 
 # OUTPUT
 
@@ -87,3 +90,11 @@ The script writes a new test file to `t/fuzz.t`. This file will:
 # AUTHOR
 
 Nigel Horne
+
+# POD ERRORS
+
+Hey! **The above document had some coding errors, which are explained below:**
+
+- Around line 176:
+
+    Non-ASCII character seen before =encoding in '→'. Assuming UTF-8
