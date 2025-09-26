@@ -1,47 +1,33 @@
 # NAME
 
-fuzz\_harness\_generator - Generate a fuzzing Test::Most harness for Perl modules
+fuzz\_harness\_generator - Generate a fuzzing and static Test::Most harness for Perl modules
 
 # SYNOPSIS
 
     perl fuzz_harness_generator.pl fuzz.conf
 
-Generates a `t/fuzz.t` test script that fuzzes the given module using
-[Params::Get](https://metacpan.org/pod/Params%3A%3AGet), [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict), and [Return::Set](https://metacpan.org/pod/Return%3A%3ASet).
-
 # DESCRIPTION
 
-This script reads a configuration file (Perl code) which must define:
+This script generates `t/fuzz.t`, which combines:
 
-- `%input`
+- A fuzzing harness using [Params::Get](https://metacpan.org/pod/Params%3A%3AGet), [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict), and [Return::Set](https://metacpan.org/pod/Return%3A%3ASet)
+- An optional static test corpus with deterministic `is(...)` checks
 
-    A hash describing input parameters accepted by the function or method under test.
+# CONFIGURATION
 
-- `%output`
+The configuration file (Perl code) may define:
 
-    A hash describing output parameters returned by the function or method.
+- `%input` - Input parameters (types, optional)
+- `%output` - Output parameters
+- `$module` - Module name (guessed from config filename if not set)
+- `$function` - Function/method to test (default: `run`)
+- `$new` - If set, args for `new()`; enables OO mode
+- `%cases` - Optional static regression tests.
+Keys are expected return values, values are arrayrefs of input arguments.
 
-- `$module`
+# EXAMPLES
 
-    The name of the Perl module to test. If not provided, it is guessed from
-    the configuration file name (`My-Module.conf` → `My::Module`).
-
-- `$function`
-
-    The function or method to test. Defaults to `run`.
-
-- `$new` (optional)
-
-    If provided, the harness will instantiate the module with
-    `new_ok($module => \%args)` and then call the method `$function`
-    on the created object.
-
-    If omitted, the harness will call the function directly as
-    `$module::$function()`.
-
-# CONFIGURATION EXAMPLES
-
-Functional style:
+Functional fuzz + corpus:
 
     %input = (
         name => { type => 'Str' },
@@ -55,9 +41,12 @@ Functional style:
     $module   = 'My::Lib';
     $function = 'process';
 
-OO style (with guessing from file name):
+    %cases = (
+        '1' => [ 'Alice', 30 ],
+        '0' => [ 'Bob' ],
+    );
 
-    # File: My-Widget.conf
+OO fuzz + corpus:
 
     %input = (
         query => { type => 'Str' },
@@ -67,34 +56,25 @@ OO style (with guessing from file name):
         result => { type => 'Str' },
     );
 
-    # $module guessed as My::Widget
     $function = 'search';
-    $new      = { api_key => 'ABC123', verbose => 1 };
+    $new      = { api_key => 'ABC123' };
+
+    %cases = (
+        'ok'   => [ 'ping' ],
+        'fail' => [ '' ],
+    );
 
 # OUTPUT
 
-The script writes a new test file to `t/fuzz.t`. This file will:
+Generates `t/fuzz.t` with:
 
-- Validate inputs with [Params::Get](https://metacpan.org/pod/Params%3A%3AGet) and [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict)
-- Generate random fuzz cases including edge cases
-- Call the module function or method under test
-- Validate outputs using [Return::Set](https://metacpan.org/pod/Return%3A%3ASet)
+- Fuzzing tests of randomized inputs + edge cases
+- Static corpus tests for regression
 
 # SEE ALSO
 
-[Test::Most](https://metacpan.org/pod/Test%3A%3AMost),  
-[Params::Get](https://metacpan.org/pod/Params%3A%3AGet),  
-[Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict),  
-[Return::Set](https://metacpan.org/pod/Return%3A%3ASet)
+[Test::Most](https://metacpan.org/pod/Test%3A%3AMost), [Params::Get](https://metacpan.org/pod/Params%3A%3AGet), [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict), [Return::Set](https://metacpan.org/pod/Return%3A%3ASet)
 
 # AUTHOR
 
 Nigel Horne
-
-# POD ERRORS
-
-Hey! **The above document had some coding errors, which are explained below:**
-
-- Around line 176:
-
-    Non-ASCII character seen before =encoding in '→'. Assuming UTF-8

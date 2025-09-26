@@ -9,9 +9,10 @@ use File::Slurp qw(write_file);
 my $conf_file = shift or die "Usage: $0 fuzz.conf\n";
 my $conf = do $conf_file or die "Failed to load $conf_file: $! $@\n";
 
-our (%input, %output, $module, $function, $new);
+our (%input, %output, $module, $function, $new, %cases);
 %input    = %input    if %input;
 %output   = %output   if %output;
+%cases    = %cases    if %cases;
 $function ||= 'run';
 $new      = $new      if $new;
 
@@ -44,11 +45,18 @@ sub render_args {
     return join(", ", map { "'$_' => '$href->{$_}'" } sort keys %$href);
 }
 
+# Quote helper for static corpus
+sub _quote {
+    my $val = shift;
+    return 'undef' unless defined $val;
+    return $val =~ /^\d+(\.\d+)?$/ ? $val : "'$val'";
+}
+
 my $input_code  = render_hash(\%input);
 my $output_code = render_hash(\%output);
 my $new_code    = $new ? render_args($new) : '';
 
-# Switch between OO and functional invocation
+# Always load the module
 my $setup_code = "use_ok('$module');";
 my $call_code;
 if ($new) {
@@ -56,6 +64,24 @@ if ($new) {
     $call_code  = "\$result = \$obj->$function(\\%params);";
 } else {
     $call_code  = "\$result = $module\::$function(\\%params);";
+}
+
+# Static corpus block if %cases is provided
+my $corpus_code = '';
+if (%cases) {
+    $corpus_code = "\n# --- Static Corpus Tests ---\n";
+    foreach my $expected (sort keys %cases) {
+        my @inputs = @{ $cases{$expected} };
+        my $input_str = join(", ", map { _quote($_) } @inputs);
+        my $expected_str = _quote($expected);
+        if ($new) {
+            $corpus_code .= "is(\$obj->$function($input_str), $expected_str, "
+                          . "'$function(@inputs) returns $expected_str');\n";
+        } else {
+            $corpus_code .= "is($module\::$function($input_str), $expected_str, "
+                          . "'$function(@inputs) returns $expected_str');\n";
+        }
+    }
 }
 
 my $test = <<"TEST";
@@ -136,62 +162,60 @@ foreach my \$case (\@{fuzz_inputs()}) {
     lives_ok { set_return(\\%output, \$result) } 'output validated';
 }
 
+$corpus_code
+
 done_testing;
 TEST
 
 write_file("t/fuzz.t", $test);
-print "Generated t/fuzz.t for $module\::$function with fuzzing support\n";
+print "Generated t/fuzz.t for $module\::$function with fuzzing + corpus support\n";
 
 __END__
 
 =head1 NAME
 
-fuzz_harness_generator - Generate a fuzzing Test::Most harness for Perl modules
+fuzz_harness_generator - Generate a fuzzing and static Test::Most harness for Perl modules
 
 =head1 SYNOPSIS
 
     perl fuzz_harness_generator.pl fuzz.conf
 
-Generates a C<t/fuzz.t> test script that fuzzes the given module using
-L<Params::Get>, L<Params::Validate::Strict>, and L<Return::Set>.
-
 =head1 DESCRIPTION
 
-This script reads a configuration file (Perl code) which must define:
+This script generates C<t/fuzz.t>, which combines:
 
 =over 4
 
-=item * C<%input>
+=item * A fuzzing harness using L<Params::Get>, L<Params::Validate::Strict>, and L<Return::Set>
 
-A hash describing input parameters accepted by the function or method under test.
-
-=item * C<%output>
-
-A hash describing output parameters returned by the function or method.
-
-=item * C<$module>
-
-The name of the Perl module to test. If not provided, it is guessed from
-the configuration file name (C<My-Module.conf> → C<My::Module>).
-
-=item * C<$function>
-
-The function or method to test. Defaults to C<run>.
-
-=item * C<$new> (optional)
-
-If provided, the harness will instantiate the module with
-C<new_ok($module =E<gt> \%args)> and then call the method C<$function>
-on the created object.
-
-If omitted, the harness will call the function directly as
-C<$module::$function()>.
+=item * An optional static test corpus with deterministic C<is(...)> checks
 
 =back
 
-=head1 CONFIGURATION EXAMPLES
+=head1 CONFIGURATION
 
-Functional style:
+The configuration file (Perl code) may define:
+
+=over 4
+
+=item * C<%input> - Input parameters (types, optional)
+
+=item * C<%output> - Output parameters
+
+=item * C<$module> - Module name (guessed from config filename if not set)
+
+=item * C<$function> - Function/method to test (default: C<run>)
+
+=item * C<$new> - If set, args for C<new()>; enables OO mode
+
+=item * C<%cases> - Optional static regression tests.
+Keys are expected return values, values are arrayrefs of input arguments.
+
+=back
+
+=head1 EXAMPLES
+
+Functional fuzz + corpus:
 
     %input = (
         name => { type => 'Str' },
@@ -205,9 +229,12 @@ Functional style:
     $module   = 'My::Lib';
     $function = 'process';
 
-OO style (with guessing from file name):
+    %cases = (
+        '1' => [ 'Alice', 30 ],
+        '0' => [ 'Bob' ],
+    );
 
-    # File: My-Widget.conf
+OO fuzz + corpus:
 
     %input = (
         query => { type => 'Str' },
@@ -217,32 +244,29 @@ OO style (with guessing from file name):
         result => { type => 'Str' },
     );
 
-    # $module guessed as My::Widget
     $function = 'search';
-    $new      = { api_key => 'ABC123', verbose => 1 };
+    $new      = { api_key => 'ABC123' };
+
+    %cases = (
+        'ok'   => [ 'ping' ],
+        'fail' => [ '' ],
+    );
 
 =head1 OUTPUT
 
-The script writes a new test file to C<t/fuzz.t>. This file will:
+Generates C<t/fuzz.t> with:
 
 =over 4
 
-=item * Validate inputs with L<Params::Get> and L<Params::Validate::Strict>
+=item * Fuzzing tests of randomized inputs + edge cases
 
-=item * Generate random fuzz cases including edge cases
-
-=item * Call the module function or method under test
-
-=item * Validate outputs using L<Return::Set>
+=item * Static corpus tests for regression
 
 =back
 
 =head1 SEE ALSO
 
-L<Test::Most>,  
-L<Params::Get>,  
-L<Params::Validate::Strict>,  
-L<Return::Set>
+L<Test::Most>, L<Params::Get>, L<Params::Validate::Strict>, L<Return::Set>
 
 =head1 AUTHOR
 
