@@ -17,4 +17,6 @@ close $fh;
 
 like($contents, qr/diag\(/, "fuzz test has diag line");
 
-done_testing;
+unlink $outfile;
+
+done_testing();

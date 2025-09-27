@@ -1,11 +1,14 @@
 use strict;
 use warnings;
+
 use Test::More;
 use App::Test::Generator qw(generate);
 
-my $conf_file = "t/conf/get_time_zone.conf";
-my $corpus    = "t/conf/get_time_zone.yml";
-my $outfile   = "t/tmp_get_time_zone.t";
+use Test::Needs 'Math::Simple';
+
+my $conf_file = "t/conf/math_simple_add.conf";
+my $corpus    = "t/conf/math_simple_add.yml";
+my $outfile   = "t/tmp_math_simple_add.t";
 
 plan skip_all => "no corpus config available"
     unless -e $conf_file && -e $corpus;
@@ -21,4 +24,6 @@ close $fh;
 
 like($contents, qr/get_time_zone/, "mentions function under test");
 
-done_testing;
+unlink $outfile;
+
+done_testing();
