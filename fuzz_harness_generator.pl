@@ -104,9 +104,9 @@ my $call_code;
 if ($new) {
     # keep use_ok regardless (user found earlier issue)
     $setup_code .= "\nmy \$obj = new_ok('$module' => { $new_code });";
-    $call_code  = "\$result = \$obj->$function(\\%params);";
+    $call_code  = "\$result = \$obj->$function(\$case);";
 } else {
-    $call_code  = "\$result = $module\::$function(\\%params);";
+    $call_code  = "\$result = $module\::$function(\$case);";
 }
 
 # Build static corpus code
