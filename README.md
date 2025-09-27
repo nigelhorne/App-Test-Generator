@@ -26,17 +26,22 @@ Recognized items:
 
             our %input = (
                     name => { type => 'string', optional => 0 },
-                    age  => { type => 'integer', optional => 1 },
+                    age => { type => 'integer', optional => 1 },
             );
 
-    Supported basic types used by the fuzzer: `string`, `integer`, `number`, `arrayref`, `hashref`.
+    Supported basic types used by the fuzzer: `string`, `integer`, `number`, `boolean`, `arrayref`, `hashref`.
     (You can add more types; they will default to `undef` unless extended.)
 
 - `%output` - output param types for Return::Set checking:
 
             our %output = (
-                    result => { type => 'string' },
+                    type => 'string'
             );
+
+    If the output hash contains the key \_STATUS, and if that key is set to DIES,
+    the routine should die with the given argumnts, otherwise it should live.
+    If it's set to WARNS,
+    the routne should warn with the given arguments
 
 - `$module` - module name (optional).
 
@@ -87,7 +92,7 @@ Functional fuzz + Perl corpus + seed:
         our $module = 'Math::Simple';
         our $function = 'add';
         our %input = ( a => { type => 'integer' }, b => { type => 'integer' } );
-        our %output = ( result => { type => 'integer' } );
+        our %output = ( type => 'integer' );
         our %cases = ( '3' => [1,2], '0' => [0,0] );
         our $seed = 12345;
         our $iterations = 100;
@@ -97,7 +102,7 @@ Functional fuzz + Perl corpus + seed:
 OO fuzz + YAML corpus + edge cases:
 
         our %input = ( query => { type => 'string' } );
-        our %output = ( result => { type => 'string' } );
+        our %output = ( type => 'string' );
         our $function = 'search';
         our $new = { api_key => 'ABC123' };
         our $yaml_cases = 't/corpus.yml';
@@ -115,6 +120,14 @@ A YAML mapping of expected -> args array:
         "failure":
           - "Bob"
 
+## Example with arrayref + hashref
+
+    our %input = (
+      tags   => { type => 'arrayref', optional => 1 },
+      config => { type => 'hashref' },
+    );
+    our %output = ( type => 'hashref' );
+
 # OUTPUT
 
 Writes `t/fuzz.t`. The generated test:
@@ -123,7 +136,7 @@ Writes `t/fuzz.t`. The generated test:
 - Uses edge cases (per-field and per-type) with configurable probability
 - Runs `$iterations` fuzz cases plus appended edge-case runs
 - Validates inputs with Params::Get / Params::Validate::Strict
-- Validates outputs with Return::Set
+- Validates outputs with [Return::Set](https://metacpan.org/pod/Return%3A%3ASet)
 - Runs static `is(... )` corpus tests from Perl and/or YAML corpus
 
 # NOTES

@@ -189,6 +189,20 @@ sub rand_int { int(rand(200)) - 100 }
 sub rand_bool { rand() > 0.5 ? 1 : 0 }
 sub rand_num { rand() * 200 - 100 }
 
+sub rand_arrayref {
+	my \$len = shift || int(rand(3)) + 1; # small arrays
+	[ map { rand_str() } 1..\$len ];
+}
+
+sub rand_hashref {
+	my \$len = shift || int(rand(3)) + 1; # small hashes
+	my \%h;
+	for (1..\$len) {
+		\$h{rand_str(3)} = rand_str(5);
+	}
+	return \\\%h;
+}
+
 sub fuzz_inputs {
 	my \@cases;
 	for (1..$iterations_code) {
@@ -216,11 +230,17 @@ sub fuzz_inputs {
 			elsif (\$type eq 'integer') {
 				\$case{\$field} = rand_int();
 			}
-			# elsif (\$type eq 'Bool') {
-				# \$case{\$field} = rand_bool();
-			# }
+			elsif (\$type eq 'boolean') {
+				\$case{\$field} = rand_bool();
+			}
 			elsif (\$type eq 'number') {
 				\$case{\$field} = rand_num();
+			}
+			elsif (\$type eq 'arrayref') {
+				\$case{\$field} = rand_arrayref();
+			}
+			elsif (\$type eq 'hashref') {
+				\$case{\$field} = rand_hashref();
 			}
 			else {
 				\$case{\$field} = undef;
@@ -250,6 +270,8 @@ foreach my \$case (\@{fuzz_inputs()}) {
 	if(my \$status = delete \$output{'_STATUS'}) {
 		if(\$status eq 'DIES') {
 			dies_ok { \$result = $call_code } 'function call dies';
+		} elsif(\$status eq 'WARNS') {
+			warnings_exist { \$result = $call_code } qr[''], 'function call warns';
 		} else {
 			lives_ok { \$result = $call_code } 'function call survives';
 		}
@@ -310,7 +332,7 @@ Recognized items:
 		age => { type => 'integer', optional => 1 },
 	);
 
-Supported basic types used by the fuzzer: C<string>, C<integer>, C<number>, C<arrayref>, C<hashref>.
+Supported basic types used by the fuzzer: C<string>, C<integer>, C<number>, C<boolean>, C<arrayref>, C<hashref>.
 (You can add more types; they will default to C<undef> unless extended.)
 
 =item * C<%output> - output param types for Return::Set checking:
@@ -321,6 +343,8 @@ Supported basic types used by the fuzzer: C<string>, C<integer>, C<number>, C<ar
 
 If the output hash contains the key _STATUS, and if that key is set to DIES,
 the routine should die with the given argumnts, otherwise it should live.
+If it's set to WARNS,
+the routne should warn with the given arguments
 
 =item * C<$module> - module name (optional).
 
@@ -404,6 +428,14 @@ A YAML mapping of expected -> args array:
 	  - 30
 	"failure":
 	  - "Bob"
+
+=head2 Example with arrayref + hashref
+
+  our %input = (
+    tags   => { type => 'arrayref', optional => 1 },
+    config => { type => 'hashref' },
+  );
+  our %output = ( type => 'hashref' );
 
 =head1 OUTPUT
 
