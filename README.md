@@ -1,12 +1,32 @@
 # NAME
 
-fuzz\_harness\_generator - Generate fuzzing + static YAML/Perl corpus Test::Most harness
+App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 # SYNOPSIS
 
-        perl fuzz_harness_generator.pl fuzz.conf
+From the command line:
+
+    fuzz-harness-generator t/conf/add.conf > t/add_fuzz.t
+
+From Perl:
+
+    use App::Test::Generator qw(generate);
+
+    # Generate to STDOUT
+    App::Test::Generator::generate("t/conf/add.conf");
+
+    # Generate directly to a file
+    App::Test::Generator::generate("t/conf/add.conf", "t/add_fuzz.t");
 
 # DESCRIPTION
+
+This module implements the logic behind [fuzz-harness-generator](https://metacpan.org/pod/fuzz-harness-generator).
+It parses configuration files (fuzz and/or corpus YAML), and
+produces a ready-to-run `.t` test script using [Test::Most](https://metacpan.org/pod/Test%3A%3AMost).
+
+It reads configuration files (Perl `.conf` with `our` variables,
+and optional YAML corpus files), and generates a [Test::Most](https://metacpan.org/pod/Test%3A%3AMost)-based
+fuzzing harness in `t/fuzz.t`.
 
 Generates `t/fuzz.t` combining:
 
@@ -89,13 +109,19 @@ Recognized items:
 
 Functional fuzz + Perl corpus + seed:
 
-        our $module = 'Math::Simple';
-        our $function = 'add';
-        our %input = ( a => { type => 'integer' }, b => { type => 'integer' } );
-        our %output = ( type => 'integer' );
-        our %cases = ( '3' => [1,2], '0' => [0,0] );
-        our $seed = 12345;
-        our $iterations = 100;
+    our $module = 'Math::Simple';
+    our $function = 'add';
+    our %input = ( a => { type => 'integer' }, b => { type => 'integer' } );
+    our %output = ( type => 'integer' );
+    our %cases = (
+      '3'     => [1, 2],
+      '0'     => [0, 0],
+      '-1'    => [-2, 1],
+      '_STATUS:DIES'  => [ 'a', 'b' ],     # non-numeric args should die
+      '_STATUS:WARNS' => [ undef, undef ], # undef args should warn
+    );
+    our $seed = 12345;
+    our $iterations = 100;
 
 ## Adding YAML file to generate tests
 
