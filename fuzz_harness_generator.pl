@@ -22,9 +22,9 @@ our ($seed, $iterations);
 our (%edge_cases, %type_edge_cases);
 
 # sensible defaults
-$function   ||= 'run';
+$function ||= 'run';
 $iterations ||= 50;		 # default fuzz runs if not specified
-$seed		= undef if defined $seed && $seed eq '';  # treat empty as undef
+$seed		= undef if defined $seed && $seed eq '';	# treat empty as undef
 
 # Guess module name from config file if not set
 if (!$module) {
@@ -90,12 +90,12 @@ sub render_arrayref_map {
 }
 
 # render edge case maps for inclusion in the .t
-my $edge_cases_code	  = render_arrayref_map(\%edge_cases);
+my $edge_cases_code	= render_arrayref_map(\%edge_cases);
 my $type_edge_cases_code = render_arrayref_map(\%type_edge_cases);
 
 # Render input/output
-my $input_code  = render_hash(\%input);
-my $output_code = render_hash(\%output);
+my $input_code = render_hash(\%input);
+my $output_code = render_args_hash(\%output);
 my $new_code	= ($new && (ref $new eq 'HASH')) ? render_args_hash($new) : '';
 
 # Setup / call code (always load module)
@@ -104,13 +104,13 @@ my $call_code;
 if(defined($new)) {
 	# keep use_ok regardless (user found earlier issue)
 	if($new_code eq '') {
-	$setup_code .= "\nmy \$obj = new_ok('$module');";
+		$setup_code .= "\nmy \$obj = new_ok('$module');";
 	} else {
-	$setup_code .= "\nmy \$obj = new_ok('$module' => [ { $new_code } ] );";
+		$setup_code .= "\nmy \$obj = new_ok('$module' => [ { $new_code } ] );";
 	}
-	$call_code  = "\$result = \$obj->$function(\$case);";
+	$call_code = "\$result = \$obj->$function(\$case);";
 } else {
-	$call_code  = "\$result = $module\::$function(\$case);";
+	$call_code = "\$result = $module\::$function(\$case);";
 }
 
 # Build static corpus code
@@ -124,10 +124,10 @@ if (%all_cases) {
 		my $expected_str = perl_quote($expected);
 		if ($new) {
 			$corpus_code .= "is(\$obj->$function($input_str), $expected_str, "
-						  . "\"$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str\");\n";
+						. "\"$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str\");\n";
 		} else {
 			$corpus_code .= "is($module\::$function($input_str), $expected_str, "
-						  . "\"$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str\");\n";
+						. "\"$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str\");\n";
 		}
 	}
 }
@@ -147,10 +147,9 @@ my $test = <<"TEST";
 
 use strict;
 use warnings;
+
 use Test::Most;
-use Params::Get qw(get_params);
-use Params::Validate::Strict qw(validate_strict);
-use Return::Set qw(set_return);
+use Test::Returns;
 
 $setup_code
 
@@ -167,12 +166,12 @@ $type_edge_cases_code
 # Seed for reproducible fuzzing (if provided)
 $seed_code
 
-my %input  = (
+my %input = (
 $input_code
 );
 
 my %output = (
-$output_code
+	$output_code
 );
 
 # --- Fuzzer helpers ---
@@ -248,14 +247,14 @@ foreach my \$case (\@{fuzz_inputs()}) {
 	# lives_ok { validate_strict(\\%input, %params) } 'Params::Validate::Strict input check';
 
 	my \$result;
-	lives_ok { $call_code } 'function call survives';
+	lives_ok { \$result = $call_code } 'function call survives';
 
-	# lives_ok { set_return(\\%output, \$result) } 'output validated';
+	returns_ok(\$result, \\%output, 'output validates');
 }
 
 $corpus_code
 
-done_testing;
+done_testing();
 TEST
 
 write_file("t/fuzz.t", $test);
@@ -300,7 +299,7 @@ Recognized items:
 
 	our %input = (
 		name => { type => 'string', optional => 0 },
-		age  => { type => 'integer', optional => 1 },
+		age => { type => 'integer', optional => 1 },
 	);
 
 Supported basic types used by the fuzzer: C<string>, C<integer>, C<number>, C<arrayref>, C<hashref>.
@@ -309,7 +308,7 @@ Supported basic types used by the fuzzer: C<string>, C<integer>, C<number>, C<ar
 =item * C<%output> - output param types for Return::Set checking:
 
 	our %output = (
-		result => { type => 'string' },
+		type => 'string'
 	);
 
 =item * C<$module> - module name (optional).
@@ -367,7 +366,7 @@ Functional fuzz + Perl corpus + seed:
 	our $module = 'Math::Simple';
 	our $function = 'add';
 	our %input = ( a => { type => 'integer' }, b => { type => 'integer' } );
-	our %output = ( result => { type => 'integer' } );
+	our %output = ( type => 'integer' );
 	our %cases = ( '3' => [1,2], '0' => [0,0] );
 	our $seed = 12345;
 	our $iterations = 100;
@@ -377,7 +376,7 @@ Functional fuzz + Perl corpus + seed:
 OO fuzz + YAML corpus + edge cases:
 
 	our %input = ( query => { type => 'string' } );
-	our %output = ( result => { type => 'string' } );
+	our %output = ( type => 'string' );
 	our $function = 'search';
 	our $new = { api_key => 'ABC123' };
 	our $yaml_cases = 't/corpus.yml';
@@ -409,7 +408,7 @@ Writes C<t/fuzz.t>. The generated test:
 
 =item * Validates inputs with Params::Get / Params::Validate::Strict
 
-=item * Validates outputs with Return::Set
+=item * Validates outputs with L<Return::Set>
 
 =item * Runs static C<is(... )> corpus tests from Perl and/or YAML corpus
 
