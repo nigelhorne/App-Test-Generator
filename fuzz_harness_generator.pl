@@ -192,7 +192,7 @@ sub fuzz_inputs {
         my %case;
         foreach my \$field (keys %input) {
             my \$spec = \$input{\$field} || {};
-            my \$type = \$spec->{type} || 'Str';
+            my \$type = \$spec->{type} || 'string';
 
             # 1) sometimes pick a field-specific edge-case
             if (exists \$edge_cases{\$field} && rand() < 0.4) {
@@ -207,16 +207,16 @@ sub fuzz_inputs {
             }
 
             # 3) normal random generation by type
-            if (\$type eq 'Str') {
+            if (\$type eq 'string') {
                 \$case{\$field} = rand_str();
             }
-            elsif (\$type eq 'Int') {
+            elsif (\$type eq 'integer') {
                 \$case{\$field} = rand_int();
             }
-            elsif (\$type eq 'Bool') {
-                \$case{\$field} = rand_bool();
-            }
-            elsif (\$type eq 'Num') {
+            # elsif (\$type eq 'Bool') {
+                # \$case{\$field} = rand_bool();
+            # }
+            elsif (\$type eq 'number') {
                 \$case{\$field} = rand_num();
             }
             else {
@@ -235,7 +235,7 @@ sub fuzz_inputs {
     push \@cases, {};
     push \@cases, { map { \$_ => undef } keys %input };
 
-    return \@cases;
+    return \\\@cases;
 }
 
 foreach my \$case (\@{fuzz_inputs()}) {
@@ -295,17 +295,17 @@ Recognized items:
 =item * C<%input> - input params with keys => type/optional specs:
 
     our %input = (
-        name => { type => 'Str', optional => 0 },
-        age  => { type => 'Int', optional => 1 },
+        name => { type => 'string', optional => 0 },
+        age  => { type => 'integer', optional => 1 },
     );
 
-Supported basic types used by the fuzzer: C<Str>, C<Int>, C<Num>, C<Bool>, C<ArrayRef>, C<HashRef>.
+Supported basic types used by the fuzzer: C<string>, C<integer>, C<number>, C<arrayref>, C<hashref>.
 (You can add more types; they will default to C<undef> unless extended.)
 
 =item * C<%output> - output param types for Return::Set checking:
 
     our %output = (
-        result => { type => 'Str' },
+        result => { type => 'string' },
     );
 
 =item * C<$module> - module name (optional).
@@ -344,8 +344,8 @@ C<My-Widget.conf> -> C<My::Widget>.
 =item * C<%type_edge_cases> - optional hash mapping types to arrayrefs of extra values to try for any field of that type:
 
     our %type_edge_cases = (
-        Str => [ '', ' ', "\n", "\\0", "long" x 50 ],
-        Int => [ -1, 0, 1, 2**31 - 1 ],
+        string => [ '', ' ', "\n", "\\0", "long" x 50 ],
+        integer => [ -1, 0, 1, 2**31 - 1 ],
     );
 
 =back
@@ -358,8 +358,8 @@ Functional fuzz + Perl corpus + seed:
 
     our $module = 'Math::Simple';
     our $function = 'add';
-    our %input = ( a => { type => 'Int' }, b => { type => 'Int' } );
-    our %output = ( result => { type => 'Int' } );
+    our %input = ( a => { type => 'integer' }, b => { type => 'integer' } );
+    our %output = ( result => { type => 'integer' } );
     our %cases = ( '3' => [1,2], '0' => [0,0] );
     our $seed = 12345;
     our $iterations = 100;
@@ -368,13 +368,13 @@ Functional fuzz + Perl corpus + seed:
 
 OO fuzz + YAML corpus + edge cases:
 
-    our %input = ( query => { type => 'Str' } );
-    our %output = ( result => { type => 'Str' } );
+    our %input = ( query => { type => 'string' } );
+    our %output = ( result => { type => 'string' } );
     our $function = 'search';
     our $new = { api_key => 'ABC123' };
     our $yaml_cases = 't/corpus.yml';
     our %edge_cases = ( query => [ '', '    ', '<script>' ] );
-    our %type_edge_cases = ( Str => [ \"\\0", "\x{FFFD}" ] );
+    our %type_edge_cases = ( string => [ \"\\0", "\x{FFFD}" ] );
     our $seed = 999;
 
 =head3 YAML Corpus Example (t/corpus.yml)
