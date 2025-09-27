@@ -64,7 +64,7 @@ sub render_hash {
 			next unless defined $def->{$subk};
 			push @pairs, "$subk => " . perl_quote($def->{$subk});
 		}
-		push @lines, "	" . perl_quote($k) . " => { " . join(", ", @pairs) . " }";
+		push @lines, '	' . perl_quote($k) . " => { " . join(", ", @pairs) . " }";
 	}
 	return join(",\n", @lines);
 }
@@ -73,7 +73,7 @@ sub render_args_hash {
 	my ($href) = @_;
 	return '' unless $href && ref($href) eq 'HASH';
 	my @pairs = map { perl_quote($_) . " => " . perl_quote($href->{$_}) } sort keys %$href;
-	return join(", ", @pairs);
+	return join(', ', @pairs);
 }
 
 sub render_arrayref_map {
@@ -247,7 +247,15 @@ foreach my \$case (\@{fuzz_inputs()}) {
 	# lives_ok { validate_strict(\\%input, %params) } 'Params::Validate::Strict input check';
 
 	my \$result;
-	lives_ok { \$result = $call_code } 'function call survives';
+	if(my \$status = delete \$output{'_STATUS'}) {
+		if(\$status eq 'DIES') {
+			dies_ok { \$result = $call_code } 'function call dies';
+		} else {
+			lives_ok { \$result = $call_code } 'function call survives';
+		}
+	} else {
+		lives_ok { \$result = $call_code } 'function call survives';
+	}
 
 	returns_ok(\$result, \\%output, 'output validates');
 }
@@ -310,6 +318,9 @@ Supported basic types used by the fuzzer: C<string>, C<integer>, C<number>, C<ar
 	our %output = (
 		type => 'string'
 	);
+
+If the output hash contains the key _STATUS, and if that key is set to DIES,
+the routine should die with the given argumnts, otherwise it should live.
 
 =item * C<$module> - module name (optional).
 
