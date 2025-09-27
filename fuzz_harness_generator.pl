@@ -123,11 +123,27 @@ if (%all_cases) {
 		my $input_str = join(", ", map { perl_quote($_) } @$inputs);
 		my $expected_str = perl_quote($expected);
 		if ($new) {
-			$corpus_code .= "is(\$obj->$function($input_str), $expected_str, "
-						. "\"$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str\");\n";
+			if($expected_str eq "'_STATUS:DIES'") {
+				$corpus_code .= "dies_ok { \$obj->$function($input_str) } "
+							. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") dies';\n";
+			} elsif($expected_str eq "'_STATUS:WARNS'") {
+				$corpus_code .= "warnings_exist { \$obj->$function($input_str) } qr[''], "
+							. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") warns';\n";
+			} else {
+				$corpus_code .= "is(\$obj->$function($input_str), $expected_str, "
+							. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str');\n";
+			}
 		} else {
-			$corpus_code .= "is($module\::$function($input_str), $expected_str, "
-						. "\"$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str\");\n";
+			if($expected_str eq "'_STATUS:DIES'") {
+				$corpus_code .= "dies_ok { $module\::$function($input_str) } "
+							. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") dies';\n";
+			} elsif($expected_str eq "'_STATUS:WARNS'") {
+				$corpus_code .= "warnings_exist { $module\::$function($input_str) } qr[''], "
+							. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") warns';\n";
+			} else {
+				$corpus_code .= "is($module\::$function($input_str), $expected_str, "
+							. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str');\n";
+			}
 		}
 	}
 }
@@ -398,13 +414,19 @@ To ensure new is called with no arguments, you still need to defined new, thus:
 
 Functional fuzz + Perl corpus + seed:
 
-	our $module = 'Math::Simple';
-	our $function = 'add';
-	our %input = ( a => { type => 'integer' }, b => { type => 'integer' } );
-	our %output = ( type => 'integer' );
-	our %cases = ( '3' => [1,2], '0' => [0,0] );
-	our $seed = 12345;
-	our $iterations = 100;
+  our $module = 'Math::Simple';
+  our $function = 'add';
+  our %input = ( a => { type => 'integer' }, b => { type => 'integer' } );
+  our %output = ( type => 'integer' );
+  our %cases = (
+    '3'     => [1, 2],
+    '0'     => [0, 0],
+    '-1'    => [-2, 1],
+    '_STATUS:DIES'  => [ 'a', 'b' ],     # non-numeric args should die
+    '_STATUS:WARNS' => [ undef, undef ], # undef args should warn
+  );
+  our $seed = 12345;
+  our $iterations = 100;
 
 =head2 Adding YAML file to generate tests
 
