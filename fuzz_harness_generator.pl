@@ -120,10 +120,10 @@ if (%all_cases) {
         my $expected_str = perl_quote($expected);
         if ($new) {
             $corpus_code .= "is(\$obj->$function($input_str), $expected_str, "
-                          . "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str');\n";
+                          . "\"$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str\");\n";
         } else {
             $corpus_code .= "is($module\::$function($input_str), $expected_str, "
-                          . "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str');\n";
+                          . "\"$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str\");\n";
         }
     }
 }
