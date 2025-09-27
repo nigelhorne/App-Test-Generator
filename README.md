@@ -4,7 +4,7 @@ fuzz\_harness\_generator - Generate fuzzing + static YAML/Perl corpus Test::Most
 
 # SYNOPSIS
 
-    perl fuzz_harness_generator.pl fuzz.conf
+        perl fuzz_harness_generator.pl fuzz.conf
 
 # DESCRIPTION
 
@@ -24,19 +24,19 @@ Recognized items:
 
 - `%input` - input params with keys => type/optional specs:
 
-        our %input = (
-            name => { type => 'Str', optional => 0 },
-            age  => { type => 'Int', optional => 1 },
-        );
+            our %input = (
+                    name => { type => 'string', optional => 0 },
+                    age  => { type => 'integer', optional => 1 },
+            );
 
-    Supported basic types used by the fuzzer: `Str`, `Int`, `Num`, `Bool`, `ArrayRef`, `HashRef`.
+    Supported basic types used by the fuzzer: `string`, `integer`, `number`, `arrayref`, `hashref`.
     (You can add more types; they will default to `undef` unless extended.)
 
 - `%output` - output param types for Return::Set checking:
 
-        our %output = (
-            result => { type => 'Str' },
-        );
+            our %output = (
+                    result => { type => 'string' },
+            );
 
 - `$module` - module name (optional).
 
@@ -46,13 +46,17 @@ Recognized items:
 - `$function` - function/method to test (defaults to `run`).
 - `$new` - optional hashref of args to pass to the module's constructor (object mode):
 
-        our $new = { api_key => 'ABC123', verbose => 1 };
+            our $new = { api_key => 'ABC123', verbose => 1 };
+
+    To ensure new is called with no arguments, you still need to defined new, thus:
+
+        our $new = '';
 
 - `%cases` - optional Perl static corpus (expected => \[ args... \]):
 
         our %cases = (
-            'ok'   => [ 'ping' ],
-            'error'=> [ '' ],
+          'ok'   => [ 'ping' ],
+          'error'=> [ '' ],
         );
 
 - `$yaml_cases` - optional path to a YAML file with the same shape as `%cases`.
@@ -60,19 +64,19 @@ Recognized items:
 - `$iterations` - optional integer controlling how many fuzz iterations to perform (default 50).
 - `%edge_cases` - optional hash mapping parameter names to arrayrefs of extra values to inject:
 
-        our %edge_cases = (
-            name => [ '', 'a' x 1024, \"\x{263A}" ],
-            age  => [ -1, 0, 99999999 ],
-        );
+            our %edge_cases = (
+                    name => [ '', 'a' x 1024, \"\x{263A}" ],
+                    age  => [ -1, 0, 99999999 ],
+            );
 
     (Values can be strings or numbers; strings will be properly quoted.)
 
 - `%type_edge_cases` - optional hash mapping types to arrayrefs of extra values to try for any field of that type:
 
-        our %type_edge_cases = (
-            Str => [ '', ' ', "\n", "\\0", "long" x 50 ],
-            Int => [ -1, 0, 1, 2**31 - 1 ],
-        );
+            our %type_edge_cases = (
+                    string => [ '', ' ', "\n", "\\0", "long" x 50 ],
+                    integer => [ -1, 0, 1, 2**31 - 1 ],
+            );
 
 # EXAMPLES
 
@@ -80,36 +84,36 @@ Recognized items:
 
 Functional fuzz + Perl corpus + seed:
 
-    our $module = 'Math::Simple';
-    our $function = 'add';
-    our %input = ( a => { type => 'Int' }, b => { type => 'Int' } );
-    our %output = ( result => { type => 'Int' } );
-    our %cases = ( '3' => [1,2], '0' => [0,0] );
-    our $seed = 12345;
-    our $iterations = 100;
+        our $module = 'Math::Simple';
+        our $function = 'add';
+        our %input = ( a => { type => 'integer' }, b => { type => 'integer' } );
+        our %output = ( result => { type => 'integer' } );
+        our %cases = ( '3' => [1,2], '0' => [0,0] );
+        our $seed = 12345;
+        our $iterations = 100;
 
 ## Adding YAML file to generate tests
 
 OO fuzz + YAML corpus + edge cases:
 
-    our %input = ( query => { type => 'Str' } );
-    our %output = ( result => { type => 'Str' } );
-    our $function = 'search';
-    our $new = { api_key => 'ABC123' };
-    our $yaml_cases = 't/corpus.yml';
-    our %edge_cases = ( query => [ '', '    ', '<script>' ] );
-    our %type_edge_cases = ( Str => [ \"\\0", "\x{FFFD}" ] );
-    our $seed = 999;
+        our %input = ( query => { type => 'string' } );
+        our %output = ( result => { type => 'string' } );
+        our $function = 'search';
+        our $new = { api_key => 'ABC123' };
+        our $yaml_cases = 't/corpus.yml';
+        our %edge_cases = ( query => [ '', '    ', '<script>' ] );
+        our %type_edge_cases = ( string => [ \"\\0", "\x{FFFD}" ] );
+        our $seed = 999;
 
 ### YAML Corpus Example (t/corpus.yml)
 
 A YAML mapping of expected -> args array:
 
-    "success":
-      - "Alice"
-      - 30
-    "failure":
-      - "Bob"
+        "success":
+          - "Alice"
+          - 30
+        "failure":
+          - "Bob"
 
 # OUTPUT
 
