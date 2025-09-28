@@ -83,7 +83,7 @@ Generates C<t/fuzz.t> combining:
 
 In addition to purely random fuzz cases, the harness generates
 deterministic edge cases for parameters that declare C<min>, C<max>,
-C<min_len>, or C<max_len> in their schema definitions.
+C<len>, or C<len> in their schema definitions.
 
 For each constraint, three edge cases are added:
 
@@ -108,20 +108,42 @@ Supported constraint types:
 
 =over 4
 
-=item * C<Num>, C<Int>, C<number>
+=item * C<number>, C<integer>
 
 Uses numeric values one below, equal to, and one above the boundary.
 
-=item * C<Str>, C<string>
+=item * C<string>
 
 Uses strings of lengths one below, equal to, and one above the boundary
-(minimum length = C<min_len>, maximum length = C<max_len>).
+(minimum length = C<len>, maximum length = C<len>).
 
-=item * C<HashRef>, C<hashref>
+=item * C<arrayref>
+
+Uses references to arrays of lengths one below, equal to, and one above the boundary
+(minimum length = C<len>, maximum length = C<len>).
+
+=item * C<hashref>
 
 Uses hashes with key counts one below, equal to, and one above the
 boundary (C<min> = minimum number of keys, C<max> = maximum number
 of keys).
+
+=item * C<memberof> - optional arrayref of allowed values for a parameter:
+
+    our %input = (
+        status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
+        level  => { type => 'integer', memberof => [ 1, 2, 3 ] },
+    );
+
+The generator will automatically create test cases for each allowed value (inside the member list), and at least one value outside the list (which should die, `_STATUS => 'DIES'`). This works for strings, integers, and numbers.
+
+=item * C<boolean> - automatic boundary tests for boolean fields
+
+    our %input = (
+        flag => { type => 'boolean' },
+    );
+
+The generator will automatically create test cases for `0` and `1`, and optionally invalid values that should trigger `_STATUS => 'DIES'`.
 
 =back
 
@@ -256,9 +278,19 @@ A YAML mapping of expected -> args array:
   );
   our %output = ( type => 'hashref' );
 
+=head2 Example with memberof
+
+  our %input = (
+      status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
+  );
+  our %output = ( type => 'string' );
+
+This will generate fuzz cases for 'ok', 'error', 'pending', and one invalid string that should die.
+
 =head1 OUTPUT
 
-Writes C<t/fuzz.t>. The generated test:
+By default, writes C<t/fuzz.t>.
+The generated test:
 
 =over 4
 
@@ -622,6 +654,22 @@ sub fuzz_inputs {
 				push \@cases, { \$field => undef, _STATUS => 'DIES' };
 				push \@cases, { \$field => 2, _STATUS => 'DIES' };	# invalid boolean
 			}
+		}
+
+		# Generate edge cases for memberof
+		if (exists \$spec->{memberof} && ref \$spec->{memberof} eq 'ARRAY' && \@{\$spec->{memberof}}) {
+			# inside values
+			foreach my \$val (\@{\$spec->{memberof}}) {
+				push \@cases, { \$field => \$val };
+			}
+			# outside value
+			my \$outside;
+			if (\$type eq 'integer' || \$type eq 'number') {
+				\$outside = (sort { \$a <=> \$b } \@{\$spec->{memberof}})[-1] + 1;
+			} else {
+				\$outside = 'INVALID_MEMBEROF';
+			}
+			push \@cases, { \$field => \$outside, _STATUS => 'DIES' };
 		}
 	}
 
