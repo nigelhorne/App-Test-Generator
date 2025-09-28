@@ -2,6 +2,15 @@ use strict;
 use warnings;
 use ExtUtils::MakeMaker;
 
+my $dist = {
+	COMPRESS => 'gzip -9f',	# Compress tarball using gzip
+	SUFFIX => 'gz',	# File suffix for tarball
+};
+
+if($^O eq 'darwin') {
+	$dist->{'TAR'} = 'gtar';
+}
+
 WriteMakefile(
 	NAME => 'App::Test::Generator',
 	VERSION_FROM => 'lib/App/Test/Generator.pm',
@@ -27,7 +36,8 @@ WriteMakefile(
 		'Test::More' => 0,
 		'Test::Needs' => 0,
 		'Test::Returns' => 0
-	},
+	}, dist => $dist,
+	clean		=> { FILES => 'App-Test-Generator-*' },
 	META_MERGE => {
 		'meta-spec' => { version => 2 },
 		resources => {
