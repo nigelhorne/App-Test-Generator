@@ -336,7 +336,7 @@ sub generate {
 	# sensible defaults
 	$function ||= 'run';
 	$iterations ||= 50;		 # default fuzz runs if not specified
-	$seed		= undef if defined $seed && $seed eq '';	# treat empty as undef
+	$seed	= undef if defined $seed && $seed eq '';	# treat empty as undef
 
 	# Guess module name from config file if not set
 	if (!$module) {
@@ -597,6 +597,9 @@ sub fuzz_inputs {
 				push \@cases, { \$field => \$spec->{min} + 1 };	# just inside
 				push \@cases, { \$field => \$spec->{min} };	# border
 				push \@cases, { \$field => \$spec->{min} - 1, _STATUS => 'DIES' }; # outside
+			} else {
+				push \@cases, { \$field => 0 };	# No min, so 0 should be allowable
+				push \@cases, { \$field => -1 };	# No min, so -1 should be allowable
 			}
 			if (defined \$spec->{max}) {
 				push \@cases, { \$field => \$spec->{max} - 1 };	# just inside
@@ -609,6 +612,8 @@ sub fuzz_inputs {
 				push \@cases, { \$field => 'a' x (\$len + 1) };	# just inside
 				push \@cases, { \$field => 'a' x \$len};	# border
 				push \@cases, { \$field => 'a' x (\$len - 1), _STATUS => 'DIES' } if \$len > 0; # outside
+			} else {
+				push \@cases, { \$field => '' };	# No min, empty string should be allowable
 			}
 			if (defined \$spec->{max}) {
 				my \$len = \$spec->{max};
@@ -622,6 +627,8 @@ sub fuzz_inputs {
 				push \@cases, { \$field => [ (1) x (\$len + 1) ] };	# just inside
 				push \@cases, { \$field => [ (1) x \$len ] };	# border
 				push \@cases, { \$field => [ (1) x (\$len - 1) ], _STATUS => 'DIES' } if \$len > 0; # outside
+			} else {
+				push \@cases, { \$field => [] };	# No min, empty array should be allowable
 			}
 			if (defined \$spec->{max}) {
 				my \$len = \$spec->{max};
@@ -635,6 +642,8 @@ sub fuzz_inputs {
 				push \@cases, { \$field => { map { "k\$_" => 1 }, 1 .. (\$len + 1) } };
 				push \@cases, { \$field => { map { "k\$_" => 1 }, 1 .. \$len } };
 				push \@cases, { \$field => { map { "k\$_" => 1 }, 1 .. (\$len - 1) }, _STATUS => 'DIES' } if \$len > 0;
+			} else {
+				push \@cases, { \$field => {} };	# No min, empty hash should be allowable
 			}
 			if (defined \$spec->{max}) {
 				my \$len = \$spec->{max};
