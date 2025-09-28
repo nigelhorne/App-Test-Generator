@@ -37,7 +37,7 @@ Generates `t/fuzz.t` combining:
 
 ## EDGE CASE GENERATION
 
-In addition to purely random fuzz cases, the harness now generates
+In addition to purely random fuzz cases, the harness generates
 deterministic edge cases for parameters that declare `min`, `max`,
 `min_len`, or `max_len` in their schema definitions.
 

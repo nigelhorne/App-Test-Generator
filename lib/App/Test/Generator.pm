@@ -57,7 +57,7 @@ Generates C<t/fuzz.t> combining:
 
 =head2 EDGE CASE GENERATION
 
-In addition to purely random fuzz cases, the harness now generates
+In addition to purely random fuzz cases, the harness generates
 deterministic edge cases for parameters that declare C<min>, C<max>,
 C<min_len>, or C<max_len> in their schema definitions.
 
