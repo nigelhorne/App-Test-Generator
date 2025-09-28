@@ -57,7 +57,7 @@ Generates `t/fuzz.t` combining:
 
 In addition to purely random fuzz cases, the harness generates
 deterministic edge cases for parameters that declare `min`, `max`,
-`min_len`, or `max_len` in their schema definitions.
+`len`, or `len` in their schema definitions.
 
 For each constraint, three edge cases are added:
 
@@ -76,20 +76,42 @@ For each constraint, three edge cases are added:
 
 Supported constraint types:
 
-- `Num`, `Int`, `number`
+- `number`, `integer`
 
     Uses numeric values one below, equal to, and one above the boundary.
 
-- `Str`, `string`
+- `string`
 
     Uses strings of lengths one below, equal to, and one above the boundary
-    (minimum length = `min_len`, maximum length = `max_len`).
+    (minimum length = `len`, maximum length = `len`).
 
-- `HashRef`, `hashref`
+- `arrayref`
+
+    Uses references to arrays of lengths one below, equal to, and one above the boundary
+    (minimum length = `len`, maximum length = `len`).
+
+- `hashref`
 
     Uses hashes with key counts one below, equal to, and one above the
     boundary (`min` = minimum number of keys, `max` = maximum number
     of keys).
+
+- `memberof` - optional arrayref of allowed values for a parameter:
+
+        our %input = (
+            status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
+            level  => { type => 'integer', memberof => [ 1, 2, 3 ] },
+        );
+
+    The generator will automatically create test cases for each allowed value (inside the member list), and at least one value outside the list (which should die, \`\_STATUS => 'DIES'\`). This works for strings, integers, and numbers.
+
+- `boolean` - automatic boundary tests for boolean fields
+
+        our %input = (
+            flag => { type => 'boolean' },
+        );
+
+    The generator will automatically create test cases for \`0\` and \`1\`, and optionally invalid values that should trigger \`\_STATUS => 'DIES'\`.
 
 These edge cases are inserted automatically, in addition to the random
 fuzzing inputs, so each run will reliably probe boundary conditions
@@ -214,9 +236,19 @@ A YAML mapping of expected -> args array:
     );
     our %output = ( type => 'hashref' );
 
+## Example with memberof
+
+    our %input = (
+        status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
+    );
+    our %output = ( type => 'string' );
+
+This will generate fuzz cases for 'ok', 'error', 'pending', and one invalid string that should die.
+
 # OUTPUT
 
-Writes `t/fuzz.t`. The generated test:
+By default, writes `t/fuzz.t`.
+The generated test:
 
 - Seeds RNG (if configured) for reproducible fuzz runs
 - Uses edge cases (per-field and per-type) with configurable probability
