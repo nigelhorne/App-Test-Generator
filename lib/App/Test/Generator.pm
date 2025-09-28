@@ -136,7 +136,7 @@ of keys).
     );
 
 The generator will automatically create test cases for each allowed value (inside the member list),
-and at least one value outside the list (which should die, C<_STATUS => 'DIES'>). This works for strings, integers, and numbers.
+and at least one value outside the list (which should die, C<_STATUS = 'DIES'>). This works for strings, integers, and numbers.
 
 =item * C<boolean> - automatic boundary tests for boolean fields
 
@@ -144,7 +144,7 @@ and at least one value outside the list (which should die, C<_STATUS => 'DIES'>)
         flag => { type => 'boolean' },
     );
 
-The generator will automatically create test cases for 0 and 1, and optionally invalid values that should trigger C<_STATUS => 'DIES'>.
+The generator will automatically create test cases for 0 and 1, and optionally invalid values that should trigger C<_STATUS = 'DIES'>.
 
 =back
 
