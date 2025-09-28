@@ -30,8 +30,13 @@ WriteMakefile(
 		'Pod::Usage' => 0,
 	},
 	TEST_REQUIRES => {
+		'File::Glob' => 0,
+		'File::stat' => 0,
 		'File::Temp' => 0,
 		'IPC::System::Simple' => 0,
+		'JSON::MaybeXS' => 0,
+		'POSIX' => 0,
+		'Readonly' => 0,
 		'Test::DescribeMe' => 0,
 		'Test::More' => 0,
 		'Test::Needs' => 0,

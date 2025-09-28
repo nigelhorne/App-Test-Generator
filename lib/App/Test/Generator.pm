@@ -132,7 +132,7 @@ of keys).
 
     our %input = (
         status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
-        level  => { type => 'integer', memberof => [ 1, 2, 3 ] },
+        level => { type => 'integer', memberof => [ 1, 2, 3 ] },
     );
 
 The generator will automatically create test cases for each allowed value (inside the member list),
@@ -587,7 +587,7 @@ sub fuzz_inputs {
 	push \@cases, { map { \$_ => undef } keys \%input };
 
 	# generate numeric, string, hashref and arrayref min/max edge cases
-	# TODO:  For hashref and arrayref, if there's a \$spec->{schema} field, use that for the sata that's being generated
+	# TODO: For hashref and arrayref, if there's a \$spec->{schema} field, use that for the sata that's being generated
 	foreach my \$field (keys \%input) {
 		my \$spec = \$input{\$field} || {};
 		my \$type = \$spec->{type} || '';
@@ -728,7 +728,13 @@ __END__
 
 =head1 SEE ALSO
 
-L<Test::Most>, L<Params::Get>, L<Params::Validate::Strict>, L<Return::Set>, L<YAML::XS>
+=over 4
+
+=item * Test coverage report: L<https://nigelhorne.github.io/App-Test-Generator/coverage/>
+
+=item * L<Test::Most>, L<Params::Get>, L<Params::Validate::Strict>, L<Return::Set>, L<YAML::XS>
+
+=back
 
 =head1 AUTHOR
 

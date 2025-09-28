@@ -100,7 +100,7 @@ Supported constraint types:
 
         our %input = (
             status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
-            level  => { type => 'integer', memberof => [ 1, 2, 3 ] },
+            level => { type => 'integer', memberof => [ 1, 2, 3 ] },
         );
 
     The generator will automatically create test cases for each allowed value (inside the member list),
@@ -265,7 +265,8 @@ The generated test:
 
 # SEE ALSO
 
-[Test::Most](https://metacpan.org/pod/Test%3A%3AMost), [Params::Get](https://metacpan.org/pod/Params%3A%3AGet), [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict), [Return::Set](https://metacpan.org/pod/Return%3A%3ASet), [YAML::XS](https://metacpan.org/pod/YAML%3A%3AXS)
+- Test coverage report: [https://nigelhorne.github.io/App-Test-Generator/coverage/](https://nigelhorne.github.io/App-Test-Generator/coverage/)
+- [Test::Most](https://metacpan.org/pod/Test%3A%3AMost), [Params::Get](https://metacpan.org/pod/Params%3A%3AGet), [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict), [Return::Set](https://metacpan.org/pod/Return%3A%3ASet), [YAML::XS](https://metacpan.org/pod/YAML%3A%3AXS)
 
 # AUTHOR
 
