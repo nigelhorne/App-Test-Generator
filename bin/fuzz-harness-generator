@@ -14,7 +14,7 @@ GetOptions(
 
 pod2usage(1) if $help;
 
-my $conf_file = shift @ARGV or pod2usage("No config file given");
+my $conf_file = shift @ARGV or pod2usage('No config file given');
 
 App::Test::Generator::generate($conf_file);
 
@@ -32,8 +32,8 @@ fuzz-harness-generator - Generate fuzzing + corpus-based test harnesses
 
 =head1 DESCRIPTION
 
-This tool generates a C<t/fuzz.t> test file that fuzzes and validates a target
-module’s function or method, using both randomized fuzz cases and static corpus
+This tool generates a C<t/fuzz.t> test file that fuzzes and validates a target module's function or method,
+using both randomized fuzz cases and static corpus
 cases (Perl or YAML).
 
 =head1 OPTIONS
