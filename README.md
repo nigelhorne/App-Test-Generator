@@ -103,7 +103,8 @@ Supported constraint types:
             level  => { type => 'integer', memberof => [ 1, 2, 3 ] },
         );
 
-    The generator will automatically create test cases for each allowed value (inside the member list), and at least one value outside the list (which should die, \`\_STATUS => 'DIES'\`). This works for strings, integers, and numbers.
+    The generator will automatically create test cases for each allowed value (inside the member list),
+    and at least one value outside the list (which should die, `_STATUS =` 'DIES'>). This works for strings, integers, and numbers.
 
 - `boolean` - automatic boundary tests for boolean fields
 
@@ -111,7 +112,7 @@ Supported constraint types:
             flag => { type => 'boolean' },
         );
 
-    The generator will automatically create test cases for \`0\` and \`1\`, and optionally invalid values that should trigger \`\_STATUS => 'DIES'\`.
+    The generator will automatically create test cases for 0 and 1, and optionally invalid values that should trigger `_STATUS =` 'DIES'>.
 
 These edge cases are inserted automatically, in addition to the random
 fuzzing inputs, so each run will reliably probe boundary conditions
