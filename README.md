@@ -35,6 +35,48 @@ Generates `t/fuzz.t` combining:
 - Functional or OO mode (via `$new`)
 - Reproducible runs via `$seed` and configurable iterations via `$iterations`
 
+## EDGE CASE GENERATION
+
+In addition to purely random fuzz cases, the harness now generates
+deterministic edge cases for parameters that declare `min`, `max`,
+`min_len`, or `max_len` in their schema definitions.
+
+For each constraint, three edge cases are added:
+
+- Just inside the allowable range
+
+    This case should succeed, since it lies strictly within the bounds.
+
+- Exactly on the boundary
+
+    This case should succeed, since it meets the constraint exactly.
+
+- Just outside the boundary
+
+    This case is annotated with `_STATUS =` 'DIES'> in the corpus and
+    should cause the harness to fail validation or croak.
+
+Supported constraint types:
+
+- `Num`, `Int`, `number`
+
+    Uses numeric values one below, equal to, and one above the boundary.
+
+- `Str`, `string`
+
+    Uses strings of lengths one below, equal to, and one above the boundary
+    (minimum length = `min_len`, maximum length = `max_len`).
+
+- `HashRef`, `hashref`
+
+    Uses hashes with key counts one below, equal to, and one above the
+    boundary (`min` = minimum number of keys, `max` = maximum number
+    of keys).
+
+These edge cases are inserted automatically, in addition to the random
+fuzzing inputs, so each run will reliably probe boundary conditions
+without relying solely on randomness.
+
 # CONFIGURATION
 
 The configuration file is a Perl file that should set variables with `our`.

@@ -55,6 +55,56 @@ Generates C<t/fuzz.t> combining:
 
 =back
 
+=head2 EDGE CASE GENERATION
+
+In addition to purely random fuzz cases, the harness now generates
+deterministic edge cases for parameters that declare C<min>, C<max>,
+C<min_len>, or C<max_len> in their schema definitions.
+
+For each constraint, three edge cases are added:
+
+=over 4
+
+=item * Just inside the allowable range
+
+This case should succeed, since it lies strictly within the bounds.
+
+=item * Exactly on the boundary
+
+This case should succeed, since it meets the constraint exactly.
+
+=item * Just outside the boundary
+
+This case is annotated with C<_STATUS => 'DIES'> in the corpus and
+should cause the harness to fail validation or croak.
+
+=back
+
+Supported constraint types:
+
+=over 4
+
+=item * C<Num>, C<Int>, C<number>
+
+Uses numeric values one below, equal to, and one above the boundary.
+
+=item * C<Str>, C<string>
+
+Uses strings of lengths one below, equal to, and one above the boundary
+(minimum length = C<min_len>, maximum length = C<max_len>).
+
+=item * C<HashRef>, C<hashref>
+
+Uses hashes with key counts one below, equal to, and one above the
+boundary (C<min> = minimum number of keys, C<max> = maximum number
+of keys).
+
+=back
+
+These edge cases are inserted automatically, in addition to the random
+fuzzing inputs, so each run will reliably probe boundary conditions
+without relying solely on randomness.
+
 =head1 CONFIGURATION
 
 The configuration file is a Perl file that should set variables with C<our>.
@@ -479,47 +529,61 @@ sub fuzz_inputs {
 	push \@cases, {};
 	push \@cases, { map { \$_ => undef } keys \%input };
 
-	# generate numeric, string, and arrayref min/max edge cases
+	# generate numeric, string, hashref and arrayref min/max edge cases
+	# TODO:  For hashref and arrayref, if there's a \$spec->{schema} field, use that for the sata that's being generated
 	foreach my \$field (keys \%input) {
 		my \$spec = \$input{\$field} || {};
 		my \$type = \$spec->{type} || '';
 
 		if (\$type eq 'number' || \$type eq 'integer') {
 			if (defined \$spec->{min}) {
-				push \@cases, { \$field => \$spec->{min} + 1 };   # just inside
-				push \@cases, { \$field => \$spec->{min} };       # border
+				push \@cases, { \$field => \$spec->{min} + 1 };	# just inside
+				push \@cases, { \$field => \$spec->{min} };	# border
 				push \@cases, { \$field => \$spec->{min} - 1, _STATUS => 'DIES' }; # outside
 			}
 			if (defined \$spec->{max}) {
-				push \@cases, { \$field => \$spec->{max} - 1 };   # just inside
-				push \@cases, { \$field => \$spec->{max} };       # border
+				push \@cases, { \$field => \$spec->{max} - 1 };	# just inside
+				push \@cases, { \$field => \$spec->{max} };	# border
 				push \@cases, { \$field => \$spec->{max} + 1, _STATUS => 'DIES' }; # outside
 			}
 		} elsif (\$type eq 'string') {
 			if (defined \$spec->{min}) {
 				my \$len = \$spec->{min};
-				push \@cases, { \$field => 'a' x (\$len + 1) };   # just inside
-				push \@cases, { \$field => 'a' x \$len};         # border
+				push \@cases, { \$field => 'a' x (\$len + 1) };	# just inside
+				push \@cases, { \$field => 'a' x \$len};	# border
 				push \@cases, { \$field => 'a' x (\$len - 1), _STATUS => 'DIES' } if \$len > 0; # outside
 			}
 			if (defined \$spec->{max}) {
 				my \$len = \$spec->{max};
-				push \@cases, { \$field => 'a' x (\$len - 1) };   # just inside
-				push \@cases, { \$field => 'a' x \$len};         # border
+				push \@cases, { \$field => 'a' x (\$len - 1) };	# just inside
+				push \@cases, { \$field => 'a' x \$len};	# border
 				push \@cases, { \$field => 'a' x (\$len + 1), _STATUS => 'DIES' }; # outside
 			}
 		} elsif (\$type eq 'arrayref') {
 			if (defined \$spec->{min}) {
 				my \$len = \$spec->{min};
-				push \@cases, { \$field => [ (1) x (\$len + 1) ] };   # just inside
-				push \@cases, { \$field => [ (1) x \$len ] };         # border
+				push \@cases, { \$field => [ (1) x (\$len + 1) ] };	# just inside
+				push \@cases, { \$field => [ (1) x \$len ] };	# border
 				push \@cases, { \$field => [ (1) x (\$len - 1) ], _STATUS => 'DIES' } if \$len > 0; # outside
 			}
 			if (defined \$spec->{max}) {
 				my \$len = \$spec->{max};
-				push \@cases, { \$field => [ (1) x (\$len - 1) ] };   # just inside
-				push \@cases, { \$field => [ (1) x \$len ] };         # border
+				push \@cases, { \$field => [ (1) x (\$len - 1) ] };	# just inside
+				push \@cases, { \$field => [ (1) x \$len ] };	# border
 				push \@cases, { \$field => [ (1) x (\$len + 1) ], _STATUS => 'DIES' }; # outside
+			}
+		} elsif (\$type eq 'hashref') {
+			if (defined \$spec->{min}) {
+				my \$len = \$spec->{min};
+				push \@cases, { \$field => { map { "k\$_" => 1 }, 1 .. (\$len + 1) } };
+				push \@cases, { \$field => { map { "k\$_" => 1 }, 1 .. \$len } };
+				push \@cases, { \$field => { map { "k\$_" => 1 }, 1 .. (\$len - 1) }, _STATUS => 'DIES' } if \$len > 0;
+			}
+			if (defined \$spec->{max}) {
+				my \$len = \$spec->{max};
+				push \@cases, { \$field => { map { "k\$_" => 1 }, 1 .. (\$len - 1) } };
+				push \@cases, { \$field => { map { "k\$_" => 1 }, 1 .. \$len } };
+				push \@cases, { \$field => { map { "k\$_" => 1 }, 1 .. (\$len + 1) }, _STATUS => 'DIES' };
 			}
 		}
 	}
