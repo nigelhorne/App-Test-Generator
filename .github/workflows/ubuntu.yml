@@ -1,0 +1,42 @@
+---
+name: Ubuntu
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  perl:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        perl-version:
+          - '5.32'
+          - '5.34'
+          - '5.36'
+          - '5.38'
+          - '5.40'
+
+    name: Perl ${{ matrix.perl-version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Perl
+        uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: ${{ matrix.perl-version }}
+
+      - name: Install CPAN dependencies
+        run: |
+          cpanm --notest --installdeps .
+
+      - name: Run tests
+        run: |
+          perl Makefile.PL
+          make
+          make test
