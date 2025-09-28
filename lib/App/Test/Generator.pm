@@ -31,6 +31,30 @@ From Perl:
   # Generate directly to a file
   App::Test::Generator::generate("t/conf/add.conf", "t/add_fuzz.t");
 
+=head1 OVERVIEW
+
+This module takes a formal input/output specification for a routine or
+method and automatically generates test cases. In effect, it allows you
+to easily add comprehensive black-box tests in addition to the more
+common white-box tests typically written for CPAN modules and other
+subroutines.
+
+The generated tests combine:
+
+=over 4
+
+=item * Random fuzzing based on input types
+
+=item * Deterministic edge cases for min/max constraints
+
+=item * Static corpus tests defined in Perl or YAML
+
+=back
+
+This approach strengthens your test suite by probing both expected and
+unexpected inputs, helping you to catch boundary errors, invalid data
+handling, and regressions without manually writing every case.
+
 =head1 DESCRIPTION
 
 This module implements the logic behind L<fuzz-harness-generator>.
@@ -75,7 +99,7 @@ This case should succeed, since it meets the constraint exactly.
 
 =item * Just outside the boundary
 
-This case is annotated with C<_STATUS => 'DIES'> in the corpus and
+This case is annotated with C<_STATUS = 'DIES'> in the corpus and
 should cause the harness to fail validation or croak.
 
 =back
