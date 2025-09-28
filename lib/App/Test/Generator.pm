@@ -212,7 +212,7 @@ Writes C<t/fuzz.t>. The generated test:
 sub generate {
 	my ($conf_file, $outfile) = @_;
 
-	croak "Usage: generate(conf_file [, outfile])" unless defined $conf_file;
+	croak 'Usage: generate(conf_file [, outfile])' unless defined $conf_file;
 
 	# --- Load configuration safely (require so config can use 'our' variables) ---
 	{
@@ -289,7 +289,7 @@ sub generate {
 			my $aref = $href->{$k};
 			next unless ref $aref eq 'ARRAY';
 			my $vals = join(", ", map { perl_quote($_) } @$aref);
-			push @entries, "	" . perl_quote($k) . " => [ $vals ]";
+			push @entries, '	' . perl_quote($k) . " => [ $vals ]";
 		}
 		return join(",\n", @entries);
 	}
@@ -477,7 +477,42 @@ sub fuzz_inputs {
 
 	# edge-case runs appended
 	push \@cases, {};
-	push \@cases, { map { \$_ => undef } keys %input };
+	push \@cases, { map { \$_ => undef } keys \%input };
+
+	# --- min/max schema edge cases ---
+	foreach my \$field (keys \%input) {
+		my \$spec = \$input{\$field} || {};
+		my (\$min, \$max) = \@\$spec{qw(min max)};
+		my \$type = \$spec->{type} || '';
+
+		# only handle numeric-like fields
+		next unless defined \$min || defined \$max;
+		next unless \$type eq 'integer' || \$type eq 'number';
+
+		# 1. Just inside allowable values
+		if (defined \$min) {
+			push \@cases, { \$field => \$min + 1 };
+		}
+		if (defined \$max) {
+			push \@cases, { \$field => \$max - 1 };
+		}
+
+		# 2. On the border
+		if (defined \$min) {
+			push \@cases, { \$field => \$min };
+		}
+		if (defined \$max) {
+			push \@cases, { \$field => \$max };
+		}
+
+		# 3. Just outside (should die)
+		if (defined \$min) {
+			push \@cases, { \$field => \$min - 1, _STATUS => 'DIES' };
+		}
+		if (defined \$max) {
+			push \@cases, { \$field => \$max + 1, _STATUS => 'DIES' };
+		}
+	}
 
 	return \\\@cases;
 }
@@ -528,6 +563,10 @@ L<Test::Most>, L<Params::Get>, L<Params::Validate::Strict>, L<Return::Set>, L<YA
 
 =head1 AUTHOR
 
-Nigel Horne
+Nigel Horne, C<< <njh at nigelhorne.com> >>
+
+Portions of this module’s design and documentation were created with the
+assistance of L<ChatGPT|https://openai.com/> (GPT-5), with final curation
+and authorship by Nigel Horne.
 
 =cut
