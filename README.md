@@ -59,13 +59,13 @@ Recognized items:
             );
 
     If the output hash contains the key \_STATUS, and if that key is set to DIES,
-    the routine should die with the given argumnts, otherwise it should live.
+    the routine should die with the given arguments; otherwise, it should live.
     If it's set to WARNS,
-    the routne should warn with the given arguments
+    the routine should warn with the given arguments
 
 - `$module` - module name (optional).
 
-    If omitted the generator will guess from the config filename:
+    If omitted, the generator will guess from the config filename:
     `My-Widget.conf` -> `My::Widget`.
 
 - `$function` - function/method to test (defaults to `run`).
@@ -176,4 +176,8 @@ Writes `t/fuzz.t`. The generated test:
 
 # AUTHOR
 
-Nigel Horne
+Nigel Horne, `<njh at nigelhorne.com>`
+
+Portions of this module's design and documentation were created with the
+assistance of [ChatGPT](https://openai.com/) (GPT-5), with final curation
+and authorship by Nigel Horne.

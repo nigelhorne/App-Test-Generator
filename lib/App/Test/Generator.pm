@@ -81,13 +81,13 @@ Supported basic types used by the fuzzer: C<string>, C<integer>, C<number>, C<bo
 	);
 
 If the output hash contains the key _STATUS, and if that key is set to DIES,
-the routine should die with the given argumnts, otherwise it should live.
+the routine should die with the given arguments; otherwise, it should live.
 If it's set to WARNS,
-the routne should warn with the given arguments
+the routine should warn with the given arguments
 
 =item * C<$module> - module name (optional).
 
-If omitted the generator will guess from the config filename:
+If omitted, the generator will guess from the config filename:
 C<My-Widget.conf> -> C<My::Widget>.
 
 =item * C<$function> - function/method to test (defaults to C<run>).
@@ -432,19 +432,19 @@ sub fuzz_inputs {
 			my \$spec = \$input{\$field} || {};
 			my \$type = \$spec->{type} || 'string';
 
-			# 1) sometimes pick a field-specific edge-case
+			# 1) Sometimes pick a field-specific edge-case
 			if (exists \$edge_cases{\$field} && rand() < 0.4) {
 				\$case{\$field} = _pick_from(\$edge_cases{\$field});
 				next;
 			}
 
-			# 2) sometimes pick a type-level edge-case
+			# 2) Sometimes pick a type-level edge-case
 			if (exists \$type_edge_cases{\$type} && rand() < 0.3) {
 				\$case{\$field} = _pick_from(\$type_edge_cases{\$type});
 				next;
 			}
 
-			# 3) normal random generation by type
+			# 3) Sormal random generation by type
 			if (\$type eq 'string') {
 				\$case{\$field} = rand_str();
 			}
@@ -479,38 +479,35 @@ sub fuzz_inputs {
 	push \@cases, {};
 	push \@cases, { map { \$_ => undef } keys \%input };
 
-	# --- min/max schema edge cases ---
+	# generate numeric and string min/max edge cases
 	foreach my \$field (keys \%input) {
 		my \$spec = \$input{\$field} || {};
-		my (\$min, \$max) = \@\$spec{qw(min max)};
 		my \$type = \$spec->{type} || '';
 
-		# only handle numeric-like fields
-		next unless defined \$min || defined \$max;
-		next unless \$type eq 'integer' || \$type eq 'number';
-
-		# 1. Just inside allowable values
-		if (defined \$min) {
-			push \@cases, { \$field => \$min + 1 };
-		}
-		if (defined \$max) {
-			push \@cases, { \$field => \$max - 1 };
-		}
-
-		# 2. On the border
-		if (defined \$min) {
-			push \@cases, { \$field => \$min };
-		}
-		if (defined \$max) {
-			push \@cases, { \$field => \$max };
-		}
-
-		# 3. Just outside (should die)
-		if (defined \$min) {
-			push \@cases, { \$field => \$min - 1, _STATUS => 'DIES' };
-		}
-		if (defined \$max) {
-			push \@cases, { \$field => \$max + 1, _STATUS => 'DIES' };
+		if (\$type eq 'number' || \$type eq 'integer') {
+			if (defined \$spec->{min}) {
+				push \@cases, { \$field => \$spec->{min} + 1 };   # just inside
+				push \@cases, { \$field => \$spec->{min} };       # border
+				push \@cases, { \$field => \$spec->{min} - 1, _STATUS => 'DIES' }; # outside
+			}
+			if (defined \$spec->{max}) {
+				push \@cases, { \$field => \$spec->{max} - 1 };   # just inside
+				push \@cases, { \$field => \$spec->{max} };       # border
+				push \@cases, { \$field => \$spec->{max} + 1, _STATUS => 'DIES' }; # outside
+			}
+		} elsif (\$type eq 'string') {
+			if (defined \$spec->{min}) {
+				my \$len = \$spec->{min};
+				push \@cases, { \$field => 'a' x (\$len + 1) };   # just inside
+				push \@cases, { \$field => 'a' x \$len};         # border
+				push \@cases, { \$field => 'a' x (\$len - 1), _STATUS => 'DIES' } if \$len > 0; # outside
+			}
+			if (defined \$spec->{max}) {
+				my \$len = \$spec->{max};
+				push \@cases, { \$field => 'a' x (\$len - 1) };   # just inside
+				push \@cases, { \$field => 'a' x \$len};         # border
+				push \@cases, { \$field => 'a' x (\$len + 1), _STATUS => 'DIES' }; # outside
+			}
 		}
 	}
 
@@ -565,7 +562,7 @@ L<Test::Most>, L<Params::Get>, L<Params::Validate::Strict>, L<Return::Set>, L<YA
 
 Nigel Horne, C<< <njh at nigelhorne.com> >>
 
-Portions of this module’s design and documentation were created with the
+Portions of this module's design and documentation were created with the
 assistance of L<ChatGPT|https://openai.com/> (GPT-5), with final curation
 and authorship by Nigel Horne.
 
