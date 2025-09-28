@@ -21,6 +21,7 @@ WriteMakefile(
 		'Pod::Usage' => 0,
 	},
 	TEST_REQUIRES => {
+		'IPC::System::Simple' => 0,
 		'Test::DescribeMe' => 0,
 		'Test::More' => 0,
 		'Test::Needs' => 0,

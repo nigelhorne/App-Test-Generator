@@ -2,6 +2,7 @@ use strict;
 use warnings;
 
 use Test::More;
+use IPC::System::Simple qw(system);
 use App::Test::Generator qw(generate);
 
 use Test::Needs 'Math::Simple';
@@ -23,6 +24,12 @@ my $contents = do { local $/; <$fh> };
 close $fh;
 
 like($contents, qr/get_time_zone/, "mentions function under test");
+
+eval {
+	system("$^X -c $outfile");
+};
+diag($@) if($@);
+ok(!$@, "$outfile compiles");
 
 unlink $outfile;
 
