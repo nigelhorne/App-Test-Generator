@@ -9,6 +9,8 @@ use Carp qw(croak);
 
 our @EXPORT_OK = qw(generate);
 
+our $VERSION = '0.01';
+
 =head1 NAME
 
 App::Test::Generator - Generate fuzz and corpus-driven test harnesses
