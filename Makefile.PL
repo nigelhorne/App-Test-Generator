@@ -21,11 +21,12 @@ WriteMakefile(
 		'Pod::Usage' => 0,
 	},
 	TEST_REQUIRES => {
+		'File::Temp' => 0,
 		'IPC::System::Simple' => 0,
 		'Test::DescribeMe' => 0,
 		'Test::More' => 0,
 		'Test::Needs' => 0,
-		'File::Temp' => 0,
+		'Test::Returns' => 0
 	},
 	META_MERGE => {
 		'meta-spec' => { version => 2 },
