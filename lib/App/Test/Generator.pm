@@ -609,6 +609,19 @@ sub fuzz_inputs {
 				push \@cases, { \$field => { map { "k\$_" => 1 }, 1 .. \$len } };
 				push \@cases, { \$field => { map { "k\$_" => 1 }, 1 .. (\$len + 1) }, _STATUS => 'DIES' };
 			}
+		} elsif (\$type eq 'boolean') {
+			if (exists \$spec->{memberof} && ref \$spec->{memberof} eq 'ARRAY') {
+				# memberof already defines allowed booleans
+				foreach my \$val (\@{\$spec->{memberof}}) {
+					push \@cases, { \$field => \$val };
+				}
+			} else {
+				# basic boolean edge cases
+				push \@cases, { \$field => 0 };
+				push \@cases, { \$field => 1 };
+				push \@cases, { \$field => undef, _STATUS => 'DIES' };
+				push \@cases, { \$field => 2, _STATUS => 'DIES' };	# invalid boolean
+			}
 		}
 	}
 
