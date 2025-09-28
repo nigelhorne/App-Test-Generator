@@ -479,7 +479,7 @@ sub fuzz_inputs {
 	push \@cases, {};
 	push \@cases, { map { \$_ => undef } keys \%input };
 
-	# generate numeric and string min/max edge cases
+	# generate numeric, string, and arrayref min/max edge cases
 	foreach my \$field (keys \%input) {
 		my \$spec = \$input{\$field} || {};
 		my \$type = \$spec->{type} || '';
@@ -507,6 +507,19 @@ sub fuzz_inputs {
 				push \@cases, { \$field => 'a' x (\$len - 1) };   # just inside
 				push \@cases, { \$field => 'a' x \$len};         # border
 				push \@cases, { \$field => 'a' x (\$len + 1), _STATUS => 'DIES' }; # outside
+			}
+		} elsif (\$type eq 'arrayref') {
+			if (defined \$spec->{min}) {
+				my \$len = \$spec->{min};
+				push \@cases, { \$field => [ (1) x (\$len + 1) ] };   # just inside
+				push \@cases, { \$field => [ (1) x \$len ] };         # border
+				push \@cases, { \$field => [ (1) x (\$len - 1) ], _STATUS => 'DIES' } if \$len > 0; # outside
+			}
+			if (defined \$spec->{max}) {
+				my \$len = \$spec->{max};
+				push \@cases, { \$field => [ (1) x (\$len - 1) ] };   # just inside
+				push \@cases, { \$field => [ (1) x \$len ] };         # border
+				push \@cases, { \$field => [ (1) x (\$len + 1) ], _STATUS => 'DIES' }; # outside
 			}
 		}
 	}
