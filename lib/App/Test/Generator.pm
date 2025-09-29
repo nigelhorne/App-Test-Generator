@@ -595,13 +595,19 @@ sub fuzz_inputs {
 
 	# Are any options manadatory?
 	my \$all_optional = 1;
+	my \%mandatory_strings;	# List of mandatory strings to be added to all tests, always put at start so it can be overwritten
 	foreach my \$field (keys \%input) {
 		my \$spec = \$input{\$field} || {};
 		if(!\$spec->{optional}) {
 			\$all_optional = 0;
-			last;
+			if(\$spec->{'type'} eq 'string') {
+				\$mandatory_strings{\$field} = rand_str();
+			} else {
+				die 'TODO: type = ', \$spec->{'type'};
+			}
 		}
 	}
+
 	if(\$all_optional) {
 		push \@cases, {};
 	} else {
@@ -621,7 +627,7 @@ sub fuzz_inputs {
 			# Generate edge cases for memberof
 			# inside values
 			foreach my \$val (\@{\$spec->{memberof}}) {
-				push \@cases, { \$field => \$val };
+				push \@cases, { \%mandatory_strings, \$field => \$val };
 			}
 			# outside value
 			my \$outside;
@@ -630,7 +636,7 @@ sub fuzz_inputs {
 			} else {
 				\$outside = 'INVALID_MEMBEROF';
 			}
-			push \@cases, { \$field => \$outside, _STATUS => 'DIES' };
+			push \@cases, { \%mandatory_strings, \$field => \$outside, _STATUS => 'DIES' };
 		} else {
 			# Generate edge cases for min/max
 			if (\$type eq 'number' || \$type eq 'integer') {
@@ -650,17 +656,17 @@ sub fuzz_inputs {
 			} elsif (\$type eq 'string') {
 				if (defined \$spec->{min}) {
 					my \$len = \$spec->{min};
-					push \@cases, { \$field => 'a' x (\$len + 1) };	# just inside
-					push \@cases, { \$field => 'a' x \$len};	# border
-					push \@cases, { \$field => 'a' x (\$len - 1), _STATUS => 'DIES' } if \$len > 0; # outside
+					push \@cases, { %mandatory_strings, \$field => 'a' x (\$len + 1) };	# just inside
+					push \@cases, { %mandatory_strings, \$field => 'a' x \$len };	# border
+					push \@cases, { %mandatory_strings, \$field => 'a' x (\$len - 1), _STATUS => 'DIES' } if \$len > 0; # outside
 				} else {
-					push \@cases, { \$field => '' };	# No min, empty string should be allowable
+					push \@cases, { %mandatory_strings, \$field => '' };	# No min, empty string should be allowable
 				}
 				if (defined \$spec->{max}) {
 					my \$len = \$spec->{max};
-					push \@cases, { \$field => 'a' x (\$len - 1) };	# just inside
-					push \@cases, { \$field => 'a' x \$len};	# border
-					push \@cases, { \$field => 'a' x (\$len + 1), _STATUS => 'DIES' }; # outside
+					push \@cases, { %mandatory_strings, \$field => 'a' x (\$len - 1), %mandatory_strings };	# just inside
+					push \@cases, { %mandatory_strings, \$field => 'a' x \$len, %mandatory_strings};	# border
+					push \@cases, { %mandatory_strings, \$field => 'a' x (\$len + 1), _STATUS => 'DIES', %mandatory_strings }; # outside
 				}
 			} elsif (\$type eq 'arrayref') {
 				if (defined \$spec->{min}) {
@@ -706,7 +712,7 @@ sub fuzz_inputs {
 					push \@cases, { \$field => 2, _STATUS => 'DIES' };	# invalid boolean
 				}
 			}
-
+		}
 	}
 
 	return \\\@cases;
