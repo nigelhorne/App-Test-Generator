@@ -361,6 +361,10 @@ sub generate {
 	sub perl_quote {
 		my ($v) = @_;
 		return 'undef' unless defined $v;
+		if(ref($v) eq 'ARRAY') {
+			my @quoted_v = map { perl_quote($_) } @{$v};
+			return '[ ' . join(', ', @quoted_v) . ' ]';
+		}
 		return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . ( $v =~ s/'/\\'/gr ) . "'";
 	}
 
