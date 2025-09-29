@@ -599,7 +599,7 @@ sub rand_num {
 	} elsif (\$r < 0.98) {
 		return (rand() * 1e308) - 5e307;           # very large floats
 	} else {
-		return 1e-308 * (rand() * 1000);           # tiny float, subnormal-like
+		return 1e-308 * (rand() * 1000);	# tiny float, subnormal-like
 	}
 }
 
@@ -748,6 +748,36 @@ sub fuzz_inputs {
 					push \@cases, { %mandatory_strings, \$field => 'a' x (\$len - 1), %mandatory_strings };	# just inside
 					push \@cases, { %mandatory_strings, \$field => 'a' x \$len, %mandatory_strings};	# border
 					push \@cases, { %mandatory_strings, \$field => 'a' x (\$len + 1), _STATUS => 'DIES', %mandatory_strings }; # outside
+				}
+				if(defined \$spec->{matches}) {
+					my \$re = \$spec->{matches};
+
+					# --- Positive controls ---
+					my \@candidate_good = ('123', 'abc', 'A1B2', '0');
+					foreach my \$val (\@candidate_good) {
+						if (\$val =~ \$re) {
+							push \@cases, { \$field => \$val };
+							last; # one good match is enough
+						}
+					}
+
+					# --- Negative controls ---
+					my \@candidate_bad = (
+						'',	# empty
+						undef,       # undefined
+						"\0",        # null byte
+						"😊",        # emoji
+						"１２３",     # full-width digits
+						"١٢٣",       # Arabic digits
+						'..',        # regex metachars
+						"a\nb",      # newline in middle
+						'x' x 5000,	# huge string
+					);
+					foreach my \$val (\@candidate_bad) {
+						if (\$val !~ \$re) {
+							push \@cases, { \$field => \$val, _STATUS => 'DIES' };
+						}
+					}
 				}
 			} elsif (\$type eq 'arrayref') {
 				if (defined \$spec->{min}) {
