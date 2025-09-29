@@ -485,7 +485,7 @@ use warnings;
 
 use Data::Dumper;
 use Test::Most;
-use Test::Returns;
+use Test::Returns 0.02;
 
 $setup_code
 

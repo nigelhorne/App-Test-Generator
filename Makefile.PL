@@ -40,20 +40,25 @@ WriteMakefile(
 		'Test::DescribeMe' => 0,
 		'Test::More' => 0,
 		'Test::Needs' => 0,
-		'Test::Returns' => 0
+		'Test::Returns' => 0.02
 	}, dist => $dist,
 	clean		=> { FILES => 'App-Test-Generator-*' },
 	META_MERGE => {
 		'meta-spec' => { version => 2 },
 		resources => {
+			homepage => 'https://metacpan.org/pod/App::Test::Generator',
 			repository => {
+				repository => 'https://github.com/nigelhorne/App-Test-Generator',
 				type => 'git',
-				url => 'https://github.com/nigelhorne/App-Test-Generator.git',
+				url => 'git://github.com/nigelhorne/App-Test-Generator.git',
 				web => 'https://github.com/nigelhorne/App-Test-Generator',
-			},
-			bugtracker => {
-				web => 'https://github.com/nigelhorne/App-Test-Generator/issues',
-			},
+				# license => 'http://dev.perl.org/licenses/',
+			}, bugtracker => {
+				mailto => 'bug-App-Test-Generator@rt.cpan.org',
+				url => 'https://github.com/nigelhorne/App-Test-Generator/issues',
+				# web => 'https://rt.cpan.org/Public/Dist/Display.html?Name=App-Test-Generator',
+				web => 'https://github.com/nigelhorne/App-Test-Generator/issues'
+			}
 		},
 	},
 );
