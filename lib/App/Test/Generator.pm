@@ -326,6 +326,7 @@ sub generate {
 
 	# --- Load configuration safely (require so config can use 'our' variables) ---
 	{
+		# FIXME:  would be better to use Config::Abstraction, since requiring the user's config could execute arbitrary code
 		my $abs = $conf_file;
 		$abs = "./$abs" unless $abs =~ m{^/};
 		require $abs;
@@ -446,7 +447,7 @@ sub generate {
 					$corpus_code .= "dies_ok { \$obj->$function($input_str) } "
 								. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") dies';\n";
 				} elsif($expected_str eq "'_STATUS:WARNS'") {
-					$corpus_code .= "warnings_exist { \$obj->$function($input_str) } qr[''], "
+					$corpus_code .= "warnings_exist { \$obj->$function($input_str) } qr/./, "
 								. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") warns';\n";
 				} else {
 					$corpus_code .= "is(\$obj->$function($input_str), $expected_str, "
@@ -457,7 +458,7 @@ sub generate {
 					$corpus_code .= "dies_ok { $module\::$function($input_str) } "
 								. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") dies';\n";
 				} elsif($expected_str eq "'_STATUS:WARNS'") {
-					$corpus_code .= "warnings_exist { $module\::$function($input_str) } qr[''], "
+					$corpus_code .= "warnings_exist { $module\::$function($input_str) } qr/./, "
 								. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") warns';\n";
 				} else {
 					$corpus_code .= "is($module\::$function($input_str), $expected_str, "
@@ -521,9 +522,36 @@ sub rand_str {
 	my \$len = shift || int(rand(10)) + 1;
 	join '', map { chr(97 + int(rand(26))) } 1..\$len;
 }
-sub rand_int { int(rand(200)) - 100 }
+
+# Integer generator: mix typical small ints with large limits
+sub rand_int {
+	my \$r = rand();
+	if (\$r < 0.75) {
+		return int(rand(200)) - 100;               # -100 .. 100 (usual)
+	} elsif (\$r < 0.9) {
+		return int(rand(2**31)) - 2**30;           # 32-bit-ish
+	} elsif (\$r < 0.98) {
+		return (int(rand(2**63)) - 2**62);         # 64-bit-ish
+	} else {
+		# very large/suspicious values
+		return 2**63 - 1;
+	}
+}
 sub rand_bool { rand() > 0.5 ? 1 : 0 }
-sub rand_num { rand() * 200 - 100 }
+
+# Number generator (floating), includes tiny/huge floats
+sub rand_num {
+	my \$r = rand();
+	if (\$r < 0.7) {
+		return (rand() * 200 - 100);               # -100 .. 100
+	} elsif (\$r < 0.9) {
+		return (rand() * 1e12) - 5e11;             # large-ish
+	} elsif (\$r < 0.98) {
+		return (rand() * 1e308) - 5e307;           # very large floats
+	} else {
+		return 1e-308 * (rand() * 1000);           # tiny float, subnormal-like
+	}
+}
 
 sub rand_arrayref {
 	my \$len = shift || int(rand(3)) + 1; # small arrays
@@ -733,7 +761,7 @@ foreach my \$case (\@{fuzz_inputs()}) {
 		if(\$status eq 'DIES') {
 			dies_ok { \$result = $call_code } 'function call dies';
 		} elsif(\$status eq 'WARNS') {
-			warnings_exist { \$result = $call_code } qr[''], 'function call warns';
+			warnings_exist { \$result = $call_code } qr/./, 'function call warns';
 		} else {
 			lives_ok { \$result = $call_code } 'function call survives';
 		}
