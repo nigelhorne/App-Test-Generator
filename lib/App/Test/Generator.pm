@@ -339,7 +339,7 @@ sub generate {
 	# sensible defaults
 	$function ||= 'run';
 	$iterations ||= 50;		 # default fuzz runs if not specified
-	$seed	= undef if defined $seed && $seed eq '';	# treat empty as undef
+	$seed = undef if defined $seed && $seed eq '';	# treat empty as undef
 
 	# Guess module name from config file if not set
 	if (!$module) {
@@ -615,10 +615,13 @@ sub fuzz_inputs {
 		push \@cases, { '_STATUS' => 'DIES' };	# At least one argument is needed
 	}
 
-	push \@cases, { map { \$_ => undef } keys \%input };
+	push \@cases, { '_STATUS' => 'DIES', map { \$_ => undef } keys \%input };
+
+	# If it's not in mandatory_strings it sets to 'undef' which is the idea, to test { value => undef } in the args
+	push \@cases, { map { \$_ => \$mandatory_strings{\$_} } keys \%input };
 
 	# generate numeric, string, hashref and arrayref min/max edge cases
-	# TODO: For hashref and arrayref, if there's a \$spec->{schema} field, use that for the sata that's being generated
+	# TODO: For hashref and arrayref, if there's a \$spec->{schema} field, use that for the data that's being generated
 	foreach my \$field (keys \%input) {
 		my \$spec = \$input{\$field} || {};
 		my \$type = \$spec->{type} || 'string';
