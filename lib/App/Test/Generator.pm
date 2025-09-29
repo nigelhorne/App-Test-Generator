@@ -227,8 +227,9 @@ To ensure new is called with no arguments, you still need to defined new, thus:
 =item * C<%type_edge_cases> - optional hash mapping types to arrayrefs of extra values to try for any field of that type:
 
 	our %type_edge_cases = (
-		string => [ '', ' ', "\n", "\\0", "long" x 50 ],
-		integer => [ -1, 0, 1, 2**31 - 1 ],
+		string  => [ '', ' ', "\t", "\n", "\0", 'long' x 1024, chr(0x1F600) ],
+		number  => [ 0, 1.0, -1.0, 1e308, -1e308, 1e-308, -1e-308, 'NaN', 'Infinity' ],
+		integer => [ 0, 1, -1, 2**31-1, -(2**31), 2**63-1, -(2**63) ],
 	);
 
 =back
@@ -794,6 +795,18 @@ sub fuzz_inputs {
 			}
 		}
 	}
+
+	# TODO: dedup, fuzzing can easily generate repeats
+	# our \$dedup = 1;	# default on
+
+	# later
+	# if (\$dedup) {
+		# my \%seen;
+		# \@cases = grep {
+			# my \$dump = encode_json(\$_);
+			# !\$seen{\$dump}++
+		# } \@cases;
+	# }
 
 	return \\\@cases;
 }

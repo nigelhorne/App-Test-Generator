@@ -20,6 +20,7 @@ WriteMakefile(
 	EXE_FILES => ['bin/fuzz-harness-generator'],
 	MIN_PERL_VERSION => '5.014',
 	PREREQ_PM => {
+		'autodie' => 0,
 		'Test::Most' => 0,
 		'Params::Get' => 0,
 		'Params::Validate::Strict' => 0,
@@ -42,7 +43,7 @@ WriteMakefile(
 		'Test::Needs' => 0,
 		'Test::Returns' => 0.02
 	}, dist => $dist,
-	clean		=> { FILES => 'App-Test-Generator-*' },
+	clean	 => { FILES => 'App-Test-Generator-*' },
 	META_MERGE => {
 		'meta-spec' => { version => 2 },
 		resources => {
