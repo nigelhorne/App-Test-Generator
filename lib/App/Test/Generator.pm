@@ -4,6 +4,8 @@ package App::Test::Generator;
 
 use strict;
 use warnings;
+use autodie qw(:all);
+
 use Exporter 'import';
 use File::Basename qw(basename);
 use YAML::XS qw(LoadFile);
@@ -484,6 +486,7 @@ sub generate {
 use strict;
 use warnings;
 
+use utf8;
 use Data::Dumper;
 use Test::Most;
 use Test::Returns 0.02;
@@ -518,20 +521,66 @@ sub _pick_from {
 	return \$arrayref->[ int(rand(scalar \@\$arrayref)) ];
 }
 
+# sub rand_str {
+	# my \$len = shift || int(rand(10)) + 1;
+	# join '', map { chr(97 + int(rand(26))) } 1..\$len;
+# }
+
+my \@unicode_codepoints = (
+    0x00A9,        # ©
+    0x00AE,        # ®
+    0x03A9,        # Ω
+    0x20AC,        # €
+    0x2013,        # – (en-dash)
+    0x0301,        # combining acute accent
+    0x0308,        # combining diaeresis
+    0x1F600,       # 😀 (emoji)
+    0x1F62E,       # 😮
+    0x1F4A9,       # 💩 (yes)
+);
+
+sub rand_unicode_char {
+    my \$cp = \$unicode_codepoints[ int(rand(\@unicode_codepoints)) ];
+    return chr(\$cp);
+}
+
+# Generate a string: mostly ASCII, sometimes unicode, sometimes nul bytes or combining marks
 sub rand_str {
 	my \$len = shift || int(rand(10)) + 1;
-	join '', map { chr(97 + int(rand(26))) } 1..\$len;
+	my \@chars;
+	for (1..\$len) {
+		my \$r = rand();
+		if (\$r < 0.72) {
+			push \@chars, chr(97 + int(rand(26)));          # a-z
+		} elsif (\$r < 0.88) {
+			push \@chars, chr(65 + int(rand(26)));          # A-Z
+		} elsif (\$r < 0.95) {
+			push \@chars, chr(48 + int(rand(10)));          # 0-9
+		} elsif (\$r < 0.975) {
+			push \@chars, rand_unicode_char();              # occasional emoji/marks
+		} else {
+			push \@chars, chr(0);                           # nul byte injection
+		}
+	}
+	# Occasionally prepend/append a combining mark to produce combining sequences
+	if (rand() < 0.08) {
+		unshift \@chars, chr(0x0301);
+	}
+	if (rand() < 0.08) {
+		push \@chars, chr(0x0308);
+	}
+	return join('', \@chars);
 }
 
 # Integer generator: mix typical small ints with large limits
 sub rand_int {
 	my \$r = rand();
 	if (\$r < 0.75) {
-		return int(rand(200)) - 100;               # -100 .. 100 (usual)
+		return int(rand(200)) - 100;	# -100 .. 100 (usual)
 	} elsif (\$r < 0.9) {
-		return int(rand(2**31)) - 2**30;           # 32-bit-ish
+		return int(rand(2**31)) - 2**30;	# 32-bit-ish
 	} elsif (\$r < 0.98) {
-		return (int(rand(2**63)) - 2**62);         # 64-bit-ish
+		return (int(rand(2**63)) - 2**62);	# 64-bit-ish
 	} else {
 		# very large/suspicious values
 		return 2**63 - 1;
@@ -543,7 +592,7 @@ sub rand_bool { rand() > 0.5 ? 1 : 0 }
 sub rand_num {
 	my \$r = rand();
 	if (\$r < 0.7) {
-		return (rand() * 200 - 100);               # -100 .. 100
+		return (rand() * 200 - 100);	# -100 .. 100
 	} elsif (\$r < 0.9) {
 		return (rand() * 1e12) - 5e11;             # large-ish
 	} elsif (\$r < 0.98) {
