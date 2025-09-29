@@ -104,7 +104,8 @@ Supported constraint types:
         );
 
     The generator will automatically create test cases for each allowed value (inside the member list),
-    and at least one value outside the list (which should die, `_STATUS = 'DIES'`). This works for strings, integers, and numbers.
+    and at least one value outside the list (which should die, `_STATUS = 'DIES'`).
+    This works for strings, integers, and numbers.
 
 - `boolean` - automatic boundary tests for boolean fields
 
@@ -182,8 +183,9 @@ Recognized items:
 - `%type_edge_cases` - optional hash mapping types to arrayrefs of extra values to try for any field of that type:
 
             our %type_edge_cases = (
-                    string => [ '', ' ', "\n", "\\0", "long" x 50 ],
-                    integer => [ -1, 0, 1, 2**31 - 1 ],
+                    string  => [ '', ' ', "\t", "\n", "\0", 'long' x 1024, chr(0x1F600) ],
+                    number  => [ 0, 1.0, -1.0, 1e308, -1e308, 1e-308, -1e-308, 'NaN', 'Infinity' ],
+                    integer => [ 0, 1, -1, 2**31-1, -(2**31), 2**63-1, -(2**63) ],
             );
 
 # EXAMPLES
