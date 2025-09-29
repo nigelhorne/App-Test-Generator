@@ -480,6 +480,7 @@ sub generate {
 use strict;
 use warnings;
 
+use Data::Dumper;
 use Test::Most;
 use Test::Returns;
 
@@ -686,6 +687,8 @@ sub fuzz_inputs {
 			push \@cases, { \$field => \$outside, _STATUS => 'DIES' };
 		}
 	}
+
+	::diag(Dumper[\\\@cases]) if(\$ENV{'TEST_VERBOSE'});
 
 	return \\\@cases;
 }
