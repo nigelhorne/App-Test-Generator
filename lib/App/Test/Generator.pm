@@ -483,7 +483,7 @@ sub generate {
 		$seed = int($seed);
 		$seed_code = "srand($seed);\n";
 	}
-	my $iterations_code = int($iterations) || 50;
+	my $iterations_code = int($iterations);
 
 	# Generate the test content
 	my $test = <<"TEST";
@@ -602,7 +602,7 @@ sub rand_num {
 	} elsif (\$r < 0.9) {
 		return (rand() * 1e12) - 5e11;             # large-ish
 	} elsif (\$r < 0.98) {
-		return (rand() * 1e308) - 5e307;           # very large floats
+		return (rand() * 1e308) - 5e307;        # very large floats
 	} else {
 		return 1e-308 * (rand() * 1000);	# tiny float, subnormal-like
 	}
@@ -644,7 +644,7 @@ sub fuzz_inputs {
 		# Basic test cases
 		foreach my \$field (keys \%input) {
 			my \$spec = \$input{\$field} || {};
-			my \$type  = lc(\$spec->{type} || 'string');
+			my \$type = lc(\$spec->{type} || 'string');
 
 			# --- Type-based seeds ---
 			if (\$type eq 'number') {
@@ -725,7 +725,7 @@ sub fuzz_inputs {
 
 	# Optional deduplication
 	# my \%seen;
-	# \@cases = grep { !\$seen{join "|", %\$_}++ } \@cases;
+	# \@cases = grep { !\$seen{join '|', %\$_}++ } \@cases;
 
 	# Random data test cases
 	for (1..$iterations_code) {
@@ -858,8 +858,8 @@ sub fuzz_inputs {
 					# --- Negative controls ---
 					my \@candidate_bad = (
 						'',	# empty
-						undef,       # undefined
-						"\0",        # null byte
+						undef,	# undefined
+						"\0",	# null byte
 						"😊",        # emoji
 						"１２３",     # full-width digits
 						"١٢٣",       # Arabic digits
