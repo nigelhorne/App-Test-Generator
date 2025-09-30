@@ -1,10 +1,14 @@
 package App::Test::Generator;
 
-# TODO: Formally define the transformation from the input set to the output set
-
 use strict;
 use warnings;
 use autodie qw(:all);
+
+use utf8;
+binmode STDOUT, ':utf8';
+binmode STDERR, ':utf8';
+
+use open qw(:std :encoding(UTF-8));
 
 use Exporter 'import';
 use File::Basename qw(basename);
@@ -619,9 +623,113 @@ sub rand_hashref {
 
 sub fuzz_inputs {
 	my \@cases;
+
+	# Are any options manadatory?
+	my \$all_optional = 1;
+	my \%mandatory_strings;	# List of mandatory strings to be added to all tests, always put at start so it can be overwritten
+	foreach my \$field (keys \%input) {
+		my \$spec = \$input{\$field} || {};
+		if(!\$spec->{optional}) {
+			\$all_optional = 0;
+			if(\$spec->{'type'} eq 'string') {
+				\$mandatory_strings{\$field} = rand_str();
+			} else {
+				die 'TODO: type = ', \$spec->{'type'};
+			}
+		}
+	}
+
+	if((\$all_optional) || ((scalar keys \%input) == 1)) {
+		# Basic test cases
+		foreach my \$field (keys \%input) {
+			my \$spec = \$input{\$field} || {};
+			my \$type  = lc(\$spec->{type} || 'string');
+
+			# --- Type-based seeds ---
+			if (\$type eq 'number') {
+				push \@cases, { \$field => 0 };
+				push \@cases, { \$field => 1.23 };
+				push \@cases, { \$field => -42 };
+				push \@cases, { \$field => 'abc', _STATUS => 'DIES' };
+			}
+			elsif (\$type eq 'integer') {
+				push \@cases, { \$field => 42 };
+				push \@cases, { \$field => -1 };
+				push \@cases, { \$field => 3.14, _STATUS => 'DIES' };
+				push \@cases, { \$field => 'xyz', _STATUS => 'DIES' };
+			}
+			elsif (\$type eq 'string') {
+				push \@cases, { \$field => "hello" };
+				push \@cases, { \$field => "" };
+				# push \@cases, { \$field => "emoji \x{1F600}" };
+				push \@cases, { \$field => "\0null", _STATUS => 'DIES' };
+			}
+			elsif (\$type eq 'boolean') {
+				push \@cases, { \$field => 0 };
+				push \@cases, { \$field => 1 };
+				push \@cases, { \$field => "true", _STATUS => 'DIES' };
+			}
+			elsif (\$type eq 'hashref') {
+				push \@cases, { \$field => { a => 1 } };
+				push \@cases, { \$field => [], _STATUS => 'DIES' };
+			}
+			elsif (\$type eq 'arrayref') {
+				push \@cases, { \$field => [1,2] };
+				push \@cases, { \$field => { a => 1 }, _STATUS => 'DIES' };
+			}
+
+			# --- min/max numeric boundaries ---
+			if (defined \$spec->{min}) {
+				my \$min = \$spec->{min};
+				push \@cases, { \$field => \$min - 1, _STATUS => 'DIES' };
+				push \@cases, { \$field => \$min };
+				push \@cases, { \$field => \$min + 1 };
+			}
+			if (defined \$spec->{max}) {
+				my \$max = \$spec->{max};
+				push \@cases, { \$field => \$max - 1 };
+				push \@cases, { \$field => \$max };
+				push \@cases, { \$field => \$max + 1, _STATUS => 'DIES' };
+			}
+
+			# --- min/max string/array boundaries ---
+			if (defined \$spec->{min}) {
+				my \$len = \$spec->{min};
+				push \@cases, { \$field => "a" x (\$len - 1), _STATUS => 'DIES' } if \$len > 0;
+				push \@cases, { \$field => "a" x \$len };
+				push \@cases, { \$field => "a" x (\$len + 1) };
+			}
+			if (defined \$spec->{max}) {
+				my \$len = \$spec->{max};
+				push \@cases, { \$field => "a" x (\$len - 1) };
+				push \@cases, { \$field => "a" x \$len };
+				push \@cases, { \$field => "a" x (\$len + 1), _STATUS => 'DIES' };
+			}
+
+			# --- matches (regex) ---
+			if (defined \$spec->{matches}) {
+				my \$regex = \$spec->{matches};
+				push \@cases, { \$field => "match123" } if "match123" =~ \$regex;
+				push \@cases, { \$field => "nope", _STATUS => 'DIES' } unless "nope" =~ \$regex;
+			}
+
+			# --- memberof ---
+			if (defined \$spec->{memberof}) {
+				my \@set = \@{ \$spec->{memberof} };
+				push \@cases, { \$field => \$set[0] } if \@set;
+				push \@cases, { \$field => "not_in_set", _STATUS => 'DIES' };
+			}
+		}
+	}
+
+	# Optional deduplication
+	# my \%seen;
+	# \@cases = grep { !\$seen{join "|", %\$_}++ } \@cases;
+
+	# Random data test cases
 	for (1..$iterations_code) {
-		my %case;
-		foreach my \$field (keys %input) {
+		my \%case;
+		foreach my \$field (keys \%input) {
 			my \$spec = \$input{\$field} || {};
 			next if \$spec->{'memberof'};	# Memberof data is created below
 			my \$type = \$spec->{type} || 'string';
@@ -670,21 +778,6 @@ sub fuzz_inputs {
 	}
 
 	# edge-cases
-
-	# Are any options manadatory?
-	my \$all_optional = 1;
-	my \%mandatory_strings;	# List of mandatory strings to be added to all tests, always put at start so it can be overwritten
-	foreach my \$field (keys \%input) {
-		my \$spec = \$input{\$field} || {};
-		if(!\$spec->{optional}) {
-			\$all_optional = 0;
-			if(\$spec->{'type'} eq 'string') {
-				\$mandatory_strings{\$field} = rand_str();
-			} else {
-				die 'TODO: type = ', \$spec->{'type'};
-			}
-		}
-	}
 
 	if(\$all_optional) {
 		push \@cases, {};
@@ -870,7 +963,7 @@ done_testing();
 TEST
 
 	if ($outfile) {
-		open my $fh, '>', $outfile or die "Cannot write $outfile: $!";
+		open my $fh, '>:encoding(UTF-8)', $outfile or die "Cannot open $outfile: $!";
 		print $fh $test;
 		close $fh;
 		print "Generated $outfile for $module\::$function with fuzzing + corpus support\n";
