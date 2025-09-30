@@ -321,8 +321,11 @@ The generated test:
 
 =head1 NOTES
 
-- The conf file must use C<our> declarations so variables are visible to the generator via C<require>.
-- Use C<srand($seed)> replay to reproduce failing cases. When you get a failure, re-run generator with the same C<$seed> to reproduce.
+=over 4
+
+=item * The conf file must use C<our> declarations so variables are visible to the generator via C<require>.
+
+=back
 
 =cut
 

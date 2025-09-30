@@ -262,8 +262,7 @@ The generated test:
 
 # NOTES
 
-\- The conf file must use `our` declarations so variables are visible to the generator via `require`.
-\- Use `srand($seed)` replay to reproduce failing cases. When you get a failure, re-run generator with the same `$seed` to reproduce.
+- The conf file must use `our` declarations so variables are visible to the generator via `require`.
 
 # SEE ALSO
 
