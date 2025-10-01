@@ -10,10 +10,12 @@ binmode STDERR, ':utf8';
 
 use open qw(:std :encoding(UTF-8));
 
-use Exporter 'import';
+use Carp qw(croak);
+use Config::Abstraction 0.34;
 use File::Basename qw(basename);
 use YAML::XS qw(LoadFile);
-use Carp qw(croak);
+
+use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
@@ -332,20 +334,29 @@ The generated test:
 sub generate {
 	my ($conf_file, $outfile) = @_;
 
-	croak 'Usage: generate(conf_file [, outfile])' unless defined $conf_file;
-
-	# --- Load configuration safely (require so config can use 'our' variables) ---
-	{
-		# FIXME:  would be better to use Config::Abstraction, since requiring the user's config could execute arbitrary code
-		my $abs = $conf_file;
-		$abs = "./$abs" unless $abs =~ m{^/};
-		require $abs;
-	}
-
 	# --- Globals exported by the user's conf (all optional except function maybe) ---
 	our (%input, %output, $module, $function, $new, %cases, $yaml_cases);
 	our ($seed, $iterations);
 	our (%edge_cases, %type_edge_cases);
+
+	if(defined($conf_file)) {
+		# --- Load configuration safely (require so config can use 'our' variables) ---
+		# FIXME:  would be better to use Config::Abstraction, since requiring the user's config could execute arbitrary code
+		my $abs = $conf_file;
+		$abs = "./$abs" unless $abs =~ m{^/};
+		require $abs;
+	} elsif(my $config = Config::Abstraction->new()) {
+		if(my $input = $config->input()) {
+			%input = %{$input};
+		}
+		if(my $output = $config->output()) {
+			%output = %{$output};
+		}
+		die 'TODO';
+	} else {
+		croak 'Usage: generate(conf_file [, outfile])';
+	}
+
 
 	# sensible defaults
 	$function ||= 'run';
