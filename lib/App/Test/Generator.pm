@@ -498,6 +498,7 @@ use warnings;
 
 use utf8;
 use Data::Dumper;
+use Class::Simple;
 use Test::Most;
 use Test::Returns 0.02;
 
@@ -632,12 +633,18 @@ sub fuzz_inputs {
 	# Are any options manadatory?
 	my \$all_optional = 1;
 	my \%mandatory_strings;	# List of mandatory strings to be added to all tests, always put at start so it can be overwritten
+	my \%mandatory_objects;
 	foreach my \$field (keys \%input) {
 		my \$spec = \$input{\$field} || {};
 		if(!\$spec->{optional}) {
 			\$all_optional = 0;
 			if(\$spec->{'type'} eq 'string') {
 				\$mandatory_strings{\$field} = rand_str();
+			} elsif(\$spec->{'type'} eq 'object') {
+				my \$obj = new_ok('Class::Simple');
+				my \$method = \$spec->{'can'};
+				\$obj->\$method(1);
+				\$mandatory_objects{\$field} = \$obj;
 			} else {
 				die 'TODO: type = ', \$spec->{'type'};
 			}
@@ -670,9 +677,9 @@ sub fuzz_inputs {
 				push \@cases, { \$field => "\0null", _STATUS => 'DIES' };
 			}
 			elsif (\$type eq 'boolean') {
-				push \@cases, { \$field => 0 };
-				push \@cases, { \$field => 1 };
-				push \@cases, { \$field => "true", _STATUS => 'DIES' };
+				push \@cases, { \%mandatory_objects, \$field => 0 };
+				push \@cases, { \%mandatory_objects, \$field => 1 };
+				push \@cases, { \%mandatory_objects, \$field => "true", _STATUS => 'DIES' };
 			}
 			elsif (\$type eq 'hashref') {
 				push \@cases, { \$field => { a => 1 } };
@@ -794,7 +801,7 @@ sub fuzz_inputs {
 	push \@cases, { '_STATUS' => 'DIES', map { \$_ => undef } keys \%input };
 
 	# If it's not in mandatory_strings it sets to 'undef' which is the idea, to test { value => undef } in the args
-	push \@cases, { map { \$_ => \$mandatory_strings{\$_} } keys \%input };
+	push \@cases, { map { \$_ => \$mandatory_strings{\$_} } keys \%input, \%mandatory_objects };
 
 	# generate numeric, string, hashref and arrayref min/max edge cases
 	# TODO: For hashref and arrayref, if there's a \$spec->{schema} field, use that for the data that's being generated
@@ -862,7 +869,7 @@ sub fuzz_inputs {
 					# --- Negative controls ---
 					my \@candidate_bad = (
 						'',	# empty
-						undef,	# undefined
+						# undef,	# undefined
 						"\0",	# null byte
 						"😊",        # emoji
 						"１２３",     # full-width digits
@@ -876,6 +883,7 @@ sub fuzz_inputs {
 							push \@cases, { \$field => \$val, _STATUS => 'DIES' };
 						}
 					}
+					push \@cases, { \$field => undef, _STATUS => 'DIES' };
 				}
 			} elsif (\$type eq 'arrayref') {
 				if (defined \$spec->{min}) {
@@ -911,14 +919,14 @@ sub fuzz_inputs {
 				if (exists \$spec->{memberof} && ref \$spec->{memberof} eq 'ARRAY') {
 					# memberof already defines allowed booleans
 					foreach my \$val (\@{\$spec->{memberof}}) {
-						push \@cases, { \$field => \$val };
+						push \@cases, { \%mandatory_objects, \$field => \$val };
 					}
 				} else {
 					# basic boolean edge cases
-					push \@cases, { \$field => 0 };
-					push \@cases, { \$field => 1 };
-					push \@cases, { \$field => undef, _STATUS => 'DIES' };
-					push \@cases, { \$field => 2, _STATUS => 'DIES' };	# invalid boolean
+					push \@cases, { \%mandatory_objects, \$field => 0 };
+					push \@cases, { \%mandatory_objects, \$field => 1 };
+					push \@cases, { \%mandatory_objects, \$field => undef, _STATUS => 'DIES' };
+					push \@cases, { \%mandatory_objects, \$field => 2, _STATUS => 'DIES' };	# invalid boolean
 				}
 			}
 		}
