@@ -330,7 +330,8 @@ The generated test:
 
 =cut
 
-sub generate {
+sub generate
+{
 	my ($conf_file, $outfile) = @_;
 
 	if(defined($conf_file)) {
@@ -358,6 +359,12 @@ sub generate {
 		(my $guess = basename($conf_file)) =~ s/\.(conf|pl|pm|yml|yaml)$//;
 		$guess =~ s/-/::/g;
 		$module = $guess || 'Unknown::Module';
+	}
+	eval {
+		require $module
+	};
+	if($@) {
+		croak(__PACKAGE__, ": $@");
 	}
 
 	# --- YAML corpus support (yaml_cases is filename string) ---
