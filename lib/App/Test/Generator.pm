@@ -10,7 +10,7 @@ binmode STDERR, ':utf8';
 
 use open qw(:std :encoding(UTF-8));
 
-use Carp qw(croak);
+use Carp qw(carp croak);
 use File::Basename qw(basename);
 use YAML::XS qw(LoadFile);
 
@@ -363,7 +363,7 @@ sub generate
 
 	eval "require $module; $module->import()";
 	if($@) {
-		croak(__PACKAGE__, ": $@");
+		carp(__PACKAGE__, ' (', __LINE__, "): $@");
 	}
 
 	# --- YAML corpus support (yaml_cases is filename string) ---
@@ -503,7 +503,7 @@ use strict;
 use warnings;
 
 use utf8;
-use open qw(:std :encoding(UTF-8));
+use open qw(:std :encoding(UTF-8));	# https://github.com/nigelhorne/App-Test-Generator/issues/1
 
 use Data::Dumper;
 use Class::Simple;
