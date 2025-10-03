@@ -1,6 +1,8 @@
 use strict;
 use warnings;
+
 use Test::More;
+use Test::Needs 'Math::Simple';
 use App::Test::Generator qw(generate);
 
 binmode STDOUT, ':utf8';

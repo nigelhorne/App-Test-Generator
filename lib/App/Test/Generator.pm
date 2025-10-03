@@ -360,9 +360,8 @@ sub generate
 		$guess =~ s/-/::/g;
 		$module = $guess || 'Unknown::Module';
 	}
-	eval {
-		require $module
-	};
+
+	eval "require $module; $module->import()";
 	if($@) {
 		croak(__PACKAGE__, ": $@");
 	}

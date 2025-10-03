@@ -1,8 +1,10 @@
 use strict;
 use warnings;
 
-use Test::More;
 use IPC::System::Simple qw(system);
+use Test::Most;
+use Test::Needs 'Math::Simple';
+
 use App::Test::Generator qw(generate);
 
 my $conf_file = 't/conf/add.conf';
@@ -10,7 +12,7 @@ my $outfile   = 't/tmp_add_fuzz.t';
 
 unlink $outfile;
 
-ok(App::Test::Generator::generate($conf_file, $outfile), "generate fuzz test");
+ok(App::Test::Generator::generate($conf_file, $outfile), 'generate fuzz test');
 ok(-e $outfile, "fuzz test file created");
 
 open my $fh, '<', $outfile or die $!;
