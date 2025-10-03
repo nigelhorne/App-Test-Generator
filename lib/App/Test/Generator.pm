@@ -361,7 +361,7 @@ sub generate
 		$module = $guess || 'Unknown::Module';
 	}
 
-	eval "require $module; $module->import()";
+	eval "require \"$module\"; \"$module\"->import()";
 	if($@) {
 		carp(__PACKAGE__, ' (', __LINE__, "): $@");
 	}
