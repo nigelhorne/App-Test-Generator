@@ -503,6 +503,8 @@ use strict;
 use warnings;
 
 use utf8;
+use open qw(:std :encoding(UTF-8));
+
 use Data::Dumper;
 use Class::Simple;
 use Test::Most;
