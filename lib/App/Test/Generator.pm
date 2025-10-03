@@ -469,7 +469,7 @@ sub generate
 								. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") warns';\n";
 				} else {
 					$corpus_code .= "is(\$obj->$function($input_str), $expected_str, "
-								. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str');\n";
+								. "\"$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str\");\n";
 				}
 			} else {
 				if($expected_str eq "'_STATUS:DIES'") {
@@ -480,7 +480,7 @@ sub generate
 								. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") warns';\n";
 				} else {
 					$corpus_code .= "is($module\::$function($input_str), $expected_str, "
-								. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str');\n";
+								. "\"$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str\");\n";
 				}
 			}
 		}
