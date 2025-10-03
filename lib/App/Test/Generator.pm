@@ -483,7 +483,7 @@ sub generate
 							"'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") warns';\n";
 				} else {
 					my $desc = sprintf("$function(%s) returns %s",
-						join(", ", map { $_ // '' } @$inputs ),
+						perlquot(join(', ', map { $_ // '' } @$inputs )),
 						$expected_str
 					);
 					$corpus_code .= "is(\$obj->$function\::$function($input_str), $expected_str, " . qwrap($desc) . ");\n";
@@ -497,7 +497,7 @@ sub generate
 						"'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") warns';\n";
 				} else {
 					my $desc = sprintf("$function(%s) returns %s",
-						join(", ", map { $_ // '' } @$inputs ),
+						perl_quote(join(', ', map { $_ // '' } @$inputs )),
 						$expected_str
 					);
 					$corpus_code .= "is($module\::$function($input_str), $expected_str, " . qwrap($desc) . ");\n";
