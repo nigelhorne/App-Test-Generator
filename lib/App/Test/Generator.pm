@@ -427,6 +427,20 @@ sub generate
 		return join(",\n", @entries);
 	}
 
+	# Robustly quote a string (GitHub#1)
+	sub qwrap {
+		my ($s) = @_;
+		for my $p ( ['{','}'], ['(',')'], ['[',']'], ['<','>'] ) {
+			my ($l,$r) = @$p;
+			return "q$l$s$r" unless $s =~ /\Q$l\E|\Q$r\E/;
+		}
+		for my $d ('~', '!', '%', '^', '=', '+', ':', ',', ';', '|', '/', '#') {
+			return "q$d$s$d" unless index($s, $d) >= 0;
+		}
+		(my $esc = $s) =~ s/'/\\'/g;
+		return "'$esc'";
+	}
+
 	# render edge case maps for inclusion in the .t
 	my $edge_cases_code	= render_arrayref_map(\%edge_cases);
 	my $type_edge_cases_code = render_arrayref_map(\%type_edge_cases);
@@ -462,25 +476,32 @@ sub generate
 			my $expected_str = perl_quote($expected);
 			if ($new) {
 				if($expected_str eq "'_STATUS:DIES'") {
-					$corpus_code .= "dies_ok { \$obj->$function($input_str) } "
-								. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") dies';\n";
+					$corpus_code .= "dies_ok { \$obj->$function($input_str) } " .
+							"'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") dies';\n";
 				} elsif($expected_str eq "'_STATUS:WARNS'") {
-					$corpus_code .= "warnings_exist { \$obj->$function($input_str) } qr/./, "
-								. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") warns';\n";
+					$corpus_code .= "warnings_exist { \$obj->$function($input_str) } qr/./, " .
+							"'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") warns';\n";
 				} else {
-					$corpus_code .= "is(\$obj->$function($input_str), $expected_str, "
-								. "\"$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str\");\n";
+					my $desc = sprintf("$function(%s) returns %s",
+						join(", ", map { $_ // '' } @$inputs ),
+						$expected_str
+					);
+					$corpus_code .= "is(\$obj->$function\::$function($input_str), $expected_str, " . qwrap($desc) . ");\n";
 				}
 			} else {
 				if($expected_str eq "'_STATUS:DIES'") {
-					$corpus_code .= "dies_ok { $module\::$function($input_str) } "
-								. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") dies';\n";
+					$corpus_code .= "dies_ok { $module\::$function($input_str) } " .
+						"'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") dies';\n";
 				} elsif($expected_str eq "'_STATUS:WARNS'") {
-					$corpus_code .= "warnings_exist { $module\::$function($input_str) } qr/./, "
-								. "'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") warns';\n";
+					$corpus_code .= "warnings_exist { $module\::$function($input_str) } qr/./, " .
+						"'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") warns';\n";
 				} else {
-					$corpus_code .= "is($module\::$function($input_str), $expected_str, "
-								. "\"$function(" . join(", ", map { $_ // '' } @$inputs ) . ") returns $expected_str\");\n";
+					my $desc = sprintf("$function(%s) returns %s",
+						join(", ", map { $_ // '' } @$inputs ),
+						$expected_str
+					);
+					$corpus_code .= "is($module\::$function($input_str), $expected_str, " . qwrap($desc) . ");\n";
+# is(Util::camelize('тест'), 'Тест', "camelize(тест) returns 'Тест'");
 				}
 			}
 		}
