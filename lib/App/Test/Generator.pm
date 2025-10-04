@@ -361,10 +361,12 @@ sub generate
 		$module = $guess || 'Unknown::Module';
 	}
 
-	eval "require \"$module\"; \"$module\"->import()";
-	if($@) {
-		carp(__PACKAGE__, ' (', __LINE__, "): $@");
-	}
+	# FIXME:  Always fails with "Can't locate" - either method
+	# eval "require \"$module\"; \"$module\"->import()";
+	# eval { require $module };
+	# if($@) {
+		# carp(__PACKAGE__, ' (', __LINE__, "): $@");
+	# }
 
 	# --- YAML corpus support (yaml_cases is filename string) ---
 	my %yaml_corpus_data;
@@ -379,19 +381,26 @@ sub generate
 	my %all_cases = (%cases, %yaml_corpus_data);
 
 	# --- Helpers for rendering data structures into Perl code for the generated test ---
+	sub perlsq {
+		my $s = $_[0];
+		$s =~ s/\\/\\\\/g; $s =~ s/'/\\'/g; $s =~ s/\n/\\n/g; $s =~ s/\r/\\r/g; $s =~ s/\t/\\t/g;
+		return $s;
+	}
+
 	sub perl_quote {
-		my ($v) = @_;
+		my $v = $_[0];
 		return 'undef' unless defined $v;
 		if(ref($v) eq 'ARRAY') {
 			my @quoted_v = map { perl_quote($_) } @{$v};
 			return '[ ' . join(', ', @quoted_v) . ' ]';
 		}
 		$v =~ s/\\/\\\\/g;
-		return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . ( $v =~ s/'/\\'/gr ) . "'";
+		# return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . ( $v =~ s/'/\\'/gr ) . "'";
+		return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . perlsq($v) . "'";
 	}
 
 	sub render_hash {
-		my ($href) = @_;
+		my $href = $_[0];
 		return '' unless $href && ref($href) eq 'HASH';
 		my @lines;
 		for my $k (sort keys %$href) {
@@ -408,14 +417,14 @@ sub generate
 	}
 
 	sub render_args_hash {
-		my ($href) = @_;
+		my $href = $_[0];
 		return '' unless $href && ref($href) eq 'HASH';
 		my @pairs = map { perl_quote($_) . " => " . perl_quote($href->{$_}) } sort keys %$href;
 		return join(', ', @pairs);
 	}
 
 	sub render_arrayref_map {
-		my ($href) = @_;
+		my $href = $_[0];
 		return "()" unless $href && ref($href) eq 'HASH';
 		my @entries;
 		for my $k (sort keys %$href) {
@@ -429,7 +438,7 @@ sub generate
 
 	# Robustly quote a string (GitHub#1)
 	sub qwrap {
-		my ($s) = @_;
+		my $s = $_[0];
 		for my $p ( ['{','}'], ['(',')'], ['[',']'], ['<','>'] ) {
 			my ($l,$r) = @$p;
 			return "q$l$s$r" unless $s =~ /\Q$l\E|\Q$r\E/;
@@ -501,7 +510,6 @@ sub generate
 						$expected_str
 					);
 					$corpus_code .= "is($module\::$function($input_str), $expected_str, " . qwrap($desc) . ");\n";
-# is(Util::camelize('тест'), 'Тест', "camelize(тест) returns 'Тест'");
 				}
 			}
 		}
