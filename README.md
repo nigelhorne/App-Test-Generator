@@ -171,14 +171,21 @@ Recognized items:
 - `$yaml_cases` - optional path to a YAML file with the same shape as `%cases`.
 - `$seed` - optional integer. When provided, the generated `t/fuzz.t` will call `srand($seed)` so fuzz runs are reproducible.
 - `$iterations` - optional integer controlling how many fuzz iterations to perform (default 50).
-- `%edge_cases` - optional hash mapping parameter names to arrayrefs of extra values to inject:
+- `%edge_cases` - optional hash mapping of extra values to inject:
 
+            # Two named parameters
             our %edge_cases = (
                     name => [ '', 'a' x 1024, \"\x{263A}" ],
                     age  => [ -1, 0, 99999999 ],
             );
 
+            # Takes a string input
+            our %edge_cases (
+                    'foo', 'bar'
+            );
+
     (Values can be strings or numbers; strings will be properly quoted.)
+    Note that this only works with routines that take named parameters.
 
 - `%type_edge_cases` - optional hash mapping types to arrayrefs of extra values to try for any field of that type:
 

@@ -220,14 +220,21 @@ To ensure new is called with no arguments, you still need to defined new, thus:
 
 =item * C<$iterations> - optional integer controlling how many fuzz iterations to perform (default 50).
 
-=item * C<%edge_cases> - optional hash mapping parameter names to arrayrefs of extra values to inject:
+=item * C<%edge_cases> - optional hash mapping of extra values to inject:
 
+	# Two named parameters
 	our %edge_cases = (
 		name => [ '', 'a' x 1024, \"\x{263A}" ],
 		age  => [ -1, 0, 99999999 ],
 	);
 
+	# Takes a string input
+	our %edge_cases (
+		'foo', 'bar'
+	);
+
 (Values can be strings or numbers; strings will be properly quoted.)
+Note that this only works with routines that take named parameters.
 
 =item * C<%type_edge_cases> - optional hash mapping types to arrayrefs of extra values to try for any field of that type:
 
@@ -463,7 +470,7 @@ sub generate
 	}
 
 	# render edge case maps for inclusion in the .t
-	my $edge_cases_code	= render_arrayref_map(\%edge_cases);
+	my $edge_cases_code = render_arrayref_map(\%edge_cases);
 	my $type_edge_cases_code = render_arrayref_map(\%type_edge_cases);
 
 	# Render configuration
@@ -729,8 +736,8 @@ sub fuzz_inputs {
 				push \@cases, { \$field => 'xyz', _STATUS => 'DIES' };
 			}
 			elsif (\$type eq 'string') {
-				push \@cases, { \$field => "hello" };
-				push \@cases, { \$field => "" };
+				push \@cases, { \$field => 'hello' };
+				push \@cases, { \$field => '' };
 				# push \@cases, { \$field => "emoji \x{1F600}" };
 				push \@cases, { \$field => "\0null", _STATUS => 'DIES' } if(\$config{'test_nuls'});
 			}
