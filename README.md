@@ -128,13 +128,22 @@ Recognized items:
 
 - `%input` - input params with keys => type/optional specs:
 
-            our %input = (
-                    name => { type => 'string', optional => 0 },
-                    age => { type => 'integer', optional => 1 },
-            );
+    When using named parameters
+    	our %input = (
+    		name => { type => 'string', optional => 0 },
+    		age => { type => 'integer', optional => 1 },
+    	);
 
     Supported basic types used by the fuzzer: `string`, `integer`, `number`, `boolean`, `arrayref`, `hashref`.
     (You can add more types; they will default to `undef` unless extended.)
+
+    For routines with one unnamed parameter
+
+        our %input = (
+           type => 'string'
+        );
+
+    Currently routines with more than one unnamed parameter are not supported.
 
 - `%output` - output param types for Return::Set checking:
 
@@ -161,11 +170,17 @@ Recognized items:
 
         our $new = '';
 
-- `%cases` - optional Perl static corpus (expected => \[ args... \]):
+- `%cases` - optional Perl static corpus, when the output is a simple string (expected => \[ args... \]):
+
+    Maps expected output string to the input and \_STATUS
 
         our %cases = (
-          'ok'   => [ 'ping' ],
-          'error'=> [ '' ],
+          'ok'   => {
+              input => 'ping',
+              status => 'OK',
+          'error' =>
+              input => '',
+              status => 'DIES'
         );
 
 - `$yaml_cases` - optional path to a YAML file with the same shape as `%cases`.
@@ -200,6 +215,7 @@ Recognized items:
     The current supported variables are
 
     - `test_nuls`, inject NUL bytes into strings (default: 1)
+    - `test_undef`, test with undefined value (default: 1)
 
 # EXAMPLES
 
@@ -258,7 +274,7 @@ A YAML mapping of expected -> args array:
         status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
     );
     our %output = ( type => 'string' );
-    our %config = ( test_nuls => 0 );
+    our %config = ( test_nuls => 0, test_undef => 1 );
 
 This will generate fuzz cases for 'ok', 'error', 'pending', and one invalid string that should die.
 
