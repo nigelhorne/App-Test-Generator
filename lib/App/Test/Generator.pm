@@ -643,7 +643,7 @@ my %output = (
 
 # --- Fuzzer helpers ---
 sub _pick_from {
-	my (\$arrayref) = \@_;
+	my \$arrayref = \$_[0];
 	return undef unless \$arrayref && ref \$arrayref eq 'ARRAY' && \@\$arrayref;
 	return \$arrayref->[ int(rand(scalar \@\$arrayref)) ];
 }
@@ -877,7 +877,7 @@ sub fuzz_inputs {
 				my \$case_input;
 				if (\@edge_case_array && rand() < 0.4) {
 					# Sometimes pick a field-specific edge-case
-					\$case_input = _pick_from(\@edge_case_array);
+					\$case_input = _pick_from(\\\@edge_case_array);
 				} elsif(exists \$type_edge_cases{\$type} && rand() < 0.3) {
 					# Sometimes pick a type-level edge-case
 					\$case_input = _pick_from(\$type_edge_cases{\$type});
