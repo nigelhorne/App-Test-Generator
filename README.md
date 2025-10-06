@@ -188,6 +188,12 @@ Recognized items:
                     integer => [ 0, 1, -1, 2**31-1, -(2**31), 2**63-1, -(2**63) ],
             );
 
+- `%config` - optional hash of configuration.
+
+    The current supported variables are
+
+    - `test_nuls`, inject NUL bytes into strings (default: 1)
+
 # EXAMPLES
 
 ## Math::Simple::add()
@@ -245,6 +251,7 @@ A YAML mapping of expected -> args array:
         status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
     );
     our %output = ( type => 'string' );
+    our %config = ( test_nuls => 0 );
 
 This will generate fuzz cases for 'ok', 'error', 'pending', and one invalid string that should die.
 

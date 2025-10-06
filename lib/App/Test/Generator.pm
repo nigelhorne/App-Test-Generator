@@ -237,6 +237,16 @@ To ensure new is called with no arguments, you still need to defined new, thus:
 		integer => [ 0, 1, -1, 2**31-1, -(2**31), 2**63-1, -(2**63) ],
 	);
 
+=item * C<%config> - optional hash of configuration.
+
+The current supported variables are
+
+=over 4
+
+=item * C<test_nuls>, inject NUL bytes into strings (default: 1)
+
+=back
+
 =back
 
 =head1 EXAMPLES
@@ -296,6 +306,7 @@ A YAML mapping of expected -> args array:
       status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
   );
   our %output = ( type => 'string' );
+  our %config = ( test_nuls => 0 );
 
 This will generate fuzz cases for 'ok', 'error', 'pending', and one invalid string that should die.
 
@@ -345,7 +356,7 @@ sub generate
 	}
 
 	# --- Globals exported by the user's conf (all optional except function maybe) ---
-	our (%input, %output, $module, $function, $new, %cases, $yaml_cases);
+	our (%input, %output, %config, $module, $function, $new, %cases, $yaml_cases);
 	our ($seed, $iterations);
 	our (%edge_cases, %type_edge_cases);
 
@@ -353,6 +364,7 @@ sub generate
 	$function ||= 'run';
 	$iterations ||= 50;		 # default fuzz runs if not specified
 	$seed = undef if defined $seed && $seed eq '';	# treat empty as undef
+	$config{'test_nuls'} //= 1;	# By default, test for embedded NULs
 
 	# Guess module name from config file if not set
 	if (!$module) {
@@ -425,7 +437,7 @@ sub generate
 
 	sub render_arrayref_map {
 		my $href = $_[0];
-		return "()" unless $href && ref($href) eq 'HASH';
+		return '()' unless $href && ref($href) eq 'HASH';
 		my @entries;
 		for my $k (sort keys %$href) {
 			my $aref = $href->{$k};
@@ -453,6 +465,12 @@ sub generate
 	# render edge case maps for inclusion in the .t
 	my $edge_cases_code	= render_arrayref_map(\%edge_cases);
 	my $type_edge_cases_code = render_arrayref_map(\%type_edge_cases);
+
+	# Render configuration
+	my $config_code;
+	foreach my $key (sort keys %config) {
+		$config_code .=  "'$key' => '$config{$key}'\n";
+	}
 
 	# Render input/output
 	my $input_code = render_hash(\%input);
@@ -549,6 +567,9 @@ $edge_cases_code
 );
 my %type_edge_cases = (
 $type_edge_cases_code
+);
+my %config = (
+$config_code
 );
 
 # Seed for reproducible fuzzing (if provided)
@@ -670,7 +691,7 @@ sub fuzz_inputs {
 	# Are any options manadatory?
 	my \$all_optional = 1;
 	my \%mandatory_strings;	# List of mandatory strings to be added to all tests, always put at start so it can be overwritten
-	my \%mandatory_objects;
+	my \%mandatory_objects = ();
 	foreach my \$field (keys \%input) {
 		my \$spec = \$input{\$field} || {};
 		if(!\$spec->{optional}) {
@@ -711,7 +732,7 @@ sub fuzz_inputs {
 				push \@cases, { \$field => "hello" };
 				push \@cases, { \$field => "" };
 				# push \@cases, { \$field => "emoji \x{1F600}" };
-				push \@cases, { \$field => "\0null", _STATUS => 'DIES' };
+				push \@cases, { \$field => "\0null", _STATUS => 'DIES' } if(\$config{'test_nuls'});
 			}
 			elsif (\$type eq 'boolean') {
 				push \@cases, { \%mandatory_objects, \$field => 0 };
@@ -776,54 +797,56 @@ sub fuzz_inputs {
 	# \@cases = grep { !\$seen{join '|', %\$_}++ } \@cases;
 
 	# Random data test cases
-	for (1..$iterations_code) {
-		my \%case;
-		foreach my \$field (keys \%input) {
-			my \$spec = \$input{\$field} || {};
-			next if \$spec->{'memberof'};	# Memberof data is created below
-			my \$type = \$spec->{type} || 'string';
+	if(scalar keys \%input) {
+		for (1..$iterations_code) {
+			my \%case;
+			foreach my \$field (keys \%input) {
+				my \$spec = \$input{\$field} || {};
+				next if \$spec->{'memberof'};	# Memberof data is created below
+				my \$type = \$spec->{type} || 'string';
 
-			# 1) Sometimes pick a field-specific edge-case
-			if (exists \$edge_cases{\$field} && rand() < 0.4) {
-				\$case{\$field} = _pick_from(\$edge_cases{\$field});
-				next;
-			}
+				# 1) Sometimes pick a field-specific edge-case
+				if (exists \$edge_cases{\$field} && rand() < 0.4) {
+					\$case{\$field} = _pick_from(\$edge_cases{\$field});
+					next;
+				}
 
-			# 2) Sometimes pick a type-level edge-case
-			if (exists \$type_edge_cases{\$type} && rand() < 0.3) {
-				\$case{\$field} = _pick_from(\$type_edge_cases{\$type});
-				next;
-			}
+				# 2) Sometimes pick a type-level edge-case
+				if (exists \$type_edge_cases{\$type} && rand() < 0.3) {
+					\$case{\$field} = _pick_from(\$type_edge_cases{\$type});
+					next;
+				}
 
-			# 3) Sormal random generation by type
-			if (\$type eq 'string') {
-				\$case{\$field} = rand_str();
-			}
-			elsif (\$type eq 'integer') {
-				\$case{\$field} = rand_int();
-			}
-			elsif (\$type eq 'boolean') {
-				\$case{\$field} = rand_bool();
-			}
-			elsif (\$type eq 'number') {
-				\$case{\$field} = rand_num();
-			}
-			elsif (\$type eq 'arrayref') {
-				\$case{\$field} = rand_arrayref();
-			}
-			elsif (\$type eq 'hashref') {
-				\$case{\$field} = rand_hashref();
-			}
-			else {
-				\$case{\$field} = undef;
-			}
+				# 3) Sormal random generation by type
+				if (\$type eq 'string') {
+					\$case{\$field} = rand_str();
+				}
+				elsif (\$type eq 'integer') {
+					\$case{\$field} = rand_int();
+				}
+				elsif (\$type eq 'boolean') {
+					\$case{\$field} = rand_bool();
+				}
+				elsif (\$type eq 'number') {
+					\$case{\$field} = rand_num();
+				}
+				elsif (\$type eq 'arrayref') {
+					\$case{\$field} = rand_arrayref();
+				}
+				elsif (\$type eq 'hashref') {
+					\$case{\$field} = rand_hashref();
+				}
+				else {
+					\$case{\$field} = undef;
+				}
 
-			# 4) occasionally drop optional fields
-			if (\$spec->{optional} && rand() < 0.25) {
-				delete \$case{\$field};
+				# 4) occasionally drop optional fields
+				if (\$spec->{optional} && rand() < 0.25) {
+					delete \$case{\$field};
+				}
 			}
+			push \@cases, \\%case;
 		}
-		push \@cases, \\%case;
 	}
 
 	# edge-cases
@@ -907,12 +930,12 @@ sub fuzz_inputs {
 					my \@candidate_bad = (
 						'',	# empty
 						# undef,	# undefined
-						"\0",	# null byte
+						# "\\0",	# null byte
 						"😊",        # emoji
 						"１２３",     # full-width digits
 						"١٢٣",       # Arabic digits
 						'..',        # regex metachars
-						"a\nb",      # newline in middle
+						"a\\nb",      # newline in middle
 						'x' x 5000,	# huge string
 					);
 					foreach my \$val (\@candidate_bad) {
@@ -921,6 +944,7 @@ sub fuzz_inputs {
 						}
 					}
 					push \@cases, { \$field => undef, _STATUS => 'DIES' };
+					push \@cases, { \$field => "\\0", _STATUS => 'DIES' } if(\$config{'test_nuls'});
 				}
 			} elsif (\$type eq 'arrayref') {
 				if (defined \$spec->{min}) {
