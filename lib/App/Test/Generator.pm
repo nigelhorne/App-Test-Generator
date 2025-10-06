@@ -1013,7 +1013,7 @@ foreach my \$case (\@{fuzz_inputs()}) {
 	# lives_ok { %params = get_params(\\%input, \%\$case) } 'Params::Get input check';
 	# lives_ok { validate_strict(\\%input, %params) } 'Params::Validate::Strict input check';
 
-	::diag(Dumper[\$case]) if(\$ENV{'TEST_VERBOSE'});
+	::diag(Dumper(\$case)) if(\$ENV{'TEST_VERBOSE'});
 
 	my \$result;
 	if(my \$status = delete \$case->{'_STATUS'} || delete \$output{'_STATUS'}) {
