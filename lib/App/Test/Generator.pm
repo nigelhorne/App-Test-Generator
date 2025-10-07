@@ -372,6 +372,12 @@ sub generate
 {
 	my ($conf_file, $outfile) = @_;
 
+	# --- Globals exported by the user's conf (all optional except function maybe) ---
+	# Ensure data don't persist across calls, which would allow 
+	local our (%input, %output, %config, $module, $function, $new, %cases, $yaml_cases);
+	local our ($seed, $iterations);
+	local our (%edge_cases, @edge_case_array, %type_edge_cases);
+
 	if(defined($conf_file)) {
 		# --- Load configuration safely (require so config can use 'our' variables) ---
 		# FIXME:  would be better to use Config::Abstraction, since requiring the user's config could execute arbitrary code
@@ -383,9 +389,9 @@ sub generate
 	}
 
 	# --- Globals exported by the user's conf (all optional except function maybe) ---
-	our (%input, %output, %config, $module, $function, $new, %cases, $yaml_cases);
-	our ($seed, $iterations);
-	our (%edge_cases, @edge_case_array, %type_edge_cases);
+	# our (%input, %output, %config, $module, $function, $new, %cases, $yaml_cases);
+	# our ($seed, $iterations);
+	# our (%edge_cases, @edge_case_array, %type_edge_cases);
 
 	# sensible defaults
 	$function ||= 'run';
@@ -453,6 +459,9 @@ sub generate
 			my @pairs;
 			for my $subk (sort keys %$def) {
 				next unless defined $def->{$subk};
+				if(ref($def->{$subk})) {
+					carp(__PACKAGE__, ": conf_file, $subk is a nested hash, not yet supported");
+				}
 				push @pairs, "$subk => " . perl_quote($def->{$subk});
 			}
 			push @lines, '	' . perl_quote($k) . " => { " . join(", ", @pairs) . " }";
