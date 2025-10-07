@@ -38,7 +38,7 @@ https://pjcj.net
 <tr><td class="h"><a id="L456">456</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless $href and ref $href eq &quot;HASH&quot;</td></tr>
 <tr><td class="h"><a id="L460">460</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless ref $def eq &quot;HASH&quot;</td></tr>
 <tr><td class="h"><a id="L463">463</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless defined $def-&gt;{$subk}</td></tr>
-<tr><td class="h"><a id="L464">464</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (ref $def-&gt;{$subk})</td></tr>
+<tr><td class="h"><a id="L464">464</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (ref $def-&gt;{$subk} and ref $def-&gt;{$subk} ne &quot;ARRAY&quot;)</td></tr>
 <tr><td class="h"><a id="L476">476</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless $href and ref $href eq &quot;HASH&quot;</td></tr>
 <tr><td class="h"><a id="L483">483</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless $href and ref $href eq &quot;HASH&quot;</td></tr>
 <tr><td class="h"><a id="L487">487</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless ref $aref eq &quot;ARRAY&quot;</td></tr>
@@ -60,8 +60,8 @@ https://pjcj.net
 <tr><td class="h"><a id="L587">587</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($status eq &#39;DIES&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($status eq &#39;WARNS&#39;) { }</td></tr>
 <tr><td class="h"><a id="L606">606</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $seed)</td></tr>
-<tr><td class="h"><a id="L1286">1286</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($outfile) { }</td></tr>
-<tr><td class="h"><a id="L1287">1287</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless &amp;App::Test::Generator::open(my $fh, &quot;&gt;:encoding(UTF-8)&quot;, $outfile)</td></tr>
+<tr><td class="h"><a id="L1287">1287</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($outfile) { }</td></tr>
+<tr><td class="h"><a id="L1288">1288</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless &amp;App::Test::Generator::open(my $fh, &quot;&gt;:encoding(UTF-8)&quot;, $outfile)</td></tr>
 </table>
 </body>
 </html>
