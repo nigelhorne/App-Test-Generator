@@ -378,6 +378,8 @@ sub generate
 	local our ($seed, $iterations);
 	local our (%edge_cases, @edge_case_array, %type_edge_cases);
 
+	@edge_case_array = ();
+
 	if(defined($conf_file)) {
 		# --- Load configuration safely (require so config can use 'our' variables) ---
 		# FIXME:  would be better to use Config::Abstraction, since requiring the user's config could execute arbitrary code
@@ -399,9 +401,6 @@ sub generate
 	$seed = undef if defined $seed && $seed eq '';	# treat empty as undef
 	$config{'test_nuls'} //= 1;	# By default, test for embedded NULs
 	$config{'test_undef'} //= 1;	# By default, see what happens when passed undef
-	if(!@edge_case_array) {
-		@edge_case_array = ();
-	}
 
 	# Guess module name from config file if not set
 	if (!$module) {
