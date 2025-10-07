@@ -461,8 +461,8 @@ sub generate
 			my @pairs;
 			for my $subk (sort keys %$def) {
 				next unless defined $def->{$subk};
-				if(ref($def->{$subk})) {
-					carp(__PACKAGE__, ": conf_file, $subk is a nested hash, not yet supported");
+				if(ref($def->{$subk}) && (ref($def->{$subk}) ne 'ARRAY')) {
+					carp(__PACKAGE__, ": conf_file, $subk is a nested element, not yet supported");
 				}
 				push @pairs, "$subk => " . perl_quote($def->{$subk});
 			}
@@ -624,6 +624,7 @@ use Data::Dumper;
 use Class::Simple;
 use Test::Most;
 use Test::Returns 0.02;
+use JSON::MaybeXS;
 
 $setup_code
 
