@@ -216,6 +216,7 @@ Recognized items:
 
     - `test_nuls`, inject NUL bytes into strings (default: 1)
     - `test_undef`, test with undefined value (default: 1)
+    - `dedup`, fuzzing can create duplicate tests, go someway to remove duplicates (default: 1)
 
 # EXAMPLES
 

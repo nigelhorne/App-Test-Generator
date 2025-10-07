@@ -271,6 +271,8 @@ The current supported variables are
 
 =item * C<test_undef>, test with undefined value (default: 1)
 
+=item * C<dedup>, fuzzing can create duplicate tests, go someway to remove duplicates (default: 1)
+
 =back
 
 =back
@@ -373,7 +375,7 @@ sub generate
 	my ($conf_file, $outfile) = @_;
 
 	# --- Globals exported by the user's conf (all optional except function maybe) ---
-	# Ensure data don't persist across calls, which would allow 
+	# Ensure data don't persist across calls, which would allow
 	local our (%input, %output, %config, $module, $function, $new, %cases, $yaml_cases);
 	local our ($seed, $iterations);
 	local our (%edge_cases, @edge_case_array, %type_edge_cases);
@@ -401,6 +403,7 @@ sub generate
 	$seed = undef if defined $seed && $seed eq '';	# treat empty as undef
 	$config{'test_nuls'} //= 1;	# By default, test for embedded NULs
 	$config{'test_undef'} //= 1;	# By default, see what happens when passed undef
+	$config{'dedup'} //= 1;	# fuzzing can easily generate repeats, default is to remove duplicates
 
 	# Guess module name from config file if not set
 	if (!$module) {
@@ -1227,17 +1230,15 @@ sub fuzz_inputs {
 		}
 	}
 
-	# TODO: dedup, fuzzing can easily generate repeats
-	# our \$dedup = 1;	# default on
-
-	# later
-	# if (\$dedup) {
-		# my \%seen;
-		# \@cases = grep {
-			# my \$dump = encode_json(\$_);
-			# !\$seen{\$dump}++
-		# } \@cases;
-	# }
+	# FIXME: I don't thing this catches them all
+	# dedup, fuzzing can easily generate repeats
+	if(\$config{'dedup'}) {
+		my \%seen;
+		\@cases = grep {
+			my \$dump = encode_json(\$_);
+			!\$seen{\$dump}++
+		} \@cases;
+	}
 
 	return \\\@cases;
 }
