@@ -472,7 +472,7 @@ sub generate
 	sub render_args_hash {
 		my $href = $_[0];
 		return '' unless $href && ref($href) eq 'HASH';
-		my @pairs = map { perl_quote($_) . " => " . perl_quote($href->{$_}) } sort keys %$href;
+		my @pairs = map { perl_quote($_) . ' => ' . perl_quote($href->{$_}) } sort keys %$href;
 		return join(', ', @pairs);
 	}
 
@@ -579,7 +579,7 @@ sub generate
 						perlquot(join(', ', map { $_ // '' } @$inputs )),
 						$expected_str
 					);
-					$corpus_code .= "is(\$obj->$function\::$function($input_str), $expected_str, " . qwrap($desc) . ");\n";
+					$corpus_code .= "is(\$obj->$function($input_str), $expected_str, " . qwrap($desc) . ");\n";
 				}
 			} else {
 				if($status eq 'DIES') {
