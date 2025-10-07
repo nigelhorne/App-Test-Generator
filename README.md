@@ -23,7 +23,7 @@ From Perl:
 This module takes a formal input/output specification for a routine or
 method and automatically generates test cases. In effect, it allows you
 to easily add comprehensive black-box tests in addition to the more
-common white-box tests typically written for CPAN modules and other
+common white-box tests that are typically written for CPAN modules and other
 subroutines.
 
 The generated tests combine:
@@ -166,13 +166,13 @@ Recognized items:
 
             our $new = { api_key => 'ABC123', verbose => 1 };
 
-    To ensure new is called with no arguments, you still need to defined new, thus:
+    To ensure new is called with no arguments, you still need to define new, thus:
 
         our $new = '';
 
 - `%cases` - optional Perl static corpus, when the output is a simple string (expected => \[ args... \]):
 
-    Maps expected output string to the input and \_STATUS
+    Maps the expected output string to the input and \_STATUS
 
         our %cases = (
           'ok'   => {

@@ -47,7 +47,7 @@ From Perl:
 This module takes a formal input/output specification for a routine or
 method and automatically generates test cases. In effect, it allows you
 to easily add comprehensive black-box tests in addition to the more
-common white-box tests typically written for CPAN modules and other
+common white-box tests that are typically written for CPAN modules and other
 subroutines.
 
 The generated tests combine:
@@ -214,13 +214,13 @@ C<My-Widget.conf> -> C<My::Widget>.
 
 	our $new = { api_key => 'ABC123', verbose => 1 };
 
-To ensure new is called with no arguments, you still need to defined new, thus:
+To ensure new is called with no arguments, you still need to define new, thus:
 
   our $new = '';
 
 =item * C<%cases> - optional Perl static corpus, when the output is a simple string (expected => [ args... ]):
 
-Maps expected output string to the input and _STATUS
+Maps the expected output string to the input and _STATUS
 
   our %cases = (
     'ok'   => {
@@ -367,6 +367,7 @@ The generated test:
 
 =cut
 
+# FIXME:  This function is *huge* and needs splitting up
 sub generate
 {
 	my ($conf_file, $outfile) = @_;
@@ -436,6 +437,7 @@ sub generate
 			my @quoted_v = map { perl_quote($_) } @{$v};
 			return '[ ' . join(', ', @quoted_v) . ' ]';
 		}
+		return Dumper($v) if ref($v);	# Generic fallback
 		$v =~ s/\\/\\\\/g;
 		# return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . ( $v =~ s/'/\\'/gr ) . "'";
 		return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . perlsq($v) . "'";
@@ -496,7 +498,7 @@ sub generate
 	my $edge_cases_code = render_arrayref_map(\%edge_cases);
 	my $type_edge_cases_code = render_arrayref_map(\%type_edge_cases);
 
-	my $edge_case_array_code;
+	my $edge_case_array_code = '';
 	if(scalar(@edge_case_array)) {
 		$edge_case_array_code = join(', ', map { qwrap($_) } @edge_case_array);
 	}
