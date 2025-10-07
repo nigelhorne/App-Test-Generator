@@ -790,7 +790,7 @@ sub fuzz_inputs {
 			my \$type = \$input{'type'};
 			if (\$type eq 'string') {
 				push \@cases, { input => 'hello' };
-				push \@cases, { input => '' };
+				push \@cases, { input => '' } if((!exists(\$input{'min'})) || (\$input{'min'} == 0));
 				# push \@cases, { \$field => "emoji \x{1F600}" };
 				push \@cases, { input => "\0null", _STATUS => 'DIES' } if(\$config{'test_nuls'});
 			} else {
@@ -817,7 +817,7 @@ sub fuzz_inputs {
 				}
 				elsif (\$type eq 'string') {
 					push \@cases, { input => 'hello' };
-					push \@cases, { input => '' };
+					push \@cases, { input => '' } if((!exists(\$spec->{min})) || (\$spec->{min} == 0));
 					# push \@cases, { \$field => "emoji \x{1F600}" };
 					push \@cases, { input => "\0null", _STATUS => 'DIES' } if(\$config{'test_nuls'});
 				}
@@ -1012,8 +1012,13 @@ sub fuzz_inputs {
 				if (defined \$input{min}) {
 					my \$len = \$input{min};
 					push \@cases, { input => 'a' x (\$len + 1) };	# just inside
-					push \@cases, { input => 'a' x \$len };	# border
-					push \@cases, { input => 'a' x (\$len - 1), _STATUS => 'DIES' } if \$len > 0; # outside
+					if(\$len == 0) {
+						push \@cases, { input => '' };
+					} elsif(\$len > 0) {
+						# outside
+						push \@cases, { input => 'a' x \$len };	# border
+						push \@cases, { input => 'a' x (\$len - 1), _STATUS => 'DIES' };
+					}
 				} else {
 					push \@cases, { input => '' };	# No min, empty string should be allowable
 				}
@@ -1141,7 +1146,12 @@ sub fuzz_inputs {
 						my \$len = \$spec->{min};
 						push \@cases, { %mandatory_strings, \$field => 'a' x (\$len + 1) };	# just inside
 						push \@cases, { %mandatory_strings, \$field => 'a' x \$len };	# border
-						push \@cases, { %mandatory_strings, \$field => 'a' x (\$len - 1), _STATUS => 'DIES' } if \$len > 0; # outside
+						if(\$len > 0) {
+							# outside
+							push \@cases, { %mandatory_strings, \$field => 'a' x (\$len - 1), _STATUS => 'DIES' }
+						} else {
+							push \@cases, { %mandatory_strings, \$field => '' };	# min == 0, empty string should be allowable
+						}
 					} else {
 						push \@cases, { %mandatory_strings, \$field => '' };	# No min, empty string should be allowable
 					}
@@ -1240,6 +1250,9 @@ sub fuzz_inputs {
 			!\$seen{\$dump}++
 		} \@cases;
 	}
+
+	use Data::Dumper;
+	::diag(Dumper(\@cases));
 
 	return \\\@cases;
 }
