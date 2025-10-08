@@ -629,7 +629,6 @@ use utf8;
 use open qw(:std :encoding(UTF-8));	# https://github.com/nigelhorne/App-Test-Generator/issues/1
 
 use Data::Dumper;
-use Class::Simple;
 use Test::Most;
 use Test::Returns 0.02;
 use JSON::MaybeXS;
@@ -786,6 +785,7 @@ sub fuzz_inputs {
 	my \$all_optional = 1;
 	my \%mandatory_strings;	# List of mandatory strings to be added to all tests, always put at start so it can be overwritten
 	my \%mandatory_objects = ();
+	my \$class_simple_loaded;
 	foreach my \$field (keys \%input) {
 		my \$spec = \$input{\$field} || {};
 		if((ref(\$spec) eq 'HASH') && (!\$spec->{optional})) {
@@ -793,6 +793,13 @@ sub fuzz_inputs {
 			if(\$spec->{'type'} eq 'string') {
 				\$mandatory_strings{\$field} = rand_str();
 			} elsif(\$spec->{'type'} eq 'object') {
+				if(!\$class_simple_loaded) {
+					require_ok('Class::Simple');
+					eval {
+						Class::Simple->import();
+						\$class_simple_loaded = 1;
+					};
+				}
 				my \$obj = new_ok('Class::Simple');
 				my \$method = \$spec->{'can'};
 				\$obj->\$method(1);
@@ -943,6 +950,8 @@ sub fuzz_inputs {
 					\$case_input = rand_int();
 				} elsif(\$type eq 'number') {
 					\$case_input = rand_num();
+				} elsif(\$type eq 'boolean') {
+					\$case_input = rand_bool();
 				} else {
 					die 'TODO';
 				}
