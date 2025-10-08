@@ -770,8 +770,6 @@ sub fuzz_inputs {
 			\$all_optional = 0;
 			if(\$spec->{'type'} eq 'string') {
 				\$mandatory_strings{\$field} = rand_str();
-			} elsif(\$spec->{'type'} eq 'integer') {
-				\$mandatory_strings{\$field} = rand_int();
 			} elsif(\$spec->{'type'} eq 'object') {
 				my \$obj = new_ok('Class::Simple');
 				my \$method = \$spec->{'can'};
@@ -879,7 +877,7 @@ sub fuzz_inputs {
 				if (defined \$spec->{matches}) {
 					my \$regex = \$spec->{matches};
 					push \@cases, { \$field => 'match123' } if "match123" =~ \$regex;
-					push \@cases, { \$field => 'nope', _STATUS => 'DIES' } unless "nope" =~ \$regex;
+					push \@cases, { \$field => 'nope', _STATUS => 'DIES' } unless 'nope' =~ \$regex;
 				}
 
 				# --- memberof ---
@@ -913,6 +911,8 @@ sub fuzz_inputs {
 					\$case_input = rand_str();
 				} elsif(\$type eq 'integer') {
 					\$case_input = rand_int();
+				} elsif(\$type eq 'number') {
+					\$case_input = rand_num();
 				} else {
 					die 'TODO';
 				}
