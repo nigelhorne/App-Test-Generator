@@ -787,7 +787,12 @@ sub fuzz_inputs {
 			# our %input = ( type => 'string' );
 			my \$type = \$input{'type'};
 			if (\$type eq 'string') {
-				push \@cases, { _input => 'hello' };
+				# Is hello allowed?
+				if(!defined(\$input->{'memberof'}) || (grep { \$_ eq 'hello' } \@{\$input->{'memberof'}})) {
+					push \@cases, { _input => 'hello' };
+				} else {
+					push \@cases, { _input => 'hello', _STATUS => 'DIES' };
+				}
 				push \@cases, { _input => '' } if((!exists(\$input{'min'})) || (\$input{'min'} == 0));
 				# push \@cases, { \$field => "emoji \x{1F600}" };
 				push \@cases, { _input => "\0null" } if(\$config{'test_nuls'});
