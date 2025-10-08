@@ -416,10 +416,23 @@ sub generate
 
 	# --- YAML corpus support (yaml_cases is filename string) ---
 	my %yaml_corpus_data;
-	if (defined $yaml_cases && -f $yaml_cases) {
+	if (defined $yaml_cases) {
+		croak("$yaml_cases file not found") if(!-f $yaml_cases);
+
 		my $yaml_data = LoadFile($yaml_cases);
 		if ($yaml_data && ref($yaml_data) eq 'HASH') {
-			%yaml_corpus_data = %$yaml_data;
+			# Validate that the corpus inputs are arrayrefs
+			# e.g: "FooBar":        ["foo_bar"]
+			my $valid_input = 1;
+			for my $expected (keys %{$yaml_data}) {
+				my $outputs = $yaml_data->{$expected};
+				unless($outputs && (ref $outputs eq 'ARRAY')) {
+					carp("$yaml_cases: $expected does not point to an array ref, ignoring");
+					$valid_input = 0;
+				}
+			}
+
+			%yaml_corpus_data = %$yaml_data if($valid_input);
 		}
 	}
 
@@ -550,7 +563,7 @@ sub generate
 		$corpus_code = "\n# --- Static Corpus Tests ---\n";
 		for my $expected (sort keys %all_cases) {
 			my $inputs = $all_cases{$expected};
-			next unless $inputs && ref $inputs eq 'ARRAY';
+			next unless($inputs && (ref $inputs eq 'ARRAY'));
 
 			my $expected_str = perl_quote($expected);
 			my $status = ((ref($inputs) eq 'HASH') && $inputs->{'_STATUS'}) // 'OK';
