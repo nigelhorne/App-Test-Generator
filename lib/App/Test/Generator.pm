@@ -650,6 +650,20 @@ my %output = (
 	$output_code
 );
 
+# Candidates for regex comparisons
+my \@candidate_good = ('123', 'abc', 'A1B2', '0');
+my \@candidate_bad = (
+	'',	# empty
+	# undef,	# undefined
+	# "\\0",	# null byte
+	"😊",	# emoji
+	"１２３",	# full-width digits
+	"١٢٣",	# Arabic digits
+	'..',	# regex metachars
+	"a\\nb",	# newline in middle
+	'x' x 5000,	# huge string
+);
+
 # --- Fuzzer helpers ---
 sub _pick_from {
 	my \$arrayref = \$_[0];
@@ -1045,7 +1059,6 @@ sub fuzz_inputs {
 					my \$re = \$input{matches};
 
 					# --- Positive controls ---
-					my \@candidate_good = ('123', 'abc', 'A1B2', '0');
 					foreach my \$val (\@candidate_good) {
 						if (\$val =~ \$re) {
 							push \@cases, { _input => \$val };
@@ -1054,17 +1067,6 @@ sub fuzz_inputs {
 					}
 
 					# --- Negative controls ---
-					my \@candidate_bad = (
-						'',	# empty
-						# undef,	# undefined
-						# "\\0",	# null byte
-						"😊",	# emoji
-						"１２３",	# full-width digits
-						"١٢٣",	# Arabic digits
-						'..',	# regex metachars
-						"a\\nb",	# newline in middle
-						'x' x 5000,	# huge string
-					);
 					foreach my \$val (\@candidate_bad) {
 						if (\$val !~ \$re) {
 							push \@cases, { _input => \$val, _STATUS => 'DIES' };
@@ -1183,7 +1185,6 @@ sub fuzz_inputs {
 						my \$re = \$spec->{matches};
 
 						# --- Positive controls ---
-						my \@candidate_good = ('123', 'abc', 'A1B2', '0');
 						foreach my \$val (\@candidate_good) {
 							if (\$val =~ \$re) {
 								push \@cases, { \$field => \$val };
@@ -1192,17 +1193,6 @@ sub fuzz_inputs {
 						}
 
 						# --- Negative controls ---
-						my \@candidate_bad = (
-							'',	# empty
-							# undef,	# undefined
-							# "\\0",	# null byte
-							"😊",	# emoji
-							"１２３",	# full-width digits
-							"١٢٣",	# Arabic digits
-							'..',	# regex metachars
-							"a\\nb",	# newline in middle
-							'x' x 5000,	# huge string
-						);
 						foreach my \$val (\@candidate_bad) {
 							if (\$val !~ \$re) {
 								push \@cases, { \$field => \$val, _STATUS => 'DIES' };
