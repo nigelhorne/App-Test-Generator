@@ -384,9 +384,26 @@ sub generate
 		# my $abs = $conf_file;
 		# $abs = "./$abs" unless $abs =~ m{^/};
 		# require $abs;
-		require File::Spec->rel2abs($conf_file);
 
-		# my $vars = _load_conf($abs);
+		# require File::Spec->rel2abs($conf_file);
+
+		if(my $config = _load_conf(File::Spec->rel2abs($conf_file))) {
+			%input = %{$config->{input}} if(exists($config->{input}));
+			%output = %{$config->{output}} if(exists($config->{output}));
+			%config = %{$config->{config}} if(exists($config->{config}));
+			%cases = %{$config->{cases}} if(exists($config->{cases}));
+			%edge_cases = %{$config->{edge_cases}} if(exists($config->{edge_cases}));
+			%type_edge_cases = %{$config->{type_edge_cases}} if(exists($config->{type_edge_cases}));
+
+			$module = $config->{module} if(exists($config->{module}));
+			$function = $config->{function} if(exists($config->{function}));
+			$new = $config->{new} if(exists($config->{new}));
+			$yaml_cases = $config->{yaml_cases} if(exists($config->{yaml_cases}));
+			$seed = $config->{seed} if(exists($config->{seed}));
+			$iterations = $config->{iterations} if(exists($config->{iterations}));
+
+			@edge_case_array = @{$config->{edge_case_array}} if(exists($config->{edge_case_array}));
+		}
 	} else {
 		croak 'Usage: generate(conf_file [, outfile])';
 	}
@@ -426,7 +443,7 @@ sub generate
 		my $yaml_data = LoadFile($yaml_cases);
 		if ($yaml_data && ref($yaml_data) eq 'HASH') {
 			# Validate that the corpus inputs are arrayrefs
-			# e.g: "FooBar":        ["foo_bar"]
+			# e.g: "FooBar":    	["foo_bar"]
 			my $valid_input = 1;
 			for my $expected (keys %{$yaml_data}) {
 				my $outputs = $yaml_data->{$expected};
@@ -445,50 +462,40 @@ sub generate
 
 	# --- Helpers for rendering data structures into Perl code for the generated test ---
 
-	# use Safe;
-	# use Encode;
+	sub _load_conf {
+		my $file = $_[0];
 
-	# Not currently used, it's a POC, but Safe doesn't allow variables, so it's no use
-	# sub _load_conf {
-		# my $conf_file = $_[0];
+		my $pkg = 'ConfigLoader';
 
-		# my $safe = Safe->new();
-		# $safe->permit_only(':base_core', ':base_mem', ':base_loop', ':base_math', ':base_io');
+		# eval in a separate package
+		{
+			package ConfigLoader;
+			no strict 'refs';
+			do $file or die "Error loading $file: $@ $!";
+		}
 
-		# # Read and decode file as UTF-8 text
-		# open my $fh, '<:encoding(UTF-8)', $conf_file
-			# or die "Cannot open $conf_file: $!";
-		# local $/;
-		# my $code = <$fh>;
-		# close $fh;
+		# Now pull variables from ConfigLoader
+		my @vars = qw(
+			module function input output cases yaml_cases
+			seed iterations edge_case_array type_edge_cases config
+		);
 
-		# # Remove 'use utf8;' or 'no utf8;' lines so Safe doesn't choke
-		# $code =~ s/^\s*(use|no)\s+utf8\s*;//mg;
+		my %conf;
+		no strict 'refs';   # allow symbolic references here
+		for my $v (@vars) {
+			if(my $full = "${pkg}::$v") {
+				if (defined ${$full}) {	# scalar
+					$conf{$v} = ${$full};
+				} elsif (@{$full}) {	# array
+					$conf{$v} = [ @{$full} ];
+				} elsif (%{$full}) {	# hash
+					$conf{$v} = { %{$full} };
+				}
+			}
+		}
 
-		# $safe->reval($code);
-		# die "Error loading $conf_file: $@" if $@;
-
-		# my @varnames = qw(
-			# module function input output cases yaml_cases seed iterations
-			# edge_case_array type_edge_cases config
-		# );
-
-		# my %vars;
-		# for my $v (@varnames) {
-			# my $sym = $safe->varglob($v);
-			# next unless $sym;
-# 
-			# if (defined ${$sym}) {
-				# $vars{$v} = ${$sym};
-			# } elsif (%{$sym}) {
-				# $vars{$v} = { %{$sym} };
-			# } elsif (@{$sym}) {
-				# $vars{$v} = [ @{$sym} ];
-			# }
-		# }
-
-		# return \%vars;
-	# }
+		return \%conf;
+	}
 
 	sub perlsq {
 		my $s = $_[0];
