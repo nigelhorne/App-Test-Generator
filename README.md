@@ -116,7 +116,7 @@ without relying solely on randomness.
 
 # CONFIGURATION
 
-The configuration file is a Perl file that should set variables with `our`.
+The configuration file is a **trusted input** Perl file that should set variables with `our`.
 Example: the generator expects your config to use `our %input`, `our $function`, etc.
 
 Recognized items:

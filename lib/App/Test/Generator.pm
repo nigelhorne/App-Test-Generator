@@ -14,6 +14,7 @@ use open qw(:std :encoding(UTF-8));
 
 use Carp qw(carp croak);
 use File::Basename qw(basename);
+use File::Spec;
 use YAML::XS qw(LoadFile);
 
 use Exporter 'import';
@@ -161,7 +162,7 @@ without relying solely on randomness.
 
 =head1 CONFIGURATION
 
-The configuration file is a Perl file that should set variables with C<our>.
+The configuration file is a B<trusted input> Perl file that should set variables with C<our>.
 Example: the generator expects your config to use C<our %input>, C<our $function>, etc.
 
 Recognized items:
@@ -380,9 +381,12 @@ sub generate
 	if(defined($conf_file)) {
 		# --- Load configuration safely (require so config can use 'our' variables) ---
 		# FIXME:  would be better to use Config::Abstraction, since requiring the user's config could execute arbitrary code
-		my $abs = $conf_file;
-		$abs = "./$abs" unless $abs =~ m{^/};
-		require $abs;
+		# my $abs = $conf_file;
+		# $abs = "./$abs" unless $abs =~ m{^/};
+		# require $abs;
+		require File::Spec->rel2abs($conf_file);
+
+		# my $vars = _load_conf($abs);
 	} else {
 		croak 'Usage: generate(conf_file [, outfile])';
 	}
@@ -440,6 +444,52 @@ sub generate
 	my %all_cases = (%cases, %yaml_corpus_data);
 
 	# --- Helpers for rendering data structures into Perl code for the generated test ---
+
+	# use Safe;
+	# use Encode;
+
+	# Not currently used, it's a POC, but Safe doesn't allow variables, so it's no use
+	# sub _load_conf {
+		# my $conf_file = $_[0];
+
+		# my $safe = Safe->new();
+		# $safe->permit_only(':base_core', ':base_mem', ':base_loop', ':base_math', ':base_io');
+
+		# # Read and decode file as UTF-8 text
+		# open my $fh, '<:encoding(UTF-8)', $conf_file
+			# or die "Cannot open $conf_file: $!";
+		# local $/;
+		# my $code = <$fh>;
+		# close $fh;
+
+		# # Remove 'use utf8;' or 'no utf8;' lines so Safe doesn't choke
+		# $code =~ s/^\s*(use|no)\s+utf8\s*;//mg;
+
+		# $safe->reval($code);
+		# die "Error loading $conf_file: $@" if $@;
+
+		# my @varnames = qw(
+			# module function input output cases yaml_cases seed iterations
+			# edge_case_array type_edge_cases config
+		# );
+
+		# my %vars;
+		# for my $v (@varnames) {
+			# my $sym = $safe->varglob($v);
+			# next unless $sym;
+# 
+			# if (defined ${$sym}) {
+				# $vars{$v} = ${$sym};
+			# } elsif (%{$sym}) {
+				# $vars{$v} = { %{$sym} };
+			# } elsif (@{$sym}) {
+				# $vars{$v} = [ @{$sym} ];
+			# }
+		# }
+
+		# return \%vars;
+	# }
+
 	sub perlsq {
 		my $s = $_[0];
 		$s =~ s/\\/\\\\/g; $s =~ s/'/\\'/g; $s =~ s/\n/\\n/g; $s =~ s/\r/\\r/g; $s =~ s/\t/\\t/g;

@@ -23,6 +23,7 @@ WriteMakefile(
 		'autodie' => 0,
 		'Carp' => 0,
 		'File::Slurp' => 0,
+		'File::Spec' => 0,
 		'Getopt::Long' => 0,
 		'Params::Get' => 0,
 		'Params::Validate::Strict' => 0,
