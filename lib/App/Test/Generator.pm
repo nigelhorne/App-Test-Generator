@@ -783,7 +783,7 @@ sub fuzz_inputs {
 			my \$type = \$input{'type'};
 			if (\$type eq 'string') {
 				# Is hello allowed?
-				if(!defined(\$input->{'memberof'}) || (grep { \$_ eq 'hello' } \@{\$input->{'memberof'}})) {
+				if(!defined(\$input{'memberof'}) || (grep { \$_ eq 'hello' } \@{\$input{'memberof'}})) {
 					push \@cases, { _input => 'hello' };
 				} else {
 					push \@cases, { _input => 'hello', _STATUS => 'DIES' };
@@ -1293,20 +1293,33 @@ foreach my \$case (\@{fuzz_inputs()}) {
 		\$input = \$case;
 	}
 
-	if(\$ENV{'TEST_VERBOSE'}) {
-		::diag('input: ', Dumper(\$input));
-	}
+	# if(\$ENV{'TEST_VERBOSE'}) {
+		# ::diag('input: ', Dumper(\$input));
+	# }
 
 	my \$result;
 	my \$mess;
 	if(defined(\$input) && !ref(\$input)) {
 		if(\$name) {
-			\$mess = "function call %s with \$name = '\$input'";
+			\$mess = "$function(\$name = '\$input') %s";
 		} else {
-			\$mess = "function call %s with '\$input'";
+			\$mess = "$function('\$input') %s";
 		}
+	} elsif(defined(\$input)) {
+		my \@alist;
+		foreach my \$key (sort keys \%{\$input}) {
+			if(\$key ne '_STATUS') {
+				if(defined(\$input->{\$key})) {
+					push \@alist, "'\$key' => '\$input->{\$key}'";
+				} else {
+					push \@alist, "'\$key' => undef";
+				}
+			}
+		}
+		my \$args = join(', ', \@alist);
+		\$mess = "$function(\$args) %s";
 	} else {
-		\$mess = "function call %s";
+		\$mess = "$function %s";
 	}
 
 	if(my \$status = delete \$case->{'_STATUS'} || delete \$output{'_STATUS'}) {
