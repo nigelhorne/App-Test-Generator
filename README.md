@@ -16,7 +16,7 @@ From Perl:
     App::Test::Generator::generate("t/conf/add.conf");
 
     # Generate directly to a file
-    App::Test::Generator::generate("t/conf/add.conf", "t/add_fuzz.t");
+    App::Test::Generator::generate('t/conf/add.conf', 't/add_fuzz.t');
 
 # OVERVIEW
 
@@ -44,9 +44,7 @@ produces a ready-to-run `.t` test script using [Test::Most](https://metacpan.org
 
 It reads configuration files (Perl `.conf` with `our` variables,
 and optional YAML corpus files), and generates a [Test::Most](https://metacpan.org/pod/Test%3A%3AMost)-based
-fuzzing harness in `t/fuzz.t`.
-
-Generates `t/fuzz.t` combining:
+fuzzing harness combining:
 
 - Randomized fuzzing of inputs (with edge cases)
 - Optional static corpus tests from Perl `%cases` or YAML file (`yaml_cases` key)
@@ -56,8 +54,7 @@ Generates `t/fuzz.t` combining:
 ## EDGE CASE GENERATION
 
 In addition to purely random fuzz cases, the harness generates
-deterministic edge cases for parameters that declare `min`, `max`,
-`len`, or `len` in their schema definitions.
+deterministic edge cases for parameters that declare `min`, `max` or `len` in their schema definitions.
 
 For each constraint, three edge cases are added:
 
@@ -82,13 +79,11 @@ Supported constraint types:
 
 - `string`
 
-    Uses strings of lengths one below, equal to, and one above the boundary
-    (minimum length = `len`, maximum length = `len`).
+    Uses strings of lengths one below, equal to, and one above the boundary.
 
 - `arrayref`
 
-    Uses references to arrays of lengths one below, equal to, and one above the boundary
-    (minimum length = `len`, maximum length = `len`).
+    Uses references to arrays of with the number of elements one below, equal to, and one above the boundary.
 
 - `hashref`
 
@@ -96,7 +91,7 @@ Supported constraint types:
     boundary (`min` = minimum number of keys, `max` = maximum number
     of keys).
 
-- `memberof` - optional arrayref of allowed values for a parameter:
+- `memberof` - arrayref of allowed values for a parameter:
 
         our %input = (
             status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
@@ -113,7 +108,7 @@ Supported constraint types:
             flag => { type => 'boolean' },
         );
 
-    The generator will automatically create test cases for 0 and 1, and optionally invalid values that should trigger `_STATUS = 'DIES'`.
+    The generator will automatically create test cases for 0 and 1; true and false; off and on, and values that should trigger `_STATUS = 'DIES'`.
 
 These edge cases are inserted automatically, in addition to the random
 fuzzing inputs, so each run will reliably probe boundary conditions

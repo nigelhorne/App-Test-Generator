@@ -40,7 +40,7 @@ From Perl:
   App::Test::Generator::generate("t/conf/add.conf");
 
   # Generate directly to a file
-  App::Test::Generator::generate("t/conf/add.conf", "t/add_fuzz.t");
+  App::Test::Generator::generate('t/conf/add.conf', 't/add_fuzz.t');
 
 =head1 OVERVIEW
 
@@ -74,9 +74,7 @@ produces a ready-to-run F<.t> test script using L<Test::Most>.
 
 It reads configuration files (Perl C<.conf> with C<our> variables,
 and optional YAML corpus files), and generates a L<Test::Most>-based
-fuzzing harness in C<t/fuzz.t>.
-
-Generates C<t/fuzz.t> combining:
+fuzzing harness combining:
 
 =over 4
 
@@ -93,8 +91,7 @@ Generates C<t/fuzz.t> combining:
 =head2 EDGE CASE GENERATION
 
 In addition to purely random fuzz cases, the harness generates
-deterministic edge cases for parameters that declare C<min>, C<max>,
-C<len>, or C<len> in their schema definitions.
+deterministic edge cases for parameters that declare C<min>, C<max> or C<len> in their schema definitions.
 
 For each constraint, three edge cases are added:
 
@@ -125,13 +122,11 @@ Uses numeric values one below, equal to, and one above the boundary.
 
 =item * C<string>
 
-Uses strings of lengths one below, equal to, and one above the boundary
-(minimum length = C<len>, maximum length = C<len>).
+Uses strings of lengths one below, equal to, and one above the boundary.
 
 =item * C<arrayref>
 
-Uses references to arrays of lengths one below, equal to, and one above the boundary
-(minimum length = C<len>, maximum length = C<len>).
+Uses references to arrays of with the number of elements one below, equal to, and one above the boundary.
 
 =item * C<hashref>
 
@@ -139,7 +134,7 @@ Uses hashes with key counts one below, equal to, and one above the
 boundary (C<min> = minimum number of keys, C<max> = maximum number
 of keys).
 
-=item * C<memberof> - optional arrayref of allowed values for a parameter:
+=item * C<memberof> - arrayref of allowed values for a parameter:
 
     our %input = (
         status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
@@ -156,7 +151,7 @@ This works for strings, integers, and numbers.
         flag => { type => 'boolean' },
     );
 
-The generator will automatically create test cases for 0 and 1, and optionally invalid values that should trigger C<_STATUS = 'DIES'>.
+The generator will automatically create test cases for 0 and 1; true and false; off and on, and values that should trigger C<_STATUS = 'DIES'>.
 
 =back
 
@@ -839,6 +834,9 @@ sub fuzz_inputs {
 					push \@cases, { \%mandatory_objects, \$field => 0 };
 					push \@cases, { \%mandatory_objects, \$field => 1 };
 					push \@cases, { \%mandatory_objects, \$field => 'true' };
+					push \@cases, { \%mandatory_objects, \$field => 'false' };
+					push \@cases, { \%mandatory_objects, \$field => 'off' };
+					push \@cases, { \%mandatory_objects, \$field => 'on' };
 					push \@cases, { \%mandatory_objects, \$field => 'bletch', _STATUS => 'DIES' };
 				}
 				elsif (\$type eq 'hashref') {
@@ -995,8 +993,7 @@ sub fuzz_inputs {
 		# our %input = ( type => 'string' );
 		my \$type = \$input{type};
 		if (exists \$input{memberof} && ref \$input{memberof} eq 'ARRAY' && \@{\$input{memberof}}) {
-			# Generate edge cases for memberof
-			# inside values
+			# Generate edge cases for memberof inside values
 			foreach my \$val (\@{\$input{memberof}}) {
 				push \@cases, { _input => \$val };
 			}
@@ -1116,8 +1113,13 @@ sub fuzz_inputs {
 					# basic boolean edge cases
 					push \@cases, { _input => 0 };
 					push \@cases, { _input => 1 };
+					push \@cases, { _input => 'off' };
+					push \@cases, { _input => 'on' };
+					push \@cases, { _input => 'false' };
+					push \@cases, { _input => 'true' };
 					push \@cases, { _input => undef, _STATUS => 'DIES' } if(\$config{'test_undef'});
 					push \@cases, { _input => 2, _STATUS => 'DIES' };	# invalid boolean
+					push \@cases, { _input => 'plugh', _STATUS => 'DIES' };	# invalid boolean
 				}
 			}
 		}
@@ -1249,8 +1251,13 @@ sub fuzz_inputs {
 						# basic boolean edge cases
 						push \@cases, { \%mandatory_objects, \$field => 0 };
 						push \@cases, { \%mandatory_objects, \$field => 1 };
+						push \@cases, { \%mandatory_objects, \$field => 'false' };
+						push \@cases, { \%mandatory_objects, \$field => 'true' };
+						push \@cases, { \%mandatory_objects, \$field => 'off' };
+						push \@cases, { \%mandatory_objects, \$field => 'on' };
 						push \@cases, { \%mandatory_objects, \$field => undef, _STATUS => 'DIES' } if(\$config{'test_undef'});
 						push \@cases, { \%mandatory_objects, \$field => 2, _STATUS => 'DIES' };	# invalid boolean
+						push \@cases, { \%mandatory_objects, \$field => 'xyzzy', _STATUS => 'DIES' };	# invalid boolean
 					}
 				}
 			}
