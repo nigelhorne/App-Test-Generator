@@ -22,6 +22,8 @@ WriteMakefile(
 	PREREQ_PM => {
 		'autodie' => 0,
 		'Carp' => 0,
+		'Data::Dumper' => 0,
+		'Data::Section::Simple' => 0,
 		'File::Slurp' => 0,
 		'File::Spec' => 0,
 		'Getopt::Long' => 0,
@@ -29,8 +31,9 @@ WriteMakefile(
 		'Params::Validate::Strict' => 0,
 		'Pod::Usage' => 0,
 		'Return::Set' => 0,
+		'Template' => 0,
 		'Test::Most' => 0,
-		'YAML::XS' => 0,
+		'YAML::XS' => 0
 	},
 	TEST_REQUIRES => {
 		'File::Glob' => 0,
