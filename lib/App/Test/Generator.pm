@@ -857,6 +857,21 @@ sub rand_str {
 	return join('', @chars);
 }
 
+# Random character either upper or lower case
+sub rand_char
+{
+	my $char = '';
+	my $upper_chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	my $lower_chars = 'abcdefghijklmnopqrstuvwxyz';
+	my $combined_chars = $upper_chars . $lower_chars;
+
+	# Generate a random index between 0 and the length of the string minus 1
+	my $rand_index = int(rand(length($combined_chars)));
+
+	# Get the character at that index
+	return substr($combined_chars, $rand_index, 1);
+}
+
 # Integer generator: mix typical small ints with large limits
 sub rand_int {
 	my $r = rand();
@@ -970,12 +985,39 @@ sub fuzz_inputs {
 					push @cases, { $field => -1 };
 					push @cases, { $field => 3.14, _STATUS => 'DIES' };
 					push @cases, { $field => 'xyz', _STATUS => 'DIES' };
+					# --- min/max numeric boundaries ---
+					# Probably duplicated below, but here as well just in case
+					if (defined $spec->{min}) {
+						my $min = $spec->{min};
+						push @cases, { $field => $min - 1, _STATUS => 'DIES' };
+						push @cases, { $field => $min };
+						push @cases, { $field => $min + 1 };
+					}
+					if (defined $spec->{max}) {
+						my $max = $spec->{max};
+						push @cases, { $field => $max - 1 };
+						push @cases, { $field => $max };
+						push @cases, { $field => $max + 1, _STATUS => 'DIES' };
+					}
+
 				} elsif ($type eq 'string') {
 					# Is hello allowed?
-					if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
-						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello' ) };
+					if(my $re = $spec->{matches}) {
+						if('hello' =~ $re) {
+							if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
+								push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello' ) };
+							} else {
+								push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello', _STATUS => 'DIES' ) };
+							}
+						} else {
+							push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello', _STATUS => 'DIES' ) };
+						}
 					} else {
-						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello', _STATUS => 'DIES' ) };
+						if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
+							push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello' ) };
+						} else {
+							push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello', _STATUS => 'DIES' ) };
+						}
 					}
 					if((!exists($spec->{min})) || ($spec->{min} == 0)) {
 						# '' should die unless it's in the memberof list
@@ -986,7 +1028,23 @@ sub fuzz_inputs {
 						}
 					}
 					# push @cases, { $field => "emoji \x{1F600}" };
-					push @cases, { %mandatory_strings, %mandatory_objects, ( $field => "\0null" ) } if($config{'test_nuls'} && !(defined $spec->{memberof}));
+					push @cases, { %mandatory_strings, %mandatory_objects, ( $field => "\0null" ) } if($config{'test_nuls'} && (!(defined $spec->{memberof})) && !defined($spec->{matches}));
+
+					unless(defined($spec->{memberof}) || defined($spec->{matches})) {
+						# --- min/max string/array boundaries ---
+						if (defined $spec->{min}) {
+							my $len = $spec->{min};
+							push @cases, { $field => "a" x ($len - 1), _STATUS => 'DIES' } if $len > 0;
+							push @cases, { $field => "a" x $len };
+							push @cases, { $field => "a" x ($len + 1) };
+						}
+						if (defined $spec->{max}) {
+							my $len = $spec->{max};
+							push @cases, { $field => "a" x ($len - 1) };
+							push @cases, { $field => "a" x $len };
+							push @cases, { $field => "a" x ($len + 1), _STATUS => 'DIES' };
+						}
+					}
 				}
 				elsif ($type eq 'boolean') {
 					push @cases, { %mandatory_objects, ( $field => 0 ) };
@@ -1004,34 +1062,6 @@ sub fuzz_inputs {
 				elsif ($type eq 'arrayref') {
 					push @cases, { $field => [1,2] };
 					push @cases, { $field => { a => 1 }, _STATUS => 'DIES' };
-				}
-
-				# --- min/max numeric boundaries ---
-				if (defined $spec->{min}) {
-					my $min = $spec->{min};
-					push @cases, { $field => $min - 1, _STATUS => 'DIES' };
-					push @cases, { $field => $min };
-					push @cases, { $field => $min + 1 };
-				}
-				if (defined $spec->{max}) {
-					my $max = $spec->{max};
-					push @cases, { $field => $max - 1 };
-					push @cases, { $field => $max };
-					push @cases, { $field => $max + 1, _STATUS => 'DIES' };
-				}
-
-				# --- min/max string/array boundaries ---
-				if (defined $spec->{min}) {
-					my $len = $spec->{min};
-					push @cases, { $field => "a" x ($len - 1), _STATUS => 'DIES' } if $len > 0;
-					push @cases, { $field => "a" x $len };
-					push @cases, { $field => "a" x ($len + 1) };
-				}
-				if (defined $spec->{max}) {
-					my $len = $spec->{max};
-					push @cases, { $field => "a" x ($len - 1) };
-					push @cases, { $field => "a" x $len };
-					push @cases, { $field => "a" x ($len + 1), _STATUS => 'DIES' };
 				}
 
 				# --- matches (regex) ---
@@ -1084,7 +1114,7 @@ sub fuzz_inputs {
 		} else {
 			# our %input = ( str => { type => 'string' } );
 			for (1..[% iterations_code %]) {
-				my %case_input = %mandatory_strings;
+				my %case_input = (%mandatory_strings, %mandatory_objects);
 				foreach my $field (keys %input) {
 					my $spec = $input{$field} || {};
 					next if $spec->{'memberof'};	# Memberof data is created below
@@ -1104,16 +1134,29 @@ sub fuzz_inputs {
 
 					# 3) Sormal random generation by type
 					if ($type eq 'string') {
-						$case_input{$field} = rand_str();
-					}
-					elsif ($type eq 'integer') {
-						$case_input{$field} = rand_int();
+						unless($spec->{matches}) {	# TODO: Make a random string to match a regex
+							if(my $min = $spec->{min}) {
+								$case_input{$field} = rand_str($min);
+							} else {
+								$case_input{$field} = rand_str();
+							}
+						}
+					} elsif ($type eq 'integer') {
+						if(my $min = $spec->{min}) {
+							$case_input{$field} = rand_int() + $min;
+						} else {
+							$case_input{$field} = rand_int();
+						}
 					}
 					elsif ($type eq 'boolean') {
 						$case_input{$field} = rand_bool();
 					}
 					elsif ($type eq 'number') {
-						$case_input{$field} = rand_num();
+						if(my $min = $spec->{min}) {
+							$case_input{$field} = rand_num() + $min;
+						} else {
+							$case_input{$field} = rand_num();
+						}
 					}
 					elsif ($type eq 'arrayref') {
 						$case_input{$field} = rand_arrayref();
@@ -1313,10 +1356,11 @@ sub fuzz_inputs {
 						if(my $re = $spec->{matches}) {
 							for my $count ($len + 1, $len, $len - 1) {
 								next if ($count < 0);
-								if(('a' x $count) =~ $re) {
-									push @cases, { %mandatory_strings, ( $field => 'a' x $count ) };
+								my $str = rand_char() x $count;
+								if($str =~ $re) {
+									push @cases, { %mandatory_strings, ( $field => $str ) };
 								} else {
-									push @cases, { %mandatory_strings, ( $field => 'a' x $count ), _STATUS => 'DIES' };
+									push @cases, { %mandatory_strings, ( $field => $str ), _STATUS => 'DIES' };
 								}
 							}
 						} else {
@@ -1334,18 +1378,21 @@ sub fuzz_inputs {
 					}
 					if (defined $spec->{max}) {
 						my $len = $spec->{max};
-						if(my $re = $spec->{matches}) {
-							for my $count ($len - 1, $len, $len + 1) {
-								if(('a' x $count) =~ $re) {
-									push @cases, { %mandatory_strings, ( $field => 'a' x $count ) };
-								} else {
-									push @cases, { %mandatory_strings, ( $field => 'a' x $count ), _STATUS => 'DIES' };
+						if((!defined($spec->{min})) || ($spec->{min} != $len)) {
+							if(my $re = $spec->{matches}) {
+								for my $count ($len - 1, $len, $len + 1) {
+									my $str = rand_char() x $count;
+									if($str =~ $re) {
+										push @cases, { %mandatory_strings, ( $field => $str ) };
+									} else {
+										push @cases, { %mandatory_strings, ( $field => $str, _STATUS => 'DIES' ) };
+									}
 								}
+							} else {
+								push @cases, { %mandatory_strings, ( $field => 'a' x ($len - 1) ) };	# just inside
+								push @cases, { %mandatory_strings, ( $field => 'a' x $len ) };	# border
+								push @cases, { %mandatory_strings, ( $field => 'a' x ($len + 1), _STATUS => 'DIES' ) }; # outside
 							}
-						} else {
-							push @cases, { %mandatory_strings, ( $field => 'a' x ($len - 1) ) };	# just inside
-							push @cases, { %mandatory_strings, ( $field => 'a' x $len ) };	# border
-							push @cases, { %mandatory_strings, ( $field => 'a' x ($len + 1), _STATUS => 'DIES' ) }; # outside
 						}
 					}
 					if(defined $spec->{matches}) {
@@ -1433,7 +1480,7 @@ sub fuzz_inputs {
 	}
 
 	# use Data::Dumper;
-	# ::diag(Dumper(@cases));
+	# die(Dumper(@cases));
 
 	return \@cases;
 }
