@@ -989,13 +989,13 @@ sub fuzz_inputs {
 					push @cases, { %mandatory_strings, ( $field => "\0null" ) } if($config{'test_nuls'} && !(defined $spec->{memberof}));
 				}
 				elsif ($type eq 'boolean') {
-					push @cases, { %mandatory_objects, $field => 0 };
-					push @cases, { %mandatory_objects, $field => 1 };
-					push @cases, { %mandatory_objects, $field => 'true' };
-					push @cases, { %mandatory_objects, $field => 'false' };
-					push @cases, { %mandatory_objects, $field => 'off' };
-					push @cases, { %mandatory_objects, $field => 'on' };
-					push @cases, { %mandatory_objects, $field => 'bletch', _STATUS => 'DIES' };
+					push @cases, { %mandatory_objects, ( $field => 0 ) };
+					push @cases, { %mandatory_objects, ( $field => 1 ) };
+					push @cases, { %mandatory_objects, ( $field => 'true' ) };
+					push @cases, { %mandatory_objects, ( $field => 'false' ) };
+					push @cases, { %mandatory_objects, ( $field => 'off' ) };
+					push @cases, { %mandatory_objects, ( $field => 'on' ) };
+					push @cases, { %mandatory_objects, ( $field => 'bletch', _STATUS => 'DIES' ) };
 				}
 				elsif ($type eq 'hashref') {
 					push @cases, { $field => { a => 1 } };
@@ -1402,19 +1402,19 @@ sub fuzz_inputs {
 					if (exists $spec->{memberof} && ref $spec->{memberof} eq 'ARRAY') {
 						# memberof already defines allowed booleans
 						foreach my $val (@{$spec->{memberof}}) {
-							push @cases, { %mandatory_objects, $field => $val };
+							push @cases, { %mandatory_objects, ( $field => $val ) };
 						}
 					} else {
 						# basic boolean edge cases
-						push @cases, { %mandatory_objects, $field => 0 };
-						push @cases, { %mandatory_objects, $field => 1 };
-						push @cases, { %mandatory_objects, $field => 'false' };
-						push @cases, { %mandatory_objects, $field => 'true' };
-						push @cases, { %mandatory_objects, $field => 'off' };
-						push @cases, { %mandatory_objects, $field => 'on' };
-						push @cases, { %mandatory_objects, $field => undef, _STATUS => 'DIES' } if($config{'test_undef'});
-						push @cases, { %mandatory_objects, $field => 2, _STATUS => 'DIES' };	# invalid boolean
-						push @cases, { %mandatory_objects, $field => 'xyzzy', _STATUS => 'DIES' };	# invalid boolean
+						push @cases, { %mandatory_objects, ( $field => 0 ) };
+						push @cases, { %mandatory_objects, ( $field => 1 ) };
+						push @cases, { %mandatory_objects, ( $field => 'false' ) };
+						push @cases, { %mandatory_objects, ( $field => 'true' ) };
+						push @cases, { %mandatory_objects, ( $field => 'off' ) };
+						push @cases, { %mandatory_objects, ( $field => 'on' ) };
+						push @cases, { %mandatory_objects, ( $field => undef, _STATUS => 'DIES' ) } if($config{'test_undef'});
+						push @cases, { %mandatory_objects, ( $field => 2, _STATUS => 'DIES' ) };	# invalid boolean
+						push @cases, { %mandatory_objects, ( $field => 'xyzzy', _STATUS => 'DIES' ) };	# invalid boolean
 					}
 				}
 			}
