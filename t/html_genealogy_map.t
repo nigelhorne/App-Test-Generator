@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 
+use IPC::Run3;
 use IPC::System::Simple qw(system);
 use Test::Needs 'HTML::Genealogy::Map';
 use Test::Most;
@@ -8,7 +9,7 @@ use Test::Most;
 use App::Test::Generator qw(generate);
 
 my $conf_file = 't/conf/html_genealogy_map.conf';
-my $outfile   = 't/tmp_html_genealogy_map.t';
+my $outfile = 't/tmp_html_genealogy_map.t';
 
 unlink $outfile;
 
@@ -16,10 +17,10 @@ ok(App::Test::Generator::generate($conf_file, $outfile), 'generate fuzz test');
 ok(-e $outfile, "fuzz test file created");
 
 open my $fh, '<', $outfile or die $!;
-my $contents = do { local $/; <$fh> };
+my $content = do { local $/; <$fh> };
 close $fh;
 
-like($contents, qr/diag\(/, 'fuzz test has diag line');
+like($content, qr/diag\(/, 'fuzz test has diag line');
 
 eval {
 	system("$^X -c $outfile");
@@ -27,9 +28,28 @@ eval {
 
 if($@) {
 	diag($@);
+	fail("$outfile compiles");
 } else {
-	# unlink $outfile;
+	pass("$outfile compiles");
+
+	# Run the generated test
+	my ($stdout, $stderr);
+	run3 [ $^X, $outfile ], undef, \$stdout, \$stderr;
+
+	ok($? == 0, 'Generated test script exits successfully');
+
+	if ($? != 0) {
+		diag("STDERR:\n$stderr");
+		diag("STDOUT:\n$stdout");
+	}
+
+	like($stderr, qr/HTML::Genealogy::Map->onload_render test case created/);
+	like($stdout, qr/^ok \d/sm, 'At least one created test passed');
+	unlike($stdout, qr/^not ok \d/sm, 'No created test failed');
+
+	# diag($stdout);
+
+	unlink $outfile;
 }
-ok(!$@, "$outfile compiles");
 
 done_testing();

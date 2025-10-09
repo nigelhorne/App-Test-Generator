@@ -758,7 +758,7 @@ use JSON::MaybeXS;
 
 [% setup_code %]
 
-diag("[% module %]::[% function %] test case created by https://github.com/nigelhorne/App-Test-Generator");
+diag("[% module %]->[% function %] test case created by https://github.com/nigelhorne/App-Test-Generator");
 
 # Edge-case maps injected from config (optional)
 my %edge_cases = (

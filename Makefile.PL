@@ -40,6 +40,7 @@ WriteMakefile(
 		'File::Glob' => 0,
 		'File::stat' => 0,
 		'File::Temp' => 0,
+		'IPC::Run3' => 0,
 		'IPC::System::Simple' => 0,
 		'JSON::MaybeXS' => 0,
 		'POSIX' => 0,
