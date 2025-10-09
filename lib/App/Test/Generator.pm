@@ -390,6 +390,7 @@ sub generate
 		# require File::Spec->rel2abs($conf_file);
 
 		if(my $config = _load_conf(File::Spec->rel2abs($conf_file))) {
+		::diag(Dumper($config));
 			%input = %{$config->{input}} if(exists($config->{input}));
 			%output = %{$config->{output}} if(exists($config->{output}));
 			%config = %{$config->{config}} if(exists($config->{config}));
