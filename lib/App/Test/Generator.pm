@@ -621,7 +621,7 @@ sub generate
 		}
 		$call_code = "\$result = \$obj->$function(\$input);";
 	} else {
-		$call_code = "\$result = $module\::$function(\$input);";
+		$call_code = "\$result = $module\->$function(\$input);";
 	}
 
 	# Build static corpus code
@@ -973,20 +973,20 @@ sub fuzz_inputs {
 				} elsif ($type eq 'string') {
 					# Is hello allowed?
 					if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
-						push @cases, { %mandatory_strings, ( $field => 'hello' ) };
+						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello' ) };
 					} else {
-						push @cases, { %mandatory_strings, ( $field => 'hello', _STATUS => 'DIES' ) };
+						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello', _STATUS => 'DIES' ) };
 					}
 					if((!exists($spec->{min})) || ($spec->{min} == 0)) {
 						# '' should die unless it's in the memberof list
 						if(defined($spec->{'memberof'}) && (!grep { $_ eq '' } @{$spec->{'memberof'}})) {
-							push @cases, { %mandatory_strings, ( $field => '', _name => $field, _STATUS => 'DIES' ) }
+							push @cases, { %mandatory_strings, %mandatory_objects, ( $field => '', _name => $field, _STATUS => 'DIES' ) }
 						} else {
-							push @cases, { %mandatory_strings, ( $field => '', _name => $field ) } if((!exists($spec->{min})) || ($spec->{min} == 0));
+							push @cases, { %mandatory_strings, %mandatory_objects, ( $field => '', _name => $field ) } if((!exists($spec->{min})) || ($spec->{min} == 0));
 						}
 					}
 					# push @cases, { $field => "emoji \x{1F600}" };
-					push @cases, { %mandatory_strings, ( $field => "\0null" ) } if($config{'test_nuls'} && !(defined $spec->{memberof}));
+					push @cases, { %mandatory_strings, %mandatory_objects, ( $field => "\0null" ) } if($config{'test_nuls'} && !(defined $spec->{memberof}));
 				}
 				elsif ($type eq 'boolean') {
 					push @cases, { %mandatory_objects, ( $field => 0 ) };
