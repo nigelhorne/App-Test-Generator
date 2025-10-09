@@ -32,10 +32,11 @@ WriteMakefile(
 		'Pod::Usage' => 0,
 		'Return::Set' => 0,
 		'Template' => 0,
-		'Test::Most' => 0,
 		'YAML::XS' => 0
 	},
 	TEST_REQUIRES => {
+		'Cwd' => 0,
+		'Encode' => 0,
 		'File::Glob' => 0,
 		'File::stat' => 0,
 		'File::Temp' => 0,
