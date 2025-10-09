@@ -138,7 +138,7 @@ Recognized items:
            type => 'string'
         );
 
-    Currently routines with more than one unnamed parameter are not supported.
+    Currently, routines with more than one unnamed parameter are not supported.
 
 - `%output` - output param types for Return::Set checking:
 
@@ -211,7 +211,7 @@ Recognized items:
 
     - `test_nuls`, inject NUL bytes into strings (default: 1)
     - `test_undef`, test with undefined value (default: 1)
-    - `dedup`, fuzzing can create duplicate tests, go someway to remove duplicates (default: 1)
+    - `dedup`, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 
 # EXAMPLES
 
