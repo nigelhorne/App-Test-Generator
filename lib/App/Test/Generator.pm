@@ -916,6 +916,7 @@ sub fuzz_inputs {
 			if($spec->{'type'} eq 'string') {
 				$mandatory_strings{$field} = rand_str();
 			} elsif($spec->{'type'} eq 'object') {
+				my $method = $spec->{'can'};
 				if(!$class_simple_loaded) {
 					require_ok('Class::Simple');
 					eval {
@@ -924,7 +925,6 @@ sub fuzz_inputs {
 					};
 				}
 				my $obj = new_ok('Class::Simple');
-				my $method = $spec->{'can'};
 				$obj->$method(1);
 				$mandatory_objects{$field} = $obj;
 				$config{'dedup'} = 0;	# FIXME:  Can't yet dedup with class method calls
@@ -1310,22 +1310,43 @@ sub fuzz_inputs {
 				} elsif ($type eq 'string') {
 					if (defined $spec->{min}) {
 						my $len = $spec->{min};
-						push @cases, { %mandatory_strings, ( $field => 'a' x ($len + 1) ) };	# just inside
-						push @cases, { %mandatory_strings, ( $field => 'a' x $len ) };	# border
-						if($len > 0) {
-							# outside
-							push @cases, { %mandatory_strings, ( $field => 'a' x ($len - 1), _STATUS => 'DIES' ) }
+						if(my $re = $spec->{matches}) {
+							for my $count ($len + 1, $len, $len - 1) {
+								next if ($count < 0);
+								if(('a' x $count) =~ $re) {
+									push @cases, { %mandatory_strings, ( $field => 'a' x $count ) };
+								} else {
+									push @cases, { %mandatory_strings, ( $field => 'a' x $count ), _STATUS => 'DIES' };
+								}
+							}
 						} else {
-							push @cases, { %mandatory_strings, ( $field => '' ) };	# min == 0, empty string should be allowable
+							push @cases, { %mandatory_strings, ( $field => 'a' x ($len + 1) ) };	# just inside
+							push @cases, { %mandatory_strings, ( $field => 'a' x $len ) };	# border
+							if($len > 0) {
+								# outside
+								push @cases, { %mandatory_strings, ( $field => 'a' x ($len - 1), _STATUS => 'DIES' ) }
+							} else {
+								push @cases, { %mandatory_strings, ( $field => '' ) };	# min == 0, empty string should be allowable
+							}
 						}
 					} else {
 						push @cases, { %mandatory_strings, ( $field => '' ) };	# No min, empty string should be allowable
 					}
 					if (defined $spec->{max}) {
 						my $len = $spec->{max};
-						push @cases, { %mandatory_strings, ( $field => 'a' x ($len - 1) ) };	# just inside
-						push @cases, { %mandatory_strings, ( $field => 'a' x $len ) };	# border
-						push @cases, { %mandatory_strings, ( $field => 'a' x ($len + 1), _STATUS => 'DIES' ) }; # outside
+						if(my $re = $spec->{matches}) {
+							for my $count ($len - 1, $len, $len + 1) {
+								if(('a' x $count) =~ $re) {
+									push @cases, { %mandatory_strings, ( $field => 'a' x $count ) };
+								} else {
+									push @cases, { %mandatory_strings, ( $field => 'a' x $count ), _STATUS => 'DIES' };
+								}
+							}
+						} else {
+							push @cases, { %mandatory_strings, ( $field => 'a' x ($len - 1) ) };	# just inside
+							push @cases, { %mandatory_strings, ( $field => 'a' x $len ) };	# border
+							push @cases, { %mandatory_strings, ( $field => 'a' x ($len + 1), _STATUS => 'DIES' ) }; # outside
+						}
 					}
 					if(defined $spec->{matches}) {
 						my $re = $spec->{matches};
