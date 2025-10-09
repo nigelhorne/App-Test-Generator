@@ -15,11 +15,21 @@ unlink $outfile;
 ok(App::Test::Generator::generate($conf_file, $outfile), 'generate fuzz test');
 ok(-e $outfile, "fuzz test file created");
 
-open my $fh, '<', $outfile or die $!;
+open my $fh, '<', $outfile or die "$outfile: $!";
 my $contents = do { local $/; <$fh> };
 close $fh;
 
 like($contents, qr/diag\(/, 'fuzz test has diag line');
+
+# Auto-detect all test names
+my @detected_tests;
+for my $line (@content) {
+	if ($line =~ /\b(?:ok|is|like|unlike)\s*\(.*?,\s*['"](.+?)['"]\s*\)/) {
+		push @detected_tests, $1;
+	}
+}
+
+ok(@detected_tests, 'Detected at least one test in the generated file');
 
 eval {
 	system("$^X -c $outfile");

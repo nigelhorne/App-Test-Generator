@@ -518,7 +518,7 @@ sub generate
 			my @quoted_v = map { perl_quote($_) } @{$v};
 			return '[ ' . join(', ', @quoted_v) . ' ]';
 		}
-		return Dumper($v) if ref($v);	# Generic fallback
+		return Dumper($v) if(ref($v) && (ref($v) ne 'Regexp'));	# Generic fallback
 		$v =~ s/\\/\\\\/g;
 		# return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . ( $v =~ s/'/\\'/gr ) . "'";
 		return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . perl_sq($v) . "'";
@@ -534,8 +534,10 @@ sub generate
 			my @pairs;
 			for my $subk (sort keys %$def) {
 				next unless defined $def->{$subk};
-				if(ref($def->{$subk}) && (ref($def->{$subk}) ne 'ARRAY')) {
-					carp(__PACKAGE__, ": conf_file, $subk is a nested element, not yet supported");
+				if(ref($def->{$subk})) {
+					unless((ref($def->{$subk}) eq 'ARRAY') || (ref($def->{$subk}) eq 'Regexp')) {
+						croak(__PACKAGE__, ": conf_file, $subk is a nested element, not yet supported (", ref($def->{$subk}), ')');
+					}
 				}
 				push @pairs, "$subk => " . perl_quote($def->{$subk});
 			}
@@ -925,6 +927,7 @@ sub fuzz_inputs {
 				my $method = $spec->{'can'};
 				$obj->$method(1);
 				$mandatory_objects{$field} = $obj;
+				$config{'dedup'} = 0;	# FIXME:  Can't yet dedup with class method calls
 			} else {
 				die 'TODO: type = ', $spec->{'type'};
 			}
@@ -1398,8 +1401,9 @@ sub fuzz_inputs {
 	}
 
 	# FIXME: I don't thing this catches them all
-	# dedup, fuzzing can easily generate repeats
+	# FIXME: Handle cases with Class::Simple calls
 	if($config{'dedup'}) {
+		# dedup, fuzzing can easily generate repeats
 		my %seen;
 		@cases = grep {
 			my $dump = encode_json($_);
