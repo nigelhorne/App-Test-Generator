@@ -13,6 +13,7 @@ binmode STDERR, ':utf8';
 use open qw(:std :encoding(UTF-8));
 
 use Carp qw(carp croak);
+use Config::Abstraction;
 use Data::Dumper;
 use Data::Section::Simple;
 use File::Basename qw(basename);
@@ -165,7 +166,10 @@ without relying solely on randomness.
 
 =head1 CONFIGURATION
 
-The configuration file is a B<trusted input> Perl file that should set variables with C<our>.
+The configuration file is either a file that can be read by L<Config::Abstraction> or a B<trusted input> Perl file that should set variables with C<our>.
+
+The documentation here covers the old trusted input style input, but that will go away so you are recommended to use
+Config::Abstraction files.
 Example: the generator expects your config to use C<our %input>, C<our $function>, etc.
 
 Recognized items:
@@ -337,6 +341,35 @@ A YAML mapping of expected -> args array:
 
 This will generate fuzz cases for 'ok', 'error', 'pending', and one invalid string that should die.
 
+=head2 New format input
+
+Testing L<HTML::Genealogy::Map>:
+
+  ---
+
+  module: HTML::Genealogy::Map
+  function: onload_render
+
+  input:
+    gedcom:
+      type: object
+      can: individuals
+    geocoder:
+      type: object
+      can: geocode
+    debug:
+      type: boolean
+      optional: true
+    google_key:
+      type: string
+      optional: true
+      min: 39
+      max: 39
+      matches: "^AIza[0-9A-Za-z_-]{35}$"
+
+  config:
+    test_undef: 0
+
 =head1 OUTPUT
 
 By default, writes C<t/fuzz.t>.
@@ -387,11 +420,22 @@ sub generate
 		# $abs = "./$abs" unless $abs =~ m{^/};
 		# require $abs;
 
-		# require File::Spec->rel2abs($conf_file);
+		my $config;
+		if($config = Config::Abstraction->new(config_dirs => ['.', ''], config_file => $conf_file)) {
+			$config = $config->all();
+			if(defined($config->{'$module'}) || defined($config->{'our $module'}) || !defined($config->{'module'})) {
+				# Legacy file format. This will go away.
+				# TODO: remove this code
+				$config = _load_conf(File::Spec->rel2abs($conf_file));
+			}
+		}
 
-		if(my $config = _load_conf(File::Spec->rel2abs($conf_file))) {
+		if($config) {
 			%input = %{$config->{input}} if(exists($config->{input}));
-			%output = %{$config->{output}} if(exists($config->{output}));
+			if(exists($config->{output})) {
+				croak("$conf_file: output should be a hash") unless(ref($config->{output}) eq 'HASH');
+				%output = %{$config->{output}}
+			}
 			%config = %{$config->{config}} if(exists($config->{config}));
 			%cases = %{$config->{cases}} if(exists($config->{cases}));
 			%edge_cases = %{$config->{edge_cases}} if(exists($config->{edge_cases}));
@@ -406,6 +450,7 @@ sub generate
 
 			@edge_case_array = @{$config->{edge_case_array}} if(exists($config->{edge_case_array}));
 		}
+		_validate_config($config);
 	} else {
 		croak 'Usage: generate(conf_file [, outfile])';
 	}
@@ -504,6 +549,38 @@ sub generate
 
 		return \%conf;
 	}
+
+	# Input validation for configuration
+	sub _validate_config {
+		my $config = $_[0];
+
+		for my $key('module', 'function', 'input') {
+			croak "Missing required '$key' specification" unless $config->{$key};
+		}
+		croak 'Invalid input specification' unless(ref $config->{input} eq 'HASH');
+
+		# Validate types, constraints, etc.
+		for my $param (keys %{$config->{input}}) {
+			my $spec = $config->{input}{$param};
+			if(ref($spec)) {
+				croak "Invalid type for parameter '$param'" unless _valid_type($spec->{type});
+			} else {
+				croak "Invalid type $spec for parameter '$param'" unless _valid_type($spec);
+			}
+		}
+	}
+
+	sub _valid_type
+	{
+		my $type = $_[0];
+
+		return(($type eq 'string') ||
+		       ($type eq 'boolean') ||
+		       ($type eq 'integer') ||
+		       ($type eq 'number') ||
+		       ($type eq 'float') ||
+		       ($type eq 'object'));
+      }
 
 	sub perl_sq {
 		my $s = $_[0];

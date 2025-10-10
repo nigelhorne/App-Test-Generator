@@ -8,7 +8,7 @@ use Test::Most;
 
 use App::Test::Generator qw(generate);
 
-my $conf_file = 't/conf/html_genealogy_map.conf';
+my $conf_file = 't/conf/html_genealogy_map.yml';
 my $outfile = 't/tmp_html_genealogy_map.t';
 
 unlink $outfile;
