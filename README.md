@@ -116,7 +116,10 @@ without relying solely on randomness.
 
 # CONFIGURATION
 
-The configuration file is a **trusted input** Perl file that should set variables with `our`.
+The configuration file is either a file that can be read by [Config::Abstraction](https://metacpan.org/pod/Config%3A%3AAbstraction) or a **trusted input** Perl file that should set variables with `our`.
+
+The documentation here covers the old trusted input style input, but that will go away so you are recommended to use
+Config::Abstraction files.
 Example: the generator expects your config to use `our %input`, `our $function`, etc.
 
 Recognized items:
@@ -273,6 +276,35 @@ A YAML mapping of expected -> args array:
     our %config = ( test_nuls => 0, test_undef => 1 );
 
 This will generate fuzz cases for 'ok', 'error', 'pending', and one invalid string that should die.
+
+## New format input
+
+Testing [HTML::Genealogy::Map](https://metacpan.org/pod/HTML%3A%3AGenealogy%3A%3AMap):
+
+    ---
+
+    module: HTML::Genealogy::Map
+    function: onload_render
+
+    input:
+      gedcom:
+        type: object
+        can: individuals
+      geocoder:
+        type: object
+        can: geocode
+      debug:
+        type: boolean
+        optional: true
+      google_key:
+        type: string
+        optional: true
+        min: 39
+        max: 39
+        matches: "^AIza[0-9A-Za-z_-]{35}$"
+
+    config:
+      test_undef: 0
 
 # OUTPUT
 
