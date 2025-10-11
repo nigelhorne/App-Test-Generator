@@ -28,10 +28,10 @@ WriteMakefile(
 		'File::Slurp' => 0,
 		'File::Spec' => 0,
 		'Getopt::Long' => 0,
-		'Params::Get' => 0,
-		'Params::Validate::Strict' => 0,
+		'Params::Get' => 0.13,
+		'Params::Validate::Strict' => 0.15,
 		'Pod::Usage' => 0,
-		'Return::Set' => 0,
+		'Return::Set' => 0.03,
 		'Template' => 0,
 		'YAML::XS' => 0
 	},

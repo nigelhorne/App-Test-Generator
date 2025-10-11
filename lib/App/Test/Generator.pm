@@ -1,6 +1,7 @@
 package App::Test::Generator;
 
 # TODO: Support routines that take more than one unnamed parameter
+# TODO: Test validator from Params::Validate::Strict 0.16
 
 use strict;
 use warnings;
