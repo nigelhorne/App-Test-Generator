@@ -14,7 +14,7 @@ binmode STDERR, ':utf8';
 use open qw(:std :encoding(UTF-8));
 
 use Carp qw(carp croak);
-use Config::Abstraction;
+use Config::Abstraction 0.34;
 use Data::Dumper;
 use Data::Section::Simple;
 use File::Basename qw(basename);

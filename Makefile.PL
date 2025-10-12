@@ -22,7 +22,7 @@ WriteMakefile(
 	PREREQ_PM => {
 		'autodie' => 0,
 		'Carp' => 0,
-		'Config::Abstraction' => 0,
+		'Config::Abstraction' => 0.34,
 		'Data::Dumper' => 0,
 		'Data::Random' => 0,
 		'Data::Section::Simple' => 0,
@@ -65,9 +65,10 @@ WriteMakefile(
 				# license => 'http://dev.perl.org/licenses/',
 			}, bugtracker => {
 				mailto => 'bug-App-Test-Generator@rt.cpan.org',
-				url => 'https://github.com/nigelhorne/App-Test-Generator/issues',
-				# web => 'https://rt.cpan.org/Public/Dist/Display.html?Name=App-Test-Generator',
-				web => 'https://github.com/nigelhorne/App-Test-Generator/issues'
+				web => 'https://rt.cpan.org/Public/Dist/Display.html?Name=App-Test-Generator',
+				url => 'https://rt.cpan.org/Public/Dist/Display.html?Name=App-Test-Generator',
+				# url => 'https://github.com/nigelhorne/App-Test-Generator/issues',
+				# web => 'https://github.com/nigelhorne/App-Test-Generator/issues'
 			}
 		},
 	},
