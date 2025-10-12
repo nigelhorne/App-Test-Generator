@@ -911,6 +911,7 @@ sub rand_unicode_char {
 # Generate a string: mostly ASCII, sometimes unicode, sometimes nul bytes or combining marks
 sub rand_str {
 	my $len = shift || int(rand(10)) + 1;
+
 	my @chars;
 	for (1..$len) {
 		my $r = rand();
@@ -1039,6 +1040,9 @@ sub fuzz_inputs {
 				# Is hello allowed?
 				if(!defined($input{'memberof'}) || (grep { $_ eq 'hello' } @{$input{'memberof'}})) {
 					push @cases, { _input => 'hello' };
+				} elsif(defined($input{'memberof'}) && !defined($input{'max'})) {
+					# Data::Random
+					push @cases, { _input => rand_set(set => $input{'memberof'}, size => 1) }
 				} else {
 					push @cases, { _input => 'hello', _STATUS => 'DIES' };
 				}
@@ -1087,6 +1091,9 @@ sub fuzz_inputs {
 						if('hello' =~ $re) {
 							if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
 								push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello' ) };
+							} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
+								# Data::Random
+								push @cases, { %mandatory_strings, %mandatory_objects, _input => rand_set(set => $spec->{'memberof'}, size => 1) }
 							} else {
 								push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello', _STATUS => 'DIES' ) };
 							}
@@ -1104,6 +1111,9 @@ sub fuzz_inputs {
 						# '' should die unless it's in the memberof list
 						if(defined($spec->{'memberof'}) && (!grep { $_ eq '' } @{$spec->{'memberof'}})) {
 							push @cases, { %mandatory_strings, %mandatory_objects, ( $field => '', _name => $field, _STATUS => 'DIES' ) }
+						} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
+							# Data::Random
+							push @cases, { %mandatory_strings, %mandatory_objects, _input => rand_set(set => $spec->{'memberof'}, size => 1) }
 						} else {
 							push @cases, { %mandatory_strings, %mandatory_objects, ( $field => '', _name => $field ) } if((!exists($spec->{min})) || ($spec->{min} == 0));
 						}
