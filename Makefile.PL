@@ -24,6 +24,7 @@ WriteMakefile(
 		'Carp' => 0,
 		'Config::Abstraction' => 0,
 		'Data::Dumper' => 0,
+		'Data::Random' => 0,
 		'Data::Section::Simple' => 0,
 		'File::Slurp' => 0,
 		'File::Spec' => 0,

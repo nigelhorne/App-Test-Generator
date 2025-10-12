@@ -830,6 +830,7 @@ use utf8;
 use open qw(:std :encoding(UTF-8));	# https://github.com/nigelhorne/App-Test-Generator/issues/1
 
 use Data::Dumper;
+use Data::Random qw(:all);
 use Test::Most;
 use Test::Returns 0.02;
 use JSON::MaybeXS;
@@ -938,16 +939,18 @@ sub rand_str {
 # Random character either upper or lower case
 sub rand_char
 {
-	my $char = '';
-	my $upper_chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-	my $lower_chars = 'abcdefghijklmnopqrstuvwxyz';
-	my $combined_chars = $upper_chars . $lower_chars;
+	return rand_chars(set => 'all', min => 1, max => 1);
 
-	# Generate a random index between 0 and the length of the string minus 1
-	my $rand_index = int(rand(length($combined_chars)));
+	# my $char = '';
+	# my $upper_chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	# my $lower_chars = 'abcdefghijklmnopqrstuvwxyz';
+	# my $combined_chars = $upper_chars . $lower_chars;
 
-	# Get the character at that index
-	return substr($combined_chars, $rand_index, 1);
+	# # Generate a random index between 0 and the length of the string minus 1
+	# my $rand_index = int(rand(length($combined_chars)));
+
+	# # Get the character at that index
+	# return substr($combined_chars, $rand_index, 1);
 }
 
 # Integer generator: mix typical small ints with large limits
