@@ -88,10 +88,13 @@ my $safe_conf = File::Spec->catfile($dir, 'safe.conf');
 open my $sfh, '>', $safe_conf or die $!;
 print $sfh <<'SAFE';
 # No unsafe operations
-$module = 'Scalar::Util';
-$function = 'blessed';
-%input = ( arg1 => 'string' );
-%output = 'undef';
+module: Scalar::Util
+function: blessed
+
+input:
+  arg1: string
+
+output: undef
 SAFE
 close $sfh;
 

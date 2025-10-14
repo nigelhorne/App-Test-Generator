@@ -170,7 +170,7 @@ without relying solely on randomness.
 The configuration file is either a file that can be read by L<Config::Abstraction> or a B<trusted input> Perl file that should set variables with C<our>.
 
 The documentation here covers the old trusted input style input, but that will go away so you are recommended to use
-Config::Abstraction files.
+L<Config::Abstraction> files.
 Example: the generator expects your config to use C<our %input>, C<our $function>, etc.
 
 Recognized items:
@@ -205,7 +205,17 @@ Currently, routines with more than one unnamed parameter are not supported.
 If the output hash contains the key _STATUS, and if that key is set to DIES,
 the routine should die with the given arguments; otherwise, it should live.
 If it's set to WARNS,
-the routine should warn with the given arguments
+the routine should warn with the given arguments.
+The output can be set to the string 'undef' if the routine should return the undefined value:
+
+  ---
+  module: Scalar::Util
+  function: blessed
+
+  input:
+    arg1: string
+
+  output: undef
 
 =item * C<$module> - module name (optional).
 
@@ -342,7 +352,7 @@ A YAML mapping of expected -> args array:
 
 This will generate fuzz cases for 'ok', 'error', 'pending', and one invalid string that should die.
 
-=head2 Scheduled fuzz Testing with GitHub Actions
+=head2 Adding Scheduled fuzz Testing with GitHub Actions to Your Code
 
 To automatically create and run tests on a regular basis on GitHub Actions,
 you need to create a configuration file for each method and subroutine that you're testing,
@@ -485,8 +495,11 @@ sub generate
 		if($config) {
 			%input = %{$config->{input}} if(exists($config->{input}));
 			if(exists($config->{output})) {
-				croak("$conf_file: output should be a hash") unless(ref($config->{output}) eq 'HASH');
-				%output = %{$config->{output}}
+				if(ref($config->{output}) eq 'HASH') {
+					%output = %{$config->{output}}
+				} elsif($config->{'output'} ne 'undef') {
+					croak("$conf_file: output should be a hash");
+				}
 			}
 			%config = %{$config->{config}} if(exists($config->{config}));
 			%cases = %{$config->{cases}} if(exists($config->{cases}));
