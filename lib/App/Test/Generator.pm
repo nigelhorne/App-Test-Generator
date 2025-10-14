@@ -1371,11 +1371,17 @@ sub fuzz_inputs {
 					my $len = $input{min};
 					push @cases, { _input => 'a' x ($len + 1) };	# just inside
 					if($len == 0) {
-						push @cases, { _input => '' };
+						push @cases, { _input => '' }
 					} else {
 						# outside
 						push @cases, { _input => 'a' x $len };	# border
 						push @cases, { _input => 'a' x ($len - 1), _STATUS => 'DIES' };
+					}
+					if($len >= 1) {
+						# Test checking of 'defined'/'exists' rather than if($string)
+						push @cases, { _input => '0' }
+					} else {
+						push @cases, { _input => '0', _STATUS => 'DIES' }
 					}
 				} else {
 					push @cases, { _input => '' };	# No min, empty string should be allowable
@@ -1492,7 +1498,7 @@ sub fuzz_inputs {
 						push @cases, { $field => $spec->{max} };	# border
 						push @cases, { $field => $spec->{max} + 1, _STATUS => 'DIES' }; # outside
 					}
-				} elsif ($type eq 'string') {
+				} elsif($type eq 'string') {
 					if (defined $spec->{min}) {
 						my $len = $spec->{min};
 						if(my $re = $spec->{matches}) {
@@ -1509,10 +1515,16 @@ sub fuzz_inputs {
 							push @cases, { %mandatory_strings, ( $field => 'a' x ($len + 1) ) };	# just inside
 							push @cases, { %mandatory_strings, ( $field => 'a' x $len ) };	# border
 							if($len > 0) {
-								# outside
-								push @cases, { %mandatory_strings, ( $field => 'a' x ($len - 1), _STATUS => 'DIES' ) }
+								push @cases, (
+									# outside
+									{ %mandatory_strings, ( $field => 'a' x ($len - 1), _STATUS => 'DIES' ) },
+									# Test checking of 'defined'/'exists' rather than if($string)
+									{ %mandatory_strings, ( $field => '0' ) }
+								);
 							} else {
 								push @cases, { %mandatory_strings, ( $field => '' ) };	# min == 0, empty string should be allowable
+								# Don't confuse if() with if(defined())
+								push @cases, { %mandatory_strings, ( $field => '0' ), _STATUS => 'DIES' };
 							}
 						}
 					} else {
