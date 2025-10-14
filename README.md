@@ -277,9 +277,15 @@ A YAML mapping of expected -> args array:
 
 This will generate fuzz cases for 'ok', 'error', 'pending', and one invalid string that should die.
 
-## New format input
+## Scheduled fuzz Testing with GitHub Actions
 
-Testing [HTML::Genealogy::Map](https://metacpan.org/pod/HTML%3A%3AGenealogy%3A%3AMap):
+To automatically create and run tests on a regular basis on GitHub Actions,
+you need to create a configuration file for each method and subroutine that you're testing,
+and a GitHub Actions configuratin file.
+
+This example takes you through testing the online\_render method of [HTML::Genealogy::Map](https://metacpan.org/pod/HTML%3A%3AGenealogy%3A%3AMap).
+
+### t/conf/online\_render.yml
 
     ---
 
@@ -305,6 +311,51 @@ Testing [HTML::Genealogy::Map](https://metacpan.org/pod/HTML%3A%3AGenealogy%3A%3
 
     config:
       test_undef: 0
+
+### .github/actions/fuzz.t
+
+    ---
+    name: Fuzz Testing
+
+    permissions:
+      contents: read
+
+    on:
+      push:
+        branches: [main, master]
+      pull_request:
+        branches: [main, master]
+      schedule:
+        - cron: '29 5 14 * *'
+
+    jobs:
+      generate-fuzz-tests:
+        runs-on: ubuntu-latest
+
+        steps:
+          - uses: actions/checkout@v5
+
+          - name: Set up Perl
+            uses: shogo82148/actions-setup-perl@v1
+            with:
+              perl-version: '5.38'
+
+          - name: Install App::Test::Generator this module's dependencies
+            run: |
+              cpanm App::Test::Generator
+              cpanm --installdeps .
+
+          - name: Generate fuzz tests
+            run: |
+              mkdir t/fuzz
+              find t/conf -name '*.yml' | while read config; do
+                test_name=$(basename "$config" .conf)
+                fuzz-harness-generator "$config" > "t/fuzz/${test_name}_fuzz.t"
+              done
+
+          - name: Run generated fuzz tests
+            run: |
+              prove -lr t/fuzz/
 
 # OUTPUT
 
