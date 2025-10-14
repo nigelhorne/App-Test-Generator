@@ -26,7 +26,7 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 =head1 NAME
 
@@ -78,9 +78,10 @@ This module implements the logic behind L<fuzz-harness-generator>.
 It parses configuration files (fuzz and/or corpus YAML), and
 produces a ready-to-run F<.t> test script using L<Test::Most>.
 
-It reads configuration files (Perl C<.conf> with C<our> variables,
-and optional YAML corpus files), and generates a L<Test::Most>-based
-fuzzing harness combining:
+It reads configuration files in any format
+(including Perl C<.conf> with C<our> variables, though this format will be deprecated in a future release)
+and optional YAML corpus files,
+and generates a L<Test::Most>-based fuzzing harness combining:
 
 =over 4
 
@@ -163,9 +164,9 @@ This works for strings, integers, and numbers.
 
 =item * C<boolean> - automatic boundary tests for boolean fields
 
-    our %input = (
-        flag => { type => 'boolean' },
-    );
+  input:
+    flag:
+      type: boolean
 
 The generator will automatically create test cases for 0 and 1; true and false; off and on, and values that should trigger C<_STATUS = 'DIES'>.
 
@@ -190,6 +191,7 @@ Recognized items:
 =item * C<%input> - input params with keys => type/optional specs:
 
 When using named parameters
+
 	our %input = (
 		name => { type => 'string', optional => 0 },
 		age => { type => 'integer', optional => 1 },

@@ -42,9 +42,10 @@ This module implements the logic behind [fuzz-harness-generator](https://metacpa
 It parses configuration files (fuzz and/or corpus YAML), and
 produces a ready-to-run `.t` test script using [Test::Most](https://metacpan.org/pod/Test%3A%3AMost).
 
-It reads configuration files (Perl `.conf` with `our` variables,
-and optional YAML corpus files), and generates a [Test::Most](https://metacpan.org/pod/Test%3A%3AMost)-based
-fuzzing harness combining:
+It reads configuration files in any format
+(including Perl `.conf` with `our` variables, though this format will be deprecated in a future release)
+and optional YAML corpus files,
+and generates a [Test::Most](https://metacpan.org/pod/Test%3A%3AMost)-based fuzzing harness combining:
 
 - Randomized fuzzing of inputs (with edge cases)
 - Optional static corpus tests from Perl `%cases` or YAML file (`yaml_cases` key)
@@ -114,9 +115,9 @@ Supported constraint types:
 
 - `boolean` - automatic boundary tests for boolean fields
 
-        our %input = (
-            flag => { type => 'boolean' },
-        );
+        input:
+          flag:
+            type: boolean
 
     The generator will automatically create test cases for 0 and 1; true and false; off and on, and values that should trigger `_STATUS = 'DIES'`.
 
@@ -137,10 +138,11 @@ Recognized items:
 - `%input` - input params with keys => type/optional specs:
 
     When using named parameters
-    	our %input = (
-    		name => { type => 'string', optional => 0 },
-    		age => { type => 'integer', optional => 1 },
-    	);
+
+            our %input = (
+                    name => { type => 'string', optional => 0 },
+                    age => { type => 'integer', optional => 1 },
+            );
 
     Supported basic types used by the fuzzer: `string`, `integer`, `number`, `boolean`, `arrayref`, `hashref`.
     (You can add more types; they will default to `undef` unless extended.)
