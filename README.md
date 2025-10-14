@@ -6,17 +6,17 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 From the command line:
 
-    fuzz-harness-generator t/conf/add.conf > t/add_fuzz.t
+    fuzz-harness-generator t/conf/add.yml > t/add_fuzz.t
 
 From Perl:
 
     use App::Test::Generator qw(generate);
 
     # Generate to STDOUT
-    App::Test::Generator::generate("t/conf/add.conf");
+    App::Test::Generator::generate("t/conf/add.yml");
 
     # Generate directly to a file
-    App::Test::Generator::generate('t/conf/add.conf', 't/add_fuzz.t');
+    App::Test::Generator::generate('t/conf/add.yml', 't/add_fuzz.t');
 
 # OVERVIEW
 
@@ -93,10 +93,20 @@ Supported constraint types:
 
 - `memberof` - arrayref of allowed values for a parameter:
 
-        our %input = (
-            status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
-            level => { type => 'integer', memberof => [ 1, 2, 3 ] },
-        );
+        ---
+        input:
+          status:
+            type: string
+            memberof:
+              - ok
+              - error
+              - pending
+          level:
+            type: integer
+            memberof:
+              - 1
+              - 5
+              - 111
 
     The generator will automatically create test cases for each allowed value (inside the member list),
     and at least one value outside the list (which should die, `_STATUS = 'DIES'`).
@@ -119,7 +129,7 @@ without relying solely on randomness.
 The configuration file is either a file that can be read by [Config::Abstraction](https://metacpan.org/pod/Config%3A%3AAbstraction) or a **trusted input** Perl file that should set variables with `our`.
 
 The documentation here covers the old trusted input style input, but that will go away so you are recommended to use
-Config::Abstraction files.
+[Config::Abstraction](https://metacpan.org/pod/Config%3A%3AAbstraction) files.
 Example: the generator expects your config to use `our %input`, `our $function`, etc.
 
 Recognized items:
@@ -152,7 +162,17 @@ Recognized items:
     If the output hash contains the key \_STATUS, and if that key is set to DIES,
     the routine should die with the given arguments; otherwise, it should live.
     If it's set to WARNS,
-    the routine should warn with the given arguments
+    the routine should warn with the given arguments.
+    The output can be set to the string 'undef' if the routine should return the undefined value:
+
+        ---
+        module: Scalar::Util
+        function: blessed
+
+        input:
+          arg1: string
+
+        output: undef
 
 - `$module` - module name (optional).
 
@@ -173,7 +193,7 @@ Recognized items:
     Maps the expected output string to the input and \_STATUS
 
         our %cases = (
-          'ok'   => {
+          'ok' => {
               input => 'ping',
               status => 'OK',
           'error' =>
@@ -189,7 +209,7 @@ Recognized items:
             # Two named parameters
             our %edge_cases = (
                     name => [ '', 'a' x 1024, \"\x{263A}" ],
-                    age  => [ -1, 0, 99999999 ],
+                    age => [ -1, 0, 99999999 ],
             );
 
             # Takes a string input
@@ -203,8 +223,8 @@ Recognized items:
 - `%type_edge_cases` - optional hash mapping types to arrayrefs of extra values to try for any field of that type:
 
             our %type_edge_cases = (
-                    string  => [ '', ' ', "\t", "\n", "\0", 'long' x 1024, chr(0x1F600) ],
-                    number  => [ 0, 1.0, -1.0, 1e308, -1e308, 1e-308, -1e-308, 'NaN', 'Infinity' ],
+                    string => [ '', ' ', "\t", "\n", "\0", 'long' x 1024, chr(0x1F600) ],
+                    number => [ 0, 1.0, -1.0, 1e308, -1e308, 1e-308, -1e-308, 'NaN', 'Infinity' ],
                     integer => [ 0, 1, -1, 2**31-1, -(2**31), 2**63-1, -(2**63) ],
             );
 
@@ -227,10 +247,10 @@ Functional fuzz + Perl corpus + seed:
     our %input = ( a => { type => 'integer' }, b => { type => 'integer' } );
     our %output = ( type => 'integer' );
     our %cases = (
-      '3'     => [1, 2],
-      '0'     => [0, 0],
-      '-1'    => [-2, 1],
-      '_STATUS:DIES'  => [ 'a', 'b' ],     # non-numeric args should die
+      '3' => [1, 2],
+      '0' => [0, 0],
+      '-1' => [-2, 1],
+      '_STATUS:DIES' => [ 'a', 'b' ],     # non-numeric args should die
       '_STATUS:WARNS' => [ undef, undef ], # undef args should warn
     );
     our $seed = 12345;
@@ -262,7 +282,7 @@ A YAML mapping of expected -> args array:
 ## Example with arrayref + hashref
 
     our %input = (
-      tags   => { type => 'arrayref', optional => 1 },
+      tags => { type => 'arrayref', optional => 1 },
       config => { type => 'hashref' },
     );
     our %output = ( type => 'hashref' );
@@ -277,7 +297,7 @@ A YAML mapping of expected -> args array:
 
 This will generate fuzz cases for 'ok', 'error', 'pending', and one invalid string that should die.
 
-## Scheduled fuzz Testing with GitHub Actions
+## Adding Scheduled fuzz Testing with GitHub Actions to Your Code
 
 To automatically create and run tests on a regular basis on GitHub Actions,
 you need to create a configuration file for each method and subroutine that you're testing,

@@ -36,17 +36,17 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 From the command line:
 
-  fuzz-harness-generator t/conf/add.conf > t/add_fuzz.t
+  fuzz-harness-generator t/conf/add.yml > t/add_fuzz.t
 
 From Perl:
 
   use App::Test::Generator qw(generate);
 
   # Generate to STDOUT
-  App::Test::Generator::generate("t/conf/add.conf");
+  App::Test::Generator::generate("t/conf/add.yml");
 
   # Generate directly to a file
-  App::Test::Generator::generate('t/conf/add.conf', 't/add_fuzz.t');
+  App::Test::Generator::generate('t/conf/add.yml', 't/add_fuzz.t');
 
 =head1 OVERVIEW
 
@@ -142,10 +142,20 @@ of keys).
 
 =item * C<memberof> - arrayref of allowed values for a parameter:
 
-    our %input = (
-        status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
-        level => { type => 'integer', memberof => [ 1, 2, 3 ] },
-    );
+  ---
+  input:
+    status:
+      type: string
+      memberof:
+        - ok
+        - error
+        - pending
+    level:
+      type: integer
+      memberof:
+        - 1
+        - 5
+        - 111
 
 The generator will automatically create test cases for each allowed value (inside the member list),
 and at least one value outside the list (which should die, C<_STATUS = 'DIES'>).
@@ -237,7 +247,7 @@ To ensure new is called with no arguments, you still need to define new, thus:
 Maps the expected output string to the input and _STATUS
 
   our %cases = (
-    'ok'   => {
+    'ok' => {
 	input => 'ping',
 	status => 'OK',
     'error' =>
@@ -256,7 +266,7 @@ Maps the expected output string to the input and _STATUS
 	# Two named parameters
 	our %edge_cases = (
 		name => [ '', 'a' x 1024, \"\x{263A}" ],
-		age  => [ -1, 0, 99999999 ],
+		age => [ -1, 0, 99999999 ],
 	);
 
 	# Takes a string input
@@ -270,8 +280,8 @@ Note that this only works with routines that take named parameters.
 =item * C<%type_edge_cases> - optional hash mapping types to arrayrefs of extra values to try for any field of that type:
 
 	our %type_edge_cases = (
-		string  => [ '', ' ', "\t", "\n", "\0", 'long' x 1024, chr(0x1F600) ],
-		number  => [ 0, 1.0, -1.0, 1e308, -1e308, 1e-308, -1e-308, 'NaN', 'Infinity' ],
+		string => [ '', ' ', "\t", "\n", "\0", 'long' x 1024, chr(0x1F600) ],
+		number => [ 0, 1.0, -1.0, 1e308, -1e308, 1e-308, -1e-308, 'NaN', 'Infinity' ],
 		integer => [ 0, 1, -1, 2**31-1, -(2**31), 2**63-1, -(2**63) ],
 	);
 
@@ -302,10 +312,10 @@ Functional fuzz + Perl corpus + seed:
   our %input = ( a => { type => 'integer' }, b => { type => 'integer' } );
   our %output = ( type => 'integer' );
   our %cases = (
-    '3'     => [1, 2],
-    '0'     => [0, 0],
-    '-1'    => [-2, 1],
-    '_STATUS:DIES'  => [ 'a', 'b' ],     # non-numeric args should die
+    '3' => [1, 2],
+    '0' => [0, 0],
+    '-1' => [-2, 1],
+    '_STATUS:DIES' => [ 'a', 'b' ],     # non-numeric args should die
     '_STATUS:WARNS' => [ undef, undef ], # undef args should warn
   );
   our $seed = 12345;
@@ -337,7 +347,7 @@ A YAML mapping of expected -> args array:
 =head2 Example with arrayref + hashref
 
   our %input = (
-    tags   => { type => 'arrayref', optional => 1 },
+    tags => { type => 'arrayref', optional => 1 },
     config => { type => 'hashref' },
   );
   our %output = ( type => 'hashref' );
@@ -852,11 +862,11 @@ sub generate
 
 	if ($outfile) {
 		open my $fh, '>:encoding(UTF-8)', $outfile or die "Cannot open $outfile: $!";
-		print $fh $test;
+		print $fh "$test\n";
 		close $fh;
 		print "Generated $outfile for $module\::$function with fuzzing + corpus support\n";
 	} else {
-		print $test;
+		print "$test\n";
 	}
 }
 
@@ -1715,5 +1725,4 @@ foreach my $case (@{fuzz_inputs()}) {
 [% corpus_code %]
 
 done_testing();
-
 __END__
