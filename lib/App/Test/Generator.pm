@@ -368,7 +368,7 @@ This will generate fuzz cases for 'ok', 'error', 'pending', and one invalid stri
 
 To automatically create and run tests on a regular basis on GitHub Actions,
 you need to create a configuration file for each method and subroutine that you're testing,
-and a GitHub Actions configuratin file.
+and a GitHub Actions configuration file.
 
 This example takes you through testing the online_render method of L<HTML::Genealogy::Map>.
 
@@ -451,7 +451,7 @@ The generated test:
 
 =over 4
 
-=item * Seeds RNG (if configured) for reproducible fuzz runs
+=item * Seeds RND (if configured) for reproducible fuzz runs
 
 =item * Uses edge cases (per-field and per-type) with configurable probability
 
@@ -1120,6 +1120,9 @@ sub fuzz_inputs {
 					# Data::Random
 					push @cases, { _input => rand_set(set => $input{'memberof'}, size => 1) }
 				} else {
+					if((!defined($input{'min'})) || ($input{'min'} >= 1)) {
+						push @cases, { _input => '0' } if(!defined($input{'memberof'}));
+					}
 					push @cases, { _input => 'hello', _STATUS => 'DIES' };
 				}
 				push @cases, { _input => '' } if((!exists($input{'min'})) || ($input{'min'} == 0));
