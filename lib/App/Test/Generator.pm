@@ -14,7 +14,7 @@ binmode STDERR, ':utf8';
 use open qw(:std :encoding(UTF-8));
 
 use Carp qw(carp croak);
-use Config::Abstraction 0.34;
+use Config::Abstraction 0.36;
 use Data::Dumper;
 use Data::Section::Simple;
 use File::Basename qw(basename);
@@ -241,6 +241,13 @@ C<My-Widget.conf> -> C<My::Widget>.
 	our $new = { api_key => 'ABC123', verbose => 1 };
 
 To ensure new is called with no arguments, you still need to define new, thus:
+
+  module: MyModule
+  function: my_function
+
+  new:
+
+For the legacy Perl variable syntax, use the empty string:
 
   our $new = '';
 
@@ -520,7 +527,9 @@ sub generate
 
 			$module = $config->{module} if(exists($config->{module}));
 			$function = $config->{function} if(exists($config->{function}));
-			$new = $config->{new} if(exists($config->{new}));
+			if(exists($config->{new})) {
+				$new = defined($config->{'new'}) ? $config->{new} : '_UNDEF';
+			}
 			$yaml_cases = $config->{yaml_cases} if(exists($config->{yaml_cases}));
 			$seed = $config->{seed} if(exists($config->{seed}));
 			$iterations = $config->{iterations} if(exists($config->{iterations}));
@@ -1241,6 +1250,13 @@ sub fuzz_inputs {
 					push @cases, { $field => 'nope', _STATUS => 'DIES' } unless 'nope' =~ $regex;
 				}
 
+				# --- nomatch (regex) ---
+				if (defined $spec->{nomatch}) {
+					my $regex = $spec->{nomatch};
+					push @cases, { $field => 'match123' } if "match123" !~ $regex;
+					push @cases, { $field => 'nope', _STATUS => 'DIES' } unless 'nope' !~ $regex;
+				}
+
 				# --- memberof ---
 				if (defined $spec->{memberof}) {
 					my @set = @{ $spec->{memberof} };
@@ -1440,6 +1456,24 @@ sub fuzz_inputs {
 					push @cases, { _input => undef, _STATUS => 'DIES' } if($config{'test_undef'});
 					push @cases, { _input => "\0", _STATUS => 'DIES' } if($config{'test_nuls'});
 				}
+				if(defined $input{nomatch}) {
+					my $re = $input{nomatch};
+
+					# --- Positive controls ---
+					foreach my $val (@candidate_good) {
+						if ($val !~ $re) {
+							push @cases, { _input => $val };
+							last; # one good match is enough
+						}
+					}
+
+					# --- Negative controls ---
+					foreach my $val (@candidate_bad) {
+						if ($val =~ $re) {
+							push @cases, { _input => $val, _STATUS => 'DIES' };
+						}
+					}
+				}
 			} elsif ($type eq 'arrayref') {
 				if (defined $input{min}) {
 					my $len = $input{min};
@@ -1565,9 +1599,9 @@ sub fuzz_inputs {
 								for my $count ($len - 1, $len, $len + 1) {
 									my $str = rand_char() x $count;
 									if($str =~ $re) {
-										push @cases, { %mandatory_strings, ( $field => $str ) };
+										push @cases, { %mandatory_strings, ( $field => $str ), _LINE => __LINE__ };
 									} else {
-										push @cases, { %mandatory_strings, ( $field => $str, _STATUS => 'DIES' ) };
+										push @cases, { %mandatory_strings, ( $field => $str, _STATUS => 'DIES', _LINE => __LINE__ ) };
 									}
 								}
 							} else {
@@ -1596,6 +1630,24 @@ sub fuzz_inputs {
 						}
 						push @cases, { $field => undef, _STATUS => 'DIES' } if($config{'test_undef'});
 						push @cases, { $field => "\0", _STATUS => 'DIES' } if($config{'test_nuls'});
+					}
+					if(defined $spec->{nomatch}) {
+						my $re = $spec->{nomatch};
+
+						# --- Positive controls ---
+						foreach my $val (@candidate_good) {
+							if ($val !~ $re) {
+								push @cases, { $field => $val };
+								last; # one good match is enough
+							}
+						}
+
+						# --- Negative controls ---
+						foreach my $val (@candidate_bad) {
+							if ($val =~ $re) {
+								push @cases, { $field => $val, _STATUS => 'DIES' };
+							}
+						}
 					}
 				} elsif ($type eq 'arrayref') {
 					if (defined $spec->{min}) {
@@ -1709,7 +1761,11 @@ foreach my $case (@{fuzz_inputs()}) {
 		$mess = "[% function %] %s";
 	}
 
-	if(my $status = delete $case->{'_STATUS'} || delete $output{'_STATUS'}) {
+	if(my $line = (delete $case->{'_LINE'} || delete $output{'_LINE'})) {
+		diag("Test case from line number $line") if($ENV{'TEST_VERBOSE'});
+	}
+
+	if(my $status = (delete $case->{'_STATUS'} || delete $output{'_STATUS'})) {
 		if($status eq 'DIES') {
 			dies_ok { [% call_code %] } sprintf($mess, 'dies');
 		} elsif($status eq 'WARNS') {
