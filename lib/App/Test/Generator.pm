@@ -640,10 +640,16 @@ sub generate
 	sub _validate_config {
 		my $config = $_[0];
 
-		for my $key('module', 'function', 'input') {
+		for my $key('module', 'function') {
 			croak "Missing required '$key' specification" unless $config->{$key};
 		}
-		croak 'Invalid input specification' unless(ref $config->{input} eq 'HASH');
+		if((!defined($config->{'input'})) && (!defined($config->{'output'}))) {
+			# Routine takes no input and no output, so there's nothing that would be gained using this software
+			croak('You must specify at least one of input and output');
+		}
+		if($config->{'input'}) {
+			croak('Invalid input specification') unless(ref $config->{input} eq 'HASH');
+		}
 
 		# Validate types, constraints, etc.
 		for my $param (keys %{$config->{input}}) {
