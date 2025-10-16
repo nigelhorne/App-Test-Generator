@@ -1377,7 +1377,11 @@ sub fuzz_inputs {
 		push @cases, { '_STATUS' => 'DIES' };	# At least one argument is needed
 	}
 
-	push @cases, { '_STATUS' => 'DIES', map { $_ => undef } keys %input } if($config{'test_undef'});
+	if(scalar keys %input) {
+		push @cases, { '_STATUS' => 'DIES', map { $_ => undef } keys %input } if($config{'test_undef'});
+	} else {
+		push @cases, { };	# Takes no input
+	}
 
 	# If it's not in mandatory_strings it sets to 'undef' which is the idea, to test { value => undef } in the args
 	push @cases, { map { $_ => $mandatory_strings{$_} } keys %input, %mandatory_objects } if($config{'test_undef'});
