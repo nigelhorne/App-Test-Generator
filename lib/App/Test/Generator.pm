@@ -571,9 +571,6 @@ sub generate
 		}
 	}
 
-	if(($config{'test_nuls'} eq 'false') || ($config{'test_nuls'} eq 'off')) {
-		$config{'test_nuls'} = 0;
-	}
 	# Guess module name from config file if not set
 	if (!$module) {
 		(my $guess = basename($conf_file)) =~ s/\.(conf|pl|pm|yml|yaml)$//;
@@ -780,10 +777,10 @@ sub generate
 		$edge_case_array_code = join(', ', map { q_wrap($_) } @edge_case_array);
 	}
 
-	# Render configuration
+	# Render configuration - all the values are integers for now, if that changes, wrap the $config{$key} in single quotes
 	my $config_code = '';
 	foreach my $key (sort keys %config) {
-		$config_code .= "'$key' => '$config{$key}',\n";
+		$config_code .= "'$key' => $config{$key},\n";
 	}
 
 	# Render input/output
