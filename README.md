@@ -2,6 +2,10 @@
 
 App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
+# VERSION
+
+Version 0.08
+
 # SYNOPSIS
 
 From the command line:
@@ -139,10 +143,13 @@ Recognized items:
 
     When using named parameters
 
-            our %input = (
-                    name => { type => 'string', optional => 0 },
-                    age => { type => 'integer', optional => 1 },
-            );
+        input:
+          name:
+            type: string
+            optional: false
+          age:
+            type: integer
+            optional: true
 
     Supported basic types used by the fuzzer: `string`, `integer`, `number`, `boolean`, `arrayref`, `hashref`.
     (You can add more types; they will default to `undef` unless extended.)
@@ -187,6 +194,13 @@ Recognized items:
             our $new = { api_key => 'ABC123', verbose => 1 };
 
     To ensure new is called with no arguments, you still need to define new, thus:
+
+        module: MyModule
+        function: my_function
+
+        new:
+
+    For the legacy Perl variable syntax, use the empty string:
 
         our $new = '';
 
@@ -303,7 +317,7 @@ This will generate fuzz cases for 'ok', 'error', 'pending', and one invalid stri
 
 To automatically create and run tests on a regular basis on GitHub Actions,
 you need to create a configuration file for each method and subroutine that you're testing,
-and a GitHub Actions configuratin file.
+and a GitHub Actions configuration file.
 
 This example takes you through testing the online\_render method of [HTML::Genealogy::Map](https://metacpan.org/pod/HTML%3A%3AGenealogy%3A%3AMap).
 
@@ -384,7 +398,7 @@ This example takes you through testing the online\_render method of [HTML::Genea
 By default, writes `t/fuzz.t`.
 The generated test:
 
-- Seeds RNG (if configured) for reproducible fuzz runs
+- Seeds RND (if configured) for reproducible fuzz runs
 - Uses edge cases (per-field and per-type) with configurable probability
 - Runs `$iterations` fuzz cases plus appended edge-case runs
 - Validates inputs with Params::Get / Params::Validate::Strict

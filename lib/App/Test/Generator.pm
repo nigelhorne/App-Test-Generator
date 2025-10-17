@@ -26,11 +26,15 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 =head1 NAME
 
 App::Test::Generator - Generate fuzz and corpus-driven test harnesses
+
+=head1 VERSION
+
+Version 0.08
 
 =head1 SYNOPSIS
 
@@ -192,10 +196,13 @@ Recognized items:
 
 When using named parameters
 
-	our %input = (
-		name => { type => 'string', optional => 0 },
-		age => { type => 'integer', optional => 1 },
-	);
+  input:
+    name:
+      type: string
+      optional: false
+    age:
+      type: integer
+      optional: true
 
 Supported basic types used by the fuzzer: C<string>, C<integer>, C<number>, C<boolean>, C<arrayref>, C<hashref>.
 (You can add more types; they will default to C<undef> unless extended.)
@@ -1252,7 +1259,7 @@ sub fuzz_inputs {
 				# --- matches (regex) ---
 				if (defined $spec->{matches}) {
 					my $regex = $spec->{matches};
-					push @cases, { $field => 'match123' } if "match123" =~ $regex;
+					push @cases, { $field => 'match123' } if 'match123' =~ $regex;
 					push @cases, { $field => 'nope', _STATUS => 'DIES' } unless 'nope' =~ $regex;
 				}
 
