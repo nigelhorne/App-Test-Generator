@@ -557,10 +557,23 @@ sub generate
 	$function ||= 'run';
 	$iterations ||= 50;		 # default fuzz runs if not specified
 	$seed = undef if defined $seed && $seed eq '';	# treat empty as undef
-	$config{'test_nuls'} //= 1;	# By default, test for embedded NULs
-	$config{'test_undef'} //= 1;	# By default, see what happens when passed undef
-	$config{'dedup'} //= 1;	# fuzzing can easily generate repeats, default is to remove duplicates
 
+	# dedup: fuzzing can easily generate repeats, default is to remove duplicates
+	foreach my $field ('test_nuls', 'test_undef', 'dedup') {
+		if(exists($config{$field})) {
+			if(($config{$field} eq 'false') || ($config{$field} eq 'off')) {
+				$config{$field} = 0;
+			} elsif(($config{$field} eq 'true') || ($config{$field} eq 'on')) {
+				$config{$field} = 1;
+			}
+		} else {
+			$config{$field} = 1;
+		}
+	}
+
+	if(($config{'test_nuls'} eq 'false') || ($config{'test_nuls'} eq 'off')) {
+		$config{'test_nuls'} = 0;
+	}
 	# Guess module name from config file if not set
 	if (!$module) {
 		(my $guess = basename($conf_file)) =~ s/\.(conf|pl|pm|yml|yaml)$//;
@@ -715,9 +728,9 @@ sub generate
 						croak(__PACKAGE__, ": conf_file, $subk is a nested element, not yet supported (", ref($def->{$subk}), ')');
 					}
 				}
-				if(($subk eq 'matches') || ($subk eq 'nomatch')) {
+				# if(($subk eq 'matches') || ($subk eq 'nomatch')) {
 					push @pairs, "$subk => " . perl_quote($def->{$subk});
-				}
+				# }
 			}
 			push @lines, '	' . perl_quote($k) . " => { " . join(", ", @pairs) . " }";
 		}
