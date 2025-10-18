@@ -725,9 +725,11 @@ sub generate
 						croak(__PACKAGE__, ": conf_file, $subk is a nested element, not yet supported (", ref($def->{$subk}), ')');
 					}
 				}
-				# if(($subk eq 'matches') || ($subk eq 'nomatch')) {
+				if(($subk eq 'matches') || ($subk eq 'nomatch')) {
+					push @pairs, "$subk => qr/$def->{$subk}/";
+				} else {
 					push @pairs, "$subk => " . perl_quote($def->{$subk});
-				# }
+				}
 			}
 			push @lines, '	' . perl_quote($k) . " => { " . join(", ", @pairs) . " }";
 		}
