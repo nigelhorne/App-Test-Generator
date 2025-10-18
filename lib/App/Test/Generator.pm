@@ -1208,6 +1208,9 @@ sub fuzz_inputs {
 				} elsif ($type eq 'string') {
 					# Is hello allowed?
 					if(my $re = $spec->{matches}) {
+						if(ref($re) ne 'Regexp') {
+							$re = qr/$re/;
+						}
 						if('hello' =~ $re) {
 							if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
 								push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello' ) };
@@ -1224,7 +1227,7 @@ sub fuzz_inputs {
 						if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
 							push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello' ) };
 						} else {
-							push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello', _STATUS => 'DIES' ) };
+							push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
 						}
 					}
 					if((!exists($spec->{min})) || ($spec->{min} == 0)) {
@@ -1447,17 +1450,17 @@ sub fuzz_inputs {
 			# Generate edge cases for min/max
 			if ($type eq 'number' || $type eq 'integer') {
 				if (defined $input{min}) {
-					push @cases, { _input => $input{min} + 1 };	# just inside
-					push @cases, { _input => $input{min} };	# border
-					push @cases, { _input => $input{min} - 1, _STATUS => 'DIES' }; # outside
+					push @cases, { %mandatory_strings, %mandatory_objects, ( _input => $input{min} + 1 ) };	# just inside
+					push @cases, { %mandatory_strings, %mandatory_objects, ( _input => $input{min} ) };	# border
+					push @cases, { %mandatory_strings, %mandatory_objects, ( _input => $input{min} - 1, _STATUS => 'DIES' ) }; # outside
 				} else {
 					push @cases, { %mandatory_strings, %mandatory_objects, ( _input => 0, _LINE => __LINE__ ) };	# No min, so 0 should be allowable
 					push @cases, { %mandatory_strings, %mandatory_objects, ( _input => -1, _LINE => __LINE__ ) };	# No min, so -1 should be allowable
 				}
 				if (defined $input{max}) {
-					push @cases, { _input => $input{max} - 1 };	# just inside
-					push @cases, { _input => $input{max} };	# border
-					push @cases, { _input => $input{max} + 1, _STATUS => 'DIES' }; # outside
+					push @cases, { %mandatory_strings, %mandatory_objects, ( _input => $input{max} - 1 ) };	# just inside
+					push @cases, { %mandatory_strings, %mandatory_objects, ( _input => $input{max} ) };	# border
+					push @cases, { %mandatory_strings, %mandatory_objects, ( _input => $input{max} + 1, _STATUS => 'DIES' ) }; # outside
 				}
 			} elsif ($type eq 'string') {
 				if (defined $input{min}) {
@@ -1597,17 +1600,17 @@ sub fuzz_inputs {
 				# Generate edge cases for min/max
 				if ($type eq 'number' || $type eq 'integer') {
 					if (defined $spec->{min}) {
-						push @cases, { $field => $spec->{min} + 1 };	# just inside
-						push @cases, { $field => $spec->{min} };	# border
-						push @cases, { $field => $spec->{min} - 1, _STATUS => 'DIES' }; # outside
+						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => $spec->{min} + 1 ) };	# just inside
+						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => $spec->{min} ) };	# border
+						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => $spec->{min} - 1, _STATUS => 'DIES' ) }; # outside
 					} else {
 						push @cases, { $field => 0 };	# No min, so 0 should be allowable
 						push @cases, { $field => -1 };	# No min, so -1 should be allowable
 					}
 					if (defined $spec->{max}) {
-						push @cases, { $field => $spec->{max} - 1 };	# just inside
-						push @cases, { $field => $spec->{max} };	# border
-						push @cases, { $field => $spec->{max} + 1, _STATUS => 'DIES' }; # outside
+						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => $spec->{max} - 1, _LINE => __LINE__ ) };	# just inside
+						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => $spec->{max}, _LINE => __LINE__ ) };	# border
+						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => $spec->{max} + 1, _STATUS => 'DIES', _LINE => __LINE__ ) }; # outside
 					}
 				} elsif($type eq 'string') {
 					if (defined $spec->{min}) {
@@ -1619,7 +1622,7 @@ sub fuzz_inputs {
 								if($str =~ $re) {
 									push @cases, { %mandatory_strings, ( $field => $str ) };
 								} else {
-									push @cases, { %mandatory_strings, ( $field => $str ), _STATUS => 'DIES' };
+									push @cases, { %mandatory_strings, ( $field => $str, _STATUS => 'DIES' ) };
 								}
 							}
 						} else {
@@ -1648,7 +1651,11 @@ sub fuzz_inputs {
 								for my $count ($len - 1, $len, $len + 1) {
 									my $str = rand_char() x $count;
 									if($str =~ $re) {
-										push @cases, { %mandatory_strings, ( $field => $str, _LINE => __LINE__ ) };
+										if($count > $len) {
+											push @cases, { %mandatory_strings, ( $field => $str, _LINE => __LINE__, _STATUS => 'DIES' ) };
+										} else {
+											push @cases, { %mandatory_strings, ( $field => $str, _LINE => __LINE__ ) };
+										}
 									} else {
 										push @cases, { %mandatory_strings, ( $field => $str, _STATUS => 'DIES', _LINE => __LINE__ ) };
 									}
