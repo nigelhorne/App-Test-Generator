@@ -22,7 +22,7 @@ WriteMakefile(
 	PREREQ_PM => {
 		'autodie' => 0,
 		'Carp' => 0,
-		'Config::Abstraction' => 0.34,
+		'Config::Abstraction' => 0.36,
 		'Data::Dumper' => 0,
 		'Data::Random' => 0,
 		'Data::Section::Simple' => 0,

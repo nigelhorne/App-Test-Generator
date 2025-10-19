@@ -209,17 +209,15 @@ Supported basic types used by the fuzzer: C<string>, C<integer>, C<number>, C<bo
 
 For routines with one unnamed parameter
 
-  our %input = (
-     type => 'string'
-  );
+  input:
+    type: string
 
 Currently, routines with more than one unnamed parameter are not supported.
 
 =item * C<%output> - output param types for Return::Set checking:
 
-	our %output = (
-		type => 'string'
-	);
+  output:
+    type: string
 
 If the output hash contains the key _STATUS, and if that key is set to DIES,
 the routine should die with the given arguments; otherwise, it should live.
@@ -245,9 +243,11 @@ C<My-Widget.conf> -> C<My::Widget>.
 
 =item * C<$new> - optional hashref of args to pass to the module's constructor (object mode):
 
-	our $new = { api_key => 'ABC123', verbose => 1 };
+  new:
+    api_key: ABC123
+    verbose: true
 
-To ensure new is called with no arguments, you still need to define new, thus:
+To ensure C<new()> is called with no arguments, you still need to define new, thus:
 
   module: MyModule
   function: my_function
