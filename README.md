@@ -96,7 +96,11 @@ Supported constraint types:
     boundary (`min` = minimum number of keys, `max` = maximum number
     of keys).
 
-- `memberof` - arrayref of allowed values for a parameter:
+- `memberof` - arrayref of allowed values for a parameter
+
+    This example is for a routine called `input()` that takes two arguments: `status` and `level`.
+    `status` is a string that must have the value `ok`, `error` or `pending`.
+    The `level` argument is an integer that must be one of `1`, `5` or `111`.
 
         ---
         input:
@@ -114,7 +118,7 @@ Supported constraint types:
               - 111
 
     The generator will automatically create test cases for each allowed value (inside the member list),
-    and at least one value outside the list (which should die, `_STATUS = 'DIES'`).
+    and at least one value outside the list (which should die or `croak`, `_STATUS = 'DIES'`).
     This works for strings, integers, and numbers.
 
 - `boolean` - automatic boundary tests for boolean fields

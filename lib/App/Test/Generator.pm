@@ -145,7 +145,11 @@ Uses hashes with key counts one below, equal to, and one above the
 boundary (C<min> = minimum number of keys, C<max> = maximum number
 of keys).
 
-=item * C<memberof> - arrayref of allowed values for a parameter:
+=item * C<memberof> - arrayref of allowed values for a parameter
+
+This example is for a routine called C<input()> that takes two arguments: C<status> and C<level>.
+C<status> is a string that must have the value C<ok>, C<error> or C<pending>.
+The C<level> argument is an integer that must be one of C<1>, C<5> or C<111>.
 
   ---
   input:
@@ -163,7 +167,7 @@ of keys).
         - 111
 
 The generator will automatically create test cases for each allowed value (inside the member list),
-and at least one value outside the list (which should die, C<_STATUS = 'DIES'>).
+and at least one value outside the list (which should die or C<croak>, C<_STATUS = 'DIES'>).
 This works for strings, integers, and numbers.
 
 =item * C<boolean> - automatic boundary tests for boolean fields
