@@ -4,7 +4,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 # VERSION
 
-Version 0.08
+Version 0.09
 
 # SYNOPSIS
 
