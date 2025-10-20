@@ -1627,6 +1627,11 @@ sub fuzz_inputs {
 						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => $spec->{max}, _LINE => __LINE__ ) };	# border
 						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => $spec->{max} + 1, _STATUS => 'DIES', _LINE => __LINE__ ) }; # outside
 					}
+					# Send wrong data type
+					push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 'hello', _STATUS => 'DIES', _LINE => __LINE__ ) };
+					push @cases, { %mandatory_strings, %mandatory_objects, ( $field => {}, _STATUS => 'DIES', _LINE => __LINE__ ) };
+					push @cases, { %mandatory_strings, %mandatory_objects, ( $field => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
+					push @cases, { %mandatory_strings, %mandatory_objects, ( $field => \'hello', _STATUS => 'DIES', _LINE => __LINE__ ) };
 				} elsif($type eq 'string') {
 					if (defined $spec->{min}) {
 						my $len = $spec->{min};
