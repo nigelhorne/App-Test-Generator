@@ -1613,7 +1613,7 @@ sub fuzz_inputs {
 				push @cases, { %mandatory_strings, ( $field => $outside, _STATUS => 'DIES' ) };
 			} else {
 				# Generate edge cases for min/max
-				if ($type eq 'number' || $type eq 'integer') {
+				if(($type eq 'number') || ($type eq 'integer') || ($type eq 'float')) {
 					if (defined $spec->{min}) {
 						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => $spec->{min} + 1 ) };	# just inside
 						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => $spec->{min} ) };	# border
@@ -1632,6 +1632,10 @@ sub fuzz_inputs {
 					push @cases, { %mandatory_strings, %mandatory_objects, ( $field => {}, _STATUS => 'DIES', _LINE => __LINE__ ) };
 					push @cases, { %mandatory_strings, %mandatory_objects, ( $field => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
 					push @cases, { %mandatory_strings, %mandatory_objects, ( $field => \'hello', _STATUS => 'DIES', _LINE => __LINE__ ) };
+					if($type eq 'integer') {
+						# Float
+						push @cases, { %mandatory_strings, %mandatory_objects, ( $field => 0.5, _STATUS => 'DIES', _LINE => __LINE__ ) };
+					}
 				} elsif($type eq 'string') {
 					if (defined $spec->{min}) {
 						my $len = $spec->{min};
@@ -1725,6 +1729,9 @@ sub fuzz_inputs {
 							}
 						}
 					}
+					# Send wrong data type
+					push @cases, { %mandatory_strings, %mandatory_objects, ( $field => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
+					push @cases, { %mandatory_strings, %mandatory_objects, ( $field => {}, _STATUS => 'DIES', _LINE => __LINE__ ) };
 				} elsif ($type eq 'arrayref') {
 					if (defined $spec->{min}) {
 						my $len = $spec->{min};
