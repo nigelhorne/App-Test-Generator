@@ -8,7 +8,7 @@ use Test::Needs 'Math::Simple';
 use App::Test::Generator qw(generate);
 
 my $conf_file = 't/conf/add.conf';
-my $outfile   = 't/tmp_add_fuzz.t';
+my $outfile = 't/tmp_add_fuzz.t';
 
 unlink $outfile;
 
@@ -22,7 +22,11 @@ close $fh;
 like($contents, qr/diag\(/, 'fuzz test has diag line');
 
 # Auto-detect all test names
-my @detected_tests;
+open $fh, '<', $outfile or die "$outfile: $!";
+my @detected_tests = <$fh>;
+close $fh;
+chomp @lines;
+
 for my $line (@content) {
 	if ($line =~ /\b(?:ok|is|like|unlike)\s*\(.*?,\s*['"](.+?)['"]\s*\)/) {
 		push @detected_tests, $1;
