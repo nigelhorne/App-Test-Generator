@@ -212,14 +212,13 @@ Recognized items:
 
     Maps the expected output string to the input and \_STATUS
 
-        our %cases = (
-          'ok' => {
-              input => 'ping',
-              status => 'OK',
-          'error' =>
-              input => '',
-              status => 'DIES'
-        );
+        cases:
+          ok:
+            input: ping
+            status: OK
+          error:
+            input: ""
+            status: DIES
 
 - `$yaml_cases` - optional path to a YAML file with the same shape as `%cases`.
 - `$seed` - optional integer. When provided, the generated `t/fuzz.t` will call `srand($seed)` so fuzz runs are reproducible.

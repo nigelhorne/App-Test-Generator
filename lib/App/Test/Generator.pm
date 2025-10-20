@@ -266,14 +266,13 @@ For the legacy Perl variable syntax, use the empty string:
 
 Maps the expected output string to the input and _STATUS
 
-  our %cases = (
-    'ok' => {
-	input => 'ping',
-	status => 'OK',
-    'error' =>
-	input => '',
-	status => 'DIES'
-  );
+  cases:
+    ok:
+      input: ping
+      status: OK
+    error:
+      input: ""
+      status: DIES
 
 =item * C<$yaml_cases> - optional path to a YAML file with the same shape as C<%cases>.
 
