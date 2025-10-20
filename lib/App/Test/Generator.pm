@@ -439,12 +439,19 @@ This example takes you through testing the online_render method of L<HTML::Genea
         - name: Set up Perl
           uses: shogo82148/actions-setup-perl@v1
           with:
-            perl-version: '5.38'
+            perl-version: '5.42'
 
         - name: Install App::Test::Generator this module's dependencies
           run: |
             cpanm App::Test::Generator
             cpanm --installdeps .
+
+        - name: Make Module
+          run: |
+            perl Makefile.PL
+            make
+          env:
+            AUTOMATED_TESTING: 1
 
         - name: Generate fuzz tests
           run: |
@@ -457,6 +464,8 @@ This example takes you through testing the online_render method of L<HTML::Genea
         - name: Run generated fuzz tests
           run: |
             prove -lr t/fuzz/
+          env:
+            AUTOMATED_TESTING: 1
 
 =head1 OUTPUT
 
