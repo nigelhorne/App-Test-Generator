@@ -23,6 +23,7 @@ my $contents = do { local $/; <$fh> };
 close $fh;
 
 like($contents, qr/add/, 'mentions function under test');
+like($contents, qr/diag\(/, 'fuzz test has diag line');
 
 eval {
 	system("$^X -c $outfile");
