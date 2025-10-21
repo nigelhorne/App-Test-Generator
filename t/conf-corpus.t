@@ -22,7 +22,7 @@ open my $fh, '<', $outfile or die $!;
 my $contents = do { local $/; <$fh> };
 close $fh;
 
-like($contents, qr/get_time_zone/, 'mentions function under test');
+like($contents, qr/add/, 'mentions function under test');
 
 eval {
 	system("$^X -c $outfile");

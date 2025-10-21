@@ -23,11 +23,13 @@ like($contents, qr/diag\(/, 'fuzz test has diag line');
 
 # Auto-detect all test names
 open $fh, '<', $outfile or die "$outfile: $!";
-my @detected_tests = <$fh>;
+my @lines = <$fh>;
 close $fh;
 chomp @lines;
 
-for my $line (@content) {
+my @detected_tests;
+
+for my $line (@lines) {
 	if ($line =~ /\b(?:ok|is|like|unlike)\s*\(.*?,\s*['"](.+?)['"]\s*\)/) {
 		push @detected_tests, $1;
 	}
