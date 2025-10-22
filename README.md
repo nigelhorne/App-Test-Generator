@@ -4,7 +4,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 # VERSION
 
-Version 0.09
+Version 0.10
 
 # SYNOPSIS
 
@@ -253,6 +253,7 @@ Recognized items:
 
     - `test_nuls`, inject NUL bytes into strings (default: 1)
     - `test_undef`, test with undefined value (default: 1)
+    - `test_empty`, test with empty strings (default: 1)
     - `dedup`, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 
 # EXAMPLES
