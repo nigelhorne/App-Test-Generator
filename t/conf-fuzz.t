@@ -8,8 +8,8 @@ use Test::Needs 'Math::Simple';
 
 use App::Test::Generator qw(generate);
 
-my $conf_file = 't/conf/add.conf';
-my $outfile = 't/tmp_add_fuzz.t';
+my $conf_file = 't/conf/max.conf';
+my $outfile = 't/tmp_max_fuzz.t';
 
 unlink $outfile;
 
@@ -21,7 +21,7 @@ my $contents = do { local $/; <$fh> };
 close $fh;
 
 like($contents, qr/diag\(/, 'fuzz test has diag line');
-like($contents, qr/add/, 'mentions function under test');
+like($contents, qr/max/, 'mentions function under test');
 
 eval {
 	system("$^X -c $outfile");
@@ -46,7 +46,7 @@ if($@) {
 		diag("STDOUT:\n$stdout");
 	}
 
-	like($stderr, qr/Math::Simple->add test case created/);
+	like($stderr, qr/Math::Simple->max test case created/);
 	like($stdout, qr/^ok \d/sm, 'At least one created test passed');
 	unlike($stdout, qr/^not ok \d/sm, 'No created test failed');
 }
