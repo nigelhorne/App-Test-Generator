@@ -993,15 +993,18 @@ my %output = (
 # Candidates for regex comparisons
 my @candidate_good = ('123', 'abc', 'A1B2', '0');
 my @candidate_bad = (
-	'',	# empty
-	# undef,	# undefined
-	# "\0",	# null byte
 	"😊",	# emoji
 	"１２３",	# full-width digits
 	"١٢٣",	# Arabic digits
 	'..',	# regex metachars
 	"a\nb",	# newline in middle
+	"é",	# E acute
 	'x' x 5000,	# huge string
+
+	# Added later if the configuration says so
+	# '',	# empty
+	# undef,	# undefined
+	# "\0",	# null byte
 );
 
 # --- Fuzzer helpers ---
@@ -1466,6 +1469,10 @@ sub fuzz_inputs {
 
 	# If it's not in mandatory_strings it sets to 'undef' which is the idea, to test { value => undef } in the args
 	push @cases, { map { $_ => $mandatory_strings{$_} } keys %input, %mandatory_objects } if($config{'test_undef'});
+
+	push @candidate_bad, '' if($config{'test_empty'});
+	push @candidate_bad, undef if($config{'test_undef'});
+	push @candidate_bad, "\0" if($config{'test_nuls'});
 
 	# generate numeric, string, hashref and arrayref min/max edge cases
 	# TODO: For hashref and arrayref, if there's a $spec->{schema} field, use that for the data that's being generated
