@@ -314,6 +314,8 @@ The current supported variables are
 
 =item * C<test_undef>, test with undefined value (default: 1)
 
+=item * C<test_empty>, test with empty strings (default: 1)
+
 =item * C<dedup>, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 
 =back
@@ -571,7 +573,7 @@ sub generate
 	$seed = undef if defined $seed && $seed eq '';	# treat empty as undef
 
 	# dedup: fuzzing can easily generate repeats, default is to remove duplicates
-	foreach my $field ('test_nuls', 'test_undef', 'dedup') {
+	foreach my $field ('test_nuls', 'test_undef', 'test_empty', 'dedup') {
 		if(exists($config{$field})) {
 			if(($config{$field} eq 'false') || ($config{$field} eq 'off')) {
 				$config{$field} = 0;
@@ -1140,6 +1142,7 @@ sub fuzz_inputs {
 			if($spec->{'type'} eq 'string') {
 				local $config{'test_undef'} = 0;
 				local $config{'test_nuls'} = 0;
+				local $config{'test_empty'} = 0;
 				$mandatory_strings{$field} = rand_ascii_str();
 			} elsif($spec->{'type'} eq 'object') {
 				my $method = $spec->{'can'};
@@ -1390,8 +1393,14 @@ sub fuzz_inputs {
 						unless($spec->{matches}) {	# TODO: Make a random string to match a regex
 							if(my $min = $spec->{min}) {
 								$case_input{$field} = rand_str($min);
+								if($config{'test_empty'} && ($min == 0)) {
+									$case_input{$field} = '';
+								}
 							} else {
 								$case_input{$field} = rand_str();
+								if($config{'test_empty'}) {
+									$case_input{$field} = '';
+								}
 							}
 						}
 					} elsif ($type eq 'integer') {
@@ -1443,7 +1452,7 @@ sub fuzz_inputs {
 
 	# edge-cases
 	if($all_optional) {
-		push @cases, {} if($config{'test_undef'});
+		push @cases, {} if($config{'test_empty'});
 	} else {
 		# Note that this is set on the input rather than output
 		push @cases, { '_STATUS' => 'DIES' };	# At least one argument is needed
@@ -1497,7 +1506,7 @@ sub fuzz_inputs {
 					my $len = $input{min};
 					push @cases, { _input => 'a' x ($len + 1) };	# just inside
 					if($len == 0) {
-						push @cases, { _input => '' }
+						push @cases, { _input => '' } if($config{'test_empty'});
 					} else {
 						# outside
 						push @cases, { _input => 'a' x $len };	# border
@@ -1510,7 +1519,7 @@ sub fuzz_inputs {
 						push @cases, { _input => '0', _STATUS => 'DIES' }
 					}
 				} else {
-					push @cases, { _input => '' };	# No min, empty string should be allowable
+					push @cases, { _input => '' } if($config{'test_empty'});	# No min, empty string should be allowable
 				}
 				if (defined $input{max}) {
 					my $len = $input{max};
@@ -1563,7 +1572,7 @@ sub fuzz_inputs {
 					push @cases, { _input => [ (1) x $len ] };	# border
 					push @cases, { _input => [ (1) x ($len - 1) ], _STATUS => 'DIES' } if $len > 0; # outside
 				} else {
-					push @cases, { _input => [] };	# No min, empty array should be allowable
+					push @cases, { _input => [] } if($config{'test_empty'});	# No min, empty array should be allowable
 				}
 				if (defined $input{max}) {
 					my $len = $input{max};
@@ -1578,7 +1587,7 @@ sub fuzz_inputs {
 					push @cases, { _input => { map { "k$_" => 1 }, 1 .. $len } };
 					push @cases, { _input => { map { "k$_" => 1 }, 1 .. ($len - 1) }, _STATUS => 'DIES' } if $len > 0;
 				} else {
-					push @cases, { _input => {} };	# No min, empty hash should be allowable
+					push @cases, { _input => {} } if($config{'test_empty'});	# No min, empty hash should be allowable
 				}
 				if (defined $input{max}) {
 					my $len = $input{max};
@@ -1674,13 +1683,13 @@ sub fuzz_inputs {
 									{ %mandatory_args, ( $field => '0' ) }
 								);
 							} else {
-								push @cases, { %mandatory_args, ( $field => '' ) };	# min == 0, empty string should be allowable
+								push @cases, { %mandatory_args, ( $field => '' ) } if($config{'test_empty'});	# min == 0, empty string should be allowable
 								# Don't confuse if() with if(defined())
 								push @cases, { %mandatory_args, ( $field => '0' , _STATUS => 'DIES' ) };
 							}
 						}
 					} else {
-						push @cases, { %mandatory_args, ( $field => '' ) };	# No min, empty string should be allowable
+						push @cases, { %mandatory_args, ( $field => '' ) } if($config{'test_empty'});	# No min, empty string should be allowable
 					}
 					if (defined $spec->{max}) {
 						my $len = $spec->{max};
@@ -1753,7 +1762,7 @@ sub fuzz_inputs {
 						push @cases, { $field => [ (1) x $len ] };	# border
 						push @cases, { $field => [ (1) x ($len - 1) ], _STATUS => 'DIES' } if $len > 0; # outside
 					} else {
-						push @cases, { $field => [] };	# No min, empty array should be allowable
+						push @cases, { $field => [] } if($config{'test_empty'});	# No min, empty array should be allowable
 					}
 					if (defined $spec->{max}) {
 						my $len = $spec->{max};
@@ -1768,7 +1777,7 @@ sub fuzz_inputs {
 						push @cases, { $field => { map { "k$_" => 1 }, 1 .. $len } };
 						push @cases, { $field => { map { "k$_" => 1 }, 1 .. ($len - 1) }, _STATUS => 'DIES' } if $len > 0;
 					} else {
-						push @cases, { $field => {} };	# No min, empty hash should be allowable
+						push @cases, { $field => {} } if($config{'test_empty'});	# No min, empty hash should be allowable
 					}
 					if (defined $spec->{max}) {
 						my $len = $spec->{max};
