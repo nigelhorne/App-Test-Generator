@@ -1228,7 +1228,7 @@ sub fuzz_inputs {
 					if (defined $spec->{min}) {
 						my $min = $spec->{min};
 						push @cases, { %mandatory_args, ( $field => $min - 1, _STATUS => 'DIES' ) };
-						push @cases, { %mandatory_args, ( $field => $min ) };
+						push @cases, { %mandatory_args, ( $field => $min, _LINE => __LINE__ ) };
 						push @cases, { %mandatory_args, ( $field => $min + 1 ) };
 					}
 					if (defined $spec->{max}) {
@@ -1455,7 +1455,7 @@ sub fuzz_inputs {
 		push @cases, {} if($config{'test_empty'});
 	} else {
 		# Note that this is set on the input rather than output
-		push @cases, { '_STATUS' => 'DIES' };	# At least one argument is needed
+		push @cases, { '_STATUS' => 'DIES' } if($config{'test_undef'});	# At least one argument is needed
 	}
 
 	if(scalar keys %input) {
@@ -1676,16 +1676,22 @@ sub fuzz_inputs {
 							push @cases, { %mandatory_args, ( $field => 'a' x ($len + 1) ) };	# just inside
 							push @cases, { %mandatory_args, ( $field => 'a' x $len ) };	# border
 							if($len > 0) {
-								push @cases, (
-									# outside
-									{ %mandatory_args, ( $field => 'a' x ($len - 1), _STATUS => 'DIES' ) },
+								if($len > 0) {
+									if(($len > 1) || $config{'test_empty'}) {
+										# outside
+										push @cases, { %mandatory_args, ( $field => 'a' x ($len - 1), _STATUS => 'DIES' ) };
+									}
 									# Test checking of 'defined'/'exists' rather than if($string)
-									{ %mandatory_args, ( $field => '0' ) }
-								);
+									push @cases, { %mandatory_args, ( $field => '0' ) };
+								} else {
+									push @cases, { %mandatory_args, ( $field => '' ) } if($config{'test_empty'});	# min == 0, empty string should be allowable
+									# Don't confuse if() with if(defined())
+									push @cases, { %mandatory_args, ( $field => '0', _STATUS => 'DIES' ) };
+								}
 							} else {
 								push @cases, { %mandatory_args, ( $field => '' ) } if($config{'test_empty'});	# min == 0, empty string should be allowable
 								# Don't confuse if() with if(defined())
-								push @cases, { %mandatory_args, ( $field => '0' , _STATUS => 'DIES' ) };
+								push @cases, { %mandatory_args, ( $field => '0', _STATUS => 'DIES' ) };
 							}
 						}
 					} else {
@@ -1753,8 +1759,8 @@ sub fuzz_inputs {
 						}
 					}
 					# Send wrong data type
-					push @cases, { %mandatory_args, ( $field => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
-					push @cases, { %mandatory_args, ( $field => {}, _STATUS => 'DIES', _LINE => __LINE__ ) };
+					push @cases, { %mandatory_args, ( $field => [], _STATUS => 'DIES', _LINE => __LINE__ ) } if($config{'test_empty'});
+					push @cases, { %mandatory_args, ( $field => {}, _STATUS => 'DIES', _LINE => __LINE__ ) } if($config{'test_empty'});
 				} elsif ($type eq 'arrayref') {
 					if (defined $spec->{min}) {
 						my $len = $spec->{min};
@@ -1843,7 +1849,7 @@ foreach my $case (@{fuzz_inputs()}) {
 	}
 
 	# if($ENV{'TEST_VERBOSE'}) {
-		# ::diag('input: ', Dumper($input));
+		# diag('input: ', Dumper($input));
 	# }
 
 	my $result;
@@ -1885,7 +1891,7 @@ foreach my $case (@{fuzz_inputs()}) {
 
 	if(scalar keys %output) {
 		if($ENV{'TEST_VERBOSE'}) {
-			::diag('result: ', Dumper($result));
+			diag('result: ', Dumper($result));
 		}
 		returns_ok($result, \%output, 'output validates');
 	}
