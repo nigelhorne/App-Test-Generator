@@ -1119,9 +1119,9 @@ sub rand_num {
 	if ($r < 0.7) {
 		return (rand() * 200 - 100);	# -100 .. 100
 	} elsif ($r < 0.9) {
-		return (rand() * 1e12) - 5e11;             # large-ish
+		return (rand() * 1e12) - 5e11;          # large-ish
 	} elsif ($r < 0.98) {
-		return (rand() * 1e308) - 5e307;      # very large floats
+		return (rand() * 1e308) - 5e307;	# very large floats
 	} else {
 		return 1e-308 * (rand() * 1000);	# tiny float, subnormal-like
 	}
@@ -1171,7 +1171,7 @@ sub fuzz_inputs {
 				my $obj = new_ok('Class::Simple');
 				$obj->$method(1);
 				$mandatory_objects{$field} = $obj;
-				$config{'dedup'} = 0;	# FIXME:  Can't yet dedup with class method calls
+				$config{'dedup'} = 0;	# FIXME:	Can't yet dedup with class method calls
 			} elsif(($spec->{'type'} eq 'float') || ($spec->{'type'} eq 'number')) {
 				my $min = $spec->{'min'};
 				my $max = $spec->{'max'};
@@ -1895,8 +1895,19 @@ sub fuzz_inputs {
 				push @cases, { $field => '_not_in_blacklist_' };
 			}
 
-			# TODO:  How do we generate tests for cross-field validation?
+			# TODO:	How do we generate tests for cross-field validation?
 		}
+	}
+
+	# FIXME: I don't think this catches them all
+	# FIXME: Handle cases with Class::Simple calls
+	if($config{'dedup'}) {
+		# dedup, fuzzing can easily generate repeats
+		my %seen;
+		@cases = grep {
+			my $dump = encode_json($_);
+			!$seen{$dump}++
+		} @cases;
 	}
 
 	# use Data::Dumper;
