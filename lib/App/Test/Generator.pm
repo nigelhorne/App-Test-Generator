@@ -1032,6 +1032,18 @@ my @unicode_codepoints = (
     0x1F4A9,       # 💩 (yes)
 );
 
+# Tests for matches or nomatch
+my @regex_tests = (
+	'match123',
+	'nope',
+	'/fullpath',
+	'/',
+	'/etc/passwd',
+	"/etc/passwd\0",
+	"D:\\dos_path",
+	"I:\\",
+);
+
 sub rand_unicode_char {
 	my $cp = $unicode_codepoints[ int(rand(@unicode_codepoints)) ];
 	return chr($cp);
@@ -1190,7 +1202,11 @@ sub fuzz_inputs {
 			if ($type eq 'string') {
 				# Is hello allowed?
 				if(!defined($input{'memberof'}) || (grep { $_ eq 'hello' } @{$input{'memberof'}})) {
-					push @cases, { _input => 'hello' };
+					if(defined($input{'notmemberof'}) && (grep { $_ eq 'hello' } @{$input{'notmemberof'}})) {
+						push @cases, { _input => 'hello', _STATUS => 'DIES' };
+					} else {
+						push @cases, { _input => 'hello' };
+					}
 				} elsif(defined($input{'memberof'}) && !defined($input{'max'})) {
 					# Data::Random
 					push @cases, { _input => rand_set(set => $input{'memberof'}, size => 1) }
@@ -1198,7 +1214,11 @@ sub fuzz_inputs {
 					if((!defined($input{'min'})) || ($input{'min'} >= 1)) {
 						push @cases, { _input => '0' } if(!defined($input{'memberof'}));
 					}
-					push @cases, { _input => 'hello', _STATUS => 'DIES' };
+					if(defined($input{'notmemberof'}) || (!grep { $_ eq 'hello' } @{$input{'memberof'}})) {
+						push @cases, { _input => 'hello' };
+					} else {
+						push @cases, { _input => 'hello', _STATUS => 'DIES' };
+					}
 				}
 				push @cases, { _input => '' } if((!exists($input{'min'})) || ($input{'min'} == 0));
 				# push @cases, { $field => "emoji \x{1F600}" };
@@ -1249,7 +1269,11 @@ sub fuzz_inputs {
 						}
 						if('hello' =~ $re) {
 							if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
-								push @cases, { %mandatory_args, ( $field => 'hello' ) };
+								if(defined($spec->{'notmemberof'}) && (grep { $_ eq 'hello' } @{$spec->{'notmemberof'}})) {
+									push @cases, { %mandatory_args, ( $field => 'hello', _STATUS => 'DIES' ) };
+								} else {
+									push @cases, { %mandatory_args, ( $field => 'hello' ) };
+								}
 							} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
 								# Data::Random
 								push @cases, { %mandatory_args, ( _input => rand_set(set => $spec->{'memberof'}, size => 1) ) }
@@ -1261,7 +1285,11 @@ sub fuzz_inputs {
 						}
 					} else {
 						if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
-							push @cases, { %mandatory_args, ( $field => 'hello' ) };
+							if(defined($spec->{'notmemberof'}) || (grep { $_ eq 'hello' } @{$spec->{'notmemberof'}})) {
+								push @cases, { %mandatory_args, ( $field => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
+							} else {
+								push @cases, { %mandatory_args, ( $field => 'hello' ) };
+							}
 						} else {
 							push @cases, { %mandatory_args, ( $field => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
 						}
@@ -1317,22 +1345,39 @@ sub fuzz_inputs {
 				# --- matches (regex) ---
 				if (defined $spec->{matches}) {
 					my $regex = $spec->{matches};
-					push @cases, { $field => 'match123' } if 'match123' =~ $regex;
-					push @cases, { $field => 'nope', _STATUS => 'DIES' } unless 'nope' =~ $regex;
+					for my $string(@regex_tests) {
+						if($string =~ $regex) {
+							push @cases, { %mandatory_args, ( $field => $string ) };
+						} else {
+							push @cases, { %mandatory_args, ( $field => $string, _STATUS => 'DIES' ) };
+						}
+					}
 				}
 
 				# --- nomatch (regex) ---
 				if (defined $spec->{nomatch}) {
 					my $regex = $spec->{nomatch};
-					push @cases, { $field => 'match123' } if "match123" !~ $regex;
-					push @cases, { $field => 'nope', _STATUS => 'DIES' } unless 'nope' !~ $regex;
+					for my $string(@regex_tests) {
+						if($string =~ $regex) {
+							push @cases, { %mandatory_args, ( $field => $string, _STATUS => 'DIES' ) };
+						} else {
+							push @cases, { %mandatory_args, ( $field => $string ) };
+						}
+					}
 				}
 
 				# --- memberof ---
 				if (defined $spec->{memberof}) {
 					my @set = @{ $spec->{memberof} };
 					push @cases, { %mandatory_args, ( $field => $set[0] ) } if @set;
-					push @cases, { %mandatory_args, ( $field => 'not_in_set', _STATUS => 'DIES' ) };
+					push @cases, { %mandatory_args, ( $field => '_not_in_set_', _STATUS => 'DIES' ) };
+				}
+
+				# --- notmemberof ---
+				if (defined $spec->{notmemberof}) {
+					my @set = @{ $spec->{notmemberof} };
+					push @cases, { %mandatory_args, ( $field => $set[0], _STATUS => 'DIES' ) } if @set;
+					push @cases, { %mandatory_args, ( $field => '_not_in_set_' ) };
 				}
 			}
 		}
@@ -1818,18 +1863,40 @@ sub fuzz_inputs {
 					}
 				}
 			}
-		}
-	}
+			# transform verification tests
+			if (defined $spec->{transform}) {
+				# Test that transform is applied before validation
+				push @cases, {
+					$field => '  UPPERCASE  ',
+					_expected_after_transform => 'uppercase'
+				};
+			}
 
-	# FIXME: I don't thing this catches them all
-	# FIXME: Handle cases with Class::Simple calls
-	if($config{'dedup'}) {
-		# dedup, fuzzing can easily generate repeats
-		my %seen;
-		@cases = grep {
-			my $dump = encode_json($_);
-			!$seen{$dump}++
-		} @cases;
+			# case_sensitive tests for memberof
+			if (defined $spec->{memberof} && exists $spec->{case_sensitive}) {
+				if (!$spec->{case_sensitive}) {
+					# Generate mixed-case versions of memberof values
+					foreach my $val (@{$spec->{memberof}}) {
+						push @cases, { $field => uc($val) };
+						push @cases, { $field => lc($val) };
+						push @cases, { $field => ucfirst(lc($val)) };
+					}
+				}
+			}
+
+			# Add notmemberof tests
+			if (defined $spec->{notmemberof}) {
+				my @blacklist = @{$spec->{notmemberof}};
+				# Each blacklisted value should die
+				foreach my $val (@blacklist) {
+					push @cases, { $field => $val, _STATUS => 'DIES' };
+				}
+				# Non-blacklisted value should pass
+				push @cases, { $field => '_not_in_blacklist_' };
+			}
+
+			# TODO:  How do we generate tests for cross-field validation?
+		}
 	}
 
 	# use Data::Dumper;
