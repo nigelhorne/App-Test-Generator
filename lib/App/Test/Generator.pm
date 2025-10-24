@@ -959,7 +959,6 @@ use Data::Dumper;
 use Data::Random qw(:all);
 use Test::Most;
 use Test::Returns 0.02;
-use JSON::MaybeXS;
 
 [% setup_code %]
 
@@ -1902,6 +1901,9 @@ sub fuzz_inputs {
 	# FIXME: I don't think this catches them all
 	# FIXME: Handle cases with Class::Simple calls
 	if($config{'dedup'}) {
+		require JSON::MaybeXS;
+		JSON::MaybeXS->import();
+
 		# dedup, fuzzing can easily generate repeats
 		my %seen;
 		@cases = grep {
