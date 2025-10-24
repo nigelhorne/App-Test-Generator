@@ -1591,7 +1591,9 @@ sub fuzz_inputs {
 
 					# --- Negative controls ---
 					foreach my $val (@candidate_bad) {
-						if ($val !~ $re) {
+						if(!defined($val)) {
+							push @cases, { _input => undef, _STATUS => 'DIES' };
+						} elsif ($val !~ $re) {
 							push @cases, { _input => $val, _STATUS => 'DIES' };
 						}
 					}
@@ -1784,8 +1786,10 @@ sub fuzz_inputs {
 
 						# --- Negative controls ---
 						foreach my $val (@candidate_bad) {
-							if ($val !~ $re) {
-								push @cases, { $field => $val, _LINE => __LINE__, _STATUS => 'DIES' };
+							if(!defined($val)) {
+								push @cases, { _input => undef, _STATUS => 'DIES' };
+							} elsif ($val !~ $re) {
+								push @cases, { _input => $val, _STATUS => 'DIES' };
 							}
 						}
 						push @cases, { $field => undef, _STATUS => 'DIES' } if($config{'test_undef'});
