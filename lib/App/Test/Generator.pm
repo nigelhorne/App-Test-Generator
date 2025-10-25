@@ -1772,7 +1772,14 @@ sub fuzz_inputs {
 								push @cases, { %mandatory_args, ( $field => 'a' x ($len + 1), _LINE => __LINE__, _STATUS => 'DIES' ) }; # outside
 							}
 						}
+					} else {
+						if(exists($spec->{'min'})) {
+							push @cases, { %mandatory_args, ( $field => 'a' x (($spec->{'min'} + 1) * 1_000), _LINE => __LINE__ ) };
+						} else {
+							push @cases, { %mandatory_args, ( $field => 'a' x 10_000, _LINE => __LINE__ ) };
+						}
 					}
+
 					if(defined $spec->{matches}) {
 						my $re = $spec->{matches};
 
