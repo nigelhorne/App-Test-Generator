@@ -4,9 +4,10 @@ use strict;
 use warnings;
 
 use App::Test::Generator;
+use autodie qw(:all);
+use File::Temp;
 use Getopt::Long qw(GetOptions);
 use Pod::Usage;
-use IPC::Run3;
 
 my $infile;
 my $outfile;
@@ -24,7 +25,13 @@ pod2usage(1) if $help;
 $infile ||= shift @ARGV or pod2usage('No config file given');
 
 if($run && !$outfile) {
-	run3('prove -l', \*STDOUT);
+	my $fh;
+	($fh, $outfile) = File::Temp::tempfile();
+
+	App::Test::Generator::generate($infile, $outfile);
+
+	system("prove -l $outfile");
+
 	exit $?;
 }
 
