@@ -1902,7 +1902,7 @@ sub fuzz_inputs {
 					push @cases, { $field => $val, _STATUS => 'DIES' };
 				}
 				# Non-blacklisted value should pass
-				push @cases, { $field => '_not_in_blacklist_' };
+				push @cases, { %mandatory_args, ( $field => '_not_in_blacklist_' ) };
 			}
 
 			# TODO:	How do we generate tests for cross-field validation?
