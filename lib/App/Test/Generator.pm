@@ -1877,8 +1877,10 @@ sub fuzz_inputs {
 			if (defined $spec->{transform}) {
 				# Test that transform is applied before validation
 				push @cases, {
-					$field => '  UPPERCASE  ',
-					_expected_after_transform => 'uppercase'
+					%mandatory_args, (
+						$field => '  UPPERCASE  ',
+						_expected_after_transform => 'uppercase'
+					)
 				};
 			}
 
@@ -1887,9 +1889,9 @@ sub fuzz_inputs {
 				if (!$spec->{case_sensitive}) {
 					# Generate mixed-case versions of memberof values
 					foreach my $val (@{$spec->{memberof}}) {
-						push @cases, { $field => uc($val) };
-						push @cases, { $field => lc($val) };
-						push @cases, { $field => ucfirst(lc($val)) };
+						push @cases, { %mandatory_args, ( $field => uc($val) ) },
+							{ %mandatory_args, ( $field => lc($val) ) },
+							{ %mandatory_args, ( $field => ucfirst(lc($val)) ) };
 					}
 				}
 			}
@@ -1899,7 +1901,7 @@ sub fuzz_inputs {
 				my @blacklist = @{$spec->{notmemberof}};
 				# Each blacklisted value should die
 				foreach my $val (@blacklist) {
-					push @cases, { $field => $val, _STATUS => 'DIES' };
+					push @cases, { %mandatory_args, ( $field => $val, _STATUS => 'DIES' ) };
 				}
 				# Non-blacklisted value should pass
 				push @cases, { %mandatory_args, ( $field => '_not_in_blacklist_' ) };
