@@ -218,6 +218,8 @@ For routines with one unnamed parameter
 
 Currently, routines with more than one unnamed parameter are not supported.
 
+The keyword C<undef> is used to indicate that the C<function> takes no arguments.
+
 =item * C<%output> - output param types for Return::Set checking:
 
   output:
@@ -237,6 +239,8 @@ The output can be set to the string 'undef' if the routine should return the und
     arg1: string
 
   output: undef
+
+The keyword C<undef> is used to indicate that the C<function> returns nothing.
 
 =item * C<$module> - module name (optional).
 
@@ -533,11 +537,17 @@ sub generate
 		}
 
 		if($config) {
-			%input = %{$config->{input}} if(exists($config->{input}));
+			if(exists($config->{input})) {
+				if(ref($config->{input}) eq 'HASH') {
+					%input = %{$config->{input}}
+				} elsif(defined($config->{'input'}) && ($config->{'input'} ne 'undef')) {
+					croak("$conf_file: input should be a hash");
+				}
+			}
 			if(exists($config->{output})) {
 				if(ref($config->{output}) eq 'HASH') {
 					%output = %{$config->{output}}
-				} elsif($config->{'output'} ne 'undef') {
+				} elsif(defined($config->{'output'}) && ($config->{'output'} ne 'undef')) {
 					croak("$conf_file: output should be a hash");
 				}
 			}
