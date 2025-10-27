@@ -1422,7 +1422,7 @@ sub fuzz_inputs {
 				} else {
 					die 'TODO';
 				}
-				push @cases, { _input => $case_input, status => 'OK' } if($case_input);
+				push @cases, { _input => $case_input, status => 'OK', _LINE => __LINE__ } if($case_input);
 			}
 		} else {
 			# our %input = ( str => { type => 'string' } );
@@ -1451,11 +1451,13 @@ sub fuzz_inputs {
 							if(my $min = $spec->{min}) {
 								$case_input{$field} = rand_str($min);
 								if($config{'test_empty'} && ($min == 0)) {
+									push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
 									$case_input{$field} = '';
 								}
 							} else {
 								$case_input{$field} = rand_str();
 								if($config{'test_empty'}) {
+									push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
 									$case_input{$field} = '';
 								}
 							}
@@ -1509,7 +1511,7 @@ sub fuzz_inputs {
 
 	# edge-cases
 	if($all_optional) {
-		push @cases, {} if($config{'test_empty'});
+		push @cases, {} if($config{'test_undef'});
 	} else {
 		# Note that this is set on the input rather than output
 		push @cases, { '_STATUS' => 'DIES' } if($config{'test_undef'});	# At least one argument is needed
@@ -1580,7 +1582,7 @@ sub fuzz_inputs {
 						push @cases, { _input => '0', _STATUS => 'DIES' }
 					}
 				} else {
-					push @cases, { _input => '' } if($config{'test_empty'});	# No min, empty string should be allowable
+					push @cases, { _input => '', _LINE => __LINE__ } if($config{'test_empty'});	# No min, empty string should be allowable
 				}
 				if (defined $input{max}) {
 					my $len = $input{max};
