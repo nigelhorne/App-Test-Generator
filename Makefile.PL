@@ -24,7 +24,6 @@ WriteMakefile(
 		'Carp' => 0,
 		'Config::Abstraction' => 0.36,
 		'Data::Dumper' => 0,
-		'Data::Random' => 0,
 		'Data::Section::Simple' => 0,
 		'File::Slurp' => 0,
 		'File::Spec' => 0,
@@ -38,6 +37,8 @@ WriteMakefile(
 	},
 	TEST_REQUIRES => {
 		'Cwd' => 0,
+		'Data::Random' => 0,
+		'Data::Random::String::Matches' => 0,
 		'Encode' => 0,
 		'File::Glob' => 0,
 		'File::stat' => 0,

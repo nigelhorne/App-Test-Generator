@@ -967,6 +967,7 @@ use open qw(:std :encoding(UTF-8));	# https://github.com/nigelhorne/App-Test-Gen
 
 use Data::Dumper;
 use Data::Random qw(:all);
+use Data::Random::String::Matches;
 use Test::Most;
 use Test::Returns 0.02;
 
@@ -1276,21 +1277,31 @@ sub fuzz_inputs {
 						if(ref($re) ne 'Regexp') {
 							$re = qr/$re/;
 						}
-						if('hello' =~ $re) {
-							if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
-								if(defined($spec->{'notmemberof'}) && (grep { $_ eq 'hello' } @{$spec->{'notmemberof'}})) {
-									push @cases, { %mandatory_args, ( $field => 'hello', _STATUS => 'DIES' ) };
-								} else {
-									push @cases, { %mandatory_args, ( $field => 'hello' ) };
-								}
-							} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
-								# Data::Random
-								push @cases, { %mandatory_args, ( _input => rand_set(set => $spec->{'memberof'}, size => 1) ) }
-							} else {
-								push @cases, { %mandatory_args, ( $field => 'hello', _STATUS => 'DIES' ) };
-							}
+						my $random_string;
+						if($spec->{'max'}) {
+							$random_string = Data::Random::String::Matches->create_random_string({ length => $spec->{'max'}, regex => $re });
+						} elsif($spec->{'min'}) {
+							$random_string = Data::Random::String::Matches->create_random_string({ length => $spec->{'min'}, regex => $re });
 						} else {
-							push @cases, { %mandatory_args, ( $field => 'hello', _STATUS => 'DIES' ) };
+							$random_string = Data::Random::String::Matches->create_random_string({ regex => $re });
+						}
+    						foreach my $str('hello', $random_string) {
+							if($str =~ $re) {
+								if(!defined($spec->{'memberof'}) || (grep { $_ eq $str } @{$spec->{'memberof'}})) {
+									if(defined($spec->{'notmemberof'}) && (grep { $_ eq $str } @{$spec->{'notmemberof'}})) {
+										push @cases, { %mandatory_args, ( $field => $str, _STATUS => 'DIES' ) };
+									} else {
+										push @cases, { %mandatory_args, ( $field => $str ) };
+									}
+								} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
+									# Data::Random
+									push @cases, { %mandatory_args, ( _input => rand_set(set => $spec->{'memberof'}, size => 1) ) }
+								} else {
+									push @cases, { %mandatory_args, ( $field => $str, _STATUS => 'DIES' ) };
+								}
+							} else {
+								push @cases, { %mandatory_args, ( $field => $str, _STATUS => 'DIES' ) };
+							}
 						}
 					} else {
 						if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
@@ -1410,7 +1421,9 @@ sub fuzz_inputs {
 					# Sometimes pick a type-level edge-case
 					$case_input = _pick_from($type_edge_cases{$type});
 				} elsif($type eq 'string') {
-					unless($input{matches}) {	# TODO: Make a random string to match a regex
+					if($input{matches}) {
+						$case_input = Data::Random::String::Matches->create_random_string({ regex => $input{'matches'} });
+					} else {
 						$case_input = rand_str();
 					}
 				} elsif($type eq 'integer') {
@@ -1447,7 +1460,18 @@ sub fuzz_inputs {
 
 					# 3) Sormal random generation by type
 					if ($type eq 'string') {
-						unless($spec->{matches}) {	# TODO: Make a random string to match a regex
+						if(my $re = $spec->{matches}) {
+							if(ref($re) ne 'Regexp') {
+								$re = qr/$re/;
+							}
+							if($spec->{'max'}) {
+								$case_input{$field} = Data::Random::String::Matches->create_random_string({ length => $spec->{'max'}, regex => $re });
+							} elsif($spec->{'min'}) {
+								$case_input{$field} = Data::Random::String::Matches->create_random_string({ length => $spec->{'min'}, regex => $re });
+							} else {
+								$case_input{$field} = Data::Random::String::Matches->create_random_string({ regex => $re });
+							}
+						} else {
 							if(my $min = $spec->{min}) {
 								$case_input{$field} = rand_str($min);
 								if($config{'test_empty'} && ($min == 0)) {
