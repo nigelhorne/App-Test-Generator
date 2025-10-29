@@ -967,7 +967,7 @@ use open qw(:std :encoding(UTF-8));	# https://github.com/nigelhorne/App-Test-Gen
 
 use Data::Dumper;
 use Data::Random qw(:all);
-use Data::Random::String::Matches;
+use Data::Random::String::Matches 0.02;
 use Test::Most;
 use Test::Returns 0.02;
 

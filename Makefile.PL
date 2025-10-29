@@ -38,7 +38,7 @@ WriteMakefile(
 	TEST_REQUIRES => {
 		'Cwd' => 0,
 		'Data::Random' => 0,
-		'Data::Random::String::Matches' => 0,
+		'Data::Random::String::Matches' => 0.02,
 		'Encode' => 0,
 		'File::Glob' => 0,
 		'File::stat' => 0,
