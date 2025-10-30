@@ -1209,6 +1209,13 @@ sub fuzz_inputs {
 		if(((scalar keys %input) == 1) && exists($input{'type'}) && !ref($input{'type'})) {
 			# our %input = ( type => 'string' );
 			my $type = $input{'type'};
+
+			foreach my $field(keys %input) {
+				if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can'))) {
+					Carp::carp("TODO: handle schema keyword '$field'");
+				}
+			}
+
 			if ($type eq 'string') {
 				# Is hello allowed?
 				if(!defined($input{'memberof'}) || (grep { $_ eq 'hello' } @{$input{'memberof'}})) {
@@ -1238,37 +1245,43 @@ sub fuzz_inputs {
 			}
 		} else {
 			# our %input = ( str => { type => 'string' } );
-			foreach my $field (keys %input) {
-				my $spec = $input{$field} || {};
+			foreach my $arg_name (keys %input) {
+				my $spec = $input{$arg_name} || {};
 				my $type = lc((!ref($spec)) ? $spec : $spec->{type}) || 'string';
+				
+				foreach my $field(keys %{$spec}) {
+					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can'))) {
+						Carp::carp("TODO: handle schema keyword '$field'");
+					}
+				}
 
 				# --- Type-based seeds ---
 				if ($type eq 'number') {
-					push @cases, { $field => 0 };
-					push @cases, { $field => 1.23 };
-					push @cases, { $field => -42 };
-					push @cases, { $field => 'abc', _STATUS => 'DIES' };
+					push @cases, { $arg_name => 0 };
+					push @cases, { $arg_name => 1.23 };
+					push @cases, { $arg_name => -42 };
+					push @cases, { $arg_name => 'abc', _STATUS => 'DIES' };
 				}
 				elsif ($type eq 'integer') {
-					push @cases, { %mandatory_args, ( $field => 42 ) };
+					push @cases, { %mandatory_args, ( $arg_name => 42 ) };
 					if((!defined $spec->{min}) || ($spec->{min} <= -1)) {
-						push @cases, { %mandatory_args, ( $field => -1, _LINE => __LINE__ ) };
+						push @cases, { %mandatory_args, ( $arg_name => -1, _LINE => __LINE__ ) };
 					}
-					push @cases, { %mandatory_args, ( $field => 3.14, _STATUS => 'DIES' ) };
-					push @cases, { %mandatory_args, ( $field => 'xyz', _STATUS => 'DIES' ) };
+					push @cases, { %mandatory_args, ( $arg_name => 3.14, _STATUS => 'DIES' ) };
+					push @cases, { %mandatory_args, ( $arg_name => 'xyz', _STATUS => 'DIES' ) };
 					# --- min/max numeric boundaries ---
 					# Probably duplicated below, but here as well just in case
 					if (defined $spec->{min}) {
 						my $min = $spec->{min};
-						push @cases, { %mandatory_args, ( $field => $min - 1, _STATUS => 'DIES' ) };
-						push @cases, { %mandatory_args, ( $field => $min, _LINE => __LINE__ ) };
-						push @cases, { %mandatory_args, ( $field => $min + 1 ) };
+						push @cases, { %mandatory_args, ( $arg_name => $min - 1, _STATUS => 'DIES' ) };
+						push @cases, { %mandatory_args, ( $arg_name => $min, _LINE => __LINE__ ) };
+						push @cases, { %mandatory_args, ( $arg_name => $min + 1 ) };
 					}
 					if (defined $spec->{max}) {
 						my $max = $spec->{max};
-						push @cases, { %mandatory_args, ( $field => $max - 1 ) };
-						push @cases, { %mandatory_args, ( $field => $max ) };
-						push @cases, { %mandatory_args, ( $field => $max + 1, _STATUS => 'DIES' ) };
+						push @cases, { %mandatory_args, ( $arg_name => $max - 1 ) };
+						push @cases, { %mandatory_args, ( $arg_name => $max ) };
+						push @cases, { %mandatory_args, ( $arg_name => $max + 1, _STATUS => 'DIES' ) };
 					}
 
 				} elsif ($type eq 'string') {
@@ -1289,77 +1302,77 @@ sub fuzz_inputs {
 							if($str =~ $re) {
 								if(!defined($spec->{'memberof'}) || (grep { $_ eq $str } @{$spec->{'memberof'}})) {
 									if(defined($spec->{'notmemberof'}) && (grep { $_ eq $str } @{$spec->{'notmemberof'}})) {
-										push @cases, { %mandatory_args, ( $field => $str, _STATUS => 'DIES' ) };
+										push @cases, { %mandatory_args, ( $arg_name => $str, _STATUS => 'DIES' ) };
 									} else {
-										push @cases, { %mandatory_args, ( $field => $str ) };
+										push @cases, { %mandatory_args, ( $arg_name => $str ) };
 									}
 								} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
 									# Data::Random
 									push @cases, { %mandatory_args, ( _input => rand_set(set => $spec->{'memberof'}, size => 1) ) }
 								} else {
-									push @cases, { %mandatory_args, ( $field => $str, _STATUS => 'DIES' ) };
+									push @cases, { %mandatory_args, ( $arg_name => $str, _STATUS => 'DIES' ) };
 								}
 							} else {
-								push @cases, { %mandatory_args, ( $field => $str, _STATUS => 'DIES' ) };
+								push @cases, { %mandatory_args, ( $arg_name => $str, _STATUS => 'DIES' ) };
 							}
 						}
 					} else {
 						if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
 							if(defined($spec->{'notmemberof'}) || (grep { $_ eq 'hello' } @{$spec->{'notmemberof'}})) {
-								push @cases, { %mandatory_args, ( $field => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
+								push @cases, { %mandatory_args, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
 							} else {
-								push @cases, { %mandatory_args, ( $field => 'hello' ) };
+								push @cases, { %mandatory_args, ( $arg_name => 'hello' ) };
 							}
 						} else {
-							push @cases, { %mandatory_args, ( $field => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
+							push @cases, { %mandatory_args, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
 						}
 					}
 					if((!exists($spec->{min})) || ($spec->{min} == 0)) {
 						# '' should die unless it's in the memberof list
 						if(defined($spec->{'memberof'}) && (!grep { $_ eq '' } @{$spec->{'memberof'}})) {
-							push @cases, { %mandatory_args, ( $field => '', _name => $field, _STATUS => 'DIES' ) }
+							push @cases, { %mandatory_args, ( $arg_name => '', _name => $arg_name, _STATUS => 'DIES' ) }
 						} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
 							# Data::Random
 							push @cases, { %mandatory_args, _input => rand_set(set => $spec->{'memberof'}, size => 1) }
 						} else {
-							push @cases, { %mandatory_args, ( $field => '', _name => $field ) } if((!exists($spec->{min})) || ($spec->{min} == 0));
+							push @cases, { %mandatory_args, ( $arg_name => '', _name => $arg_name ) } if((!exists($spec->{min})) || ($spec->{min} == 0));
 						}
 					}
-					# push @cases, { $field => "emoji \x{1F600}" };
-					push @cases, { %mandatory_args, ( $field => "\0null" ) } if($config{'test_nuls'} && (!(defined $spec->{memberof})) && !defined($spec->{matches}));
+					# push @cases, { $arg_name => "emoji \x{1F600}" };
+					push @cases, { %mandatory_args, ( $arg_name => "\0null" ) } if($config{'test_nuls'} && (!(defined $spec->{memberof})) && !defined($spec->{matches}));
 
 					unless(defined($spec->{memberof}) || defined($spec->{matches})) {
 						# --- min/max string/array boundaries ---
 						if (defined $spec->{min}) {
 							my $len = $spec->{min};
-							push @cases, { %mandatory_args, ( $field => 'a' x ($len - 1), _STATUS => 'DIES' ) } if($len > 0);
-							push @cases, { %mandatory_args, ( $field => 'a' x $len ) };
-							push @cases, { %mandatory_args, ( $field => 'a' x ($len + 1) ) };
+							push @cases, { %mandatory_args, ( $arg_name => 'a' x ($len - 1), _STATUS => 'DIES' ) } if($len > 0);
+							push @cases, { %mandatory_args, ( $arg_name => 'a' x $len ) };
+							push @cases, { %mandatory_args, ( $arg_name => 'a' x ($len + 1) ) };
 						}
 						if (defined $spec->{max}) {
 							my $len = $spec->{max};
-							push @cases, { %mandatory_args, ( $field => 'a' x ($len - 1) ) };
-							push @cases, { %mandatory_args, ( $field => 'a' x $len ) };
-							push @cases, { %mandatory_args, ( $field => 'a' x ($len + 1), _STATUS => 'DIES' ) };
+							push @cases, { %mandatory_args, ( $arg_name => 'a' x ($len - 1) ) };
+							push @cases, { %mandatory_args, ( $arg_name => 'a' x $len ) };
+							push @cases, { %mandatory_args, ( $arg_name => 'a' x ($len + 1), _STATUS => 'DIES' ) };
 						}
 					}
 				}
 				elsif ($type eq 'boolean') {
-					push @cases, { %mandatory_args, ( $field => 0 ) };
-					push @cases, { %mandatory_args, ( $field => 1 ) };
-					push @cases, { %mandatory_args, ( $field => 'true' ) };
-					push @cases, { %mandatory_args, ( $field => 'false' ) };
-					push @cases, { %mandatory_args, ( $field => 'off' ) };
-					push @cases, { %mandatory_args, ( $field => 'on' ) };
-					push @cases, { %mandatory_args, ( $field => 'bletch', _STATUS => 'DIES' ) };
+					push @cases, { %mandatory_args, ( $arg_name => 0 ) };
+					push @cases, { %mandatory_args, ( $arg_name => 1 ) };
+					push @cases, { %mandatory_args, ( $arg_name => 'true' ) };
+					push @cases, { %mandatory_args, ( $arg_name => 'false' ) };
+					push @cases, { %mandatory_args, ( $arg_name => 'off' ) };
+					push @cases, { %mandatory_args, ( $arg_name => 'on' ) };
+					push @cases, { %mandatory_args, ( $arg_name => 'bletch', _STATUS => 'DIES' ) };
 				}
 				elsif ($type eq 'hashref') {
-					push @cases, { $field => { a => 1 } };
-					push @cases, { $field => [], _STATUS => 'DIES' };
+					push @cases, { $arg_name => { a => 1 } };
+					push @cases, { $arg_name => [], _STATUS => 'DIES' };
 				}
 				elsif ($type eq 'arrayref') {
-					push @cases, { $field => [1,2] };
-					push @cases, { $field => { a => 1 }, _STATUS => 'DIES' };
+					push @cases, { $arg_name => [1,2] };
+					push @cases, { $arg_name => { a => 1 }, _STATUS => 'DIES' };
 				}
 
 				# --- matches (regex) ---
@@ -1367,9 +1380,9 @@ sub fuzz_inputs {
 					my $regex = $spec->{matches};
 					for my $string(@regex_tests) {
 						if($string =~ $regex) {
-							push @cases, { %mandatory_args, ( $field => $string ) };
+							push @cases, { %mandatory_args, ( $arg_name => $string ) };
 						} else {
-							push @cases, { %mandatory_args, ( $field => $string, _STATUS => 'DIES' ) };
+							push @cases, { %mandatory_args, ( $arg_name => $string, _STATUS => 'DIES' ) };
 						}
 					}
 				}
@@ -1379,9 +1392,9 @@ sub fuzz_inputs {
 					my $regex = $spec->{nomatch};
 					for my $string(@regex_tests) {
 						if($string =~ $regex) {
-							push @cases, { %mandatory_args, ( $field => $string, _STATUS => 'DIES' ) };
+							push @cases, { %mandatory_args, ( $arg_name => $string, _STATUS => 'DIES' ) };
 						} else {
-							push @cases, { %mandatory_args, ( $field => $string ) };
+							push @cases, { %mandatory_args, ( $arg_name => $string ) };
 						}
 					}
 				}
@@ -1389,15 +1402,15 @@ sub fuzz_inputs {
 				# --- memberof ---
 				if (defined $spec->{memberof}) {
 					my @set = @{ $spec->{memberof} };
-					push @cases, { %mandatory_args, ( $field => $set[0] ) } if @set;
-					push @cases, { %mandatory_args, ( $field => '_not_in_set_', _STATUS => 'DIES' ) };
+					push @cases, { %mandatory_args, ( $arg_name => $set[0] ) } if @set;
+					push @cases, { %mandatory_args, ( $arg_name => '_not_in_set_', _STATUS => 'DIES' ) };
 				}
 
 				# --- notmemberof ---
 				if (defined $spec->{notmemberof}) {
 					my @set = @{ $spec->{notmemberof} };
-					push @cases, { %mandatory_args, ( $field => $set[0], _STATUS => 'DIES' ) } if @set;
-					push @cases, { %mandatory_args, ( $field => '_not_in_set_' ) };
+					push @cases, { %mandatory_args, ( $arg_name => $set[0], _STATUS => 'DIES' ) } if @set;
+					push @cases, { %mandatory_args, ( $arg_name => '_not_in_set_' ) };
 				}
 			}
 		}
