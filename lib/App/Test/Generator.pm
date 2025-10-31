@@ -1041,9 +1041,9 @@ use Test::Returns 0.02;
 [% setup_code %]
 
 [% IF module %]
-	diag("[% module %]->[% function %] test case created by https://github.com/nigelhorne/App-Test-Generator");
+	diag('[% module %]->[% function %] test case created by https://github.com/nigelhorne/App-Test-Generator');
 [% ELSE %]
-	diag("[% function %] test case created by https://github.com/nigelhorne/App-Test-Generator");
+	diag('[% function %] test case created by https://github.com/nigelhorne/App-Test-Generator');
 [% END %]
 
 # Edge-case maps injected from config (optional)
@@ -1620,11 +1620,13 @@ sub fuzz_inputs {
 	}
 
 	# edge-cases
-	if($all_optional) {
-		push @cases, {} if($config{'test_undef'});
-	} else {
-		# Note that this is set on the input rather than output
-		push @cases, { '_STATUS' => 'DIES' } if($config{'test_undef'});	# At least one argument is needed
+	if($config{'test_undef'}) {
+		if($all_optional) {
+			push @cases, {};
+		} else {
+			# Note that this is set on the input rather than output
+			push @cases, { '_STATUS' => 'DIES' };	# At least one argument is needed
+		}
 	}
 
 	if(scalar keys %input) {
