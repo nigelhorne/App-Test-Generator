@@ -255,7 +255,7 @@ This is a draft definition of the schema.
   input:
     number:
       type: number
-      position: 1
+      position: 0
   output:
     number:
       type: number
@@ -263,13 +263,19 @@ This is a draft definition of the schema.
   transforms:
     positive:
       input:
+        type: number
+        position: 0
         min: 0
       output:
+        type: number
         min: 0
     negative:
       input:
+        type: number
+        position: 0
         max: 0
       output:
+        type: number
         min: 0
     error:
       input:
@@ -1767,6 +1773,7 @@ sub fuzz_inputs {
 		}
 	} else {
 		# our %input = ( str => { type => 'string' } );
+		# PUT INTO A ROUTINE
 		foreach my $field (keys %input) {
 			my $spec = $input{$field} || {};
 			my $type = $spec->{type} || 'string';
@@ -2028,6 +2035,16 @@ sub fuzz_inputs {
 	return \@cases;
 }
 
+sub fuzz_transforms {
+	my $input = $_[0];
+	my @cases;
+
+	foreach my $input (keys %input) {
+		# COPY CALL ROUTINE FROM LINE 1776
+	}
+	return \@cases;
+}
+
 foreach my $case (@{fuzz_inputs()}) {
 	# my %params;
 	# lives_ok { %params = get_params(\%input, %$case) } 'Params::Get input check';
@@ -2099,6 +2116,14 @@ foreach my $transform (keys %transforms) {
 	my $output = $transforms{$transform}{'output'} || {};
 
 	::diag("TODO: tests for transform $transform");
+	foreach my $case (@{fuzz_transforms($input)}) {
+		# BUILD CODE TO CALL FUNCTION
+		# CALL FUNCTION
+		# CHECK STATUS CORRECT
+		# IF STATUS EQ LIVES
+		#   CHECK OUTPUT USING returns_ok
+		# FI
+	}
 }
 
 [% corpus_code %]

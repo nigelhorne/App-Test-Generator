@@ -201,7 +201,7 @@ Recognized items:
         input:
           number:
             type: number
-            position: 1
+            position: 0
         output:
           number:
             type: number
@@ -209,13 +209,19 @@ Recognized items:
         transforms:
           positive:
             input:
+              type: number
+              position: 0
               min: 0
             output:
+              type: number
               min: 0
           negative:
             input:
+              type: number
+              position: 0
               max: 0
             output:
+              type: number
               min: 0
           error:
             input:
