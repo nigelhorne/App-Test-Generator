@@ -870,11 +870,21 @@ sub generate
 	my $output_code = render_args_hash(\%output);
 	my $new_code = ($new && (ref $new eq 'HASH')) ? render_args_hash($new) : '';
 
-	my $transforms_code = "'input' => {" .
-		render_args_hash(\%transforms{'input'}) .
-		"}, 'output' => {" .
-		render_args_hash(\%transforms{'output'}) .
-		' }';
+	my $transforms_code;
+	if(keys %transforms) {
+		foreach my $transform(keys %transforms) {
+			if($transforms_code) {
+				$transforms_code .= "},\n";
+			}
+			$transforms_code .= "$transform => {\n" .
+				"\t'input' => { " .
+				render_args_hash($transforms{$transform}->{'input'}) .
+				"\t}, 'output' => { " .
+			render_args_hash($transforms{$transform}->{'output'}) .
+			"\t},\n";
+		}
+		$transforms_code .= "}\n";
+	}
 
 	# Setup / call code (always load module)
 	my $setup_code = ($module) ? "BEGIN { use_ok('$module') }" : '';
@@ -1073,11 +1083,13 @@ my %config = (
 my %input = (
 [% input_code %]
 );
+
 my %output = (
-	[% output_code %]
+[% output_code %]
 );
+
 my %transforms = (
-	[% transforms_code %]
+[% transforms_code %]
 );
 
 # Candidates for regex comparisons
@@ -2072,7 +2084,7 @@ sub fuzz_inputs {
 }
 
 sub fuzz_transforms {
-	my $input = $_[0];
+	my($transform, $input, $output) = @_;
 	my @cases;
 
 	foreach my $input (keys %input) {
@@ -2190,7 +2202,7 @@ foreach my $transform (keys %transforms) {
 	my $output = $transforms{$transform}{'output'} || {};
 
 	::diag("TODO: tests for transform $transform");
-	foreach my $case (@{fuzz_transforms($input)}) {
+	foreach my $case (@{fuzz_transforms($transform, $input, $output)}) {
 		# BUILD CODE TO CALL FUNCTION
 		# CALL FUNCTION
 		# CHECK STATUS CORRECT
