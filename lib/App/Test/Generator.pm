@@ -548,14 +548,6 @@ The generated test:
 
 =back
 
-=head1 NOTES
-
-=over 4
-
-=item * The conf file must use C<our> declarations so variables are visible to the generator via C<require>.
-
-=back
-
 =cut
 
 sub generate
@@ -1002,13 +994,27 @@ sub generate
 
 1;
 
+=head1 NOTES
+
+=over 4
+
+=item * The legacy format conf file must use C<our> declarations so variables are visible to the generator via C<require>.
+
+=back
+
 =head1 SEE ALSO
 
 =over 4
 
-=item * Test coverage report: L<https://nigelhorne.github.io/App-Test-Generator/coverage/>
+=item * L<https://nigelhorne.github.io/App-Test-Generator/coverage/>: Test Coverage Report
 
-=item * L<Test::Most>, L<Params::Get>, L<Params::Validate::Strict>, L<Return::Set>, L<YAML::XS>
+=item * L<Params::Validate::Strict>: Schema Definition
+
+=item * L<Params::Get>: Input validation
+
+=item * L<Return::Set>: Output validation
+
+=item * L<Test::Most>, L<YAML::XS>
 
 =back
 

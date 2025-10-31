@@ -473,12 +473,15 @@ The generated test:
 
 # NOTES
 
-- The conf file must use `our` declarations so variables are visible to the generator via `require`.
+- The legacy format conf file must use `our` declarations so variables are visible to the generator via `require`.
 
 # SEE ALSO
 
-- Test coverage report: [https://nigelhorne.github.io/App-Test-Generator/coverage/](https://nigelhorne.github.io/App-Test-Generator/coverage/)
-- [Test::Most](https://metacpan.org/pod/Test%3A%3AMost), [Params::Get](https://metacpan.org/pod/Params%3A%3AGet), [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict), [Return::Set](https://metacpan.org/pod/Return%3A%3ASet), [YAML::XS](https://metacpan.org/pod/YAML%3A%3AXS)
+- [https://nigelhorne.github.io/App-Test-Generator/coverage/](https://nigelhorne.github.io/App-Test-Generator/coverage/): Test Coverage Report
+- [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict): Schema Definition
+- [Params::Get](https://metacpan.org/pod/Params%3A%3AGet): Input validation
+- [Return::Set](https://metacpan.org/pod/Return%3A%3ASet): Output validation
+- [Test::Most](https://metacpan.org/pod/Test%3A%3AMost), [YAML::XS](https://metacpan.org/pod/YAML%3A%3AXS)
 
 # AUTHOR
 
