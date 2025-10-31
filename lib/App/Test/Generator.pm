@@ -249,6 +249,7 @@ TO BE IMPLEMENTED.
 This is a draft definition of the schema.
 
   ---
+  module: builtin
   function: abs
   test_undef: no
 
@@ -257,9 +258,8 @@ This is a draft definition of the schema.
       type: number
       position: 0
   output:
-    number:
-      type: number
-      min: 0
+    type: number
+    min: 0
   transforms:
     positive:
       input:
@@ -291,6 +291,8 @@ the routine should warn with the given arguments.
 The keyword C<undef> is used to indicate that the C<function> returns nothing.
 
 =item * C<$module> - module name (optional).
+
+Using the reserved word C<builtin> means you're testing a Perl builtin function.
 
 If omitted, the generator will guess from the config filename:
 C<My-Widget.conf> -> C<My::Widget>.
@@ -590,7 +592,7 @@ sub generate
 				if(ref($config->{input}) eq 'HASH') {
 					%input = %{$config->{input}}
 				} elsif(defined($config->{'input'}) && ($config->{'input'} ne 'undef')) {
-					croak("$conf_file: input should be a hash");
+					croak("$conf_file: input should be a hash, not ", ref($config->{'input'}));
 				}
 			}
 			if(exists($config->{output})) {
@@ -646,7 +648,9 @@ sub generate
 	}
 
 	# Guess module name from config file if not set
-	if (!$module) {
+	if($module eq 'builtin') {
+		$module = '';
+	} elsif (!$module) {
 		(my $guess = basename($conf_file)) =~ s/\.(conf|pl|pm|yml|yaml)$//;
 		$guess =~ s/-/::/g;
 		$module = $guess || 'Unknown::Module';

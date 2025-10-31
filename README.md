@@ -195,6 +195,7 @@ Recognized items:
     This is a draft definition of the schema.
 
         ---
+        module: builtin
         function: abs
         test_undef: no
 
@@ -203,9 +204,8 @@ Recognized items:
             type: number
             position: 0
         output:
-          number:
-            type: number
-            min: 0
+          type: number
+          min: 0
         transforms:
           positive:
             input:
@@ -237,6 +237,8 @@ Recognized items:
     The keyword `undef` is used to indicate that the `function` returns nothing.
 
 - `$module` - module name (optional).
+
+    Using the reserved word `builtin` means you're testing a Perl builtin function.
 
     If omitted, the generator will guess from the config filename:
     `My-Widget.conf` -> `My::Widget`.
