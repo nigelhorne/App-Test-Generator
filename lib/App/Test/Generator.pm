@@ -649,7 +649,7 @@ sub generate
 
 	# Guess module name from config file if not set
 	if($module eq 'builtin') {
-		$module = '';
+		undef $module;
 	} elsif (!$module) {
 		(my $guess = basename($conf_file)) =~ s/\.(conf|pl|pm|yml|yaml)$//;
 		$guess =~ s/-/::/g;
@@ -875,11 +875,16 @@ sub generate
 		$input_code = render_hash(\%input);
 	}
 	my $output_code = render_args_hash(\%output);
-	my $transforms_code = render_args_hash(\%transforms);
 	my $new_code = ($new && (ref $new eq 'HASH')) ? render_args_hash($new) : '';
 
+	my $transforms_code = "'input' => {" .
+		render_args_hash(\%transforms{'input'}) .
+		"}, 'output' => {" .
+		render_args_hash(\%transforms{'output'}) .
+		' }';
+
 	# Setup / call code (always load module)
-	my $setup_code = "BEGIN { use_ok('$module') }";
+	my $setup_code = ($module) ? "BEGIN { use_ok('$module') }" : '';
 	my $call_code;
 	if(defined($new)) {
 		# keep use_ok regardless (user found earlier issue)
@@ -889,8 +894,10 @@ sub generate
 			$setup_code .= "\nmy \$obj = new_ok('$module' => [ { $new_code } ] );";
 		}
 		$call_code = "\$result = \$obj->$function(\$input);";
-	} else {
+	} elsif(defined($module)) {
 		$call_code = "\$result = $module\->$function(\$input);";
+	} else {
+		$call_code = "\$result = $function(\$input);";
 	}
 
 	# Build static corpus code
@@ -982,7 +989,11 @@ sub generate
 		open my $fh, '>:encoding(UTF-8)', $outfile or die "Cannot open $outfile: $!";
 		print $fh "$test\n";
 		close $fh;
-		print "Generated $outfile for $module\::$function with fuzzing + corpus support\n";
+		if($module) {
+			print "Generated $outfile for $module\::$function with fuzzing + corpus support\n";
+		} else {
+			print "Generated $outfile for $function with fuzzing + corpus support\n";
+		}
 	} else {
 		print "$test\n";
 	}
@@ -1029,7 +1040,11 @@ use Test::Returns 0.02;
 
 [% setup_code %]
 
-diag("[% module %]->[% function %] test case created by https://github.com/nigelhorne/App-Test-Generator");
+[% IF module %]
+	diag("[% module %]->[% function %] test case created by https://github.com/nigelhorne/App-Test-Generator");
+[% ELSE %]
+	diag("[% function %] test case created by https://github.com/nigelhorne/App-Test-Generator");
+[% END %]
 
 # Edge-case maps injected from config (optional)
 my %edge_cases = (
