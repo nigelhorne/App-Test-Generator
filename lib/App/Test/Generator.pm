@@ -3,6 +3,7 @@ package App::Test::Generator;
 # TODO: Support routines that take more than one unnamed parameter
 # TODO: Test validator from Params::Validate::Strict 0.16
 # TODO: $seed should be passed to Data::Random::String::Matches
+# TODO: positional args - when config_undef is set, see what happens when not all args are given
 
 use strict;
 use warnings;
@@ -767,7 +768,7 @@ sub generate
 		       ($type eq 'number') ||
 		       ($type eq 'float') ||
 		       ($type eq 'object'));
-      }
+	}
 
 	sub perl_sq {
 		my $s = $_[0];
@@ -1285,7 +1286,7 @@ sub fuzz_inputs {
 
 			foreach my $field(keys %input) {
 				if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can'))) {
-					Carp::carp("TODO: handle schema keyword '$field'");
+					::diag("TODO: handle schema keyword '$field'");
 				}
 			}
 
@@ -1324,7 +1325,7 @@ sub fuzz_inputs {
 
 				foreach my $field(keys %{$spec}) {
 					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can'))) {
-						Carp::carp("TODO: handle schema keyword '$field'");
+						::diag("TODO: handle schema keyword '$field'");
 					}
 				}
 
@@ -1525,6 +1526,14 @@ sub fuzz_inputs {
 			}
 		} else {
 			# our %input = ( str => { type => 'string' } );
+			foreach my $field (keys %input) {
+				my $spec = $input{$field} || {};
+				foreach my $field(keys %{$spec}) {
+					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can'))) {
+						::diag("TODO: handle schema keyword '$field'");
+					}
+				}
+			}
 			for (1..[% iterations_code %]) {
 				my %case_input = (%mandatory_args);
 				foreach my $field (keys %input) {
@@ -1816,7 +1825,7 @@ sub fuzz_inputs {
 			} else {
 				# Generate edge cases for min/max
 				if(($type eq 'number') || ($type eq 'integer') || ($type eq 'float')) {
-					if (defined $spec->{min}) {
+					if(defined $spec->{min}) {
 						push @cases, { %mandatory_args, ( $field => $spec->{min} + 1 ) };	# just inside
 						push @cases, { %mandatory_args, ( $field => $spec->{min} ) };	# border
 						push @cases, { %mandatory_args, ( $field => $spec->{min} - 1, _STATUS => 'DIES' ) }; # outside
@@ -1824,7 +1833,7 @@ sub fuzz_inputs {
 						push @cases, { $field => 0 };	# No min, so 0 should be allowable
 						push @cases, { $field => -1 };	# No min, so -1 should be allowable
 					}
-					if (defined $spec->{max}) {
+					if(defined $spec->{max}) {
 						push @cases, { %mandatory_args, ( $field => $spec->{max} - 1, _LINE => __LINE__ ) };	# just inside
 						push @cases, { %mandatory_args, ( $field => $spec->{max}, _LINE => __LINE__ ) };	# border
 						push @cases, { %mandatory_args, ( $field => $spec->{max} + 1, _STATUS => 'DIES', _LINE => __LINE__ ) }; # outside
@@ -1919,7 +1928,7 @@ sub fuzz_inputs {
 						# --- Negative controls ---
 						foreach my $val (@candidate_bad) {
 							if(!defined($val)) {
-								push @cases, { _input => undef, _STATUS => 'DIES' };
+								push @cases, { _input => undef, _STATUS => 'DIES' } if($config{'test_undef'});
 							} elsif ($val !~ $re) {
 								push @cases, { _input => $val, _STATUS => 'DIES' };
 							}
@@ -2066,6 +2075,28 @@ sub fuzz_transforms {
 	return \@cases;
 }
 
+sub populate_positions
+{
+	my $input = shift;
+
+	my $rc;
+	foreach my $arg (keys %{$input}) {
+		my $spec = $input->{$arg} || {};
+		if(defined($spec->{'position'})) {
+			$rc->{$arg} = $spec->{'position'};
+		} else {
+			if($rc) {
+				::diag("$arg is missing a position parameter in its schema");
+			}
+			return;	# All must be defined
+		}
+	}
+
+	return $rc;
+}
+
+my $positions = populate_positions(\%input);
+
 foreach my $case (@{fuzz_inputs()}) {
 	# my %params;
 	# lives_ok { %params = get_params(\%input, %$case) } 'Params::Get input check';
@@ -2083,9 +2114,9 @@ foreach my $case (@{fuzz_inputs()}) {
 		diag("Test case from line number $line") if($ENV{'TEST_VERBOSE'});
 	}
 
-	# if($ENV{'TEST_VERBOSE'}) {
-		# diag('input: ', Dumper($input));
-	# }
+	if($ENV{'TEST_VERBOSE'}) {
+		diag('input: ', Dumper($input));
+	}
 
 	my $result;
 	my $mess;
@@ -2097,12 +2128,26 @@ foreach my $case (@{fuzz_inputs()}) {
 		}
 	} elsif(defined($input)) {
 		my @alist;
-		foreach my $key (sort keys %{$input}) {
-			if($key ne '_STATUS') {
-				if(defined($input->{$key})) {
-					push @alist, "'$key' => '$input->{$key}'";
+		if($positions) {
+			# Positional args
+			foreach (keys %{$input}) {
+				next if($_ eq '_STATUS');
+				if(exists($positions->{$_})) {
+					$alist[$positions->{$_}] = delete $input->{$_};
 				} else {
-					push @alist, "'$key' => undef";
+					diag("Lost position number for $_");
+				}
+			}
+			$input = join(', ', @alist);
+		} else {
+			# Named args
+			foreach my $key (sort keys %{$input}) {
+				if($key ne '_STATUS') {
+					if(defined($input->{$key})) {
+						push @alist, "'$key' => '$input->{$key}'";
+					} else {
+						push @alist, "'$key' => undef";
+					}
 				}
 			}
 		}
