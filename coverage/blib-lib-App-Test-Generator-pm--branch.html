@@ -20,7 +20,7 @@ https://pjcj.net
 <h1>Branch Coverage</h1>
 <table>
 <tr><td class="h" align="right">File:</td><td align="left">blib/lib/App/Test/Generator.pm</td></tr>
-<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">53.6%</td></tr>
+<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">54.1%</td></tr>
 </table>
 <div><br/></div>
 <table>
@@ -84,30 +84,33 @@ https://pjcj.net
 <tr><td class="h"><a id="L801">801</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (ref $$def{$subk})</td></tr>
 <tr><td class="h"><a id="L802">802</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless (ref $$def{$subk} eq &quot;ARRAY&quot; or ref $$def{$subk} eq &quot;Regexp&quot;)</td></tr>
 <tr><td class="h"><a id="L806">806</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($subk eq &#39;matches&#39; or $subk eq &#39;nomatch&#39;) { }</td></tr>
-<tr><td class="h"><a id="L819">819</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $href and ref $href eq &quot;HASH&quot;</td></tr>
+<tr><td class="h"><a id="L819">819</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless $href and ref $href eq &quot;HASH&quot;</td></tr>
 <tr><td class="h"><a id="L826">826</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $href and ref $href eq &quot;HASH&quot;</td></tr>
 <tr><td class="h"><a id="L830">830</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless ref $aref eq &quot;ARRAY&quot;</td></tr>
 <tr><td class="h"><a id="L842">842</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">unless $s =~ /\Q$l\E|\Q$r\E/</td></tr>
 <tr><td class="h"><a id="L845">845</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless index($s, $d) != -1</td></tr>
 <tr><td class="h"><a id="L856">856</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (scalar @edge_case_array)</td></tr>
 <tr><td class="h"><a id="L868">868</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (scalar keys %input == 1 and exists $input{&#39;type&#39;} and not ref $input{&#39;type&#39;}) { }</td></tr>
-<tr><td class="h"><a id="L879">879</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">$new &amp;&amp; ref $new eq &#39;HASH&#39; ? :</td></tr>
-<tr><td class="h"><a id="L884">884</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $new) { }</td></tr>
-<tr><td class="h"><a id="L886">886</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($new_code eq &#39;&#39;) { }</td></tr>
-<tr><td class="h"><a id="L898">898</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (%all_cases)</td></tr>
-<tr><td class="h"><a id="L902">902</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $inputs and ref $inputs eq &quot;ARRAY&quot;</td></tr>
-<tr><td class="h"><a id="L906">906</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($expected_str eq q[&#39;_STATUS:DIES&#39;]) { }</td></tr>
+<tr><td class="h"><a id="L878">878</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">$new &amp;&amp; ref $new eq &#39;HASH&#39; ? :</td></tr>
+<tr><td class="h"><a id="L887">887</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">$module ? :</td></tr>
+<tr><td class="h"><a id="L889">889</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $new) { }</td></tr>
+<tr><td class="h"></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">elsif (defined $module) { }</td></tr>
+<tr><td class="h"><a id="L891">891</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($new_code eq &#39;&#39;) { }</td></tr>
+<tr><td class="h"><a id="L905">905</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (%all_cases)</td></tr>
+<tr><td class="h"><a id="L909">909</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $inputs and ref $inputs eq &quot;ARRAY&quot;</td></tr>
+<tr><td class="h"><a id="L913">913</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($expected_str eq q[&#39;_STATUS:DIES&#39;]) { }</td></tr>
 <tr><td class="h"></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">elsif ($expected_str eq q[&#39;_STATUS:WARNS&#39;]) { }</td></tr>
-<tr><td class="h"><a id="L912">912</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (ref $inputs eq &quot;HASH&quot;)</td></tr>
-<tr><td class="h"><a id="L916">916</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($new) { }</td></tr>
-<tr><td class="h"><a id="L917">917</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($status eq &#39;DIES&#39;) { }</td></tr>
+<tr><td class="h"><a id="L919">919</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (ref $inputs eq &quot;HASH&quot;)</td></tr>
+<tr><td class="h"><a id="L923">923</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($new) { }</td></tr>
+<tr><td class="h"><a id="L924">924</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($status eq &#39;DIES&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($status eq &#39;WARNS&#39;) { }</td></tr>
-<tr><td class="h"><a id="L931">931</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($status eq &#39;DIES&#39;) { }</td></tr>
+<tr><td class="h"><a id="L938">938</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($status eq &#39;DIES&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">elsif ($status eq &#39;WARNS&#39;) { }</td></tr>
-<tr><td class="h"><a id="L950">950</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $seed)</td></tr>
-<tr><td class="h"><a id="L979">979</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $tt-&gt;process(\$template, $vars, \$test)</td></tr>
-<tr><td class="h"><a id="L981">981</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($outfile) { }</td></tr>
-<tr><td class="h"><a id="L982">982</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless &amp;App::Test::Generator::open(my $fh, &quot;&gt;:encoding(UTF-8)&quot;, $outfile)</td></tr>
+<tr><td class="h"><a id="L957">957</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $seed)</td></tr>
+<tr><td class="h"><a id="L986">986</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $tt-&gt;process(\$template, $vars, \$test)</td></tr>
+<tr><td class="h"><a id="L988">988</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($outfile) { }</td></tr>
+<tr><td class="h"><a id="L989">989</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless &amp;App::Test::Generator::open(my $fh, &quot;&gt;:encoding(UTF-8)&quot;, $outfile)</td></tr>
+<tr><td class="h"><a id="L992">992</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if ($module) { }</td></tr>
 </table>
 </body>
 </html>
