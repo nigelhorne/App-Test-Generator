@@ -2127,17 +2127,19 @@ foreach my $case (@{fuzz_inputs()}) {
 			$mess = "[% function %]('$input') %s";
 		}
 	} elsif(defined($input)) {
-		my @alist;
+		my @alist = ();
 		if($positions) {
 			# Positional args
-			foreach (keys %{$input}) {
-				next if($_ eq '_STATUS');
-				if(exists($positions->{$_})) {
-					$alist[$positions->{$_}] = delete $input->{$_};
-				} else {
-					diag("Lost position number for $_");
+			foreach my $key (keys %{$input}) {
+				if($key ne '_STATUS') {
+					if(exists($positions->{$key})) {
+						$alist[$positions->{$key}] = delete $input->{$key};
+					} else {
+						diag("Lost position number for $key");
+					}
 				}
 			}
+			@alist = grep { defined $_ } @alist;	# Undefs will cause not enough args to be sent, which is a nice test
 			$input = join(', ', @alist);
 		} else {
 			# Named args
