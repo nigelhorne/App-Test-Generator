@@ -165,6 +165,8 @@ Recognized items:
 
     Currently, routines with more than one unnamed parameter are not supported.
 
+    The keyword `undef` is used to indicate that the `function` takes no arguments.
+
 - `%output` - output param types for Return::Set checking:
 
         output:
@@ -184,6 +186,49 @@ Recognized items:
           arg1: string
 
         output: undef
+
+    The keyword `undef` is used to indicate that the `function` returns nothing.
+
+- `%transforms` - list of transformations from input sets to output sets
+
+    TO BE IMPLEMENTED.
+    This is a draft definition of the schema.
+
+        ---
+        function: abs
+        test_undef: no
+
+        input:
+          number:
+            type: number
+            position: 1
+        output:
+          number:
+            type: number
+            min: 0
+        transforms:
+          positive:
+            input:
+              min: 0
+            output:
+              min: 0
+          negative:
+            input:
+              max: 0
+            output:
+              min: 0
+          error:
+            input:
+              undef
+            output:
+              _STATUS: DIES
+
+    If the output hash contains the key \_STATUS, and if that key is set to DIES,
+    the routine should die with the given arguments; otherwise, it should live.
+    If it's set to WARNS,
+    the routine should warn with the given arguments.
+
+    The keyword `undef` is used to indicate that the `function` returns nothing.
 
 - `$module` - module name (optional).
 

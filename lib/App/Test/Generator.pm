@@ -2,6 +2,7 @@ package App::Test::Generator;
 
 # TODO: Support routines that take more than one unnamed parameter
 # TODO: Test validator from Params::Validate::Strict 0.16
+# TODO: $seed should be passed to Data::Random::String::Matches
 
 use strict;
 use warnings;
@@ -239,6 +240,47 @@ The output can be set to the string 'undef' if the routine should return the und
     arg1: string
 
   output: undef
+
+The keyword C<undef> is used to indicate that the C<function> returns nothing.
+
+=item * C<%transforms> - list of transformations from input sets to output sets
+
+TO BE IMPLEMENTED.
+This is a draft definition of the schema.
+
+  ---
+  function: abs
+  test_undef: no
+
+  input:
+    number:
+      type: number
+      position: 1
+  output:
+    number:
+      type: number
+      min: 0
+  transforms:
+    positive:
+      input:
+        min: 0
+      output:
+        min: 0
+    negative:
+      input:
+        max: 0
+      output:
+        min: 0
+    error:
+      input:
+        undef
+      output:
+        _STATUS: DIES
+
+If the output hash contains the key _STATUS, and if that key is set to DIES,
+the routine should die with the given arguments; otherwise, it should live.
+If it's set to WARNS,
+the routine should warn with the given arguments.
 
 The keyword C<undef> is used to indicate that the C<function> returns nothing.
 
@@ -513,7 +555,7 @@ sub generate
 
 	# --- Globals exported by the user's conf (all optional except function maybe) ---
 	# Ensure data don't persist across calls, which would allow
-	local our (%input, %output, %config, $module, $function, $new, %cases, $yaml_cases);
+	local our (%input, %output, %config, $module, $function, $new, %cases, $yaml_cases, %transforms);
 	local our ($seed, $iterations);
 	local our (%edge_cases, @edge_case_array, %type_edge_cases);
 
@@ -537,6 +579,7 @@ sub generate
 		}
 
 		if($config) {
+			%config = %{$config->{config}} if(exists($config->{config}));
 			if(exists($config->{input})) {
 				if(ref($config->{input}) eq 'HASH') {
 					%input = %{$config->{input}}
@@ -551,7 +594,13 @@ sub generate
 					croak("$conf_file: output should be a hash");
 				}
 			}
-			%config = %{$config->{config}} if(exists($config->{config}));
+			if(exists($config->{transforms})) {
+				if(ref($config->{transforms}) eq 'HASH') {
+					%transforms = %{$config->{transforms}}
+				} elsif(defined($config->{'transforms'}) && ($config->{'transforms'} ne 'undef')) {
+					croak("$conf_file: transforms should be a hash");
+				}
+			}
 			%cases = %{$config->{cases}} if(exists($config->{cases}));
 			%edge_cases = %{$config->{edge_cases}} if(exists($config->{edge_cases}));
 			%type_edge_cases = %{$config->{type_edge_cases}} if(exists($config->{type_edge_cases}));
@@ -571,11 +620,6 @@ sub generate
 	} else {
 		croak 'Usage: generate(conf_file [, outfile])';
 	}
-
-	# --- Globals exported by the user's conf (all optional except function maybe) ---
-	# our (%input, %output, %config, $module, $function, $new, %cases, $yaml_cases);
-	# our ($seed, $iterations);
-	# our (%edge_cases, @edge_case_array, %type_edge_cases);
 
 	# sensible defaults
 	$function ||= 'run';
@@ -821,6 +865,7 @@ sub generate
 		$input_code = render_hash(\%input);
 	}
 	my $output_code = render_args_hash(\%output);
+	my $transforms_code = render_args_hash(\%transforms);
 	my $new_code = ($new && (ref $new eq 'HASH')) ? render_args_hash($new) : '';
 
 	# Setup / call code (always load module)
@@ -912,6 +957,7 @@ sub generate
 		seed_code => $seed_code,
 		input_code => $input_code,
 		output_code => $output_code,
+		transforms_code => $transforms_code,
 		corpus_code => $corpus_code,
 		call_code => $call_code,
 		function => $function,
@@ -995,9 +1041,11 @@ my %config = (
 my %input = (
 [% input_code %]
 );
-
 my %output = (
 	[% output_code %]
+);
+my %transforms = (
+	[% transforms_code %]
 );
 
 # Candidates for regex comparisons
@@ -1248,7 +1296,7 @@ sub fuzz_inputs {
 			foreach my $arg_name (keys %input) {
 				my $spec = $input{$arg_name} || {};
 				my $type = lc((!ref($spec)) ? $spec : $spec->{type}) || 'string';
-				
+
 				foreach my $field(keys %{$spec}) {
 					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can'))) {
 						Carp::carp("TODO: handle schema keyword '$field'");
@@ -2044,6 +2092,13 @@ foreach my $case (@{fuzz_inputs()}) {
 		}
 		returns_ok($result, \%output, 'output validates');
 	}
+}
+
+foreach my $transform (keys %transforms) {
+	my $input = $transforms{$transform}{'input'} || {};
+	my $output = $transforms{$transform}{'output'} || {};
+
+	::diag("TODO: tests for transform $transform");
 }
 
 [% corpus_code %]
