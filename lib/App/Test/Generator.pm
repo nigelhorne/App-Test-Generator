@@ -1376,7 +1376,6 @@ sub fuzz_inputs
 						push @cases, { %mandatory_args, ( $arg_name => $max ) };
 						push @cases, { %mandatory_args, ( $arg_name => $max + 1, _STATUS => 'DIES' ) };
 					}
-
 				} elsif ($type eq 'string') {
 					# Is hello allowed?
 					if(my $re = $spec->{matches}) {
@@ -1535,7 +1534,7 @@ sub fuzz_inputs
 				} elsif($type eq 'integer') {
 					$case_input = rand_int() + $input{'min'};
 				} elsif(($type eq 'number') || ($type eq 'float')) {
-					$case_input = rand_num();
+					$case_input = rand_num() + $input{'min'};
 				} elsif($type eq 'boolean') {
 					$case_input = rand_bool();
 				} else {
@@ -2217,6 +2216,7 @@ foreach my $case (@{fuzz_inputs()}) {
 }
 
 diag('Run ', scalar(keys %transforms), ' transform tests') if($ENV{'TEST_VERBOSE'});
+diag('-' x 60);
 
 # Generate transform tests
 # Don't generate invalid data, that's all already done,
@@ -2226,7 +2226,40 @@ foreach my $transform (keys %transforms) {
 	my $input = $transforms{$transform}{'input'} || {};
 	my $output = $transforms{$transform}{'output'} || {};
 
+	# Build the foundation
+
+	my $foundation;
+
+	foreach my $field (keys %input) {
+		my $spec = $input{$field} || {};
+		my $type = $spec->{type} || 'string';
+
+		if(($type eq 'number') || ($type eq 'float')) {
+			if(defined $spec->{min}) {
+				if(defined $spec->{max}) {
+					$foundation->{$field} = $spec->{max};	# border
+				} else {
+					$foundation->{$field} = rand_num() + $input{'min'};
+				}
+			} else {
+				if(defined $spec->{max}) {
+					$foundation->{$field} = $spec->{max};	# border
+				}
+				$foundation->{$field} = -0.1;	# No min, so -0.1 should be allowable
+			}
+		} else {
+			die("TODO: transform type $type");
+		}
+	}
+
+	# The foundation should work
+	my $case = { _name => $transform, _LINE => __LINE__ };
+	run_tests($case, $foundation, \%output, $positions);
+
 	::diag("TODO: tests for transform $transform");
+
+	# Now modify the foundation with test code
+
 	# BUILD CODE TO CALL FUNCTION
 	# CALL FUNCTION
 	# CHECK STATUS CORRECT
@@ -2239,7 +2272,6 @@ foreach my $transform (keys %transforms) {
 		my $type = $spec->{type} || 'string';
 
 		if(($type eq 'number') || ($type eq 'integer') || ($type eq 'float')) {
-			# TODO: needs more than one test
 			if(defined $spec->{min}) {
 				$test->{$field} = $spec->{min} + 1;	# just inside
 				# $test->{$field} = $spec->{min};	# border
@@ -2258,8 +2290,8 @@ foreach my $transform (keys %transforms) {
 	push @tests, $test;
 }
 
-	use Data::Dumper;
-	diag(Dumper(\@tests));
+use Data::Dumper;
+diag(Dumper(\@tests));
 
 [% corpus_code %]
 
