@@ -2125,12 +2125,13 @@ sub populate_positions
 
 sub run_tests
 {
-	my($case, $input, $output, $name, $positions) = @_;
+	my($case, $input, $output, $positions) = @_;
 
 	if($ENV{'TEST_VERBOSE'}) {
 		diag('input: ', Dumper($input));
 	}
 
+	my $name = $case->{'_name'};
 	my $result;
 	my $mess;
 	if(defined($input) && !ref($input)) {
@@ -2194,13 +2195,14 @@ sub run_tests
 
 my $positions = populate_positions(\%input);
 
+diag('Run Fuzz Tests') if($ENV{'TEST_VERBOSE'});
+
 foreach my $case (@{fuzz_inputs()}) {
 	# my %params;
 	# lives_ok { %params = get_params(\%input, %$case) } 'Params::Get input check';
 	# lives_ok { validate_strict(\%input, %params) } 'Params::Validate::Strict input check';
 
 	my $input;
-	my $name = delete $case->{'_name'};
 	if((ref($case) eq 'HASH') && exists($case->{'_input'})) {
 		$input = $case->{'_input'};
 	} else {
@@ -2211,8 +2213,10 @@ foreach my $case (@{fuzz_inputs()}) {
 		diag("Test case from line number $line") if($ENV{'TEST_VERBOSE'});
 	}
 
-	run_tests($case, $input, \%output, $name, $positions);
+	run_tests($case, $input, \%output, $positions);
 }
+
+diag('Run ', scalar(keys %transforms), ' transform tests') if($ENV{'TEST_VERBOSE'});
 
 foreach my $transform (keys %transforms) {
 	my $input = $transforms{$transform}{'input'} || {};
@@ -2227,8 +2231,8 @@ foreach my $transform (keys %transforms) {
 		# IF STATUS EQ LIVES
 		#   CHECK OUTPUT USING returns_ok
 		# FI
-		::diag(__LINE__);
-		::diag(Dumper($case));
+		diag(Dumper($input));
+		run_tests($case, $input, \%output, $positions);
 	}
 }
 
