@@ -775,7 +775,13 @@ sub generate
 			my @quoted_v = map { perl_quote($_) } @{$v};
 			return '[ ' . join(', ', @quoted_v) . ' ]';
 		}
-		return Dumper($v) if(ref($v) && (ref($v) ne 'Regexp'));	# Generic fallback
+		if(ref($v) && (ref($v) ne 'Regexp')) {
+			# Generic fallback
+			$v = Dumper($v);
+			$v =~ s/\$VAR1 =//;
+			$v =~ s/;//;
+			return $v;
+		}
 		$v =~ s/\\/\\\\/g;
 		# return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . ( $v =~ s/'/\\'/gr ) . "'";
 		return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . perl_sq($v) . "'";
@@ -2231,7 +2237,7 @@ foreach my $transform (keys %transforms) {
 	my $foundation;
 
 	foreach my $field (keys %input) {
-		my $spec = $input{$field} || {};
+		my $spec = $input->{$field} || {};
 		my $type = $spec->{type} || 'string';
 
 		if(($type eq 'number') || ($type eq 'float')) {
@@ -2239,16 +2245,17 @@ foreach my $transform (keys %transforms) {
 				if(defined $spec->{max}) {
 					$foundation->{$field} = $spec->{max};	# border
 				} else {
-					$foundation->{$field} = rand_num() + $input{'min'};
+					$foundation->{$field} = rand_num() + $spec->{'min'};
 				}
 			} else {
 				if(defined $spec->{max}) {
 					$foundation->{$field} = $spec->{max};	# border
+				} else {
+					$foundation->{$field} = -0.1;	# No min, so -0.1 should be allowable
 				}
-				$foundation->{$field} = -0.1;	# No min, so -0.1 should be allowable
 			}
 		} else {
-			die("TODO: transform type $type");
+			die("TODO: transform type $type for foundation");
 		}
 	}
 
@@ -2256,7 +2263,7 @@ foreach my $transform (keys %transforms) {
 	my $case = { _name => $transform, _LINE => __LINE__ };
 	run_tests($case, $foundation, \%output, $positions);
 
-	::diag("TODO: tests for transform $transform");
+	::diag("tests for transform $transform") if($ENV{'TEST_VERBOSE'});
 
 	# Now modify the foundation with test code
 
@@ -2284,14 +2291,11 @@ foreach my $transform (keys %transforms) {
 				# $test->{$field} = $spec->{max};	# border
 			}
 		} else {
-			die("TODO: transform type $type");
+			die("TODO: transform type $type for test case");
 		}
 	}
 	push @tests, $test;
 }
-
-use Data::Dumper;
-diag(Dumper(\@tests));
 
 [% corpus_code %]
 
