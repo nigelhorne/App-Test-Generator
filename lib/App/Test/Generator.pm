@@ -2123,24 +2123,9 @@ sub populate_positions
 	return $rc;
 }
 
-my $positions = populate_positions(\%input);
-
-foreach my $case (@{fuzz_inputs()}) {
-	# my %params;
-	# lives_ok { %params = get_params(\%input, %$case) } 'Params::Get input check';
-	# lives_ok { validate_strict(\%input, %params) } 'Params::Validate::Strict input check';
-
-	my $input;
-	my $name = delete $case->{'_name'};
-	if((ref($case) eq 'HASH') && exists($case->{'_input'})) {
-		$input = $case->{'_input'};
-	} else {
-		$input = $case;
-	}
-
-	if(my $line = (delete $case->{'_LINE'} || delete $input{'_LINE'})) {
-		diag("Test case from line number $line") if($ENV{'TEST_VERBOSE'});
-	}
+sub run_tests
+{
+	my($case, $input, $output, $name, $positions) = @_;
 
 	if($ENV{'TEST_VERBOSE'}) {
 		diag('input: ', Dumper($input));
@@ -2187,7 +2172,7 @@ foreach my $case (@{fuzz_inputs()}) {
 		$mess = "[% function %] %s";
 	}
 
-	if(my $status = (delete $case->{'_STATUS'} || delete $output{'_STATUS'})) {
+	if(my $status = (delete $case->{'_STATUS'} || delete $output->{'_STATUS'})) {
 		if($status eq 'DIES') {
 			dies_ok { [% call_code %] } sprintf($mess, 'dies');
 		} elsif($status eq 'WARNS') {
@@ -2199,12 +2184,34 @@ foreach my $case (@{fuzz_inputs()}) {
 		lives_ok { [% call_code %] } sprintf($mess, 'survives');
 	}
 
-	if(scalar keys %output) {
+	if(scalar keys %{$output}) {
 		if($ENV{'TEST_VERBOSE'}) {
 			diag('result: ', Dumper($result));
 		}
-		returns_ok($result, \%output, 'output validates');
+		returns_ok($result, $output, 'output validates');
 	}
+}
+
+my $positions = populate_positions(\%input);
+
+foreach my $case (@{fuzz_inputs()}) {
+	# my %params;
+	# lives_ok { %params = get_params(\%input, %$case) } 'Params::Get input check';
+	# lives_ok { validate_strict(\%input, %params) } 'Params::Validate::Strict input check';
+
+	my $input;
+	my $name = delete $case->{'_name'};
+	if((ref($case) eq 'HASH') && exists($case->{'_input'})) {
+		$input = $case->{'_input'};
+	} else {
+		$input = $case;
+	}
+
+	if(my $line = (delete $case->{'_LINE'} || delete $input{'_LINE'})) {
+		diag("Test case from line number $line") if($ENV{'TEST_VERBOSE'});
+	}
+
+	run_tests($case, $input, \%output, $name, $positions);
 }
 
 foreach my $transform (keys %transforms) {
