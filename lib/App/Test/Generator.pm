@@ -2218,23 +2218,48 @@ foreach my $case (@{fuzz_inputs()}) {
 
 diag('Run ', scalar(keys %transforms), ' transform tests') if($ENV{'TEST_VERBOSE'});
 
+# Generate transform tests
+# Don't generate invalid data, that's all already done,
+#	this is about verifying the transorms
+my @tests = ();
 foreach my $transform (keys %transforms) {
 	my $input = $transforms{$transform}{'input'} || {};
 	my $output = $transforms{$transform}{'output'} || {};
 
 	::diag("TODO: tests for transform $transform");
-	use Data::Dumper;
-	foreach my $case (@{fuzz_transforms($transform, $input, $output)}) {
-		# BUILD CODE TO CALL FUNCTION
-		# CALL FUNCTION
-		# CHECK STATUS CORRECT
-		# IF STATUS EQ LIVES
-		#   CHECK OUTPUT USING returns_ok
-		# FI
-		diag(Dumper($input));
-		run_tests($case, $input, \%output, $positions);
+	# BUILD CODE TO CALL FUNCTION
+	# CALL FUNCTION
+	# CHECK STATUS CORRECT
+	# IF STATUS EQ LIVES
+	#   CHECK OUTPUT USING returns_ok
+	# FI
+	my $test;
+	foreach my $field (keys %input) {
+		my $spec = $input{$field} || {};
+		my $type = $spec->{type} || 'string';
+
+		if(($type eq 'number') || ($type eq 'integer') || ($type eq 'float')) {
+			# TODO: needs more than one test
+			if(defined $spec->{min}) {
+				$test->{$field} = $spec->{min} + 1;	# just inside
+				# $test->{$field} = $spec->{min};	# border
+			} else {
+				$test->{$field} = 0;	# No min, so 0 should be allowable
+				# $test->{$field} = -1;	# No min, so -1 should be allowable
+			}
+			if(defined $spec->{max}) {
+				$test->{$field} = $spec->{max} - 1;	# just inside
+				# $test->{$field} = $spec->{max};	# border
+			}
+		} else {
+			die("TODO: transform type $type");
+		}
 	}
+	push @tests, $test;
 }
+
+	use Data::Dumper;
+	diag(Dumper(\@tests));
 
 [% corpus_code %]
 
