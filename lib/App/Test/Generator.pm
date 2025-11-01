@@ -247,12 +247,18 @@ The keyword C<undef> is used to indicate that the C<function> returns nothing.
 =item * C<%transforms> - list of transformations from input sets to output sets
 
 TO BE IMPLEMENTED.
+
+It takes a list of subsets of the input and output definitions,
+and verifies that data from each input subset is correctly transformed into data from the matching output subset.
+
 This is a draft definition of the schema.
 
   ---
   module: builtin
   function: abs
   test_undef: no
+  test_empty: no
+  test_nuls: no
 
   input:
     number:
@@ -264,17 +270,19 @@ This is a draft definition of the schema.
   transforms:
     positive:
       input:
-        type: number
-        position: 0
-        min: 0
+        number:
+          type: number
+          position: 0
+          min: 0
       output:
         type: number
         min: 0
     negative:
       input:
-        type: number
-        position: 0
-        max: 0
+        number:
+          type: number
+          position: 0
+          max: 0
       output:
         type: number
         min: 0
