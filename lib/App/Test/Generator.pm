@@ -2136,7 +2136,7 @@ sub populate_positions
 	return $rc;
 }
 
-sub run_tests
+sub run_test
 {
 	my($case, $input, $output, $positions) = @_;
 
@@ -2226,11 +2226,11 @@ foreach my $case (@{fuzz_inputs()}) {
 		diag("Test case from line number $line") if($ENV{'TEST_VERBOSE'});
 	}
 
-	run_tests($case, $input, \%output, $positions);
+	run_test($case, $input, \%output, $positions);
 }
 
 diag('Run ', scalar(keys %transforms), ' transform tests') if($ENV{'TEST_VERBOSE'});
-diag('-' x 60);
+# diag('-' x 60);
 
 # Build the foundation - which is a basic test with sensible defaults in the field
 foreach my $transform (keys %transforms) {
@@ -2264,13 +2264,14 @@ foreach my $transform (keys %transforms) {
 
 	# The foundation should work
 	my $case = { _name => "basic $transform test", _LINE => __LINE__ };
-	run_tests($case, $foundation, \%output, $positions);
+	my $positions = populate_positions(\%input);
+	run_test($case, $foundation, \%output, $positions);
 
 	# Generate transform tests
 	# Don't generate invalid data, that's all already done,
 	#	this is about verifying the transorms
-	my @tests = ();
-	::diag("tests for transform $transform") if($ENV{'TEST_VERBOSE'});
+	my @tests;
+	diag("tests for transform $transform") if($ENV{'TEST_VERBOSE'});
 
 	# Now modify the foundation with test code
 
@@ -2281,38 +2282,30 @@ foreach my $transform (keys %transforms) {
 	#   CHECK OUTPUT USING returns_ok
 	# FI
 
-
-	# XXXXXXXXXXXXXXXXXXXXXXx Fix the positions
 	foreach my $field (keys %input) {
 		my $spec = $input{$field} || {};
 		my $type = $spec->{type} || 'string';
 
 		if(($type eq 'number') || ($type eq 'integer') || ($type eq 'float')) {
 			if(defined $spec->{min}) {
-				$foundation->{$field} = $spec->{min} + 1;	# just inside
-				push @tests, $foundation;
-				$foundation->{$field} = $spec->{min};	# border
-				push @tests, $foundation;
+				push @tests, { %{$foundation}, ( $field => $spec->{min} + 1 ) };	# just inside
+				push @tests, { %{$foundation}, ( $field => $spec->{min} ) };	# border
 			} else {
-				$foundation->{$field} = 0;	# No min, so 0 should be allowable
-				push @tests, $foundation;
-				$foundation->{$field} = -1;	# No min, so -1 should be allowable
-				push @tests, $foundation;
+				push @tests, { %{$foundation}, ( $field => 0 ) };	# No min, so 0 should be allowable
+				push @tests, { %{$foundation}, ( $field => -1 ) };	# No min, so -1 should be allowable
 			}
 			if(defined $spec->{max}) {
-				$foundation->{$field} = $spec->{max} - 1;	# just inside
-				push @tests, $foundation;
-				$foundation->{$field} = $spec->{max};	# border
-				push @tests, $foundation;
+				push @tests, { %{$foundation}, ( $field => $spec->{max} - 1 ) };	# just inside
+				push @tests, { %{$foundation}, ( $field => $spec->{max} ) };	# border
 			}
 		} else {
 			die("TODO: transform type $type for test case");
 		}
 	}
 
-	use Data::Dumper;
-	diag($transform);
-	diag(Dumper(\@tests));
+	foreach my $test(@tests) {
+		run_test({ _name => $transform }, $test, \%output, $positions);
+	}
 }
 
 [% corpus_code %]
