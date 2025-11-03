@@ -1230,7 +1230,8 @@ sub rand_unicode_char {
 }
 
 # Generate a string: mostly ASCII, sometimes unicode, sometimes nul bytes or combining marks
-sub rand_str {
+sub rand_str
+{
 	my $len = shift || int(rand(10)) + 1;
 
 	my @chars;
@@ -1309,7 +1310,8 @@ sub rand_num {
 
 sub rand_arrayref {
 	my $len = shift || int(rand(3)) + 1; # small arrays
-	[ map { rand_str() } 1..$len ];
+
+	return [ map { rand_str() } 1..$len ];
 }
 
 sub rand_hashref {
@@ -2360,27 +2362,55 @@ foreach my $transform (keys %transforms) {
 				%{$foundation},
 				$field => $spec->{value},
 				_LINE => __LINE__
-				# _TRANSFORM => $transform_name,
 				# _DESCRIPTION => "$transform_name: $field=$spec->{value}"
 			};
 			next;
 		}
 
+		# Generate edge cases based on type and contraints
 		if(($type eq 'number') || ($type eq 'integer') || ($type eq 'float')) {
 			if(defined $spec->{min}) {
 				push @tests, { %{$foundation}, ( $field => $spec->{min} + 1 ) };	# just inside
 				push @tests, { %{$foundation}, ( $field => $spec->{min} ) };	# border
+				# Test 0 if it's in range
+				push @tests, { %{$foundation}, ( $field => 0 ) } if($spec->{'min'} < -1);
 			} else {
 				push @tests, { %{$foundation}, ( $field => 0 ) };	# No min, so 0 should be allowable
-				push @tests, { %{$foundation}, ( $field => -1 ) };	# No min, so -1 should be allowable
+				push @tests, { %{$foundation}, ( $field => (($type eq 'integer') ? -1 : -0.1) ) };	# No min, so -1 should be allowable
 			}
 			if(defined $spec->{max}) {
-				push @tests, { %{$foundation}, ( $field => $spec->{max} - 1 ) };	# just inside
-				push @tests, { %{$foundation}, ( $field => $spec->{max} ) };	# border
+				push @tests, { %{$foundation}, ( $field => $spec->{max} - (($type eq 'integer') ? 1 : 0.1 ) ) };	# just inside
+				if((defined $spec->{min}) && ($spec->{'min'} != $spec->{'max'})) {
+					push @tests, { %{$foundation}, ( $field => $spec->{max} ) };	# border
+				}
 			}
+		} elsif($type eq 'string') {
+			if(defined $spec->{min}) {
+				push @tests, { %{$foundation}, ( $field => rand_str($spec->{min} + 1) ) };	# just inside
+				push @tests, { %{$foundation}, ( $field => rand_str($spec->{min}) ) };	# border
+			} else {
+				push @tests, { %{$foundation}, ( $field => rand_str() ) };
+			}
+			if(defined $spec->{max}) {
+				push @tests, { %{$foundation}, ( $field => rand_str($spec->{max} - 1) ) };	# just inside
+				if((defined $spec->{min}) && ($spec->{'min'} != $spec->{'max'})) {
+					push @tests, { %{$foundation}, ( $field => rand_str($spec->{max}) ) };	# border
+				}
+			}
+		} elsif($type eq 'boolean') {
+			push @tests, { %{$foundation}, ( $field => 1 ) }, { %{$foundation}, ( $field => 0 ) };
 		} else {
 			die("TODO: transform type $type for test case");
 		}
+	}
+
+	if($config{'dedup'}) {
+		# dedup, fuzzing can easily generate repeats
+		my %seen;
+		@tests = grep {
+			my $dump = encode_json($_);
+			!$seen{$dump}++
+		} @tests;
 	}
 
 	foreach my $test(@tests) {
