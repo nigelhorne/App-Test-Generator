@@ -1546,12 +1546,12 @@ sub fuzz_inputs
 					if((!exists($spec->{min})) || ($spec->{min} == 0)) {
 						# '' should die unless it's in the memberof list
 						if(defined($spec->{'memberof'}) && (!grep { $_ eq '' } @{$spec->{'memberof'}})) {
-							push @cases, { %mandatory_args, ( $arg_name => '', _name => $arg_name, _STATUS => 'DIES' ) }
+							push @cases, { %mandatory_args, ( $arg_name => '', _NAME => $arg_name, _STATUS => 'DIES' ) }
 						} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
 							# Data::Random
 							push @cases, { %mandatory_args, _input => rand_set(set => $spec->{'memberof'}, size => 1) }
 						} else {
-							push @cases, { %mandatory_args, ( $arg_name => '', _name => $arg_name ) } if((!exists($spec->{min})) || ($spec->{min} == 0));
+							push @cases, { %mandatory_args, ( $arg_name => '', _NAME => $arg_name ) } if((!exists($spec->{min})) || ($spec->{min} == 0));
 						}
 					}
 					# push @cases, { $arg_name => "emoji \x{1F600}" };
@@ -2236,7 +2236,7 @@ sub run_test
 		diag('input: ', Dumper($input));
 	}
 
-	my $name = $case->{'_name'};
+	my $name = $case->{'_NAME'};
 	my $result;
 	my $mess;
 	if(defined($input) && !ref($input)) {
@@ -2377,7 +2377,7 @@ foreach my $transform (keys %transforms) {
 	}
 
 	# The foundation should work
-	my $case = { _name => "basic $transform test", _LINE => __LINE__ };
+	my $case = { _NAME => "basic $transform test", _LINE => __LINE__ };
 	my $positions = populate_positions(\%input);
 	run_test($case, $foundation, \%output, $positions);
 
@@ -2458,7 +2458,7 @@ foreach my $transform (keys %transforms) {
 	}
 
 	foreach my $test(@tests) {
-		run_test({ _name => $transform }, $test, \%output, $positions);
+		run_test({ _NAME => $transform }, $test, \%output, $positions);
 	}
 }
 
