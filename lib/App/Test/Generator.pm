@@ -386,7 +386,7 @@ The current supported variables are
 
 =back
 
-=head1 OUTPUT
+=head2 OUTPUT
 
 By default, writes C<t/fuzz.t>.
 The generated test:
@@ -407,15 +407,15 @@ The generated test:
 
 =back
 
-=head1 TRANSFORMS
+=head2 TRANSFORMS
 
-=head2 Overview
+=head3 Overview
 
 Transforms allow you to define how input data should be transformed into output data.
 This is useful for testing functions that convert between formats, normalize data,
 or apply business logic transformations on a set of data to different set of data.
 
-=head2 Configuration Example
+=head3 Configuration Example
 
   ---
   module: Math::Utils
@@ -459,7 +459,7 @@ or apply business logic transformations on a set of data to different set of dat
         type: number
         value: 0
 
-=head2 Transform Validation Rules
+=head3 Transform Validation Rules
 
 For each transform:
 1. Generate test cases using the transform's input schema

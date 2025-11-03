@@ -319,7 +319,7 @@ Recognized items:
     - `test_empty`, test with empty strings (default: 1)
     - `dedup`, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 
-# OUTPUT
+## OUTPUT
 
 By default, writes `t/fuzz.t`.
 The generated test:
@@ -331,15 +331,15 @@ The generated test:
 - Validates outputs with [Return::Set](https://metacpan.org/pod/Return%3A%3ASet)
 - Runs static `is(... )` corpus tests from Perl and/or YAML corpus
 
-# TRANSFORMS
+## TRANSFORMS
 
-## Overview
+### Overview
 
 Transforms allow you to define how input data should be transformed into output data.
 This is useful for testing functions that convert between formats, normalize data,
-or apply business logic transformations.
+or apply business logic transformations on a set of data to different set of data.
 
-## Configuration Example
+### Configuration Example
 
     ---
     module: Math::Utils
@@ -383,7 +383,7 @@ or apply business logic transformations.
           type: number
           value: 0
 
-## Transform Validation Rules
+### Transform Validation Rules
 
 For each transform:
 1\. Generate test cases using the transform's input schema
