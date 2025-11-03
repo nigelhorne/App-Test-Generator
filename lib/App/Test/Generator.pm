@@ -20,6 +20,7 @@ use Data::Dumper;
 use Data::Section::Simple;
 use File::Basename qw(basename);
 use File::Spec;
+use Module::Load::Conditional qw(check_install can_load);
 use Template;
 use YAML::XS qw(LoadFile);
 
@@ -721,12 +722,9 @@ sub generate
 		$module = $guess || 'Unknown::Module';
 	}
 
-	# FIXME:  Always fails with "Can't locate" - either method
-	# eval "require \"$module\"; \"$module\"->import()";
-	# eval { require $module };
-	# if($@) {
-		# carp(__PACKAGE__, ' (', __LINE__, "): $@");
-	# }
+	if($module && ($module ne 'Unknown::Module')) {
+		_validate_module($module, $conf_file)
+	}
 
 	# --- YAML corpus support (yaml_cases is filename string) ---
 	my %yaml_corpus_data;
@@ -832,6 +830,49 @@ sub generate
 		       ($type eq 'number') ||
 		       ($type eq 'float') ||
 		       ($type eq 'object'));
+	}
+
+	sub _validate_module {
+		my ($module, $conf_file) = @_;
+		
+		return 1 unless $module;  # No module to validate (builtin functions)
+		
+		# Check if the module can be found
+		my $mod_info = check_install(module => $module);
+		
+		if (!$mod_info) {
+			# Module not found - this is just a warning, not an error
+			# The module might not be installed on the generation machine
+			# but could be on the test machine
+			carp("Warning: Module '$module' not found in \@INC during generation.");
+			carp("  Config file: $conf_file");
+			carp("  This is OK if the module will be available when tests run.");
+			carp("  If this is unexpected, check your module name and installation.");
+			return 0;  # Not found, but not fatal
+		}
+		
+		# Module was found
+		if ($ENV{TEST_VERBOSE} || $ENV{GENERATOR_VERBOSE}) {
+			print STDERR "Found module '$module' at: $mod_info->{file}\n",
+				'  Version: ', ($mod_info->{version} || 'unknown'), "\n";
+		}
+		
+		# Optionally try to load it (disabled by default since it can have side effects)
+		if ($ENV{GENERATOR_VALIDATE_LOAD}) {
+			my $loaded = can_load(modules => { $module => undef }, verbose => 0);
+			
+			if (!$loaded) {
+				carp("Warning: Module '$module' found but failed to load: $Module::Load::Conditional::ERROR");
+				carp("  This might indicate a broken installation or missing dependencies.");
+				return 0;
+			}
+			
+			if ($ENV{TEST_VERBOSE} || $ENV{GENERATOR_VERBOSE}) {
+				print STDERR "Successfully loaded module '$module'\n";
+			}
+		}
+		
+		return 1;
 	}
 
 	sub perl_sq {
