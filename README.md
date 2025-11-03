@@ -141,6 +141,8 @@ The documentation here covers the old trusted input style input, but that will g
 [Config::Abstraction](https://metacpan.org/pod/Config%3A%3AAbstraction) files.
 Example: the generator expects your config to use `our %input`, `our $function`, etc.
 
+## INPUT
+
 Recognized items:
 
 - `%input` - input params with keys => type/optional specs:
@@ -317,6 +319,79 @@ Recognized items:
     - `test_empty`, test with empty strings (default: 1)
     - `dedup`, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 
+# OUTPUT
+
+By default, writes `t/fuzz.t`.
+The generated test:
+
+- Seeds RND (if configured) for reproducible fuzz runs
+- Uses edge cases (per-field and per-type) with configurable probability
+- Runs `$iterations` fuzz cases plus appended edge-case runs
+- Validates inputs with Params::Get / Params::Validate::Strict
+- Validates outputs with [Return::Set](https://metacpan.org/pod/Return%3A%3ASet)
+- Runs static `is(... )` corpus tests from Perl and/or YAML corpus
+
+# TRANSFORMS
+
+## Overview
+
+Transforms allow you to define how input data should be transformed into output data.
+This is useful for testing functions that convert between formats, normalize data,
+or apply business logic transformations.
+
+## Configuration Example
+
+    ---
+    module: Math::Utils
+    function: normalize_number
+    
+    input:
+      value:
+        type: number
+        position: 0
+    
+    output:
+      type: number
+    
+    transforms:
+      positive_stays_positive:
+        input:
+          value:
+            type: number
+            min: 0
+            max: 1000
+        output:
+          type: number
+          min: 0
+          max: 1
+      
+      negative_becomes_zero:
+        input:
+          value:
+            type: number
+            max: 0
+        output:
+          type: number
+          value: 0
+      
+      preserves_zero:
+        input:
+          value:
+            type: number
+            value: 0
+        output:
+          type: number
+          value: 0
+
+## Transform Validation Rules
+
+For each transform:
+1\. Generate test cases using the transform's input schema
+2\. Call the function with those inputs
+3\. Validate the output matches the transform's output schema
+4\. If output has a specific 'value', check exact match
+5\. If output has constraints (min/max), validate within bounds
+
 # EXAMPLES
 
 ## Math::Simple::add()
@@ -466,18 +541,6 @@ This example takes you through testing the online\_render method of [HTML::Genea
               prove -lr t/fuzz/
             env:
               AUTOMATED_TESTING: 1
-
-# OUTPUT
-
-By default, writes `t/fuzz.t`.
-The generated test:
-
-- Seeds RND (if configured) for reproducible fuzz runs
-- Uses edge cases (per-field and per-type) with configurable probability
-- Runs `$iterations` fuzz cases plus appended edge-case runs
-- Validates inputs with Params::Get / Params::Validate::Strict
-- Validates outputs with [Return::Set](https://metacpan.org/pod/Return%3A%3ASet)
-- Runs static `is(... )` corpus tests from Perl and/or YAML corpus
 
 # NOTES
 

@@ -193,6 +193,8 @@ The documentation here covers the old trusted input style input, but that will g
 L<Config::Abstraction> files.
 Example: the generator expects your config to use C<our %input>, C<our $function>, etc.
 
+=head2 INPUT
+
 Recognized items:
 
 =over 4
@@ -384,6 +386,88 @@ The current supported variables are
 
 =back
 
+=head1 OUTPUT
+
+By default, writes C<t/fuzz.t>.
+The generated test:
+
+=over 4
+
+=item * Seeds RND (if configured) for reproducible fuzz runs
+
+=item * Uses edge cases (per-field and per-type) with configurable probability
+
+=item * Runs C<$iterations> fuzz cases plus appended edge-case runs
+
+=item * Validates inputs with Params::Get / Params::Validate::Strict
+
+=item * Validates outputs with L<Return::Set>
+
+=item * Runs static C<is(... )> corpus tests from Perl and/or YAML corpus
+
+=back
+
+=head1 TRANSFORMS
+
+=head2 Overview
+
+Transforms allow you to define how input data should be transformed into output data.
+This is useful for testing functions that convert between formats, normalize data,
+or apply business logic transformations on a set of data to different set of data.
+
+=head2 Configuration Example
+
+  ---
+  module: Math::Utils
+  function: normalize_number
+  
+  input:
+    value:
+      type: number
+      position: 0
+  
+  output:
+    type: number
+  
+  transforms:
+    positive_stays_positive:
+      input:
+        value:
+          type: number
+          min: 0
+          max: 1000
+      output:
+        type: number
+        min: 0
+        max: 1
+    
+    negative_becomes_zero:
+      input:
+        value:
+          type: number
+          max: 0
+      output:
+        type: number
+        value: 0
+    
+    preserves_zero:
+      input:
+        value:
+          type: number
+          value: 0
+      output:
+        type: number
+        value: 0
+
+=head2 Transform Validation Rules
+
+For each transform:
+1. Generate test cases using the transform's input schema
+2. Call the function with those inputs
+3. Validate the output matches the transform's output schema
+4. If output has a specific 'value', check exact match
+5. If output has constraints (min/max), validate within bounds
+
 =head1 EXAMPLES
 
 =head2 Math::Simple::add()
@@ -533,27 +617,6 @@ This example takes you through testing the online_render method of L<HTML::Genea
             prove -lr t/fuzz/
           env:
             AUTOMATED_TESTING: 1
-
-=head1 OUTPUT
-
-By default, writes C<t/fuzz.t>.
-The generated test:
-
-=over 4
-
-=item * Seeds RND (if configured) for reproducible fuzz runs
-
-=item * Uses edge cases (per-field and per-type) with configurable probability
-
-=item * Runs C<$iterations> fuzz cases plus appended edge-case runs
-
-=item * Validates inputs with Params::Get / Params::Validate::Strict
-
-=item * Validates outputs with L<Return::Set>
-
-=item * Runs static C<is(... )> corpus tests from Perl and/or YAML corpus
-
-=back
 
 =cut
 
