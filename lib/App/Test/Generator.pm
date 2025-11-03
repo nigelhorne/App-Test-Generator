@@ -415,6 +415,8 @@ Transforms allow you to define how input data should be transformed into output 
 This is useful for testing functions that convert between formats, normalize data,
 or apply business logic transformations on a set of data to different set of data.
 
+Transform schemas also have the keyword C<value>, when a specific value is required
+
 =head3 Configuration Example
 
   ---
@@ -2351,6 +2353,18 @@ foreach my $transform (keys %transforms) {
 	foreach my $field (keys %input) {
 		my $spec = $input{$field} || {};
 		my $type = $spec->{type} || 'string';
+
+		# If there's a specific value, test that exact value
+		if (exists $spec->{value}) {
+			push @tests, {
+				%{$foundation},
+				$field => $spec->{value},
+				_LINE => __LINE__
+				# _TRANSFORM => $transform_name,
+				# _DESCRIPTION => "$transform_name: $field=$spec->{value}"
+			};
+			next;
+		}
 
 		if(($type eq 'number') || ($type eq 'integer') || ($type eq 'float')) {
 			if(defined $spec->{min}) {
