@@ -2130,16 +2130,6 @@ sub generate_tests
 				}
 			}
 		}
-		# transform verification tests
-		if (defined $spec->{transform}) {
-			# Test that transform is applied before validation
-			push @cases, {
-				%mandatory_args, (
-					$field => '  UPPERCASE  ',
-					_expected_after_transform => 'uppercase'
-				)
-			};
-		}
 
 		# case_sensitive tests for memberof
 		if (defined $spec->{memberof} && exists $spec->{case_sensitive}) {
@@ -2167,14 +2157,6 @@ sub generate_tests
 		# TODO:	How do we generate tests for cross-field validation?
 	}
 
-	return \@cases;
-}
-
-sub fuzz_transforms {
-	my($transform, $input, $output) = @_;
-	my @cases;
-
-	push @cases, @{generate_tests(\%input, {})};
 	return \@cases;
 }
 
@@ -2299,7 +2281,7 @@ foreach my $transform (keys %transforms) {
 	my $input = $transforms{$transform}{'input'} || {};
 	my $output = $transforms{$transform}{'output'} || {};
 
-	my $foundation;
+	my $foundation;	# basic set of data with every field filled in with a sensible default value
 
 	foreach my $field (keys %input) {
 		my $spec = $input->{$field} || {};
@@ -2319,6 +2301,28 @@ foreach my $transform (keys %transforms) {
 					$foundation->{$field} = -0.1;	# No min, so -0.1 should be allowable
 				}
 			}
+		} elsif($type eq 'string') {
+			if(defined $spec->{min} && $spec->{min} > 0) {
+				$foundation->{$field} = 'a' x $spec->{min};
+			} elsif(defined $spec->{max} && $spec->{max} > 0) {
+				$foundation->{$field} = 'b' x $spec->{max};
+			} else {
+				$foundation->{$field} = 'test_value';
+			}
+		} elsif ($type eq 'integer') {
+			if (defined $spec->{min}) {
+				$foundation->{$field} = $spec->{min};
+			} elsif (defined $spec->{max}) {
+				$foundation->{$field} = rand_int() + $spec->{max};
+			} else {
+				$foundation->{$field} = rand_int();
+			}
+		} elsif ($type eq 'boolean') {
+			$foundation->{$field} = 1;
+		} elsif ($type eq 'arrayref') {
+			$foundation->{$field} = ['test'];
+		} elsif ($type eq 'hashref') {
+			$foundation->{$field} = { key => 'value' };
 		} else {
 			die("TODO: transform type $type for foundation");
 		}
