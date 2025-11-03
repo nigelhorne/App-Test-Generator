@@ -649,6 +649,9 @@ sub generate
 				# Legacy file format. This will go away.
 				# TODO: remove this code
 				$config = _load_conf(File::Spec->rel2abs($conf_file));
+				if($config) {
+					carp("$conf_file: Loading perl files as configs is deprecated and will be removed soon.");
+				}
 			}
 		}
 
