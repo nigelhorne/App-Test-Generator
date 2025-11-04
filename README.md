@@ -141,7 +141,7 @@ The documentation here covers the old trusted input style input, but that will g
 [Config::Abstraction](https://metacpan.org/pod/Config%3A%3AAbstraction) files.
 Example: the generator expects your config to use `our %input`, `our $function`, etc.
 
-## INPUT
+## SCHEMA
 
 Recognized items:
 
@@ -192,8 +192,6 @@ Recognized items:
     The keyword `undef` is used to indicate that the `function` returns nothing.
 
 - `%transforms` - list of transformations from input sets to output sets
-
-    TO BE IMPLEMENTED.
 
     It takes a list of subsets of the input and output definitions,
     and verifies that data from each input subset is correctly transformed into data from the matching output subset.
@@ -321,7 +319,6 @@ Recognized items:
 
 ## OUTPUT
 
-By default, writes `t/fuzz.t`.
 The generated test:
 
 - Seeds RND (if configured) for reproducible fuzz runs
@@ -338,6 +335,8 @@ The generated test:
 Transforms allow you to define how input data should be transformed into output data.
 This is useful for testing functions that convert between formats, normalize data,
 or apply business logic transformations on a set of data to different set of data.
+
+Transform schemas also have the keyword `value`, when a specific value is required
 
 ### Configuration Example
 
@@ -541,6 +540,12 @@ This example takes you through testing the online\_render method of [HTML::Genea
               prove -lr t/fuzz/
             env:
               AUTOMATED_TESTING: 1
+
+# METHODS
+
+    generate($schema_file, $test_file)
+
+Takes a schema file and produces a test file (or STDOUT).
 
 # NOTES
 

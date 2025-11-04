@@ -194,7 +194,7 @@ The documentation here covers the old trusted input style input, but that will g
 L<Config::Abstraction> files.
 Example: the generator expects your config to use C<our %input>, C<our $function>, etc.
 
-=head2 INPUT
+=head2 SCHEMA
 
 Recognized items:
 
@@ -247,8 +247,6 @@ The output can be set to the string 'undef' if the routine should return the und
 The keyword C<undef> is used to indicate that the C<function> returns nothing.
 
 =item * C<%transforms> - list of transformations from input sets to output sets
-
-TO BE IMPLEMENTED.
 
 It takes a list of subsets of the input and output definitions,
 and verifies that data from each input subset is correctly transformed into data from the matching output subset.
@@ -389,7 +387,6 @@ The current supported variables are
 
 =head2 OUTPUT
 
-By default, writes C<t/fuzz.t>.
 The generated test:
 
 =over 4
@@ -621,11 +618,17 @@ This example takes you through testing the online_render method of L<HTML::Genea
           env:
             AUTOMATED_TESTING: 1
 
+=head1 METHODS
+
+  generate($schema_file, $test_file)
+
+Takes a schema file and produces a test file (or STDOUT).
+
 =cut
 
 sub generate
 {
-	my ($conf_file, $outfile) = @_;
+	my ($schema_file, $test_file) = @_;
 
 	# --- Globals exported by the user's conf (all optional except function maybe) ---
 	# Ensure data don't persist across calls, which would allow
@@ -635,22 +638,22 @@ sub generate
 
 	@edge_case_array = ();
 
-	if(defined($conf_file)) {
+	if(defined($schema_file)) {
 		# --- Load configuration safely (require so config can use 'our' variables) ---
 		# FIXME:  would be better to use Config::Abstraction, since requiring the user's config could execute arbitrary code
-		# my $abs = $conf_file;
+		# my $abs = $schema_file;
 		# $abs = "./$abs" unless $abs =~ m{^/};
 		# require $abs;
 
 		my $config;
-		if($config = Config::Abstraction->new(config_dirs => ['.', ''], config_file => $conf_file)) {
+		if($config = Config::Abstraction->new(config_dirs => ['.', ''], config_file => $schema_file)) {
 			$config = $config->all();
 			if(defined($config->{'$module'}) || defined($config->{'our $module'}) || !defined($config->{'module'})) {
 				# Legacy file format. This will go away.
 				# TODO: remove this code
-				$config = _load_conf(File::Spec->rel2abs($conf_file));
+				$config = _load_conf(File::Spec->rel2abs($schema_file));
 				if($config) {
-					carp("$conf_file: Loading perl files as configs is deprecated and will be removed soon.");
+					carp("$schema_file: Loading perl files as configs is deprecated and will be removed soon.");
 				}
 			}
 		}
@@ -661,21 +664,21 @@ sub generate
 				if(ref($config->{input}) eq 'HASH') {
 					%input = %{$config->{input}}
 				} elsif(defined($config->{'input'}) && ($config->{'input'} ne 'undef')) {
-					croak("$conf_file: input should be a hash, not ", ref($config->{'input'}));
+					croak("$schema_file: input should be a hash, not ", ref($config->{'input'}));
 				}
 			}
 			if(exists($config->{output})) {
 				if(ref($config->{output}) eq 'HASH') {
 					%output = %{$config->{output}}
 				} elsif(defined($config->{'output'}) && ($config->{'output'} ne 'undef')) {
-					croak("$conf_file: output should be a hash");
+					croak("$schema_file: output should be a hash");
 				}
 			}
 			if(exists($config->{transforms})) {
 				if(ref($config->{transforms}) eq 'HASH') {
 					%transforms = %{$config->{transforms}}
 				} elsif(defined($config->{'transforms'}) && ($config->{'transforms'} ne 'undef')) {
-					croak("$conf_file: transforms should be a hash");
+					croak("$schema_file: transforms should be a hash");
 				}
 			}
 			%cases = %{$config->{cases}} if(exists($config->{cases}));
@@ -695,7 +698,7 @@ sub generate
 		}
 		_validate_config($config);
 	} else {
-		croak 'Usage: generate(conf_file [, outfile])';
+		croak 'Usage: generate(schema_file [, outfile])';
 	}
 
 	# sensible defaults
@@ -720,13 +723,13 @@ sub generate
 	if($module eq 'builtin') {
 		undef $module;
 	} elsif (!$module) {
-		(my $guess = basename($conf_file)) =~ s/\.(conf|pl|pm|yml|yaml)$//;
+		(my $guess = basename($schema_file)) =~ s/\.(conf|pl|pm|yml|yaml)$//;
 		$guess =~ s/-/::/g;
 		$module = $guess || 'Unknown::Module';
 	}
 
 	if($module && ($module ne 'Unknown::Module')) {
-		_validate_module($module, $conf_file)
+		_validate_module($module, $schema_file)
 	}
 
 	# --- YAML corpus support (yaml_cases is filename string) ---
@@ -836,7 +839,7 @@ sub generate
 	}
 
 	sub _validate_module {
-		my ($module, $conf_file) = @_;
+		my ($module, $schema_file) = @_;
 		
 		return 1 unless $module;  # No module to validate (builtin functions)
 		
@@ -848,7 +851,7 @@ sub generate
 			# The module might not be installed on the generation machine
 			# but could be on the test machine
 			carp("Warning: Module '$module' not found in \@INC during generation.");
-			carp("  Config file: $conf_file");
+			carp("  Config file: $schema_file");
 			carp("  This is OK if the module will be available when tests run.");
 			carp("  If this is unexpected, check your module name and installation.");
 			return 0;  # Not found, but not fatal
@@ -915,7 +918,7 @@ sub generate
 				next unless defined $def->{$subk};
 				if(ref($def->{$subk})) {
 					unless((ref($def->{$subk}) eq 'ARRAY') || (ref($def->{$subk}) eq 'Regexp')) {
-						croak(__PACKAGE__, ": conf_file, $subk is a nested element, not yet supported (", ref($def->{$subk}), ')');
+						croak(__PACKAGE__, ": schema_file, $subk is a nested element, not yet supported (", ref($def->{$subk}), ')');
 					}
 				}
 				if(($subk eq 'matches') || ($subk eq 'nomatch')) {
@@ -1110,14 +1113,14 @@ sub generate
 	my $test;
 	$tt->process(\$template, $vars, \$test) or die $tt->error();
 
-	if ($outfile) {
-		open my $fh, '>:encoding(UTF-8)', $outfile or die "Cannot open $outfile: $!";
+	if ($test_file) {
+		open my $fh, '>:encoding(UTF-8)', $test_file or die "Cannot open $test_file: $!";
 		print $fh "$test\n";
 		close $fh;
 		if($module) {
-			print "Generated $outfile for $module\::$function with fuzzing + corpus support\n";
+			print "Generated $test_file for $module\::$function with fuzzing + corpus support\n";
 		} else {
-			print "Generated $outfile for $function with fuzzing + corpus support\n";
+			print "Generated $test_file for $function with fuzzing + corpus support\n";
 		}
 	} else {
 		print "$test\n";
