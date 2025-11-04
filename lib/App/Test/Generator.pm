@@ -1432,7 +1432,7 @@ sub fuzz_inputs
 
 			foreach my $field(keys %input) {
 				if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can'))) {
-					::diag("TODO: handle schema keyword '$field'");
+					diag("TODO: handle schema keyword '$field'");
 				}
 			}
 
@@ -1471,7 +1471,7 @@ sub fuzz_inputs
 
 				foreach my $field(keys %{$spec}) {
 					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can'))) {
-						::diag("TODO: handle schema keyword '$field'");
+						diag("TODO: handle schema keyword '$field'");
 					}
 				}
 
@@ -1675,7 +1675,7 @@ sub fuzz_inputs
 				my $spec = $input{$field} || {};
 				foreach my $field(keys %{$spec}) {
 					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can'))) {
-						::diag("TODO: handle schema keyword '$field'");
+						diag("TODO: handle schema keyword '$field'");
 					}
 				}
 			}
