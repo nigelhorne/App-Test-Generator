@@ -4,7 +4,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 # VERSION
 
-        Version 0.12
+Version 0.12
 
 # SYNOPSIS
 
@@ -268,15 +268,15 @@ Transform schemas also have the keyword `value`, when a specific value is requir
     ---
     module: Math::Utils
     function: normalize_number
-    
+
     input:
       value:
         type: number
         position: 0
-    
+
     output:
       type: number
-    
+
     transforms:
       positive_stays_positive:
         input:
@@ -288,7 +288,7 @@ Transform schemas also have the keyword `value`, when a specific value is requir
           type: number
           min: 0
           max: 1
-      
+
       negative_becomes_zero:
         input:
           value:
@@ -297,7 +297,7 @@ Transform schemas also have the keyword `value`, when a specific value is requir
         output:
           type: number
           value: 0
-      
+
       preserves_zero:
         input:
           value:
@@ -565,6 +565,6 @@ Takes a schema file and produces a test file (or STDOUT).
 
 Nigel Horne, `<njh at nigelhorne.com>`
 
-Portions of this module's design and documentation were created with the
+Portions of this module's initial design and documentation were created with the
 assistance of [ChatGPT](https://openai.com/) (GPT-5), with final curation
 and authorship by Nigel Horne.

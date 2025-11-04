@@ -36,7 +36,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 =head1 VERSION
 
-	Version 0.12
+Version 0.12
 
 =head1 SYNOPSIS
 
@@ -337,15 +337,15 @@ Transform schemas also have the keyword C<value>, when a specific value is requi
   ---
   module: Math::Utils
   function: normalize_number
-  
+
   input:
     value:
       type: number
       position: 0
-  
+
   output:
     type: number
-  
+
   transforms:
     positive_stays_positive:
       input:
@@ -357,7 +357,7 @@ Transform schemas also have the keyword C<value>, when a specific value is requi
         type: number
         min: 0
         max: 1
-    
+
     negative_becomes_zero:
       input:
         value:
@@ -366,7 +366,7 @@ Transform schemas also have the keyword C<value>, when a specific value is requi
       output:
         type: number
         value: 0
-    
+
     preserves_zero:
       input:
         value:
@@ -1159,7 +1159,7 @@ sub generate
 
 Nigel Horne, C<< <njh at nigelhorne.com> >>
 
-Portions of this module's design and documentation were created with the
+Portions of this module's initial design and documentation were created with the
 assistance of L<ChatGPT|https://openai.com/> (GPT-5), with final curation
 and authorship by Nigel Horne.
 
@@ -1676,7 +1676,7 @@ sub fuzz_inputs
 			foreach my $field (keys %input) {
 				my $spec = $input{$field} || {};
 				foreach my $field(keys %{$spec}) {
-					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can'))) {
+					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'position'))) {
 						diag("TODO: handle schema keyword '$field'");
 					}
 				}
