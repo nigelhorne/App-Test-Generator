@@ -101,91 +101,6 @@ and generates a L<Test::Most>-based fuzzing harness combining:
 
 =back
 
-=head2 EDGE CASE GENERATION
-
-In addition to purely random fuzz cases, the harness generates
-deterministic edge cases for parameters that declare C<min>, C<max> or C<len> in their schema definitions.
-
-For each constraint, three edge cases are added:
-
-=over 4
-
-=item * Just inside the allowable range
-
-This case should succeed, since it lies strictly within the bounds.
-
-=item * Exactly on the boundary
-
-This case should succeed, since it meets the constraint exactly.
-
-=item * Just outside the boundary
-
-This case is annotated with C<_STATUS = 'DIES'> in the corpus and
-should cause the harness to fail validation or croak.
-
-=back
-
-Supported constraint types:
-
-=over 4
-
-=item * C<number>, C<integer>
-
-Uses numeric values one below, equal to, and one above the boundary.
-
-=item * C<string>
-
-Uses strings of lengths one below, equal to, and one above the boundary.
-
-=item * C<arrayref>
-
-Uses references to arrays of with the number of elements one below, equal to, and one above the boundary.
-
-=item * C<hashref>
-
-Uses hashes with key counts one below, equal to, and one above the
-boundary (C<min> = minimum number of keys, C<max> = maximum number
-of keys).
-
-=item * C<memberof> - arrayref of allowed values for a parameter
-
-This example is for a routine called C<input()> that takes two arguments: C<status> and C<level>.
-C<status> is a string that must have the value C<ok>, C<error> or C<pending>.
-The C<level> argument is an integer that must be one of C<1>, C<5> or C<111>.
-
-  ---
-  input:
-    status:
-      type: string
-      memberof:
-        - ok
-        - error
-        - pending
-    level:
-      type: integer
-      memberof:
-        - 1
-        - 5
-        - 111
-
-The generator will automatically create test cases for each allowed value (inside the member list),
-and at least one value outside the list (which should die or C<croak>, C<_STATUS = 'DIES'>).
-This works for strings, integers, and numbers.
-
-=item * C<boolean> - automatic boundary tests for boolean fields
-
-  input:
-    flag:
-      type: boolean
-
-The generator will automatically create test cases for 0 and 1; true and false; off and on, and values that should trigger C<_STATUS = 'DIES'>.
-
-=back
-
-These edge cases are inserted automatically, in addition to the random
-fuzzing inputs, so each run will reliably probe boundary conditions
-without relying solely on randomness.
-
 =head1 CONFIGURATION
 
 The configuration file is either a file that can be read by L<Config::Abstraction> or a B<trusted input> Perl file that should set variables with C<our>.
@@ -467,6 +382,91 @@ For each transform:
 3. Validate the output matches the transform's output schema
 4. If output has a specific 'value', check exact match
 5. If output has constraints (min/max), validate within bounds
+
+=head2 EDGE CASE GENERATION
+
+In addition to purely random fuzz cases, the harness generates
+deterministic edge cases for parameters that declare C<min>, C<max> or C<len> in their schema definitions.
+
+For each constraint, three edge cases are added:
+
+=over 4
+
+=item * Just inside the allowable range
+
+This case should succeed, since it lies strictly within the bounds.
+
+=item * Exactly on the boundary
+
+This case should succeed, since it meets the constraint exactly.
+
+=item * Just outside the boundary
+
+This case is annotated with C<_STATUS = 'DIES'> in the corpus and
+should cause the harness to fail validation or croak.
+
+=back
+
+Supported constraint types:
+
+=over 4
+
+=item * C<number>, C<integer>
+
+Uses numeric values one below, equal to, and one above the boundary.
+
+=item * C<string>
+
+Uses strings of lengths one below, equal to, and one above the boundary.
+
+=item * C<arrayref>
+
+Uses references to arrays of with the number of elements one below, equal to, and one above the boundary.
+
+=item * C<hashref>
+
+Uses hashes with key counts one below, equal to, and one above the
+boundary (C<min> = minimum number of keys, C<max> = maximum number
+of keys).
+
+=item * C<memberof> - arrayref of allowed values for a parameter
+
+This example is for a routine called C<input()> that takes two arguments: C<status> and C<level>.
+C<status> is a string that must have the value C<ok>, C<error> or C<pending>.
+The C<level> argument is an integer that must be one of C<1>, C<5> or C<111>.
+
+  ---
+  input:
+    status:
+      type: string
+      memberof:
+        - ok
+        - error
+        - pending
+    level:
+      type: integer
+      memberof:
+        - 1
+        - 5
+        - 111
+
+The generator will automatically create test cases for each allowed value (inside the member list),
+and at least one value outside the list (which should die or C<croak>, C<_STATUS = 'DIES'>).
+This works for strings, integers, and numbers.
+
+=item * C<boolean> - automatic boundary tests for boolean fields
+
+  input:
+    flag:
+      type: boolean
+
+The generator will automatically create test cases for 0 and 1; true and false; off and on, and values that should trigger C<_STATUS = 'DIES'>.
+
+=back
+
+These edge cases are inserted automatically, in addition to the random
+fuzzing inputs, so each run will reliably probe boundary conditions
+without relying solely on randomness.
 
 =head1 EXAMPLES
 

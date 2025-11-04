@@ -56,83 +56,6 @@ and generates a [Test::Most](https://metacpan.org/pod/Test%3A%3AMost)-based fuzz
 - Functional or OO mode (via `$new`)
 - Reproducible runs via `$seed` and configurable iterations via `$iterations`
 
-## EDGE CASE GENERATION
-
-In addition to purely random fuzz cases, the harness generates
-deterministic edge cases for parameters that declare `min`, `max` or `len` in their schema definitions.
-
-For each constraint, three edge cases are added:
-
-- Just inside the allowable range
-
-    This case should succeed, since it lies strictly within the bounds.
-
-- Exactly on the boundary
-
-    This case should succeed, since it meets the constraint exactly.
-
-- Just outside the boundary
-
-    This case is annotated with `_STATUS = 'DIES'` in the corpus and
-    should cause the harness to fail validation or croak.
-
-Supported constraint types:
-
-- `number`, `integer`
-
-    Uses numeric values one below, equal to, and one above the boundary.
-
-- `string`
-
-    Uses strings of lengths one below, equal to, and one above the boundary.
-
-- `arrayref`
-
-    Uses references to arrays of with the number of elements one below, equal to, and one above the boundary.
-
-- `hashref`
-
-    Uses hashes with key counts one below, equal to, and one above the
-    boundary (`min` = minimum number of keys, `max` = maximum number
-    of keys).
-
-- `memberof` - arrayref of allowed values for a parameter
-
-    This example is for a routine called `input()` that takes two arguments: `status` and `level`.
-    `status` is a string that must have the value `ok`, `error` or `pending`.
-    The `level` argument is an integer that must be one of `1`, `5` or `111`.
-
-        ---
-        input:
-          status:
-            type: string
-            memberof:
-              - ok
-              - error
-              - pending
-          level:
-            type: integer
-            memberof:
-              - 1
-              - 5
-              - 111
-
-    The generator will automatically create test cases for each allowed value (inside the member list),
-    and at least one value outside the list (which should die or `croak`, `_STATUS = 'DIES'`).
-    This works for strings, integers, and numbers.
-
-- `boolean` - automatic boundary tests for boolean fields
-
-        input:
-          flag:
-            type: boolean
-
-    The generator will automatically create test cases for 0 and 1; true and false; off and on, and values that should trigger `_STATUS = 'DIES'`.
-
-These edge cases are inserted automatically, in addition to the random
-fuzzing inputs, so each run will reliably probe boundary conditions
-without relying solely on randomness.
-
 # CONFIGURATION
 
 The configuration file is either a file that can be read by [Config::Abstraction](https://metacpan.org/pod/Config%3A%3AAbstraction) or a **trusted input** Perl file that should set variables with `our`.
@@ -390,6 +313,83 @@ For each transform:
 3\. Validate the output matches the transform's output schema
 4\. If output has a specific 'value', check exact match
 5\. If output has constraints (min/max), validate within bounds
+
+## EDGE CASE GENERATION
+
+In addition to purely random fuzz cases, the harness generates
+deterministic edge cases for parameters that declare `min`, `max` or `len` in their schema definitions.
+
+For each constraint, three edge cases are added:
+
+- Just inside the allowable range
+
+    This case should succeed, since it lies strictly within the bounds.
+
+- Exactly on the boundary
+
+    This case should succeed, since it meets the constraint exactly.
+
+- Just outside the boundary
+
+    This case is annotated with `_STATUS = 'DIES'` in the corpus and
+    should cause the harness to fail validation or croak.
+
+Supported constraint types:
+
+- `number`, `integer`
+
+    Uses numeric values one below, equal to, and one above the boundary.
+
+- `string`
+
+    Uses strings of lengths one below, equal to, and one above the boundary.
+
+- `arrayref`
+
+    Uses references to arrays of with the number of elements one below, equal to, and one above the boundary.
+
+- `hashref`
+
+    Uses hashes with key counts one below, equal to, and one above the
+    boundary (`min` = minimum number of keys, `max` = maximum number
+    of keys).
+
+- `memberof` - arrayref of allowed values for a parameter
+
+    This example is for a routine called `input()` that takes two arguments: `status` and `level`.
+    `status` is a string that must have the value `ok`, `error` or `pending`.
+    The `level` argument is an integer that must be one of `1`, `5` or `111`.
+
+        ---
+        input:
+          status:
+            type: string
+            memberof:
+              - ok
+              - error
+              - pending
+          level:
+            type: integer
+            memberof:
+              - 1
+              - 5
+              - 111
+
+    The generator will automatically create test cases for each allowed value (inside the member list),
+    and at least one value outside the list (which should die or `croak`, `_STATUS = 'DIES'`).
+    This works for strings, integers, and numbers.
+
+- `boolean` - automatic boundary tests for boolean fields
+
+        input:
+          flag:
+            type: boolean
+
+    The generator will automatically create test cases for 0 and 1; true and false; off and on, and values that should trigger `_STATUS = 'DIES'`.
+
+These edge cases are inserted automatically, in addition to the random
+fuzzing inputs, so each run will reliably probe boundary conditions
+without relying solely on randomness.
 
 # EXAMPLES
 
