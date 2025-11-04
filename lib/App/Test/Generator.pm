@@ -2278,6 +2278,7 @@ sub run_test
 			}
 		}
 		my $args = join(', ', @alist);
+		$args =~ s/%/%%/g;
 		$mess = "[% function %]($args) %s";
 	} else {
 		$mess = "[% function %] %s";
