@@ -124,9 +124,11 @@ Recognized items:
         ---
         module: builtin
         function: abs
-        test_undef: no
-        test_empty: no
-        test_nuls: no
+
+        config:
+          test_undef: no
+          test_empty: no
+          test_nuls: no
 
         input:
           number:

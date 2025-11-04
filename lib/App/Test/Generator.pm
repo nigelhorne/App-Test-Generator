@@ -171,9 +171,11 @@ This is a draft definition of the schema.
   ---
   module: builtin
   function: abs
-  test_undef: no
-  test_empty: no
-  test_nuls: no
+
+  config:
+    test_undef: no
+    test_empty: no
+    test_nuls: no
 
   input:
     number:
@@ -709,9 +711,9 @@ sub generate
 	# dedup: fuzzing can easily generate repeats, default is to remove duplicates
 	foreach my $field ('test_nuls', 'test_undef', 'test_empty', 'dedup') {
 		if(exists($config{$field})) {
-			if(($config{$field} eq 'false') || ($config{$field} eq 'off')) {
+			if(($config{$field} eq 'false') || ($config{$field} eq 'off') || ($config{$field} eq 'no')) {
 				$config{$field} = 0;
-			} elsif(($config{$field} eq 'true') || ($config{$field} eq 'on')) {
+			} elsif(($config{$field} eq 'true') || ($config{$field} eq 'on') || ($config{$field} eq 'yes')) {
 				$config{$field} = 1;
 			}
 		} else {
@@ -2004,8 +2006,8 @@ sub generate_tests
 					push @cases, { %mandatory_args, ( $field => $spec->{min} ) };	# border
 					push @cases, { %mandatory_args, ( $field => $spec->{min} - 1, _STATUS => 'DIES' ) }; # outside
 				} else {
-					push @cases, { $field => 0 };	# No min, so 0 should be allowable
-					push @cases, { $field => -1 };	# No min, so -1 should be allowable
+					push @cases, { $field => 0, _LINE => __LINE__ };	# No min, so 0 should be allowable
+					push @cases, { $field => -1, _LINE => __LINE__ };	# No min, so -1 should be allowable
 				}
 				if(defined $spec->{max}) {
 					push @cases, { %mandatory_args, ( $field => $spec->{max} - 1, _LINE => __LINE__ ) };	# just inside
