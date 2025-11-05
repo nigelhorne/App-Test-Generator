@@ -605,6 +605,7 @@ This example takes you through testing the online_render method of L<HTML::Genea
             make
           env:
             AUTOMATED_TESTING: 1
+            NONINTERACTIVE_TESTING: 1
 
         - name: Generate fuzz tests
           run: |
@@ -619,6 +620,7 @@ This example takes you through testing the online_render method of L<HTML::Genea
             prove -lr t/fuzz/
           env:
             AUTOMATED_TESTING: 1
+            NONINTERACTIVE_TESTING: 1
 
 =head1 METHODS
 

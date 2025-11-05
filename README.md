@@ -4,7 +4,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 # VERSION
 
-Version 0.12
+Version 0.13
 
 # SYNOPSIS
 
@@ -528,6 +528,7 @@ This example takes you through testing the online\_render method of [HTML::Genea
               make
             env:
               AUTOMATED_TESTING: 1
+              NONINTERACTIVE_TESTING: 1
 
           - name: Generate fuzz tests
             run: |
@@ -542,6 +543,7 @@ This example takes you through testing the online\_render method of [HTML::Genea
               prove -lr t/fuzz/
             env:
               AUTOMATED_TESTING: 1
+              NONINTERACTIVE_TESTING: 1
 
 # METHODS
 
