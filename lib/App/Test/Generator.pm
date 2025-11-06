@@ -1541,7 +1541,7 @@ sub fuzz_inputs
 						}
 					} else {
 						if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
-							if(defined($spec->{'notmemberof'}) || (grep { $_ eq 'hello' } @{$spec->{'notmemberof'}})) {
+							if(defined($spec->{'notmemberof'}) && (grep { $_ eq 'hello' } @{$spec->{'notmemberof'}})) {
 								push @cases, { %mandatory_args, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
 							} else {
 								push @cases, { %mandatory_args, ( $arg_name => 'hello' ) };
