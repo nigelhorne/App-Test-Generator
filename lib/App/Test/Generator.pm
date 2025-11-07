@@ -284,6 +284,32 @@ Note that this only works with routines that take named parameters.
 		integer => [ 0, 1, -1, 2**31-1, -(2**31), 2**63-1, -(2**63) ],
 	);
 
+=item * C<%edge_case_array> - specify edge case values for routines that accept a single unnamed parameter
+
+This is specifically designed for simple functions that take one argument without a parameter name.
+These edge cases supplement the normal random string generation, ensuring specific problematic values are always tested.
+During fuzzing iterations, there's a 40% probability that a test case will use a value from edge_case_array instead of randomly generated data.
+
+  ---
+  module: Text::Processor
+  function: sanitize
+
+  input:
+    type: string
+    min: 1
+    max: 1000
+
+  edge_case_array:
+    - "<script>alert('xss')</script>"
+    - "'; DROP TABLE users; --"
+    - "\0null\0byte"
+    - "emoji😊test"
+    - ""
+    - " "
+
+  seed: 42
+  iterations: 50
+
 =item * C<%config> - optional hash of configuration.
 
 The current supported variables are
@@ -1951,6 +1977,11 @@ sub fuzz_inputs
 					push @cases, { _input => 2, _STATUS => 'DIES' };	# invalid boolean
 					push @cases, { _input => 'plugh', _STATUS => 'DIES' };	# invalid boolean
 				}
+			}
+
+			# Test all edge cases
+			foreach my $edge(@edge_case_array) {
+				push @cases, { _input => $edge };
 			}
 		}
 	} else {

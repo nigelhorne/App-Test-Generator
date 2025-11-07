@@ -233,6 +233,32 @@ Recognized items:
                     integer => [ 0, 1, -1, 2**31-1, -(2**31), 2**63-1, -(2**63) ],
             );
 
+- `%edge_case_array` - specify edge case values for routines that accept a single unnamed parameter
+
+    This is specifically designed for simple functions that take one argument without a parameter name.
+    These edge cases supplement the normal random string generation, ensuring specific problematic values are always tested.
+    During fuzzing iterations, there's a 40% probability that a test case will use a value from edge\_case\_array instead of randomly generated data.
+
+        ---
+        module: Text::Processor
+        function: sanitize
+
+        input:
+          type: string
+          min: 1
+          max: 1000
+
+        edge_case_array:
+          - "<script>alert('xss')</script>"
+          - "'; DROP TABLE users; --"
+          - "\0null\0byte"
+          - "emoji😊test"
+          - ""
+          - " "
+
+        seed: 42
+        iterations: 50
+
 - `%config` - optional hash of configuration.
 
     The current supported variables are
@@ -570,3 +596,11 @@ Nigel Horne, `<njh at nigelhorne.com>`
 Portions of this module's initial design and documentation were created with the
 assistance of [ChatGPT](https://openai.com/) (GPT-5), with final curation
 and authorship by Nigel Horne.
+
+# POD ERRORS
+
+Hey! **The above document had some coding errors, which are explained below:**
+
+- Around line 306:
+
+    Non-ASCII character seen before =encoding in '"emoji😊test"'. Assuming UTF-8
