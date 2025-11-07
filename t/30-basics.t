@@ -3,12 +3,12 @@
 use strict;
 use warnings;
 
+use Cwd qw(abs_path);
 use Encode qw(encode);
 use File::Temp qw(tempdir tempfile);
 use File::Spec;
-use Cwd qw(abs_path);
-use YAML::XS qw(DumpFile);
 use Test::Most;
+use YAML::XS qw(DumpFile);
 
 BEGIN { use_ok('App::Test::Generator') }
 

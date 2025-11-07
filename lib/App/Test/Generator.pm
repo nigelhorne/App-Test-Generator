@@ -748,9 +748,6 @@ sub generate
 	if($module eq 'builtin') {
 		undef $module;
 	} elsif(!$module) {
-		if(!defined($function)) {
-			croak("$schema_file: at least one of function and module must be defined");
-		}
 		(my $guess = basename($schema_file)) =~ s/\.(conf|pl|pm|yml|yaml)$//;
 		$guess =~ s/-/::/g;
 		$module = $guess || 'builtin';
@@ -837,9 +834,11 @@ sub generate
 	sub _validate_config {
 		my $config = $_[0];
 
-		for my $key('module', 'function') {
-			croak "Missing required '$key' specification" unless $config->{$key};
+		if((!defined($config->{'module'})) && (!defined($config->{'function'}))) {
+			# Can't work out what should be tested
+			croak('At least one of function and module must be defined');
 		}
+
 		if((!defined($config->{'input'})) && (!defined($config->{'output'}))) {
 			# Routine takes no input and no output, so there's nothing that would be gained using this software
 			croak('You must specify at least one of input and output');
