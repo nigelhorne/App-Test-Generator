@@ -705,11 +705,6 @@ sub generate
 		croak 'Usage: generate(schema_file [, outfile])';
 	}
 
-	# sensible defaults
-	$function ||= 'run';
-	$iterations ||= 50;		 # default fuzz runs if not specified
-	$seed = undef if defined $seed && $seed eq '';	# treat empty as undef
-
 	# dedup: fuzzing can easily generate repeats, default is to remove duplicates
 	foreach my $field ('test_nuls', 'test_undef', 'test_empty', 'dedup') {
 		if(exists($config{$field})) {
@@ -726,15 +721,23 @@ sub generate
 	# Guess module name from config file if not set
 	if($module eq 'builtin') {
 		undef $module;
-	} elsif (!$module) {
+	} elsif(!$module) {
+		if(!defined($function)) {
+			croak("$schema_file: at least one of function and module must be defined");
+		}
 		(my $guess = basename($schema_file)) =~ s/\.(conf|pl|pm|yml|yaml)$//;
 		$guess =~ s/-/::/g;
-		$module = $guess || 'Unknown::Module';
+		$module = $guess || 'builtin';
 	}
 
-	if($module && ($module ne 'Unknown::Module')) {
+	if($module && ($module ne 'builtin')) {
 		_validate_module($module, $schema_file)
 	}
+
+	# sensible defaults
+	$function ||= 'run';
+	$iterations ||= 50;		 # default fuzz runs if not specified
+	$seed = undef if defined $seed && $seed eq '';	# treat empty as undef
 
 	# --- YAML corpus support (yaml_cases is filename string) ---
 	my %yaml_corpus_data;
