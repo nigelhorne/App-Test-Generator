@@ -2376,7 +2376,7 @@ foreach my $transform (keys %transforms) {
 		} elsif ($type eq 'boolean') {
 			$foundation->{$field} = 1;
 		} elsif ($type eq 'arrayref') {
-			$foundation->{$field} = ['test'];
+			$foundation->{$field} = rand_arrayref(defined($spec->{'min'}) ? $spec->{'min'} : ($spec->{'max'} // 5));
 		} elsif ($type eq 'hashref') {
 			$foundation->{$field} = { key => 'value' };
 		} else {
