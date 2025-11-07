@@ -53,7 +53,7 @@ input:
 output:
   type: string
 
-yaml_cases: "/not_there_at_all"
+yaml_cases: /not_there_at_all
 
 CONF
 
