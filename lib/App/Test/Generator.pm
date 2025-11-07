@@ -2429,6 +2429,13 @@ foreach my $transform (keys %transforms) {
 			} else {
 				push @tests, { %{$foundation}, ( $field => 0 ) };	# No min, so 0 should be allowable
 				push @tests, { %{$foundation}, ( $field => (($type eq 'integer') ? -1 : -0.1) ) };	# No min, so -1 should be allowable
+				if(!defined($spec->{'max'})) {
+					if($type eq 'integer') {
+						push @tests, { %{$foundation}, ( $field => rand_int() ) };
+					} else {
+						push @tests, { %{$foundation}, ( $field => rand_num() ) };
+					}
+				}
 			}
 			if(defined $spec->{max}) {
 				push @tests, { %{$foundation}, ( $field => $spec->{max} - (($type eq 'integer') ? 1 : 0.1 ) ) };	# just inside
@@ -2451,6 +2458,19 @@ foreach my $transform (keys %transforms) {
 			}
 		} elsif($type eq 'boolean') {
 			push @tests, { %{$foundation}, ( $field => 1 ) }, { %{$foundation}, ( $field => 0 ) };
+		} elsif ($type eq 'arrayref') {
+			if(defined $spec->{min}) {
+				push @tests, { %{$foundation}, ( $field => rand_arrayref($spec->{min} + 1) ) };	# just inside
+				push @tests, { %{$foundation}, ( $field => rand_arrayref($spec->{min}) ) };	# border
+			} else {
+				push @tests, { %{$foundation}, ( $field => rand_arrayref() ) };
+			}
+			if(defined $spec->{max}) {
+				push @tests, { %{$foundation}, ( $field => rand_arrayref($spec->{max} - 1) ) };	# just inside
+				if((defined $spec->{min}) && ($spec->{'min'} != $spec->{'max'})) {
+					push @tests, { %{$foundation}, ( $field => rand_arrayref($spec->{max}) ) };	# border
+				}
+			}
 		} else {
 			die("TODO: transform type $type for test case");
 		}
