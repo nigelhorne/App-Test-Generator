@@ -765,7 +765,7 @@ sub generate
 	# --- YAML corpus support (yaml_cases is filename string) ---
 	my %yaml_corpus_data;
 	if (defined $yaml_cases) {
-		croak("$yaml_cases file not found") if(!-f $yaml_cases);
+		croak("$yaml_cases: $!") if(!-f $yaml_cases);
 
 		my $yaml_data = LoadFile(Encode::decode('utf8', $yaml_cases));
 		if ($yaml_data && ref($yaml_data) eq 'HASH') {
@@ -2392,13 +2392,10 @@ diag('Run ', scalar(keys %transforms), ' transform tests') if($ENV{'TEST_VERBOSE
 
 # Build the foundation - which is a basic test with sensible defaults in the field
 foreach my $transform (keys %transforms) {
-	my $input = $transforms{$transform}{'input'} || {};
-	my $output = $transforms{$transform}{'output'} || {};
-
 	my $foundation;	# basic set of data with every field filled in with a sensible default value
 
 	foreach my $field (keys %input) {
-		my $spec = $input->{$field} || {};
+		my $spec = $input{$field} || {};
 		my $type = $spec->{type} || 'string';
 
 		if(($type eq 'number') || ($type eq 'float')) {
@@ -2462,8 +2459,10 @@ foreach my $transform (keys %transforms) {
 	#   CHECK OUTPUT USING returns_ok
 	# FI
 
+	my $transform_input = $transforms{$transform}{'input'} || {};
+
 	foreach my $field (keys %input) {
-		my $spec = $input{$field} || {};
+		my $spec = $transform_input->{$field} || {};
 		my $type = $spec->{type} || 'string';
 
 		# If there's a specific value, test that exact value
@@ -2484,10 +2483,23 @@ foreach my $transform (keys %transforms) {
 				push @tests, { %{$foundation}, ( $field => $spec->{min} ) };	# border
 				# Test 0 if it's in range
 				push @tests, { %{$foundation}, ( $field => 0 ) } if($spec->{'min'} < -1);
+				if(!defined($spec->{'max'})) {
+					if($type eq 'integer') {
+						push @tests, { %{$foundation}, ( $field => abs(rand_int()) ) };
+					} else {
+						push @tests, { %{$foundation}, ( $field => abs(rand_num()) ) };
+					}
+				}
 			} else {
 				push @tests, { %{$foundation}, ( $field => 0 ) };	# No min, so 0 should be allowable
-				push @tests, { %{$foundation}, ( $field => (($type eq 'integer') ? -1 : -0.1) ) };	# No min, so -1 should be allowable
-				if(!defined($spec->{'max'})) {
+				push @tests, { %{$foundation}, ( $field => (($type eq 'integer') ? -1 : -0.1), _LINE => __LINE__ ) };	# No min, so -1 should be allowable
+				if(defined($spec->{'max'})) {
+					if($type eq 'integer') {
+						push @tests, { %{$foundation}, ( $field => $spec->{'max'} - abs(rand_int()) ) };
+					} else {
+						push @tests, { %{$foundation}, ( $field => $spec->{'max'} - abs(rand_num()) ) };
+					}
+				} else {
 					if($type eq 'integer') {
 						push @tests, { %{$foundation}, ( $field => rand_int() ) };
 					} else {
@@ -2543,8 +2555,21 @@ foreach my $transform (keys %transforms) {
 		} @tests;
 	}
 
-	foreach my $test(@tests) {
-		run_test({ _NAME => $transform }, $test, \%output, $positions);
+	{
+		# local %ENV;
+		my $transform_output = $transforms{$transform}{'output'} || {};
+		foreach my $test(@tests) {
+			if(my $line = (delete $test->{'_LINE'} || delete $input{'_LINE'})) {
+				diag("Test case from line number $line") if($ENV{'TEST_VERBOSE'});
+			}
+			run_test({ _NAME => $transform }, $test, $transform_output, $positions);
+			# delete $ENV{'LANG'};
+			# delete $ENV{'LC_ALL'};
+			# run_test({ _NAME => $transform }, $test, \%output, $positions);
+			# $ENV{'LANG'} = 'fr_FR.utf8';
+			# $ENV{'LC_ALL'} = 'fr_FR.utf8';
+			# run_test({ _NAME => $transform }, $test, \%output, $positions);
+		}
 	}
 }
 
