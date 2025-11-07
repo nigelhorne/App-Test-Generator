@@ -596,11 +596,3 @@ Nigel Horne, `<njh at nigelhorne.com>`
 Portions of this module's initial design and documentation were created with the
 assistance of [ChatGPT](https://openai.com/) (GPT-5), with final curation
 and authorship by Nigel Horne.
-
-# POD ERRORS
-
-Hey! **The above document had some coding errors, which are explained below:**
-
-- Around line 306:
-
-    Non-ASCII character seen before =encoding in '"emoji😊test"'. Assuming UTF-8

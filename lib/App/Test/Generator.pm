@@ -54,6 +54,8 @@ From Perl:
   # Generate directly to a file
   App::Test::Generator::generate('t/conf/add.yml', 't/add_fuzz.t');
 
+=encoding utf8
+
 =head1 OVERVIEW
 
 This module takes a formal input/output specification for a routine or
@@ -2384,7 +2386,16 @@ foreach my $case (@{fuzz_inputs()}) {
 		diag("Test case from line number $line") if($ENV{'TEST_VERBOSE'});
 	}
 
-	run_test($case, $input, \%output, $positions);
+	{
+		# local %ENV;
+		run_test($case, $input, \%output, $positions);
+		# delete $ENV{'LANG'};
+		# delete $ENV{'LC_ALL'};
+		# run_test($case, $input, \%output, $positions);
+		# $ENV{'LANG'} = 'fr_FR.utf8';
+		# $ENV{'LC_ALL'} = 'fr_FR.utf8';
+		# run_test($case, $input, \%output, $positions);
+	}
 }
 
 diag('Run ', scalar(keys %transforms), ' transform tests') if($ENV{'TEST_VERBOSE'});
