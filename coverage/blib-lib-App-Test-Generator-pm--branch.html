@@ -20,7 +20,7 @@ https://pjcj.net
 <h1>Branch Coverage</h1>
 <table>
 <tr><td class="h" align="right">File:</td><td align="left">blib/lib/App/Test/Generator.pm</td></tr>
-<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">57.9%</td></tr>
+<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">61.9%</td></tr>
 </table>
 <div><br/></div>
 <table>
@@ -45,8 +45,8 @@ https://pjcj.net
 <tr><td class="h"><a id="L716">716</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if exists $config-&gt;{&#39;type_edge_cases&#39;}</td></tr>
 <tr><td class="h"><a id="L718">718</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if exists $config-&gt;{&#39;module&#39;}</td></tr>
 <tr><td class="h"><a id="L719">719</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if exists $config-&gt;{&#39;function&#39;}</td></tr>
-<tr><td class="h"><a id="L720">720</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (exists $config-&gt;{&#39;new&#39;})</td></tr>
-<tr><td class="h"><a id="L721">721</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">defined $$config{&#39;new&#39;} ? :</td></tr>
+<tr><td class="h"><a id="L720">720</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (exists $config-&gt;{&#39;new&#39;})</td></tr>
+<tr><td class="h"><a id="L721">721</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">defined $$config{&#39;new&#39;} ? :</td></tr>
 <tr><td class="h"><a id="L723">723</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if exists $config-&gt;{&#39;yaml_cases&#39;}</td></tr>
 <tr><td class="h"><a id="L724">724</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if exists $config-&gt;{&#39;seed&#39;}</td></tr>
 <tr><td class="h"><a id="L725">725</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if exists $config-&gt;{&#39;iterations&#39;}</td></tr>
@@ -63,7 +63,7 @@ https://pjcj.net
 <tr><td class="h"><a id="L771">771</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if ($yaml_data and ref $yaml_data eq &quot;HASH&quot;)</td></tr>
 <tr><td class="h"><a id="L777">777</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless ($outputs and ref $outputs eq &quot;ARRAY&quot;)</td></tr>
 <tr><td class="h"><a id="L783">783</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if $valid_input</td></tr>
-<tr><td class="h"><a id="L791">791</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (exists $cases{$k} and ref $cases{$k} eq &quot;ARRAY&quot; and ref $yaml_corpus_data{$k} eq &quot;ARRAY&quot;)</td></tr>
+<tr><td class="h"><a id="L791">791</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (exists $cases{$k} and ref $cases{$k} eq &quot;ARRAY&quot; and ref $yaml_corpus_data{$k} eq &quot;ARRAY&quot;)</td></tr>
 <tr><td class="h"><a id="L807">807</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless do $file</td></tr>
 <tr><td class="h"><a id="L819">819</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (my $full = &quot;${pkg}::$v&quot;)</td></tr>
 <tr><td class="h"><a id="L820">820</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined ${$full;}) { }</td></tr>
@@ -104,13 +104,13 @@ https://pjcj.net
 <tr><td class="h"><a id="L1034">1034</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (scalar keys %input == 1 and exists $input{&#39;type&#39;} and not ref $input{&#39;type&#39;}) { }</td></tr>
 <tr><td class="h"><a id="L1043">1043</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined(my $re = $output{&quot;matches&quot;}))</td></tr>
 <tr><td class="h"><a id="L1044">1044</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (ref $re ne &quot;Regexp&quot;)</td></tr>
-<tr><td class="h"><a id="L1050">1050</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">$new &amp;&amp; ref $new eq &#39;HASH&#39; ? :</td></tr>
+<tr><td class="h"><a id="L1050">1050</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">$new &amp;&amp; ref $new eq &#39;HASH&#39; ? :</td></tr>
 <tr><td class="h"><a id="L1053">1053</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (keys %transforms)</td></tr>
 <tr><td class="h"><a id="L1055">1055</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($transforms_code)</td></tr>
 <tr><td class="h"><a id="L1069">1069</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">$module ? :</td></tr>
-<tr><td class="h"><a id="L1071">1071</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $new) { }</td></tr>
+<tr><td class="h"><a id="L1071">1071</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (defined $new) { }</td></tr>
 <tr><td class="h"></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">elsif (defined $module) { }</td></tr>
-<tr><td class="h"><a id="L1073">1073</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($new_code eq &#39;&#39;) { }</td></tr>
+<tr><td class="h"><a id="L1073">1073</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($new_code eq &#39;&#39;) { }</td></tr>
 <tr><td class="h"><a id="L1087">1087</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (%all_cases)</td></tr>
 <tr><td class="h"><a id="L1091">1091</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $inputs and ref $inputs eq &quot;ARRAY&quot;</td></tr>
 <tr><td class="h"><a id="L1095">1095</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($expected_str eq q[&#39;_STATUS:DIES&#39;]) { }</td></tr>
