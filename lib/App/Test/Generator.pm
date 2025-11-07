@@ -847,12 +847,12 @@ sub generate
 
 	sub _validate_module {
 		my ($module, $schema_file) = @_;
-		
+
 		return 1 unless $module;  # No module to validate (builtin functions)
-		
+
 		# Check if the module can be found
 		my $mod_info = check_install(module => $module);
-		
+
 		if (!$mod_info) {
 			# Module not found - this is just a warning, not an error
 			# The module might not be installed on the generation machine
@@ -863,28 +863,28 @@ sub generate
 			carp("  If this is unexpected, check your module name and installation.");
 			return 0;  # Not found, but not fatal
 		}
-		
+
 		# Module was found
 		if ($ENV{TEST_VERBOSE} || $ENV{GENERATOR_VERBOSE}) {
 			print STDERR "Found module '$module' at: $mod_info->{file}\n",
 				'  Version: ', ($mod_info->{version} || 'unknown'), "\n";
 		}
-		
+
 		# Optionally try to load it (disabled by default since it can have side effects)
 		if ($ENV{GENERATOR_VALIDATE_LOAD}) {
 			my $loaded = can_load(modules => { $module => undef }, verbose => 0);
-			
+
 			if (!$loaded) {
 				carp("Warning: Module '$module' found but failed to load: $Module::Load::Conditional::ERROR");
 				carp("  This might indicate a broken installation or missing dependencies.");
 				return 0;
 			}
-			
+
 			if ($ENV{TEST_VERBOSE} || $ENV{GENERATOR_VERBOSE}) {
 				print STDERR "Successfully loaded module '$module'\n";
 			}
 		}
-		
+
 		return 1;
 	}
 
@@ -2019,10 +2019,13 @@ sub generate_tests
 					push @cases, { %mandatory_args, ( $field => $spec->{max}, _LINE => __LINE__ ) };	# border
 					push @cases, { %mandatory_args, ( $field => $spec->{max} + 1, _STATUS => 'DIES', _LINE => __LINE__ ) }; # outside
 				}
-				# Send wrong data type
-				push @cases, { %mandatory_args, ( $field => 'hello', _STATUS => 'DIES', _LINE => __LINE__ ) };
-				push @cases, { %mandatory_args, ( $field => {}, _STATUS => 'DIES', _LINE => __LINE__ ) };
-				push @cases, { %mandatory_args, ( $field => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
+
+				[% IF module %]
+					# Send wrong data type - builtins aren't good at checking this
+					push @cases, { %mandatory_args, ( $field => 'test string in integer field', _STATUS => 'DIES', _LINE => __LINE__ ) };
+					push @cases, { %mandatory_args, ( $field => {}, _STATUS => 'DIES', _LINE => __LINE__ ) };
+					push @cases, { %mandatory_args, ( $field => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
+				[% END %]
 				if($type eq 'integer') {
 					# Float
 					push @cases, { %mandatory_args, ( $field => 0.5, _STATUS => 'DIES', _LINE => __LINE__ ) };
