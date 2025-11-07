@@ -844,8 +844,12 @@ sub generate
 			# Routine takes no input and no output, so there's nothing that would be gained using this software
 			croak('You must specify at least one of input and output');
 		}
-		if($config->{'input'}) {
-			croak('Invalid input specification') unless(ref $config->{input} eq 'HASH');
+		if(($config->{'input'}) && (ref($config->{input}) ne 'HASH')) {
+			if($config->{'input'} eq 'undef') {
+				delete $config->{'input'};
+			} else {
+				croak('Invalid input specification')
+			}
 		}
 
 		# Validate types, constraints, etc.
