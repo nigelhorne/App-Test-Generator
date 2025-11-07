@@ -61,4 +61,36 @@ close $fh;
 
 throws_ok(sub { App::Test::Generator::generate($conf_file) }, qr/not_there_at_all:\s/, 'Dies when yaml_cases file is not found');
 
+unlink $conf_file;
+
+open $fh, '>', $conf_file or die $!;
+print $fh <<"CONF";
+---
+module: Test::Simple
+function: nan
+
+CONF
+
+close $fh;
+
+throws_ok(sub { App::Test::Generator::generate($conf_file) }, qr/least one of input and output/, 'Check we are told something to set or get');
+
+unlink $conf_file;
+
+open $fh, '>', $conf_file or die $!;
+print $fh <<"CONF";
+---
+module: Test::Simple
+function: wrong_type
+
+input:
+  name:
+    type: freddy
+
+CONF
+
+close $fh;
+
+throws_ok(sub { App::Test::Generator::generate($conf_file) }, qr/Invalid type/, 'Type must be sensible');
+
 done_testing();
