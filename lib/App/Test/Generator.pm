@@ -868,11 +868,11 @@ sub generate
 		my $type = $_[0];
 
 		return(($type eq 'string') ||
-		       ($type eq 'boolean') ||
-		       ($type eq 'integer') ||
-		       ($type eq 'number') ||
-		       ($type eq 'float') ||
-		       ($type eq 'object'));
+			($type eq 'boolean') ||
+			($type eq 'integer') ||
+			($type eq 'number') ||
+			($type eq 'float') ||
+			($type eq 'object'));
 	}
 
 	sub _validate_module {
@@ -927,11 +927,23 @@ sub generate
 	sub perl_quote {
 		my $v = $_[0];
 		return 'undef' unless defined $v;
-		if(ref($v) eq 'ARRAY') {
-			my @quoted_v = map { perl_quote($_) } @{$v};
-			return '[ ' . join(', ', @quoted_v) . ' ]';
-		}
-		if(ref($v) && (ref($v) ne 'Regexp')) {
+		if(ref($v)) {
+			if(ref($v) eq 'ARRAY') {
+				my @quoted_v = map { perl_quote($_) } @{$v};
+				return '[ ' . join(', ', @quoted_v) . ' ]';
+			}
+			if(ref($v) eq 'Regexp') {
+				my $s = "$v";
+
+				# default to qr{...}
+				return "qr{$s}" unless $s =~ /[{}]/;
+
+				# fallback: quote with slash if no slash inside
+				return "qr/$s/" unless $s =~ m{/};
+
+				# fallback: quote with # if slash inside
+				return "qr#$s#";
+			}
 			# Generic fallback
 			$v = Dumper($v);
 			$v =~ s/\$VAR1 =//;
@@ -1028,6 +1040,12 @@ sub generate
 	} else {
 		# our %input = ( str => { type => 'string' } );
 		$input_code = render_hash(\%input);
+	}
+	if(defined(my $re = $output{'matches'})) {
+		if(ref($re) ne 'Regexp') {
+			$re = qr/$re/;
+			$output{'matches'} = $re;
+		}
 	}
 	my $output_code = render_args_hash(\%output);
 	my $new_code = ($new && (ref $new eq 'HASH')) ? render_args_hash($new) : '';
