@@ -533,7 +533,17 @@ This example takes you through testing the online\_render method of [HTML::Genea
 
     jobs:
       generate-fuzz-tests:
-        runs-on: ubuntu-latest
+        strategy:
+          fail-fast: false
+          matrix:
+            os:
+              - macos-latest
+              - ubuntu-latest
+              - windows-latest
+            perl: ['5.42', '5.40', '5.38', '5.36', '5.34', '5.32', '5.30', '5.28', '5.22']
+
+        runs-on: ${{ matrix.os }}
+        name: Fuzz testing with perl ${{ matrix.perl }} on ${{ matrix.os }}
 
         steps:
           - uses: actions/checkout@v5
@@ -541,7 +551,7 @@ This example takes you through testing the online\_render method of [HTML::Genea
           - name: Set up Perl
             uses: shogo82148/actions-setup-perl@v1
             with:
-              perl-version: '5.42'
+              perl-version: ${{ matrix.perl }}
 
           - name: Install App::Test::Generator this module's dependencies
             run: |
@@ -587,7 +597,8 @@ Takes a schema file and produces a test file (or STDOUT).
 - [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict): Schema Definition
 - [Params::Get](https://metacpan.org/pod/Params%3A%3AGet): Input validation
 - [Return::Set](https://metacpan.org/pod/Return%3A%3ASet): Output validation
-- [Test::Most](https://metacpan.org/pod/Test%3A%3AMost), [YAML::XS](https://metacpan.org/pod/YAML%3A%3AXS)
+- [Test::Most](https://metacpan.org/pod/Test%3A%3AMost)
+- [YAML::XS](https://metacpan.org/pod/YAML%3A%3AXS)
 
 # AUTHOR
 

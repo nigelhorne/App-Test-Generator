@@ -612,7 +612,17 @@ This example takes you through testing the online_render method of L<HTML::Genea
 
   jobs:
     generate-fuzz-tests:
-      runs-on: ubuntu-latest
+      strategy:
+        fail-fast: false
+        matrix:
+          os:
+            - macos-latest
+            - ubuntu-latest
+            - windows-latest
+          perl: ['5.42', '5.40', '5.38', '5.36', '5.34', '5.32', '5.30', '5.28', '5.22']
+
+      runs-on: ${{ matrix.os }}
+      name: Fuzz testing with perl ${{ matrix.perl }} on ${{ matrix.os }}
 
       steps:
         - uses: actions/checkout@v5
@@ -620,7 +630,7 @@ This example takes you through testing the online_render method of L<HTML::Genea
         - name: Set up Perl
           uses: shogo82148/actions-setup-perl@v1
           with:
-            perl-version: '5.42'
+            perl-version: ${{ matrix.perl }}
 
         - name: Install App::Test::Generator this module's dependencies
           run: |
@@ -879,7 +889,7 @@ sub generate
 	sub _validate_module {
 		my ($module, $schema_file) = @_;
 
-		return 1 unless $module;  # No module to validate (builtin functions)
+		return 1 unless $module;	# No module to validate (builtin functions)
 
 		# Check if the module can be found
 		my $mod_info = check_install(module => $module);
@@ -891,7 +901,7 @@ sub generate
 			carp("Warning: Module '$module' not found in \@INC during generation.");
 			carp("  Config file: $schema_file");
 			carp("  This is OK if the module will be available when tests run.");
-			carp("  If this is unexpected, check your module name and installation.");
+			carp('  If this is unexpected, check your module name and installation.');
 			return 0;  # Not found, but not fatal
 		}
 
@@ -1205,7 +1215,9 @@ sub generate
 
 =item * L<Return::Set>: Output validation
 
-=item * L<Test::Most>, L<YAML::XS>
+=item * L<Test::Most>
+
+=item * L<YAML::XS>
 
 =back
 
