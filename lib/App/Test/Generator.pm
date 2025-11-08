@@ -28,7 +28,7 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 =head1 NAME
 
@@ -36,7 +36,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 =head1 VERSION
 
-Version 0.13
+Version 0.14
 
 =head1 SYNOPSIS
 
@@ -358,7 +358,7 @@ Transforms allow you to define how input data should be transformed into output 
 This is useful for testing functions that convert between formats, normalize data,
 or apply business logic transformations on a set of data to different set of data.
 
-Transform schemas also have the keyword C<value>, when a specific value is required
+Transform schema also have the keyword C<value>, when a specific value is required
 
 =head3 Configuration Example
 

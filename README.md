@@ -4,7 +4,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 # VERSION
 
-Version 0.13
+Version 0.14
 
 # SYNOPSIS
 
@@ -287,7 +287,7 @@ Transforms allow you to define how input data should be transformed into output 
 This is useful for testing functions that convert between formats, normalize data,
 or apply business logic transformations on a set of data to different set of data.
 
-Transform schemas also have the keyword `value`, when a specific value is required
+Transform schema also have the keyword `value`, when a specific value is required
 
 ### Configuration Example
 
