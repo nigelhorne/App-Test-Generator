@@ -705,9 +705,8 @@ Then create this file as <t/fuzz.t>:
 			diag($stderr) if(length($stderr));
 		}
 	}
+	closedir($dh);
   }
-
-  closedir($dh);
 
   done_testing();
 
