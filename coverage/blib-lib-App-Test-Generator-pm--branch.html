@@ -20,7 +20,7 @@ https://pjcj.net
 <h1>Branch Coverage</h1>
 <table>
 <tr><td class="h" align="right">File:</td><td align="left">blib/lib/App/Test/Generator.pm</td></tr>
-<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">61.9%</td></tr>
+<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">59.8%</td></tr>
 </table>
 <div><br/></div>
 <table>
@@ -112,20 +112,26 @@ https://pjcj.net
 <tr><td class="h"></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">elsif (defined $module) { }</td></tr>
 <tr><td class="h"><a id="L1135">1135</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($new_code eq &#39;&#39;) { }</td></tr>
 <tr><td class="h"><a id="L1149">1149</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (%all_cases)</td></tr>
-<tr><td class="h"><a id="L1153">1153</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $inputs and ref $inputs eq &quot;ARRAY&quot;</td></tr>
+<tr><td class="h"><a id="L1153">1153</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $inputs</td></tr>
 <tr><td class="h"><a id="L1157">1157</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($expected_str eq q[&#39;_STATUS:DIES&#39;]) { }</td></tr>
 <tr><td class="h"></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">elsif ($expected_str eq q[&#39;_STATUS:WARNS&#39;]) { }</td></tr>
 <tr><td class="h"><a id="L1163">1163</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (ref $inputs eq &quot;HASH&quot;)</td></tr>
-<tr><td class="h"><a id="L1167">1167</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($new) { }</td></tr>
-<tr><td class="h"><a id="L1168">1168</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($status eq &#39;DIES&#39;) { }</td></tr>
+<tr><td class="h"><a id="L1167">1167</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (ref $inputs eq &#39;ARRAY&#39;) { }</td></tr>
+<tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif (ref $inputs eq &#39;HASH&#39;) { }</td></tr>
+<tr><td class="h"><a id="L1177">1177</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($input_str eq &quot;undef&quot; and not $config{&quot;test_undefs&quot;})</td></tr>
+<tr><td class="h"><a id="L1180">1180</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($new) { }</td></tr>
+<tr><td class="h"><a id="L1181">1181</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($status eq &#39;DIES&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($status eq &#39;WARNS&#39;) { }</td></tr>
-<tr><td class="h"><a id="L1182">1182</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($status eq &#39;DIES&#39;) { }</td></tr>
+<tr><td class="h"><a id="L1195">1195</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($status eq &#39;DIES&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">elsif ($status eq &#39;WARNS&#39;) { }</td></tr>
-<tr><td class="h"><a id="L1201">1201</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $seed)</td></tr>
-<tr><td class="h"><a id="L1230">1230</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $tt-&gt;process(\$template, $vars, \$test)</td></tr>
-<tr><td class="h"><a id="L1232">1232</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($test_file) { }</td></tr>
-<tr><td class="h"><a id="L1233">1233</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless &amp;App::Test::Generator::open(my $fh, &quot;&gt;:encoding(UTF-8)&quot;, $test_file)</td></tr>
-<tr><td class="h"><a id="L1236">1236</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($module) { }</td></tr>
+<tr><td class="h"><a id="L1197">1197</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">$inputs eq &#39;ARRAY&#39; ? :</td></tr>
+<tr><td class="h"><a id="L1200">1200</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">ref $inputs eq &#39;ARRAY&#39; ? :</td></tr>
+<tr><td class="h"><a id="L1203">1203</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">ref $inputs eq &#39;ARRAY&#39; ? :</td></tr>
+<tr><td class="h"><a id="L1214">1214</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $seed)</td></tr>
+<tr><td class="h"><a id="L1243">1243</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $tt-&gt;process(\$template, $vars, \$test)</td></tr>
+<tr><td class="h"><a id="L1245">1245</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($test_file) { }</td></tr>
+<tr><td class="h"><a id="L1246">1246</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless &amp;App::Test::Generator::open(my $fh, &quot;&gt;:encoding(UTF-8)&quot;, $test_file)</td></tr>
+<tr><td class="h"><a id="L1249">1249</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($module) { }</td></tr>
 </table>
 </body>
 </html>
