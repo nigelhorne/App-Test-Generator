@@ -251,10 +251,10 @@ Maps the expected output string to the input and _STATUS
   cases:
     ok:
       input: ping
-      status: OK
+      _STATUS: OK
     error:
       input: ""
-      status: DIES
+      _STATUS: DIES
 
 =item * C<$yaml_cases> - optional path to a YAML file with the same shape as C<%cases>.
 
@@ -1021,7 +1021,7 @@ sub generate
 		return '' unless $href && ref($href) eq 'HASH';
 		my @lines;
 		for my $k (sort keys %$href) {
-			my $def = $href->{$k} || {};
+			my $def = $href->{$k} // {};
 			next unless ref $def eq 'HASH';
 			my @pairs;
 			for my $subk (sort keys %$def) {
@@ -1150,7 +1150,7 @@ sub generate
 		$corpus_code = "\n# --- Static Corpus Tests ---\n";
 		for my $expected (sort keys %all_cases) {
 			my $inputs = $all_cases{$expected};
-			next unless($inputs && (ref $inputs eq 'ARRAY'));
+			next unless($inputs);
 
 			my $expected_str = perl_quote($expected);
 			my $status = ((ref($inputs) eq 'HASH') && $inputs->{'_STATUS'}) // 'OK';
@@ -1163,14 +1163,27 @@ sub generate
 			if(ref($inputs) eq 'HASH') {
 				$inputs = $inputs->{'input'};
 			}
-			my $input_str = join(', ', map { perl_quote($_) } @$inputs);
+			my $input_str;
+			if(ref($inputs) eq 'ARRAY') {
+				$input_str = join(', ', map { perl_quote($_) } @{$inputs});
+			} elsif(ref($inputs) eq 'HASH') {
+				$input_str = Dumper($inputs);
+				$input_str =~ s/\$VAR1 =//;
+				$input_str =~ s/;//;
+				$input_str =~ s/=> 'undef'/=> undef/gms;
+			} else {
+				$input_str = $inputs;
+			}
+			if(($input_str eq 'undef') && (!$config{'test_undefs'})) {
+				carp('corpus case set to undef, yet test_undefs is not set in config');
+			}
 			if ($new) {
 				if($status eq 'DIES') {
 					$corpus_code .= "dies_ok { \$obj->$function($input_str) } " .
-							"'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") dies';\n";
+							"'$function(" . join(', ', map { $_ // '' } @$inputs ) . ") dies';\n";
 				} elsif($status eq 'WARNS') {
 					$corpus_code .= "warnings_exist { \$obj->$function($input_str) } qr/./, " .
-							"'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") warns';\n";
+							"'$function(" . join(', ', map { $_ // '' } @$inputs ) . ") warns';\n";
 				} else {
 					my $desc = sprintf("$function(%s) returns %s",
 						perl_quote(join(', ', map { $_ // '' } @$inputs )),
@@ -1181,13 +1194,13 @@ sub generate
 			} else {
 				if($status eq 'DIES') {
 					$corpus_code .= "dies_ok { $module\::$function($input_str) } " .
-						"'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") dies';\n";
+						"'$function(" . ref(($inputs eq 'ARRAY') ? join(', ', map { $_ // '' } @{$inputs}) : $inputs) . ") dies';\n";
 				} elsif($status eq 'WARNS') {
 					$corpus_code .= "warnings_exist { $module\::$function($input_str) } qr/./, " .
-						"'$function(" . join(", ", map { $_ // '' } @$inputs ) . ") warns';\n";
+						"'$function(" . ((ref $inputs eq 'ARRAY') ? join(', ', map { $_ // '' } @{$inputs}) : $inputs) . ") warns';\n";
 				} else {
 					my $desc = sprintf("$function(%s) returns %s",
-						perl_quote(join(', ', map { $_ // '' } @$inputs )),
+						perl_quote((ref $inputs eq 'ARRAY') ? (join(', ', map { $_ // '' } @{$inputs})) : $inputs),
 						$expected_str
 					);
 					$corpus_code .= "is($module\::$function($input_str), $expected_str, " . q_wrap($desc) . ");\n";
