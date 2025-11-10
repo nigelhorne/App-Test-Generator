@@ -720,6 +720,10 @@ Takes a schema file and produces a test file (or STDOUT).
 
 sub generate
 {
+	if($_[0] && ($_[0] eq __PACKAGE__)) {
+		shift;
+	}
+
 	my ($schema_file, $test_file) = @_;
 
 	# --- Globals exported by the user's conf (all optional except function maybe) ---
@@ -731,6 +735,10 @@ sub generate
 	@edge_case_array = ();
 
 	if(defined($schema_file)) {
+		if(!-r $schema_file) {
+			croak(__PACKAGE__, ": generate($schema_file): $!");
+		}
+
 		# --- Load configuration safely (require so config can use 'our' variables) ---
 		# FIXME:  would be better to use Config::Abstraction, since requiring the user's config could execute arbitrary code
 		# my $abs = $schema_file;
