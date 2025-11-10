@@ -2106,15 +2106,20 @@ sub fuzz_inputs
 					}
 				} else {
 					# basic boolean edge cases
-					push @cases, { _input => 0 };
-					push @cases, { _input => 1 };
-					push @cases, { _input => 'off' };
-					push @cases, { _input => 'on' };
-					push @cases, { _input => 'false' };
-					push @cases, { _input => 'true' };
+					push @cases,
+						{ _input => 0 },
+						{ _input => 1 },
+						{ _input => 'off' },
+						{ _input => 'on' },
+						{ _input => 'false' },
+						{ _input => 'true' },
+						{ _input => 'yes' },
+						{ _input => 'no' },
+						{ _input => 2, _STATUS => 'DIES' },	# invalid boolean
+						{ _input => [ 3 ], _STATUS => 'DIES' },	# invalid boolean
+						{ _input => { 'abc' => 'xyz' }, _STATUS => 'DIES' },	# invalid boolean
+						{ _input => 'plugh', _STATUS => 'DIES' };	# invalid boolean
 					push @cases, { _input => undef, _STATUS => 'DIES' } if($config{'test_undef'});
-					push @cases, { _input => 2, _STATUS => 'DIES' };	# invalid boolean
-					push @cases, { _input => 'plugh', _STATUS => 'DIES' };	# invalid boolean
 				}
 			}
 
