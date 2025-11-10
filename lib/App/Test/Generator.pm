@@ -917,9 +917,9 @@ sub generate
 		for my $param (keys %{$config->{input}}) {
 			my $spec = $config->{input}{$param};
 			if(ref($spec)) {
-				croak "Invalid type for parameter '$param'" unless _valid_type($spec->{type});
+				croak "Invalid type '$spec->{type}' for parameter '$param'" unless _valid_type($spec->{type});
 			} else {
-				croak "Invalid type $spec for parameter '$param'" unless _valid_type($spec);
+				croak "Invalid type '$spec' for parameter '$param'" unless _valid_type($spec);
 			}
 		}
 	}
