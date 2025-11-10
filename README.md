@@ -628,6 +628,8 @@ Then create this file as &lt;t/fuzz.t>:
           }
     }
 
+    closedir($dh);
+
     done_testing();
 
 # METHODS

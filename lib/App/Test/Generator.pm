@@ -707,6 +707,8 @@ Then create this file as <t/fuzz.t>:
 	}
   }
 
+  closedir($dh);
+
   done_testing();
 
 =head1 METHODS
