@@ -922,6 +922,45 @@ sub generate
 				croak "Invalid type '$spec' for parameter '$param'" unless _valid_type($spec);
 			}
 		}
+
+		# Check if using positional arguments
+		my $has_positions = 0;
+		my %positions;
+
+		for my $param (keys %{$config->{input}}) {
+			my $spec = $config->{input}{$param};
+			if (ref($spec) eq 'HASH' && defined($spec->{position})) {
+				$has_positions = 1;
+				my $pos = $spec->{position};
+
+				# Validate position is non-negative integer
+				croak "Position for '$param' must be a non-negative integer" unless $pos =~ /^\d+$/;
+
+				# Check for duplicate positions
+				croak "Duplicate position $pos for parameters '$positions{$pos}' and '$param'" if exists $positions{$pos};
+
+				$positions{$pos} = $param;
+			}
+		}
+
+		# If using positions, all params must have positions
+		if ($has_positions) {
+			for my $param (keys %{$config->{input}}) {
+				my $spec = $config->{input}{$param};
+				unless (ref($spec) eq 'HASH' && defined($spec->{position})) {
+					croak "Parameter '$param' missing position (all params must have positions if any do)";
+				}
+			}
+
+			# Check for gaps in positions (0, 1, 3 - missing 2)
+			my @sorted = sort { $a <=> $b } keys %positions;
+			for my $i (0..$#sorted) {
+				if ($sorted[$i] != $i) {
+					carp "Warning: Position sequence has gaps (positions: @sorted)";
+					last;
+				}
+			}
+		}
 	}
 
 	sub _valid_type
@@ -933,6 +972,8 @@ sub generate
 			($type eq 'integer') ||
 			($type eq 'number') ||
 			($type eq 'float') ||
+			($type eq 'hashref') ||
+			($type eq 'arrayref') ||
 			($type eq 'object'));
 	}
 
@@ -1601,7 +1642,7 @@ sub fuzz_inputs
 				my $type = lc((!ref($spec)) ? $spec : $spec->{type}) || 'string';
 
 				foreach my $field(keys %{$spec}) {
-					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can'))) {
+					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'memberof'))) {
 						diag(__LINE__, ": TODO: handle schema keyword '$field'");
 					}
 				}
