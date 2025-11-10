@@ -683,8 +683,8 @@ Then create this file as <t/fuzz.t>:
 
   if((-d $dirname) && opendir(my $dh, $dirname)) {
 	while (my $filename = readdir($dh)) {
-		# Skip '.' and '..' entries
-		next if ($filename eq '.' || $filename eq '..');
+		# Skip '.' and '..' entries and vi temporary files
+		next if ($filename eq '.' || $filename eq '..') || ($filename =~ /\.swp$/);
 
 		my $filepath = "$dirname/$filename";
 
@@ -1365,7 +1365,7 @@ sub rand_ascii_str {
 }
 
 my @unicode_codepoints = (
-    0x00A9,        # ©
+    0x00A9,	# ©
     0x00AE,        # ®
     0x03A9,        # Ω
     0x20AC,        # €
@@ -1374,7 +1374,7 @@ my @unicode_codepoints = (
     0x0308,        # combining diaeresis
     0x1F600,       # 😀 (emoji)
     0x1F62E,       # 😮
-    0x1F4A9,       # 💩 (yes)
+    0x1F4A9,	# 💩 (yes)
 );
 
 # Tests for matches or nomatch
@@ -1403,17 +1403,17 @@ sub rand_str
 	for (1..$len) {
 		my $r = rand();
 		if ($r < 0.72) {
-			push @chars, chr(97 + int(rand(26)));          # a-z
+			push @chars, chr(97 + int(rand(26)));	# a-z
 		} elsif ($r < 0.88) {
-			push @chars, chr(65 + int(rand(26)));          # A-Z
+			push @chars, chr(65 + int(rand(26)));	# A-Z
 		} elsif ($r < 0.95) {
-			push @chars, chr(48 + int(rand(10)));          # 0-9
+			push @chars, chr(48 + int(rand(10)));	# 0-9
 		} elsif ($r < 0.975) {
-			push @chars, rand_unicode_char();              # occasional emoji/marks
+			push @chars, rand_unicode_char();	# occasional emoji/marks
 		} elsif($config{'test_nuls'}) {
-			push @chars, chr(0);                           # nul byte injection
+			push @chars, chr(0);	# nul byte injection
 		} else {
-			push @chars, chr(97 + int(rand(26)));          # a-z
+			push @chars, chr(97 + int(rand(26)));	# a-z
 		}
 	}
 	# Occasionally prepend/append a combining mark to produce combining sequences
@@ -1465,7 +1465,7 @@ sub rand_num {
 	if ($r < 0.7) {
 		return (rand() * 200 - 100);	# -100 .. 100
 	} elsif ($r < 0.9) {
-		return (rand() * 1e12) - 5e11;          # large-ish
+		return (rand() * 1e12) - 5e11;	# large-ish
 	} elsif ($r < 0.98) {
 		return (rand() * 1e308) - 5e307;	# very large floats
 	} else {
@@ -2344,7 +2344,7 @@ sub populate_positions
 	my $rc;
 	foreach my $arg (keys %{$input}) {
 		my $spec = $input->{$arg} || {};
-		if(defined($spec->{'position'})) {
+		if(((ref($spec)) eq 'HASH') && defined($spec->{'position'})) {
 			$rc->{$arg} = $spec->{'position'};
 		} else {
 			if($rc) {
