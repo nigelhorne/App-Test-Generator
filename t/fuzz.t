@@ -7,7 +7,7 @@ use FindBin qw($Bin);
 use IPC::Run3;
 use IPC::System::Simple qw(system);
 use Test::Most;
-# use Test::Needs 'App::Test::Generator';
+use Test::Needs 'Data::Text', 'HTML::Genealogy::Map', 'Class::Simple';
 
 my $dirname = "$Bin/conf";
 
