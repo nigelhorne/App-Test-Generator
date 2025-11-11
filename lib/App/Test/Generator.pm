@@ -1360,6 +1360,11 @@ use Data::Random::String::Matches 0.02;
 use Test::Most;
 use Test::Returns 0.02;
 
+if($^O ne 'MSWin32') {
+	close(STDIN);
+	open(STDIN, '<', '/dev/null');
+}
+
 [% setup_code %]
 
 [% IF module %]
