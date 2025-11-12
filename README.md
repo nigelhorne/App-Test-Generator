@@ -4,7 +4,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 # VERSION
 
-Version 0.14
+Version 0.15
 
 # SYNOPSIS
 
@@ -201,10 +201,10 @@ Recognized items:
         cases:
           ok:
             input: ping
-            status: OK
+            _STATUS: OK
           error:
             input: ""
-            status: DIES
+            _STATUS: DIES
 
 - `$yaml_cases` - optional path to a YAML file with the same shape as `%cases`.
 - `$seed` - optional integer. When provided, the generated `t/fuzz.t` will call `srand($seed)` so fuzz runs are reproducible.
@@ -604,8 +604,8 @@ Then create this file as &lt;t/fuzz.t>:
 
     if((-d $dirname) && opendir(my $dh, $dirname)) {
           while (my $filename = readdir($dh)) {
-                  # Skip '.' and '..' entries
-                  next if ($filename eq '.' || $filename eq '..');
+                  # Skip '.' and '..' entries and vi temporary files
+                  next if ($filename eq '.' || $filename eq '..') || ($filename =~ /\.swp$/);
 
                   my $filepath = "$dirname/$filename";
 
