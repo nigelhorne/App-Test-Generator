@@ -2235,17 +2235,13 @@ sub generate_tests
 						push @cases, { %mandatory_args, ( $field => 'a' x ($len + 1) ) };	# just inside
 						push @cases, { %mandatory_args, ( $field => 'a' x $len ) };	# border
 						if($len > 0) {
-							if($len > 0) {
-								if(($len > 1) || $config{'test_empty'}) {
-									# outside
-									push @cases, { %mandatory_args, ( $field => 'a' x ($len - 1), _STATUS => 'DIES' ) };
-								}
-								# Test checking of 'defined'/'exists' rather than if($string)
-								push @cases, { %mandatory_args, ( $field => '0' ) };
-							} else {
-								push @cases, { %mandatory_args, ( $field => '' ) } if($config{'test_empty'});	# min == 0, empty string should be allowable
-								# Don't confuse if() with if(defined())
-								push @cases, { %mandatory_args, ( $field => '0', _STATUS => 'DIES' ) };
+							if(($len > 1) || $config{'test_empty'}) {
+								# outside
+								push @cases, { %mandatory_args, ( $field => 'a' x ($len - 1), _STATUS => 'DIES' ) };
+							}
+							if($len <= 1) {
+								push @cases, { %mandatory_args, ( $field => '9' ) };
+								push @cases, { %mandatory_args, ( $field => '' ) } if($len == 0);
 							}
 						} else {
 							push @cases, { %mandatory_args, ( $field => '' ) } if($config{'test_empty'});	# min == 0, empty string should be allowable
