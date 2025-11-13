@@ -1,0 +1,72 @@
+---
+# See https://github.com/actions/virtual-environments
+# https://github.com/marketplace/actions/setup-perl-environment
+
+name: Test Code
+on:
+  push:
+    branches:
+      - '*'
+    tags-ignore:
+      - '*'
+  pull_request:
+  schedule:
+    - cron: '12 23 14 * *'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+        perl: ['5.42', '5.40', '5.38', '5.36', '5.34', '5.32', '5.30', '5.28', '5.22']
+    name: Perl ${{ matrix.perl }} on ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup Perl
+        uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: ${{ matrix.perl }}
+      - run: perl -V
+      - name: Install Dependencies
+        env:
+          AUTOMATED_TESTING: 1
+        run: |
+          cpanm -iqn ExtUtils::MakeMaker Test::Most
+          cpanm -iqn --skip-satisfied --installdeps --notest .
+      - name: Make Module
+        env:
+          AUTOMATED_TESTING: 1
+          NO_NETWORK_TESTING: 1
+          NONINTERACTIVE_TESTING: 1
+        run: |
+          # find . -name build.log | xargs cat
+          perl Makefile.PL
+          make
+      - name: Run Tests
+        env:
+          AUTOMATED_TESTING: 1
+          NO_NETWORK_TESTING: 1
+          NONINTERACTIVE_TESTING: 1
+          # CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: prove -l -b t
+        # run: |
+        #   cover -test
+        #   cover -report codecov
+        #   curl -Os https://uploader.codecov.io/latest/macos/codecov
+        #   chmod +x codecov
+        #   ./codecov -t ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Show cpanm build log on failure (Windows)
+        if: runner.os == 'Windows' && failure()
+        shell: pwsh
+        run: Get-Content "$env:USERPROFILE\.cpanm\work\*\build.log" -Tail 100
+
+      - name: Show cpanm build log on failure (non-Windows)
+        if: runner.os != 'Windows' && failure()
+        run: tail -100 "$HOME/.cpanm/work/*/build.log"
