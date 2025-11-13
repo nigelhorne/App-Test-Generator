@@ -1496,9 +1496,9 @@ sub rand_str
 }
 
 # Random character either upper or lower case
-sub rand_char
-{
-	return rand_chars(set => 'all', min => 1, max => 1);
+# sub rand_char
+# {
+	# return rand_chars(set => 'all', min => 1, max => 1);
 
 	# my $char = '';
 	# my $upper_chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -1510,7 +1510,7 @@ sub rand_char
 
 	# # Get the character at that index
 	# return substr($combined_chars, $rand_index, 1);
-}
+# }
 
 # Integer generator: mix typical small ints with large limits
 sub rand_int {
@@ -2259,7 +2259,7 @@ sub generate_tests
 					if((!defined($spec->{min})) || ($spec->{min} != $len)) {
 						if(my $re = $spec->{matches}) {
 							for my $count ($len - 1, $len, $len + 1) {
-								my $str = rand_char() x $count;
+								my $str = rand_str($count);
 								if($str =~ $re) {
 									if($count > $len) {
 										push @cases, { %mandatory_args, ( $field => $str, _LINE => __LINE__, _STATUS => 'DIES' ) };
