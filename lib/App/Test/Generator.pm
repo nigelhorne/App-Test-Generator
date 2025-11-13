@@ -676,8 +676,8 @@ Then create this file as <t/fuzz.t>:
   use FindBin qw($Bin);
   use IPC::Run3;
   use IPC::System::Simple qw(system);
-  use Test::Most;
   use Test::Needs 'App::Test::Generator';
+  use Test::Most;
 
   my $dirname = "$Bin/conf";
 
@@ -1356,6 +1356,7 @@ use open qw(:std :encoding(UTF-8));	# https://github.com/nigelhorne/App-Test-Gen
 
 use Data::Dumper;
 use Data::Random qw(:all);
+use Data::Random::String;
 use Data::Random::String::Matches 0.02;
 use Test::Most;
 use Test::Returns 0.02;
@@ -1428,7 +1429,8 @@ sub _pick_from {
 
 sub rand_ascii_str {
 	my $len = shift || int(rand(10)) + 1;
-	join '', map { chr(97 + int(rand(26))) } 1..$len;
+	# join '', map { chr(97 + int(rand(26))) } 1..$len;
+	return Data::Random::String->create_random_string(length => $len, contains => 'alphanumeric');
 }
 
 my @unicode_codepoints = (
