@@ -1358,6 +1358,7 @@ use Data::Dumper;
 use Data::Random qw(:all);
 use Data::Random::String;
 use Data::Random::String::Matches 0.02;
+use Data::Random::Structure;
 use Test::Most;
 use Test::Returns 0.02;
 
@@ -1545,16 +1546,21 @@ sub rand_num {
 sub rand_arrayref {
 	my $len = shift || int(rand(3)) + 1; # small arrays
 
-	return [ map { rand_str() } 1..$len ];
+	return Data::Random::Structure->new(max_elements => $len, max_depth => 1)->generate_array();
+
+	# return [ map { rand_str() } 1..$len ];
 }
 
 sub rand_hashref {
 	my $len = shift || int(rand(3)) + 1; # small hashes
-	my %h;
-	for (1..$len) {
-		$h{rand_str(3)} = rand_str(5);
-	}
-	return \%h;
+
+	return Data::Random::Structure->new(max_elements => $len, max_depth => 1)->generate_hash();
+
+	# my %h;
+	# for (1..$len) {
+		# $h{rand_str(3)} = rand_str(5);
+	# }
+	# return \%h;
 }
 
 sub fuzz_inputs

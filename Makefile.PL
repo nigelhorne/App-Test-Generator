@@ -40,6 +40,7 @@ WriteMakefile(
 		'Data::Random' => 0,
 		'Data::Random::String' => 0,
 		'Data::Random::String::Matches' => 0.02,
+		'Data::Random::Structure' => 0,
 		'Encode' => 0,
 		'File::Temp' => 0,
 		'IPC::Run3' => 0,
