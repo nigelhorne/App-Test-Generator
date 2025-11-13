@@ -69,7 +69,7 @@ edge_case_array:
   - ""
   - " "
 
-yaml_cases: "$yaml_file"
+yaml_cases: $yaml_file
 
 CONF
 
