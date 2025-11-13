@@ -764,7 +764,11 @@ sub generate
 				if(ref($config->{input}) eq 'HASH') {
 					%input = %{$config->{input}}
 				} elsif(defined($config->{'input'}) && ($config->{'input'} ne 'undef')) {
-					croak("$schema_file: input should be a hash, not ", ref($config->{'input'}));
+					if(ref($config->{'input'}) && length($config->{'input'})) {
+						croak("$schema_file: input should be a hash, not ", ref($config->{'input'}));
+					} else {
+						croak("$schema_file: input should be a hash, not ", $config->{'input'});
+					}
 				}
 			}
 			if(exists($config->{output})) {
