@@ -747,6 +747,7 @@ sub generate
 
 		my $config;
 		if($config = Config::Abstraction->new(config_dirs => ['.', ''], config_file => $schema_file)) {
+					carp(Dumper($config));	###### DEBUG
 			$config = $config->all();
 			if(defined($config->{'$module'}) || defined($config->{'our $module'}) || !defined($config->{'module'})) {
 				# Legacy file format. This will go away.
