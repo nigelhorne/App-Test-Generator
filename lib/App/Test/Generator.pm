@@ -751,10 +751,10 @@ sub generate
 			if(defined($config->{'$module'}) || defined($config->{'our $module'}) || !defined($config->{'module'})) {
 				# Legacy file format. This will go away.
 				# TODO: remove this code
-				$config = _load_conf(File::Spec->rel2abs($schema_file));
-				if($config) {
-					carp("$schema_file: Loading perl files as configs is deprecated and will be removed soon.");
-				}
+				# $config = _load_conf(File::Spec->rel2abs($schema_file));
+				# if($config) {
+					croak("$schema_file: Loading perl files as configs is no longer supported");
+				# }
 			}
 		}
 
@@ -871,6 +871,8 @@ sub generate
 	# --- Helpers for rendering data structures into Perl code for the generated test ---
 
 	sub _load_conf {
+		croak('Loading perl files as configs is no longer supported');
+
 		my $file = $_[0];
 
 		my $pkg = 'ConfigLoader';
