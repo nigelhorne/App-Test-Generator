@@ -89,9 +89,7 @@ DumpFile($yaml_file, $yaml_data);
 #------------------------------------------------------------------------------
 
 lives_ok {
-	App::Test::Generator::generate(
-		 $conf_file, $output_file,
-	);
+	App::Test::Generator::generate($conf_file, $output_file);
 } 'Generator runs without fatal errors';
 
 #------------------------------------------------------------------------------
