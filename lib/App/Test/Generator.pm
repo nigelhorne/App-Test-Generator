@@ -2226,7 +2226,7 @@ sub generate_tests
 					if(my $re = $spec->{matches}) {
 						for my $count ($len + 1, $len, $len - 1) {
 							next if ($count < 0);
-							my $str = rand_char() x $count;
+							my $str = rand_str($count);
 							if($str =~ $re) {
 								push @cases, { %mandatory_args, ( $field => $str ) };
 							} else {
