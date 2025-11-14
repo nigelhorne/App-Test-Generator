@@ -240,10 +240,6 @@ To ensure C<new()> is called with no arguments, you still need to define new, th
 
   new:
 
-For the legacy Perl variable syntax, use the empty string:
-
-  our $new = '';
-
 =item * C<%cases> - optional Perl static corpus, when the output is a simple string (expected => [ args... ]):
 
 Maps the expected output string to the input and _STATUS
@@ -500,64 +496,7 @@ without relying solely on randomness.
 
 =head1 EXAMPLES
 
-=head2 Math::Simple::add()
-
-Functional fuzz + Perl corpus + seed:
-
-  our $module = 'Math::Simple';
-  our $function = 'add';
-  our %input = ( a => { type => 'integer' }, b => { type => 'integer' } );
-  our %output = ( type => 'integer' );
-  our %cases = (
-    '3' => [1, 2],
-    '0' => [0, 0],
-    '-1' => [-2, 1],
-    '_STATUS:DIES' => [ 'a', 'b' ],     # non-numeric args should die
-    '_STATUS:WARNS' => [ undef, undef ], # undef args should warn
-  );
-  our $seed = 12345;
-  our $iterations = 100;
-
-=head2 Adding YAML file to generate tests
-
-OO fuzz + YAML corpus + edge cases:
-
-	our %input = ( query => { type => 'string' } );
-	our %output = ( type => 'string' );
-	our $function = 'search';
-	our $new = { api_key => 'ABC123' };
-	our $yaml_cases = 't/corpus.yml';
-	our %edge_cases = ( query => [ '', '	', '<script>' ] );
-	our %type_edge_cases = ( string => [ \"\\0", "\x{FFFD}" ] );
-	our $seed = 999;
-
-=head3 YAML Corpus Example (t/corpus.yml)
-
-A YAML mapping of expected -> args array:
-
-	"success":
-	  - "Alice"
-	  - 30
-	"failure":
-	  - "Bob"
-
-=head2 Example with arrayref + hashref
-
-  our %input = (
-    tags => { type => 'arrayref', optional => 1 },
-    config => { type => 'hashref' },
-  );
-  our %output = ( type => 'hashref' );
-
-=head2 Example with memberof
-
-  our %input = (
-      status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
-  );
-  our %output = ( type => 'string' );
-  our %config = ( test_nuls => 0, test_undef => 1 );
-
-This will generate fuzz cases for 'ok', 'error', 'pending', and one invalid string that should die.
+See the files in C<t/conf> for examples.
 
 =head2 Adding Scheduled fuzz Testing with GitHub Actions to Your Code
 
@@ -700,7 +639,7 @@ Then create this file as <t/fuzz.t>:
 					diag("$1 tests run");
 				}
 			} else {
-				diag("STDOUT:\n$stdout");
+				diag("$filepath: STDOUT:\n$stdout");
 			}
 			diag($stderr) if(length($stderr));
 		}
@@ -1670,7 +1609,7 @@ sub fuzz_inputs
 				my $type = lc((!ref($spec)) ? $spec : $spec->{type}) || 'string';
 
 				foreach my $field(keys %{$spec}) {
-					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'memberof'))) {
+					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'memberof', 'position'))) {
 						diag(__LINE__, ": TODO: handle schema keyword '$field'");
 					}
 				}
@@ -2462,7 +2401,7 @@ sub run_test
 		if($positions) {
 			# Positional args
 			foreach my $key (keys %{$input}) {
-				if($key ne '_STATUS') {
+				if(($key ne '_STATUS') && ($key ne '_NAME')) {
 					if(exists($positions->{$key})) {
 						$alist[$positions->{$key}] = delete $input->{$key};
 					} else {
@@ -2491,7 +2430,7 @@ sub run_test
 		$mess = "[% function %] %s";
 	}
 
-	if(my $status = (delete $case->{'_STATUS'} || delete $output->{'_STATUS'})) {
+	if(my $status = (delete $case->{'_STATUS'} || $output->{'_STATUS'})) {
 		if($status eq 'DIES') {
 			dies_ok { [% call_code %] } sprintf($mess, 'dies');
 		} elsif($status eq 'WARNS') {
@@ -2502,6 +2441,8 @@ sub run_test
 	} else {
 		lives_ok { [% call_code %] } sprintf($mess, 'survives');
 	}
+
+	delete local $output->{'_STATUS'};
 
 	if(scalar keys %{$output}) {
 		if($ENV{'TEST_VERBOSE'}) {

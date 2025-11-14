@@ -190,10 +190,6 @@ Recognized items:
 
         new:
 
-    For the legacy Perl variable syntax, use the empty string:
-
-        our $new = '';
-
 - `%cases` - optional Perl static corpus, when the output is a simple string (expected => \[ args... \]):
 
     Maps the expected output string to the input and \_STATUS
@@ -421,64 +417,7 @@ without relying solely on randomness.
 
 # EXAMPLES
 
-## Math::Simple::add()
-
-Functional fuzz + Perl corpus + seed:
-
-    our $module = 'Math::Simple';
-    our $function = 'add';
-    our %input = ( a => { type => 'integer' }, b => { type => 'integer' } );
-    our %output = ( type => 'integer' );
-    our %cases = (
-      '3' => [1, 2],
-      '0' => [0, 0],
-      '-1' => [-2, 1],
-      '_STATUS:DIES' => [ 'a', 'b' ],     # non-numeric args should die
-      '_STATUS:WARNS' => [ undef, undef ], # undef args should warn
-    );
-    our $seed = 12345;
-    our $iterations = 100;
-
-## Adding YAML file to generate tests
-
-OO fuzz + YAML corpus + edge cases:
-
-        our %input = ( query => { type => 'string' } );
-        our %output = ( type => 'string' );
-        our $function = 'search';
-        our $new = { api_key => 'ABC123' };
-        our $yaml_cases = 't/corpus.yml';
-        our %edge_cases = ( query => [ '', '    ', '<script>' ] );
-        our %type_edge_cases = ( string => [ \"\\0", "\x{FFFD}" ] );
-        our $seed = 999;
-
-### YAML Corpus Example (t/corpus.yml)
-
-A YAML mapping of expected -> args array:
-
-        "success":
-          - "Alice"
-          - 30
-        "failure":
-          - "Bob"
-
-## Example with arrayref + hashref
-
-    our %input = (
-      tags => { type => 'arrayref', optional => 1 },
-      config => { type => 'hashref' },
-    );
-    our %output = ( type => 'hashref' );
-
-## Example with memberof
-
-    our %input = (
-        status => { type => 'string', memberof => [ 'ok', 'error', 'pending' ] },
-    );
-    our %output = ( type => 'string' );
-    our %config = ( test_nuls => 0, test_undef => 1 );
-
-This will generate fuzz cases for 'ok', 'error', 'pending', and one invalid string that should die.
+See the files in `t/conf` for examples.
 
 ## Adding Scheduled fuzz Testing with GitHub Actions to Your Code
 
@@ -597,8 +536,8 @@ Then create this file as &lt;t/fuzz.t>:
     use FindBin qw($Bin);
     use IPC::Run3;
     use IPC::System::Simple qw(system);
-    use Test::Most;
     use Test::Needs 'App::Test::Generator';
+    use Test::Most;
 
     my $dirname = "$Bin/conf";
 
@@ -621,7 +560,7 @@ Then create this file as &lt;t/fuzz.t>:
                                           diag("$1 tests run");
                                   }
                           } else {
-                                  diag("STDOUT:\n$stdout");
+                                  diag("$filepath: STDOUT:\n$stdout");
                           }
                           diag($stderr) if(length($stderr));
                   }
