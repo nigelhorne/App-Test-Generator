@@ -1722,7 +1722,11 @@ sub fuzz_inputs
 					push @cases, { %mandatory_args, ( $arg_name => 'false' ) };
 					push @cases, { %mandatory_args, ( $arg_name => 'off' ) };
 					push @cases, { %mandatory_args, ( $arg_name => 'on' ) };
+					push @cases, { %mandatory_args, ( $arg_name => 'yes' ) };
+					push @cases, { %mandatory_args, ( $arg_name => 'no' ) };
 					push @cases, { %mandatory_args, ( $arg_name => 'bletch', _STATUS => 'DIES' ) };
+					push @cases, { %mandatory_args, ( $arg_name => -1, _STATUS => 'DIES' ) };
+					push @cases, { %mandatory_args, ( $arg_name => 2, _STATUS => 'DIES' ) };
 				}
 				elsif ($type eq 'hashref') {
 					push @cases, { $arg_name => { a => 1 } };
@@ -2083,6 +2087,7 @@ sub fuzz_inputs
 						{ _input => 'yes' },
 						{ _input => 'no' },
 						{ _input => 2, _STATUS => 'DIES' },	# invalid boolean
+						{ _input => -1, _STATUS => 'DIES' },	# invalid boolean
 						{ _input => [ 3 ], _STATUS => 'DIES' },	# invalid boolean
 						{ _input => { 'abc' => 'xyz' }, _STATUS => 'DIES' },	# invalid boolean
 						{ _input => 'plugh', _STATUS => 'DIES' };	# invalid boolean
@@ -2317,15 +2322,21 @@ sub generate_tests
 					}
 				} else {
 					# basic boolean edge cases
-					push @cases, { %mandatory_args, ( $field => 0 ) };
-					push @cases, { %mandatory_args, ( $field => 1 ) };
-					push @cases, { %mandatory_args, ( $field => 'false' ) };
-					push @cases, { %mandatory_args, ( $field => 'true' ) };
-					push @cases, { %mandatory_args, ( $field => 'off' ) };
-					push @cases, { %mandatory_args, ( $field => 'on' ) };
+					push @cases,
+						{ %mandatory_args, ( $field => 0 ) },
+						{ %mandatory_args, ( $field => 1 ) },
+						{ %mandatory_args, ( $field => 'false' ) },
+						{ %mandatory_args, ( $field => 'true' ) },
+						{ %mandatory_args, ( $field => 'off' ) },
+						{ %mandatory_args, ( $field => 'on' ) },
+						{ %mandatory_args, ( $field => 'yes' ) },
+						{ %mandatory_args, ( $field => 'no' ) },
+						{ %mandatory_args, ( $field => 2, _STATUS => 'DIES' ) },	# invalid boolean
+						{ %mandatory_args, ( $field => -1, _STATUS => 'DIES' ) },	# invalid boolean
+						{ %mandatory_args, ( $field => 'xyzzy', _STATUS => 'DIES' ) };	# invalid boolean
+
 					push @cases, { %mandatory_args, ( $field => undef, _STATUS => 'DIES' ) } if($config{'test_undef'});
-					push @cases, { %mandatory_args, ( $field => 2, _STATUS => 'DIES' ) };	# invalid boolean
-					push @cases, { %mandatory_args, ( $field => 'xyzzy', _STATUS => 'DIES' ) };	# invalid boolean
+					push @cases, { %mandatory_args, ( $field => '', _STATUS => 'DIES' ) } if($config{'test_empty'});
 				}
 			}
 		}
@@ -2387,7 +2398,7 @@ sub run_test
 		diag('input: ', Dumper($input));
 	}
 
-	my $name = $case->{'_NAME'};
+	my $name = delete local $case->{'_NAME'};
 	my $result;
 	my $mess;
 	if(defined($input) && !ref($input)) {
@@ -2433,7 +2444,8 @@ sub run_test
 	if(my $status = (delete $case->{'_STATUS'} || $output->{'_STATUS'})) {
 		if($status eq 'DIES') {
 			dies_ok { [% call_code %] } sprintf($mess, 'dies');
-			return;
+			ok(!defined($result));
+			return;	# There should be no output to validate
 		} elsif($status eq 'WARNS') {
 			warnings_exist { [% call_code %] } qr/./, sprintf($mess, 'warns');
 		} else {
