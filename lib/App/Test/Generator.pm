@@ -2433,6 +2433,7 @@ sub run_test
 	if(my $status = (delete $case->{'_STATUS'} || $output->{'_STATUS'})) {
 		if($status eq 'DIES') {
 			dies_ok { [% call_code %] } sprintf($mess, 'dies');
+			return;
 		} elsif($status eq 'WARNS') {
 			warnings_exist { [% call_code %] } qr/./, sprintf($mess, 'warns');
 		} else {
