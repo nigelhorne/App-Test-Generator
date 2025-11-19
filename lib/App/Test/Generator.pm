@@ -932,13 +932,16 @@ portion with a message.
 =head2 Testing Email Validation
 
   ---
-  module: Email::Validator
-  function: is_valid
+  module: Email::Valid
+  function: rfc822
 
   config:
     properties:
       enable: true
-      trials: 1000
+      trials: 200
+    test_undef: no
+    test_empty: no
+    test_nuls: no
 
   input:
     email:
@@ -957,9 +960,8 @@ portion with a message.
           semantic: email
       output:
         type: boolean
-        value: 1
 
-This generates 1000 realistic email addresses for testing, rather than random strings.
+This generates 200 realistic email addresses for testing, rather than random strings.
 
 =head2 Combining Semantic with Regex
 
@@ -1684,7 +1686,8 @@ sub _generate_transform_properties {
 		# Build the call code
 		my $call_code;
 		if ($module) {
-			$call_code = "$module\::$function";
+			# $call_code = "$module\::$function";
+			$call_code = "$module->$function";
 		} else {
 			$call_code = $function;
 		}
@@ -1831,12 +1834,38 @@ sub _get_semantic_generators {
 		email => {
 			code => q{
 				Gen {
+					my $len = rand(10);
+					my $l;
+					my @name;
+					my @tlds = qw(com org net edu gov io co uk de fr);
+
+					for($l = 0; $l < $len; $l++) {
+						push @name, pack('c', (int(rand 26))+97);
+					}
+					push @name, '@';
+					$len = rand(10);
+					for($l = 0; $l < $len; $l++) {
+						push @name, pack('c', (int(rand 26))+97);
+					}
+					push @name, '.';
+					$len = rand($#tlds+1);
+					push @name, $tlds[$len];
+					return join('', @name);
+				}
+			},
+			description => 'Valid email addresses',
+		},
+		old_email => {
+			code => q{
+				Gen {
 					my @chars = ('a'..'z', '0'..'9', '_', '.');
 					my @tlds = qw(com org net edu gov io co uk de fr);
 					my $user_len = 5 + int(rand(10));
 					my $domain_len = 3 + int(rand(12));
 
-					my $user = join('', map { $chars[int(rand(@chars))] } 1..$user_len);
+					my $user = ('a'..'z')[int(rand(26))] .
+						join('', map { $chars[int(rand(@chars))] } 1..$user_len - 2) .
+						('a'..'z')[int(rand(26))];
 					my $domain = join('', map { ('a'..'z')[int(rand(26))] } 1..$domain_len);
 					my $tld = $tlds[int(rand(@tlds))];
 
@@ -1845,7 +1874,6 @@ sub _get_semantic_generators {
 			},
 			description => 'Valid email addresses',
 		},
-
 		url => {
 			code => q{
 				Gen {
@@ -2249,6 +2277,7 @@ sub _render_properties {
 			$code .= "    \$died;\n";
 		} else {
 			$code .= "    my \$error = \$\@;\n";
+			# $code .= "    ::diag(\"\$$prop->{name} -> \$error; \") if(\$ENV{'TEST_VERBOSE'});\n";
 			$code .= "    \n";
 			$code .= "    !\$error && (\n";
 			$code .= "        $prop->{property_checks}\n";

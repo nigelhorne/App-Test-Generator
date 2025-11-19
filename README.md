@@ -264,16 +264,43 @@ Recognized items:
     - `test_empty`, test with empty strings (default: 1)
     - `dedup`, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 
-## OUTPUT
+### Semantic Data Generators
 
-The generated test:
+For property-based testing, you can use semantic generators to create realistic test data:
 
-- Seeds RND (if configured) for reproducible fuzz runs
-- Uses edge cases (per-field and per-type) with configurable probability
-- Runs `$iterations` fuzz cases plus appended edge-case runs
-- Validates inputs with Params::Get / Params::Validate::Strict
-- Validates outputs with [Return::Set](https://metacpan.org/pod/Return%3A%3ASet)
-- Runs static `is(... )` corpus tests from Perl and/or YAML corpus
+    input:
+      email:
+        type: string
+        semantic: email
+
+      user_id:
+        type: string
+        semantic: uuid
+
+      phone:
+        type: string
+        semantic: phone_us
+
+#### Available Semantic Types
+
+- `email` - Valid email addresses (user@domain.tld)
+- `url` - HTTP/HTTPS URLs
+- `uuid` - UUIDv4 identifiers
+- `phone_us` - US phone numbers (XXX-XXX-XXXX)
+- `phone_e164` - International E.164 format (+XXXXXXXXXXXX)
+- `ipv4` - IPv4 addresses (0.0.0.0 - 255.255.255.255)
+- `ipv6` - IPv6 addresses
+- `username` - Alphanumeric usernames with \_ and -
+- `slug` - URL slugs (lowercase-with-hyphens)
+- `hex_color` - Hex color codes (#RRGGBB)
+- `iso_date` - ISO 8601 dates (YYYY-MM-DD)
+- `iso_datetime` - ISO 8601 datetimes (YYYY-MM-DDTHH:MM:SSZ)
+- `semver` - Semantic version strings (major.minor.patch)
+- `jwt` - JWT-like tokens (base64url format)
+- `json` - Simple JSON objects
+- `base64` - Base64-encoded strings
+- `md5` - MD5 hashes (32 hex chars)
+- `sha256` - SHA-256 hashes (64 hex chars)
 
 ## TRANSFORMS
 
@@ -614,7 +641,7 @@ Here's a complete example testing the `abs` builtin function:
         output:
           type: number
           min: 0
-      
+
       negative:
         input:
           number:
@@ -697,7 +724,7 @@ Here's a more complex example testing a string normalization function:
         output:
           type: string
           value: ""
-      
+
       single_space:
         input:
           text:
@@ -707,7 +734,7 @@ Here's a more complex example testing a string normalization function:
         output:
           type: string
           matches: '^\S+( \S+)*$'
-      
+
       length_bounded:
         input:
           text:
@@ -756,7 +783,7 @@ You can also disable traditional fuzzing and only use property-based tests:
       properties:
         enable: true
         trials: 5000
-    
+
     iterations: 0  # Disable random fuzzing, use only property tests
 
 ### When to Use Property-Based Testing
@@ -778,6 +805,63 @@ Property-based testing requires [Test::LectroTest](https://metacpan.org/pod/Test
 If not installed, the generated tests will automatically skip the property-based
 portion with a message.
 
+## Testing Email Validation
+
+    ---
+    module: Email::Valid
+    function: rfc822
+
+    config:
+      properties:
+        enable: true
+        trials: 200
+      test_undef: no
+      test_empty: no
+      test_nuls: no
+
+    input:
+      email:
+        type: string
+        semantic: email
+        position: 0
+
+    output:
+      type: boolean
+
+    transforms:
+      valid_emails:
+        input:
+          email:
+            type: string
+            semantic: email
+        output:
+          type: boolean
+
+This generates 200 realistic email addresses for testing, rather than random strings.
+
+## Combining Semantic with Regex
+
+You can combine semantic generators with regex validation:
+
+    input:
+      corporate_email:
+        type: string
+        semantic: email
+        matches: '@company\.com$'
+
+The semantic generator creates realistic emails, and the regex ensures they match your domain.
+
+## OUTPUT
+
+The generated test:
+
+- Seeds RND (if configured) for reproducible fuzz runs
+- Uses edge cases (per-field and per-type) with configurable probability
+- Runs `$iterations` fuzz cases plus appended edge-case runs
+- Validates inputs with Params::Get / Params::Validate::Strict
+- Validates outputs with [Return::Set](https://metacpan.org/pod/Return%3A%3ASet)
+- Runs static `is(... )` corpus tests from Perl and/or YAML corpus
+
 # METHODS
 
     generate($schema_file, $test_file)
@@ -791,6 +875,10 @@ Converts transform specifications into LectroTest property definitions.
 ## \_detect\_transform\_properties
 
 Automatically detects testable properties from transform input/output specs.
+
+## \_get\_semantic\_generators
+
+Returns a hash of built-in semantic generators for common data types.
 
 ## \_schema\_to\_lectrotest\_generator
 
