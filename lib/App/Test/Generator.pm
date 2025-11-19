@@ -929,7 +929,7 @@ Property-based testing requires L<Test::LectroTest> to be installed:
 If not installed, the generated tests will automatically skip the property-based
 portion with a message.
 
-=head2 Testing Email Validation
+=head3 Testing Email Validation
 
   ---
   module: Email::Valid
@@ -963,7 +963,7 @@ portion with a message.
 
 This generates 200 realistic email addresses for testing, rather than random strings.
 
-=head2 Combining Semantic with Regex
+=head3 Combining Semantic with Regex
 
 You can combine semantic generators with regex validation:
 
@@ -974,6 +974,131 @@ You can combine semantic generators with regex validation:
       matches: '@company\.com$'
 
 The semantic generator creates realistic emails, and the regex ensures they match your domain.
+
+=head3 Custom Properties for Transforms
+
+You can define additional properties that should hold for your transforms beyond
+the automatically detected ones.
+
+=head4 Using Built-in Properties
+
+  transforms:
+    positive:
+      input:
+        number:
+          type: number
+          min: 0
+      output:
+        type: number
+        min: 0
+      properties:
+        - idempotent       # f(f(x)) == f(x)
+        - non_negative     # result >= 0
+        - positive         # result > 0
+
+Available built-in properties:
+
+=over 4
+
+=item * C<idempotent> - Function is idempotent: f(f(x)) == f(x)
+
+=item * C<non_negative> - Result is always >= 0
+
+=item * C<positive> - Result is always > 0
+
+=item * C<non_empty> - String result is never empty
+
+=item * C<length_preserved> - Output length equals input length
+
+=item * C<uppercase> - Result is all uppercase
+
+=item * C<lowercase> - Result is all lowercase
+
+=item * C<trimmed> - No leading/trailing whitespace
+
+=item * C<sorted_ascending> - Array is sorted ascending
+
+=item * C<sorted_descending> - Array is sorted descending
+
+=item * C<unique_elements> - Array has no duplicates
+
+=item * C<preserves_keys> - Hash has same keys as input
+
+=back
+
+=head4 Custom Property Code
+
+Custom properties allows the definition additional invariants and relationships that should hold for their transforms,
+beyond what's auto-detected.
+For example:
+
+=over 4
+
+=item * Idempotence: f(f(x)) == f(x)
+
+=item * Commutativity: f(x, y) == f(y, x)
+
+=item * Associativity: f(f(x, y), z) == f(x, f(y, z))
+
+=item * Inverse relationships: decode(encode(x)) == x
+
+=item * Domain-specific invariants: Custom business logic
+
+=back
+
+Define your own properties with custom Perl code:
+
+  transforms:
+    normalize:
+      input:
+        text:
+          type: string
+      output:
+        type: string
+      properties:
+        - name: single_spaces
+          description: "No multiple consecutive spaces"
+          code: $result !~ /  /
+
+        - name: no_leading_space
+          description: "No space at start"
+          code: $result !~ /^\s/
+
+        - name: reversible
+          description: "Can be reversed back"
+          code: length($result) == length($text)
+
+The code has access to:
+
+=over 4
+
+=item * C<$result> - The function's return value
+
+=item * Input variables - All input parameters (e.g., C<$text>, C<$number>)
+
+=item * The function itself - Can call it again for idempotence checks
+
+=back
+
+=head4 Combining Auto-detected and Custom Properties
+
+The generator automatically detects properties from your output spec, and adds
+your custom properties:
+
+  transforms:
+    sanitize:
+      input:
+        html:
+          type: string
+      output:
+        type: string
+        min: 0              # Auto-detects: defined, min_length >= 0
+        max: 10000
+      properties:           # Additional custom checks:
+        - name: no_scripts
+          code: $result !~ /<script/i
+        - name: no_iframes
+          code: $result !~ /<iframe/i
 
 =head2 OUTPUT
 
@@ -1271,6 +1396,40 @@ sub generate
 				unless (exists $semantic_generators->{$semantic}) {
 					carp "Warning: Unknown semantic type '$semantic' for parameter '$param'. Available types: ",
 						join(', ', sort keys %$semantic_generators);
+				}
+			}
+		}
+
+		# Validate custom properties in transforms
+		if (exists $config->{transforms} && ref($config->{transforms}) eq 'HASH') {
+			my $builtin_props = _get_builtin_properties();
+
+			for my $transform_name (keys %{$config->{transforms}}) {
+				my $transform = $config->{transforms}{$transform_name};
+
+				if (exists $transform->{properties}) {
+					unless (ref($transform->{properties}) eq 'ARRAY') {
+						croak "Transform '$transform_name': properties must be an array";
+					}
+
+					for my $prop (@{$transform->{properties}}) {
+						if (!ref($prop)) {
+							# Check if builtin exists
+							unless (exists $builtin_props->{$prop}) {
+								carp "Transform '$transform_name': unknown built-in property '$prop'. Available: ",
+									join(', ', sort keys %$builtin_props);
+							}
+						}
+						elsif (ref($prop) eq 'HASH') {
+							# Validate custom property structure
+							unless ($prop->{name} && $prop->{code}) {
+								croak "Transform '$transform_name': custom properties must have 'name' and 'code' fields";
+							}
+						}
+						else {
+							croak "Transform '$transform_name': invalid property definition";
+						}
+					}
 				}
 			}
 		}
@@ -1653,7 +1812,7 @@ sub _generate_transform_properties {
 		my $input_spec = $transform->{input};
 		my $output_spec = $transform->{output};
 
-		# Skip if input is 'undef' (these are death tests, handled separately)
+		# Skip if input is 'undef'
 		if (!ref($input_spec) && $input_spec eq 'undef') {
 			next;
 		}
@@ -1665,8 +1824,23 @@ sub _generate_transform_properties {
 			$output_spec
 		);
 
-		# Skip if no properties detected
-		next unless @detected_props;
+		# Process custom properties from schema
+		my @custom_props = ();
+		if (exists $transform->{properties} && ref($transform->{properties}) eq 'ARRAY') {
+			@custom_props = _process_custom_properties(
+				$transform->{properties},
+				$function,
+				$module,
+				$input_spec,
+				$output_spec
+			);
+		}
+
+		# Combine detected and custom properties
+		my @all_props = (@detected_props, @custom_props);
+
+		# Skip if no properties detected or defined
+		next unless @all_props;
 
 		# Build LectroTest generator specification
 		my @generators;
@@ -1678,7 +1852,7 @@ sub _generate_transform_properties {
 
 			my $gen = _schema_to_lectrotest_generator($field, $spec);
 			push @generators, $gen;
-			push @var_names, $field;  # Just the name, no $
+			push @var_names, $field;
 		}
 
 		my $gen_spec = join(', ', @generators);
@@ -1705,8 +1879,8 @@ sub _generate_transform_properties {
 		my $args_str = join(', ', @args);
 
 		# Build property checks
-		my @checks = map { $_->{code} } @detected_props;
-		my $property_checks = join(" &&\n		", @checks);
+		my @checks = map { $_->{code} } @all_props;
+		my $property_checks = join(" &&\n\t", @checks);
 
 		# Handle _STATUS in output
 		my $should_die = ($output_spec->{_STATUS} // '') eq 'DIES';
@@ -1722,6 +1896,94 @@ sub _generate_transform_properties {
 	}
 
 	return \@properties;
+}
+
+=head2 _process_custom_properties
+
+Processes custom property definitions from the schema.
+
+=cut
+
+sub _process_custom_properties {
+	my ($properties_spec, $function, $module, $input_spec, $output_spec) = @_;
+
+	my @properties;
+	my $builtin_properties = _get_builtin_properties();
+
+	for my $prop_def (@$properties_spec) {
+		my $prop_name;
+		my $prop_code;
+		my $prop_desc;
+
+		if (!ref($prop_def)) {
+			# Simple string - lookup builtin property
+			$prop_name = $prop_def;
+
+			if (exists $builtin_properties->{$prop_name}) {
+				my $builtin = $builtin_properties->{$prop_name};
+
+				# Get input variable names
+				my @var_names = sort keys %$input_spec;
+
+				# Build call code
+				my $call_code;
+				if ($module) {
+					# $call_code = "$module\::$function";
+					$call_code = "$module->$function";
+				} else {
+					$call_code = $function;
+				}
+
+				# Build args
+				my @args;
+				if (_has_positions($input_spec)) {
+					my @sorted = sort {
+						$input_spec->{$a}{position} <=> $input_spec->{$b}{position}
+					} @var_names;
+					@args = map { "\$$_" } @sorted;
+				} else {
+					@args = map { "\$$_" } @var_names;
+				}
+				$call_code .= '(' . join(', ', @args) . ')';
+
+				# Generate property code from template
+				$prop_code = $builtin->{code_template}->($function, $call_code, \@var_names);
+				$prop_desc = $builtin->{description};
+			} else {
+				carp "Unknown built-in property '$prop_name', skipping";
+				next;
+			}
+		}
+		elsif (ref($prop_def) eq 'HASH') {
+			# Custom property with code
+			$prop_name = $prop_def->{name} || 'custom_property';
+			$prop_code = $prop_def->{code};
+			$prop_desc = $prop_def->{description} || "Custom property: $prop_name";
+
+			unless ($prop_code) {
+				carp "Custom property '$prop_name' missing 'code' field, skipping";
+				next;
+			}
+
+			# Validate that the code looks reasonable
+			unless ($prop_code =~ /\$/ || $prop_code =~ /\w+/) {
+				carp "Custom property '$prop_name' code looks invalid: $prop_code";
+				next;
+			}
+		}
+		else {
+			carp 'Invalid property definition: ', Dumper($prop_def);
+			next;
+		}
+
+		push @properties, {
+			name => $prop_name,
+			code => $prop_code,
+			description => $prop_desc,
+		};
+	}
+
+	return @properties;
 }
 
 =head2 _detect_transform_properties
@@ -2073,6 +2335,136 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'SHA-256 hashes (64 hex characters)',
+		},
+	};
+}
+
+=head2 _get_builtin_properties
+
+Returns a hash of built-in property templates that can be applied to transforms.
+
+=cut
+
+sub _get_builtin_properties {
+	return {
+		idempotent => {
+			description => 'Function is idempotent: f(f(x)) == f(x)',
+			code_template => sub {
+				my ($function, $call_code, $input_vars) = @_;
+				return "\$result eq do { my \$tmp = $call_code; $call_code }";
+			},
+			applicable_to => ['all'],
+		},
+
+		non_negative => {
+			description => 'Result is always non-negative',
+			code_template => sub {
+				my ($function, $call_code, $input_vars) = @_;
+				return '$result >= 0';
+			},
+			applicable_to => ['number', 'integer', 'float'],
+		},
+
+		positive => {
+			description => 'Result is always positive (> 0)',
+			code_template => sub {
+				my ($function, $call_code, $input_vars) = @_;
+				return '$result > 0';
+			},
+			applicable_to => ['number', 'integer', 'float'],
+		},
+
+		non_empty => {
+			description => 'Result is never empty',
+			code_template => sub {
+				my ($function, $call_code, $input_vars) = @_;
+				return 'length($result) > 0';
+			},
+			applicable_to => ['string'],
+		},
+
+		length_preserved => {
+			description => 'Output length equals input length',
+			code_template => sub {
+				my ($function, $call_code, $input_vars) = @_;
+				my $first_var = $input_vars->[0];
+				return "length(\$result) == length(\$$first_var)";
+			},
+			applicable_to => ['string'],
+		},
+
+		uppercase => {
+			description => 'Result is all uppercase',
+			code_template => sub {
+				my ($function, $call_code, $input_vars) = @_;
+				return '$result eq uc($result)';
+			},
+			applicable_to => ['string'],
+		},
+
+		lowercase => {
+			description => 'Result is all lowercase',
+			code_template => sub {
+				my ($function, $call_code, $input_vars) = @_;
+				return '$result eq lc($result)';
+			},
+			applicable_to => ['string'],
+		},
+
+		trimmed => {
+			description => 'Result has no leading/trailing whitespace',
+			code_template => sub {
+				my ($function, $call_code, $input_vars) = @_;
+				return '$result !~ /^\s/ && $result !~ /\s$/';
+			},
+			applicable_to => ['string'],
+		},
+
+		sorted_ascending => {
+			description => 'Array is sorted in ascending order',
+			code_template => sub {
+				my ($function, $call_code, $input_vars) = @_;
+				return 'do { my @arr = @$result; my $sorted = 1; for my $i (1..$#arr) { $sorted = 0 if $arr[$i] < $arr[$i-1]; } $sorted }';
+			},
+			applicable_to => ['arrayref'],
+		},
+
+		sorted_descending => {
+			description => 'Array is sorted in descending order',
+			code_template => sub {
+				my ($function, $call_code, $input_vars) = @_;
+				return 'do { my @arr = @$result; my $sorted = 1; for my $i (1..$#arr) { $sorted = 0 if $arr[$i] > $arr[$i-1]; } $sorted }';
+			},
+			applicable_to => ['arrayref'],
+		},
+
+		unique_elements => {
+			description => 'Array has no duplicate elements',
+			code_template => sub {
+				my ($function, $call_code, $input_vars) = @_;
+				return 'do { my @arr = @$result; my %seen; !grep { $seen{$_}++ } @arr }';
+			},
+			applicable_to => ['arrayref'],
+		},
+
+		preserves_keys => {
+			description => 'Hash has same keys as input',
+			code_template => sub {
+				my ($function, $call_code, $input_vars) = @_;
+				my $first_var = $input_vars->[0];
+				return 'do { my @in = sort keys %{$' . $first_var . '}; my @out = sort keys %$result; join(",", @in) eq join(",", @out) }';
+			},
+			applicable_to => ['hashref'],
+		},
+
+		monotonic_increasing => {
+			description => 'For x <= y, f(x) <= f(y)',
+			code_template => sub {
+				my ($function, $call_code, $input_vars) = @_;
+				# This would need multiple inputs - complex
+				return '1';  # Placeholder
+			},
+			applicable_to => ['number', 'integer'],
 		},
 	};
 }

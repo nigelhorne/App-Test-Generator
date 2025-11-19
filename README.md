@@ -805,7 +805,7 @@ Property-based testing requires [Test::LectroTest](https://metacpan.org/pod/Test
 If not installed, the generated tests will automatically skip the property-based
 portion with a message.
 
-## Testing Email Validation
+### Testing Email Validation
 
     ---
     module: Email::Valid
@@ -839,7 +839,7 @@ portion with a message.
 
 This generates 200 realistic email addresses for testing, rather than random strings.
 
-## Combining Semantic with Regex
+### Combining Semantic with Regex
 
 You can combine semantic generators with regex validation:
 
@@ -850,6 +850,102 @@ You can combine semantic generators with regex validation:
         matches: '@company\.com$'
 
 The semantic generator creates realistic emails, and the regex ensures they match your domain.
+
+### Custom Properties for Transforms
+
+You can define additional properties that should hold for your transforms beyond
+the automatically detected ones.
+
+#### Using Built-in Properties
+
+    transforms:
+      positive:
+        input:
+          number:
+            type: number
+            min: 0
+        output:
+          type: number
+          min: 0
+        properties:
+          - idempotent       # f(f(x)) == f(x)
+          - non_negative     # result >= 0
+          - positive         # result > 0
+
+Available built-in properties:
+
+- `idempotent` - Function is idempotent: f(f(x)) == f(x)
+- `non_negative` - Result is always >= 0
+- `positive` - Result is always > 0
+- `non_empty` - String result is never empty
+- `length_preserved` - Output length equals input length
+- `uppercase` - Result is all uppercase
+- `lowercase` - Result is all lowercase
+- `trimmed` - No leading/trailing whitespace
+- `sorted_ascending` - Array is sorted ascending
+- `sorted_descending` - Array is sorted descending
+- `unique_elements` - Array has no duplicates
+- `preserves_keys` - Hash has same keys as input
+
+#### Custom Property Code
+
+Custom properties allows the definition additional invariants and relationships that should hold for their transforms,
+beyond what's auto-detected.
+For example:
+
+- Idempotence: f(f(x)) == f(x)
+- Commutativity: f(x, y) == f(y, x)
+- Associativity: f(f(x, y), z) == f(x, f(y, z))
+- Inverse relationships: decode(encode(x)) == x
+- Domain-specific invariants: Custom business logic
+
+Define your own properties with custom Perl code:
+
+    transforms:
+      normalize:
+        input:
+          text:
+            type: string
+        output:
+          type: string
+        properties:
+          - name: single_spaces
+            description: "No multiple consecutive spaces"
+            code: $result !~ /  /
+
+          - name: no_leading_space
+            description: "No space at start"
+            code: $result !~ /^\s/
+
+          - name: reversible
+            description: "Can be reversed back"
+            code: length($result) == length($text)
+
+The code has access to:
+
+- `$result` - The function's return value
+- Input variables - All input parameters (e.g., `$text`, `$number`)
+- The function itself - Can call it again for idempotence checks
+
+#### Combining Auto-detected and Custom Properties
+
+The generator automatically detects properties from your output spec, and adds
+your custom properties:
+
+    transforms:
+      sanitize:
+        input:
+          html:
+            type: string
+        output:
+          type: string
+          min: 0              # Auto-detects: defined, min_length >= 0
+          max: 10000
+        properties:           # Additional custom checks:
+          - name: no_scripts
+            code: $result !~ /<script/i
+          - name: no_iframes
+            code: $result !~ /<iframe/i
 
 ## OUTPUT
 
@@ -872,6 +968,10 @@ Takes a schema file and produces a test file (or STDOUT).
 
 Converts transform specifications into LectroTest property definitions.
 
+## \_process\_custom\_properties
+
+Processes custom property definitions from the schema.
+
 ## \_detect\_transform\_properties
 
 Automatically detects testable properties from transform input/output specs.
@@ -879,6 +979,10 @@ Automatically detects testable properties from transform input/output specs.
 ## \_get\_semantic\_generators
 
 Returns a hash of built-in semantic generators for common data types.
+
+## \_get\_builtin\_properties
+
+Returns a hash of built-in property templates that can be applied to transforms.
 
 ## \_schema\_to\_lectrotest\_generator
 
