@@ -1465,8 +1465,8 @@ foreach my $transform (keys %transforms) {
 			# delete $ENV{'LANG'};
 			# delete $ENV{'LC_ALL'};
 			# run_test({ _NAME => $transform }, $test, \%output, $positions);
-			# $ENV{'LANG'} = 'fr_FR.utf8';
-			# $ENV{'LC_ALL'} = 'fr_FR.utf8';
+			# $ENV{'LANG'} = 'de_DE.utf8';
+			# $ENV{'LC_ALL'} = 'de_DE.utf8';
 			# run_test({ _NAME => $transform }, $test, \%output, $positions);
 		}
 	}

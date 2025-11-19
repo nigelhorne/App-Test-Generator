@@ -1147,32 +1147,10 @@ sub generate
 	if(defined($schema_file)) {
 		if(my $schema = _load_schema($schema_file)) {
 			# Parse the schema file and load into our structures
-			if(exists($schema->{input})) {
-				if(ref($schema->{input}) eq 'HASH') {
-					%input = %{$schema->{input}}
-				} elsif(defined($schema->{'input'}) && ($schema->{'input'} ne 'undef')) {
-					# carp(Dumper($schema));
-					if(ref($schema->{'input'}) && length($schema->{'input'})) {
-						croak("$schema_file: input should be a hash, not ", ref($schema->{'input'}));
-					} else {
-						croak("$schema_file: input should be a hash, not ", $schema->{'input'});
-					}
-				}
-			}
-			if(exists($schema->{output})) {
-				if(ref($schema->{output}) eq 'HASH') {
-					%output = %{$schema->{output}}
-				} elsif(defined($schema->{'output'}) && ($schema->{'output'} ne 'undef')) {
-					croak("$schema_file: output should be a hash");
-				}
-			}
-			if(exists($schema->{transforms})) {
-				if(ref($schema->{transforms}) eq 'HASH') {
-					%transforms = %{$schema->{transforms}}
-				} elsif(defined($schema->{'transforms'}) && ($schema->{'transforms'} ne 'undef')) {
-					croak("$schema_file: transforms should be a hash");
-				}
-			}
+			%input = %{_load_schema_section($schema, 'input', $schema_file)};
+			%output = %{_load_schema_section($schema, 'output', $schema_file)};
+			%transforms = %{_load_schema_section($schema, 'transforms', $schema_file)};
+
 			%cases = %{$schema->{cases}} if(exists($schema->{cases}));
 			%edge_cases = %{$schema->{edge_cases}} if(exists($schema->{edge_cases}));
 			%type_edge_cases = %{$schema->{type_edge_cases}} if(exists($schema->{type_edge_cases}));
@@ -1271,7 +1249,7 @@ sub generate
 	foreach my $key (sort keys %config) {
 		# Skip nested hashes like 'properties' - handle them separately or skip
 		if(ref($config{$key}) eq 'HASH') {
-			next;  # Skip nested structures in config output
+			next;	# Skip nested structures in config output
 		}
 		$config_code .= "'$key' => $config{$key},\n";
 	}
@@ -1493,6 +1471,25 @@ sub _load_schema {
 	}
 }
 
+sub _load_schema_section
+{
+	my($schema, $section, $schema_file) = @_;
+
+	if(exists($schema->{$section})) {
+		if(ref($schema->{$section}) eq 'HASH') {
+			return $schema->{$section};
+		} elsif(defined($schema->{$section}) && ($schema->{$section} ne 'undef')) {
+			# carp(Dumper($schema));
+			if(ref($schema->{$section}) && length($schema->{$section})) {
+				croak("$schema_file: $section should be a hash, not ", ref($schema->{$section}));
+			} else {
+				croak("$schema_file: $section should be a hash, not ", $schema->{$section});
+			}
+		}
+	}
+	return {};
+}
+
 sub _load_conf {
 	croak('Loading perl files as configs is no longer supported');
 
@@ -1678,7 +1675,7 @@ sub _validate_module {
 		carp("  Config file: $schema_file");
 		carp("  This is OK if the module will be available when tests run.");
 		carp('  If this is unexpected, check your module name and installation.');
-		return 0;  # Not found, but not fatal
+		return 0;	# Not found, but not fatal
 	}
 
 	# Module was found
@@ -2470,7 +2467,7 @@ sub _get_builtin_properties {
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
 				# This would need multiple inputs - complex
-				return '1';  # Placeholder
+				return '1';	# Placeholder
 			},
 			applicable_to => ['number', 'integer'],
 		},
