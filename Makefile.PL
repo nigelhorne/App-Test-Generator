@@ -47,6 +47,7 @@ WriteMakefile(
 		'IPC::System::Simple' => 0,
 		'JSON::MaybeXS' => 0,
 		'Test::DescribeMe' => 0,
+		'Test::LectroTest' => 0,
 		'Test::Most' => 0,
 		'Test::Needs' => 0,
 		'Test::Returns' => 0.02
