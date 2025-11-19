@@ -326,23 +326,62 @@ The current supported variables are
 
 =back
 
-=head2 OUTPUT
+=head3 Semantic Data Generators
 
-The generated test:
+For property-based testing, you can use semantic generators to create realistic test data:
+
+  input:
+    email:
+      type: string
+      semantic: email
+
+    user_id:
+      type: string
+      semantic: uuid
+
+    phone:
+      type: string
+      semantic: phone_us
+
+=head4 Available Semantic Types
 
 =over 4
 
-=item * Seeds RND (if configured) for reproducible fuzz runs
+=item * C<email> - Valid email addresses (user@domain.tld)
 
-=item * Uses edge cases (per-field and per-type) with configurable probability
+=item * C<url> - HTTP/HTTPS URLs
 
-=item * Runs C<$iterations> fuzz cases plus appended edge-case runs
+=item * C<uuid> - UUIDv4 identifiers
 
-=item * Validates inputs with Params::Get / Params::Validate::Strict
+=item * C<phone_us> - US phone numbers (XXX-XXX-XXXX)
 
-=item * Validates outputs with L<Return::Set>
+=item * C<phone_e164> - International E.164 format (+XXXXXXXXXXXX)
 
-=item * Runs static C<is(... )> corpus tests from Perl and/or YAML corpus
+=item * C<ipv4> - IPv4 addresses (0.0.0.0 - 255.255.255.255)
+
+=item * C<ipv6> - IPv6 addresses
+
+=item * C<username> - Alphanumeric usernames with _ and -
+
+=item * C<slug> - URL slugs (lowercase-with-hyphens)
+
+=item * C<hex_color> - Hex color codes (#RRGGBB)
+
+=item * C<iso_date> - ISO 8601 dates (YYYY-MM-DD)
+
+=item * C<iso_datetime> - ISO 8601 datetimes (YYYY-MM-DDTHH:MM:SSZ)
+
+=item * C<semver> - Semantic version strings (major.minor.patch)
+
+=item * C<jwt> - JWT-like tokens (base64url format)
+
+=item * C<json> - Simple JSON objects
+
+=item * C<base64> - Base64-encoded strings
+
+=item * C<md5> - MD5 hashes (32 hex chars)
+
+=item * C<sha256> - SHA-256 hashes (64 hex chars)
 
 =back
 
@@ -890,6 +929,70 @@ Property-based testing requires L<Test::LectroTest> to be installed:
 If not installed, the generated tests will automatically skip the property-based
 portion with a message.
 
+=head2 Testing Email Validation
+
+  ---
+  module: Email::Validator
+  function: is_valid
+
+  config:
+    properties:
+      enable: true
+      trials: 1000
+
+  input:
+    email:
+      type: string
+      semantic: email
+      position: 0
+
+  output:
+    type: boolean
+
+  transforms:
+    valid_emails:
+      input:
+        email:
+          type: string
+          semantic: email
+      output:
+        type: boolean
+        value: 1
+
+This generates 1000 realistic email addresses for testing, rather than random strings.
+
+=head2 Combining Semantic with Regex
+
+You can combine semantic generators with regex validation:
+
+  input:
+    corporate_email:
+      type: string
+      semantic: email
+      matches: '@company\.com$'
+
+The semantic generator creates realistic emails, and the regex ensures they match your domain.
+
+=head2 OUTPUT
+
+The generated test:
+
+=over 4
+
+=item * Seeds RND (if configured) for reproducible fuzz runs
+
+=item * Uses edge cases (per-field and per-type) with configurable probability
+
+=item * Runs C<$iterations> fuzz cases plus appended edge-case runs
+
+=item * Validates inputs with Params::Get / Params::Validate::Strict
+
+=item * Validates outputs with L<Return::Set>
+
+=item * Runs static C<is(... )> corpus tests from Perl and/or YAML corpus
+
+=back
+
 =head1 METHODS
 
   generate($schema_file, $test_file)
@@ -1153,6 +1256,19 @@ sub generate
 				if ($sorted[$i] != $i) {
 					carp "Warning: Position sequence has gaps (positions: @sorted)";
 					last;
+				}
+			}
+		}
+
+		# Validate semantic types
+		my $semantic_generators = _get_semantic_generators();
+		for my $param (keys %{$config->{input}}) {
+			my $spec = $config->{input}{$param};
+			if (ref($spec) eq 'HASH' && defined($spec->{semantic})) {
+				my $semantic = $spec->{semantic};
+				unless (exists $semantic_generators->{$semantic}) {
+					carp "Warning: Unknown semantic type '$semantic' for parameter '$param'. Available types: ",
+						join(', ', sort keys %$semantic_generators);
 				}
 			}
 		}
@@ -1704,6 +1820,235 @@ sub _detect_transform_properties {
 	return @properties;
 }
 
+=head2 _get_semantic_generators
+
+Returns a hash of built-in semantic generators for common data types.
+
+=cut
+
+sub _get_semantic_generators {
+	return {
+		email => {
+			code => q{
+				Gen {
+					my @chars = ('a'..'z', '0'..'9', '_', '.');
+					my @tlds = qw(com org net edu gov io co uk de fr);
+					my $user_len = 5 + int(rand(10));
+					my $domain_len = 3 + int(rand(12));
+
+					my $user = join('', map { $chars[int(rand(@chars))] } 1..$user_len);
+					my $domain = join('', map { ('a'..'z')[int(rand(26))] } 1..$domain_len);
+					my $tld = $tlds[int(rand(@tlds))];
+
+					return "$user\@$domain.$tld";
+				}
+			},
+			description => 'Valid email addresses',
+		},
+
+		url => {
+			code => q{
+				Gen {
+					my @schemes = qw(http https);
+					my @tlds = qw(com org net io);
+					my $scheme = $schemes[int(rand(@schemes))];
+					my $domain = join('', map { ('a'..'z')[int(rand(26))] } 1..(5 + int(rand(10))));
+					my $tld = $tlds[int(rand(@tlds))];
+					my $path = join('', map { ('a'..'z', '0'..'9', '-', '_')[int(rand(38))] } 1..int(rand(20)));
+
+					return "$scheme://$domain.$tld" . ($path ? "/$path" : '');
+				}
+			},
+			description => 'Valid HTTP/HTTPS URLs',
+		},
+
+		uuid => {
+			code => q{
+				Gen {
+					sprintf('%08x-%04x-%04x-%04x-%012x',
+						int(rand(0xffffffff)),
+						int(rand(0xffff)),
+						(int(rand(0xffff)) & 0x0fff) | 0x4000,
+						(int(rand(0xffff)) & 0x3fff) | 0x8000,
+						int(rand(0x1000000000000))
+					);
+				}
+			},
+			description => 'Valid UUIDv4 identifiers',
+		},
+
+		phone_us => {
+			code => q{
+				Gen {
+					my $area = 200 + int(rand(800));
+					my $exchange = 200 + int(rand(800));
+					my $subscriber = int(rand(10000));
+					sprintf('%03d-%03d-%04d', $area, $exchange, $subscriber);
+				}
+			},
+			description => 'US phone numbers (XXX-XXX-XXXX format)',
+		},
+
+		phone_e164 => {
+			code => q{
+				Gen {
+					my $country = 1 + int(rand(999));
+					my $area = 100 + int(rand(900));
+					my $number = int(rand(10000000));
+					sprintf('+%d%03d%07d', $country, $area, $number);
+				}
+			},
+			description => 'E.164 international phone numbers',
+		},
+
+		ipv4 => {
+			code => q{
+				Gen {
+					join('.', map { int(rand(256)) } 1..4);
+				}
+			},
+			description => 'IPv4 addresses',
+		},
+
+		ipv6 => {
+			code => q{
+				Gen {
+					join(':', map { sprintf('%04x', int(rand(0x10000))) } 1..8);
+				}
+			},
+			description => 'IPv6 addresses',
+		},
+
+		username => {
+			code => q{
+				Gen {
+					my $len = 3 + int(rand(13));
+					my @chars = ('a'..'z', '0'..'9', '_', '-');
+					my $first = ('a'..'z')[int(rand(26))];
+					$first . join('', map { $chars[int(rand(@chars))] } 1..($len-1));
+				}
+			},
+			description => 'Valid usernames (alphanumeric with _ and -)',
+		},
+
+		slug => {
+			code => q{
+				Gen {
+					my @words = qw(quick brown fox jumps over lazy dog hello world test data);
+					my $count = 1 + int(rand(4));
+					join('-', map { $words[int(rand(@words))] } 1..$count);
+				}
+			},
+			description => 'URL slugs (lowercase words separated by hyphens)',
+		},
+
+		hex_color => {
+			code => q{
+				Gen {
+					sprintf('#%06x', int(rand(0x1000000)));
+				}
+			},
+			description => 'Hex color codes (#RRGGBB)',
+		},
+
+		iso_date => {
+			code => q{
+				Gen {
+					my $year = 2000 + int(rand(25));
+					my $month = 1 + int(rand(12));
+					my $day = 1 + int(rand(28));
+					sprintf('%04d-%02d-%02d', $year, $month, $day);
+				}
+			},
+			description => 'ISO 8601 date format (YYYY-MM-DD)',
+		},
+
+		iso_datetime => {
+			code => q{
+				Gen {
+					my $year = 2000 + int(rand(25));
+					my $month = 1 + int(rand(12));
+					my $day = 1 + int(rand(28));
+					my $hour = int(rand(24));
+					my $minute = int(rand(60));
+					my $second = int(rand(60));
+					sprintf('%04d-%02d-%02dT%02d:%02d:%02dZ',
+						$year, $month, $day, $hour, $minute, $second);
+				}
+			},
+			description => 'ISO 8601 datetime format (YYYY-MM-DDTHH:MM:SSZ)',
+		},
+
+		semver => {
+			code => q{
+				Gen {
+					my $major = int(rand(10));
+					my $minor = int(rand(20));
+					my $patch = int(rand(50));
+					"$major.$minor.$patch";
+				}
+			},
+			description => 'Semantic version strings (major.minor.patch)',
+		},
+
+		jwt => {
+			code => q{
+				Gen {
+					my @chars = ('A'..'Z', 'a'..'z', '0'..'9', '-', '_');
+					my $header = join('', map { $chars[int(rand(@chars))] } 1..20);
+					my $payload = join('', map { $chars[int(rand(@chars))] } 1..40);
+					my $signature = join('', map { $chars[int(rand(@chars))] } 1..30);
+					"$header.$payload.$signature";
+				}
+			},
+			description => 'JWT-like tokens (base64url format)',
+		},
+
+		json => {
+			code => q{
+				Gen {
+					my @keys = qw(id name value status count);
+					my $key = $keys[int(rand(@keys))];
+					my $value = 1 + int(rand(1000));
+					qq({"$key":$value});
+				}
+			},
+			description => 'Simple JSON objects',
+		},
+
+		base64 => {
+			code => q{
+				Gen {
+					my @chars = ('A'..'Z', 'a'..'z', '0'..'9', '+', '/');
+					my $len = 12 + int(rand(20));
+					my $str = join('', map { $chars[int(rand(@chars))] } 1..$len);
+					$str .= '=' x (4 - ($len % 4)) if $len % 4;
+					$str;
+				}
+			},
+			description => 'Base64-encoded strings',
+		},
+
+		md5 => {
+			code => q{
+				Gen {
+					join('', map { sprintf('%x', int(rand(16))) } 1..32);
+				}
+			},
+			description => 'MD5 hashes (32 hex characters)',
+		},
+
+		sha256 => {
+			code => q{
+				Gen {
+					join('', map { sprintf('%x', int(rand(16))) } 1..64);
+				}
+			},
+			description => 'SHA-256 hashes (64 hex characters)',
+		},
+	};
+}
+
 =head2 _schema_to_lectrotest_generator
 
 Converts a schema field spec to a LectroTest generator string.
@@ -1714,6 +2059,24 @@ sub _schema_to_lectrotest_generator {
 	my ($field_name, $spec) = @_;
 
 	my $type = $spec->{type} || 'string';
+
+	# Check for semantic generator first
+	if ($type eq 'string' && defined $spec->{semantic}) {
+		my $semantic_type = $spec->{semantic};
+		my $generators = _get_semantic_generators();
+
+		if (exists $generators->{$semantic_type}) {
+			my $gen_code = $generators->{$semantic_type}{code};
+			# Remove leading/trailing whitespace and compress
+			$gen_code =~ s/^\s+//;
+			$gen_code =~ s/\s+$//;
+			$gen_code =~ s/\n\s+/ /g;
+			return "$field_name <- $gen_code";
+		} else {
+			carp "Unknown semantic type '$semantic_type', falling back to regular string generator";
+			# Fall through to regular string generation
+		}
+	}
 
 	if ($type eq 'integer') {
 		my $min = $spec->{min};
