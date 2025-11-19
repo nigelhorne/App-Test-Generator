@@ -1049,7 +1049,7 @@ sub generate
 				if(ref($config->{input}) eq 'HASH') {
 					%input = %{$config->{input}}
 				} elsif(defined($config->{'input'}) && ($config->{'input'} ne 'undef')) {
-					carp(Dumper($config));
+					# carp(Dumper($config));
 					if(ref($config->{'input'}) && length($config->{'input'})) {
 						croak("$schema_file: input should be a hash, not ", ref($config->{'input'}));
 					} else {
@@ -2552,6 +2552,27 @@ sub rand_hashref {
 	# return \%h;
 }
 
+sub rand_email
+{
+	my $len = shift || int(rand(10));
+	my $l;
+	my @name;
+	my @tlds = qw(com org net edu gov io co uk de fr);
+
+	for($l = 0; $l < $len; $l++) {
+		push @name, pack('c', (int(rand 26))+97);
+	}
+	push @name, '@';
+	$len = rand(10);
+	for($l = 0; $l < $len; $l++) {
+		push @name, pack('c', (int(rand 26))+97);
+	}
+	push @name, '.';
+	$len = rand($#tlds+1);
+	push @name, $tlds[$len];
+	return join('', @name);
+}
+
 sub fuzz_inputs
 {
 	my @cases;
@@ -2896,6 +2917,12 @@ sub fuzz_inputs
 								$case_input{$field} = Data::Random::String::Matches->create_random_string({ length => $spec->{'min'}, regex => $re });
 							} else {
 								$case_input{$field} = Data::Random::String::Matches->create_random_string({ regex => $re });
+							}
+						} elsif(my $semantic = $spec->{'semantic'}) {
+							if($semantic eq 'email') {
+								$case_input{$field} = rand_email($spec->{'max'} // $spec->{'min'});
+							} else {
+								diag(__LINE__, ": TODO: handle semantic type '$semantic'");
 							}
 						} else {
 							if(my $min = $spec->{min}) {
