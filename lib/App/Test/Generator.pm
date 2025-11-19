@@ -1136,82 +1136,60 @@ sub generate
 
 	my ($schema_file, $test_file) = @_;
 
-	# --- Globals exported by the user's conf (all optional except function maybe) ---
-	# Ensure data don't persist across calls, which would allow
-	local our (%input, %output, %config, $module, $function, $new, %cases, $yaml_cases, %transforms);
-	local our ($seed, $iterations);
-	local our (%edge_cases, @edge_case_array, %type_edge_cases);
+	# Globals loaded from the user's conf (all optional except function maybe)
+	my (%input, %output, %config, $module, $function, $new, %cases, $yaml_cases, %transforms);
+	my ($seed, $iterations);
+	my (%edge_cases, @edge_case_array, %type_edge_cases);
 
 	@edge_case_array = ();
 
 	if(defined($schema_file)) {
-		if(!-r $schema_file) {
-			croak(__PACKAGE__, ": generate($schema_file): $!");
-		}
-
-		# --- Load configuration safely (require so config can use 'our' variables) ---
-		# FIXME:  would be better to use Config::Abstraction, since requiring the user's config could execute arbitrary code
-		# my $abs = $schema_file;
-		# $abs = "./$abs" unless $abs =~ m{^/};
-		# require $abs;
-
-		my $config;
-		if($config = Config::Abstraction->new(config_dirs => ['.', ''], config_file => $schema_file)) {
-			$config = $config->all();
-			if(defined($config->{'$module'}) || defined($config->{'our $module'}) || !defined($config->{'module'})) {
-				# Legacy file format. This will go away.
-				# TODO: remove this code
-				# $config = _load_conf(File::Spec->rel2abs($schema_file));
-				# if($config) {
-					croak("$schema_file: Loading perl files as configs is no longer supported");
-				# }
-			}
-		}
-
-		if($config) {
-			%config = %{$config->{config}} if(exists($config->{config}));
-			if(exists($config->{input})) {
-				if(ref($config->{input}) eq 'HASH') {
-					%input = %{$config->{input}}
-				} elsif(defined($config->{'input'}) && ($config->{'input'} ne 'undef')) {
-					# carp(Dumper($config));
-					if(ref($config->{'input'}) && length($config->{'input'})) {
-						croak("$schema_file: input should be a hash, not ", ref($config->{'input'}));
+		if(my $schema = _load_schema($schema_file)) {
+			# Parse the schema file and load into our structures
+			if(exists($schema->{input})) {
+				if(ref($schema->{input}) eq 'HASH') {
+					%input = %{$schema->{input}}
+				} elsif(defined($schema->{'input'}) && ($schema->{'input'} ne 'undef')) {
+					# carp(Dumper($schema));
+					if(ref($schema->{'input'}) && length($schema->{'input'})) {
+						croak("$schema_file: input should be a hash, not ", ref($schema->{'input'}));
 					} else {
-						croak("$schema_file: input should be a hash, not ", $config->{'input'});
+						croak("$schema_file: input should be a hash, not ", $schema->{'input'});
 					}
 				}
 			}
-			if(exists($config->{output})) {
-				if(ref($config->{output}) eq 'HASH') {
-					%output = %{$config->{output}}
-				} elsif(defined($config->{'output'}) && ($config->{'output'} ne 'undef')) {
+			if(exists($schema->{output})) {
+				if(ref($schema->{output}) eq 'HASH') {
+					%output = %{$schema->{output}}
+				} elsif(defined($schema->{'output'}) && ($schema->{'output'} ne 'undef')) {
 					croak("$schema_file: output should be a hash");
 				}
 			}
-			if(exists($config->{transforms})) {
-				if(ref($config->{transforms}) eq 'HASH') {
-					%transforms = %{$config->{transforms}}
-				} elsif(defined($config->{'transforms'}) && ($config->{'transforms'} ne 'undef')) {
+			if(exists($schema->{transforms})) {
+				if(ref($schema->{transforms}) eq 'HASH') {
+					%transforms = %{$schema->{transforms}}
+				} elsif(defined($schema->{'transforms'}) && ($schema->{'transforms'} ne 'undef')) {
 					croak("$schema_file: transforms should be a hash");
 				}
 			}
-			%cases = %{$config->{cases}} if(exists($config->{cases}));
-			%edge_cases = %{$config->{edge_cases}} if(exists($config->{edge_cases}));
-			%type_edge_cases = %{$config->{type_edge_cases}} if(exists($config->{type_edge_cases}));
+			%cases = %{$schema->{cases}} if(exists($schema->{cases}));
+			%edge_cases = %{$schema->{edge_cases}} if(exists($schema->{edge_cases}));
+			%type_edge_cases = %{$schema->{type_edge_cases}} if(exists($schema->{type_edge_cases}));
 
-			$module = $config->{module} if(exists($config->{module}));
-			$function = $config->{function} if(exists($config->{function}));
-			if(exists($config->{new})) {
-				$new = defined($config->{'new'}) ? $config->{new} : '_UNDEF';
+			$module = $schema->{module} if(exists($schema->{module}));
+			$function = $schema->{function} if(exists($schema->{function}));
+			if(exists($schema->{new})) {
+				$new = defined($schema->{'new'}) ? $schema->{new} : '_UNDEF';
 			}
-			$yaml_cases = $config->{yaml_cases} if(exists($config->{yaml_cases}));
-			$seed = $config->{seed} if(exists($config->{seed}));
-			$iterations = $config->{iterations} if(exists($config->{iterations}));
+			$yaml_cases = $schema->{yaml_cases} if(exists($schema->{yaml_cases}));
+			$seed = $schema->{seed} if(exists($schema->{seed}));
+			$iterations = $schema->{iterations} if(exists($schema->{iterations}));
 
-			@edge_case_array = @{$config->{edge_case_array}} if(exists($config->{edge_case_array}));
+			@edge_case_array = @{$schema->{edge_case_array}} if(exists($schema->{edge_case_array}));
+			_validate_config($schema);
+
+			%config = %{$schema->{config}} if(exists($schema->{config}));
 		}
-		_validate_config($config);
 	} else {
 		croak 'Usage: generate(schema_file [, outfile])';
 	}
@@ -1276,317 +1254,6 @@ sub generate
 		if (exists $cases{$k} && ref($cases{$k}) eq 'ARRAY' && ref($yaml_corpus_data{$k}) eq 'ARRAY') {
 			$all_cases{$k} = [ @{$yaml_corpus_data{$k}}, @{$cases{$k}} ];
 		}
-	}
-
-	# --- Helpers for rendering data structures into Perl code for the generated test ---
-
-	sub _load_conf {
-		croak('Loading perl files as configs is no longer supported');
-
-		my $file = $_[0];
-
-		my $pkg = 'ConfigLoader';
-
-		# eval in a separate package
-		{
-			package ConfigLoader;
-			no strict 'refs';
-			do $file or die "Error loading $file: ", ($@ || $!);
-		}
-
-		# Now pull variables from ConfigLoader
-		my @vars = qw(
-			module new edge_cases function input output cases yaml_cases
-			seed iterations edge_case_array type_edge_cases config
-		);
-
-		my %conf;
-		no strict 'refs';	# allow symbolic references here
-		for my $v (@vars) {
-			if(my $full = "${pkg}::$v") {
-				if (defined ${$full}) {	# scalar
-					$conf{$v} = ${$full};
-				} elsif (@{$full}) {	# array
-					$conf{$v} = [ @{$full} ];
-				} elsif (%{$full}) {	# hash
-					$conf{$v} = { %{$full} };
-				}
-			}
-		}
-
-		return \%conf;
-	}
-
-	# Input validation for configuration
-	sub _validate_config {
-		my $config = $_[0];
-
-		if((!defined($config->{'module'})) && (!defined($config->{'function'}))) {
-			# Can't work out what should be tested
-			croak('At least one of function and module must be defined');
-		}
-
-		if((!defined($config->{'input'})) && (!defined($config->{'output'}))) {
-			# Routine takes no input and no output, so there's nothing that would be gained using this software
-			croak('You must specify at least one of input and output');
-		}
-		if(($config->{'input'}) && (ref($config->{input}) ne 'HASH')) {
-			if($config->{'input'} eq 'undef') {
-				delete $config->{'input'};
-			} else {
-				croak('Invalid input specification')
-			}
-		}
-
-		# Validate types, constraints, etc.
-		for my $param (keys %{$config->{input}}) {
-			my $spec = $config->{input}{$param};
-			if(ref($spec)) {
-				croak "Invalid type '$spec->{type}' for parameter '$param'" unless _valid_type($spec->{type});
-			} else {
-				croak "Invalid type '$spec' for parameter '$param'" unless _valid_type($spec);
-			}
-		}
-
-		# Check if using positional arguments
-		my $has_positions = 0;
-		my %positions;
-
-		for my $param (keys %{$config->{input}}) {
-			my $spec = $config->{input}{$param};
-			if (ref($spec) eq 'HASH' && defined($spec->{position})) {
-				$has_positions = 1;
-				my $pos = $spec->{position};
-
-				# Validate position is non-negative integer
-				croak "Position for '$param' must be a non-negative integer" unless $pos =~ /^\d+$/;
-
-				# Check for duplicate positions
-				croak "Duplicate position $pos for parameters '$positions{$pos}' and '$param'" if exists $positions{$pos};
-
-				$positions{$pos} = $param;
-			}
-		}
-
-		# If using positions, all params must have positions
-		if ($has_positions) {
-			for my $param (keys %{$config->{input}}) {
-				my $spec = $config->{input}{$param};
-				unless (ref($spec) eq 'HASH' && defined($spec->{position})) {
-					croak "Parameter '$param' missing position (all params must have positions if any do)";
-				}
-			}
-
-			# Check for gaps in positions (0, 1, 3 - missing 2)
-			my @sorted = sort { $a <=> $b } keys %positions;
-			for my $i (0..$#sorted) {
-				if ($sorted[$i] != $i) {
-					carp "Warning: Position sequence has gaps (positions: @sorted)";
-					last;
-				}
-			}
-		}
-
-		# Validate semantic types
-		my $semantic_generators = _get_semantic_generators();
-		for my $param (keys %{$config->{input}}) {
-			my $spec = $config->{input}{$param};
-			if (ref($spec) eq 'HASH' && defined($spec->{semantic})) {
-				my $semantic = $spec->{semantic};
-				unless (exists $semantic_generators->{$semantic}) {
-					carp "Warning: Unknown semantic type '$semantic' for parameter '$param'. Available types: ",
-						join(', ', sort keys %$semantic_generators);
-				}
-			}
-		}
-
-		# Validate custom properties in transforms
-		if (exists $config->{transforms} && ref($config->{transforms}) eq 'HASH') {
-			my $builtin_props = _get_builtin_properties();
-
-			for my $transform_name (keys %{$config->{transforms}}) {
-				my $transform = $config->{transforms}{$transform_name};
-
-				if (exists $transform->{properties}) {
-					unless (ref($transform->{properties}) eq 'ARRAY') {
-						croak "Transform '$transform_name': properties must be an array";
-					}
-
-					for my $prop (@{$transform->{properties}}) {
-						if (!ref($prop)) {
-							# Check if builtin exists
-							unless (exists $builtin_props->{$prop}) {
-								carp "Transform '$transform_name': unknown built-in property '$prop'. Available: ",
-									join(', ', sort keys %$builtin_props);
-							}
-						}
-						elsif (ref($prop) eq 'HASH') {
-							# Validate custom property structure
-							unless ($prop->{name} && $prop->{code}) {
-								croak "Transform '$transform_name': custom properties must have 'name' and 'code' fields";
-							}
-						}
-						else {
-							croak "Transform '$transform_name': invalid property definition";
-						}
-					}
-				}
-			}
-		}
-	}
-
-	sub _valid_type
-	{
-		my $type = $_[0];
-
-		return(($type eq 'string') ||
-			($type eq 'boolean') ||
-			($type eq 'integer') ||
-			($type eq 'number') ||
-			($type eq 'float') ||
-			($type eq 'hashref') ||
-			($type eq 'arrayref') ||
-			($type eq 'object'));
-	}
-
-	sub _validate_module {
-		my ($module, $schema_file) = @_;
-
-		return 1 unless $module;	# No module to validate (builtin functions)
-
-		# Check if the module can be found
-		my $mod_info = check_install(module => $module);
-
-		if (!$mod_info) {
-			# Module not found - this is just a warning, not an error
-			# The module might not be installed on the generation machine
-			# but could be on the test machine
-			carp("Warning: Module '$module' not found in \@INC during generation.");
-			carp("  Config file: $schema_file");
-			carp("  This is OK if the module will be available when tests run.");
-			carp('  If this is unexpected, check your module name and installation.');
-			return 0;  # Not found, but not fatal
-		}
-
-		# Module was found
-		if ($ENV{TEST_VERBOSE} || $ENV{GENERATOR_VERBOSE}) {
-			print STDERR "Found module '$module' at: $mod_info->{file}\n",
-				'  Version: ', ($mod_info->{version} || 'unknown'), "\n";
-		}
-
-		# Optionally try to load it (disabled by default since it can have side effects)
-		if ($ENV{GENERATOR_VALIDATE_LOAD}) {
-			my $loaded = can_load(modules => { $module => undef }, verbose => 0);
-
-			if (!$loaded) {
-				carp("Warning: Module '$module' found but failed to load: $Module::Load::Conditional::ERROR");
-				carp("  This might indicate a broken installation or missing dependencies.");
-				return 0;
-			}
-
-			if ($ENV{TEST_VERBOSE} || $ENV{GENERATOR_VERBOSE}) {
-				print STDERR "Successfully loaded module '$module'\n";
-			}
-		}
-
-		return 1;
-	}
-
-	sub perl_sq {
-		my $s = $_[0];
-		$s =~ s/\\/\\\\/g; $s =~ s/'/\\'/g; $s =~ s/\n/\\n/g; $s =~ s/\r/\\r/g; $s =~ s/\t/\\t/g;
-		return $s;
-	}
-
-	sub perl_quote {
-		my $v = $_[0];
-		return 'undef' unless defined $v;
-		if(ref($v)) {
-			if(ref($v) eq 'ARRAY') {
-				my @quoted_v = map { perl_quote($_) } @{$v};
-				return '[ ' . join(', ', @quoted_v) . ' ]';
-			}
-			if(ref($v) eq 'Regexp') {
-				my $s = "$v";
-
-				# default to qr{...}
-				return "qr{$s}" unless $s =~ /[{}]/;
-
-				# fallback: quote with slash if no slash inside
-				return "qr/$s/" unless $s =~ m{/};
-
-				# fallback: quote with # if slash inside
-				return "qr#$s#";
-			}
-			# Generic fallback
-			$v = Dumper($v);
-			$v =~ s/\$VAR1 =//;
-			$v =~ s/;//;
-			return $v;
-		}
-		$v =~ s/\\/\\\\/g;
-		# return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . ( $v =~ s/'/\\'/gr ) . "'";
-		return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . perl_sq($v) . "'";
-	}
-
-	sub render_hash {
-		my $href = $_[0];
-		return '' unless $href && ref($href) eq 'HASH';
-		my @lines;
-		for my $k (sort keys %$href) {
-			my $def = $href->{$k} // {};
-			next unless ref $def eq 'HASH';
-			my @pairs;
-			for my $subk (sort keys %$def) {
-				next unless defined $def->{$subk};
-				if(ref($def->{$subk})) {
-					unless((ref($def->{$subk}) eq 'ARRAY') || (ref($def->{$subk}) eq 'Regexp')) {
-						croak(__PACKAGE__, ": schema_file, $subk is a nested element, not yet supported (", ref($def->{$subk}), ')');
-					}
-				}
-				if(($subk eq 'matches') || ($subk eq 'nomatch')) {
-					push @pairs, "$subk => qr/$def->{$subk}/";
-				} else {
-					push @pairs, "$subk => " . perl_quote($def->{$subk});
-				}
-			}
-			push @lines, '	' . perl_quote($k) . " => { " . join(", ", @pairs) . " }";
-		}
-		return join(",\n", @lines);
-	}
-
-	sub render_args_hash {
-		my $href = $_[0];
-		return '' unless $href && ref($href) eq 'HASH';
-		my @pairs = map { perl_quote($_) . ' => ' . perl_quote($href->{$_}) } sort keys %$href;
-		return join(', ', @pairs);
-	}
-
-	sub render_arrayref_map {
-		my $href = $_[0];
-		return '()' unless $href && ref($href) eq 'HASH';
-		my @entries;
-		for my $k (sort keys %$href) {
-			my $aref = $href->{$k};
-			next unless ref $aref eq 'ARRAY';
-			my $vals = join(', ', map { perl_quote($_) } @$aref);
-			push @entries, '	' . perl_quote($k) . " => [ $vals ]";
-		}
-		return join(",\n", @entries);
-	}
-
-	# Robustly quote a string (GitHub#1)
-	sub q_wrap {
-		my $s = $_[0];
-		for my $p ( ['{','}'], ['(',')'], ['[',']'], ['<','>'] ) {
-			my ($l,$r) = @$p;
-			return "q$l$s$r" unless $s =~ /\Q$l\E|\Q$r\E/;
-		}
-		for my $d ('~', '!', '%', '^', '=', '+', ':', ',', ';', '|', '/', '#') {
-			return "q$d$s$d" unless index($s, $d) >= 0;
-		}
-		(my $esc = $s) =~ s/'/\\'/g;
-		return "'$esc'";
 	}
 
 	# render edge case maps for inclusion in the .t
@@ -1794,6 +1461,345 @@ sub generate
 		print "$test\n";
 	}
 }
+
+# --- Helpers for rendering data structures into Perl code for the generated test ---
+
+sub _load_schema {
+	my $schema_file = $_[0];
+
+	if(!-r $schema_file) {
+		croak(__PACKAGE__, ": generate($schema_file): $!");
+	}
+
+	# --- Load configuration safely (require so config can use 'our' variables) ---
+	# FIXME:  would be better to use Config::Abstraction, since requiring the user's config could execute arbitrary code
+	# my $abs = $schema_file;
+	# $abs = "./$abs" unless $abs =~ m{^/};
+	# require $abs;
+
+	if(my $config = Config::Abstraction->new(config_dirs => ['.', ''], config_file => $schema_file)) {
+		$config = $config->all();
+		if(defined($config->{'$module'}) || defined($config->{'our $module'}) || !defined($config->{'module'})) {
+			# Legacy file format. This will go away.
+			# TODO: remove this code
+			# $config = _load_conf(File::Spec->rel2abs($schema_file));
+			# if($config) {
+				croak("$schema_file: Loading perl files as configs is no longer supported");
+			# }
+		}
+		return $config;
+	}
+}
+
+sub _load_conf {
+	croak('Loading perl files as configs is no longer supported');
+
+	my $file = $_[0];
+
+	my $pkg = 'ConfigLoader';
+
+	# eval in a separate package
+	{
+		package ConfigLoader;
+		no strict 'refs';
+		do $file or die "Error loading $file: ", ($@ || $!);
+	}
+
+	# Now pull variables from ConfigLoader
+	my @vars = qw(
+		module new edge_cases function input output cases yaml_cases
+		seed iterations edge_case_array type_edge_cases config
+	);
+
+	my %conf;
+	no strict 'refs';	# allow symbolic references here
+	for my $v (@vars) {
+		if(my $full = "${pkg}::$v") {
+			if (defined ${$full}) {	# scalar
+				$conf{$v} = ${$full};
+			} elsif (@{$full}) {	# array
+				$conf{$v} = [ @{$full} ];
+			} elsif (%{$full}) {	# hash
+				$conf{$v} = { %{$full} };
+			}
+		}
+	}
+
+	return \%conf;
+}
+
+# Input validation for configuration
+sub _validate_config {
+	my $config = $_[0];
+
+	if((!defined($config->{'module'})) && (!defined($config->{'function'}))) {
+		# Can't work out what should be tested
+		croak('At least one of function and module must be defined');
+	}
+
+	if((!defined($config->{'input'})) && (!defined($config->{'output'}))) {
+		# Routine takes no input and no output, so there's nothing that would be gained using this software
+		croak('You must specify at least one of input and output');
+	}
+	if(($config->{'input'}) && (ref($config->{input}) ne 'HASH')) {
+		if($config->{'input'} eq 'undef') {
+			delete $config->{'input'};
+		} else {
+			croak('Invalid input specification')
+		}
+	}
+
+	# Validate types, constraints, etc.
+	for my $param (keys %{$config->{input}}) {
+		my $spec = $config->{input}{$param};
+		if(ref($spec)) {
+			croak "Invalid type '$spec->{type}' for parameter '$param'" unless _valid_type($spec->{type});
+		} else {
+			croak "Invalid type '$spec' for parameter '$param'" unless _valid_type($spec);
+		}
+	}
+
+	# Check if using positional arguments
+	my $has_positions = 0;
+	my %positions;
+
+	for my $param (keys %{$config->{input}}) {
+		my $spec = $config->{input}{$param};
+		if (ref($spec) eq 'HASH' && defined($spec->{position})) {
+			$has_positions = 1;
+			my $pos = $spec->{position};
+
+			# Validate position is non-negative integer
+			croak "Position for '$param' must be a non-negative integer" unless $pos =~ /^\d+$/;
+
+			# Check for duplicate positions
+			croak "Duplicate position $pos for parameters '$positions{$pos}' and '$param'" if exists $positions{$pos};
+
+			$positions{$pos} = $param;
+		}
+	}
+
+	# If using positions, all params must have positions
+	if ($has_positions) {
+		for my $param (keys %{$config->{input}}) {
+			my $spec = $config->{input}{$param};
+			unless (ref($spec) eq 'HASH' && defined($spec->{position})) {
+				croak "Parameter '$param' missing position (all params must have positions if any do)";
+			}
+		}
+
+		# Check for gaps in positions (0, 1, 3 - missing 2)
+		my @sorted = sort { $a <=> $b } keys %positions;
+		for my $i (0..$#sorted) {
+			if ($sorted[$i] != $i) {
+				carp "Warning: Position sequence has gaps (positions: @sorted)";
+				last;
+			}
+		}
+	}
+
+	# Validate semantic types
+	my $semantic_generators = _get_semantic_generators();
+	for my $param (keys %{$config->{input}}) {
+		my $spec = $config->{input}{$param};
+		if (ref($spec) eq 'HASH' && defined($spec->{semantic})) {
+			my $semantic = $spec->{semantic};
+			unless (exists $semantic_generators->{$semantic}) {
+				carp "Warning: Unknown semantic type '$semantic' for parameter '$param'. Available types: ",
+					join(', ', sort keys %$semantic_generators);
+			}
+		}
+	}
+
+	# Validate custom properties in transforms
+	if (exists $config->{transforms} && ref($config->{transforms}) eq 'HASH') {
+		my $builtin_props = _get_builtin_properties();
+
+		for my $transform_name (keys %{$config->{transforms}}) {
+			my $transform = $config->{transforms}{$transform_name};
+
+			if (exists $transform->{properties}) {
+				unless (ref($transform->{properties}) eq 'ARRAY') {
+					croak "Transform '$transform_name': properties must be an array";
+				}
+
+				for my $prop (@{$transform->{properties}}) {
+					if (!ref($prop)) {
+						# Check if builtin exists
+						unless (exists $builtin_props->{$prop}) {
+							carp "Transform '$transform_name': unknown built-in property '$prop'. Available: ",
+								join(', ', sort keys %$builtin_props);
+						}
+					}
+					elsif (ref($prop) eq 'HASH') {
+						# Validate custom property structure
+						unless ($prop->{name} && $prop->{code}) {
+							croak "Transform '$transform_name': custom properties must have 'name' and 'code' fields";
+						}
+					}
+					else {
+						croak "Transform '$transform_name': invalid property definition";
+					}
+				}
+			}
+		}
+	}
+}
+
+sub _valid_type
+{
+	my $type = $_[0];
+
+	return(($type eq 'string') ||
+		($type eq 'boolean') ||
+		($type eq 'integer') ||
+		($type eq 'number') ||
+		($type eq 'float') ||
+		($type eq 'hashref') ||
+		($type eq 'arrayref') ||
+		($type eq 'object'));
+}
+
+sub _validate_module {
+	my ($module, $schema_file) = @_;
+
+	return 1 unless $module;	# No module to validate (builtin functions)
+
+	# Check if the module can be found
+	my $mod_info = check_install(module => $module);
+
+	if (!$mod_info) {
+		# Module not found - this is just a warning, not an error
+		# The module might not be installed on the generation machine
+		# but could be on the test machine
+		carp("Warning: Module '$module' not found in \@INC during generation.");
+		carp("  Config file: $schema_file");
+		carp("  This is OK if the module will be available when tests run.");
+		carp('  If this is unexpected, check your module name and installation.');
+		return 0;  # Not found, but not fatal
+	}
+
+	# Module was found
+	if ($ENV{TEST_VERBOSE} || $ENV{GENERATOR_VERBOSE}) {
+		print STDERR "Found module '$module' at: $mod_info->{file}\n",
+			'  Version: ', ($mod_info->{version} || 'unknown'), "\n";
+	}
+
+	# Optionally try to load it (disabled by default since it can have side effects)
+	if ($ENV{GENERATOR_VALIDATE_LOAD}) {
+		my $loaded = can_load(modules => { $module => undef }, verbose => 0);
+
+		if (!$loaded) {
+			carp("Warning: Module '$module' found but failed to load: $Module::Load::Conditional::ERROR");
+			carp("  This might indicate a broken installation or missing dependencies.");
+			return 0;
+		}
+
+		if ($ENV{TEST_VERBOSE} || $ENV{GENERATOR_VERBOSE}) {
+			print STDERR "Successfully loaded module '$module'\n";
+		}
+	}
+
+	return 1;
+}
+
+sub perl_sq {
+	my $s = $_[0];
+	$s =~ s/\\/\\\\/g; $s =~ s/'/\\'/g; $s =~ s/\n/\\n/g; $s =~ s/\r/\\r/g; $s =~ s/\t/\\t/g;
+	return $s;
+}
+
+sub perl_quote {
+	my $v = $_[0];
+	return 'undef' unless defined $v;
+	if(ref($v)) {
+		if(ref($v) eq 'ARRAY') {
+			my @quoted_v = map { perl_quote($_) } @{$v};
+			return '[ ' . join(', ', @quoted_v) . ' ]';
+		}
+		if(ref($v) eq 'Regexp') {
+			my $s = "$v";
+
+			# default to qr{...}
+			return "qr{$s}" unless $s =~ /[{}]/;
+
+			# fallback: quote with slash if no slash inside
+			return "qr/$s/" unless $s =~ m{/};
+
+			# fallback: quote with # if slash inside
+			return "qr#$s#";
+		}
+		# Generic fallback
+		$v = Dumper($v);
+		$v =~ s/\$VAR1 =//;
+		$v =~ s/;//;
+		return $v;
+	}
+	$v =~ s/\\/\\\\/g;
+	# return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . ( $v =~ s/'/\\'/gr ) . "'";
+	return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . perl_sq($v) . "'";
+}
+
+sub render_hash {
+	my $href = $_[0];
+	return '' unless $href && ref($href) eq 'HASH';
+	my @lines;
+	for my $k (sort keys %$href) {
+		my $def = $href->{$k} // {};
+		next unless ref $def eq 'HASH';
+		my @pairs;
+		for my $subk (sort keys %$def) {
+			next unless defined $def->{$subk};
+			if(ref($def->{$subk})) {
+				unless((ref($def->{$subk}) eq 'ARRAY') || (ref($def->{$subk}) eq 'Regexp')) {
+					croak(__PACKAGE__, ": schema_file, $subk is a nested element, not yet supported (", ref($def->{$subk}), ')');
+				}
+			}
+			if(($subk eq 'matches') || ($subk eq 'nomatch')) {
+				push @pairs, "$subk => qr/$def->{$subk}/";
+			} else {
+				push @pairs, "$subk => " . perl_quote($def->{$subk});
+			}
+		}
+		push @lines, '	' . perl_quote($k) . " => { " . join(", ", @pairs) . " }";
+	}
+	return join(",\n", @lines);
+}
+
+sub render_args_hash {
+	my $href = $_[0];
+	return '' unless $href && ref($href) eq 'HASH';
+	my @pairs = map { perl_quote($_) . ' => ' . perl_quote($href->{$_}) } sort keys %$href;
+	return join(', ', @pairs);
+}
+
+sub render_arrayref_map {
+	my $href = $_[0];
+	return '()' unless $href && ref($href) eq 'HASH';
+	my @entries;
+	for my $k (sort keys %$href) {
+		my $aref = $href->{$k};
+		next unless ref $aref eq 'ARRAY';
+		my $vals = join(', ', map { perl_quote($_) } @$aref);
+		push @entries, '	' . perl_quote($k) . " => [ $vals ]";
+	}
+	return join(",\n", @entries);
+}
+
+# Robustly quote a string (GitHub#1)
+sub q_wrap {
+	my $s = $_[0];
+	for my $p ( ['{','}'], ['(',')'], ['[',']'], ['<','>'] ) {
+		my ($l,$r) = @$p;
+		return "q$l$s$r" unless $s =~ /\Q$l\E|\Q$r\E/;
+	}
+	for my $d ('~', '!', '%', '^', '=', '+', ':', ',', ';', '|', '/', '#') {
+		return "q$d$s$d" unless index($s, $d) >= 0;
+	}
+	(my $esc = $s) =~ s/'/\\'/g;
+	return "'$esc'";
+}
+
 
 =head2 _generate_transform_properties
 
