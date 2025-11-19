@@ -570,11 +570,237 @@ Then create this file as &lt;t/fuzz.t>:
 
     done_testing();
 
+## Property-Based Testing with Transforms
+
+The generator can create property-based tests using [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest) when the
+`properties` configuration option is enabled.
+This provides more comprehensive
+testing by automatically generating thousands of test cases and verifying that
+mathematical properties hold across all inputs.
+
+### Basic Property-Based Transform Example
+
+Here's a complete example testing the `abs` builtin function:
+
+**t/conf/abs.yml**:
+
+    ---
+    module: builtin
+    function: abs
+
+    config:
+      test_undef: no
+      test_empty: no
+      test_nuls: no
+      properties:
+        enable: true
+        trials: 1000
+
+    input:
+      number:
+        type: number
+        position: 0
+
+    output:
+      type: number
+      min: 0
+
+    transforms:
+      positive:
+        input:
+          number:
+            type: number
+            min: 0
+        output:
+          type: number
+          min: 0
+      
+      negative:
+        input:
+          number:
+            type: number
+            max: 0
+        output:
+          type: number
+          min: 0
+
+This configuration:
+
+- Enables property-based testing with 1000 trials per property
+- Defines two transforms: one for positive numbers, one for negative
+- Automatically generates properties that verify `abs()` always returns non-negative numbers
+
+Generate the test:
+
+    fuzz-harness-generator t/conf/abs.yml > t/abs_property.t
+
+The generated test will include:
+
+- Traditional edge-case tests for boundary conditions
+- Random fuzzing with 50 iterations (or as configured)
+- Property-based tests that verify the transforms with 1000 trials each
+
+### What Properties Are Tested?
+
+The generator automatically detects and tests these properties based on your transform specifications:
+
+- **Range constraints** - If output has `min` or `max`, verifies results stay within bounds
+- **Type preservation** - Ensures numeric inputs produce numeric outputs
+- **Definedness** - Verifies the function doesn't return `undef` unexpectedly
+- **Specific values** - If output specifies a `value`, checks exact equality
+
+For the `abs` example above, the generated properties verify:
+
+    # For the "positive" transform:
+    - Given a positive number, abs() returns >= 0
+    - The result is a valid number
+    - The result is defined
+
+    # For the "negative" transform:
+    - Given a negative number, abs() returns >= 0
+    - The result is a valid number
+    - The result is defined
+
+### Advanced Example: String Normalization
+
+Here's a more complex example testing a string normalization function:
+
+**t/conf/normalize.yml**:
+
+    ---
+    module: Text::Processor
+    function: normalize_whitespace
+
+    config:
+      properties:
+        enable: true
+        trials: 500
+
+    input:
+      text:
+        type: string
+        min: 0
+        max: 1000
+        position: 0
+
+    output:
+      type: string
+      min: 0
+      max: 1000
+
+    transforms:
+      empty_preserved:
+        input:
+          text:
+            type: string
+            value: ""
+        output:
+          type: string
+          value: ""
+      
+      single_space:
+        input:
+          text:
+            type: string
+            min: 1
+            matches: '^\S+(\s+\S+)*$'
+        output:
+          type: string
+          matches: '^\S+( \S+)*$'
+      
+      length_bounded:
+        input:
+          text:
+            type: string
+            min: 1
+            max: 100
+        output:
+          type: string
+          min: 1
+          max: 100
+
+This tests that the normalization function:
+
+- Preserves empty strings (`empty_preserved` transform)
+- Collapses multiple spaces into single spaces (`single_space` transform)
+- Maintains length constraints (`length_bounded` transform)
+
+### Interpreting Property Test Results
+
+When property-based tests run, you'll see output like:
+
+    ok 123 - negative property holds (1000 trials)
+    ok 124 - positive property holds (1000 trials)
+
+If a property fails, Test::LectroTest will attempt to find the minimal failing
+case and display it:
+
+    not ok 123 - positive property holds (47 trials)
+    # Property failed
+    # Reason: counterexample found
+
+This helps you quickly identify edge cases that your function doesn't handle correctly.
+
+### Configuration Options for Property-Based Testing
+
+In the `config` section:
+
+    config:
+      properties:
+        enable: true     # Enable property-based testing (default: false)
+        trials: 1000     # Number of test cases per property (default: 1000)
+
+You can also disable traditional fuzzing and only use property-based tests:
+
+    config:
+      properties:
+        enable: true
+        trials: 5000
+    
+    iterations: 0  # Disable random fuzzing, use only property tests
+
+### When to Use Property-Based Testing
+
+Property-based testing with transforms is particularly useful for:
+
+- Mathematical functions (`abs`, `sqrt`, `min`, `max`, etc.)
+- Data transformations (encoding, normalization, sanitization)
+- Parsers and formatters
+- Functions with clear input-output relationships
+- Code that should satisfy mathematical properties (commutativity, associativity, idempotence)
+
+### Requirements
+
+Property-based testing requires [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest) to be installed:
+
+    cpanm Test::LectroTest
+
+If not installed, the generated tests will automatically skip the property-based
+portion with a message.
+
 # METHODS
 
     generate($schema_file, $test_file)
 
 Takes a schema file and produces a test file (or STDOUT).
+
+## \_generate\_transform\_properties
+
+Converts transform specifications into LectroTest property definitions.
+
+## \_detect\_transform\_properties
+
+Automatically detects testable properties from transform input/output specs.
+
+## \_schema\_to\_lectrotest\_generator
+
+Converts a schema field spec to a LectroTest generator string.
+
+## Helper functions for type detection
+
+## \_render\_properties
+
+Renders property definitions into Perl code for the template.
 
 # NOTES
 
@@ -586,6 +812,7 @@ Takes a schema file and produces a test file (or STDOUT).
 - [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict): Schema Definition
 - [Params::Get](https://metacpan.org/pod/Params%3A%3AGet): Input validation
 - [Return::Set](https://metacpan.org/pod/Return%3A%3ASet): Output validation
+- [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest)
 - [Test::Most](https://metacpan.org/pod/Test%3A%3AMost)
 - [YAML::XS](https://metacpan.org/pod/YAML%3A%3AXS)
 

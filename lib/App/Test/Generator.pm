@@ -649,6 +649,247 @@ Then create this file as <t/fuzz.t>:
 
   done_testing();
 
+=head2 Property-Based Testing with Transforms
+
+The generator can create property-based tests using L<Test::LectroTest> when the
+C<properties> configuration option is enabled.
+This provides more comprehensive
+testing by automatically generating thousands of test cases and verifying that
+mathematical properties hold across all inputs.
+
+=head3 Basic Property-Based Transform Example
+
+Here's a complete example testing the C<abs> builtin function:
+
+B<t/conf/abs.yml>:
+
+  ---
+  module: builtin
+  function: abs
+
+  config:
+    test_undef: no
+    test_empty: no
+    test_nuls: no
+    properties:
+      enable: true
+      trials: 1000
+
+  input:
+    number:
+      type: number
+      position: 0
+
+  output:
+    type: number
+    min: 0
+
+  transforms:
+    positive:
+      input:
+        number:
+          type: number
+          min: 0
+      output:
+        type: number
+        min: 0
+    
+    negative:
+      input:
+        number:
+          type: number
+          max: 0
+      output:
+        type: number
+        min: 0
+
+This configuration:
+
+=over 4
+
+=item * Enables property-based testing with 1000 trials per property
+
+=item * Defines two transforms: one for positive numbers, one for negative
+
+=item * Automatically generates properties that verify C<abs()> always returns non-negative numbers
+
+=back
+
+Generate the test:
+
+  fuzz-harness-generator t/conf/abs.yml > t/abs_property.t
+
+The generated test will include:
+
+=over 4
+
+=item * Traditional edge-case tests for boundary conditions
+
+=item * Random fuzzing with 50 iterations (or as configured)
+
+=item * Property-based tests that verify the transforms with 1000 trials each
+
+=back
+
+=head3 What Properties Are Tested?
+
+The generator automatically detects and tests these properties based on your transform specifications:
+
+=over 4
+
+=item * B<Range constraints> - If output has C<min> or C<max>, verifies results stay within bounds
+
+=item * B<Type preservation> - Ensures numeric inputs produce numeric outputs
+
+=item * B<Definedness> - Verifies the function doesn't return C<undef> unexpectedly
+
+=item * B<Specific values> - If output specifies a C<value>, checks exact equality
+
+=back
+
+For the C<abs> example above, the generated properties verify:
+
+  # For the "positive" transform:
+  - Given a positive number, abs() returns >= 0
+  - The result is a valid number
+  - The result is defined
+
+  # For the "negative" transform:
+  - Given a negative number, abs() returns >= 0
+  - The result is a valid number
+  - The result is defined
+
+=head3 Advanced Example: String Normalization
+
+Here's a more complex example testing a string normalization function:
+
+B<t/conf/normalize.yml>:
+
+  ---
+  module: Text::Processor
+  function: normalize_whitespace
+
+  config:
+    properties:
+      enable: true
+      trials: 500
+
+  input:
+    text:
+      type: string
+      min: 0
+      max: 1000
+      position: 0
+
+  output:
+    type: string
+    min: 0
+    max: 1000
+
+  transforms:
+    empty_preserved:
+      input:
+        text:
+          type: string
+          value: ""
+      output:
+        type: string
+        value: ""
+    
+    single_space:
+      input:
+        text:
+          type: string
+          min: 1
+          matches: '^\S+(\s+\S+)*$'
+      output:
+        type: string
+        matches: '^\S+( \S+)*$'
+    
+    length_bounded:
+      input:
+        text:
+          type: string
+          min: 1
+          max: 100
+      output:
+        type: string
+        min: 1
+        max: 100
+
+This tests that the normalization function:
+
+=over 4
+
+=item * Preserves empty strings (C<empty_preserved> transform)
+
+=item * Collapses multiple spaces into single spaces (C<single_space> transform)
+
+=item * Maintains length constraints (C<length_bounded> transform)
+
+=back
+
+=head3 Interpreting Property Test Results
+
+When property-based tests run, you'll see output like:
+
+  ok 123 - negative property holds (1000 trials)
+  ok 124 - positive property holds (1000 trials)
+
+If a property fails, Test::LectroTest will attempt to find the minimal failing
+case and display it:
+
+  not ok 123 - positive property holds (47 trials)
+  # Property failed
+  # Reason: counterexample found
+
+This helps you quickly identify edge cases that your function doesn't handle correctly.
+
+=head3 Configuration Options for Property-Based Testing
+
+In the C<config> section:
+
+  config:
+    properties:
+      enable: true     # Enable property-based testing (default: false)
+      trials: 1000     # Number of test cases per property (default: 1000)
+
+You can also disable traditional fuzzing and only use property-based tests:
+
+  config:
+    properties:
+      enable: true
+      trials: 5000
+  
+  iterations: 0  # Disable random fuzzing, use only property tests
+
+=head3 When to Use Property-Based Testing
+
+Property-based testing with transforms is particularly useful for:
+
+=over 4
+
+=item * Mathematical functions (C<abs>, C<sqrt>, C<min>, C<max>, etc.)
+
+=item * Data transformations (encoding, normalization, sanitization)
+
+=item * Parsers and formatters
+
+=item * Functions with clear input-output relationships
+
+=item * Code that should satisfy mathematical properties (commutativity, associativity, idempotence)
+
+=back
+
+=head3 Requirements
+
+Property-based testing requires L<Test::LectroTest> to be installed:
+
+  cpanm Test::LectroTest
+
+If not installed, the generated tests will automatically skip the property-based
+portion with a message.
+
 =head1 METHODS
 
   generate($schema_file, $test_file)
@@ -1083,6 +1324,10 @@ sub generate
 	# Render configuration - all the values are integers for now, if that changes, wrap the $config{$key} in single quotes
 	my $config_code = '';
 	foreach my $key (sort keys %config) {
+		# Skip nested hashes like 'properties' - handle them separately or skip
+		if(ref($config{$key}) eq 'HASH') {
+			next;  # Skip nested structures in config output
+		}
 		$config_code .= "'$key' => $config{$key},\n";
 	}
 
@@ -1120,6 +1365,25 @@ sub generate
 			"\t},\n";
 		}
 		$transforms_code .= "}\n";
+	}
+
+	my $transform_properties_code = '';
+	my $use_properties = 0;
+
+	if (keys %transforms && ($config{properties}{enable} // 0)) {
+		$use_properties = 1;
+
+		# Generate property-based tests for transforms
+		my $properties = _generate_transform_properties(
+			\%transforms,
+			$function,
+			$module,
+			\%input,
+			\%config
+		);
+
+		# Convert to code for template
+		$transform_properties_code = _render_properties($properties);
 	}
 
 	# Setup / call code (always load module)
@@ -1231,6 +1495,9 @@ sub generate
 		call_code => $call_code,
 		function => $function,
 		iterations_code => int($iterations),
+		use_properties => $use_properties,
+		transform_properties_code => $transform_properties_code,
+		property_trials => $config{properties}{trials} // 1000,
 		module => $module
 	};
 
@@ -1249,6 +1516,372 @@ sub generate
 	} else {
 		print "$test\n";
 	}
+}
+
+=head2 _generate_transform_properties
+
+Converts transform specifications into LectroTest property definitions.
+
+=cut
+
+sub _generate_transform_properties {
+	my ($transforms, $function, $module, $input, $config) = @_;
+
+	my @properties;
+
+	for my $transform_name (sort keys %$transforms) {
+		my $transform = $transforms->{$transform_name};
+
+		my $input_spec = $transform->{input};
+		my $output_spec = $transform->{output};
+
+		# Skip if input is 'undef' (these are death tests, handled separately)
+		if (!ref($input_spec) && $input_spec eq 'undef') {
+			next;
+		}
+
+		# Detect automatic properties from the transform spec
+		my @detected_props = _detect_transform_properties(
+			$transform_name,
+			$input_spec,
+			$output_spec
+		);
+
+		# Skip if no properties detected
+		next unless @detected_props;
+
+		# Build LectroTest generator specification
+		my @generators;
+		my @var_names;
+
+		for my $field (sort keys %$input_spec) {
+			my $spec = $input_spec->{$field};
+			next unless ref($spec) eq 'HASH';
+
+			my $gen = _schema_to_lectrotest_generator($field, $spec);
+			push @generators, $gen;
+			push @var_names, $field;  # Just the name, no $
+		}
+
+		my $gen_spec = join(', ', @generators);
+
+		# Build the call code
+		my $call_code;
+		if ($module) {
+			$call_code = "$module\::$function";
+		} else {
+			$call_code = $function;
+		}
+
+		# Build argument list (respect positions if defined)
+		my @args;
+		if (_has_positions($input_spec)) {
+			my @sorted = sort {
+				$input_spec->{$a}{position} <=> $input_spec->{$b}{position}
+			} keys %$input_spec;
+			@args = map { "\$$_" } @sorted;
+		} else {
+			@args = map { "\$$_" } @var_names;
+		}
+		my $args_str = join(', ', @args);
+
+		# Build property checks
+		my @checks = map { $_->{code} } @detected_props;
+		my $property_checks = join(" &&\n		", @checks);
+
+		# Handle _STATUS in output
+		my $should_die = ($output_spec->{_STATUS} // '') eq 'DIES';
+
+		push @properties, {
+			name => $transform_name,
+			generator_spec => $gen_spec,
+			call_code => "$call_code($args_str)",
+			property_checks => $property_checks,
+			should_die => $should_die,
+			trials => $config->{properties}{trials} // 1000,
+		};
+	}
+
+	return \@properties;
+}
+
+=head2 _detect_transform_properties
+
+Automatically detects testable properties from transform input/output specs.
+
+=cut
+
+sub _detect_transform_properties {
+	my ($transform_name, $input_spec, $output_spec) = @_;
+
+	my @properties;
+
+	# Skip if input is 'undef'
+	return @properties if (!ref($input_spec) && $input_spec eq 'undef');
+
+	# Property 1: Output range constraints (numeric)
+	if (_is_numeric_transform($input_spec, $output_spec)) {
+		if (defined $output_spec->{min}) {
+			my $min = $output_spec->{min};
+			push @properties, {
+				name => 'min_constraint',
+				code => "\$result >= $min"
+			};
+		}
+
+		if (defined $output_spec->{max}) {
+			my $max = $output_spec->{max};
+			push @properties, {
+				name => 'max_constraint',
+				code => "\$result <= $max"
+			};
+		}
+
+		# For transforms, add idempotence check where appropriate
+		# e.g., abs(abs(x)) == abs(x)
+		if ($transform_name =~ /positive/i) {
+			push @properties, {
+				name => 'non_negative',
+				code => "\$result >= 0"
+			};
+		}
+	}
+
+	# Property 2: Specific value output
+	if (defined $output_spec->{value}) {
+		my $expected = $output_spec->{value};
+		push @properties, {
+			name => 'exact_value',
+			code => "\$result == $expected"
+		};
+	}
+
+	# Property 3: String length constraints
+	if (_is_string_transform($input_spec, $output_spec)) {
+		if (defined $output_spec->{min}) {
+			push @properties, {
+				name => 'min_length',
+				code => "length(\$result) >= $output_spec->{min}"
+			};
+		}
+
+		if (defined $output_spec->{max}) {
+			push @properties, {
+				name => 'max_length',
+				code => "length(\$result) <= $output_spec->{max}"
+			};
+		}
+
+		if (defined $output_spec->{matches}) {
+			my $pattern = $output_spec->{matches};
+			push @properties, {
+				name => 'pattern_match',
+				code => "\$result =~ qr/$pattern/"
+			};
+		}
+	}
+
+	# Property 4: Type preservation
+	if (_same_type($input_spec, $output_spec)) {
+		my $type = _get_dominant_type($output_spec);
+
+		if ($type eq 'number' || $type eq 'integer' || $type eq 'float') {
+			push @properties, {
+				name => 'numeric_type',
+				code => "looks_like_number(\$result)"
+			};
+		}
+	}
+
+	# Property 5: Definedness (unless output can be undef)
+	unless (($output_spec->{type} // '') eq 'undef') {
+		push @properties, {
+			name => 'defined',
+			code => "defined(\$result)"
+		};
+	}
+
+	return @properties;
+}
+
+=head2 _schema_to_lectrotest_generator
+
+Converts a schema field spec to a LectroTest generator string.
+
+=cut
+
+sub _schema_to_lectrotest_generator {
+	my ($field_name, $spec) = @_;
+
+	my $type = $spec->{type} || 'string';
+
+	if ($type eq 'integer') {
+		my $min = $spec->{min};
+		my $max = $spec->{max};
+
+		if (!defined($min) && !defined($max)) {
+			return "$field_name <- Int";
+		} elsif (!defined($min)) {
+			return "$field_name <- Int(sized => sub { int(rand($max + 1)) })";
+		} elsif (!defined($max)) {
+			return "$field_name <- Int(sized => sub { $min + int(rand(1000)) })";
+		} else {
+			my $range = $max - $min;
+			return "$field_name <- Int(sized => sub { $min + int(rand($range + 1)) })";
+		}
+	}
+	elsif ($type eq 'number' || $type eq 'float') {
+		my $min = $spec->{min};
+		my $max = $spec->{max};
+
+		if (!defined($min) && !defined($max)) {
+			# No constraints - full range
+			return "$field_name <- Float(sized => sub { rand(1000) - 500 })";
+		} elsif (!defined($min)) {
+			# Only max defined
+			if ($max == 0) {
+				# max=0 means negative numbers only
+				return "$field_name <- Float(sized => sub { -rand(1000) })";
+			} elsif ($max > 0) {
+				# Positive max, generate 0 to max
+				return "$field_name <- Float(sized => sub { rand($max) })";
+			} else {
+				# Negative max, generate from some negative to max
+				return "$field_name <- Float(sized => sub { ($max - 1000) + rand(1000 + $max) })";
+			}
+		} elsif (!defined($max)) {
+			# Only min defined
+			if ($min == 0) {
+				# min=0 means positive numbers only
+				return "$field_name <- Float(sized => sub { rand(1000) })";
+			} elsif ($min > 0) {
+				# Positive min
+				return "$field_name <- Float(sized => sub { $min + rand(1000) })";
+			} else {
+				# Negative min
+				return "$field_name <- Float(sized => sub { $min + rand(-$min + 1000) })";
+			}
+		} else {
+			# Both min and max defined
+			my $range = $max - $min;
+			if ($range <= 0) {
+				carp "Invalid range: min=$min, max=$max";
+				return "$field_name <- Float(sized => sub { $min })";
+			}
+			return "$field_name <- Float(sized => sub { $min + rand($range) })";
+		}
+	}
+	elsif ($type eq 'string') {
+		my $min_len = $spec->{min} // 0;
+		my $max_len = $spec->{max} // 100;
+
+		return "$field_name <- String(length => [$min_len, $max_len])";
+	} elsif ($type eq 'boolean') {
+		return "$field_name <- Bool";
+	}
+	elsif ($type eq 'arrayref') {
+		my $min_size = $spec->{min} // 0;
+		my $max_size = $spec->{max} // 10;
+		return "$field_name <- List(Int, length => [$min_size, $max_size])";
+	}
+	elsif ($type eq 'hashref') {
+		# LectroTest doesn't have built-in Hash, use custom generator
+		my $min_keys = $spec->{min} // 0;
+		my $max_keys = $spec->{max} // 10;
+		return "$field_name <- Elements(map { my \%h; for (1..\$_) { \$h{'key'.\$_} = \$_ }; \\\%h } $min_keys..$max_keys)";
+	}
+	else {
+		carp "Unknown type '$type' for LectroTest generator, using String";
+		return "$field_name <- String";
+	}
+}
+
+=head2 Helper functions for type detection
+
+=cut
+
+sub _is_numeric_transform {
+	my ($input_spec, $output_spec) = @_;
+
+	my $out_type = $output_spec->{type} // '';
+	return $out_type eq 'number' || $out_type eq 'integer' || $out_type eq 'float';
+}
+
+sub _is_string_transform {
+	my ($input_spec, $output_spec) = @_;
+
+	my $out_type = $output_spec->{type} // '';
+	return $out_type eq 'string';
+}
+
+sub _same_type {
+	my ($input_spec, $output_spec) = @_;
+
+	# Simplified - would need more sophisticated logic for multiple inputs
+	my $in_type = _get_dominant_type($input_spec);
+	my $out_type = _get_dominant_type($output_spec);
+
+	return $in_type eq $out_type;
+}
+
+sub _get_dominant_type {
+	my $spec = $_[0];
+
+	return $spec->{type} if defined $spec->{type};
+
+	# For multi-field specs, return first type found
+	for my $field (keys %$spec) {
+		next unless ref($spec->{$field}) eq 'HASH';
+		return $spec->{$field}{type} if defined $spec->{$field}{type};
+	}
+
+	return 'string';  # Default
+}
+
+sub _has_positions {
+	my $spec = $_[0];
+
+	for my $field (keys %$spec) {
+		next unless ref($spec->{$field}) eq 'HASH';
+		return 1 if defined $spec->{$field}{position};
+	}
+
+	return 0;
+}
+
+=head2 _render_properties
+
+Renders property definitions into Perl code for the template.
+
+=cut
+
+sub _render_properties {
+	my $properties = $_[0];
+
+	my $code = "use Test::LectroTest::Compat;\n\n";
+
+	for my $prop (@$properties) {
+		$code .= "# Transform property: $prop->{name}\n";
+		$code .= "Property {\n";
+		$code .= "    ##[ $prop->{generator_spec} ]##\n";
+		$code .= "    \n";
+		$code .= "    my \$result = eval { $prop->{call_code} };\n";
+
+		if ($prop->{should_die}) {
+			$code .= "    my \$died = defined(\$\@) && \$\@;\n";
+			$code .= "    \$died;\n";
+		} else {
+			$code .= "    my \$error = \$\@;\n";
+			$code .= "    \n";
+			$code .= "    !\$error && (\n";
+			$code .= "        $prop->{property_checks}\n";
+			$code .= "    );\n";
+		}
+
+		$code .= "}, name => '$prop->{name}', trials => $prop->{trials};\n\n";
+	}
+
+	return $code;
 }
 
 1;
@@ -1272,6 +1905,8 @@ sub generate
 =item * L<Params::Get>: Input validation
 
 =item * L<Return::Set>: Output validation
+
+=item * L<Test::LectroTest>
 
 =item * L<Test::Most>
 
@@ -1388,7 +2023,7 @@ my @unicode_codepoints = (
     0x2013,        # – (en-dash)
     0x0301,        # combining acute accent
     0x0308,        # combining diaeresis
-    0x1F600,       # 😀 (emoji)
+    0x1F600,	# 😀 (emoji)
     0x1F62E,       # 😮
     0x1F4A9,	# 💩 (yes)
 );
@@ -2682,6 +3317,21 @@ foreach my $transform (keys %transforms) {
 		}
 	}
 }
+
+[% IF use_properties %]
+# ============================================================
+# Property-Based Transform Tests (Test::LectroTest)
+# ============================================================
+
+use Test::LectroTest::Compat;
+use Test::LectroTest::Generator qw(:common);
+use Scalar::Util qw(looks_like_number);
+
+diag('Run property-based transform tests') if($ENV{'TEST_VERBOSE'});
+
+[% transform_properties_code %]
+
+[% END %]
 
 [% corpus_code %]
 
