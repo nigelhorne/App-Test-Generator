@@ -693,7 +693,7 @@ B<t/conf/abs.yml>:
       output:
         type: number
         min: 0
-    
+
     negative:
       input:
         number:
@@ -795,7 +795,7 @@ B<t/conf/normalize.yml>:
       output:
         type: string
         value: ""
-    
+
     single_space:
       input:
         text:
@@ -805,7 +805,7 @@ B<t/conf/normalize.yml>:
       output:
         type: string
         matches: '^\S+( \S+)*$'
-    
+
     length_bounded:
       input:
         text:
@@ -860,7 +860,7 @@ You can also disable traditional fuzzing and only use property-based tests:
     properties:
       enable: true
       trials: 5000
-  
+
   iterations: 0  # Disable random fuzzing, use only property tests
 
 =head3 When to Use Property-Based Testing
@@ -1858,7 +1858,7 @@ Renders property definitions into Perl code for the template.
 sub _render_properties {
 	my $properties = $_[0];
 
-	my $code = "use Test::LectroTest::Compat;\n\n";
+	my $code = "use_ok('Test::LectroTest::Compat');\n\n";
 
 	for my $prop (@$properties) {
 		$code .= "# Transform property: $prop->{name}\n";
