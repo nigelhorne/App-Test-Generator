@@ -2239,7 +2239,7 @@ sub _render_properties {
 
 	for my $prop (@$properties) {
 		$code .= "# Transform property: $prop->{name}\n";
-		$code .= "Property {\n";
+		$code .= "my \$$prop->{name} = Property {\n";
 		$code .= "    ##[ $prop->{generator_spec} ]##\n";
 		$code .= "    \n";
 		$code .= "    my \$result = eval { $prop->{call_code} };\n";
@@ -2256,6 +2256,8 @@ sub _render_properties {
 		}
 
 		$code .= "}, name => '$prop->{name}', trials => $prop->{trials};\n\n";
+
+		$code .= "holds(\$$prop->{name});\n";
 	}
 
 	return $code;
@@ -2829,7 +2831,7 @@ sub fuzz_inputs
 			foreach my $field (keys %input) {
 				my $spec = $input{$field} || {};
 				foreach my $field(keys %{$spec}) {
-					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'position'))) {
+					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'position', 'semantic'))) {
 						diag(__LINE__, ": TODO: handle schema keyword '$field'");
 					}
 				}
