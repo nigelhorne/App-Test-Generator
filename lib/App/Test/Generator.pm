@@ -1775,6 +1775,20 @@ sub _schema_to_lectrotest_generator {
 		my $min_len = $spec->{min} // 0;
 		my $max_len = $spec->{max} // 100;
 
+		# Handle regex patterns
+		if (defined $spec->{matches}) {
+			my $pattern = $spec->{matches};
+
+			# Build generator using Data::Random::String::Matches
+			if (defined $spec->{max}) {
+				return "$field_name <- Gen { Data::Random::String::Matches->create_random_string({ regex => qr/$pattern/, length => $spec->{max} }) }";
+			} elsif (defined $spec->{min}) {
+				return "$field_name <- Gen { Data::Random::String::Matches->create_random_string({ regex => qr/$pattern/, length => $spec->{min} }) }";
+			} else {
+				return "$field_name <- Gen { Data::Random::String::Matches->create_random_string({ regex => qr/$pattern/ }) }";
+			}
+		}
+
 		return "$field_name <- String(length => [$min_len, $max_len])";
 	} elsif ($type eq 'boolean') {
 		return "$field_name <- Bool";
@@ -1835,7 +1849,7 @@ sub _get_dominant_type {
 		return $spec->{$field}{type} if defined $spec->{$field}{type};
 	}
 
-	return 'string';  # Default
+	return 'string';	# Default
 }
 
 sub _has_positions {
@@ -2024,7 +2038,7 @@ my @unicode_codepoints = (
     0x0301,        # combining acute accent
     0x0308,        # combining diaeresis
     0x1F600,	# 😀 (emoji)
-    0x1F62E,       # 😮
+    0x1F62E,    # 😮
     0x1F4A9,	# 💩 (yes)
 );
 
@@ -2291,7 +2305,7 @@ sub fuzz_inputs
 						} else {
 							$random_string = Data::Random::String::Matches->create_random_string({ regex => $re });
 						}
-    						foreach my $str('hello', $random_string) {
+						foreach my $str('hello', $random_string) {
 							if($str =~ $re) {
 								if(!defined($spec->{'memberof'}) || (grep { $_ eq $str } @{$spec->{'memberof'}})) {
 									if(defined($spec->{'notmemberof'}) && (grep { $_ eq $str } @{$spec->{'notmemberof'}})) {
