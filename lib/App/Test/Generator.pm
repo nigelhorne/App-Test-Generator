@@ -1262,7 +1262,13 @@ sub generate
 		if(ref($config{$key}) eq 'HASH') {
 			next;
 		}
-		$config_code .= "'$key' => $config{$key},\n";
+		if((!defined($config{$key})) || !$config{$key}) {
+			# YAML will strip the word 'false'
+			# e.g. in 'test_undef: false'
+			$config_code .= "'$key' => 0,\n";
+		} else {
+			$config_code .= "'$key' => $config{$key},\n";
+		}
 	}
 
 	# Render input/output

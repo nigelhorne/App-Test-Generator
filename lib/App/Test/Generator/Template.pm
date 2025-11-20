@@ -367,30 +367,8 @@ sub fuzz_inputs
 			}
 
 			if ($type eq 'string') {
-				# Is hello allowed?
-				# push @cases, @{_generate_string_cases('_input', \%input, \%mandatory_args)};
-				if(!defined($input{'memberof'}) || (grep { $_ eq 'hello' } @{$input{'memberof'}})) {
-					if(defined($input{'notmemberof'}) && (grep { $_ eq 'hello' } @{$input{'notmemberof'}})) {
-						push @cases, { _input => 'hello', _STATUS => 'DIES' };
-					} else {
-						push @cases, { _input => 'hello' };
-					}
-				} elsif(defined($input{'memberof'}) && !defined($input{'max'})) {
-					# Data::Random
-					push @cases, { _input => (rand_set(set => $input{'memberof'}, size => 1))[0] }
-				} else {
-					if((!defined($input{'min'})) || ($input{'min'} >= 1)) {
-						push @cases, { _input => '0' } if(!defined($input{'memberof'}));
-					}
-					if(defined($input{'notmemberof'}) || (!grep { $_ eq 'hello' } @{$input{'memberof'}})) {
-						push @cases, { _input => 'hello' };
-					} else {
-						push @cases, { _input => 'hello', _STATUS => 'DIES' };
-					}
-				}
-				push @cases, { _input => '' } if((!exists($input{'min'})) || ($input{'min'} == 0));
-				# push @cases, { $field => "emoji \x{1F600}" };
-				push @cases, { _input => "\0null" } if($config{'test_nuls'});
+				push @cases, @{_generate_string_cases('_input', \%input, \%mandatory_args)};
+				# push @cases, { '_input' => "emoji \x{1F600}" };
 			} else {
 				die "TODO: type $type";
 			}
@@ -509,7 +487,7 @@ sub fuzz_inputs
 				my $spec = $input{$field} || {};
 				foreach my $field(keys %{$spec}) {
 					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'position', 'semantic'))) {
-						diag(__LINE__, ": TODO: handle schema keyword '$field'");
+						die("TODO: handle schema keyword '$field'");
 					}
 				}
 			}
@@ -661,6 +639,7 @@ sub fuzz_inputs
 			} elsif(($type eq 'number') || ($type eq 'float')) {
 				push @cases, @{_generate_float_cases('_input', \%input, \%mandatory_args)};
 			} elsif ($type eq 'string') {
+				push @cases, @{_generate_string_cases('_input', \%input, \%mandatory_args)};
 				if (defined $input{min}) {
 					my $len = $input{min};
 					push @cases, { _input => 'a' x ($len + 1) };	# just inside
@@ -961,6 +940,7 @@ sub _generate_string_cases
 			} else {
 				$random_string = Data::Random::String::Matches->create_random_string({ regex => $re });
 			}
+			# Is hello allowed?
 			foreach my $str('hello', $random_string) {
 				if($str =~ $re) {
 					if(!defined($spec->{'memberof'}) || (grep { $_ eq $str } @{$spec->{'memberof'}})) {
