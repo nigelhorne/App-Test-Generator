@@ -29,7 +29,7 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
-our $VERSION = '0.15';
+our $VERSION = '0.16';
 
 use constant {
 	DEFAULT_ITERATIONS => 50,
@@ -42,7 +42,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 =head1 VERSION
 
-Version 0.15
+Version 0.16
 
 =head1 SYNOPSIS
 
@@ -1254,7 +1254,7 @@ sub generate
 	# Render configuration - all the values are integers for now, if that changes, wrap the $config{$key} in single quotes
 	my $config_code = '';
 	foreach my $key (sort keys %config) {
-		# Skip nested structures like 'properties' - they're used during 
+		# Skip nested structures like 'properties' - they're used during
 		# generation but don't need to be in the generated test
 		if(ref($config{$key}) eq 'HASH') {
 			next;
@@ -1953,7 +1953,7 @@ sub _process_custom_properties {
 					$call_code = "my \$obj = new_ok('$module');";
 					$call_code .= "\$obj->$function";  # Method call
 				} elsif($module && $module ne 'builtin') {
-					$call_code = "$module\::$function";  # Function call  
+					$call_code = "$module\::$function";  # Function call
 				} else {
 					$call_code = $function;  # Builtin
 				}
