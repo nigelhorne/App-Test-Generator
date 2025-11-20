@@ -413,77 +413,7 @@ sub fuzz_inputs
 					# Probably duplicated below, but here as well just in case
 					push @cases, @{_generate_integer_cases($arg_name, $spec, \%mandatory_args)};
 				} elsif ($type eq 'string') {
-					# Is hello allowed?
-					if(my $re = $spec->{matches}) {
-						if(ref($re) ne 'Regexp') {
-							$re = qr/$re/;
-						}
-						my $random_string;
-						if($spec->{'max'}) {
-							$random_string = Data::Random::String::Matches->create_random_string({ length => $spec->{'max'}, regex => $re });
-						} elsif($spec->{'min'}) {
-							$random_string = Data::Random::String::Matches->create_random_string({ length => $spec->{'min'}, regex => $re });
-						} else {
-							$random_string = Data::Random::String::Matches->create_random_string({ regex => $re });
-						}
-						foreach my $str('hello', $random_string) {
-							if($str =~ $re) {
-								if(!defined($spec->{'memberof'}) || (grep { $_ eq $str } @{$spec->{'memberof'}})) {
-									if(defined($spec->{'notmemberof'}) && (grep { $_ eq $str } @{$spec->{'notmemberof'}})) {
-										push @cases, { %mandatory_args, ( $arg_name => $str, _STATUS => 'DIES' ) };
-									} else {
-										push @cases, { %mandatory_args, ( $arg_name => $str ) };
-									}
-								} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
-									# Data::Random
-									push @cases, { %mandatory_args, ( _input => (rand_set(set => $spec->{'memberof'}, size => 1))[0] ) }
-								} else {
-									push @cases, { %mandatory_args, ( $arg_name => $str, _STATUS => 'DIES' ) };
-								}
-							} else {
-								push @cases, { %mandatory_args, ( $arg_name => $str, _STATUS => 'DIES' ) };
-							}
-						}
-					} else {
-						if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
-							if(defined($spec->{'notmemberof'}) && (grep { $_ eq 'hello' } @{$spec->{'notmemberof'}})) {
-								push @cases, { %mandatory_args, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
-							} else {
-								push @cases, { %mandatory_args, ( $arg_name => 'hello' ) };
-							}
-						} else {
-							push @cases, { %mandatory_args, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
-						}
-					}
-					if((!exists($spec->{min})) || ($spec->{min} == 0)) {
-						# '' should die unless it's in the memberof list
-						if(defined($spec->{'memberof'}) && (!grep { $_ eq '' } @{$spec->{'memberof'}})) {
-							push @cases, { %mandatory_args, ( $arg_name => '', _NAME => $arg_name, _STATUS => 'DIES' ) }
-						} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
-							# Data::Random
-							push @cases, { %mandatory_args, _input => (rand_set(set => $spec->{'memberof'}, size => 1))[0] }
-						} else {
-							push @cases, { %mandatory_args, ( $arg_name => '', _NAME => $arg_name ) } if((!exists($spec->{min})) || ($spec->{min} == 0));
-						}
-					}
-					# push @cases, { $arg_name => "emoji \x{1F600}" };
-					push @cases, { %mandatory_args, ( $arg_name => "\0null" ) } if($config{'test_nuls'} && (!(defined $spec->{memberof})) && !defined($spec->{matches}));
-
-					unless(defined($spec->{memberof}) || defined($spec->{matches})) {
-						# --- min/max string/array boundaries ---
-						if (defined $spec->{min}) {
-							my $len = $spec->{min};
-							push @cases, { %mandatory_args, ( $arg_name => 'a' x ($len - 1), _STATUS => 'DIES' ) } if($len > 0);
-							push @cases, { %mandatory_args, ( $arg_name => 'a' x $len ) };
-							push @cases, { %mandatory_args, ( $arg_name => 'a' x ($len + 1) ) };
-						}
-						if (defined $spec->{max}) {
-							my $len = $spec->{max};
-							push @cases, { %mandatory_args, ( $arg_name => 'a' x ($len - 1) ) };
-							push @cases, { %mandatory_args, ( $arg_name => 'a' x $len ) };
-							push @cases, { %mandatory_args, ( $arg_name => 'a' x ($len + 1), _STATUS => 'DIES' ) };
-						}
-					}
+					push @cases, @{_generate_string_cases($arg_name, $spec, \%mandatory_args)};
 				}
 				elsif ($type eq 'boolean') {
 					push @cases, @{_generate_boolean_cases($arg_name, $spec, \%mandatory_args)};
@@ -1010,6 +940,193 @@ sub _generate_boolean_cases {
 	return \@cases;
 }
 
+sub _generate_string_cases
+{
+	my ($arg_name, $spec, $mandatory_args) = @_;
+
+	my @cases;
+
+	if (defined $spec->{min}) {
+		my $len = $spec->{min};
+		if(my $re = $spec->{matches}) {
+			if(ref($re) ne 'Regexp') {
+				$re = qr/$re/;
+			}
+			my $random_string;
+			if($spec->{'max'}) {
+				$random_string = Data::Random::String::Matches->create_random_string({ length => $spec->{'max'}, regex => $re });
+			} elsif($spec->{'min'}) {
+				$random_string = Data::Random::String::Matches->create_random_string({ length => $spec->{'min'}, regex => $re });
+			} else {
+				$random_string = Data::Random::String::Matches->create_random_string({ regex => $re });
+			}
+			foreach my $str('hello', $random_string) {
+				if($str =~ $re) {
+					if(!defined($spec->{'memberof'}) || (grep { $_ eq $str } @{$spec->{'memberof'}})) {
+						if(defined($spec->{'notmemberof'}) && (grep { $_ eq $str } @{$spec->{'notmemberof'}})) {
+							push @cases, { %{$mandatory_args}, ( $arg_name => $str, _STATUS => 'DIES' ) };
+						} else {
+							push @cases, { %{$mandatory_args}, ( $arg_name => $str ) };
+						}
+					} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
+						# Data::Random
+						push @cases, { %{$mandatory_args}, ( _input => (rand_set(set => $spec->{'memberof'}, size => 1))[0] ) }
+					} else {
+						push @cases, { %{$mandatory_args}, ( $arg_name => $str, _STATUS => 'DIES' ) };
+					}
+				} else {
+					push @cases, { %{$mandatory_args}, ( $arg_name => $str, _STATUS => 'DIES' ) };
+				}
+			}
+			for my $count ($len + 1, $len, $len - 1) {
+				next if ($count < 0);
+				my $str = rand_str($count);
+				if($str =~ $re) {
+					push @cases, { %{$mandatory_args}, ( $arg_name => $str ) };
+				} else {
+					push @cases, { %{$mandatory_args}, ( $arg_name => $str, _STATUS => 'DIES' ) };
+				}
+			}
+		} else {
+			# matches is not defined
+			if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
+				if(defined($spec->{'notmemberof'}) && (grep { $_ eq 'hello' } @{$spec->{'notmemberof'}})) {
+					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
+				} else {
+					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello' ) };
+				}
+			} else {
+				push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
+			}
+
+			if($len <= 0) {
+				push @cases, { %{$mandatory_args}, ( $arg_name => '', _LINE => __LINE__ ) } if($config{'test_empty'});	# min == 0, empty string should be allowable
+				# Don't confuse if() with if(defined())
+				push @cases, { %{$mandatory_args}, ( $arg_name => '0', _STATUS => 'DIES' ) };
+			}
+		}
+	} else {
+		push @cases, { %{$mandatory_args}, ( $arg_name => '', _LINE => __LINE__ ) } if($config{'test_empty'});	# No min, empty string should be allowable
+	}
+	if (defined $spec->{max}) {
+		my $len = $spec->{max};
+		if((!defined($spec->{min})) || ($spec->{min} != $len)) {
+			if(my $re = $spec->{matches}) {
+				for my $count ($len - 1, $len, $len + 1) {
+					my $str = rand_str($count);
+					if($str =~ $re) {
+						if($count > $len) {
+							push @cases, { %{$mandatory_args}, ( $arg_name => $str, _LINE => __LINE__, _STATUS => 'DIES' ) };
+						} else {
+							push @cases, { %{$mandatory_args}, ( $arg_name => $str, _LINE => __LINE__ ) };
+						}
+					} else {
+						push @cases, { %{$mandatory_args}, ( $arg_name => $str, _STATUS => 'DIES', _LINE => __LINE__ ) };
+					}
+				}
+			} else {
+				push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x ($len - 1), _LINE => __LINE__ ) };	# just inside
+				push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x $len, _LINE => __LINE__ ) };	# border
+				push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x ($len + 1), _LINE => __LINE__, _STATUS => 'DIES' ) }; # outside
+			}
+		}
+	} else {
+		if(exists($spec->{'min'})) {
+			push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x (($spec->{'min'} + 1) * 1_000), _LINE => __LINE__ ) };
+		} else {
+			push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x 10_000, _LINE => __LINE__ ) };
+		}
+	}
+
+	if((!exists($spec->{min})) || ($spec->{min} == 0)) {
+		# '' should die unless it's in the memberof list
+		if(defined($spec->{'memberof'}) && (!grep { $_ eq '' } @{$spec->{'memberof'}})) {
+			push @cases, { %{$mandatory_args}, ( $arg_name => '', _NAME => $arg_name, _STATUS => 'DIES', _LINE => __LINE__ ) }
+		} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
+			# Data::Random
+			push @cases, { %{$mandatory_args}, _input => (rand_set(set => $spec->{'memberof'}, size => 1))[0] }
+		} else {
+			push @cases, { %{$mandatory_args}, ( $arg_name => '', _NAME => $arg_name, _LINE => __LINE__ ) } if((!exists($spec->{min})) || ($spec->{min} == 0));
+		}
+	}
+	# push @cases, { $arg_name => "emoji \x{1F600}" };
+
+	unless(defined($spec->{memberof}) || defined($spec->{matches})) {
+		# --- min/max string/array boundaries ---
+		if (defined $spec->{min}) {
+			my $len = $spec->{min};
+			if($len == 1) {
+				if($config{'test_empty'}) {
+					push @cases, { %{$mandatory_args}, ( $arg_name => '', _STATUS => 'DIES', _LINE => __LINE__ ) };
+				}
+			} elsif($len > 0) {
+				push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x ($len - 1), _STATUS => 'DIES' ) };
+			}
+			push @cases, { %{$mandatory_args}, ( $arg_name => 'b' x $len ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => 'c' x ($len + 1) ) };
+		}
+		if (defined $spec->{max}) {
+			my $len = $spec->{max};
+			push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x ($len - 1) ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x $len ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x ($len + 1), _STATUS => 'DIES' ) };
+		}
+	}
+
+	if(defined $spec->{matches}) {
+		my $re = $spec->{matches};
+
+		# --- Positive controls ---
+		foreach my $val (@candidate_good) {
+			if ($val =~ $re) {
+				push @cases, { %{$mandatory_args}, ( $arg_name => $val ) };
+				last; # one good match is enough
+			}
+		}
+
+		# --- Negative controls ---
+		foreach my $val (@candidate_bad) {
+			if(!defined($val)) {
+				push @cases, { _input => undef, _STATUS => 'DIES' } if($config{'test_undef'});
+			} elsif ($val !~ $re) {
+				push @cases, { _input => $val, _STATUS => 'DIES' };
+			}
+		}
+		push @cases, { $arg_name => undef, _STATUS => 'DIES' } if($config{'test_undef'});
+	}
+	if(defined $spec->{nomatch}) {
+		my $re = $spec->{nomatch};
+
+		# --- Positive controls ---
+		foreach my $val (@candidate_good) {
+			if ($val !~ $re) {
+				push @cases, { %{$mandatory_args}, ( $arg_name => $val ) };
+				last; # one good match is enough
+			}
+		}
+
+		# --- Negative controls ---
+		foreach my $val (@candidate_bad) {
+			if ($val =~ $re) {
+				push @cases, { $arg_name => $val, _STATUS => 'DIES' };
+			}
+		}
+	}
+
+	if($config{'test_nuls'}) {
+		push @cases,
+			{ %{$mandatory_args}, $arg_name => "\0", _STATUS => 'DIES', _LINE => __LINE__ },
+			{ %{$mandatory_args}, $arg_name => "nul\0", _STATUS => 'DIES', _LINE => __LINE__ },
+			{ %{$mandatory_args}, $arg_name => "\0nul", _STATUS => 'DIES', _LINE => __LINE__ };
+	}
+
+	# Send wrong data type
+	push @cases, { %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) } if($config{'test_empty'});
+	push @cases, { %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) } if($config{'test_empty'});
+
+	return \@cases;
+}
+
 # dedup, fuzzing can easily generate repeats
 # FIXME: I don't think this catches them all
 # FIXME: Handle cases with Class::Simple calls
@@ -1061,112 +1178,7 @@ sub generate_tests
 			} elsif(($type eq 'number') || ($type eq 'float')) {
 				push @cases, @{_generate_float_cases($field, $spec, \%mandatory_args)};
 			} elsif($type eq 'string') {
-				if (defined $spec->{min}) {
-					my $len = $spec->{min};
-					if(my $re = $spec->{matches}) {
-						for my $count ($len + 1, $len, $len - 1) {
-							next if ($count < 0);
-							my $str = rand_str($count);
-							if($str =~ $re) {
-								push @cases, { %mandatory_args, ( $field => $str ) };
-							} else {
-								push @cases, { %mandatory_args, ( $field => $str, _STATUS => 'DIES' ) };
-							}
-						}
-					} else {
-						push @cases, { %mandatory_args, ( $field => 'a' x ($len + 1) ) };	# just inside
-						push @cases, { %mandatory_args, ( $field => 'a' x $len ) };	# border
-						if($len > 0) {
-							if(($len > 1) || $config{'test_empty'}) {
-								# outside
-								push @cases, { %mandatory_args, ( $field => 'a' x ($len - 1), _STATUS => 'DIES' ) };
-							}
-							if($len <= 1) {
-								push @cases, { %mandatory_args, ( $field => '9' ) };
-								push @cases, { %mandatory_args, ( $field => '' ) } if($len == 0);
-							}
-						} else {
-							push @cases, { %mandatory_args, ( $field => '' ) } if($config{'test_empty'});	# min == 0, empty string should be allowable
-							# Don't confuse if() with if(defined())
-							push @cases, { %mandatory_args, ( $field => '0', _STATUS => 'DIES' ) };
-						}
-					}
-				} else {
-					push @cases, { %mandatory_args, ( $field => '' ) } if($config{'test_empty'});	# No min, empty string should be allowable
-				}
-				if (defined $spec->{max}) {
-					my $len = $spec->{max};
-					if((!defined($spec->{min})) || ($spec->{min} != $len)) {
-						if(my $re = $spec->{matches}) {
-							for my $count ($len - 1, $len, $len + 1) {
-								my $str = rand_str($count);
-								if($str =~ $re) {
-									if($count > $len) {
-										push @cases, { %mandatory_args, ( $field => $str, _LINE => __LINE__, _STATUS => 'DIES' ) };
-									} else {
-										push @cases, { %mandatory_args, ( $field => $str, _LINE => __LINE__ ) };
-									}
-								} else {
-									push @cases, { %mandatory_args, ( $field => $str, _STATUS => 'DIES', _LINE => __LINE__ ) };
-								}
-							}
-						} else {
-							push @cases, { %mandatory_args, ( $field => 'a' x ($len - 1), _LINE => __LINE__ ) };	# just inside
-							push @cases, { %mandatory_args, ( $field => 'a' x $len, _LINE => __LINE__ ) };	# border
-							push @cases, { %mandatory_args, ( $field => 'a' x ($len + 1), _LINE => __LINE__, _STATUS => 'DIES' ) }; # outside
-						}
-					}
-				} else {
-					if(exists($spec->{'min'})) {
-						push @cases, { %mandatory_args, ( $field => 'a' x (($spec->{'min'} + 1) * 1_000), _LINE => __LINE__ ) };
-					} else {
-						push @cases, { %mandatory_args, ( $field => 'a' x 10_000, _LINE => __LINE__ ) };
-					}
-				}
-
-				if(defined $spec->{matches}) {
-					my $re = $spec->{matches};
-
-					# --- Positive controls ---
-					foreach my $val (@candidate_good) {
-						if ($val =~ $re) {
-							push @cases, { %mandatory_args, ( $field => $val ) };
-							last; # one good match is enough
-						}
-					}
-
-					# --- Negative controls ---
-					foreach my $val (@candidate_bad) {
-						if(!defined($val)) {
-							push @cases, { _input => undef, _STATUS => 'DIES' } if($config{'test_undef'});
-						} elsif ($val !~ $re) {
-							push @cases, { _input => $val, _STATUS => 'DIES' };
-						}
-					}
-					push @cases, { $field => undef, _STATUS => 'DIES' } if($config{'test_undef'});
-					push @cases, { $field => "\0", _STATUS => 'DIES' } if($config{'test_nuls'});
-				}
-				if(defined $spec->{nomatch}) {
-					my $re = $spec->{nomatch};
-
-					# --- Positive controls ---
-					foreach my $val (@candidate_good) {
-						if ($val !~ $re) {
-							push @cases, { %mandatory_args, ( $field => $val ) };
-							last; # one good match is enough
-						}
-					}
-
-					# --- Negative controls ---
-					foreach my $val (@candidate_bad) {
-						if ($val =~ $re) {
-							push @cases, { $field => $val, _STATUS => 'DIES' };
-						}
-					}
-				}
-				# Send wrong data type
-				push @cases, { %mandatory_args, ( $field => [], _STATUS => 'DIES', _LINE => __LINE__ ) } if($config{'test_empty'});
-				push @cases, { %mandatory_args, ( $field => {}, _STATUS => 'DIES', _LINE => __LINE__ ) } if($config{'test_empty'});
+				push @cases, @{_generate_string_cases($field, $spec, \%mandatory_args)};
 			} elsif ($type eq 'arrayref') {
 				if (defined $spec->{min}) {
 					my $len = $spec->{min};
