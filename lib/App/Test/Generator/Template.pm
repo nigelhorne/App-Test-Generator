@@ -399,10 +399,7 @@ sub fuzz_inputs
 
 				# --- Type-based seeds ---
 				if(($type eq 'number') || ($type eq 'float')) {
-					push @cases, { $arg_name => 0 };
-					push @cases, { $arg_name => 1.23 };
-					push @cases, { $arg_name => -42 };
-					push @cases, { $arg_name => 'abc', _STATUS => 'DIES' };
+					push @cases, @{_generate_float_cases($arg_name, $spec, \%mandatory_args)};
 				}
 				elsif ($type eq 'integer') {
 					# Probably duplicated below, but here as well just in case
@@ -730,20 +727,10 @@ sub fuzz_inputs
 			push @cases, { _input => $outside, _STATUS => 'DIES' };
 		} else {
 			# Generate edge cases for min/max
-			if ($type eq 'number' || $type eq 'integer') {
-				if (defined $input{min}) {
-					push @cases, { %mandatory_args, ( _input => $input{min} + 1 ) };	# just inside
-					push @cases, { %mandatory_args, ( _input => $input{min} ) };	# border
-					push @cases, { %mandatory_args, ( _input => $input{min} - 1, _STATUS => 'DIES' ) }; # outside
-				} else {
-					push @cases, { %mandatory_args, ( _input => 0, _LINE => __LINE__ ) };	# No min, so 0 should be allowable
-					push @cases, { %mandatory_args, ( _input => -1, _LINE => __LINE__ ) };	# No min, so -1 should be allowable
-				}
-				if (defined $input{max}) {
-					push @cases, { %mandatory_args, ( _input => $input{max} - 1 ) };	# just inside
-					push @cases, { %mandatory_args, ( _input => $input{max} ) };	# border
-					push @cases, { %mandatory_args, ( _input => $input{max} + 1, _STATUS => 'DIES' ) }; # outside
-				}
+			if($type eq 'integer') {
+				push @cases, @{_generate_integer_cases('_input', \%input, \%mandatory_args)};
+			} elsif(($type eq 'number') || ($type eq 'float')) {
+				push @cases, @{_generate_float_cases('_input', \%input, \%mandatory_args)};
 			} elsif ($type eq 'string') {
 				if (defined $input{min}) {
 					my $len = $input{min};
@@ -898,15 +885,13 @@ sub _generate_integer_cases {
 		push @cases, { %{$mandatory_args}, ( $arg_name => 42 ) };
 	}
 
-	push @cases,
-		{ %{$mandatory_args}, ( $arg_name => 3.14, _STATUS => 'DIES' ) },	# Float
-		{ %{$mandatory_args}, ( $arg_name => 'xyz', _STATUS => 'DIES' ) };
-
 	[% IF module %]
 		# Send wrong data type - builtins aren't good at checking this
 		push @cases,
 			{ %{$mandatory_args}, ( $arg_name => "test string in integer field $arg_name", _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) },
+			{ %{$mandatory_args}, ( $arg_name => 3.14, _STATUS => 'DIES' ) },	# Float
+			{ %{$mandatory_args}, ( $arg_name => 'xyz', _STATUS => 'DIES' ) },
 			{ %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
 	[% END %]
 
@@ -921,7 +906,7 @@ sub _generate_integer_cases {
 		if(!defined $spec->{max}) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => $min + rand_int() ) };
 			if($min == 0) {
-				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_int()) ) };	# Any positive number
+				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_int()) ) };	# Any positive integer
 			}
 		}
 	}
@@ -938,13 +923,77 @@ sub _generate_integer_cases {
 		} else {
 			push @cases, { %{$mandatory_args}, ( $arg_name => $max - rand_int() ) };
 			if($max == 0) {
-				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_int()) * -1 ) };	# Any negative number
+				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_int()) * -1 ) };	# Any negative integer
 			}
 		}
 	} elsif(!defined $spec->{min}) {
 		# Can take any number, so give it one
 		push @cases,
 			{ %{$mandatory_args}, ( $arg_name => rand_int() ) },
+			{ %{$mandatory_args}, ( $arg_name => 0) };	# 0 is in range
+	}
+
+	return \@cases;
+}
+
+sub _generate_float_cases {
+	my ($arg_name, $spec, $mandatory_args) = @_;
+	my @cases;
+
+	if((!defined $spec->{min}) || ($spec->{min} <= -0.1)) {
+		push @cases, { %{$mandatory_args}, ( $arg_name => -0.1, _LINE => __LINE__ ) };
+	}
+	if((!defined $spec->{min}) || ($spec->{min} <= 43.56)) {
+		push @cases, { %{$mandatory_args}, ( $arg_name => 43.56 ) };
+	}
+
+
+	[% IF module %]
+		# Send wrong data type - builtins aren't good at checking this
+		push @cases,
+			{ %{$mandatory_args}, ( $arg_name => "test string in integer field $arg_name", _STATUS => 'DIES', _LINE => __LINE__ ) },
+			{ %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) },
+			{ %{$mandatory_args}, ( $arg_name => 'abc', _STATUS => 'DIES' ) },
+			{ %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
+	[% END %]
+
+	# min/max numeric boundaries
+	if (defined $spec->{min}) {
+		my $min = $spec->{min};
+		push @cases,
+			{ %{$mandatory_args}, ( $arg_name => $min - 0.001, _STATUS => 'DIES' ) },
+			{ %{$mandatory_args}, ( $arg_name => $min, _LINE => __LINE__ ) },	# border
+			{ %{$mandatory_args}, ( $arg_name => $min + 0.001 ) };	# just inside
+
+		if(!defined $spec->{max}) {
+			push @cases, { %{$mandatory_args}, ( $arg_name => $min + rand_num() ) };
+			if($min == 0) {
+				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_num()) ) };	# Any positive number
+			}
+		}
+	}
+	if (defined $spec->{max}) {
+		my $max = $spec->{max};
+		push @cases,
+			{ %{$mandatory_args}, ( $arg_name => $max - 0.000001 ) },
+			{ %{$mandatory_args}, ( $arg_name => $max ) },
+			{ %{$mandatory_args}, ( $arg_name => $max + 0.000001, _STATUS => 'DIES' ) };
+
+		if(defined $spec->{min}) {
+			# Test 0 if it's in range
+			push @cases, { %{$mandatory_args}, ( $arg_name => 0 ) } if($spec->{'min'} >= 0);
+		} else {
+			push @cases, { %{$mandatory_args}, ( $arg_name => $max - rand_num() ) };
+			if($max == 0) {
+				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_num()) * -0.00000001 ) };	# Any negative number
+			}
+		}
+	} elsif(!defined $spec->{min}) {
+		# Can take any number, so give it some
+		push @cases,
+			{ %{$mandatory_args}, ( $arg_name => rand_num() ) },
+			{ %{$mandatory_args}, ( $arg_name => 1.23 ) },
+			{ %{$mandatory_args}, ( $arg_name => -42.1 ) },
 			{ %{$mandatory_args}, ( $arg_name => 0) };	# 0 is in range
 	}
 
@@ -1000,26 +1049,7 @@ sub generate_tests
 			if($type eq 'integer') {
 				push @cases, @{_generate_integer_cases($field, $spec, \%mandatory_args)};
 			} elsif(($type eq 'number') || ($type eq 'float')) {
-				if(defined $spec->{min}) {
-					push @cases, { %mandatory_args, ( $field => $spec->{min} + 1 ) };	# just inside
-					push @cases, { %mandatory_args, ( $field => $spec->{min} ) };	# border
-					push @cases, { %mandatory_args, ( $field => $spec->{min} - 1, _STATUS => 'DIES' ) }; # outside
-				} else {
-					push @cases, { $field => 0, _LINE => __LINE__ };	# No min, so 0 should be allowable
-					push @cases, { $field => -1, _LINE => __LINE__ };	# No min, so -1 should be allowable
-				}
-				if(defined $spec->{max}) {
-					push @cases, { %mandatory_args, ( $field => $spec->{max} - 1, _LINE => __LINE__ ) };	# just inside
-					push @cases, { %mandatory_args, ( $field => $spec->{max}, _LINE => __LINE__ ) };	# border
-					push @cases, { %mandatory_args, ( $field => $spec->{max} + 1, _STATUS => 'DIES', _LINE => __LINE__ ) }; # outside
-				}
-
-				[% IF module %]
-					# Send wrong data type - builtins aren't good at checking this
-					push @cases, { %mandatory_args, ( $field => 'test string in integer field', _STATUS => 'DIES', _LINE => __LINE__ ) };
-					push @cases, { %mandatory_args, ( $field => {}, _STATUS => 'DIES', _LINE => __LINE__ ) };
-					push @cases, { %mandatory_args, ( $field => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
-				[% END %]
+				push @cases, @{_generate_float_cases($field, $spec, \%mandatory_args)};
 			} elsif($type eq 'string') {
 				if (defined $spec->{min}) {
 					my $len = $spec->{min};
@@ -1433,29 +1463,7 @@ foreach my $transform (keys %transforms) {
 		if($type eq 'integer') {
 			push @tests, @{_generate_integer_cases($field, $spec, $foundation)};
 		} elsif(($type eq 'number') || ($type eq 'float')) {
-			if(defined $spec->{min}) {
-				push @tests, { %{$foundation}, ( $field => $spec->{min} + 1 ) };	# just inside
-				push @tests, { %{$foundation}, ( $field => $spec->{min} ) };	# border
-				# Test 0 if it's in range
-				push @tests, { %{$foundation}, ( $field => 0 ) } if($spec->{'min'} < -1);
-				if(!defined($spec->{'max'})) {
-					push @tests, { %{$foundation}, ( $field => abs(rand_num()) ) };
-				}
-			} else {
-				push @tests, { %{$foundation}, ( $field => 0 ) };	# No min, so 0 should be allowable
-				push @tests, { %{$foundation}, ( $field => -0.1, _LINE => __LINE__ ) };	# No min, so -1 should be allowable
-				if(defined($spec->{'max'})) {
-					push @tests, { %{$foundation}, ( $field => $spec->{'max'} - abs(rand_num()) ) };
-				} else {
-					push @tests, { %{$foundation}, ( $field => rand_num() ) };
-				}
-			}
-			if(defined $spec->{max}) {
-				push @tests, { %{$foundation}, ( $field => $spec->{max} - 0.1 ) };	# just inside
-				if((defined $spec->{min}) && ($spec->{'min'} != $spec->{'max'})) {
-					push @tests, { %{$foundation}, ( $field => $spec->{max} ) };	# border
-				}
-			}
+			push @tests, @{_generate_float_cases($field, $spec, $foundation)};
 		} elsif($type eq 'string') {
 			if(defined $spec->{min}) {
 				push @tests, { %{$foundation}, ( $field => rand_str($spec->{min} + 1) ) };	# just inside
