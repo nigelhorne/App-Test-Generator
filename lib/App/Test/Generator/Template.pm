@@ -75,6 +75,13 @@ if($^O ne 'MSWin32') {
 	open(STDIN, '<', '/dev/null');
 }
 
+# TODO: add more, and remove magic numbers
+# perhaps allow them to be configurable?
+use constant {
+	PROB_LOWERCASE => 0.72,
+	PROB_EDGE_CASE => 0.4,
+};
+
 [% setup_code %]
 
 [% IF module %]
@@ -181,7 +188,7 @@ sub rand_str
 	my @chars;
 	for (1..$len) {
 		my $r = rand();
-		if ($r < 0.72) {
+		if ($r < PROB_LOWERCASE) {
 			push @chars, chr(97 + int(rand(26)));	# a-z
 		} elsif ($r < 0.88) {
 			push @chars, chr(65 + int(rand(26)));	# A-Z
@@ -369,7 +376,7 @@ sub fuzz_inputs
 					}
 				} elsif(defined($input{'memberof'}) && !defined($input{'max'})) {
 					# Data::Random
-					push @cases, { _input => rand_set(set => $input{'memberof'}, size => 1) }
+					push @cases, { _input => (rand_set(set => $input{'memberof'}, size => 1))[0] }
 				} else {
 					if((!defined($input{'min'})) || ($input{'min'} >= 1)) {
 						push @cases, { _input => '0' } if(!defined($input{'memberof'}));
@@ -384,7 +391,7 @@ sub fuzz_inputs
 				# push @cases, { $field => "emoji \x{1F600}" };
 				push @cases, { _input => "\0null" } if($config{'test_nuls'});
 			} else {
-				die 'TODO';
+				die "TODO: type $type";
 			}
 		} else {
 			# our %input = ( str => { type => 'string' } );
@@ -429,7 +436,7 @@ sub fuzz_inputs
 									}
 								} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
 									# Data::Random
-									push @cases, { %mandatory_args, ( _input => rand_set(set => $spec->{'memberof'}, size => 1) ) }
+									push @cases, { %mandatory_args, ( _input => (rand_set(set => $spec->{'memberof'}, size => 1))[0] ) }
 								} else {
 									push @cases, { %mandatory_args, ( $arg_name => $str, _STATUS => 'DIES' ) };
 								}
@@ -454,7 +461,7 @@ sub fuzz_inputs
 							push @cases, { %mandatory_args, ( $arg_name => '', _NAME => $arg_name, _STATUS => 'DIES' ) }
 						} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
 							# Data::Random
-							push @cases, { %mandatory_args, _input => rand_set(set => $spec->{'memberof'}, size => 1) }
+							push @cases, { %mandatory_args, _input => (rand_set(set => $spec->{'memberof'}, size => 1))[0] }
 						} else {
 							push @cases, { %mandatory_args, ( $arg_name => '', _NAME => $arg_name ) } if((!exists($spec->{min})) || ($spec->{min} == 0));
 						}
@@ -552,7 +559,7 @@ sub fuzz_inputs
 			my $type = $input{'type'};
 			for (1..[% iterations_code %]) {
 				my $case_input;
-				if (@edge_case_array && rand() < 0.4) {
+				if (@edge_case_array && rand() < PROB_EDGE_CASE) {
 					# Sometimes pick a field-specific edge-case
 					$case_input = _pick_from(\@edge_case_array);
 				} elsif(exists $type_edge_cases{$type} && rand() < 0.3) {
@@ -571,7 +578,7 @@ sub fuzz_inputs
 				} elsif($type eq 'boolean') {
 					$case_input = rand_bool();
 				} else {
-					die 'TODO';
+					die "TODO: type $type";
 				}
 				push @cases, { _input => $case_input, status => 'OK', _LINE => __LINE__ } if($case_input);
 			}
@@ -593,7 +600,7 @@ sub fuzz_inputs
 					my $type = $spec->{type} || 'string';
 
 					# 1) Sometimes pick a field-specific edge-case
-					if (exists $edge_cases{$field} && rand() < 0.4) {
+					if (exists $edge_cases{$field} && rand() < PROB_EDGE_CASE) {
 						$case_input{$field} = _pick_from($edge_cases{$field});
 						next;
 					}
