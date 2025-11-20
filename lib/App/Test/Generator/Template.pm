@@ -941,16 +941,16 @@ sub _generate_string_cases
 					}
 				}
 			} else {
-				push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x ($len - 1), _LINE => __LINE__ ) };	# just inside
-				push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x $len, _LINE => __LINE__ ) };	# border
-				push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x ($len + 1), _LINE => __LINE__, _STATUS => 'DIES' ) }; # outside
+				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len - 1), _LINE => __LINE__ ) };	# just inside
+				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len), _LINE => __LINE__ ) };	# border
+				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len + 1), _LINE => __LINE__, _STATUS => 'DIES' ) }; # outside
 			}
 		}
 	} else {
 		if(exists($spec->{'min'})) {
-			push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x (($spec->{'min'} + 1) * 1_000), _LINE => __LINE__ ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str(($spec->{'min'} + 1) * 1_000), _LINE => __LINE__ ) };
 		} else {
-			push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x 10_000, _LINE => __LINE__ ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str(10_000), _LINE => __LINE__ ) };
 		}
 	}
 
@@ -976,16 +976,16 @@ sub _generate_string_cases
 					push @cases, { %{$mandatory_args}, ( $arg_name => '', _STATUS => 'DIES', _LINE => __LINE__ ) };
 				}
 			} elsif($len > 0) {
-				push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x ($len - 1), _STATUS => 'DIES' ) };
+				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len - 1), _STATUS => 'DIES' ) };
 			}
-			push @cases, { %{$mandatory_args}, ( $arg_name => 'b' x $len ) };
-			push @cases, { %{$mandatory_args}, ( $arg_name => 'c' x ($len + 1) ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len) ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len + 1) ) };
 		}
 		if (defined $spec->{max}) {
 			my $len = $spec->{max};
-			push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x ($len - 1) ) };
-			push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x $len ) };
-			push @cases, { %{$mandatory_args}, ( $arg_name => 'a' x ($len + 1), _STATUS => 'DIES' ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len - 1) ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len) ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len + 1), _STATUS => 'DIES' ) };
 		}
 	}
 
@@ -1315,9 +1315,9 @@ foreach my $transform (keys %transforms) {
 			}
 		} elsif($type eq 'string') {
 			if(defined $spec->{min} && $spec->{min} > 0) {
-				$foundation->{$field} = 'a' x $spec->{min};
+				$foundation->{$field} = rand_str($spec->{min});
 			} elsif(defined $spec->{max} && $spec->{max} > 0) {
-				$foundation->{$field} = 'b' x $spec->{max};
+				$foundation->{$field} = rand_str($spec->{max});
 			} else {
 				$foundation->{$field} = 'test_value';
 			}
