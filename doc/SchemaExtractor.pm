@@ -83,7 +83,7 @@ notes:
 ### 4. Use with Test Generator
 
 ```bash
-test-generator --schema schemas/validate_email.yaml
+fuzz-harness-generator -r schemas/validate_email.yaml
 ```
 
 ## Usage Examples

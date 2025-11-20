@@ -9,7 +9,6 @@ use Pod::Simple::Text;
 use YAML::XS;
 use File::Basename;
 use File::Path qw(make_path);
-use Data::Dumper;
 
 our $VERSION = '0.01';
 
@@ -38,16 +37,16 @@ and constraints.
 =cut
 
 sub new {
-    my ($class, %args) = @_;
+	my ($class, %args) = @_;
     
-    my $self = {
-        input_file => $args{input_file} || die "input_file required",
-        output_dir => $args{output_dir} || 'schemas',
-        verbose    => $args{verbose} || 0,
-        confidence_threshold => $args{confidence_threshold} || 0.5,
-    };
-    
-    return bless $self, $class;
+	my $self = {
+		input_file => ($args{input_file} || die 'input_file required'),
+		output_dir => $args{output_dir} || 'schemas',
+		verbose    => $args{verbose} || 0,
+		confidence_threshold => $args{confidence_threshold} || 0.5,
+	};
+
+	return bless $self, $class;
 }
 
 =head2 extract_all
@@ -569,6 +568,7 @@ Write a schema to a YAML file.
 sub _write_schema {
     my ($self, $method_name, $schema) = @_;
     
+    die if(!defined($self->{'output_dir'}));
     make_path($self->{output_dir}) unless -d $self->{output_dir};
     
     my $filename = "$self->{output_dir}/${method_name}.yaml";
