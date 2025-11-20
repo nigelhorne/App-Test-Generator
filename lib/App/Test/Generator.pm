@@ -1302,7 +1302,8 @@ sub generate
 			$function,
 			$module,
 			\%input,
-			\%config
+			\%config,
+			$new
 		);
 
 		# Convert to code for template
@@ -1807,7 +1808,7 @@ Converts transform specifications into LectroTest property definitions.
 =cut
 
 sub _generate_transform_properties {
-	my ($transforms, $function, $module, $input, $config) = @_;
+	my ($transforms, $function, $module, $input, $config, $new) = @_;
 
 	my @properties;
 
@@ -1837,7 +1838,8 @@ sub _generate_transform_properties {
 				$function,
 				$module,
 				$input_spec,
-				$output_spec
+				$output_spec,
+				$new
 			);
 		}
 
@@ -1910,10 +1912,11 @@ Processes custom property definitions from the schema.
 =cut
 
 sub _process_custom_properties {
-	my ($properties_spec, $function, $module, $input_spec, $output_spec) = @_;
+	my ($properties_spec, $function, $module, $input_spec, $output_spec, $schema) = @_;
 
 	my @properties;
 	my $builtin_properties = _get_builtin_properties();
+	my $new = defined($schema->{'new'}) ? $schema->{new} : '_UNDEF';
 
 	for my $prop_def (@$properties_spec) {
 		my $prop_name;
@@ -1933,10 +1936,18 @@ sub _process_custom_properties {
 				# Build call code
 				my $call_code;
 				if ($module) {
-					# $call_code = "$module\::$function";
-					$call_code = "$module->$function";
+					$call_code = "$module\::$function";
 				} else {
 					$call_code = $function;
+				}
+				# Check if this is OO mode
+				if($module && defined($new)) {
+					$call_code = "my \$obj = new_ok('$module');";
+					$call_code .= "\$obj->$function";  # Method call
+				} elsif($module && $module ne 'builtin') {
+					$call_code = "$module\::$function";  # Function call  
+				} else {
+					$call_code = $function;  # Builtin
 				}
 
 				# Build args
@@ -2118,25 +2129,6 @@ sub _get_semantic_generators {
 					$len = rand($#tlds+1);
 					push @name, $tlds[$len];
 					return join('', @name);
-				}
-			},
-			description => 'Valid email addresses',
-		},
-		old_email => {
-			code => q{
-				Gen {
-					my @chars = ('a'..'z', '0'..'9', '_', '.');
-					my @tlds = qw(com org net edu gov io co uk de fr);
-					my $user_len = 5 + int(rand(10));
-					my $domain_len = 3 + int(rand(12));
-
-					my $user = ('a'..'z')[int(rand(26))] .
-						join('', map { $chars[int(rand(@chars))] } 1..$user_len - 2) .
-						('a'..'z')[int(rand(26))];
-					my $domain = join('', map { ('a'..'z')[int(rand(26))] } 1..$domain_len);
-					my $tld = $tlds[int(rand(@tlds))];
-
-					return "$user\@$domain.$tld";
 				}
 			},
 			description => 'Valid email addresses',
