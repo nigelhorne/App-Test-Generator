@@ -143,16 +143,16 @@ sub rand_ascii_str {
 }
 
 my @unicode_codepoints = (
-    0x00A9,	# ©
-    0x00AE,        # ®
-    0x03A9,        # Ω
-    0x20AC,        # €
-    0x2013,        # – (en-dash)
-    0x0301,        # combining acute accent
-    0x0308,        # combining diaeresis
-    0x1F600,	# 😀 (emoji)
-    0x1F62E,    # 😮
-    0x1F4A9,	# 💩 (yes)
+	0x00A9,	# ©
+	0x00AE,	# ®
+	0x03A9,	# Ω
+	0x20AC,	# €
+	0x2013,	# – (en-dash)
+	0x0301,	# combining acute accent
+	0x0308,	# combining diaeresis
+	0x1F600,	# 😀 (emoji)
+	0x1F62E,	# 😮
+	0x1F4A9,	# 💩 (yes)
 );
 
 # Tests for matches or nomatch
@@ -398,33 +398,15 @@ sub fuzz_inputs
 				}
 
 				# --- Type-based seeds ---
-				if ($type eq 'number') {
+				if(($type eq 'number') || ($type eq 'float')) {
 					push @cases, { $arg_name => 0 };
 					push @cases, { $arg_name => 1.23 };
 					push @cases, { $arg_name => -42 };
 					push @cases, { $arg_name => 'abc', _STATUS => 'DIES' };
 				}
 				elsif ($type eq 'integer') {
-					push @cases, { %mandatory_args, ( $arg_name => 42 ) };
-					if((!defined $spec->{min}) || ($spec->{min} <= -1)) {
-						push @cases, { %mandatory_args, ( $arg_name => -1, _LINE => __LINE__ ) };
-					}
-					push @cases, { %mandatory_args, ( $arg_name => 3.14, _STATUS => 'DIES' ) };
-					push @cases, { %mandatory_args, ( $arg_name => 'xyz', _STATUS => 'DIES' ) };
-					# --- min/max numeric boundaries ---
 					# Probably duplicated below, but here as well just in case
-					if (defined $spec->{min}) {
-						my $min = $spec->{min};
-						push @cases, { %mandatory_args, ( $arg_name => $min - 1, _STATUS => 'DIES' ) };
-						push @cases, { %mandatory_args, ( $arg_name => $min, _LINE => __LINE__ ) };
-						push @cases, { %mandatory_args, ( $arg_name => $min + 1 ) };
-					}
-					if (defined $spec->{max}) {
-						my $max = $spec->{max};
-						push @cases, { %mandatory_args, ( $arg_name => $max - 1 ) };
-						push @cases, { %mandatory_args, ( $arg_name => $max ) };
-						push @cases, { %mandatory_args, ( $arg_name => $max + 1, _STATUS => 'DIES' ) };
-					}
+					push @cases, @{_generate_integer_cases($arg_name, $spec, \%mandatory_args)};
 				} elsif ($type eq 'string') {
 					# Is hello allowed?
 					if(my $re = $spec->{matches}) {
@@ -904,6 +886,65 @@ sub fuzz_inputs
 	return \@cases;
 }
 
+# Functions to generate test cases
+sub _generate_integer_cases {
+	my ($arg_name, $spec, $mandatory_args) = @_;
+	my @cases;
+
+	if((!defined $spec->{min}) || ($spec->{min} <= -1)) {
+		push @cases, { %{$mandatory_args}, ( $arg_name => -1, _LINE => __LINE__ ) };
+	}
+	if((!defined $spec->{min}) || ($spec->{min} <= 42)) {
+		push @cases, { %{$mandatory_args}, ( $arg_name => 42 ) };
+	}
+
+	push @cases,
+		{ %{$mandatory_args}, ( $arg_name => 3.14, _STATUS => 'DIES' ) },	# Float
+		{ %{$mandatory_args}, ( $arg_name => 'xyz', _STATUS => 'DIES' ) };
+
+	[% IF module %]
+		# Send wrong data type - builtins aren't good at checking this
+		push @cases,
+			{ %{$mandatory_args}, ( $arg_name => "test string in integer field $arg_name", _STATUS => 'DIES', _LINE => __LINE__ ) },
+			{ %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) },
+			{ %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
+	[% END %]
+
+	# min/max numeric boundaries
+	if (defined $spec->{min}) {
+		my $min = $spec->{min};
+		push @cases,
+			{ %{$mandatory_args}, ( $arg_name => $min - 1, _STATUS => 'DIES' ) },
+			{ %{$mandatory_args}, ( $arg_name => $min, _LINE => __LINE__ ) },	# border
+			{ %{$mandatory_args}, ( $arg_name => $min + 1 ) };	# just inside
+
+		if(!defined $spec->{max}) {
+			push @cases, { %{$mandatory_args}, ( $arg_name => $min + rand_int() ) };
+		}
+	}
+	if (defined $spec->{max}) {
+		my $max = $spec->{max};
+		push @cases,
+			{ %{$mandatory_args}, ( $arg_name => $max - 1 ) },
+			{ %{$mandatory_args}, ( $arg_name => $max ) },
+			{ %{$mandatory_args}, ( $arg_name => $max + 1, _STATUS => 'DIES' ) };
+
+		if(defined $spec->{min}) {
+			# Test 0 if it's in range
+			push @cases, { %{$mandatory_args}, ( $arg_name => 0 ) } if($spec->{'min'} >= 0);
+		} else {
+			push @cases, { %{$mandatory_args}, ( $arg_name => $max - abs(rand_int()) ) };
+		}
+	} elsif(!defined $spec->{min}) {
+		# Can take any number, so give it one
+		push @cases,
+			{ %{$mandatory_args}, ( $arg_name => abs(rand_int()) ) },
+			{ %{$mandatory_args}, ( $arg_name => 0) };	# 0 is in range
+	}
+
+	return \@cases;
+}
+
 # dedup, fuzzing can easily generate repeats
 # FIXME: I don't think this catches them all
 # FIXME: Handle cases with Class::Simple calls
@@ -950,7 +991,9 @@ sub generate_tests
 			push @cases, { %mandatory_args, ( $field => $outside, _STATUS => 'DIES' ) };
 		} else {
 			# Generate edge cases for min/max
-			if(($type eq 'number') || ($type eq 'integer') || ($type eq 'float')) {
+			if($type eq 'integer') {
+				push @cases, @{_generate_integer_cases($field, $spec, \%mandatory_args)};
+			} elsif(($type eq 'number') || ($type eq 'float')) {
 				if(defined $spec->{min}) {
 					push @cases, { %mandatory_args, ( $field => $spec->{min} + 1 ) };	# just inside
 					push @cases, { %mandatory_args, ( $field => $spec->{min} ) };	# border
@@ -971,10 +1014,6 @@ sub generate_tests
 					push @cases, { %mandatory_args, ( $field => {}, _STATUS => 'DIES', _LINE => __LINE__ ) };
 					push @cases, { %mandatory_args, ( $field => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
 				[% END %]
-				if($type eq 'integer') {
-					# Float
-					push @cases, { %mandatory_args, ( $field => 0.5, _STATUS => 'DIES', _LINE => __LINE__ ) };
-				}
 			} elsif($type eq 'string') {
 				if (defined $spec->{min}) {
 					my $len = $spec->{min};
@@ -1385,38 +1424,28 @@ foreach my $transform (keys %transforms) {
 		}
 
 		# Generate edge cases based on type and contraints
-		if(($type eq 'number') || ($type eq 'integer') || ($type eq 'float')) {
+		if($type eq 'integer') {
+			push @tests, @{_generate_integer_cases($field, $spec, $foundation)};
+		} elsif(($type eq 'number') || ($type eq 'float')) {
 			if(defined $spec->{min}) {
 				push @tests, { %{$foundation}, ( $field => $spec->{min} + 1 ) };	# just inside
 				push @tests, { %{$foundation}, ( $field => $spec->{min} ) };	# border
 				# Test 0 if it's in range
 				push @tests, { %{$foundation}, ( $field => 0 ) } if($spec->{'min'} < -1);
 				if(!defined($spec->{'max'})) {
-					if($type eq 'integer') {
-						push @tests, { %{$foundation}, ( $field => abs(rand_int()) ) };
-					} else {
-						push @tests, { %{$foundation}, ( $field => abs(rand_num()) ) };
-					}
+					push @tests, { %{$foundation}, ( $field => abs(rand_num()) ) };
 				}
 			} else {
 				push @tests, { %{$foundation}, ( $field => 0 ) };	# No min, so 0 should be allowable
-				push @tests, { %{$foundation}, ( $field => (($type eq 'integer') ? -1 : -0.1), _LINE => __LINE__ ) };	# No min, so -1 should be allowable
+				push @tests, { %{$foundation}, ( $field => -0.1, _LINE => __LINE__ ) };	# No min, so -1 should be allowable
 				if(defined($spec->{'max'})) {
-					if($type eq 'integer') {
-						push @tests, { %{$foundation}, ( $field => $spec->{'max'} - abs(rand_int()) ) };
-					} else {
-						push @tests, { %{$foundation}, ( $field => $spec->{'max'} - abs(rand_num()) ) };
-					}
+					push @tests, { %{$foundation}, ( $field => $spec->{'max'} - abs(rand_num()) ) };
 				} else {
-					if($type eq 'integer') {
-						push @tests, { %{$foundation}, ( $field => rand_int() ) };
-					} else {
-						push @tests, { %{$foundation}, ( $field => rand_num() ) };
-					}
+					push @tests, { %{$foundation}, ( $field => rand_num() ) };
 				}
 			}
 			if(defined $spec->{max}) {
-				push @tests, { %{$foundation}, ( $field => $spec->{max} - (($type eq 'integer') ? 1 : 0.1 ) ) };	# just inside
+				push @tests, { %{$foundation}, ( $field => $spec->{max} - 0.1 ) };	# just inside
 				if((defined $spec->{min}) && ($spec->{'min'} != $spec->{'max'})) {
 					push @tests, { %{$foundation}, ( $field => $spec->{max} ) };	# border
 				}
