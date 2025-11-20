@@ -920,6 +920,9 @@ sub _generate_integer_cases {
 
 		if(!defined $spec->{max}) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => $min + rand_int() ) };
+			if($min == 0) {
+				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_int()) ) };	# Any positive number
+			}
 		}
 	}
 	if (defined $spec->{max}) {
@@ -933,12 +936,15 @@ sub _generate_integer_cases {
 			# Test 0 if it's in range
 			push @cases, { %{$mandatory_args}, ( $arg_name => 0 ) } if($spec->{'min'} >= 0);
 		} else {
-			push @cases, { %{$mandatory_args}, ( $arg_name => $max - abs(rand_int()) ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => $max - rand_int() ) };
+			if($max == 0) {
+				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_int()) * -1 ) };	# Any negative number
+			}
 		}
 	} elsif(!defined $spec->{min}) {
 		# Can take any number, so give it one
 		push @cases,
-			{ %{$mandatory_args}, ( $arg_name => abs(rand_int()) ) },
+			{ %{$mandatory_args}, ( $arg_name => rand_int() ) },
 			{ %{$mandatory_args}, ( $arg_name => 0) };	# 0 is in range
 	}
 
