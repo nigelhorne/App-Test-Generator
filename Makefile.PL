@@ -30,6 +30,8 @@ WriteMakefile(
 		'Module::Load::Conditional' => 0,
 		'Params::Get' => 0.13,
 		'Params::Validate::Strict' => 0.23,
+		'PPI' => 0,
+		'Pod::Simple' => 0,
 		'Pod::Usage' => 0,
 		'Return::Set' => 0.03,
 		'Template' => 0,
