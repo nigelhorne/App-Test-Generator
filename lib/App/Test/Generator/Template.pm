@@ -368,6 +368,7 @@ sub fuzz_inputs
 
 			if ($type eq 'string') {
 				# Is hello allowed?
+				# push @cases, @{_generate_string_cases('_input', \%input, \%mandatory_args)};
 				if(!defined($input{'memberof'}) || (grep { $_ eq 'hello' } @{$input{'memberof'}})) {
 					if(defined($input{'notmemberof'}) && (grep { $_ eq 'hello' } @{$input{'notmemberof'}})) {
 						push @cases, { _input => 'hello', _STATUS => 'DIES' };
@@ -1370,7 +1371,9 @@ foreach my $case (@{fuzz_inputs()}) {
 	}
 }
 
-diag('Run ', scalar(keys %transforms), ' transform tests') if($ENV{'TEST_VERBOSE'});
+if(scalar(keys %transforms)) {
+	diag('Run ', scalar(keys %transforms), ' transform tests');
+}
 # diag('-' x 60);
 
 # Build the foundation - which is a basic test with sensible defaults in the field
@@ -1465,18 +1468,7 @@ foreach my $transform (keys %transforms) {
 		} elsif(($type eq 'number') || ($type eq 'float')) {
 			push @tests, @{_generate_float_cases($field, $spec, $foundation)};
 		} elsif($type eq 'string') {
-			if(defined $spec->{min}) {
-				push @tests, { %{$foundation}, ( $field => rand_str($spec->{min} + 1) ) };	# just inside
-				push @tests, { %{$foundation}, ( $field => rand_str($spec->{min}) ) };	# border
-			} else {
-				push @tests, { %{$foundation}, ( $field => rand_str() ) };
-			}
-			if(defined $spec->{max}) {
-				push @tests, { %{$foundation}, ( $field => rand_str($spec->{max} - 1) ) };	# just inside
-				if((defined $spec->{min}) && ($spec->{'min'} != $spec->{'max'})) {
-					push @tests, { %{$foundation}, ( $field => rand_str($spec->{max}) ) };	# border
-				}
-			}
+			push @tests, @{_generate_string_cases($field, $spec, $foundation)};
 		} elsif($type eq 'boolean') {
 			push @tests, @{_generate_boolean_cases($field, $spec, $foundation)};
 		} elsif ($type eq 'arrayref') {

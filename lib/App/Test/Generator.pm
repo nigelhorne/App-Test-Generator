@@ -1341,7 +1341,9 @@ sub generate
 	# Build static corpus code
 	my $corpus_code = '';
 	if (%all_cases) {
-		$corpus_code = "\n# --- Static Corpus Tests ---\n";
+		$corpus_code = "\n# --- Static Corpus Tests ---\n" .
+			"diag('Running " . scalar(keys %all_cases) . " corpus tests');\n";
+
 		for my $expected (sort keys %all_cases) {
 			my $inputs = $all_cases{$expected};
 			next unless($inputs);
@@ -1388,16 +1390,16 @@ sub generate
 			} else {
 				if($status eq 'DIES') {
 					$corpus_code .= "dies_ok { $module\::$function($input_str) } " .
-						"'$function(" . ref(($inputs eq 'ARRAY') ? join(', ', map { $_ // '' } @{$inputs}) : $inputs) . ") dies';\n";
+						"'Corpus $expected dies';\n";
 				} elsif($status eq 'WARNS') {
 					$corpus_code .= "warnings_exist { $module\::$function($input_str) } qr/./, " .
-						"'$function(" . ((ref $inputs eq 'ARRAY') ? join(', ', map { $_ // '' } @{$inputs}) : $inputs) . ") warns';\n";
+						"'Corpus $expected warns';\n";
 				} else {
 					my $desc = sprintf("$function(%s) returns %s",
 						perl_quote((ref $inputs eq 'ARRAY') ? (join(', ', map { $_ // '' } @{$inputs})) : $inputs),
 						$expected_str
 					);
-					$corpus_code .= "is($module\::$function($input_str), $expected_str, " . q_wrap($desc) . ");\n";
+					$corpus_code .= "is($module\::$function($input_str), $expected_str, 'Corpus $expected works');\n";
 				}
 			}
 		}
@@ -2677,7 +2679,7 @@ sub _render_properties {
 			$code .= "    \$died;\n";
 		} else {
 			$code .= "    my \$error = \$\@;\n";
-			# $code .= "    ::diag(\"\$$prop->{name} -> \$error; \") if(\$ENV{'TEST_VERBOSE'});\n";
+			# $code .= "    diag(\"\$$prop->{name} -> \$error; \") if(\$ENV{'TEST_VERBOSE'});\n";
 			$code .= "    \n";
 			$code .= "    !\$error && (\n";
 			$code .= "        $prop->{property_checks}\n";
