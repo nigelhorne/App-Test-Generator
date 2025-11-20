@@ -159,6 +159,11 @@ foreach my $method (sort keys %$schemas) {
     
     print "Method: $method\n";
     print "  Confidence: " . uc($schema->{_confidence}) . "\n";
+    
+    if ($schema->{new}) {
+        print "  Requires: $schema->{new}->new()\n";
+    }
+    
     print "  Parameters:\n";
     
     if (keys %{$schema->{input}}) {

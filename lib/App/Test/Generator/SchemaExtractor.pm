@@ -19,13 +19,13 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 =head1 SYNOPSIS
 
     use App::Test::Generator::SchemaExtractor;
-    
+
     my $extractor = App::Test::Generator::SchemaExtractor->new(
         input_file => 'lib/MyModule.pm',
         output_dir => 'schemas/',
         verbose    => 1,
     );
-    
+
     my $schemas = $extractor->extract_all();
 
 =head1 DESCRIPTION
@@ -38,7 +38,7 @@ and constraints.
 
 sub new {
 	my ($class, %args) = @_;
-    
+
 	my $self = {
 		input_file => ($args{input_file} || die 'input_file required'),
 		output_dir => $args{output_dir} || 'schemas',
@@ -59,30 +59,33 @@ Returns a hashref of method_name => schema.
 
 sub extract_all {
     my ($self) = @_;
-    
+
     $self->_log("Parsing $self->{input_file}...");
-    
+
     my $document = PPI::Document->new($self->{input_file})
         or die "Failed to parse $self->{input_file}: $!";
-    
+
+    # Store document for later use
+    $self->{_document} = $document;
+
     my $package_name = $self->_extract_package_name($document);
     $self->_log("Package: $package_name");
     $self->{_module} = $package_name;
-    
+
     my $methods = $self->_find_methods($document);
     $self->_log("Found " . scalar(@$methods) . " methods");
-    
+
     my %schemas;
     foreach my $method (@$methods) {
         $self->_log("\nAnalyzing method: $method->{name}");
-        
+
         my $schema = $self->_analyze_method($method);
         $schemas{$method->{name}} = $schema;
-        
+
         # Write individual schema file
         $self->_write_schema($method->{name}, $schema);
     }
-    
+
     return \%schemas;
 }
 
@@ -94,7 +97,7 @@ Extract the package name from the document.
 
 sub _extract_package_name {
     my ($self, $document) = @_;
-    
+
     my $package_stmt = $document->find_first('PPI::Statement::Package');
     return $package_stmt ? $package_stmt->namespace : 'Unknown';
 }
@@ -110,19 +113,19 @@ Returns arrayref of hashrefs with structure:
 
 sub _find_methods {
     my ($self, $document) = @_;
-    
+
     my $subs = $document->find('PPI::Statement::Sub') || [];
-    
+
     my @methods;
     foreach my $sub (@$subs) {
         my $name = $sub->name;
-        
+
         # Skip private methods (starting with _) unless they're special
         next if $name =~ /^_/ && $name !~ /^_(new|init)/;
-        
+
         # Get the POD before this sub
         my $pod = $self->_extract_pod_before($sub);
-        
+
         push @methods, {
             name => $name,
             node => $sub,
@@ -130,7 +133,7 @@ sub _find_methods {
             pod  => $pod,
         };
     }
-    
+
     return \@methods;
 }
 
@@ -142,10 +145,10 @@ Extract POD documentation that appears before a subroutine.
 
 sub _extract_pod_before {
     my ($self, $sub) = @_;
-    
+
     my $pod = '';
     my $current = $sub->previous_sibling;
-    
+
     # Walk backwards collecting POD
     while ($current) {
         if ($current->isa('PPI::Token::Pod')) {
@@ -158,7 +161,7 @@ sub _extract_pod_before {
         }
         $current = $current->previous_sibling;
     }
-    
+
     return $pod;
 }
 
@@ -172,7 +175,7 @@ Combines POD analysis, code pattern analysis, and signature analysis.
 
 sub _analyze_method {
     my ($self, $method) = @_;
-    
+
     my $schema = {
         _method_name => $method->{name},
         _confidence => 'unknown',
@@ -181,22 +184,29 @@ sub _analyze_method {
         setup => undef,
         transforms => {},
     };
-    
+
     # Analyze different sources
     my $pod_params = $self->_analyze_pod($method->{pod});
     my $code_params = $self->_analyze_code($method->{body});
     my $sig_params = $self->_analyze_signature($method->{body});
-    
+
     # Merge analyses
     $schema->{input} = $self->_merge_parameter_analyses(
         $pod_params,
         $code_params,
         $sig_params
     );
-    
+
+    # Detect if this is an instance method that needs object instantiation
+    my $needs_object = $self->_needs_object_instantiation($method->{name}, $method->{body});
+    if ($needs_object) {
+        $schema->{new} = $needs_object;
+        $self->_log("  Method requires object instantiation: $needs_object");
+    }
+
     # Calculate confidence
     $schema->{_confidence} = $self->_calculate_confidence($schema->{input});
-    
+
     # Add metadata
     $schema->{_notes} = $self->_generate_notes($schema->{input});
     
@@ -583,6 +593,11 @@ sub _write_schema {
 	module => $self->{_module}
     };
 
+    # Add 'new' field if object instantiation is needed
+    if ($schema->{new}) {
+        $output->{new} = $schema->{new};
+    }
+    
     open my $fh, '>', $filename;
     print $fh YAML::XS::Dump($output);
     print $fh "\n# Run this script through fuzz-harness-generator -r\n",
@@ -593,8 +608,69 @@ sub _write_schema {
 	}
     }
     close $fh;
-    
-    $self->_log("  Wrote: $filename (confidence: $schema->{_confidence})");
+
+    $self->_log("  Wrote: $filename (confidence: $schema->{_confidence})" .
+                ($schema->{new} ? " [requires: $schema->{new}]" : ""));
+}
+
+=head2 _needs_object_instantiation
+
+Determine if a method needs object instantiation and return the class name.
+
+Returns the package name if this is an instance method, undef if it's a class method or constructor.
+
+=cut
+
+sub _needs_object_instantiation {
+    my ($self, $method_name, $method_body) = @_;
+
+    # Skip constructors - they don't need object instantiation
+    return undef if $method_name eq 'new';
+    return undef if $method_name =~ /^(create|build|construct|init)$/i;
+
+    # Check if method has $self as first parameter
+    # Pattern 1: my ($self, ...) = @_;
+    if ($method_body =~ /my\s*\(\s*\$self\s*[,)]/) {
+        # This is an instance method, get the package name
+        my $doc = $self->{_document};
+        if ($doc) {
+            my $package_stmt = $doc->find_first('PPI::Statement::Package');
+            if ($package_stmt) {
+                my $package_name = $package_stmt->namespace;
+                $self->_log("  Detected instance method in package: $package_name");
+                return $package_name;
+            }
+        }
+        # Fallback: couldn't determine package, but it's clearly an instance method
+        return 'UNKNOWN_PACKAGE';
+    }
+
+    # Pattern 2: my $self = shift;
+    if ($method_body =~ /my\s+\$self\s*=\s*shift/) {
+        my $doc = $self->{_document};
+        if ($doc) {
+            my $package_stmt = $doc->find_first('PPI::Statement::Package');
+            if ($package_stmt) {
+                return $package_stmt->namespace;
+            }
+        }
+        return 'UNKNOWN_PACKAGE';
+    }
+
+    # Pattern 3: Check for $self-> method calls in body
+    if ($method_body =~ /\$self\s*->\s*\w+/) {
+        my $doc = $self->{_document};
+        if ($doc) {
+            my $package_stmt = $doc->find_first('PPI::Statement::Package');
+            if ($package_stmt) {
+                return $package_stmt->namespace;
+            }
+        }
+        return 'UNKNOWN_PACKAGE';
+    }
+
+    # Not an instance method
+    return undef;
 }
 
 =head2 _log
