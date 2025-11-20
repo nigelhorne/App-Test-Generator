@@ -31,6 +31,11 @@ our @EXPORT_OK = qw(generate);
 
 our $VERSION = '0.15';
 
+use constant {
+	DEFAULT_ITERATIONS => 50,
+	DEFAULT_PROPERTY_TRIALS => 1000
+};
+
 =head1 NAME
 
 App::Test::Generator - Generate fuzz and corpus-driven test harnesses
@@ -1168,6 +1173,8 @@ sub generate
 			_validate_config($schema);
 
 			%config = %{$schema->{config}} if(exists($schema->{config}));
+		} else {
+			croak "Failed to load schema from $schema_file";
 		}
 	} else {
 		croak 'Usage: generate(schema_file [, outfile])';
@@ -1201,7 +1208,7 @@ sub generate
 
 	# sensible defaults
 	$function ||= 'run';
-	$iterations ||= 50;		 # default fuzz runs if not specified
+	$iterations ||= DEFAULT_ITERATIONS;		 # default fuzz runs if not specified
 	$seed = undef if defined $seed && $seed eq '';	# treat empty as undef
 
 	# --- YAML corpus support (yaml_cases is filename string) ---
@@ -1247,9 +1254,10 @@ sub generate
 	# Render configuration - all the values are integers for now, if that changes, wrap the $config{$key} in single quotes
 	my $config_code = '';
 	foreach my $key (sort keys %config) {
-		# Skip nested hashes like 'properties' - handle them separately or skip
+		# Skip nested structures like 'properties' - they're used during 
+		# generation but don't need to be in the generated test
 		if(ref($config{$key}) eq 'HASH') {
-			next;	# Skip nested structures in config output
+			next;
 		}
 		$config_code .= "'$key' => $config{$key},\n";
 	}
@@ -1422,7 +1430,7 @@ sub generate
 		iterations_code => int($iterations),
 		use_properties => $use_properties,
 		transform_properties_code => $transform_properties_code,
-		property_trials => $config{properties}{trials} // 1000,
+		property_trials => $config{properties}{trials} // DEFAULT_PROPERTY_TRIALS,
 		module => $module
 	};
 
@@ -1898,7 +1906,7 @@ sub _generate_transform_properties {
 			call_code => "$call_code($args_str)",
 			property_checks => $property_checks,
 			should_die => $should_die,
-			trials => $config->{properties}{trials} // 1000,
+			trials => $config->{properties}{trials} // DEFAULT_PROPERTY_TRIALS,
 		};
 	}
 
@@ -2112,23 +2120,22 @@ sub _get_semantic_generators {
 		email => {
 			code => q{
 				Gen {
-					my $len = rand(10);
-					my $l;
-					my @name;
+					my $len = 5 + int(rand(10));
+					my @addr;
 					my @tlds = qw(com org net edu gov io co uk de fr);
 
-					for($l = 0; $l < $len; $l++) {
-						push @name, pack('c', (int(rand 26))+97);
+					for(my $i = 0; $i < $len; $i++) {
+						push @addr, pack('c', (int(rand 26))+97);
 					}
-					push @name, '@';
-					$len = rand(10);
-					for($l = 0; $l < $len; $l++) {
-						push @name, pack('c', (int(rand 26))+97);
+					push @addr, '@';
+					$len = 5 + int(rand(10));
+					for(my $i = 0; $i < $len; $i++) {
+						push @addr, pack('c', (int(rand 26))+97);
 					}
-					push @name, '.';
+					push @addr, '.';
 					$len = rand($#tlds+1);
-					push @name, $tlds[$len];
-					return join('', @name);
+					push @addr, $tlds[$len];
+					return join('', @addr);
 				}
 			},
 			description => 'Valid email addresses',
@@ -2348,7 +2355,8 @@ sub _get_builtin_properties {
 			description => 'Function is idempotent: f(f(x)) == f(x)',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
-				return "\$result eq do { my \$tmp = $call_code; $call_code }";
+				# Use string comparison - works for all types in Perl
+				return "do { my \$tmp = $call_code; \$result eq \$tmp }";
 			},
 			applicable_to => ['all'],
 		},
