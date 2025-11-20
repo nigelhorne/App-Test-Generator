@@ -67,6 +67,7 @@ sub extract_all {
     
     my $package_name = $self->_extract_package_name($document);
     $self->_log("Package: $package_name");
+    $self->{_module} = $package_name;
     
     my $methods = $self->_find_methods($document);
     $self->_log("Found " . scalar(@$methods) . " methods");
@@ -572,17 +573,25 @@ sub _write_schema {
     make_path($self->{output_dir}) unless -d $self->{output_dir};
     
     my $filename = "$self->{output_dir}/${method_name}.yaml";
-    
+
     # Clean up schema for output
     my $output = {
-        method => $method_name,
-        confidence => $schema->{_confidence},
-        notes => $schema->{_notes},
+        function => $method_name,
+        # confidence => $schema->{_confidence},
+        # notes => $schema->{_notes},
         input => $schema->{input},
+	module => $self->{_module}
     };
-    
+
     open my $fh, '>', $filename;
     print $fh YAML::XS::Dump($output);
+    print $fh "\n# Run this script through fuzz-harness-generator -r\n",
+	    "# Confidence $schema->{_confidence}\n";
+    if($self->{_notes} && scalar(@{$self->{_notes}})) {
+    	foreach my $note(@{$self->{_notes}}) {
+		print $fh "# $note\n";
+	}
+    }
     close $fh;
     
     $self->_log("  Wrote: $filename (confidence: $schema->{_confidence})");
@@ -595,8 +604,8 @@ Log a message if verbose mode is on.
 =cut
 
 sub _log {
-    my ($self, $msg) = @_;
-    print "$msg\n" if $self->{verbose};
+	my ($self, $msg) = @_;
+	print "$msg\n" if $self->{verbose};
 }
 
 1;
