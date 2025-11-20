@@ -162,6 +162,7 @@ my @regex_tests = (
 	'/fullpath',
 	'/',
 	'/etc/passwd',
+	'../../etc/passwd',
 	"/etc/passwd\0",
 	"D:\\dos_path",
 	"I:\\",
@@ -354,7 +355,7 @@ sub fuzz_inputs
 
 			foreach my $field(keys %input) {
 				if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can'))) {
-					diag(__LINE__, ": TODO: handle schema keyword '$field'");
+					die("TODO: handle schema keyword '$field'");
 				}
 			}
 
