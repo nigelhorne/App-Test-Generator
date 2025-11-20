@@ -894,24 +894,33 @@ sub fuzz_inputs
 		push @cases, @{generate_tests(\%input, \%mandatory_args)};
 	}
 
-	# FIXME: I don't think this catches them all
-	# FIXME: Handle cases with Class::Simple calls
 	if($config{'dedup'}) {
-		require JSON::MaybeXS;
-		JSON::MaybeXS->import();
-
-		# dedup, fuzzing can easily generate repeats
-		my %seen;
-		@cases = grep {
-			my $dump = encode_json($_);
-			!$seen{$dump}++
-		} @cases;
+		return _dedup_cases(\@cases);
 	}
 
 	# use Data::Dumper;
 	# die(Dumper(@cases));
 
 	return \@cases;
+}
+
+# dedup, fuzzing can easily generate repeats
+# FIXME: I don't think this catches them all
+# FIXME: Handle cases with Class::Simple calls
+sub _dedup_cases
+{
+	my $cases = shift;
+
+	require JSON::MaybeXS;
+	JSON::MaybeXS->import();
+
+	my %seen;
+	my @rc = grep {
+		my $dump = encode_json($_);
+		!$seen{$dump}++
+	} @{$cases};
+
+	return \@rc;
 }
 
 sub generate_tests
@@ -1446,12 +1455,7 @@ foreach my $transform (keys %transforms) {
 	}
 
 	if($config{'dedup'}) {
-		# dedup, fuzzing can easily generate repeats
-		my %seen;
-		@tests = grep {
-			my $dump = encode_json($_);
-			!$seen{$dump}++
-		} @tests;
+		@tests = @{_dedup_cases(\@tests)};
 	}
 
 	{
