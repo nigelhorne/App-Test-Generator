@@ -486,17 +486,7 @@ sub fuzz_inputs
 					}
 				}
 				elsif ($type eq 'boolean') {
-					push @cases, { %mandatory_args, ( $arg_name => 0 ) };
-					push @cases, { %mandatory_args, ( $arg_name => 1 ) };
-					push @cases, { %mandatory_args, ( $arg_name => 'true' ) };
-					push @cases, { %mandatory_args, ( $arg_name => 'false' ) };
-					push @cases, { %mandatory_args, ( $arg_name => 'off' ) };
-					push @cases, { %mandatory_args, ( $arg_name => 'on' ) };
-					push @cases, { %mandatory_args, ( $arg_name => 'yes' ) };
-					push @cases, { %mandatory_args, ( $arg_name => 'no' ) };
-					push @cases, { %mandatory_args, ( $arg_name => 'bletch', _STATUS => 'DIES' ) };
-					push @cases, { %mandatory_args, ( $arg_name => -1, _STATUS => 'DIES' ) };
-					push @cases, { %mandatory_args, ( $arg_name => 2, _STATUS => 'DIES' ) };
+					push @cases, @{_generate_boolean_cases($arg_name, $spec, \%mandatory_args)};
 				}
 				elsif ($type eq 'hashref') {
 					push @cases, { $arg_name => { a => 1 } };
@@ -836,29 +826,7 @@ sub fuzz_inputs
 					push @cases, { _input => { map { "k$_" => 1 }, 1 .. ($len + 1) }, _STATUS => 'DIES' };
 				}
 			} elsif ($type eq 'boolean') {
-				if (exists $input{memberof} && ref $input{memberof} eq 'ARRAY') {
-					# memberof already defines allowed booleans
-					foreach my $val (@{$input{memberof}}) {
-						push @cases, { _input => $val };
-					}
-				} else {
-					# basic boolean edge cases
-					push @cases,
-						{ _input => 0 },
-						{ _input => 1 },
-						{ _input => 'off' },
-						{ _input => 'on' },
-						{ _input => 'false' },
-						{ _input => 'true' },
-						{ _input => 'yes' },
-						{ _input => 'no' },
-						{ _input => 2, _STATUS => 'DIES' },	# invalid boolean
-						{ _input => -1, _STATUS => 'DIES' },	# invalid boolean
-						{ _input => [ 3 ], _STATUS => 'DIES' },	# invalid boolean
-						{ _input => { 'abc' => 'xyz' }, _STATUS => 'DIES' },	# invalid boolean
-						{ _input => 'plugh', _STATUS => 'DIES' };	# invalid boolean
-					push @cases, { _input => undef, _STATUS => 'DIES' } if($config{'test_undef'});
-				}
+				push @cases, @{_generate_boolean_cases('_input', \%input, \%mandatory_args)};
 			}
 
 			# Test all edge cases
@@ -1004,6 +972,40 @@ sub _generate_float_cases {
 			{ %{$mandatory_args}, ( $arg_name => -42.1 ) },
 			{ %{$mandatory_args}, ( $arg_name => 0) };	# 0 is in range
 	}
+
+	return \@cases;
+}
+
+# basic boolean edge cases
+sub _generate_boolean_cases {
+	my ($arg_name, $spec, $mandatory_args) = @_;
+
+	my @cases;
+
+	if(exists($spec->{'memberof'}) && (ref($spec->{'memberof'} eq 'ARRAY'))) {
+		# memberof already defines allowed booleans
+		foreach my $val (@{$spec->{memberof}}) {
+			push @cases, { %{$mandatory_args}, ( $arg_name => $val ) };
+		}
+	} else {
+		@cases = (
+			{ %{$mandatory_args}, ( $arg_name => 0 ) },
+			{ %{$mandatory_args}, ( $arg_name => 1 ) },
+			{ %{$mandatory_args}, ( $arg_name => 'true' ) },
+			{ %{$mandatory_args}, ( $arg_name => 'false' ) },
+			{ %{$mandatory_args}, ( $arg_name => 'off' ) },
+			{ %{$mandatory_args}, ( $arg_name => 'on' ) },
+			{ %{$mandatory_args}, ( $arg_name => 'yes' ) },
+			{ %{$mandatory_args}, ( $arg_name => 'no' ) },
+			{ %{$mandatory_args}, ( $arg_name => 'xyzzy', _STATUS => 'DIES' ) },	# invalid boolean
+			{ %{$mandatory_args}, ( $arg_name => -1, _STATUS => 'DIES' ) },	# invalid boolean
+			{ %{$mandatory_args}, ( $arg_name => 2, _STATUS => 'DIES' ) },	# invalid boolean
+			{ %{$mandatory_args}, ( $arg_name => [ 1 ], _STATUS => 'DIES' ) }	# invalid boolean
+		);
+	}
+
+	push @cases, { %{$mandatory_args}, ( $arg_name => undef, _STATUS => 'DIES' ) } if($config{'test_undef'});
+	push @cases, { %{$mandatory_args}, ( $arg_name => "\0", _STATUS => 'DIES' ) } if($config{'test_nuls'});
 
 	return \@cases;
 }
@@ -1196,29 +1198,7 @@ sub generate_tests
 					push @cases, { $field => { map { "k$_" => 1 }, 1 .. ($len + 1) }, _STATUS => 'DIES' };
 				}
 			} elsif ($type eq 'boolean') {
-				if (exists $spec->{memberof} && ref $spec->{memberof} eq 'ARRAY') {
-					# memberof already defines allowed booleans
-					foreach my $val (@{$spec->{memberof}}) {
-						push @cases, { %mandatory_args, ( $field => $val ) };
-					}
-				} else {
-					# basic boolean edge cases
-					push @cases,
-						{ %mandatory_args, ( $field => 0 ) },
-						{ %mandatory_args, ( $field => 1 ) },
-						{ %mandatory_args, ( $field => 'false' ) },
-						{ %mandatory_args, ( $field => 'true' ) },
-						{ %mandatory_args, ( $field => 'off' ) },
-						{ %mandatory_args, ( $field => 'on' ) },
-						{ %mandatory_args, ( $field => 'yes' ) },
-						{ %mandatory_args, ( $field => 'no' ) },
-						{ %mandatory_args, ( $field => 2, _STATUS => 'DIES' ) },	# invalid boolean
-						{ %mandatory_args, ( $field => -1, _STATUS => 'DIES' ) },	# invalid boolean
-						{ %mandatory_args, ( $field => 'xyzzy', _STATUS => 'DIES' ) };	# invalid boolean
-
-					push @cases, { %mandatory_args, ( $field => undef, _STATUS => 'DIES' ) } if($config{'test_undef'});
-					push @cases, { %mandatory_args, ( $field => '', _STATUS => 'DIES' ) } if($config{'test_empty'});
-				}
+				push @cases, @{_generate_boolean_cases($field, $spec, \%mandatory_args)};
 			}
 		}
 
@@ -1486,7 +1466,7 @@ foreach my $transform (keys %transforms) {
 				}
 			}
 		} elsif($type eq 'boolean') {
-			push @tests, { %{$foundation}, ( $field => 1 ) }, { %{$foundation}, ( $field => 0 ) };
+			push @tests, @{_generate_boolean_cases($field, $spec, $foundation)};
 		} elsif ($type eq 'arrayref') {
 			if(defined $spec->{min}) {
 				push @tests, { %{$foundation}, ( $field => rand_arrayref($spec->{min} + 1) ) };	# just inside
