@@ -44,12 +44,13 @@ handling, and regressions without manually writing every case.
 
 This module implements the logic behind [fuzz-harness-generator](https://metacpan.org/pod/fuzz-harness-generator).
 It parses configuration files (fuzz and/or corpus YAML), and
-produces a ready-to-run `.t` test script using [Test::Most](https://metacpan.org/pod/Test%3A%3AMost).
+produces a ready-to-run `.t` test script to run through `prove`.
 
-It reads configuration files in any format
-(including Perl `.conf` with `our` variables, though this format will be deprecated in a future release)
-and optional YAML corpus files,
-and generates a [Test::Most](https://metacpan.org/pod/Test%3A%3AMost)-based fuzzing harness combining:
+It reads configuration files in any format,
+and optional YAML corpus files.
+All of the examples in this documenation are in `YAML` format,
+other formats may not work as they aren't so heavily tested.
+It then generates a [Test::Most](https://metacpan.org/pod/Test%3A%3AMost)-based fuzzing harness combining:
 
 - Randomized fuzzing of inputs (with edge cases)
 - Optional static corpus tests from Perl `%cases` or YAML file (`yaml_cases` key)
@@ -58,259 +59,156 @@ and generates a [Test::Most](https://metacpan.org/pod/Test%3A%3AMost)-based fuzz
 
 # CONFIGURATION
 
-The configuration file is a file that can be read by [Config::Abstraction](https://metacpan.org/pod/Config%3A%3AAbstraction).
+The configuration file,
+for each set of tests to be produced,
+is a file containng a schema that can be read by [Config::Abstraction](https://metacpan.org/pod/Config%3A%3AAbstraction).
 
 ## SCHEMA
 
-Recognized items:
+The schema is split into several sections.
 
-- `%input` - input params with keys => type/optional specs:
+### `%input` - input params with keys => type/optional specs
 
-    When using named parameters
-
-        input:
-          name:
-            type: string
-            optional: false
-          age:
-            type: integer
-            optional: true
-
-    Supported basic types used by the fuzzer: `string`, `integer`, `number`, `boolean`, `arrayref`, `hashref`.
-    (You can add more types; they will default to `undef` unless extended.)
-
-    For routines with one unnamed parameter
-
-        input:
-          type: string
-
-    Currently, routines with more than one unnamed parameter are not supported.
-
-    The keyword `undef` is used to indicate that the `function` takes no arguments.
-
-- `%output` - output param types for Return::Set checking:
-
-        output:
-          type: string
-
-    If the output hash contains the key \_STATUS, and if that key is set to DIES,
-    the routine should die with the given arguments; otherwise, it should live.
-    If it's set to WARNS,
-    the routine should warn with the given arguments.
-    The output can be set to the string 'undef' if the routine should return the undefined value:
-
-        ---
-        module: Scalar::Util
-        function: blessed
-
-        input:
-          arg1: string
-
-        output: undef
-
-    The keyword `undef` is used to indicate that the `function` returns nothing.
-
-- `%transforms` - list of transformations from input sets to output sets
-
-    It takes a list of subsets of the input and output definitions,
-    and verifies that data from each input subset is correctly transformed into data from the matching output subset.
-
-    This is a draft definition of the schema.
-
-        ---
-        module: builtin
-        function: abs
-
-        config:
-          test_undef: no
-          test_empty: no
-          test_nuls: no
-          test_non_ascii: no
-
-        input:
-          number:
-            type: number
-            position: 0
-        output:
-          type: number
-          min: 0
-        transforms:
-          positive:
-            input:
-              number:
-                type: number
-                position: 0
-                min: 0
-            output:
-              type: number
-              min: 0
-          negative:
-            input:
-              number:
-                type: number
-                position: 0
-                max: 0
-            output:
-              type: number
-              min: 0
-          error:
-            input:
-              undef
-            output:
-              _STATUS: DIES
-
-    If the output hash contains the key \_STATUS, and if that key is set to DIES,
-    the routine should die with the given arguments; otherwise, it should live.
-    If it's set to WARNS,
-    the routine should warn with the given arguments.
-
-    The keyword `undef` is used to indicate that the `function` returns nothing.
-
-- `$module` - module name (optional).
-
-    Using the reserved word `builtin` means you're testing a Perl builtin function.
-
-    If omitted, the generator will guess from the config filename:
-    `My-Widget.conf` -> `My::Widget`.
-
-- `$function` - function/method to test (defaults to `run`).
-- `$new` - optional hashref of args to pass to the module's constructor (object mode):
-
-        new:
-          api_key: ABC123
-          verbose: true
-
-    To ensure `new()` is called with no arguments, you still need to define new, thus:
-
-        module: MyModule
-        function: my_function
-
-        new:
-
-- `%cases` - optional Perl static corpus, when the output is a simple string (expected => \[ args... \]):
-
-    Maps the expected output string to the input and \_STATUS
-
-        cases:
-          ok:
-            input: ping
-            _STATUS: OK
-          error:
-            input: ""
-            _STATUS: DIES
-
-- `$yaml_cases` - optional path to a YAML file with the same shape as `%cases`.
-- `$seed` - optional integer. When provided, the generated `t/fuzz.t` will call `srand($seed)` so fuzz runs are reproducible.
-- `$iterations` - optional integer controlling how many fuzz iterations to perform (default 50).
-- `%edge_cases` - optional hash mapping of extra values to inject:
-
-            # Two named parameters
-            our %edge_cases = (
-                    name => [ '', 'a' x 1024, \"\x{263A}" ],
-                    age => [ -1, 0, 99999999 ],
-            );
-
-            # Takes a string input
-            our %edge_cases (
-                    'foo', 'bar'
-            );
-
-    (Values can be strings or numbers; strings will be properly quoted.)
-    Note that this only works with routines that take named parameters.
-
-- `%type_edge_cases` - optional hash mapping types to arrayrefs of extra values to try for any field of that type:
-
-            our %type_edge_cases = (
-                    string => [ '', ' ', "\t", "\n", "\0", 'long' x 1024, chr(0x1F600) ],
-                    number => [ 0, 1.0, -1.0, 1e308, -1e308, 1e-308, -1e-308, 'NaN', 'Infinity' ],
-                    integer => [ 0, 1, -1, 2**31-1, -(2**31), 2**63-1, -(2**63) ],
-            );
-
-- `%edge_case_array` - specify edge case values for routines that accept a single unnamed parameter
-
-    This is specifically designed for simple functions that take one argument without a parameter name.
-    These edge cases supplement the normal random string generation, ensuring specific problematic values are always tested.
-    During fuzzing iterations, there's a 40% probability that a test case will use a value from edge\_case\_array instead of randomly generated data.
-
-        ---
-        module: Text::Processor
-        function: sanitize
-
-        input:
-          type: string
-          min: 1
-          max: 1000
-
-        edge_case_array:
-          - "<script>alert('xss')</script>"
-          - "'; DROP TABLE users; --"
-          - "\0null\0byte"
-          - "emoji😊test"
-          - ""
-          - " "
-
-        seed: 42
-        iterations: 50
-
-- `%config` - optional hash of configuration.
-
-    The current supported variables are
-
-    - `test_nuls`, inject NUL bytes into strings (default: 1)
-    - `test_undef`, test with undefined value (default: 1)
-    - `test_empty`, test with empty strings (default: 1)
-    - `test_non_ascii`, test with strings that contain non ascii characaters (default: 1)
-    - `dedup`, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
-
-### Semantic Data Generators
-
-For property-based testing, you can use semantic generators to create realistic test data:
+When using named parameters
 
     input:
-      email:
+      name:
         type: string
-        semantic: email
+        optional: false
+      age:
+        type: integer
+        optional: true
 
-      user_id:
-        type: string
-        semantic: uuid
+Supported basic types used by the fuzzer: `string`, `integer`, `number`, `boolean`, `arrayref`, `hashref`.
+See also [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict).
+(You can add more types; they will default to `undef` unless extended.)
 
-      phone:
-        type: string
-        semantic: phone_us
+For routines with one unnamed parameter
 
-#### Available Semantic Types
+    input:
+      type: string
 
-- `email` - Valid email addresses (user@domain.tld)
-- `url` - HTTP/HTTPS URLs
-- `uuid` - UUIDv4 identifiers
-- `phone_us` - US phone numbers (XXX-XXX-XXXX)
-- `phone_e164` - International E.164 format (+XXXXXXXXXXXX)
-- `ipv4` - IPv4 addresses (0.0.0.0 - 255.255.255.255)
-- `ipv6` - IPv6 addresses
-- `username` - Alphanumeric usernames with \_ and -
-- `slug` - URL slugs (lowercase-with-hyphens)
-- `hex_color` - Hex color codes (#RRGGBB)
-- `iso_date` - ISO 8601 dates (YYYY-MM-DD)
-- `iso_datetime` - ISO 8601 datetimes (YYYY-MM-DDTHH:MM:SSZ)
-- `semver` - Semantic version strings (major.minor.patch)
-- `jwt` - JWT-like tokens (base64url format)
-- `json` - Simple JSON objects
-- `base64` - Base64-encoded strings
-- `md5` - MD5 hashes (32 hex chars)
-- `sha256` - SHA-256 hashes (64 hex chars)
+For routines with more than one named parameter, use the `position` keyword.
 
-## TRANSFORMS
+    module: Math::Simple::MinMax
+    fuction: max
 
-### Overview
+    input:
+      left:
+        type: number
+        position: 0
+      right:
+        type: number
+        position: 1
+
+    output:
+      type: number
+
+The keyword `undef` is used to indicate that the `function` takes no arguments.
+
+### `%output` - output param types for [Return::Set](https://metacpan.org/pod/Return%3A%3ASet) checking
+
+    output:
+      type: string
+
+If the output hash contains the key \_STATUS, and if that key is set to DIES,
+the routine should die with the given arguments; otherwise, it should live.
+If it's set to WARNS,
+the routine should warn with the given arguments.
+The output can be set to the string 'undef' if the routine should return the undefined value:
+
+    ---
+    module: Scalar::Util
+    function: blessed
+
+    input:
+      type: string
+
+    output: undef
+
+The keyword `undef` is used to indicate that the `function` returns nothing.
+
+### `%config` - optional hash of configuration.
+
+The current supported variables are
+
+- `test_nuls`, inject NUL bytes into strings (default: 1)
+- `test_undef`, test with undefined value (default: 1)
+- `test_empty`, test with empty strings (default: 1)
+- `test_non_ascii`, test with strings that contain non ascii characaters (default: 1)
+- `dedup`, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
+
+### `%transforms` - list of transformations from input sets to output sets
 
 Transforms allow you to define how input data should be transformed into output data.
 This is useful for testing functions that convert between formats, normalize data,
 or apply business logic transformations on a set of data to different set of data.
+It takes a list of subsets of the input and output definitions,
+and verifies that data from each input subset is correctly transformed into data from the matching output subset.
 
-Transform schema also have the keyword `value`, when a specific value is required
+#### Transform Validation Rules
 
-### Configuration Example
+For each transform:
+
+- 1. Generate test cases using the transform's input schema
+- 2. Call the function with those inputs
+- 3. Validate the output matches the transform's output schema
+- 4. If output has a specific 'value', check exact match
+- 5. If output has constraints (min/max), validate within bounds
+
+#### Example 1
+
+    ---
+    module: builtin
+    function: abs
+
+    config:
+      test_undef: no
+      test_empty: no
+      test_nuls: no
+      test_non_ascii: no
+
+    input:
+      number:
+        type: number
+        position: 0
+
+    output:
+      type: number
+      min: 0
+
+    transforms:
+      positive:
+        input:
+          number:
+            type: number
+            position: 0
+            min: 0
+        output:
+          type: number
+          min: 0
+      negative:
+        input:
+          number:
+            type: number
+            position: 0
+            max: 0
+        output:
+          type: number
+          min: 0
+      error:
+        input:
+          undef
+        output:
+          _STATUS: DIES
+
+If the output hash contains the key \_STATUS, and if that key is set to DIES,
+the routine should die with the given arguments; otherwise, it should live.
+If it's set to WARNS, the routine should warn with the given arguments.
+
+The keyword `undef` is used to indicate that the `function` returns nothing.
+
+#### Example 2
 
     ---
     module: Math::Utils
@@ -354,14 +252,131 @@ Transform schema also have the keyword `value`, when a specific value is require
           type: number
           value: 0
 
-### Transform Validation Rules
+### `$module` - module name (optional).
 
-For each transform:
-1\. Generate test cases using the transform's input schema
-2\. Call the function with those inputs
-3\. Validate the output matches the transform's output schema
-4\. If output has a specific 'value', check exact match
-5\. If output has constraints (min/max), validate within bounds
+Using the reserved word `builtin` means you're testing a Perl builtin function.
+
+If omitted, the generator will guess from the config filename:
+`My-Widget.conf` -> `My::Widget`.
+
+### `$function` - function/method to test (defaults to `run`).
+
+### `%new` - optional hashref of args to pass to the module's constructor (object mode):
+
+    new:
+      api_key: ABC123
+      verbose: true
+
+To ensure `new()` is called with no arguments, you still need to define new, thus:
+
+    module: MyModule
+    function: my_function
+
+    new:
+
+### `%cases` - optional Perl static corpus, when the output is a simple string (expected => \[ args... \])
+
+Maps the expected output string to the input and \_STATUS
+
+    cases:
+      ok:
+        input: ping
+        _STATUS: OK
+      error:
+        input: ""
+        _STATUS: DIES
+
+### `$yaml_cases` - optional path to a YAML file with the same shape as `%cases`.
+
+### `$seed` - optional integer. When provided, the generated `t/fuzz.t` will call `srand($seed)` so fuzz runs are reproducible.
+
+### `$iterations` - optional integer controlling how many fuzz iterations to perform (default 50).
+
+### `%edge_cases` - optional hash mapping of extra values to inject
+
+        # Two named parameters
+        edge_cases:
+                name: [ '', 'a' x 1024, \"\x{263A}" ]
+                age: [ -1, 0, 99999999 ]
+        );
+
+        # Takes a string input
+        edge_cases: [ 'foo', 'bar' ]
+
+Values can be strings or numbers; strings will be properly quoted.
+Note that this only works with routines that take named parameters.
+
+### `%type_edge_cases` - optional hash mapping types to arrayrefs of extra values to try for any field of that type:
+
+        type_edge_cases:
+                string: [ '', ' ', "\t", "\n", "\0", 'long' x 1024, chr(0x1F600) ]
+                number: [ 0, 1.0, -1.0, 1e308, -1e308, 1e-308, -1e-308, 'NaN', 'Infinity' ]
+                integer: [ 0, 1, -1, 2**31-1, -(2**31), 2**63-1, -(2**63) ]
+
+### `%edge_case_array` - specify edge case values for routines that accept a single unnamed parameter
+
+This is specifically designed for simple functions that take one argument without a parameter name.
+These edge cases supplement the normal random string generation, ensuring specific problematic values are always tested.
+During fuzzing iterations, there's a 40% probability that a test case will use a value from edge\_case\_array instead of randomly generated data.
+
+    ---
+    module: Text::Processor
+    function: sanitize
+
+    input:
+      type: string
+      min: 1
+      max: 1000
+
+    edge_case_array:
+      - "<script>alert('xss')</script>"
+      - "'; DROP TABLE users; --"
+      - "\0null\0byte"
+      - "emoji😊test"
+      - ""
+      - " "
+
+    seed: 42
+    iterations: 50
+
+### Semantic Data Generators
+
+For property-based testing using [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest), you can use semantic generators to create realistic test data.
+Fuzz testing support for `semantic` entries is being developed.
+
+    input:
+      email:
+        type: string
+        semantic: email
+
+      user_id:
+        type: string
+        semantic: uuid
+
+      phone:
+        type: string
+        semantic: phone_us
+
+#### Available Semantic Types
+
+- `email` - Valid email addresses (user@domain.tld)
+- `url` - HTTP/HTTPS URLs
+- `uuid` - UUIDv4 identifiers
+- `phone_us` - US phone numbers (XXX-XXX-XXXX)
+- `phone_e164` - International E.164 format (+XXXXXXXXXXXX)
+- `ipv4` - IPv4 addresses (0.0.0.0 - 255.255.255.255)
+- `ipv6` - IPv6 addresses
+- `username` - Alphanumeric usernames with \_ and -
+- `slug` - URL slugs (lowercase-with-hyphens)
+- `hex_color` - Hex color codes (#RRGGBB)
+- `iso_date` - ISO 8601 dates (YYYY-MM-DD)
+- `iso_datetime` - ISO 8601 datetimes (YYYY-MM-DDTHH:MM:SSZ)
+- `semver` - Semantic version strings (major.minor.patch)
+- `jwt` - JWT-like tokens (base64url format)
+- `json` - Simple JSON objects
+- `base64` - Base64-encoded strings
+- `md5` - MD5 hashes (32 hex chars)
+- `sha256` - SHA-256 hashes (64 hex chars)
 
 ## EDGE CASE GENERATION
 
@@ -385,7 +400,7 @@ For each constraint, three edge cases are added:
 
 Supported constraint types:
 
-- `number`, `integer`
+- `number`, `integer`, `float`
 
     Uses numeric values one below, equal to, and one above the boundary.
 
@@ -996,6 +1011,8 @@ Converts a schema field spec to a LectroTest generator string.
 Renders property definitions into Perl code for the template.
 
 # NOTES
+
+`seed` and `iterations` really should be within `config`.
 
 # SEE ALSO
 

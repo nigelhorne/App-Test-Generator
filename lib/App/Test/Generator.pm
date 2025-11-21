@@ -90,12 +90,13 @@ handling, and regressions without manually writing every case.
 
 This module implements the logic behind L<fuzz-harness-generator>.
 It parses configuration files (fuzz and/or corpus YAML), and
-produces a ready-to-run F<.t> test script using L<Test::Most>.
+produces a ready-to-run F<.t> test script to run through C<prove>.
 
-It reads configuration files in any format
-(including Perl C<.conf> with C<our> variables, though this format will be deprecated in a future release)
-and optional YAML corpus files,
-and generates a L<Test::Most>-based fuzzing harness combining:
+It reads configuration files in any format,
+and optional YAML corpus files.
+All of the examples in this documenation are in C<YAML> format,
+other formats may not work as they aren't so heavily tested.
+It then generates a L<Test::Most>-based fuzzing harness combining:
 
 =over 4
 
@@ -111,15 +112,15 @@ and generates a L<Test::Most>-based fuzzing harness combining:
 
 =head1 CONFIGURATION
 
-The configuration file is a file that can be read by L<Config::Abstraction>.
+The configuration file,
+for each set of tests to be produced,
+is a file containng a schema that can be read by L<Config::Abstraction>.
 
 =head2 SCHEMA
 
-Recognized items:
+The schema is split into several sections.
 
-=over 4
-
-=item * C<%input> - input params with keys => type/optional specs:
+=head3 C<%input> - input params with keys => type/optional specs
 
 When using named parameters
 
@@ -132,6 +133,7 @@ When using named parameters
       optional: true
 
 Supported basic types used by the fuzzer: C<string>, C<integer>, C<number>, C<boolean>, C<arrayref>, C<hashref>.
+See also L<Params::Validate::Strict>.
 (You can add more types; they will default to C<undef> unless extended.)
 
 For routines with one unnamed parameter
@@ -139,11 +141,25 @@ For routines with one unnamed parameter
   input:
     type: string
 
-Currently, routines with more than one unnamed parameter are not supported.
+For routines with more than one named parameter, use the C<position> keyword.
+
+  module: Math::Simple::MinMax
+  fuction: max
+
+  input:
+    left:
+      type: number
+      position: 0
+    right:
+      type: number
+      position: 1
+
+  output:
+    type: number
 
 The keyword C<undef> is used to indicate that the C<function> takes no arguments.
 
-=item * C<%output> - output param types for Return::Set checking:
+=head3 C<%output> - output param types for L<Return::Set> checking
 
   output:
     type: string
@@ -159,18 +175,57 @@ The output can be set to the string 'undef' if the routine should return the und
   function: blessed
 
   input:
-    arg1: string
+    type: string
 
   output: undef
 
 The keyword C<undef> is used to indicate that the C<function> returns nothing.
 
-=item * C<%transforms> - list of transformations from input sets to output sets
+=head3 C<%config> - optional hash of configuration.
 
+The current supported variables are
+
+=over 4
+
+=item * C<test_nuls>, inject NUL bytes into strings (default: 1)
+
+=item * C<test_undef>, test with undefined value (default: 1)
+
+=item * C<test_empty>, test with empty strings (default: 1)
+
+=item * C<test_non_ascii>, test with strings that contain non ascii characaters (default: 1)
+
+=item * C<dedup>, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
+
+=back
+
+=head3 C<%transforms> - list of transformations from input sets to output sets
+
+Transforms allow you to define how input data should be transformed into output data.
+This is useful for testing functions that convert between formats, normalize data,
+or apply business logic transformations on a set of data to different set of data.
 It takes a list of subsets of the input and output definitions,
 and verifies that data from each input subset is correctly transformed into data from the matching output subset.
 
-This is a draft definition of the schema.
+=head4 Transform Validation Rules
+
+For each transform:
+
+=over 4
+
+=item 1. Generate test cases using the transform's input schema
+
+=item 2. Call the function with those inputs
+
+=item 3. Validate the output matches the transform's output schema
+
+=item 4. If output has a specific 'value', check exact match
+
+=item 5. If output has constraints (min/max), validate within bounds
+
+=back
+
+=head4 Example 1
 
   ---
   module: builtin
@@ -186,9 +241,11 @@ This is a draft definition of the schema.
     number:
       type: number
       position: 0
+
   output:
     type: number
     min: 0
+
   transforms:
     positive:
       input:
@@ -216,21 +273,64 @@ This is a draft definition of the schema.
 
 If the output hash contains the key _STATUS, and if that key is set to DIES,
 the routine should die with the given arguments; otherwise, it should live.
-If it's set to WARNS,
-the routine should warn with the given arguments.
+If it's set to WARNS, the routine should warn with the given arguments.
 
 The keyword C<undef> is used to indicate that the C<function> returns nothing.
 
-=item * C<$module> - module name (optional).
+=head4 Example 2
+
+  ---
+  module: Math::Utils
+  function: normalize_number
+
+  input:
+    value:
+      type: number
+      position: 0
+
+  output:
+    type: number
+
+  transforms:
+    positive_stays_positive:
+      input:
+        value:
+          type: number
+          min: 0
+          max: 1000
+      output:
+        type: number
+        min: 0
+        max: 1
+
+    negative_becomes_zero:
+      input:
+        value:
+          type: number
+          max: 0
+      output:
+        type: number
+        value: 0
+
+    preserves_zero:
+      input:
+        value:
+          type: number
+          value: 0
+      output:
+        type: number
+        value: 0
+
+=head3 C<$module> - module name (optional).
 
 Using the reserved word C<builtin> means you're testing a Perl builtin function.
 
 If omitted, the generator will guess from the config filename:
 C<My-Widget.conf> -> C<My::Widget>.
 
-=item * C<$function> - function/method to test (defaults to C<run>).
+=head3 C<$function> - function/method to test (defaults to C<run>).
 
-=item * C<$new> - optional hashref of args to pass to the module's constructor (object mode):
+=head3 C<%new> - optional hashref of args to pass to the module's constructor (object mode):
 
   new:
     api_key: ABC123
@@ -243,7 +343,7 @@ To ensure C<new()> is called with no arguments, you still need to define new, th
 
   new:
 
-=item * C<%cases> - optional Perl static corpus, when the output is a simple string (expected => [ args... ]):
+=head3 C<%cases> - optional Perl static corpus, when the output is a simple string (expected => [ args... ])
 
 Maps the expected output string to the input and _STATUS
 
@@ -255,37 +355,34 @@ Maps the expected output string to the input and _STATUS
       input: ""
       _STATUS: DIES
 
-=item * C<$yaml_cases> - optional path to a YAML file with the same shape as C<%cases>.
+=head3 C<$yaml_cases> - optional path to a YAML file with the same shape as C<%cases>.
 
-=item * C<$seed> - optional integer. When provided, the generated C<t/fuzz.t> will call C<srand($seed)> so fuzz runs are reproducible.
+=head3 C<$seed> - optional integer. When provided, the generated C<t/fuzz.t> will call C<srand($seed)> so fuzz runs are reproducible.
 
-=item * C<$iterations> - optional integer controlling how many fuzz iterations to perform (default 50).
+=head3 C<$iterations> - optional integer controlling how many fuzz iterations to perform (default 50).
 
-=item * C<%edge_cases> - optional hash mapping of extra values to inject:
+=head3 C<%edge_cases> - optional hash mapping of extra values to inject
 
 	# Two named parameters
-	our %edge_cases = (
-		name => [ '', 'a' x 1024, \"\x{263A}" ],
-		age => [ -1, 0, 99999999 ],
+	edge_cases:
+		name: [ '', 'a' x 1024, \"\x{263A}" ]
+		age: [ -1, 0, 99999999 ]
 	);
 
 	# Takes a string input
-	our %edge_cases (
-		'foo', 'bar'
-	);
+	edge_cases: [ 'foo', 'bar' ]
 
-(Values can be strings or numbers; strings will be properly quoted.)
+Values can be strings or numbers; strings will be properly quoted.
 Note that this only works with routines that take named parameters.
 
-=item * C<%type_edge_cases> - optional hash mapping types to arrayrefs of extra values to try for any field of that type:
+=head3 C<%type_edge_cases> - optional hash mapping types to arrayrefs of extra values to try for any field of that type:
 
-	our %type_edge_cases = (
-		string => [ '', ' ', "\t", "\n", "\0", 'long' x 1024, chr(0x1F600) ],
-		number => [ 0, 1.0, -1.0, 1e308, -1e308, 1e-308, -1e-308, 'NaN', 'Infinity' ],
-		integer => [ 0, 1, -1, 2**31-1, -(2**31), 2**63-1, -(2**63) ],
-	);
+	type_edge_cases:
+		string: [ '', ' ', "\t", "\n", "\0", 'long' x 1024, chr(0x1F600) ]
+		number: [ 0, 1.0, -1.0, 1e308, -1e308, 1e-308, -1e-308, 'NaN', 'Infinity' ]
+		integer: [ 0, 1, -1, 2**31-1, -(2**31), 2**63-1, -(2**63) ]
 
-=item * C<%edge_case_array> - specify edge case values for routines that accept a single unnamed parameter
+=head3 C<%edge_case_array> - specify edge case values for routines that accept a single unnamed parameter
 
 This is specifically designed for simple functions that take one argument without a parameter name.
 These edge cases supplement the normal random string generation, ensuring specific problematic values are always tested.
@@ -311,29 +408,10 @@ During fuzzing iterations, there's a 40% probability that a test case will use a
   seed: 42
   iterations: 50
 
-=item * C<%config> - optional hash of configuration.
-
-The current supported variables are
-
-=over 4
-
-=item * C<test_nuls>, inject NUL bytes into strings (default: 1)
-
-=item * C<test_undef>, test with undefined value (default: 1)
-
-=item * C<test_empty>, test with empty strings (default: 1)
-
-=item * C<test_non_ascii>, test with strings that contain non ascii characaters (default: 1)
-
-=item * C<dedup>, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
-
-=back
-
-=back
-
 =head3 Semantic Data Generators
 
-For property-based testing, you can use semantic generators to create realistic test data:
+For property-based testing using L<Test::LectroTest>, you can use semantic generators to create realistic test data.
+Fuzz testing support for C<semantic> entries is being developed.
 
   input:
     email:
@@ -390,69 +468,6 @@ For property-based testing, you can use semantic generators to create realistic 
 
 =back
 
-=head2 TRANSFORMS
-
-=head3 Overview
-
-Transforms allow you to define how input data should be transformed into output data.
-This is useful for testing functions that convert between formats, normalize data,
-or apply business logic transformations on a set of data to different set of data.
-
-Transform schema also have the keyword C<value>, when a specific value is required
-
-=head3 Configuration Example
-
-  ---
-  module: Math::Utils
-  function: normalize_number
-
-  input:
-    value:
-      type: number
-      position: 0
-
-  output:
-    type: number
-
-  transforms:
-    positive_stays_positive:
-      input:
-        value:
-          type: number
-          min: 0
-          max: 1000
-      output:
-        type: number
-        min: 0
-        max: 1
-
-    negative_becomes_zero:
-      input:
-        value:
-          type: number
-          max: 0
-      output:
-        type: number
-        value: 0
-
-    preserves_zero:
-      input:
-        value:
-          type: number
-          value: 0
-      output:
-        type: number
-        value: 0
-
-=head3 Transform Validation Rules
-
-For each transform:
-1. Generate test cases using the transform's input schema
-2. Call the function with those inputs
-3. Validate the output matches the transform's output schema
-4. If output has a specific 'value', check exact match
-5. If output has constraints (min/max), validate within bounds
-
 =head2 EDGE CASE GENERATION
 
 In addition to purely random fuzz cases, the harness generates
@@ -481,7 +496,7 @@ Supported constraint types:
 
 =over 4
 
-=item * C<number>, C<integer>
+=item * C<number>, C<integer>, C<float>
 
 Uses numeric values one below, equal to, and one above the boundary.
 
@@ -2660,6 +2675,8 @@ sub _render_properties {
 1;
 
 =head1 NOTES
+
+C<seed> and C<iterations> really should be within C<config>.
 
 =head1 SEE ALSO
 

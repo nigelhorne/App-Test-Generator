@@ -456,6 +456,7 @@ sub fuzz_inputs
 	# @cases = grep { !$seen{join '|', %$_}++ } @cases;
 
 	# Random data test cases
+	# Uses type_edge_cases sometimes
 	if(scalar keys %input) {
 		if(((scalar keys %input) == 1) && exists($input{'type'}) && !ref($input{'type'})) {
 			# our %input = ( type => 'string' );
