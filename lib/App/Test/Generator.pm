@@ -111,11 +111,7 @@ and generates a L<Test::Most>-based fuzzing harness combining:
 
 =head1 CONFIGURATION
 
-The configuration file is either a file that can be read by L<Config::Abstraction> or a B<trusted input> Perl file that should set variables with C<our>.
-
-The documentation here covers the old trusted input style input, but that will go away so you are recommended to use
-L<Config::Abstraction> files.
-Example: the generator expects your config to use C<our %input>, C<our $function>, etc.
+The configuration file is a file that can be read by L<Config::Abstraction>.
 
 =head2 SCHEMA
 
@@ -1277,12 +1273,12 @@ sub generate
 	# Render input/output
 	my $input_code = '';
 	if(((scalar keys %input) == 1) && exists($input{'type'}) && !ref($input{'type'})) {
-		# our %input = ( type => 'string' );
+		# %input = ( type => 'string' );
 		foreach my $key (sort keys %input) {
 			$input_code .= "'$key' => '$input{$key}',\n";
 		}
 	} else {
-		# our %input = ( str => { type => 'string' } );
+		# %input = ( str => { type => 'string' } );
 		$input_code = render_hash(\%input);
 	}
 	if(defined(my $re = $output{'matches'})) {
@@ -1483,12 +1479,7 @@ sub _load_schema {
 	if(my $config = Config::Abstraction->new(config_dirs => ['.', ''], config_file => $schema_file)) {
 		$config = $config->all();
 		if(defined($config->{'$module'}) || defined($config->{'our $module'}) || !defined($config->{'module'})) {
-			# Legacy file format. This will go away.
-			# TODO: remove this code
-			# $config = _load_conf(File::Spec->rel2abs($schema_file));
-			# if($config) {
-				croak("$schema_file: Loading perl files as configs is no longer supported");
-			# }
+			croak("$schema_file: Loading perl files as configs is no longer supported");
 		}
 		return $config;
 	}
@@ -1511,43 +1502,6 @@ sub _load_schema_section
 		}
 	}
 	return {};
-}
-
-sub _load_conf {
-	croak('Loading perl files as configs is no longer supported');
-
-	my $file = $_[0];
-
-	my $pkg = 'ConfigLoader';
-
-	# eval in a separate package
-	{
-		package ConfigLoader;
-		no strict 'refs';
-		do $file or die "Error loading $file: ", ($@ || $!);
-	}
-
-	# Now pull variables from ConfigLoader
-	my @vars = qw(
-		module new edge_cases function input output cases yaml_cases
-		seed iterations edge_case_array type_edge_cases config
-	);
-
-	my %conf;
-	no strict 'refs';	# allow symbolic references here
-	for my $v (@vars) {
-		if(my $full = "${pkg}::$v") {
-			if (defined ${$full}) {	# scalar
-				$conf{$v} = ${$full};
-			} elsif (@{$full}) {	# array
-				$conf{$v} = [ @{$full} ];
-			} elsif (%{$full}) {	# hash
-				$conf{$v} = { %{$full} };
-			}
-		}
-	}
-
-	return \%conf;
 }
 
 # Input validation for configuration
@@ -2706,12 +2660,6 @@ sub _render_properties {
 1;
 
 =head1 NOTES
-
-=over 4
-
-=item * The legacy format conf file must use C<our> declarations so variables are visible to the generator via C<require>.
-
-=back
 
 =head1 SEE ALSO
 

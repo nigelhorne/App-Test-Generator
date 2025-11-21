@@ -58,11 +58,7 @@ and generates a [Test::Most](https://metacpan.org/pod/Test%3A%3AMost)-based fuzz
 
 # CONFIGURATION
 
-The configuration file is either a file that can be read by [Config::Abstraction](https://metacpan.org/pod/Config%3A%3AAbstraction) or a **trusted input** Perl file that should set variables with `our`.
-
-The documentation here covers the old trusted input style input, but that will go away so you are recommended to use
-[Config::Abstraction](https://metacpan.org/pod/Config%3A%3AAbstraction) files.
-Example: the generator expects your config to use `our %input`, `our $function`, etc.
+The configuration file is a file that can be read by [Config::Abstraction](https://metacpan.org/pod/Config%3A%3AAbstraction).
 
 ## SCHEMA
 
@@ -1000,8 +996,6 @@ Converts a schema field spec to a LectroTest generator string.
 Renders property definitions into Perl code for the template.
 
 # NOTES
-
-- The legacy format conf file must use `our` declarations so variables are visible to the generator via `require`.
 
 # SEE ALSO
 
