@@ -70,7 +70,6 @@ sub extract_all {
 
     my $package_name = $self->_extract_package_name($document);
     $self->_log("Package: $package_name");
-    $self->{_module} = $package_name;
 
     my $methods = $self->_find_methods($document);
     $self->_log("Found " . scalar(@$methods) . " methods");
@@ -353,67 +352,72 @@ sub _analyze_code {
         my $p = \$params{$param};
         
         # Type inference from ref() checks
-        if ($code =~ /ref\(\s*\$$param\s*\)\s*eq\s*['"]ARRAY['"]/i) {
-            $$p->{type} = 'arrayref';
+        if ($code =~ /ref\(\s*\$param\s*\)\s*eq\s*['"]ARRAY['"]/i) {
+            $p->{type} = 'arrayref';
             $self->_log("  CODE: $param is arrayref (ref check)");
         }
-        elsif ($code =~ /ref\(\s*\$$param\s*\)\s*eq\s*['"]HASH['"]/i) {
-            $$p->{type} = 'hashref';
+        elsif ($code =~ /ref\(\s*\$param\s*\)\s*eq\s*['"]HASH['"]/i) {
+            $p->{type} = 'hashref';
             $self->_log("  CODE: $param is hashref (ref check)");
         }
-        elsif ($code =~ /ref\(\s*\$$param\s*\)/) {
-            $$p->{type} = 'object';
+        elsif ($code =~ /ref\(\s*\$param\s*\)/) {
+            $p->{type} = 'object';
             $self->_log("  CODE: $param is object (ref check)");
         }
         
         # String operations suggest string type
-        if ($code =~ /\$$param\s*=~/ || $code =~ /length\(\s*\$$param\s*\)/) {
-            $$p->{type} ||= 'string';
+        if ($code =~ /\$param\s*=~/ || $code =~ /length\(\s*\$param\s*\)/) {
+            $p->{type} ||= 'string';
         }
         
         # Numeric operations suggest numeric type
-        if ($code =~ /\$$param\s*[+\-*\/%]|[+\-*\/%]\s*\$$param/) {
-            $$p->{type} ||= 'number';
+        if ($code =~ /\$param\s*[+\-*\/%]|[+\-*\/%]\s*\$param/) {
+            $p->{type} ||= 'number';
         }
         
         # Length checks for strings
-        if ($code =~ /length\(\s*\$$param\s*\)\s*([<>]=?)\s*(\d+)/) {
+        if ($code =~ /length\(\s*\$param\s*\)\s*([<>]=?)\s*(\d+)/) {
             my ($op, $val) = ($1, $2);
-            $$p->{type} ||= 'string';
+            $p->{type} ||= 'string';
             if ($op =~ /</) {
-                $$p->{max} = $val;
+                $p->{max} = $val;
                 $self->_log("  CODE: $param max=$val (length check)");
             } else {
-                $$p->{min} = $val;
+                $p->{min} = $val;
                 $self->_log("  CODE: $param min=$val (length check)");
             }
         }
         
         # Numeric range checks
-        if ($code =~ /\$$param\s*([<>]=?)\s*(\d+)/) {
+        if ($code =~ /\$param\s*([<>]=?)\s*(\d+)/) {
             my ($op, $val) = ($1, $2);
-            $$p->{type} ||= 'integer';
+            $p->{type} ||= 'integer';
             if ($op =~ /</) {
-                $$p->{max} = $val;
+                $p->{max} = $val;
                 $self->_log("  CODE: $param max=$val (numeric check)");
             } else {
-                $$p->{min} = $val;
+                $p->{min} = $val;
                 $self->_log("  CODE: $param min=$val (numeric check)");
             }
         }
         
         # Regex pattern matching
-        if ($code =~ /\$$param\s*=~\s*(qr?\/[^\/]+\/|\$\w+)/) {
+        if ($code =~ /\$param\s*=~\s*(qr?\/[^\/]+\/|\$\w+)/) {
             my $pattern = $1;
-            $$p->{type} ||= 'string';
-            $$p->{matches} = $pattern unless $pattern =~ /^\$/;
+            $p->{type} ||= 'string';
+            $p->{matches} = $pattern unless $pattern =~ /^\$/;
             $self->_log("  CODE: $param matches pattern");
         }
         
-        # Required/optional checks
-        if ($code =~ /(?:die|croak|confess)\s+.+unless\s+(?:defined\s+)?\$$param/) {
-            $$p->{optional} = 0;
-            $self->_log("  CODE: $param is required");
+        # Required/optional checks - look for validation that parameter must be defined
+        if ($code =~ /(?:die|croak|confess|carp)\s+[^;]*unless\s+(?:defined\s+)?\$param/s) {
+            $p->{optional} = 0;
+            $self->_log("  CODE: $param is required (die/croak check)");
+        }
+        # Also check for positive checks: die if not defined
+        if ($code =~ /(?:die|croak|confess|carp)\s+[^;]*(?:if|unless)\s+!\s*(?:defined\s+)?\$param/s) {
+            $p->{optional} = 0;
+            $self->_log("  CODE: $param is required (die/croak check)");
         }
     }
     
@@ -486,8 +490,13 @@ sub _merge_parameter_analyses {
         if ($code->{$param}) {
             foreach my $key (keys %{$code->{$param}}) {
                 next if $key eq '_source';
-                # Code evidence overrides if POD didn't specify
-                $p->{$key} //= $code->{$param}{$key};
+                # Code evidence for 'optional' always wins (it's definitive)
+                if ($key eq 'optional') {
+                    $p->{$key} = $code->{$param}{$key};
+                } else {
+                    # Other fields: code fills in gaps
+                    $p->{$key} //= $code->{$param}{$key};
+                }
             }
         }
         
@@ -497,6 +506,12 @@ sub _merge_parameter_analyses {
                 next if $key eq '_source';
                 $p->{$key} //= $sig->{$param}{$key};
             }
+        }
+        
+        # Default: if we found validation code but no explicit optional flag,
+        # and the parameter is in the signature, assume it's required
+        if (!defined($p->{optional}) && (keys %$p > 0)) {
+            $p->{optional} = 0;  # Default to required if we have any info about it
         }
         
         # Clean up internal fields
@@ -517,6 +532,7 @@ Returns: 'high', 'medium', 'low'
 sub _calculate_confidence {
     my ($self, $params) = @_;
     
+    # If no parameters detected or documented, it's low confidence
     return 'low' unless keys %$params;
     
     my $total_score = 0;
@@ -526,11 +542,22 @@ sub _calculate_confidence {
         my $p = $params->{$param};
         my $score = 0;
         
-        $score += 30 if $p->{type};
+        # Type is most important
+        $score += 30 if $p->{type} && $p->{type} ne 'string';  # 'string' is often just a guess
+        $score += 20 if $p->{type} && $p->{type} eq 'string' && ($p->{min} || $p->{max} || $p->{matches});
+        
+        # Constraints show understanding
         $score += 20 if defined $p->{min};
         $score += 20 if defined $p->{max};
         $score += 15 if defined $p->{optional};
         $score += 15 if $p->{matches};
+        
+        # If we only have type='string' and nothing else, that's a weak signal
+        if ($p->{type} && $p->{type} eq 'string' && 
+            !defined($p->{min}) && !defined($p->{max}) && 
+            !defined($p->{matches}) && !defined($p->{optional})) {
+            $score = 10;  # Very low confidence - just guessing
+        }
         
         $total_score += $score;
         $count++;
@@ -538,8 +565,8 @@ sub _calculate_confidence {
     
     my $avg = $total_score / ($count || 1);
     
-    return 'high' if $avg >= 70;
-    return 'medium' if $avg >= 40;
+    return 'high' if $avg >= 60;
+    return 'medium' if $avg >= 30;
     return 'low';
 }
 
@@ -562,8 +589,8 @@ sub _generate_notes {
         }
         
         unless (defined $p->{optional}) {
-            push @notes, "$param: optional status unknown - assumed required";
-            $p->{optional} = 0;  # default to required
+            push @notes, "$param: optional status unknown";
+            # Don't automatically set - let it be undef if we don't know
         }
     }
     
@@ -584,13 +611,21 @@ sub _write_schema {
     
     my $filename = "$self->{output_dir}/${method_name}.yaml";
 
+    # Extract package name for module field
+    my $package_name = '';
+    if ($self->{_document}) {
+        my $package_stmt = $self->{_document}->find_first('PPI::Statement::Package');
+        $package_name = $package_stmt ? $package_stmt->namespace : '';
+    }
+    
+
     # Clean up schema for output
     my $output = {
         function => $method_name,
         # confidence => $schema->{_confidence},
         # notes => $schema->{_notes},
         input => $schema->{input},
-	module => $self->{_module}
+        module => $package_name,   # Add module name
     };
 
     # Add 'new' field if object instantiation is needed
@@ -603,8 +638,9 @@ sub _write_schema {
     print $fh "\n# Run this script through fuzz-harness-generator -r\n",
 	    "# Confidence $schema->{_confidence}\n";
     if($self->{_notes} && scalar(@{$self->{_notes}})) {
-    	foreach my $note(@{$self->{_notes}}) {
-		print $fh "# $note\n";
+        print $fh "# Notes:\n";
+        foreach my $note (@{$schema->{_notes}}) {
+            print $fh "#   $note\n";
 	}
     }
     close $fh;
