@@ -12,6 +12,9 @@ use File::Path qw(make_path);
 
 our $VERSION = '0.01';
 
+# Configure YAML::XS to not quote numeric strings
+$YAML::XS::QuoteNumericStrings = 0;
+
 =head1 NAME
 
 App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
@@ -255,8 +258,8 @@ sub _analyze_pod {
         
         # Check for optional/required in description
         if ($desc) {
-            $params{$name}{optional} = 1 if $desc =~ /optional/i;
             $params{$name}{optional} = 0 if $desc =~ /required|mandatory/i;
+            $params{$name}{optional} = 1 if $desc =~ /optional/i;
             
             # Look for regex patterns in description
             if ($desc =~ m{matches?\s+(/[^/]+/|qr/.+?/)}i) {
@@ -442,7 +445,7 @@ sub _analyze_signature {
             $params{$1} = {
                 _source => 'signature',
                 type => 'string',  # default guess
-                optional => 1,      # can't tell from signature alone
+                # Don't set optional here - let code analysis determine it
             };
         }
     }
@@ -451,7 +454,7 @@ sub _analyze_signature {
         $params{$1} = {
             _source => 'signature',
             type => 'string',
-            optional => 1,
+            # Don't set optional here
         };
     }
     
@@ -516,6 +519,15 @@ sub _merge_parameter_analyses {
         
         # Clean up internal fields
         delete $p->{_source};
+    }
+    
+    # Debug logging
+    if ($self->{verbose}) {
+        foreach my $param (keys %merged) {
+            my $p = $merged{$param};
+            $self->_log("  MERGED $param: type=" . ($p->{type} || 'none') . 
+                       ", optional=" . (defined($p->{optional}) ? $p->{optional} : 'undef'));
+        }
     }
     
     return \%merged;
