@@ -129,6 +129,7 @@ Recognized items:
           test_undef: no
           test_empty: no
           test_nuls: no
+          test_non_ascii: no
 
         input:
           number:
@@ -262,6 +263,7 @@ Recognized items:
     - `test_nuls`, inject NUL bytes into strings (default: 1)
     - `test_undef`, test with undefined value (default: 1)
     - `test_empty`, test with empty strings (default: 1)
+    - `test_non_ascii`, test with strings that contain non ascii characaters (default: 1)
     - `dedup`, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 
 ### Semantic Data Generators
@@ -588,6 +590,9 @@ Then create this file as &lt;t/fuzz.t>:
                                   }
                           } else {
                                   diag("$filepath: STDOUT:\n$stdout");
+                                  diag($stderr) if(length($stderr));
+                                  diag("$filepath Failed");
+                                  last;
                           }
                           diag($stderr) if(length($stderr));
                   }
