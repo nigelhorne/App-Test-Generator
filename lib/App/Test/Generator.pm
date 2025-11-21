@@ -132,9 +132,9 @@ When using named parameters
       type: integer
       optional: true
 
-Supported basic types used by the fuzzer: C<string>, C<integer>, C<number>, C<boolean>, C<arrayref>, C<hashref>.
+Supported basic types used by the fuzzer: C<string>, C<integer>, C<float>, C<number>, C<boolean>, C<arrayref>, C<hashref>.
 See also L<Params::Validate::Strict>.
-(You can add more types; they will default to C<undef> unless extended.)
+You can add more custom types using properties.
 
 For routines with one unnamed parameter
 
@@ -196,6 +196,8 @@ The current supported variables are
 =item * C<test_non_ascii>, test with strings that contain non ascii characaters (default: 1)
 
 =item * C<dedup>, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
+
+=item * C<properties>, enable L<Test::LectroTest> Property tests (default: 0)
 
 =back
 
@@ -321,16 +323,24 @@ The keyword C<undef> is used to indicate that the C<function> returns nothing.
         type: number
         value: 0
 
-=head3 C<$module> - module name (optional).
+=head3 C<$module>
+
+The name of the module (optional).
 
 Using the reserved word C<builtin> means you're testing a Perl builtin function.
 
 If omitted, the generator will guess from the config filename:
 C<My-Widget.conf> -> C<My::Widget>.
 
-=head3 C<$function> - function/method to test (defaults to C<run>).
+=head3 C<$function>
 
-=head3 C<%new> - optional hashref of args to pass to the module's constructor (object mode):
+The function/method to test.
+
+This defaults to C<run>.
+
+=head3 C<%new>
+
+An optional hashref of args to pass to the module's constructor.
 
   new:
     api_key: ABC123
@@ -343,7 +353,9 @@ To ensure C<new()> is called with no arguments, you still need to define new, th
 
   new:
 
-=head3 C<%cases> - optional Perl static corpus, when the output is a simple string (expected => [ args... ])
+=head3 C<%cases>
+
+An optional Perl static corpus, when the output is a simple string (expected => [ args... ]).
 
 Maps the expected output string to the input and _STATUS
 
@@ -357,17 +369,23 @@ Maps the expected output string to the input and _STATUS
 
 =head3 C<$yaml_cases> - optional path to a YAML file with the same shape as C<%cases>.
 
-=head3 C<$seed> - optional integer. When provided, the generated C<t/fuzz.t> will call C<srand($seed)> so fuzz runs are reproducible.
+=head3 C<$seed>
 
-=head3 C<$iterations> - optional integer controlling how many fuzz iterations to perform (default 50).
+An optional integer.
+When provided, the generated C<t/fuzz.t> will call C<srand($seed)> so fuzz runs are reproducible.
 
-=head3 C<%edge_cases> - optional hash mapping of extra values to inject
+=head3 C<$iterations>
+
+An optional integer controlling how many fuzz iterations to perform (default 50).
+
+=head3 C<%edge_cases>
+
+An optional hash mapping of extra values to inject.
 
 	# Two named parameters
 	edge_cases:
 		name: [ '', 'a' x 1024, \"\x{263A}" ]
 		age: [ -1, 0, 99999999 ]
-	);
 
 	# Takes a string input
 	edge_cases: [ 'foo', 'bar' ]
@@ -375,15 +393,18 @@ Maps the expected output string to the input and _STATUS
 Values can be strings or numbers; strings will be properly quoted.
 Note that this only works with routines that take named parameters.
 
-=head3 C<%type_edge_cases> - optional hash mapping types to arrayrefs of extra values to try for any field of that type:
+=head3 C<%type_edge_cases>
+
+An optional hash mapping types to arrayrefs of extra values to try for any field of that type:
 
 	type_edge_cases:
 		string: [ '', ' ', "\t", "\n", "\0", 'long' x 1024, chr(0x1F600) ]
 		number: [ 0, 1.0, -1.0, 1e308, -1e308, 1e-308, -1e-308, 'NaN', 'Infinity' ]
 		integer: [ 0, 1, -1, 2**31-1, -(2**31), 2**63-1, -(2**63) ]
 
-=head3 C<%edge_case_array> - specify edge case values for routines that accept a single unnamed parameter
+=head3 C<%edge_case_array>
 
+Specify edge case values for routines that accept a single unnamed parameter.
 This is specifically designed for simple functions that take one argument without a parameter name.
 These edge cases supplement the normal random string generation, ensuring specific problematic values are always tested.
 During fuzzing iterations, there's a 40% probability that a test case will use a value from edge_case_array instead of randomly generated data.
@@ -410,7 +431,8 @@ During fuzzing iterations, there's a 40% probability that a test case will use a
 
 =head3 Semantic Data Generators
 
-For property-based testing using L<Test::LectroTest>, you can use semantic generators to create realistic test data.
+For property-based testing with L<Test::LectroTest>,
+you can use semantic generators to create realistic test data.
 Fuzz testing support for C<semantic> entries is being developed.
 
   input:
@@ -1123,7 +1145,7 @@ your custom properties:
         - name: no_iframes
           code: $result !~ /<iframe/i
 
-=head2 OUTPUT
+=head2 GENERATED OUTPUT
 
 The generated test:
 
@@ -1140,6 +1162,8 @@ The generated test:
 =item * Validates outputs with L<Return::Set>
 
 =item * Runs static C<is(... )> corpus tests from Perl and/or YAML corpus
+
+=item * Runs L<Test::LectroTest> tests
 
 =back
 

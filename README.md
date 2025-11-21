@@ -79,9 +79,9 @@ When using named parameters
         type: integer
         optional: true
 
-Supported basic types used by the fuzzer: `string`, `integer`, `number`, `boolean`, `arrayref`, `hashref`.
+Supported basic types used by the fuzzer: `string`, `integer`, `float`, `number`, `boolean`, `arrayref`, `hashref`.
 See also [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict).
-(You can add more types; they will default to `undef` unless extended.)
+You can add more custom types using properties.
 
 For routines with one unnamed parameter
 
@@ -137,6 +137,7 @@ The current supported variables are
 - `test_empty`, test with empty strings (default: 1)
 - `test_non_ascii`, test with strings that contain non ascii characaters (default: 1)
 - `dedup`, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
+- `properties`, enable [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest) Property tests (default: 0)
 
 ### `%transforms` - list of transformations from input sets to output sets
 
@@ -252,16 +253,24 @@ The keyword `undef` is used to indicate that the `function` returns nothing.
           type: number
           value: 0
 
-### `$module` - module name (optional).
+### `$module`
+
+The name of the module (optional).
 
 Using the reserved word `builtin` means you're testing a Perl builtin function.
 
 If omitted, the generator will guess from the config filename:
 `My-Widget.conf` -> `My::Widget`.
 
-### `$function` - function/method to test (defaults to `run`).
+### `$function`
 
-### `%new` - optional hashref of args to pass to the module's constructor (object mode):
+The function/method to test.
+
+This defaults to `run`.
+
+### `%new`
+
+An optional hashref of args to pass to the module's constructor.
 
     new:
       api_key: ABC123
@@ -274,7 +283,9 @@ To ensure `new()` is called with no arguments, you still need to define new, thu
 
     new:
 
-### `%cases` - optional Perl static corpus, when the output is a simple string (expected => \[ args... \])
+### `%cases`
+
+An optional Perl static corpus, when the output is a simple string (expected => \[ args... \]).
 
 Maps the expected output string to the input and \_STATUS
 
@@ -288,17 +299,23 @@ Maps the expected output string to the input and \_STATUS
 
 ### `$yaml_cases` - optional path to a YAML file with the same shape as `%cases`.
 
-### `$seed` - optional integer. When provided, the generated `t/fuzz.t` will call `srand($seed)` so fuzz runs are reproducible.
+### `$seed`
 
-### `$iterations` - optional integer controlling how many fuzz iterations to perform (default 50).
+An optional integer.
+When provided, the generated `t/fuzz.t` will call `srand($seed)` so fuzz runs are reproducible.
 
-### `%edge_cases` - optional hash mapping of extra values to inject
+### `$iterations`
+
+An optional integer controlling how many fuzz iterations to perform (default 50).
+
+### `%edge_cases`
+
+An optional hash mapping of extra values to inject.
 
         # Two named parameters
         edge_cases:
                 name: [ '', 'a' x 1024, \"\x{263A}" ]
                 age: [ -1, 0, 99999999 ]
-        );
 
         # Takes a string input
         edge_cases: [ 'foo', 'bar' ]
@@ -306,15 +323,18 @@ Maps the expected output string to the input and \_STATUS
 Values can be strings or numbers; strings will be properly quoted.
 Note that this only works with routines that take named parameters.
 
-### `%type_edge_cases` - optional hash mapping types to arrayrefs of extra values to try for any field of that type:
+### `%type_edge_cases`
+
+An optional hash mapping types to arrayrefs of extra values to try for any field of that type:
 
         type_edge_cases:
                 string: [ '', ' ', "\t", "\n", "\0", 'long' x 1024, chr(0x1F600) ]
                 number: [ 0, 1.0, -1.0, 1e308, -1e308, 1e-308, -1e-308, 'NaN', 'Infinity' ]
                 integer: [ 0, 1, -1, 2**31-1, -(2**31), 2**63-1, -(2**63) ]
 
-### `%edge_case_array` - specify edge case values for routines that accept a single unnamed parameter
+### `%edge_case_array`
 
+Specify edge case values for routines that accept a single unnamed parameter.
 This is specifically designed for simple functions that take one argument without a parameter name.
 These edge cases supplement the normal random string generation, ensuring specific problematic values are always tested.
 During fuzzing iterations, there's a 40% probability that a test case will use a value from edge\_case\_array instead of randomly generated data.
@@ -341,7 +361,8 @@ During fuzzing iterations, there's a 40% probability that a test case will use a
 
 ### Semantic Data Generators
 
-For property-based testing using [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest), you can use semantic generators to create realistic test data.
+For property-based testing with [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest),
+you can use semantic generators to create realistic test data.
 Fuzz testing support for `semantic` entries is being developed.
 
     input:
@@ -963,7 +984,7 @@ your custom properties:
           - name: no_iframes
             code: $result !~ /<iframe/i
 
-## OUTPUT
+## GENERATED OUTPUT
 
 The generated test:
 
@@ -973,6 +994,7 @@ The generated test:
 - Validates inputs with Params::Get / Params::Validate::Strict
 - Validates outputs with [Return::Set](https://metacpan.org/pod/Return%3A%3ASet)
 - Runs static `is(... )` corpus tests from Perl and/or YAML corpus
+- Runs [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest) tests
 
 # METHODS
 
