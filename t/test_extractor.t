@@ -151,14 +151,14 @@ cmp_ok(scalar(@methods), '>=', 6, 'Found at least 6 methods');
 subtest 'simple_string method' => sub {
     my $schema = $schemas->{simple_string};
     ok($schema, 'simple_string schema exists');
-    
+
     my $name_param = $schema->{input}{name};
     ok($name_param, 'name parameter detected');
     is($name_param->{type}, 'string', 'type is string');
     is($name_param->{min}, 3, 'min is 3');
     is($name_param->{max}, 50, 'max is 50');
     is($name_param->{optional}, 0, 'parameter is required');
-    
+
     like($schema->{_confidence}, qr/high|medium/, 'confidence is high or medium');
 };
 
@@ -166,7 +166,7 @@ subtest 'simple_string method' => sub {
 subtest 'simple_integer method' => sub {
     my $schema = $schemas->{simple_integer};
     ok($schema, 'simple_integer schema exists');
-    
+
     my $count_param = $schema->{input}{count};
     ok($count_param, 'count parameter detected');
     is($count_param->{type}, 'integer', 'type is integer');
@@ -178,7 +178,7 @@ subtest 'simple_integer method' => sub {
 subtest 'with_regex method' => sub {
     my $schema = $schemas->{with_regex};
     ok($schema, 'with_regex schema exists');
-    
+
     my $email_param = $schema->{input}{email};
     ok($email_param, 'email parameter detected');
     is($email_param->{type}, 'string', 'type is string');
@@ -189,7 +189,7 @@ subtest 'with_regex method' => sub {
 subtest 'array_param method' => sub {
     my $schema = $schemas->{array_param};
     ok($schema, 'array_param schema exists');
-    
+
     my $items_param = $schema->{input}{items};
     ok($items_param, 'items parameter detected');
     is($items_param->{type}, 'arrayref', 'type is arrayref');
@@ -199,7 +199,7 @@ subtest 'array_param method' => sub {
 subtest 'hash_param method' => sub {
     my $schema = $schemas->{hash_param};
     ok($schema, 'hash_param schema exists');
-    
+
     my $config_param = $schema->{input}{config};
     ok($config_param, 'config parameter detected');
     is($config_param->{type}, 'hashref', 'type is hashref');
@@ -209,13 +209,13 @@ subtest 'hash_param method' => sub {
 subtest 'optional_param method' => sub {
     my $schema = $schemas->{optional_param};
     ok($schema, 'optional_param schema exists');
-    
+
     my $required_param = $schema->{input}{required};
     my $optional_param = $schema->{input}{optional};
-    
+
     ok($required_param, 'required parameter detected');
     ok($optional_param, 'optional parameter detected');
-    
+
     is($required_param->{optional}, 0, 'required param marked as required');
     is($optional_param->{optional}, 1, 'optional param marked as optional');
 };
@@ -224,7 +224,7 @@ subtest 'optional_param method' => sub {
 subtest 'poorly_documented method' => sub {
     my $schema = $schemas->{poorly_documented};
     ok($schema, 'poorly_documented schema exists');
-    
+
     is($schema->{_confidence}, 'low', 'confidence is low');
     # Notes might be present or not, depending on what we could infer
     # Just check the schema exists and has low confidence
@@ -239,11 +239,11 @@ subtest 'object instantiation detection' => sub {
     my $simple_string = $schemas->{simple_string};
     ok($simple_string->{new}, 'simple_string has new field');
     is($simple_string->{new}, 'TestModule', 'new field contains package name');
-    
+
     my $array_param = $schemas->{array_param};
     ok($array_param->{new}, 'array_param has new field');
     is($array_param->{new}, 'TestModule', 'new field contains package name');
-    
+
     # Note: We don't test constructors since they shouldn't have 'new' field
 };
 

@@ -16,13 +16,13 @@ extract-schemas - Extract test schemas from Perl modules
 =head1 SYNOPSIS
 
     extract-schemas [options] <module.pm>
-    
+
     Options:
       --output-dir DIR    Output directory for schema files (default: schemas/)
       --verbose           Show detailed analysis
       --help              Show this help message
       --man               Show full documentation
-      
+
     Examples:
       extract-schemas lib/MyModule.pm
       extract-schemas --output-dir my_schemas --verbose lib/MyModule.pm
@@ -103,9 +103,9 @@ foreach my $method (sort keys %$schemas) {
     my $schema = $schemas->{$method};
     my $conf = $schema->{_confidence};
     $confidence_counts{$conf}++;
-    
+
     my $param_count = scalar keys %{$schema->{input}};
-    
+
     printf "%-30s %d params  [%s confidence]\n",
         $method, $param_count, uc($conf);
 }

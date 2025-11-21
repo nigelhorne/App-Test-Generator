@@ -13,7 +13,7 @@ Sample::Module - Example module for schema extraction testing
 =head1 SYNOPSIS
 
     use Sample::Module;
-    
+
     my $obj = Sample::Module->new();
     my $result = $obj->validate_email('user@example.com');
 
@@ -51,12 +51,12 @@ Returns:
 
 sub validate_email {
     my ($self, $email) = @_;
-    
+
     croak "Email is required" unless defined $email;
     croak "Email too short" unless length($email) >= 5;
     croak "Email too long" unless length($email) <= 254;
     croak "Invalid email format" unless $email =~ /^[^@]+@[^@]+\.[^@]+$/;
-    
+
     return 1;
 }
 
@@ -74,11 +74,11 @@ Returns:
 
 sub calculate_age {
     my ($self, $birth_year) = @_;
-    
+
     croak "Birth year required" unless defined $birth_year;
     croak "Birth year must be a number" unless $birth_year =~ /^\d+$/;
     croak "Birth year out of range" unless $birth_year >= 1900 && $birth_year <= 2024;
-    
+
     my $current_year = 2024;
     return $current_year - $birth_year;
 }
@@ -97,16 +97,16 @@ Returns:
 
 sub process_names {
     my ($self, $names) = @_;
-    
+
     croak "Names required" unless defined $names;
     croak "Names must be an array reference" unless ref($names) eq 'ARRAY';
-    
+
     my $count = 0;
     foreach my $name (@$names) {
         # Process each name
         $count++ if defined $name && length($name) > 0;
     }
-    
+
     return $count;
 }
 
@@ -124,10 +124,10 @@ Returns:
 
 sub set_config {
     my ($self, $config) = @_;
-    
+
     croak "Config required" unless defined $config;
     croak "Config must be a hash reference" unless ref($config) eq 'HASH';
-    
+
     $self->{config} = $config;
     return 1;
 }
@@ -147,13 +147,13 @@ Returns:
 
 sub greet {
     my ($self, $name, $greeting) = @_;
-    
+
     croak "Name is required" unless defined $name;
     croak "Name too short" unless length($name) >= 1;
     croak "Name too long" unless length($name) <= 50;
-    
+
     $greeting ||= "Hello";
-    
+
     return "$greeting, $name!";
 }
 
@@ -171,7 +171,7 @@ Returns:
 
 sub check_flag {
     my ($self, $enabled) = @_;
-    
+
     return $enabled ? 1 : 0;
 }
 
@@ -189,11 +189,11 @@ Returns:
 
 sub validate_score {
     my ($self, $score) = @_;
-    
+
     croak "Score is required" unless defined $score;
     croak "Score must be numeric" unless $score =~ /^[\d.]+$/;
     croak "Score out of range" unless $score >= 0.0 && $score <= 100.0;
-    
+
     return $score >= 60.0 ? "Pass" : "Fail";
 }
 
@@ -207,7 +207,7 @@ Does something with a thing.
 
 sub mysterious_method {
     my ($self, $thing) = @_;
-    
+
     # No validation - extractor should flag this as low confidence
     return $thing * 2;
 }

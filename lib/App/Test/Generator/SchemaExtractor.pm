@@ -211,7 +211,7 @@ sub _analyze_method {
 
     # Add metadata
     $schema->{_notes} = $self->_generate_notes($schema->{input});
-    
+
     return $schema;
 }
 
@@ -228,34 +228,97 @@ Looks for patterns like:
 
 sub _analyze_pod {
     my ($self, $pod) = @_;
-    
+
     return {} unless $pod;
-    
+
     my %params;
-    
-    # Pattern 1: $var - type (constraints), description
-    while ($pod =~ /\$(\w+)\s*-\s*(string|integer|int|number|num|float|boolean|bool|arrayref|array|hashref|hash|object)(?:\s*\(([^)]+)\))?(?:\s*,\s*(.+?))?(?=\n|$)/gi) {
+
+    # Pattern 1: Parse line-by-line in Parameters section
+    # First, extract the Parameters section
+    if ($pod =~ /(?:Parameters?|Arguments?):\s*\n(.*?)(?=\n\n|\n=[a-z]|$)/si) {
+        my $param_section = $1;
+
+        # Now parse each line that starts with $varname
+        foreach my $line (split /\n/, $param_section) {
+            # Match: $name - type (constraints), description
+            # or:    $name - type, description
+            # or:    $name - type
+            if ($line =~ /^\s*\$(\w+)\s*-\s*(\w+)(?:\s*\(([^)]+)\))?\s*,?\s*(.*)$/i) {
+                my ($name, $type, $constraint, $desc) = ($1, lc($2), $3, $4);
+
+                # Clean up
+                $desc =~ s/^\s+|\s+$//g if $desc;
+
+                # Skip common non-parameters
+                next if $name =~ /^(self|class|return|returns?)$/i;
+
+                $params{$name} ||= { _source => 'pod' };
+
+                # Normalize type names
+                $type = 'integer' if $type eq 'int';
+                $type = 'number' if $type eq 'num' || $type eq 'float';
+                $type = 'boolean' if $type eq 'bool';
+                $type = 'arrayref' if $type eq 'array';
+                $type = 'hashref' if $type eq 'hash';
+
+                $params{$name}{type} = $type;
+
+                # Parse constraints
+                if ($constraint) {
+                    $self->_parse_constraints($params{$name}, $constraint);
+                }
+
+                # Check for optional/required in description OR constraint
+                my $full_text = ($constraint || '') . ' ' . ($desc || '');
+                if ($full_text =~ /optional/i) {
+                    $params{$name}{optional} = 1;
+                    $self->_log("  POD: $name marked as optional");
+                } elsif ($full_text =~ /required|mandatory/i) {
+                    $params{$name}{optional} = 0;
+                    $self->_log("  POD: $name marked as required");
+                }
+
+                # Look for regex patterns
+                if ($desc && $desc =~ m{matches?\s+(/[^/]+/|qr/.+?/)}i) {
+                    $params{$name}{matches} = $1;
+                }
+
+                $self->_log("  POD: Found parameter '$name' type=$type" .
+                            ($constraint ? " ($constraint)" : "") .
+                            ($desc ? " - $desc" : ""));
+            }
+        }
+    }
+
+    # Pattern 2: Also try the inline format in case Parameters: section wasn't found
+    while ($pod =~ /\$(\w+)\s*-\s*(string|integer|int|number|num|float|boolean|bool|arrayref|array|hashref|hash|object)(?:\s*\(([^)]+)\))?\s*,?\s*(.*)$/gim) {
         my ($name, $type, $constraint, $desc) = ($1, lc($2), $3, $4);
-        
+
+        # Only process if we haven't already found this param in the Parameters section
+        next if exists $params{$name};
+
+        # Clean up description - remove leading/trailing whitespace
+        $desc =~ s/^\s+|\s+$//g if $desc;
+
         # Skip common words that aren't parameters
         next if $name =~ /^(self|class|return|returns?)$/i;
-        
+
         $params{$name} ||= { _source => 'pod' };
-        
+
         # Normalize type names
         $type = 'integer' if $type eq 'int';
         $type = 'number' if $type eq 'num' || $type eq 'float';
         $type = 'boolean' if $type eq 'bool';
         $type = 'arrayref' if $type eq 'array';
         $type = 'hashref' if $type eq 'hash';
-        
+
         $params{$name}{type} = $type;
-        
+
         # Parse constraints
         if ($constraint) {
             $self->_parse_constraints($params{$name}, $constraint);
         }
-        
+
         # Check for optional/required in description
         if ($desc) {
             if ($desc =~ /optional/i) {
@@ -263,34 +326,17 @@ sub _analyze_pod {
             } elsif ($desc =~ /required|mandatory/i) {
                 $params{$name}{optional} = 0;
             }
-            
+
             # Look for regex patterns in description
             if ($desc =~ m{matches?\s+(/[^/]+/|qr/.+?/)}i) {
                 $params{$name}{matches} = $1;
             }
         }
-        
-        $self->_log("  POD: Found parameter '$name' type=$type" . 
+
+        $self->_log("  POD: Found parameter '$name' type=$type" .
                     ($constraint ? " ($constraint)" : ""));
     }
-    
-    # Pattern 2: Parameters: or Arguments: section
-    if ($pod =~ /(?:Parameters?|Arguments?):\s*\n(.*?)(?=\n\n|\n=[a-z]|$)/si) {
-        my $param_section = $1;
-        
-        while ($param_section =~ /(?:^|\n)\s*\$(\w+)\s*[-:]\s*(.+?)(?=\n\s*\$|\n\n|$)/sg) {
-            my ($name, $desc) = ($1, $2);
-            next if $name =~ /^(self|class)$/i;
-            
-            $params{$name} ||= { _source => 'pod' };
-            
-            # Try to infer type from description
-            if ($desc =~ /\b(string|integer|number|boolean|array|hash)/i) {
-                $params{$name}{type} ||= lc($1);
-            }
-        }
-    }
-    
+
     return \%params;
 }
 
@@ -302,7 +348,7 @@ Parse constraint strings like "3-50 chars" or "positive" or "1-100".
 
 sub _parse_constraints {
     my ($self, $param, $constraint) = @_;
-    
+
     # Range: "3-50" or "1-100 chars"
     if ($constraint =~ /(\d+)\s*-\s*(\d+)/) {
         $param->{min} = $1;
@@ -342,9 +388,9 @@ Looks for common validation patterns:
 
 sub _analyze_code {
     my ($self, $code) = @_;
-    
+
     my %params;
-    
+
     # Extract parameter names from signature
     if ($code =~ /my\s*\(\s*\$\w+\s*,\s*(.+?)\)\s*=\s*\@_/s) {
         my $sig = $1;
@@ -352,11 +398,11 @@ sub _analyze_code {
             $params{$1} ||= { _source => 'code' };
         }
     }
-    
+
     # Analyze each parameter
     foreach my $param (keys %params) {
         my $p = \$params{$param};
-        
+
         # Type inference from ref() checks
         if ($code =~ /ref\(\s*\$param\s*\)\s*eq\s*['"]ARRAY['"]/i) {
             $p->{type} = 'arrayref';
@@ -370,17 +416,17 @@ sub _analyze_code {
             $p->{type} = 'object';
             $self->_log("  CODE: $param is object (ref check)");
         }
-        
+
         # String operations suggest string type
         if ($code =~ /\$param\s*=~/ || $code =~ /length\(\s*\$param\s*\)/) {
             $p->{type} ||= 'string';
         }
-        
+
         # Numeric operations suggest numeric type
         if ($code =~ /\$param\s*[+\-*\/%]|[+\-*\/%]\s*\$param/) {
             $p->{type} ||= 'number';
         }
-        
+
         # Length checks for strings
         if ($code =~ /length\(\s*\$param\s*\)\s*([<>]=?)\s*(\d+)/) {
             my ($op, $val) = ($1, $2);
@@ -393,7 +439,7 @@ sub _analyze_code {
                 $self->_log("  CODE: $param min=$val (length check)");
             }
         }
-        
+
         # Numeric range checks
         if ($code =~ /\$param\s*([<>]=?)\s*(\d+)/) {
             my ($op, $val) = ($1, $2);
@@ -406,7 +452,7 @@ sub _analyze_code {
                 $self->_log("  CODE: $param min=$val (numeric check)");
             }
         }
-        
+
         # Regex pattern matching
         if ($code =~ /\$param\s*=~\s*(qr?\/[^\/]+\/|\$\w+)/) {
             my $pattern = $1;
@@ -414,7 +460,7 @@ sub _analyze_code {
             $p->{matches} = $pattern unless $pattern =~ /^\$/;
             $self->_log("  CODE: $param matches pattern");
         }
-        
+
         # Required/optional checks - look for validation that parameter must be defined
         if ($code =~ /(?:die|croak|confess|carp)\s+[^;]*unless\s+(?:defined\s+)?\$param/s) {
             $p->{optional} = 0;
@@ -426,7 +472,7 @@ sub _analyze_code {
             $self->_log("  CODE: $param is required (die/croak check)");
         }
     }
-    
+
     return \%params;
 }
 
@@ -438,9 +484,9 @@ Analyze method signature to extract parameter names.
 
 sub _analyze_signature {
     my ($self, $code) = @_;
-    
+
     my %params;
-    
+
     # Classic: my ($self, $arg1, $arg2) = @_;
     if ($code =~ /my\s*\(\s*\$\w+\s*,\s*(.+?)\)\s*=\s*\@_/s) {
         my $sig = $1;
@@ -460,7 +506,7 @@ sub _analyze_signature {
             # Don't set optional here
         };
     }
-    
+
     return \%params;
 }
 
@@ -474,28 +520,28 @@ Priority: POD > Code > Signature
 
 sub _merge_parameter_analyses {
     my ($self, $pod, $code, $sig) = @_;
-    
+
     my %merged;
-    
+
     # Start with all parameters from all sources
     my %all_params = map { $_ => 1 } (
         keys %$pod,
         keys %$code,
         keys %$sig
     );
-    
+
     foreach my $param (keys %all_params) {
         my $p = $merged{$param} = {};
-        
+
         # POD has highest priority for explicit optional/required declarations
         my $pod_optional = $pod->{$param}{optional} if $pod->{$param};
         my $code_optional = $code->{$param}{optional} if $code->{$param};
-        
+
         # POD has highest priority for type info
         if ($pod->{$param}) {
             %$p = %{$pod->{$param}};
         }
-        
+
         # Code analysis adds/overrides with concrete evidence
         if ($code->{$param}) {
             foreach my $key (keys %{$code->{$param}}) {
@@ -505,7 +551,7 @@ sub _merge_parameter_analyses {
                 $p->{$key} //= $code->{$param}{$key};
             }
         }
-        
+
         # Signature fills in gaps
         if ($sig->{$param}) {
             foreach my $key (keys %{$sig->{$param}}) {
@@ -513,7 +559,7 @@ sub _merge_parameter_analyses {
                 $p->{$key} //= $sig->{$param}{$key};
             }
         }
-        
+
         # Handle optional field with priority: POD explicit > Code evidence > default required
         if (defined($pod_optional)) {
             # POD explicitly says optional or required - trust it
@@ -526,20 +572,20 @@ sub _merge_parameter_analyses {
             # Default to required
             $p->{optional} = 0;
         }
-        
+
         # Clean up internal fields
         delete $p->{_source};
     }
-    
+
     # Debug logging
     if ($self->{verbose}) {
         foreach my $param (keys %merged) {
             my $p = $merged{$param};
-            $self->_log("  MERGED $param: type=" . ($p->{type} || 'none') . 
+            $self->_log("  MERGED $param: type=" . ($p->{type} || 'none') .
                        ", optional=" . (defined($p->{optional}) ? $p->{optional} : 'undef'));
         }
     }
-    
+
     return \%merged;
 }
 
@@ -553,40 +599,40 @@ Returns: 'high', 'medium', 'low'
 
 sub _calculate_confidence {
     my ($self, $params) = @_;
-    
+
     # If no parameters detected or documented, it's low confidence
     return 'low' unless keys %$params;
-    
+
     my $total_score = 0;
     my $count = 0;
-    
+
     foreach my $param (keys %$params) {
         my $p = $params->{$param};
         my $score = 0;
-        
+
         # Type is most important
         $score += 30 if $p->{type} && $p->{type} ne 'string';  # 'string' is often just a guess
         $score += 20 if $p->{type} && $p->{type} eq 'string' && ($p->{min} || $p->{max} || $p->{matches});
-        
+
         # Constraints show understanding
         $score += 20 if defined $p->{min};
         $score += 20 if defined $p->{max};
         $score += 15 if defined $p->{optional};
         $score += 15 if $p->{matches};
-        
+
         # If we only have type='string' and nothing else, that's a weak signal
-        if ($p->{type} && $p->{type} eq 'string' && 
-            !defined($p->{min}) && !defined($p->{max}) && 
+        if ($p->{type} && $p->{type} eq 'string' &&
+            !defined($p->{min}) && !defined($p->{max}) &&
             !defined($p->{matches}) && !defined($p->{optional})) {
             $score = 10;  # Very low confidence - just guessing
         }
-        
+
         $total_score += $score;
         $count++;
     }
-    
+
     my $avg = $total_score / ($count || 1);
-    
+
     return 'high' if $avg >= 60;
     return 'medium' if $avg >= 30;
     return 'low';
@@ -600,22 +646,22 @@ Generate helpful notes about the analysis.
 
 sub _generate_notes {
     my ($self, $params) = @_;
-    
+
     my @notes;
-    
+
     foreach my $param (keys %$params) {
         my $p = $params->{$param};
-        
+
         unless ($p->{type}) {
             push @notes, "$param: type unknown - please review";
         }
-        
+
         unless (defined $p->{optional}) {
             push @notes, "$param: optional status unknown";
             # Don't automatically set - let it be undef if we don't know
         }
     }
-    
+
     return \@notes;
 }
 
@@ -627,10 +673,10 @@ Write a schema to a YAML file.
 
 sub _write_schema {
     my ($self, $method_name, $schema) = @_;
-    
+
     die if(!defined($self->{'output_dir'}));
     make_path($self->{output_dir}) unless -d $self->{output_dir};
-    
+
     my $filename = "$self->{output_dir}/${method_name}.yaml";
 
     # Extract package name for module field
@@ -639,7 +685,7 @@ sub _write_schema {
         my $package_stmt = $self->{_document}->find_first('PPI::Statement::Package');
         $package_name = $package_stmt ? $package_stmt->namespace : '';
     }
-    
+
 
     # Clean up schema for output
     my $output = {
@@ -654,7 +700,7 @@ sub _write_schema {
     if ($schema->{new}) {
         $output->{new} = $schema->{new};
     }
-    
+
     open my $fh, '>', $filename;
     print $fh YAML::XS::Dump($output);
     print $fh "\n# Run this script through fuzz-harness-generator -r\n",

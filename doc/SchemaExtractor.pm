@@ -140,12 +140,12 @@ Detects validation patterns:
 ```perl
 sub validate_email {
     my ($self, $email) = @_;
-    
+
     croak "Email required" unless defined $email;
     croak "Too short" unless length($email) >= 5;     # min: 5
     croak "Too long" unless length($email) <= 254;    # max: 254
     croak "Invalid" unless $email =~ /pattern/;       # matches: /pattern/
-    
+
     return 1;
 }
 ```
@@ -248,7 +248,7 @@ Help the extractor with inline comments:
 ```perl
 sub process {
     my ($self, $data) = @_;  # $data is arrayref
-    
+
     croak unless ref($data) eq 'ARRAY';
     # ... rest of code
 }
