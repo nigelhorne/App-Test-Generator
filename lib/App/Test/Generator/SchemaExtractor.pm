@@ -258,8 +258,11 @@ sub _analyze_pod {
         
         # Check for optional/required in description
         if ($desc) {
-            $params{$name}{optional} = 0 if $desc =~ /required|mandatory/i;
-            $params{$name}{optional} = 1 if $desc =~ /optional/i;
+            if ($desc =~ /optional/i) {
+                $params{$name}{optional} = 1;
+            } elsif ($desc =~ /required|mandatory/i) {
+                $params{$name}{optional} = 0;
+            }
             
             # Look for regex patterns in description
             if ($desc =~ m{matches?\s+(/[^/]+/|qr/.+?/)}i) {
@@ -484,6 +487,10 @@ sub _merge_parameter_analyses {
     foreach my $param (keys %all_params) {
         my $p = $merged{$param} = {};
         
+        # POD has highest priority for explicit optional/required declarations
+        my $pod_optional = $pod->{$param}{optional} if $pod->{$param};
+        my $code_optional = $code->{$param}{optional} if $code->{$param};
+        
         # POD has highest priority for type info
         if ($pod->{$param}) {
             %$p = %{$pod->{$param}};
@@ -493,13 +500,9 @@ sub _merge_parameter_analyses {
         if ($code->{$param}) {
             foreach my $key (keys %{$code->{$param}}) {
                 next if $key eq '_source';
-                # Code evidence for 'optional' always wins (it's definitive)
-                if ($key eq 'optional') {
-                    $p->{$key} = $code->{$param}{$key};
-                } else {
-                    # Other fields: code fills in gaps
-                    $p->{$key} //= $code->{$param}{$key};
-                }
+                next if $key eq 'optional';  # Handle optional separately
+                # Code fills in gaps
+                $p->{$key} //= $code->{$param}{$key};
             }
         }
         
@@ -511,10 +514,17 @@ sub _merge_parameter_analyses {
             }
         }
         
-        # Default: if we found validation code but no explicit optional flag,
-        # and the parameter is in the signature, assume it's required
-        if (!defined($p->{optional}) && (keys %$p > 0)) {
-            $p->{optional} = 0;  # Default to required if we have any info about it
+        # Handle optional field with priority: POD explicit > Code evidence > default required
+        if (defined($pod_optional)) {
+            # POD explicitly says optional or required - trust it
+            $p->{optional} = $pod_optional;
+        } elsif (defined($code_optional)) {
+            # Code has validation showing it's required
+            $p->{optional} = $code_optional;
+        } elsif (keys %$p > 0) {
+            # We have info about the param but no explicit optional flag
+            # Default to required
+            $p->{optional} = 0;
         }
         
         # Clean up internal fields

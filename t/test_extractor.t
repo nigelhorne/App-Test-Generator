@@ -2,7 +2,9 @@
 
 use strict;
 use warnings;
+
 use Test::More;
+use Test::DescribeMe qw(extended);	# New features
 use File::Temp qw(tempdir);
 use File::Spec;
 use File::Path qw(make_path);
