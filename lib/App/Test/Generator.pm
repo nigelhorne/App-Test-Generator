@@ -184,6 +184,7 @@ This is a draft definition of the schema.
     test_undef: no
     test_empty: no
     test_nuls: no
+    test_non_ascii: no
 
   input:
     number:
@@ -325,6 +326,8 @@ The current supported variables are
 =item * C<test_undef>, test with undefined value (default: 1)
 
 =item * C<test_empty>, test with empty strings (default: 1)
+
+=item * C<test_non_ascii>, test with strings that contain non ascii characaters (default: 1)
 
 =item * C<dedup>, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 
@@ -1184,7 +1187,7 @@ sub generate
 	}
 
 	# dedup: fuzzing can easily generate repeats, default is to remove duplicates
-	foreach my $field ('test_nuls', 'test_undef', 'test_empty', 'dedup') {
+	foreach my $field ('test_nuls', 'test_undef', 'test_empty', 'test_non_ascii', 'dedup') {
 		if(exists($config{$field})) {
 			if(($config{$field} eq 'false') || ($config{$field} eq 'off') || ($config{$field} eq 'no')) {
 				$config{$field} = 0;

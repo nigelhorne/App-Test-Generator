@@ -185,6 +185,10 @@ sub rand_str
 {
 	my $len = shift || int(rand(10)) + 1;
 
+	if(!$config{'test_non_ascii'}) {
+		return rand_ascii_str($len);
+	}
+
 	my @chars;
 	for (1..$len) {
 		my $r = rand();
@@ -194,7 +198,7 @@ sub rand_str
 			push @chars, chr(65 + int(rand(26)));	# A-Z
 		} elsif ($r < 0.95) {
 			push @chars, chr(48 + int(rand(10)));	# 0-9
-		} elsif ($r < 0.975) {
+		} elsif(($r < 0.975) {
 			push @chars, rand_unicode_char();	# occasional emoji/marks
 		} elsif($config{'test_nuls'}) {
 			push @chars, chr(0);	# nul byte injection
