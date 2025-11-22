@@ -85,9 +85,9 @@ print "Output directory: $opts{output_dir}\n";
 print "\n";
 
 my $extractor = App::Test::Generator::SchemaExtractor->new(
-    input_file => $input_file,
-    output_dir => $opts{output_dir},
-    verbose    => $opts{verbose},
+	input_file => $input_file,
+	output_dir => $opts{output_dir},
+	verbose    => $opts{verbose},
 );
 
 my $schemas = $extractor->extract_all();
@@ -111,7 +111,7 @@ foreach my $method (sort keys %$schemas) {
 }
 
 print "\n";
-print "Total methods: " . (scalar keys %$schemas) . "\n";
+print 'Total methods: ', (scalar keys %$schemas), "\n";
 print "  High confidence:   $confidence_counts{high}\n";
 print "  Medium confidence: $confidence_counts{medium}\n";
 print "  Low confidence:    $confidence_counts{low}\n";
