@@ -199,6 +199,9 @@ sub _analyze_method {
         $sig_params
     );
 
+    # Analyze output/return values    
+    $schema->{output} = $self->_analyze_output($method->{pod}, $method->{body});
+
     # Detect if this is an instance method that needs object instantiation
     my $needs_object = $self->_needs_object_instantiation($method->{name}, $method->{body});
     if ($needs_object) {
@@ -363,6 +366,149 @@ if ($pod =~ /=head2\s+\w+\s*\(([^)]+)\)/s) {
     }
 
     return \%params;
+}
+
+=head2 _analyze_output
+
+Analyze return values from POD and code.
+
+Looks for:
+  - Returns: section in POD
+  - return statements in code
+  - Common patterns like "returns 1 on success"
+
+=cut
+
+sub _analyze_output {
+    my ($self, $pod, $code) = @_;
+    
+    my %output;
+    
+    # Analyze POD for Returns section
+    if ($pod) {
+        # Pattern 1: Returns: section
+        if ($pod =~ /Returns?:\s*\n?\s*(.+?)(?=\n\n|\n=[a-z]|$)/si) {
+            my $returns_desc = $1;
+            $returns_desc =~ s/^\s+|\s+$//g;
+            
+            $self->_log("  OUTPUT: Found Returns section: $returns_desc");
+            
+            # Try to infer type from description
+            if ($returns_desc =~ /\b(string|text)\b/i) {
+                $output{type} = 'string';
+            } elsif ($returns_desc =~ /\b(integer|int|number|count)\b/i) {
+                $output{type} = 'integer';
+            } elsif ($returns_desc =~ /\b(float|decimal|number)\b/i) {
+                $output{type} = 'number';
+            } elsif ($returns_desc =~ /\b(boolean|true|false)\b/i) {
+                $output{type} = 'boolean';
+            } elsif ($returns_desc =~ /\b(array|list)\b/i) {
+                $output{type} = 'arrayref';
+            } elsif ($returns_desc =~ /\b(hash|hashref|dictionary)\b/i) {
+                $output{type} = 'hashref';
+            } elsif ($returns_desc =~ /\b(object|instance)\b/i) {
+                $output{type} = 'object';
+            } elsif ($returns_desc =~ /\bundef\b/i) {
+                $output{type} = 'undef';
+            }
+            
+            # Look for specific values
+            if ($returns_desc =~ /\b1\s+(?:on\s+success|if\s+successful)\b/i) {
+                $output{value} = 1;
+                $output{type} ||= 'boolean';
+                $self->_log("  OUTPUT: Returns 1 on success");
+            } elsif ($returns_desc =~ /\b0\s+(?:on\s+failure|if\s+fail)\b/i) {
+                $output{alt_value} = 0;
+            } elsif ($returns_desc =~ /dies\s+on\s+(?:error|failure)/i) {
+                $output{_STATUS} = 'LIVES';
+                $self->_log("  OUTPUT: Should not die on success");
+            }
+        }
+        
+        # Pattern 2: Inline "returns X"
+        elsif ($pod =~ /returns?\s+(?:an?\s+)?(\w+)/i) {
+            my $type = lc($1);
+            $type = 'integer' if $type eq 'int';
+            $type = 'number' if $type =~ /^(num|float)$/;
+            $type = 'boolean' if $type eq 'bool';
+            $type = 'arrayref' if $type eq 'array';
+            $type = 'hashref' if $type eq 'hash';
+            
+            $output{type} = $type;
+            $self->_log("  OUTPUT: Inferred type from POD: $type");
+        }
+    }
+    
+    # Analyze code for return statements
+    if ($code) {
+        my @return_statements;
+        
+        # Find all return statements
+        while ($code =~ /return\s+([^;]+);/g) {
+            my $return_expr = $1;
+            push @return_statements, $return_expr;
+        }
+        
+        if (@return_statements) {
+            $self->_log("  OUTPUT: Found " . scalar(@return_statements) . " return statement(s)");
+            
+            # Analyze return patterns
+            my %return_types;
+            foreach my $ret (@return_statements) {
+                $ret =~ s/^\s+|\s+$//g;
+                
+                # Literal values
+                if ($ret eq '1' || $ret eq '0') {
+                    $return_types{boolean}++;
+                } elsif ($ret =~ /^['"]/) {
+                    $return_types{string}++;
+                } elsif ($ret =~ /^-?\d+$/) {
+                    $return_types{integer}++;
+                } elsif ($ret =~ /^-?\d+\.\d+$/) {
+                    $return_types{number}++;
+                } elsif ($ret eq 'undef') {
+                    $return_types{undef}++;
+                }
+                # Data structures
+                elsif ($ret =~ /^\[/) {
+                    $return_types{arrayref}++;
+                } elsif ($ret =~ /^\{/) {
+                    $return_types{hashref}++;
+                }
+                # Variables/expressions
+                elsif ($ret =~ /\$\w+/) {
+                    # Check for array/hash dereference
+                    if ($ret =~ /\\\@/ || $ret =~ /\[.*\]/) {
+                        $return_types{arrayref}++;
+                    } elsif ($ret =~ /\\\%/ || $ret =~ /\{.*\}/) {
+                        $return_types{hashref}++;
+                    } else {
+                        $return_types{scalar}++;
+                    }
+                }
+            }
+            
+            # Determine most common return type
+            if (keys %return_types) {
+                my ($most_common) = sort { $return_types{$b} <=> $return_types{$a} } keys %return_types;
+                unless ($output{type}) {
+                    $output{type} = $most_common;
+                    $self->_log("  OUTPUT: Inferred type from code: $most_common");
+                }
+            }
+            
+            # Check for consistent single value returns
+            if (@return_statements == 1 && $return_statements[0] eq '1') {
+                $output{value} = 1;
+                $output{type} ||= 'boolean';
+            }
+        } else {
+            # No explicit return - might return nothing or implicit undef
+            $self->_log("  OUTPUT: No explicit return statement found");
+        }
+    }
+    
+    return \%output;
 }
 
 =head2 _parse_constraints
@@ -736,8 +882,7 @@ sub _write_schema {
         $package_name = $package_stmt ? $package_stmt->namespace : '';
     }
 
-
-    # Clean up schema for output
+    # Clean up schema for output - use the format expected by test generator
     my $output = {
         function => $method_name,
         # confidence => $schema->{_confidence},
@@ -756,6 +901,9 @@ sub _write_schema {
 	# if($schema->{'input'} && (scalar(keys %{$schema->{'input'}}))) {
 		$output->{'input'} = $schema->{'input'};
 	# }
+	if($schema->{'output'} && (scalar(keys %{$schema->{'output'}}))) {
+		$output->{'output'} = $schema->{'output'};
+	}
 
     # Add 'new' field if object instantiation is needed
     if ($schema->{new}) {
