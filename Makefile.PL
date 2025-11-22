@@ -17,7 +17,7 @@ WriteMakefile(
 	ABSTRACT_FROM => 'lib/App/Test/Generator.pm',
 	AUTHOR => 'Nigel Horne <njh@nigelhorne.com>',
 	LICENSE => 'GPL',
-	EXE_FILES => ['bin/fuzz-harness-generator'],
+	EXE_FILES => ['bin/fuzz-harness-generator', 'bin/extract-schemas'],
 	MIN_PERL_VERSION => '5.014',
 	PREREQ_PM => {
 		'autodie' => 0,
