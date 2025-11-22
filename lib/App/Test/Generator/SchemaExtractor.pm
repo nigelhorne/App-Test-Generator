@@ -232,11 +232,30 @@ sub _analyze_pod {
     return {} unless $pod;
 
     my %params;
+    my $position_counter = 0;
+
+# Check for positional arguments in method signature
+# Pattern: =head2 method_name($arg1, $arg2, $arg3)
+if ($pod =~ /=head2\s+\w+\s*\(([^)]+)\)/s) {
+    my $sig = $1;
+    # Extract parameter names in order
+    my @sig_params = $sig =~ /\$(\w+)/g;
+    
+    # Skip $self or $class
+    shift @sig_params if @sig_params && $sig_params[0] =~ /^(self|class)$/i;
+    
+    # Assign positions
+    foreach my $param (@sig_params) {
+        $params{$param}{position} = $position_counter++;
+        $self->_log("  POD: $param has position $params{$param}{position}");
+    }
+}
 
     # Pattern 1: Parse line-by-line in Parameters section
     # First, extract the Parameters section
     if ($pod =~ /(?:Parameters?|Arguments?):\s*\n(.*?)(?=\n\n|\n=[a-z]|$)/si) {
         my $param_section = $1;
+	my $param_order = 0;
 
         # Now parse each line that starts with $varname
         foreach my $line (split /\n/, $param_section) {
@@ -253,6 +272,12 @@ sub _analyze_pod {
                 next if $name =~ /^(self|class|return|returns?)$/i;
 
                 $params{$name} ||= { _source => 'pod' };
+
+		# If we haven't already assigned a position from the signature, use order in Parameters section
+        unless (exists $params{$name}{position}) {
+            $params{$name}{position} = $param_order++;
+            $self->_log("  POD: $name has position $params{$name}{position} (from Parameters order)");
+        }
 
                 # Normalize type names
                 $type = 'integer' if $type eq 'int';
@@ -404,71 +429,71 @@ sub _analyze_code {
         my $p = \$params{$param};
 
         # Type inference from ref() checks
-        if ($code =~ /ref\(\s*\$param\s*\)\s*eq\s*['"]ARRAY['"]/i) {
-            $p->{type} = 'arrayref';
+        if ($code =~ /ref\(\s*\$$param\s*\)\s*eq\s*['"]ARRAY['"]/i) {
+            $$p->{type} = 'arrayref';
             $self->_log("  CODE: $param is arrayref (ref check)");
         }
-        elsif ($code =~ /ref\(\s*\$param\s*\)\s*eq\s*['"]HASH['"]/i) {
-            $p->{type} = 'hashref';
+        elsif ($code =~ /ref\(\s*\$$param\s*\)\s*eq\s*['"]HASH['"]/i) {
+            $$p->{type} = 'hashref';
             $self->_log("  CODE: $param is hashref (ref check)");
         }
-        elsif ($code =~ /ref\(\s*\$param\s*\)/) {
-            $p->{type} = 'object';
+        elsif ($code =~ /ref\(\s*\$$param\s*\)/) {
+            $$p->{type} = 'object';
             $self->_log("  CODE: $param is object (ref check)");
         }
 
         # String operations suggest string type
-        if ($code =~ /\$param\s*=~/ || $code =~ /length\(\s*\$param\s*\)/) {
-            $p->{type} ||= 'string';
+        if ($code =~ /\$$param\s*=~/ || $code =~ /length\(\s*\$$param\s*\)/) {
+            $$p->{type} ||= 'string';
         }
 
         # Numeric operations suggest numeric type
-        if ($code =~ /\$param\s*[+\-*\/%]|[+\-*\/%]\s*\$param/) {
-            $p->{type} ||= 'number';
+        if ($code =~ /\$$param\s*[+\-*\/%]|[+\-*\/%]\s*\$$param/) {
+            $$p->{type} ||= 'number';
         }
 
         # Length checks for strings
-        if ($code =~ /length\(\s*\$param\s*\)\s*([<>]=?)\s*(\d+)/) {
+        if ($code =~ /length\(\s*\$$param\s*\)\s*([<>]=?)\s*(\d+)/) {
             my ($op, $val) = ($1, $2);
-            $p->{type} ||= 'string';
+            $$p->{type} ||= 'string';
             if ($op =~ /</) {
-                $p->{max} = $val;
+                $$p->{max} = $val;
                 $self->_log("  CODE: $param max=$val (length check)");
             } else {
-                $p->{min} = $val;
+                $$p->{min} = $val;
                 $self->_log("  CODE: $param min=$val (length check)");
             }
         }
 
         # Numeric range checks
-        if ($code =~ /\$param\s*([<>]=?)\s*(\d+)/) {
+        if ($code =~ /\$$param\s*([<>]=?)\s*(\d+)/) {
             my ($op, $val) = ($1, $2);
-            $p->{type} ||= 'integer';
+            $$p->{type} ||= 'integer';
             if ($op =~ /</) {
-                $p->{max} = $val;
+                $$p->{max} = $val;
                 $self->_log("  CODE: $param max=$val (numeric check)");
             } else {
-                $p->{min} = $val;
+                $$p->{min} = $val;
                 $self->_log("  CODE: $param min=$val (numeric check)");
             }
         }
 
         # Regex pattern matching
-        if ($code =~ /\$param\s*=~\s*(qr?\/[^\/]+\/|\$\w+)/) {
+        if ($code =~ /\$$param\s*=~\s*(qr?\/[^\/]+\/|\$\w+)/) {
             my $pattern = $1;
-            $p->{type} ||= 'string';
-            $p->{matches} = $pattern unless $pattern =~ /^\$/;
+            $$p->{type} ||= 'string';
+            $$p->{matches} = $pattern unless $pattern =~ /^\$/;
             $self->_log("  CODE: $param matches pattern");
         }
 
         # Required/optional checks - look for validation that parameter must be defined
-        if ($code =~ /(?:die|croak|confess|carp)\s+[^;]*unless\s+(?:defined\s+)?\$param/s) {
-            $p->{optional} = 0;
+        if ($code =~ /(?:die|croak|confess|carp)\s+[^;]*unless\s+(?:defined\s+)?\$$param/s) {
+            $$p->{optional} = 0;
             $self->_log("  CODE: $param is required (die/croak check)");
         }
         # Also check for positive checks: die if not defined
-        if ($code =~ /(?:die|croak|confess|carp)\s+[^;]*(?:if|unless)\s+!\s*(?:defined\s+)?\$param/s) {
-            $p->{optional} = 0;
+        if ($code =~ /(?:die|croak|confess|carp)\s+[^;]*(?:if|unless)\s+!\s*(?:defined\s+)?\$$param/s) {
+            $$p->{optional} = 0;
             $self->_log("  CODE: $param is required (die/croak check)");
         }
     }
@@ -486,25 +511,39 @@ sub _analyze_signature {
     my ($self, $code) = @_;
 
     my %params;
+    my $position = 0;
 
     # Classic: my ($self, $arg1, $arg2) = @_;
-    if ($code =~ /my\s*\(\s*\$\w+\s*,\s*(.+?)\)\s*=\s*\@_/s) {
-        my $sig = $1;
-        while ($sig =~ /\$(\w+)/g) {
-            $params{$1} = {
+    if ($code =~ /my\s*\(\s*\$(\w+)\s*,\s*(.+?)\)\s*=\s*\@_/s) {
+        my $first_var = $1;
+        my $rest = $2;
+        
+        # Skip $self or $class
+        if ($first_var =~ /^(self|class)$/i) {
+            # Extract remaining parameters with positions
+            while ($rest =~ /\$(\w+)/g) {
+                $params{$1} = {
+                    _source => 'signature',
+                    type => 'string',
+                    position => $position++,
+                };
+                $self->_log("  SIG: $1 has position $params{$1}{position}");
+            }
+        } else {
+            # First parameter is not self/class, include it
+            $params{$first_var} = {
                 _source => 'signature',
-                type => 'string',  # default guess
-                # Don't set optional here - let code analysis determine it
+                type => 'string',
+                position => $position++,
             };
+            while ($rest =~ /\$(\w+)/g) {
+                $params{$1} = {
+                    _source => 'signature',
+                    type => 'string',
+                    position => $position++,
+                };
+            }
         }
-    }
-    # Or: my $self = shift; my $arg = shift;
-    elsif ($code =~ /my\s+\$\w+\s*=\s*shift.*?my\s+\$(\w+)\s*=\s*shift/) {
-        $params{$1} = {
-            _source => 'signature',
-            type => 'string',
-            # Don't set optional here
-        };
     }
 
     return \%params;
@@ -547,6 +586,7 @@ sub _merge_parameter_analyses {
             foreach my $key (keys %{$code->{$param}}) {
                 next if $key eq '_source';
                 next if $key eq 'optional';  # Handle optional separately
+		next if $key eq 'position';  # Handle position separately
                 # Code fills in gaps
                 $p->{$key} //= $code->{$param}{$key};
             }
@@ -556,9 +596,19 @@ sub _merge_parameter_analyses {
         if ($sig->{$param}) {
             foreach my $key (keys %{$sig->{$param}}) {
                 next if $key eq '_source';
+		next if $key eq 'position';  # Handle position separately
                 $p->{$key} //= $sig->{$param}{$key};
             }
         }
+
+	# Handle position field with priority: POD > Signature > Code
+if ($pod->{$param} && defined($pod->{$param}{position})) {
+    $p->{position} = $pod->{$param}{position};
+} elsif ($sig->{$param} && defined($sig->{$param}{position})) {
+    $p->{position} = $sig->{$param}{position};
+} elsif ($code->{$param} && defined($code->{$param}{position})) {
+    $p->{position} = $code->{$param}{position};
+}
 
         # Handle optional field with priority: POD explicit > Code evidence > default required
         if (defined($pod_optional)) {
