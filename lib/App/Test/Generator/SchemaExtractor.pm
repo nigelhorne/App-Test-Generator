@@ -428,6 +428,10 @@ sub _analyze_output {
         # Pattern 2: Inline "returns X"
         elsif ($pod =~ /returns?\s+(?:an?\s+)?(\w+)/i) {
             my $type = lc($1);
+            
+            # Skip if it's just a number (like "returns 1")
+            next if $type =~ /^\d+$/;
+            
             $type = 'integer' if $type eq 'int';
             $type = 'number' if $type =~ /^(num|float)$/;
             $type = 'boolean' if $type eq 'bool';
