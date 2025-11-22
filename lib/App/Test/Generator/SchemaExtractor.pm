@@ -285,7 +285,7 @@ if ($pod =~ /=head2\s+\w+\s*\(([^)]+)\)/s) {
                 # Normalize type names
                 $type = 'integer' if $type eq 'int';
                 $type = 'number' if $type eq 'num' || $type eq 'float';
-                $type = 'boolean' if $type eq 'bool';
+                $type = 'boolean' if $type eq 'boolean';
                 $type = 'arrayref' if $type eq 'array';
                 $type = 'hashref' if $type eq 'hash';
 
@@ -336,7 +336,7 @@ if ($pod =~ /=head2\s+\w+\s*\(([^)]+)\)/s) {
         # Normalize type names
         $type = 'integer' if $type eq 'int';
         $type = 'number' if $type eq 'num' || $type eq 'float';
-        $type = 'boolean' if $type eq 'bool';
+        $type = 'boolean' if $type eq 'boolean';
         $type = 'arrayref' if $type eq 'array';
         $type = 'hashref' if $type eq 'hash';
 
@@ -415,7 +415,11 @@ sub _analyze_output {
             # Look for specific values
             if ($returns_desc =~ /\b1\s+(?:on\s+success|if\s+successful)\b/i) {
                 $output{value} = 1;
-                $output{type} ||= 'boolean';
+		if($output{type} eq 'scalar') {
+			$output{type} = 'boolean';
+		} else {
+			$output{type} ||= 'boolean';
+		}
                 $self->_log("  OUTPUT: Returns 1 on success");
             } elsif ($returns_desc =~ /\b0\s+(?:on\s+failure|if\s+fail)\b/i) {
                 $output{alt_value} = 0;
@@ -430,16 +434,22 @@ sub _analyze_output {
             my $type = lc($1);
             
 	        # Skip if it's just a number (like "returns 1")
-    unless ($type =~ /^\d+$/) {
         $type = 'integer' if $type eq 'int';
         $type = 'number' if $type =~ /^(num|float)$/;
-        $type = 'boolean' if $type eq 'bool';
+        $type = 'boolean' if $type eq 'boolean';
         $type = 'arrayref' if $type eq 'array';
         $type = 'hashref' if $type eq 'hash';
+	if($type =~ /^\d+$/) {
+		# if($type eq '1' || $type eq '0') {
+			# $type = 'boolean';
+		# } else {
+			$type = 'integer'
+		# }
+	}
         
         $output{type} = $type;
         $self->_log("  OUTPUT: Inferred type from POD: $type");
-    }
+	$type = 'arrayref' if($pod =~ /returns?\s+.+\slist\b/i);
         }
     }
     
