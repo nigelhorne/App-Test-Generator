@@ -2710,6 +2710,10 @@ C<seed> and C<iterations> really should be within C<config>.
 
 =item * L<https://nigelhorne.github.io/App-Test-Generator/coverage/>: Test Coverage Report
 
+=item * L<App::Test::Generator::Template> - Template of the file of tests created by C<App::Test::Generator>
+
+=item * L<App::Test::Generator::SchemaExtractor> - Project to create schemas from Perl programs
+
 =item * L<Params::Validate::Strict>: Schema Definition
 
 =item * L<Params::Get>: Input validation
