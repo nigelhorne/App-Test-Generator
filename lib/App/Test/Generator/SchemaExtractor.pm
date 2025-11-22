@@ -387,7 +387,7 @@ sub _analyze_output {
     # Analyze POD for Returns section
     if ($pod) {
         # Pattern 1: Returns: section
-        if ($pod =~ /Returns?:\s*\n?\s*(.+?)(?=\n\n|\n=[a-z]|$)/si) {
+	if ($pod =~ /Returns?:\s+(.+?)(?=\n\n|\n=[a-z]|$)/si) {
             my $returns_desc = $1;
             $returns_desc =~ s/^\s+|\s+$//g;
 
@@ -429,17 +429,17 @@ sub _analyze_output {
         elsif ($pod =~ /returns?\s+(?:an?\s+)?(\w+)/i) {
             my $type = lc($1);
             
-            # Skip if it's just a number (like "returns 1")
-            next if $type =~ /^\d+$/;
-            
-            $type = 'integer' if $type eq 'int';
-            $type = 'number' if $type =~ /^(num|float)$/;
-            $type = 'boolean' if $type eq 'bool';
-            $type = 'arrayref' if $type eq 'array';
-            $type = 'hashref' if $type eq 'hash';
-            
-            $output{type} = $type;
-            $self->_log("  OUTPUT: Inferred type from POD: $type");
+	        # Skip if it's just a number (like "returns 1")
+    unless ($type =~ /^\d+$/) {
+        $type = 'integer' if $type eq 'int';
+        $type = 'number' if $type =~ /^(num|float)$/;
+        $type = 'boolean' if $type eq 'bool';
+        $type = 'arrayref' if $type eq 'array';
+        $type = 'hashref' if $type eq 'hash';
+        
+        $output{type} = $type;
+        $self->_log("  OUTPUT: Inferred type from POD: $type");
+    }
         }
     }
     
