@@ -1103,32 +1103,36 @@ sub generate_tests
 			} elsif ($type eq 'arrayref') {
 				if (defined $spec->{min}) {
 					my $len = $spec->{min};
-					push @cases, { $field => [ (1) x ($len + 1) ] };	# just inside
-					push @cases, { $field => [ (1) x $len ] };	# border
+					push @cases,
+						{ $field => [ (1) x ($len + 1) ] },	# just inside
+						{ $field => [ (1) x $len ] };	# border
 					push @cases, { $field => [ (1) x ($len - 1) ], _STATUS => 'DIES' } if $len > 0; # outside
 				} else {
 					push @cases, { $field => [] } if($config{'test_empty'});	# No min, empty array should be allowable
 				}
 				if (defined $spec->{max}) {
 					my $len = $spec->{max};
-					push @cases, { $field => [ (1) x ($len - 1) ] };	# just inside
-					push @cases, { $field => [ (1) x $len ] };	# border
-					push @cases, { $field => [ (1) x ($len + 1) ], _STATUS => 'DIES' }; # outside
+					push @cases,
+						{ $field => [ (1) x ($len - 1) ] },	# just inside
+						{ $field => [ (1) x $len ] },	# border
+						{ $field => [ (1) x ($len + 1) ], _STATUS => 'DIES' }; # outside
 				}
 			} elsif ($type eq 'hashref') {
 				if (defined $spec->{min}) {
 					my $len = $spec->{min};
-					push @cases, { $field => { map { "k$_" => 1 }, 1 .. ($len + 1) } };
-					push @cases, { $field => { map { "k$_" => 1 }, 1 .. $len } };
+					push @cases,
+						{ $field => { map { "k$_" => 1 }, 1 .. ($len + 1) } },
+						{ $field => { map { "k$_" => 1 }, 1 .. $len } };
 					push @cases, { $field => { map { "k$_" => 1 }, 1 .. ($len - 1) }, _STATUS => 'DIES' } if $len > 0;
 				} else {
 					push @cases, { $field => {} } if($config{'test_empty'});	# No min, empty hash should be allowable
 				}
 				if (defined $spec->{max}) {
 					my $len = $spec->{max};
-					push @cases, { $field => { map { "k$_" => 1 }, 1 .. ($len - 1) } };
-					push @cases, { $field => { map { "k$_" => 1 }, 1 .. $len } };
-					push @cases, { $field => { map { "k$_" => 1 }, 1 .. ($len + 1) }, _STATUS => 'DIES' };
+					push @cases,
+						{ $field => { map { "k$_" => 1 }, 1 .. ($len - 1) } },
+						{ $field => { map { "k$_" => 1 }, 1 .. $len } },
+						{ $field => { map { "k$_" => 1 }, 1 .. ($len + 1) }, _STATUS => 'DIES' };
 				}
 			} elsif ($type eq 'boolean') {
 				push @cases, @{_generate_boolean_cases($field, $spec, \%mandatory_args)};

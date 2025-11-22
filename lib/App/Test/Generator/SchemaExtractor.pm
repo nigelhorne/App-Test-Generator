@@ -411,7 +411,7 @@ sub _analyze_output {
             } elsif ($returns_desc =~ /\bundef\b/i) {
                 $output{type} = 'undef';
             }
-            
+
             # Look for specific values
             if ($returns_desc =~ /\b1\s+(?:on\s+success|if\s+successful)\b/i) {
                 $output{value} = 1;
@@ -1001,5 +1001,13 @@ sub _log {
 }
 
 1;
+
+=head1 NOTES
+
+This is pre-pre-alpha proof of concept code.
+Nevertheless,
+it is useful for creating a template which you can modify to create a working schema to pass into L<App::Test::Generator>.
+
+=cut
 
 __END__
