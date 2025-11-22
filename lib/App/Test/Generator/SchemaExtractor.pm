@@ -742,7 +742,6 @@ sub _write_schema {
         function => $method_name,
         # confidence => $schema->{_confidence},
         # notes => $schema->{_notes},
-        input => $schema->{input},
         module => $package_name,   # Add module name
 	config => {	# err on the side of caution for now
 		test_nuls => 0,
@@ -751,6 +750,12 @@ sub _write_schema {
 		test_non_ascii => 0
 	}
     };
+
+	# TODO: build the output, since one must be given
+	# Perhaps no input is given?
+	# if($schema->{'input'} && (scalar(keys %{$schema->{'input'}}))) {
+		$output->{'input'} = $schema->{'input'};
+	# }
 
     # Add 'new' field if object instantiation is needed
     if ($schema->{new}) {
