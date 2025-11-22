@@ -199,7 +199,7 @@ sub _analyze_method {
         $sig_params
     );
 
-    # Analyze output/return values    
+    # Analyze output/return values
     $schema->{output} = $self->_analyze_output($method->{pod}, $method->{body});
 
     # Detect if this is an instance method that needs object instantiation
@@ -243,10 +243,10 @@ if ($pod =~ /=head2\s+\w+\s*\(([^)]+)\)/s) {
     my $sig = $1;
     # Extract parameter names in order
     my @sig_params = $sig =~ /\$(\w+)/g;
-    
+
     # Skip $self or $class
     shift @sig_params if @sig_params && $sig_params[0] =~ /^(self|class)$/i;
-    
+
     # Assign positions
     foreach my $param (@sig_params) {
         $params{$param}{position} = $position_counter++;
@@ -381,18 +381,18 @@ Looks for:
 
 sub _analyze_output {
     my ($self, $pod, $code) = @_;
-    
+
     my %output;
-    
+
     # Analyze POD for Returns section
     if ($pod) {
         # Pattern 1: Returns: section
         if ($pod =~ /Returns?:\s*\n?\s*(.+?)(?=\n\n|\n=[a-z]|$)/si) {
             my $returns_desc = $1;
             $returns_desc =~ s/^\s+|\s+$//g;
-            
+
             $self->_log("  OUTPUT: Found Returns section: $returns_desc");
-            
+
             # Try to infer type from description
             if ($returns_desc =~ /\b(string|text)\b/i) {
                 $output{type} = 'string';
@@ -663,7 +663,7 @@ sub _analyze_signature {
     if ($code =~ /my\s*\(\s*\$(\w+)\s*,\s*(.+?)\)\s*=\s*\@_/s) {
         my $first_var = $1;
         my $rest = $2;
-        
+
         # Skip $self or $class
         if ($first_var =~ /^(self|class)$/i) {
             # Extract remaining parameters with positions
@@ -896,11 +896,10 @@ sub _write_schema {
 	}
     };
 
-	# TODO: build the output, since one must be given
 	# Perhaps no input is given?
-	# if($schema->{'input'} && (scalar(keys %{$schema->{'input'}}))) {
+	if($schema->{'input'} && (scalar(keys %{$schema->{'input'}}))) {
 		$output->{'input'} = $schema->{'input'};
-	# }
+	}
 	if($schema->{'output'} && (scalar(keys %{$schema->{'output'}}))) {
 		$output->{'output'} = $schema->{'output'};
 	}

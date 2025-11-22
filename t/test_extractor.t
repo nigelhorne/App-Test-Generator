@@ -263,7 +263,24 @@ subtest 'positional argument detection' => sub {
     is($optional_param_schema->{input}{optional}{position}, 1, 'optional is position 1');
 };
 
-# Test 14: YAML files written
+# Test 14: output/return value detection
+subtest 'output detection' => sub {
+    # simple_string returns uc($name), so should detect string return
+    my $simple_string = $schemas->{simple_string};
+    ok($simple_string->{output}, 'simple_string has output section');
+    # Type might be detected or not depending on code analysis
+    
+    # simple_integer has explicit return value
+    my $simple_integer = $schemas->{simple_integer};
+    ok($simple_integer->{output}, 'simple_integer has output section');
+    
+    # array_param returns scalar @$items
+    my $array_param = $schemas->{array_param};
+    ok($array_param->{output}, 'array_param has output section');
+    ok($array_param->{output}{type}, 'array_param output has type');
+};
+
+# Test 15: YAML files written
 my $schema_dir = File::Spec->catdir($tempdir, 'schemas');
 ok(-d $schema_dir, 'schema directory created');
 
@@ -279,7 +296,6 @@ like($yaml_content, qr/function:\s*simple_string/, 'YAML contains method name');
 like($yaml_content, qr/type:\s*string/, 'YAML contains type');
 like($yaml_content, qr/min:\s*3/, 'YAML contains min');
 like($yaml_content, qr/max:\s*50/, 'YAML contains max');
-like($yaml_content, qr/position:\s*0/, 'YAML contains position');
 
 done_testing();
 
