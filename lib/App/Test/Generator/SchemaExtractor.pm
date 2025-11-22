@@ -744,6 +744,12 @@ sub _write_schema {
         # notes => $schema->{_notes},
         input => $schema->{input},
         module => $package_name,   # Add module name
+	config => {	# err on the side of caution for now
+		test_nuls => 0,
+		test_undef => 0,
+		test_empty => 1,
+		test_non_ascii => 0
+	}
     };
 
     # Add 'new' field if object instantiation is needed

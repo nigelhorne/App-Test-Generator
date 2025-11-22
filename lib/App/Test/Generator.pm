@@ -48,7 +48,9 @@ Version 0.16
 
 From the command line:
 
-  fuzz-harness-generator t/conf/add.yml > t/add_fuzz.t
+  fuzz-harness-generator -r t/conf/add.yml
+
+  extract-schemas bin/extract-schemas lib/Sample/Module.pm; fuzz-harness-generator -r schemas/greet.yaml
 
 From Perl:
 
