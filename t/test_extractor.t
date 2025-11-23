@@ -28,7 +28,8 @@ use Carp qw(croak);
 
 =head2 simple_string($name)
 
-Parameters:
+=head3 INPUT
+
   $name - string (3-50 chars), person's name
 
 =cut

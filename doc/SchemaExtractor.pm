@@ -120,7 +120,8 @@ The extractor looks for parameter documentation in POD:
 ```perl
 =head2 validate_email($email)
 
-Parameters:
+=head3 INPUT
+
   $email - string (5-254 chars), email address
 
 Returns: 1 if valid
