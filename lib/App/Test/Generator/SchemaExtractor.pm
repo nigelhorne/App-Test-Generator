@@ -261,14 +261,20 @@ sub _analyze_pod {
 		}
 	}
 
-	$self->_log("  Found $position_counter unnamed parameters to add to the position list");
+	$self->_log("  POD: Found $position_counter unnamed parameters to add to the position list");
 
 	# Pattern 1: Parse line-by-line in Parameters section
 	# First, extract the Parameters section
-	if ($pod =~ /(?:Parameters?|Arguments?):\s*\n(.*?)(?=\n\n|\n=[a-z]|$)/si) {
-		my $param_section = $1;
+	my $param_section;
+	if ($pod =~ /(?:Parameters?|Arguments?|Inputs?):?\s*\n(.*?)(?=\n\n|\n=[a-z]|$)/si) {
+		$param_section = $1;
+	# } elsif ($pod =~ /^=head\d+\s+(?:Parameters?|Arguments?|Inputs?)\b.*?\n(.*?)(?=^=head|\Z)/msi) {
+		# $param_section = $1;
+	}
+	if($param_section) {
 		my $param_order = 0;
 
+		$self->_log("  POD: Scan for named parameters in '$param_section'");
 		# Now parse each line that starts with $varname
 		foreach my $line (split /\n/, $param_section) {
 			# Match: $name - type (constraints), description
@@ -285,11 +291,11 @@ sub _analyze_pod {
 
 				$params{$name} ||= { _source => 'pod' };
 
-		# If we haven't already assigned a position from the signature, use order in Parameters section
-		unless (exists $params{$name}{position}) {
-			$params{$name}{position} = $param_order++;
-			$self->_log("  POD: $name has position $params{$name}{position} (from Parameters order)");
-		}
+				# If we haven't already assigned a position from the signature, use order in Parameters section
+				unless (exists $params{$name}{position}) {
+					$params{$name}{position} = $param_order++;
+					$self->_log("  POD: $name has position $params{$name}{position} (from Parameters order)");
+				}
 
 				# Normalize type names
 				$type = 'integer' if $type eq 'int';
