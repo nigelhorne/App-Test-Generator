@@ -58,6 +58,14 @@ Extract schemas for all methods in the module.
 
 Returns a hashref of method_name => schema.
 
+=head3 Pseudo Code
+
+  FOREACH method
+  DO
+    analyze the method
+    write a schema file for that method
+  END
+
 =cut
 
 sub extract_all {
@@ -65,8 +73,7 @@ sub extract_all {
 
 	$self->_log("Parsing $self->{input_file}...");
 
-	my $document = PPI::Document->new($self->{input_file})
-		or die "Failed to parse $self->{input_file}: $!";
+	my $document = PPI::Document->new($self->{input_file}) or die "Failed to parse $self->{input_file}: $!";
 
 	# Store document for later use
 	$self->{_document} = $document;
@@ -78,7 +85,7 @@ sub extract_all {
 	$self->_log("Found " . scalar(@$methods) . " methods");
 
 	my %schemas;
-	foreach my $method (@$methods) {
+	foreach my $method (@{$methods}) {
 		$self->_log("\nAnalyzing method: $method->{name}");
 
 		my $schema = $self->_analyze_method($method);
@@ -425,7 +432,7 @@ sub _analyze_output {
 				$output{alt_value} = 0;
 			} elsif ($returns_desc =~ /dies\s+on\s+(?:error|failure)/i) {
 				$output{_STATUS} = 'LIVES';
-				$self->_log("  OUTPUT: Should not die on success");
+				$self->_log('  OUTPUT: Should not die on success');
 			}
 		}
 
