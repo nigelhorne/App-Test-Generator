@@ -244,28 +244,30 @@ sub _analyze_pod {
 	my %params;
 	my $position_counter = 0;
 
-# Check for positional arguments in method signature
-# Pattern: =head2 method_name($arg1, $arg2, $arg3)
-if ($pod =~ /=head2\s+\w+\s*\(([^)]+)\)/s) {
-	my $sig = $1;
-	# Extract parameter names in order
-	my @sig_params = $sig =~ /\$(\w+)/g;
+	# Check for positional arguments in method signature
+	# Pattern: =head2 method_name($arg1, $arg2, $arg3)
+	if ($pod =~ /=head2\s+\w+\s*\(([^)]+)\)/s) {
+		my $sig = $1;
+		# Extract parameter names in order
+		my @sig_params = $sig =~ /\$(\w+)/g;
 
-	# Skip $self or $class
-	shift @sig_params if @sig_params && $sig_params[0] =~ /^(self|class)$/i;
+		# Skip $self or $class
+		shift @sig_params if @sig_params && $sig_params[0] =~ /^(self|class)$/i;
 
-	# Assign positions
-	foreach my $param (@sig_params) {
-		$params{$param}{position} = $position_counter++;
-		$self->_log("  POD: $param has position $params{$param}{position}");
+		# Assign positions
+		foreach my $param (@sig_params) {
+			$params{$param}{position} = $position_counter++;
+			$self->_log("  POD: $param has position $params{$param}{position}");
+		}
 	}
-}
+
+	$self->_log("  Found $position_counter unnamed parameters to add to the position list");
 
 	# Pattern 1: Parse line-by-line in Parameters section
 	# First, extract the Parameters section
 	if ($pod =~ /(?:Parameters?|Arguments?):\s*\n(.*?)(?=\n\n|\n=[a-z]|$)/si) {
 		my $param_section = $1;
-	my $param_order = 0;
+		my $param_order = 0;
 
 		# Now parse each line that starts with $varname
 		foreach my $line (split /\n/, $param_section) {
