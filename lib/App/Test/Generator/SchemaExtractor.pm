@@ -268,8 +268,8 @@ sub _analyze_pod {
 	my $param_section;
 	if ($pod =~ /(?:Parameters?|Arguments?|Inputs?):?\s*\n(.*?)(?=\n\n|\n=[a-z]|$)/si) {
 		$param_section = $1;
-	# } elsif ($pod =~ /^=head\d+\s+(?:Parameters?|Arguments?|Inputs?)\b.*?\n(.*?)(?=^=head|\Z)/msi) {
-		# $param_section = $1;
+	} elsif ($pod =~ /^=head\d+\s+(?:Parameters?|Arguments?|Inputs?)\b.*?\n(.*?)(?=^=head|\Z)/msi) {
+		$param_section = $1;
 	}
 	if($param_section) {
 		my $param_order = 0;
@@ -319,6 +319,11 @@ sub _analyze_pod {
 				} elsif ($full_text =~ /required|mandatory/i) {
 					$params{$name}{optional} = 0;
 					$self->_log("  POD: $name marked as required");
+				}
+
+				# Detect semantic types:
+				if ($desc =~ /\b(email|url|uri|path|filename)\b/i) {
+					$params{$name}{semantic} = lc($1);
 				}
 
 				# Look for regex patterns
@@ -479,6 +484,19 @@ sub _analyze_output {
 	if ($code) {
 		my @return_statements;
 
+		# Detect blessed refs
+		if ($code =~ /return\s+bless\s*\{[^}]*\}\s*,\s*['"]?(\w+)['"]?/s) {
+			$output{type} = 'object';
+			$output{class} = $1;
+		} elsif ($code =~ /return\s+bless\s*\{\s*$/sm) {
+			$output{type} = 'object';
+			$self->_log('  OUTPUT: Bless found, inferring type from code is object');
+		} elsif ($code =~ /return\s*\([^)]+,\s*[^)]+\)/) {
+			# Detect array context returns
+			$output{type} = 'array';  # Not arrayref - actual array
+			$self->_log('  OUTPUT: Found array contect return');
+		}
+
 		# Find all return statements
 		while ($code =~ /return\s+([^;]+);/g) {
 			my $return_expr = $1;
@@ -490,6 +508,10 @@ sub _analyze_output {
 
 			# Analyze return patterns
 			my %return_types;
+
+			if($output{'type'}) {
+				$return_types{$output{'type'}}++;	# Add weighting to what's already been found
+			}
 			foreach my $ret (@return_statements) {
 				$ret =~ s/^\s+|\s+$//g;
 
@@ -520,7 +542,7 @@ sub _analyze_output {
 						if ($ret =~ /\\\%/) {
 							$return_types{hashref}++;
 						} elsif ($ret =~ /bless\s*\{/) {
-							$return_types{object} += 2;	# Higher weighting
+							$return_types{object} += 2;	# Higher weight
 						} elsif ($ret =~ /^\{[^}]*\}$/) {
 							$return_types{hashref}++;
 						}
@@ -541,8 +563,9 @@ sub _analyze_output {
 
 			# Check for consistent single value returns
 			if (@return_statements == 1 && $return_statements[0] eq '1') {
-				$output{value} = 1;
+				# $output{value} = 1;
 				$output{type} ||= 'boolean';
+				$self->_log("  OUTPUT: Type already set to '$output{type}', overriding with boolean") if($output{'type'});
 			}
 		} else {
 			# No explicit return - might return nothing or implicit undef
@@ -550,7 +573,8 @@ sub _analyze_output {
 		}
 	}
 
-	return \%output;
+	# Don't return empty output
+	return (keys %output) ? \%output : {};
 }
 
 =head2 _parse_constraints
