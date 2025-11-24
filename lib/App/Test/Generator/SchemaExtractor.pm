@@ -430,11 +430,11 @@ sub _analyze_output {
 			# Look for specific values
 			if ($returns_desc =~ /\b1\s+(?:on\s+success|if\s+successful)\b/i) {
 				$output{value} = 1;
-		if($output{type} eq 'scalar') {
-			$output{type} = 'boolean';
-		} else {
-			$output{type} ||= 'boolean';
-		}
+				if($output{type} eq 'scalar') {
+					$output{type} = 'boolean';
+				} else {
+					$output{type} ||= 'boolean';
+				}
 				$self->_log("  OUTPUT: Returns 1 on success");
 			} elsif ($returns_desc =~ /\b0\s+(?:on\s+failure|if\s+fail)\b/i) {
 				$output{alt_value} = 0;
@@ -455,11 +455,18 @@ sub _analyze_output {
 			$type = 'arrayref' if $type eq 'array';
 			$type = 'hashref' if $type eq 'hash';
 			if($type =~ /^\d+$/) {
-				# if($type eq '1' || $type eq '0') {
-					# $type = 'boolean';
-				# } else {
+				if($type eq '1' || $type eq '0') {
+					# Try hard to guess if the result is a boolean
+					if($pod =~ /1 on success.+0 (on|if) /i) {
+						$type = 'boolean';
+					} elsif($pod =~ /return 0 .+ 1 on success/) {
+						$type = 'boolean';
+					} else {
+						$type = 'integer'
+					}
+				} else {
 					$type = 'integer'
-				# }
+				}
 			}
 
 			$type = 'arrayref' if($pod =~ /returns?\s+.+\slist\b/i);
