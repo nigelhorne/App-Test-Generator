@@ -351,7 +351,7 @@ sub _analyze_pod {
 		# Normalize type names
 		$type = 'integer' if $type eq 'int';
 		$type = 'number' if $type eq 'num' || $type eq 'float';
-		$type = 'boolean' if $type eq 'boolean';
+		$type = 'boolean' if $type eq 'bool';
 		$type = 'arrayref' if $type eq 'array';
 		$type = 'hashref' if $type eq 'hash';
 
@@ -402,7 +402,7 @@ sub _analyze_output {
 	# Analyze POD for Returns section
 	if ($pod) {
 		# Pattern 1: Returns: section
-	if ($pod =~ /Returns?:\s+(.+?)(?=\n\n|\n=[a-z]|$)/si) {
+		if ($pod =~ /Returns?:\s+(.+?)(?=\n\n|\n=[a-z]|$)/si) {
 			my $returns_desc = $1;
 			$returns_desc =~ s/^\s+|\s+$//g;
 
@@ -445,7 +445,7 @@ sub _analyze_output {
 		}
 
 		# Pattern 2: Inline "returns X"
-		elsif ($pod =~ /returns?\s+(?:an?\s+)?(\w+)/i) {
+		if(!scalar(keys %output) && ($pod =~ /returns?\s+(?:an?\s+)?(\w+)/i)) {
 			my $type = lc($1);
 
 			# Skip if it's just a number (like "returns 1")
@@ -462,10 +462,10 @@ sub _analyze_output {
 					} elsif($pod =~ /return 0 .+ 1 on success/) {
 						$type = 'boolean';
 					} else {
-						$type = 'integer'
+						$type = 'integer';
 					}
 				} else {
-					$type = 'integer'
+					$type = 'integer';
 				}
 			}
 
