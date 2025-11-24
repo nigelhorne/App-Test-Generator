@@ -37,6 +37,9 @@ Analyzes Perl modules and generates YAML schema files for test generation.
 Uses POD documentation, code patterns, and heuristics to infer parameter types
 and constraints.
 
+Private methods are not included,
+unless C<include_private> is used in C<new()>.
+
 =cut
 
 sub new {
@@ -47,7 +50,14 @@ sub new {
 		output_dir => $args{output_dir} || 'schemas',
 		verbose	=> $args{verbose} || 0,
 		confidence_threshold => $args{confidence_threshold} || 0.5,
+		include_private => $args{include_private} || 0,  # include _private methods
+		max_parameters => $args{max_parameters} || 20,   # safety limit
 	};
+
+	# Validate input file exists
+	unless (-f $self->{input_file}) {
+		croak(__PACKAGE__, ": Input file '$self->{input_file}' does not exist");
+	}
 
 	return bless $self, $class;
 }
@@ -115,7 +125,7 @@ sub _extract_package_name {
 
 Find all subroutines/methods in the document.
 
-Returns arrayref of hashrefs with structure:
+Returns an arrayref of hashrefs with the structure:
   { name => $name, node => $ppi_node, body => $code_text }
 
 =cut
@@ -124,13 +134,16 @@ sub _find_methods {
 	my ($self, $document) = @_;
 
 	my $subs = $document->find('PPI::Statement::Sub') || [];
+	my $sub_decls = $document->find('PPI::Statement::Scheduled') || []; # for method modifiers
 
 	my @methods;
 	foreach my $sub (@$subs) {
-		my $name = $sub->name;
+		my $name = $sub->name();
 
-		# Skip private methods (starting with _) unless they're special
-		next if $name =~ /^_/ && $name !~ /^_(new|init)/;
+		# Skip private methods unless explicitly included, or they're special
+		if ($name =~ /^_/ && $name !~ /^_(new|init|build)/) {
+			next unless $self->{include_private};
+		}
 
 		# Get the POD before this sub
 		my $pod = $self->_extract_pod_before($sub);
@@ -138,9 +151,39 @@ sub _find_methods {
 		push @methods, {
 			name => $name,
 			node => $sub,
-			body => $sub->content,
+			body => $sub->content(),
 			pod => $pod,
+			type => 'sub',
 		};
+	}
+
+	# Process method modifiers (Moose)
+	foreach my $decl (@$sub_decls) {
+		my $content = $decl->content;
+		if ($content =~ /^(before|after|around)\s+['"]?(\w+)['"]?\s*/) {
+			my ($modifier, $method_name) = ($1, $2);
+			my $full_name = "${modifier}_$method_name";
+
+			# Look for the actual sub definition that follows
+			my $next_sib = $decl->next_sibling;
+			while ($next_sib && !$next_sib->isa('PPI::Statement::Sub')) {
+				$next_sib = $next_sib->next_sibling;
+			}
+
+			if ($next_sib && $next_sib->isa('PPI::Statement::Sub')) {
+				my $pod = $self->_extract_pod_before($decl); # POD might be before modifier
+				push @methods, {
+					name => $full_name,
+					node => $next_sib,
+					body => $next_sib->content,
+					pod => $pod,
+					type => 'modifier',
+					original_method => $method_name,
+					modifier => $modifier,
+				};
+				$self->_log("  Found method modifier: $full_name");
+			}
+		}
 	}
 
 	return \@methods;
@@ -156,14 +199,21 @@ sub _extract_pod_before {
 	my ($self, $sub) = @_;
 
 	my $pod = '';
-	my $current = $sub->previous_sibling;
+	my $current = $sub->previous_sibling();
 
 	# Walk backwards collecting POD
 	while ($current) {
 		if ($current->isa('PPI::Token::Pod')) {
 			$pod = $current->content . $pod;
-		} elsif ($current->isa('PPI::Token::Whitespace')) {
-			# Skip whitespace
+			        } elsif ($current->isa('PPI::Token::Comment')) {
+            # Include comments that might contain parameter info
+            my $comment = $current->content;
+            if ($comment =~ /#\s*(?:param|arg|input)\s+\$(\w+)\s*:\s*(.+)/i) {
+                $pod .= "=item \$$1\n$2\n\n";
+            }
+        } elsif ($current->isa('PPI::Token::Whitespace') || 
+                 $current->isa('PPI::Token::Separator')) {
+            # Skip whitespace and separators
 		} else {
 			# Hit non-POD, non-whitespace - stop
 			last;
@@ -921,7 +971,7 @@ sub _calculate_input_confidence {
 		my $score = 0;
 
 		# Type is most important
-		$score += 30 if $p->{type} && $p->{type} ne 'string';  # 'string' is often just a guess
+		$score += 30 if $p->{type} && $p->{type} ne 'string';	# 'string' is often just a guess
 		$score += 20 if $p->{type} && $p->{type} eq 'string' && ($p->{min} || $p->{max} || $p->{matches});
 
 		# Constraints show understanding
@@ -934,7 +984,7 @@ sub _calculate_input_confidence {
 		if ($p->{type} && $p->{type} eq 'string' &&
 			!defined($p->{min}) && !defined($p->{max}) &&
 			!defined($p->{matches}) && !defined($p->{optional})) {
-			$score = 10;  # Very low confidence - just guessing
+			$score = 10;	# Very low confidence - just guessing
 		}
 
 		$total_score += $score;
@@ -1036,8 +1086,8 @@ sub _write_schema {
 	open my $fh, '>', $filename;
 	print $fh YAML::XS::Dump($output);
 	print $fh "\n# Run this script through fuzz-harness-generator -r\n",
-		"# Input Confidence $schema->{_confidence}{input}\n",
-		"# Output Confidence $schema->{_confidence}{output}\n";
+		"# Input confidence: $schema->{_confidence}{input}\n",
+		"# Output confidence: $schema->{_confidence}{output}\n";
 	if($self->{_notes} && scalar(@{$self->{_notes}})) {
 		print $fh "# Notes:\n";
 		foreach my $note (@{$schema->{_notes}}) {
@@ -1046,7 +1096,7 @@ sub _write_schema {
 	}
 	close $fh;
 
-	$self->_log("  Wrote: $filename (confidence: $schema->{_confidence})" .
+	$self->_log("  Wrote: $filename (input confidence: $schema->{_confidence}{input})" .
 				($schema->{new} ? " [requires: $schema->{new}]" : ""));
 }
 
