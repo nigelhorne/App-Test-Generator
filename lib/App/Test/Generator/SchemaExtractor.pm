@@ -9,6 +9,7 @@ use Pod::Simple::Text;
 use YAML::XS;
 use File::Basename;
 use File::Path qw(make_path);
+use Scalar::Util qw(looks_like_number);
 
 our $VERSION = '0.01';
 
@@ -72,8 +73,8 @@ Returns a hashref of method_name => schema.
 
   FOREACH method
   DO
-    analyze the method
-    write a schema file for that method
+	analyze the method
+	write a schema file for that method
   END
 
 =cut
@@ -205,15 +206,15 @@ sub _extract_pod_before {
 	while ($current) {
 		if ($current->isa('PPI::Token::Pod')) {
 			$pod = $current->content . $pod;
-			        } elsif ($current->isa('PPI::Token::Comment')) {
-            # Include comments that might contain parameter info
-            my $comment = $current->content;
-            if ($comment =~ /#\s*(?:param|arg|input)\s+\$(\w+)\s*:\s*(.+)/i) {
-                $pod .= "=item \$$1\n$2\n\n";
-            }
-        } elsif ($current->isa('PPI::Token::Whitespace') ||
-                 $current->isa('PPI::Token::Separator')) {
-            # Skip whitespace and separators
+					} elsif ($current->isa('PPI::Token::Comment')) {
+			# Include comments that might contain parameter info
+			my $comment = $current->content;
+			if ($comment =~ /#\s*(?:param|arg|input)\s+\$(\w+)\s*:\s*(.+)/i) {
+				$pod .= "=item \$$1\n$2\n\n";
+			}
+		} elsif ($current->isa('PPI::Token::Whitespace') ||
+				 $current->isa('PPI::Token::Separator')) {
+			# Skip whitespace and separators
 		} else {
 			# Hit non-POD, non-whitespace - stop
 			last;
@@ -262,6 +263,9 @@ sub _analyze_method {
 	# Analyze output/return values
 	$schema->{output} = $self->_analyze_output($method->{pod}, $method->{body});
 
+	# Detect accessor methods
+	$self->_detect_accessor_methods($method, $schema);
+
 	# Detect if this is an instance method that needs object instantiation
 	my $needs_object = $self->_needs_object_instantiation($method->{name}, $method->{body});
 	if ($needs_object) {
@@ -277,6 +281,35 @@ sub _analyze_method {
 	$schema->{_notes} = $self->_generate_notes($schema->{input});
 
 	return $schema;
+}
+
+# Add method to detect accessor methods
+sub _detect_accessor_methods {
+	my ($self, $method, $schema) = @_;
+
+	my $body = $method->{body};
+	my $name = $method->{name};
+
+	# Simple getter: return $self->{field};
+	if ($body =~ /return\s+\$self\s*->\s*\{([^}]+)\}\s*;/) {
+		$schema->{_accessor} = { type => 'getter', field => $1 };
+		$self->_log("  Detected getter accessor for field: $1");
+	}
+
+	# Setter: $self->{field} = $value; return $self;
+	elsif ($body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*\$(\w+)\s*;/ &&
+		   $body =~ /return\s+\$self\s*;/) {
+		$schema->{_accessor} = { type => 'setter', field => $1, param => $2 };
+		$self->_log("  Detected setter accessor for field: $1");
+	}
+
+	# Getter/Setter combination
+	elsif ($body =~ /if\s*\(\s*\@_\s*>\s*1\s*\)/ &&
+		   $body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*shift\s*;/ &&
+		   $body =~ /return\s+\$self\s*->\s*\{[^}]+\}\s*;/) {
+		$schema->{_accessor} = { type => 'getset', field => $1 };
+		$self->_log("  Detected getter/setter accessor for field: $1");
+	}
 }
 
 =head2 _analyze_pod
@@ -790,95 +823,182 @@ Looks for common validation patterns:
 
 =cut
 
+# Enhanced _analyze_code with more pattern detection
 sub _analyze_code {
 	my ($self, $code) = @_;
 
 	my %params;
 
-	# Extract parameter names from signature
-	if ($code =~ /my\s*\(\s*\$\w+\s*,\s*(.+?)\)\s*=\s*\@_/s) {
-		my $sig = $1;
-		while ($sig =~ /\$(\w+)/g) {
-			$params{$1} ||= { _source => 'code' };
-		}
-	}
+	# Safety check - limit parameter analysis to prevent runaway processing
+	my $param_count = 0;
 
-	# Analyze each parameter
+	# Extract parameter names from various signature styles
+	$self->_extract_parameters_from_signature(\%params, $code);
+
+	# Analyze each parameter (with safety limit)
 	foreach my $param (keys %params) {
+		last if $param_count++ > $self->{max_parameters};
+
 		my $p = \$params{$param};
 
-		# Type inference from ref() checks
-		if ($code =~ /ref\(\s*\$$param\s*\)\s*eq\s*['"]ARRAY['"]/i) {
-			$$p->{type} = 'arrayref';
-			$self->_log("  CODE: $param is arrayref (ref check)");
-		}
-		elsif ($code =~ /ref\(\s*\$$param\s*\)\s*eq\s*['"]HASH['"]/i) {
-			$$p->{type} = 'hashref';
-			$self->_log("  CODE: $param is hashref (ref check)");
-		}
-		elsif ($code =~ /ref\(\s*\$$param\s*\)/) {
-			$$p->{type} = 'object';
-			$self->_log("  CODE: $param is object (ref check)");
-		}
-
-		# String operations suggest string type
-		if ($code =~ /\$$param\s*=~/ || $code =~ /length\(\s*\$$param\s*\)/) {
-			$$p->{type} ||= 'string';
-		}
-
-		# Numeric operations suggest numeric type
-		if ($code =~ /\$$param\s*[+\-*\/%]|[+\-*\/%]\s*\$$param/) {
-			$$p->{type} ||= 'number';
-		}
-
-		# Length checks for strings
-		if ($code =~ /length\(\s*\$$param\s*\)\s*([<>]=?)\s*(\d+)/) {
-			my ($op, $val) = ($1, $2);
-			$$p->{type} ||= 'string';
-			if ($op =~ /</) {
-				$$p->{max} = $val;
-				$self->_log("  CODE: $param max=$val (length check)");
-			} else {
-				$$p->{min} = $val;
-				$self->_log("  CODE: $param min=$val (length check)");
-			}
-		}
-
-		# Numeric range checks
-		if ($code =~ /\$$param\s*([<>]=?)\s*(\d+)/) {
-			my ($op, $val) = ($1, $2);
-			$$p->{type} ||= 'integer';
-			if ($op =~ /</) {
-				$$p->{max} = $val;
-				$self->_log("  CODE: $param max=$val (numeric check)");
-			} else {
-				$$p->{min} = $val;
-				$self->_log("  CODE: $param min=$val (numeric check)");
-			}
-		}
-
-		# Regex pattern matching
-		if ($code =~ /\$$param\s*=~\s*(qr?\/[^\/]+\/|\$\w+)/) {
-			my $pattern = $1;
-			$$p->{type} ||= 'string';
-			$$p->{matches} = $pattern unless $pattern =~ /^\$/;
-			$self->_log("  CODE: $param matches pattern");
-		}
-
-		# Required/optional checks - look for validation that parameter must be defined
-		if ($code =~ /(?:die|croak|confess|carp)\s+[^;]*unless\s+(?:defined\s+)?\$$param/s) {
-			$$p->{optional} = 0;
-			$self->_log("  CODE: $param is required (die/croak check)");
-		}
-		# Also check for positive checks: die if not defined
-		if ($code =~ /(?:die|croak|confess|carp)\s+[^;]*(?:if|unless)\s+!\s*(?:defined\s+)?\$$param/s) {
-			$$p->{optional} = 0;
-			$self->_log("  CODE: $param is required (die/croak check)");
-		}
+		$self->_analyze_parameter_type($p, $param, $code);
+		$self->_analyze_parameter_constraints($p, $param, $code);
+		$self->_analyze_parameter_validation($p, $param, $code);
 	}
 
 	return \%params;
 }
+
+sub _extract_parameters_from_signature {
+	my ($self, $params, $code) = @_;
+
+	# Style 1: my ($self, $arg1, $arg2) = @_;
+	if ($code =~ /my\s*\(\s*\$\w+\s*,\s*(.+?)\)\s*=\s*\@_/s) {
+		my $sig = $1;
+		while ($sig =~ /\$(\w+)/g) {
+			$params->{$1} ||= { _source => 'code' };
+		}
+	}
+
+	# Style 2: my $self = shift; my $arg1 = shift; ...
+	elsif ($code =~ /my\s+\$self\s*=\s*shift/) {
+		my @shifts;
+		while ($code =~ /my\s+\$(\w+)\s*=\s*shift/g) {
+			push @shifts, $1;
+		}
+		# Skip $self and get parameters
+		shift @shifts if @shifts && $shifts[0] =~ /^(self|class)$/i;
+		foreach my $param (@shifts) {
+			$params->{$param} ||= { _source => 'code' };
+		}
+	}
+
+	# Style 3: Function parameters (no $self)
+	if ($code =~ /my\s*\(\s*([^)]+)\)\s*=\s*\@_/s) {
+		my $sig = $1;
+		my @params = $sig =~ /\$(\w+)/g;
+		foreach my $param (@params) {
+			next if $param =~ /^(self|class)$/i;
+			$params->{$param} ||= { _source => 'code' };
+		}
+	}
+}
+
+sub _analyze_parameter_type {
+	my ($self, $p_ref, $param, $code) = @_;
+	my $p = $$p_ref;
+
+	# Type inference from ref() checks
+	if ($code =~ /ref\s*\(\s*\$$param\s*\)\s*eq\s*['"](ARRAY|HASH|SCALAR)['"]/gi) {
+		my $reftype = lc($1);
+		$p->{type} = $reftype eq 'array' ? 'arrayref' :
+					 $reftype eq 'hash' ? 'hashref' :
+					 'scalar';
+		$self->_log("  CODE: $param is $p->{type} (ref check)");
+	}
+
+	# ISA checks for objects
+	elsif ($code =~ /\$$param\s*->\s*isa\s*\(\s*['"]([^'"]+)['"]\s*\)/i) {
+		$p->{type} = 'object';
+		$p->{class} = $1;
+		$self->_log("  CODE: $param is object of class $1");
+	}
+
+	# Blessed references
+	elsif ($code =~ /bless\s+.*\$$param/) {
+		$p->{type} = 'object';
+		$self->_log("  CODE: $param is blessed object");
+	}
+
+	# Array/hash operations
+	if (!$p->{type}) {
+		if ($code =~ /\@\{\s*\$$param\s*\}/ || $code =~ /push\s*\(\s*\@?\$$param/) {
+			$p->{type} = 'arrayref';
+		}
+		elsif ($code =~ /\%\{\s*\$$param\s*\}/ || $code =~ /\$$param\s*->\s*\{/) {
+			$p->{type} = 'hashref';
+		}
+	}
+}
+
+sub _analyze_parameter_constraints {
+	my ($self, $p_ref, $param, $code) = @_;
+	my $p = $$p_ref;
+
+	# Length checks for strings
+	if ($code =~ /length\s*\(\s*\$$param\s*\)\s*([<>]=?)\s*(\d+)/) {
+		my ($op, $val) = ($1, $2);
+		$p->{type} ||= 'string';
+		if ($op eq '<') {
+			$p->{max} = $val - 1;
+		} elsif ($op eq '<=') {
+			$p->{max} = $val;
+		} elsif ($op eq '>') {
+			$p->{min} = $val + 1;
+		} elsif ($op eq '>=') {
+			$p->{min} = $val;
+		}
+		$self->_log("  CODE: $param length constraint $op $val");
+	}
+
+	# Numeric range checks
+	if ($code =~ /\$$param\s*([<>]=?)\s*([+-]?(?:\d+\.?\d*|\.\d+))/) {
+		my ($op, $val) = ($1, $2);
+		$p->{type} ||= looks_like_number($val) ? 'number' : 'integer';
+		if ($op eq '<') {
+			$p->{max} = $val - 1;
+		} elsif ($op eq '<=') {
+			$p->{max} = $val;
+		} elsif ($op eq '>') {
+			$p->{min} = $val + 1;
+		} elsif ($op eq '>=') {
+			$p->{min} = $val;
+		}
+		$self->_log("  CODE: $param numeric constraint $op $val");
+	}
+
+	# Regex pattern matching with better capture
+	if ($code =~ /\$$param\s*=~\s*((?:qr?\/[^\/]+\/|\$[\w:]+|\$\{\w+\}))/) {
+		my $pattern = $1;
+		$p->{type} ||= 'string';
+
+		# Clean up the pattern if it's a straightforward regex
+		if ($pattern =~ /^qr?\/([^\/]+)\/$/) {
+			$p->{matches} = "/$1/";
+		} else {
+			$p->{matches} = $pattern;
+		}
+		$self->_log("  CODE: $param matches pattern: $p->{matches}");
+	}
+}
+
+sub _analyze_parameter_validation {
+	my ($self, $p_ref, $param, $code) = @_;
+	my $p = $$p_ref;
+
+	# Required/optional checks
+	my $is_required = 0;
+
+	# Die/croak if not defined
+	if ($code =~ /(?:die|croak|confess)\s+[^;]*unless\s+(?:defined\s+)?\$$param/s) {
+		$is_required = 1;
+	}
+
+	# Default values suggest optional
+	if ($code =~ /\$$param\s*=\s*\$$param\s*\|\|\s*[^;]+/ ||
+		$code =~ /\$$param\s*=\s*[^;]*unless\s+defined\s+\$$param/) {
+		$p->{optional} = 1;
+		$p->{default} = 'unknown'; # We could try to extract the actual default
+		$self->_log("  CODE: $param has default value (optional)");
+	}
+
+	# Explicit required check overrides default detection
+	if ($is_required) {
+		$p->{optional} = 0;
+		$self->_log("  CODE: $param is required (validation check)");
+	}
+}
+
 
 =head2 _analyze_signature
 
@@ -936,71 +1056,63 @@ Priority: POD > Code > Signature
 
 =cut
 
+# Enhanced merge with better position handling
 sub _merge_parameter_analyses {
 	my ($self, $pod, $code, $sig) = @_;
 
 	my %merged;
 
 	# Start with all parameters from all sources
-	my %all_params = map { $_ => 1 } (
-		keys %$pod,
-		keys %$code,
-		keys %$sig
-	);
+	my %all_params = map { $_ => 1 } (keys %$pod, keys %$code, keys %$sig);
 
 	foreach my $param (keys %all_params) {
 		my $p = $merged{$param} = {};
 
-		# POD has highest priority for explicit optional/required declarations
-		my $pod_optional = $pod->{$param}{optional} if $pod->{$param};
-		my $code_optional = $code->{$param}{optional} if $code->{$param};
+		# Collect position from all sources
+		my @positions;
+		push @positions, $pod->{$param}{position} if $pod->{$param} && defined $pod->{$param}{position};
+		push @positions, $sig->{$param}{position} if $sig->{$param} && defined $sig->{$param}{position};
+		push @positions, $code->{$param}{position} if $code->{$param} && defined $code->{$param}{position};
 
-		# POD has highest priority for type info
-		if ($pod->{$param}) {
-			%$p = %{$pod->{$param}};
+		# Use the most common position, or lowest if tie
+		if (@positions) {
+			my %pos_count;
+			$pos_count{$_}++ for @positions;
+			my ($best_pos) = sort { $pos_count{$b} <=> $pos_count{$a} || $a <=> $b } keys %pos_count;
+			$p->{position} = $best_pos;
 		}
 
-		# Code analysis adds/overrides with concrete evidence
+		# POD has highest priority for type info and explicit declarations
+		if ($pod->{$param}) {
+			%$p = (%$p, %{$pod->{$param}});
+		}
+
+		# Code analysis adds concrete evidence (but doesn't override POD explicit types)
 		if ($code->{$param}) {
 			foreach my $key (keys %{$code->{$param}}) {
 				next if $key eq '_source';
-				next if $key eq 'optional';  # Handle optional separately
-		next if $key eq 'position';  # Handle position separately
-				# Code fills in gaps
-				$p->{$key} //= $code->{$param}{$key};
+				next if $key eq 'position';
+
+				# Only override if POD didn't provide this info or it's a stronger signal
+				if (!exists $p->{$key} ||
+					($key eq 'type' && $p->{_source} && $p->{_source} eq 'pod' &&
+					 $p->{type} eq 'string' && $code->{$param}{$key} ne 'string')) {
+					$p->{$key} = $code->{$param}{$key};
+				}
 			}
 		}
 
-		# Signature fills in gaps
+		# Signature fills in remaining gaps
 		if ($sig->{$param}) {
 			foreach my $key (keys %{$sig->{$param}}) {
 				next if $key eq '_source';
-		next if $key eq 'position';  # Handle position separately
+				next if $key eq 'position';
 				$p->{$key} //= $sig->{$param}{$key};
 			}
 		}
 
-	# Handle position field with priority: POD > Signature > Code
-if ($pod->{$param} && defined($pod->{$param}{position})) {
-	$p->{position} = $pod->{$param}{position};
-} elsif ($sig->{$param} && defined($sig->{$param}{position})) {
-	$p->{position} = $sig->{$param}{position};
-} elsif ($code->{$param} && defined($code->{$param}{position})) {
-	$p->{position} = $code->{$param}{position};
-}
-
-		# Handle optional field with priority: POD explicit > Code evidence > default required
-		if (defined($pod_optional)) {
-			# POD explicitly says optional or required - trust it
-			$p->{optional} = $pod_optional;
-		} elsif (defined($code_optional)) {
-			# Code has validation showing it's required
-			$p->{optional} = $code_optional;
-		} elsif (keys %$p > 0) {
-			# We have info about the param but no explicit optional flag
-			# Default to required
-			$p->{optional} = 0;
-		}
+		# Handle optional field with better logic
+		$self->_determine_optional_status($p, $pod->{$param}, $code->{$param});
 
 		# Clean up internal fields
 		delete $p->{_source};
@@ -1008,15 +1120,39 @@ if ($pod->{$param} && defined($pod->{$param}{position})) {
 
 	# Debug logging
 	if ($self->{verbose}) {
-		foreach my $param (keys %merged) {
+		foreach my $param (sort { ($merged{$a}{position} || 999) <=> ($merged{$b}{position} || 999) } keys %merged) {
 			my $p = $merged{$param};
-			$self->_log("  MERGED $param: type=" . ($p->{type} || 'none') .
-					   ", optional=" . (defined($p->{optional}) ? $p->{optional} : 'undef'));
+			$self->_log("  MERGED $param: " .
+					"pos=" . ($p->{position} || 'none') .
+					", type=" . ($p->{type} || 'none') .
+					", optional=" . (defined($p->{optional}) ? $p->{optional} : 'undef'));
 		}
 	}
 
 	return \%merged;
 }
+
+sub _determine_optional_status {
+	my ($self, $merged_param, $pod_param, $code_param) = @_;
+
+	my $pod_optional = $pod_param ? $pod_param->{optional} : undef;
+	my $code_optional = $code_param ? $code_param->{optional} : undef;
+
+	# Explicit POD declaration wins
+	if (defined $pod_optional) {
+		$merged_param->{optional} = $pod_optional;
+	}
+	# Code validation evidence
+	elsif (defined $code_optional) {
+		$merged_param->{optional} = $code_optional;
+	}
+	# Default: if we have any info about the param, assume required
+	elsif (keys %$merged_param > 0) {
+		$merged_param->{optional} = 0;
+	}
+	# Otherwise leave undef (unknown)
+}
+
 
 =head2 _calculate_confidence
 
@@ -1029,8 +1165,7 @@ Returns: 'high', 'medium', 'low'
 sub _calculate_input_confidence {
 	my ($self, $params) = @_;
 
-	# If no parameters detected or documented, it's low confidence
-	return 'low' unless keys %$params;
+	return 'none' unless keys %$params;
 
 	my $total_score = 0;
 	my $count = 0;
@@ -1039,32 +1174,37 @@ sub _calculate_input_confidence {
 		my $p = $params->{$param};
 		my $score = 0;
 
-		# Type is most important
-		$score += 30 if $p->{type} && $p->{type} ne 'string';	# 'string' is often just a guess
-		$score += 20 if $p->{type} && $p->{type} eq 'string' && ($p->{min} || $p->{max} || $p->{matches});
-
-		# Constraints show understanding
-		$score += 20 if defined $p->{min};
-		$score += 20 if defined $p->{max};
-		$score += 15 if defined $p->{optional};
-		$score += 15 if $p->{matches};
-
-		# If we only have type='string' and nothing else, that's a weak signal
-		if ($p->{type} && $p->{type} eq 'string' &&
-			!defined($p->{min}) && !defined($p->{max}) &&
-			!defined($p->{matches}) && !defined($p->{optional})) {
-			$score = 10;	# Very low confidence - just guessing
+		# Type information
+		if ($p->{type}) {
+			if ($p->{type} eq 'string' && ($p->{min} || $p->{max} || $p->{matches})) {
+				$score += 25;	# String with constraints
+			} elsif ($p->{type} eq 'string') {
+				$score += 10;	# Plain string (weak)
+			} else {
+				$score += 30;	# Non-string type
+			}
 		}
+
+		# Constraints
+		$score += 15 if defined $p->{min};
+		$score += 15 if defined $p->{max};
+		$score += 20 if defined $p->{optional};	# Explicit optional/required is valuable
+		$score += 20 if $p->{matches};
+		$score += 25 if $p->{class};	# Specific class is high confidence
+
+		# Position information
+		$score += 10 if defined $p->{position};
 
 		$total_score += $score;
 		$count++;
 	}
 
-	my $avg = $total_score / ($count || 1);
+	my $avg = $count ? ($total_score / $count) : 0;
 
 	return 'high' if $avg >= 60;
-	return 'medium' if $avg >= 30;
-	return 'low';
+	return 'medium' if $avg >= 35;
+	return 'low'	if $avg >= 15;
+	return 'very_low';
 }
 
 sub _calculate_output_confidence {

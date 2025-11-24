@@ -97,27 +97,35 @@ print "\n", '=' x 70, "\n";
 print "EXTRACTION SUMMARY\n";
 print '=' x 70, "\n\n";
 
-my %confidence_counts = (high => 0, medium => 0, low => 0);
+my %iconfidence_counts = (high => 0, medium => 0, low => 0);
+my %oconfidence_counts = (high => 0, medium => 0, low => 0);
 
 foreach my $method (sort keys %$schemas) {
     my $schema = $schemas->{$method};
-    my $conf = $schema->{_confidence};
-    $confidence_counts{$conf}++;
+    my $iconf = $schema->{_confidence}{input};
+    $iconfidence_counts{$iconf}++;
+    my $oconf = $schema->{_confidence}{output};
+    $oconfidence_counts{$oconf}++;
 
     my $param_count = scalar keys %{$schema->{input}};
 
-    printf "%-30s %d params  [%s confidence]\n",
-        $method, $param_count, uc($conf);
+    printf "%-30s %d params  [%s input confidence] [%s output confidence]\n",
+        $method, $param_count, uc($iconf), uc($oconf);
 }
 
 print "\n";
 print 'Total methods: ', (scalar keys %$schemas), "\n";
-print "  High confidence:   $confidence_counts{high}\n";
-print "  Medium confidence: $confidence_counts{medium}\n";
-print "  Low confidence:    $confidence_counts{low}\n";
+print "  Input:\n";
+print "    High confidence:   $iconfidence_counts{high}\n";
+print "    Medium confidence: $iconfidence_counts{medium}\n";
+print "    Low confidence:    $iconfidence_counts{low}\n";
+print "  Outut:\n";
+print "    High confidence:   $oconfidence_counts{high}\n";
+print "    Medium confidence: $oconfidence_counts{medium}\n";
+print "    Low confidence:    $oconfidence_counts{low}\n";
 print "\n";
 
-if ($confidence_counts{low} > 0 || $confidence_counts{medium} > 0) {
+if ($iconfidence_counts{low} > 0 || $iconfidence_counts{medium} > 0) {
     print "RECOMMENDATION:\n";
     print "Review the generated schemas in $opts{output_dir}/\n";
     print "Focus on methods with medium/low confidence ratings.\n";

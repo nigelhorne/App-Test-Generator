@@ -10,7 +10,7 @@ use File::Spec;
 use File::Path qw(make_path);
 
 BEGIN {
-    use_ok('App::Test::Generator::SchemaExtractor');
+	use_ok('App::Test::Generator::SchemaExtractor');
 }
 
 # Create a temporary module for testing
@@ -35,11 +35,11 @@ use Carp qw(croak);
 =cut
 
 sub simple_string {
-    my ($self, $name) = @_;
-    croak unless defined $name;
-    croak unless length($name) >= 3;
-    croak unless length($name) <= 50;
-    return uc($name);
+	my ($self, $name) = @_;
+	croak unless defined $name;
+	croak unless length($name) >= 3;
+	croak unless length($name) <= 50;
+	return uc($name);
 }
 
 =head2 simple_integer($count)
@@ -50,10 +50,10 @@ Parameters:
 =cut
 
 sub simple_integer {
-    my ($self, $count) = @_;
-    croak unless $count >= 1;
-    croak unless $count <= 100;
-    return $count * 2;
+	my ($self, $count) = @_;
+	croak unless $count >= 1;
+	croak unless $count <= 100;
+	return $count * 2;
 }
 
 =head2 with_regex($email)
@@ -64,9 +64,9 @@ Parameters:
 =cut
 
 sub with_regex {
-    my ($self, $email) = @_;
-    croak unless $email =~ /\@/;
-    return $email;
+	my ($self, $email) = @_;
+	croak unless $email =~ /\@/;
+	return $email;
 }
 
 =head2 array_param($items)
@@ -77,9 +77,9 @@ Parameters:
 =cut
 
 sub array_param {
-    my ($self, $items) = @_;
-    croak unless ref($items) eq 'ARRAY';
-    return scalar @$items;
+	my ($self, $items) = @_;
+	croak unless ref($items) eq 'ARRAY';
+	return scalar @$items;
 }
 
 =head2 hash_param($config)
@@ -90,9 +90,9 @@ Parameters:
 =cut
 
 sub hash_param {
-    my ($self, $config) = @_;
-    croak unless ref($config) eq 'HASH';
-    return keys %$config;
+	my ($self, $config) = @_;
+	croak unless ref($config) eq 'HASH';
+	return keys %$config;
 }
 
 =head2 optional_param($required, $optional)
@@ -104,9 +104,9 @@ Parameters:
 =cut
 
 sub optional_param {
-    my ($self, $required, $optional) = @_;
-    croak unless defined $required;
-    return $required . ($optional || '');
+	my ($self, $required, $optional) = @_;
+	croak unless defined $required;
+	return $required . ($optional || '');
 }
 
 =head2 poorly_documented($x)
@@ -116,13 +116,13 @@ Does something.
 =cut
 
 sub poorly_documented {
-    my ($self, $x) = @_;
-    return $x;
+	my ($self, $x) = @_;
+	return $x;
 }
 
 sub _private_method {
-    my ($self) = @_;
-    return 1;
+	my ($self) = @_;
+	return 1;
 }
 
 1;
@@ -131,9 +131,9 @@ close $fh;
 
 # Module instantiation
 my $extractor = App::Test::Generator::SchemaExtractor->new(
-    input_file => $test_module,
-    output_dir => File::Spec->catdir($tempdir, 'schemas'),
-    verbose    => 0,
+	input_file => $test_module,
+	output_dir => File::Spec->catdir($tempdir, 'schemas'),
+	verbose	=> 0,
 );
 
 isa_ok($extractor, 'App::Test::Generator::SchemaExtractor');
@@ -150,86 +150,86 @@ cmp_ok(scalar(@methods), '>=', 6, 'Found at least 6 methods');
 
 # simple_string analysis
 subtest 'simple_string method' => sub {
-    my $schema = $schemas->{simple_string};
-    ok($schema, 'simple_string schema exists');
+	my $schema = $schemas->{simple_string};
+	ok($schema, 'simple_string schema exists');
 
-    my $name_param = $schema->{input}{name};
-    ok($name_param, 'name parameter detected');
-    is($name_param->{type}, 'string', 'type is string');
-    is($name_param->{min}, 3, 'min is 3');
-    is($name_param->{max}, 50, 'max is 50');
-    is($name_param->{optional}, 0, 'parameter is required');
+	my $name_param = $schema->{input}{name};
+	ok($name_param, 'name parameter detected');
+	is($name_param->{type}, 'string', 'type is string');
+	is($name_param->{min}, 3, 'min is 3');
+	is($name_param->{max}, 50, 'max is 50');
+	is($name_param->{optional}, 0, 'parameter is required');
 
-    like($schema->{_confidence}{input}, qr/high|medium/, 'input confidence is high or medium');
+	like($schema->{_confidence}{input}, qr/high|medium/, 'input confidence is high or medium');
 };
 
 # simple_integer analysis
 subtest 'simple_integer method' => sub {
-    my $schema = $schemas->{simple_integer};
-    ok($schema, 'simple_integer schema exists');
+	my $schema = $schemas->{simple_integer};
+	ok($schema, 'simple_integer schema exists');
 
-    my $count_param = $schema->{input}{count};
-    ok($count_param, 'count parameter detected');
-    is($count_param->{type}, 'integer', 'type is integer');
-    is($count_param->{min}, 1, 'min is 1');
-    is($count_param->{max}, 100, 'max is 100');
+	my $count_param = $schema->{input}{count};
+	ok($count_param, 'count parameter detected');
+	is($count_param->{type}, 'integer', 'type is integer');
+	is($count_param->{min}, 1, 'min is 1');
+	is($count_param->{max}, 100, 'max is 100');
 };
 
 # regex pattern detection
 subtest 'with_regex method' => sub {
-    my $schema = $schemas->{with_regex};
-    ok($schema, 'with_regex schema exists');
+	my $schema = $schemas->{with_regex};
+	ok($schema, 'with_regex schema exists');
 
-    my $email_param = $schema->{input}{email};
-    ok($email_param, 'email parameter detected');
-    is($email_param->{type}, 'string', 'type is string');
-    ok($email_param->{matches}, 'has matches constraint');
+	my $email_param = $schema->{input}{email};
+	ok($email_param, 'email parameter detected');
+	is($email_param->{type}, 'string', 'type is string');
+	ok($email_param->{matches}, 'has matches constraint');
 };
 
 # arrayref detection
 subtest 'array_param method' => sub {
-    my $schema = $schemas->{array_param};
-    ok($schema, 'array_param schema exists');
+	my $schema = $schemas->{array_param};
+	ok($schema, 'array_param schema exists');
 
-    my $items_param = $schema->{input}{items};
-    ok($items_param, 'items parameter detected');
-    is($items_param->{type}, 'arrayref', 'type is arrayref');
+	my $items_param = $schema->{input}{items};
+	ok($items_param, 'items parameter detected');
+	is($items_param->{type}, 'arrayref', 'type is arrayref');
 };
 
 # hashref detection
 subtest 'hash_param method' => sub {
-    my $schema = $schemas->{hash_param};
-    ok($schema, 'hash_param schema exists');
+	my $schema = $schemas->{hash_param};
+	ok($schema, 'hash_param schema exists');
 
-    my $config_param = $schema->{input}{config};
-    ok($config_param, 'config parameter detected');
-    is($config_param->{type}, 'hashref', 'type is hashref');
+	my $config_param = $schema->{input}{config};
+	ok($config_param, 'config parameter detected');
+	is($config_param->{type}, 'hashref', 'type is hashref');
 };
 
 # optional parameter detection
 subtest 'optional_param method' => sub {
-    my $schema = $schemas->{optional_param};
-    ok($schema, 'optional_param schema exists');
+	my $schema = $schemas->{optional_param};
+	ok($schema, 'optional_param schema exists');
 
-    my $required_param = $schema->{input}{required};
-    my $optional_param = $schema->{input}{optional};
+	my $required_param = $schema->{input}{required};
+	my $optional_param = $schema->{input}{optional};
 
-    ok($required_param, 'required parameter detected');
-    ok($optional_param, 'optional parameter detected');
+	ok($required_param, 'required parameter detected');
+	ok($optional_param, 'optional parameter detected');
 
-    is($required_param->{optional}, 0, 'required param marked as required');
-    is($optional_param->{optional}, 1, 'optional param marked as optional');
+	is($required_param->{optional}, 0, 'required param marked as required');
+	is($optional_param->{optional}, 1, 'optional param marked as optional');
 };
 
 # poorly documented method
 subtest 'poorly_documented method' => sub {
-    my $schema = $schemas->{poorly_documented};
-    ok($schema, 'poorly_documented schema exists');
+	my $schema = $schemas->{poorly_documented};
+	ok($schema, 'poorly_documented schema exists');
 
-    is($schema->{_confidence}{input}, 'low', 'input confidence is low');
-    is($schema->{_confidence}{output}, 'medium', 'output confidence is low');
-    # Notes might be present or not, depending on what we could infer
-    # Just check the schema exists and has low confidence
+	is($schema->{_confidence}{input}, 'medium', 'input confidence is low');
+	is($schema->{_confidence}{output}, 'medium', 'output confidence is low');
+	# Notes might be present or not, depending on what we could infer
+	# Just check the schema exists and has low confidence
 };
 
 # private methods excluded
@@ -237,49 +237,49 @@ ok(!exists($schemas->{_private_method}), 'private methods excluded');
 
 # object instantiation detection
 subtest 'object instantiation detection' => sub {
-    # Instance methods should have 'new' field
-    my $simple_string = $schemas->{simple_string};
-    ok($simple_string->{new}, 'simple_string has new field');
-    is($simple_string->{new}, 'TestModule', 'new field contains package name');
+	# Instance methods should have 'new' field
+	my $simple_string = $schemas->{simple_string};
+	ok($simple_string->{new}, 'simple_string has new field');
+	is($simple_string->{new}, 'TestModule', 'new field contains package name');
 
-    my $array_param = $schemas->{array_param};
-    ok($array_param->{new}, 'array_param has new field');
-    is($array_param->{new}, 'TestModule', 'new field contains package name');
+	my $array_param = $schemas->{array_param};
+	ok($array_param->{new}, 'array_param has new field');
+	is($array_param->{new}, 'TestModule', 'new field contains package name');
 
-    # Note: We don't test constructors since they shouldn't have 'new' field
+	# Note: We don't test constructors since they shouldn't have 'new' field
 };
 
 # positional argument detection
 subtest 'positional argument detection' => sub {
-    my $simple_string = $schemas->{simple_string};
-    my $name_param = $simple_string->{input}{name};
+	my $simple_string = $schemas->{simple_string};
+	my $name_param = $simple_string->{input}{name};
 
-    ok(defined($name_param->{position}), 'name parameter has position');
-    is($name_param->{position}, 0, 'name is first parameter (position 0)');
+	ok(defined($name_param->{position}), 'name parameter has position');
+	is($name_param->{position}, 0, 'name is first parameter (position 0)');
 
-    # Test optional_param which has two parameters
-    my $optional_param_schema = $schemas->{optional_param};
-    ok(defined($optional_param_schema->{input}{required}{position}), 'required has position');
-    ok(defined($optional_param_schema->{input}{optional}{position}), 'optional has position');
-    is($optional_param_schema->{input}{required}{position}, 0, 'required is position 0');
-    is($optional_param_schema->{input}{optional}{position}, 1, 'optional is position 1');
+	# Test optional_param which has two parameters
+	my $optional_param_schema = $schemas->{optional_param};
+	ok(defined($optional_param_schema->{input}{required}{position}), 'required has position');
+	ok(defined($optional_param_schema->{input}{optional}{position}), 'optional has position');
+	is($optional_param_schema->{input}{required}{position}, 0, 'required is position 0');
+	is($optional_param_schema->{input}{optional}{position}, 1, 'optional is position 1');
 };
 
 # output/return value detection
 subtest 'output detection' => sub {
-    # simple_string returns uc($name), so should detect string return
-    my $simple_string = $schemas->{simple_string};
-    ok($simple_string->{output}, 'simple_string has output section');
-    # Type might be detected or not depending on code analysis
+	# simple_string returns uc($name), so should detect string return
+	my $simple_string = $schemas->{simple_string};
+	ok($simple_string->{output}, 'simple_string has output section');
+	# Type might be detected or not depending on code analysis
 
-    # simple_integer has explicit return value
-    my $simple_integer = $schemas->{simple_integer};
-    ok($simple_integer->{output}, 'simple_integer has output section');
+	# simple_integer has explicit return value
+	my $simple_integer = $schemas->{simple_integer};
+	ok($simple_integer->{output}, 'simple_integer has output section');
 
-    # array_param returns scalar @$items
-    my $array_param = $schemas->{array_param};
-    ok($array_param->{output}, 'array_param has output section');
-    ok($array_param->{output}{type}, 'array_param output has type');
+	# array_param returns scalar @$items
+	my $array_param = $schemas->{array_param};
+	ok($array_param->{output}, 'array_param has output section');
+	ok($array_param->{output}{type}, 'array_param output has type');
 };
 
 # YAML files written
