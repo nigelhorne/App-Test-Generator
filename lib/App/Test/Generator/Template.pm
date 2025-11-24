@@ -336,7 +336,7 @@ sub fuzz_inputs
 				$obj->$method(1);
 				$mandatory_objects{$field} = $obj;
 				$config{'dedup'} = 0;	# FIXME:	Can't yet dedup with class method calls
-			} elsif(($spec->{'type'} eq 'float') || ($spec->{'type'} eq 'number')) {
+			} elsif(($spec->{'type'} eq 'float') || ($spec->{'type'} eq 'number') || ($spec->{'type'} eq 'integer')) {
 				my $min = $spec->{'min'};
 				my $max = $spec->{'max'};
 				my $number;
