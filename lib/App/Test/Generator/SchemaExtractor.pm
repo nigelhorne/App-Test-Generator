@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use autodie qw(:all);
 
+use Carp qw(carp croak);
 use PPI;
 use Pod::Simple::Text;
 use YAML::XS;
