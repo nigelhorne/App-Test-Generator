@@ -323,6 +323,7 @@ sub _analyze_pod {
 
 				# Detect semantic types:
 				if ($desc =~ /\b(email|url|uri|path|filename)\b/i) {
+					# TODO: ensure properties is set to 1 in $config
 					$params{$name}{semantic} = lc($1);
 				}
 
@@ -404,7 +405,17 @@ sub _analyze_output {
 
 	my %output;
 
-	# Analyze POD for Returns section
+	$self->_analyze_output_from_pod(\%output, $pod);
+	$self->_analyze_output_from_code(\%output, $code);
+
+	# Don't return empty output
+	return (keys %output) ? \%output : {};
+}
+
+# Analyze POD for Returns section
+sub _analyze_output_from_pod {
+	my ($self, $output, $pod) = @_;
+
 	if ($pod) {
 		# Pattern 1: Returns: section
 		if ($pod =~ /Returns?:\s+(.+?)(?=\n\n|\n=[a-z]|$)/si) {
@@ -415,42 +426,42 @@ sub _analyze_output {
 
 			# Try to infer type from description
 			if ($returns_desc =~ /\b(string|text)\b/i) {
-				$output{type} = 'string';
+				$output->{type} = 'string';
 			} elsif ($returns_desc =~ /\b(integer|int|number|count)\b/i) {
-				$output{type} = 'integer';
+				$output->{type} = 'integer';
 			} elsif ($returns_desc =~ /\b(float|decimal|number)\b/i) {
-				$output{type} = 'number';
+				$output->{type} = 'number';
 			} elsif ($returns_desc =~ /\b(boolean|true|false)\b/i) {
-				$output{type} = 'boolean';
+				$output->{type} = 'boolean';
 			} elsif ($returns_desc =~ /\b(array|list)\b/i) {
-				$output{type} = 'arrayref';
+				$output->{type} = 'arrayref';
 			} elsif ($returns_desc =~ /\b(hash|hashref|dictionary)\b/i) {
-				$output{type} = 'hashref';
+				$output->{type} = 'hashref';
 			} elsif ($returns_desc =~ /\b(object|instance)\b/i) {
-				$output{type} = 'object';
+				$output->{type} = 'object';
 			} elsif ($returns_desc =~ /\bundef\b/i) {
-				$output{type} = 'undef';
+				$output->{type} = 'undef';
 			}
 
 			# Look for specific values
 			if ($returns_desc =~ /\b1\s+(?:on\s+success|if\s+successful)\b/i) {
-				$output{value} = 1;
-				if(defined($output{'type'}) && ($output{type} eq 'scalar')) {
-					$output{type} = 'boolean';
+				$output->{value} = 1;
+				if(defined($output->{'type'}) && ($output->{type} eq 'scalar')) {
+					$output->{type} = 'boolean';
 				} else {
-					$output{type} ||= 'boolean';
+					$output->{type} ||= 'boolean';
 				}
 				$self->_log("  OUTPUT: Returns 1 on success");
 			} elsif ($returns_desc =~ /\b0\s+(?:on\s+failure|if\s+fail)\b/i) {
-				$output{alt_value} = 0;
+				$output->{alt_value} = 0;
 			} elsif ($returns_desc =~ /dies\s+on\s+(?:error|failure)/i) {
-				$output{_STATUS} = 'LIVES';
+				$output->{_STATUS} = 'LIVES';
 				$self->_log('  OUTPUT: Should not die on success');
 			}
 		}
 
 		# Pattern 2: Inline "returns X"
-		if(!scalar(keys %output) && ($pod =~ /returns?\s+(?:an?\s+)?(\w+)/i)) {
+		if(!scalar(keys %{$output}) && ($pod =~ /returns?\s+(?:an?\s+)?(\w+)/i)) {
 			my $type = lc($1);
 
 			# Skip if it's just a number (like "returns 1")
@@ -475,25 +486,30 @@ sub _analyze_output {
 			}
 
 			$type ||= 'arrayref' if($pod =~ /returns?\s+.+\slist\b/i);
-			$output{type} = $type;
+			$output->{type} = $type;
 			$self->_log("  OUTPUT: Inferred type from POD: $type");
 		}
 	}
+}
 
-	# Analyze code for return statements
+# Analyze code for return statements
+sub _analyze_output_from_code
+{
+	my ($self, $output, $code) = @_;
+
 	if ($code) {
 		my @return_statements;
 
 		# Detect blessed refs
 		if ($code =~ /return\s+bless\s*\{[^}]*\}\s*,\s*['"]?(\w+)['"]?/s) {
-			$output{type} = 'object';
-			$output{class} = $1;
+			$output->{type} = 'object';
+			$output->{class} = $1;
 		} elsif ($code =~ /return\s+bless\s*\{\s*$/sm) {
-			$output{type} = 'object';
+			$output->{type} = 'object';
 			$self->_log('  OUTPUT: Bless found, inferring type from code is object');
 		} elsif ($code =~ /return\s*\([^)]+,\s*[^)]+\)/) {
 			# Detect array context returns
-			$output{type} = 'array';  # Not arrayref - actual array
+			$output->{type} = 'array';  # Not arrayref - actual array
 			$self->_log('  OUTPUT: Found array contect return');
 		}
 
@@ -509,8 +525,8 @@ sub _analyze_output {
 			# Analyze return patterns
 			my %return_types;
 
-			if($output{'type'}) {
-				$return_types{$output{'type'}}++;	# Add weighting to what's already been found
+			if($output->{'type'}) {
+				$return_types{$output->{'type'}}++;	# Add weighting to what's already been found
 			}
 			foreach my $ret (@return_statements) {
 				$ret =~ s/^\s+|\s+$//g;
@@ -555,26 +571,23 @@ sub _analyze_output {
 			# Determine most common return type
 			if (keys %return_types) {
 				my ($most_common) = sort { $return_types{$b} <=> $return_types{$a} } keys %return_types;
-				unless ($output{type}) {
-					$output{type} = $most_common;
+				unless ($output->{type}) {
+					$output->{type} = $most_common;
 					$self->_log("  OUTPUT: Inferred type from code: $most_common");
 				}
 			}
 
 			# Check for consistent single value returns
 			if (@return_statements == 1 && $return_statements[0] eq '1') {
-				# $output{value} = 1;
-				$output{type} ||= 'boolean';
-				$self->_log("  OUTPUT: Type already set to '$output{type}', overriding with boolean") if($output{'type'});
+				# $output->{value} = 1;
+				$output->{type} ||= 'boolean';
+				$self->_log("  OUTPUT: Type already set to '$output->{type}', overriding with boolean") if($output->{'type'});
 			}
 		} else {
 			# No explicit return - might return nothing or implicit undef
 			$self->_log("  OUTPUT: No explicit return statement found");
 		}
 	}
-
-	# Don't return empty output
-	return (keys %output) ? \%output : {};
 }
 
 =head2 _parse_constraints
