@@ -187,7 +187,10 @@ sub _analyze_method {
 
 	my $schema = {
 		_method_name => $method->{name},
-		_confidence => 'unknown',
+		_confidence => {
+			'input' => 'unknown',
+			'output' => 'unknown',
+		},
 		input => {},
 		output => {},
 		setup => undef,
@@ -216,8 +219,9 @@ sub _analyze_method {
 		$self->_log("  Method requires object instantiation: $needs_object");
 	}
 
-	# Calculate confidence
-	$schema->{_confidence} = $self->_calculate_confidence($schema->{input});
+	# Calculate confidences
+	$schema->{_confidence}{'input'} = $self->_calculate_input_confidence($schema->{input});
+	$schema->{_confidence}{'output'} = $self->_calculate_output_confidence($schema->{output});
 
 	# Add metadata
 	$schema->{_notes} = $self->_generate_notes($schema->{input});
@@ -324,6 +328,7 @@ sub _analyze_pod {
 				# Detect semantic types:
 				if ($desc =~ /\b(email|url|uri|path|filename)\b/i) {
 					# TODO: ensure properties is set to 1 in $config
+					carp('Manually set config->properties to 1 in ', $self->{'input_file'});
 					$params{$name}{semantic} = lc($1);
 				}
 
@@ -408,6 +413,8 @@ sub _analyze_output {
 	$self->_analyze_output_from_pod(\%output, $pod);
 	$self->_analyze_output_from_code(\%output, $code);
 
+	$self->_validate_output(\%output) if(keys %output);
+
 	# Don't return empty output
 	return (keys %output) ? \%output : {};
 }
@@ -467,7 +474,7 @@ sub _analyze_output_from_pod {
 			# Skip if it's just a number (like "returns 1")
 			$type = 'integer' if $type eq 'int';
 			$type = 'number' if $type =~ /^(num|float)$/;
-			$type = 'boolean' if $type eq 'boolean';
+			$type = 'boolean' if $type eq 'bool';
 			$type = 'arrayref' if $type eq 'array';
 			$type = 'hashref' if $type eq 'hash';
 			if($type =~ /^\d+$/) {
@@ -485,11 +492,12 @@ sub _analyze_output_from_pod {
 				}
 			}
 
-			$type ||= 'arrayref' if($pod =~ /returns?\s+.+\slist\b/i);
-			$output->{type} = $type;
+			$type = 'arrayref' if !$type && $pod =~ /returns?\s+.+\slist\b/i;
+			$output->{type} = $type if $type && $type !~ /^\d+$/;
 			$self->_log("  OUTPUT: Inferred type from POD: $type");
 		}
 	}
+
 }
 
 # Analyze code for return statements
@@ -504,13 +512,19 @@ sub _analyze_output_from_code
 		if ($code =~ /return\s+bless\s*\{[^}]*\}\s*,\s*['"]?(\w+)['"]?/s) {
 			$output->{type} = 'object';
 			$output->{class} = $1;
-		} elsif ($code =~ /return\s+bless\s*\{\s*$/sm) {
+			$self->_log('  OUTPUT: Bless found, inferring type from code is object');
+		} elsif ($code =~ /return\s+bless/s) {
 			$output->{type} = 'object';
 			$self->_log('  OUTPUT: Bless found, inferring type from code is object');
 		} elsif ($code =~ /return\s*\([^)]+,\s*[^)]+\)/) {
 			# Detect array context returns
 			$output->{type} = 'array';  # Not arrayref - actual array
 			$self->_log('  OUTPUT: Found array contect return');
+		} elsif ($code =~ /return\s*\(([^)]+)\)/) {
+			my $content = $1;
+			if ($content =~ /,/) {  # Has comma = multiple values
+				$output->{type} = 'array';
+			}
 		}
 
 		# Find all return statements
@@ -526,7 +540,7 @@ sub _analyze_output_from_code
 			my %return_types;
 
 			if($output->{'type'}) {
-				$return_types{$output->{'type'}}++;	# Add weighting to what's already been found
+				$return_types{$output->{'type'}} += 3;	# Add weighting to what's already been found
 			}
 			foreach my $ret (@return_statements) {
 				$ret =~ s/^\s+|\s+$//g;
@@ -551,17 +565,16 @@ sub _analyze_output_from_code
 				}
 				# Variables/expressions
 				elsif ($ret =~ /\$\w+/) {
-					# Check for array/hash dereference
-					if ($ret =~ /\\\@/ || $ret =~ /\[.*\]/) {
+					if ($ret =~ /\\\@/) {
 						$return_types{arrayref}++;
-					} elsif ($ret =~ /\\\%/ || $ret =~ /\{.*\}/) {
-						if ($ret =~ /\\\%/) {
-							$return_types{hashref}++;
-						} elsif ($ret =~ /bless\s*\{/) {
-							$return_types{object} += 2;	# Higher weight
-						} elsif ($ret =~ /^\{[^}]*\}$/) {
-							$return_types{hashref}++;
-						}
+					} elsif ($ret =~ /\\\%/) {
+						$return_types{hashref}++;
+					} elsif ($ret =~ /bless/) {
+						$return_types{object} += 2;	# Heigher weight
+					} elsif ($ret =~ /^\{[^}]*\}$/) {
+						$return_types{hashref}++;
+					} elsif ($ret =~ /^\[[^\]]*\]$/) {
+						$return_types{arrayref}++;
 					} else {
 						$return_types{scalar}++;
 					}
@@ -579,14 +592,27 @@ sub _analyze_output_from_code
 
 			# Check for consistent single value returns
 			if (@return_statements == 1 && $return_statements[0] eq '1') {
-				# $output->{value} = 1;
-				$output->{type} ||= 'boolean';
+				$output->{value} = 1;
+				$output->{type} = 'boolean' if !$output->{type} || $output->{type} eq 'scalar';
 				$self->_log("  OUTPUT: Type already set to '$output->{type}', overriding with boolean") if($output->{'type'});
 			}
 		} else {
 			# No explicit return - might return nothing or implicit undef
 			$self->_log("  OUTPUT: No explicit return statement found");
 		}
+	}
+}
+
+sub _validate_output {
+	my ($self, $output) = @_;
+
+	# Warn about suspicious combinations
+	if ($output->{type} eq 'boolean' && !defined($output->{value})) {
+		$self->_log('  WARNING: Boolean type without value - may want to set value: 1');
+	}
+
+	if ($output->{value} && $output->{type} ne 'boolean') {
+		$self->_log('  WARNING: Value set but type is not boolean: $output->{type}');
 	}
 }
 
@@ -872,7 +898,7 @@ Returns: 'high', 'medium', 'low'
 
 =cut
 
-sub _calculate_confidence {
+sub _calculate_input_confidence {
 	my ($self, $params) = @_;
 
 	# If no parameters detected or documented, it's low confidence
@@ -910,6 +936,16 @@ sub _calculate_confidence {
 
 	return 'high' if $avg >= 60;
 	return 'medium' if $avg >= 30;
+	return 'low';
+}
+
+sub _calculate_output_confidence {
+	my ($self, $output) = @_;
+
+	return 'none' unless keys %$output;
+	return 'high' if $output->{type} && $output->{value};
+	return 'high' if $output->{type} && $output->{class};
+	return 'medium' if $output->{type};
 	return 'low';
 }
 
@@ -991,7 +1027,8 @@ sub _write_schema {
 	open my $fh, '>', $filename;
 	print $fh YAML::XS::Dump($output);
 	print $fh "\n# Run this script through fuzz-harness-generator -r\n",
-		"# Confidence $schema->{_confidence}\n";
+		"# Input Confidence $schema->{_confidence}{input}\n",
+		"# Output Confidence $schema->{_confidence}{output}\n";
 	if($self->{_notes} && scalar(@{$self->{_notes}})) {
 		print $fh "# Notes:\n";
 		foreach my $note (@{$schema->{_notes}}) {
