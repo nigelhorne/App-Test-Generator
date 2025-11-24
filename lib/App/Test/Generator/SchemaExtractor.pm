@@ -430,7 +430,7 @@ sub _analyze_output {
 			# Look for specific values
 			if ($returns_desc =~ /\b1\s+(?:on\s+success|if\s+successful)\b/i) {
 				$output{value} = 1;
-				if($output{type} eq 'scalar') {
+				if(defined($output{'type'}) && ($output{type} eq 'scalar')) {
 					$output{type} = 'boolean';
 				} else {
 					$output{type} ||= 'boolean';
@@ -469,7 +469,7 @@ sub _analyze_output {
 				}
 			}
 
-			$type = 'arrayref' if($pod =~ /returns?\s+.+\slist\b/i);
+			$type ||= 'arrayref' if($pod =~ /returns?\s+.+\slist\b/i);
 			$output{type} = $type;
 			$self->_log("  OUTPUT: Inferred type from POD: $type");
 		}
@@ -517,9 +517,11 @@ sub _analyze_output {
 					if ($ret =~ /\\\@/ || $ret =~ /\[.*\]/) {
 						$return_types{arrayref}++;
 					} elsif ($ret =~ /\\\%/ || $ret =~ /\{.*\}/) {
-						if($ret =~ /bless\s+/) {
-							$return_types{object}++;
-						} else {
+						if ($ret =~ /\\\%/) {
+							$return_types{hashref}++;
+						} elsif ($ret =~ /bless\s*\{/) {
+							$return_types{object} += 2;	# Higher weighting
+						} elsif ($ret =~ /^\{[^}]*\}$/) {
 							$return_types{hashref}++;
 						}
 					} else {
