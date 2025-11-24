@@ -35,12 +35,161 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 
 =head1 DESCRIPTION
 
-Analyzes Perl modules and generates YAML schema files for test generation.
-Uses POD documentation, code patterns, and heuristics to infer parameter types
-and constraints.
+App::Test::Generator::SchemaExtractor automatically analyzes Perl modules and generates
+structured YAML schema files suitable for automated test generation.
+This module employs
+static analysis techniques to infer parameter types, constraints, and
+method behaviors directly from your source code.
 
-Private methods are not included,
-unless C<include_private> is used in C<new()>.
+=head2 Analysis Methods
+
+The extractor combines multiple analysis approaches for comprehensive schema generation:
+
+=over 4
+
+=item * B<POD Documentation Analysis>
+
+Parses method documentation to extract:
+  - Parameter names, types, and descriptions
+  - Return value specifications
+  - Constraints (ranges, patterns, requirements)
+  - Method purpose and usage examples
+
+=item * B<Code Pattern Detection>
+
+Analyzes source code to identify:
+  - Type checks (ref(), isa(), blessed())
+  - Validation patterns (length checks, regex matches)
+  - Parameter usage and constraints
+  - Return statements and value types
+  - Object instantiation requirements
+
+=item * B<Signature Analysis>
+
+Examines method signatures for:
+  - Parameter names and positions
+  - Instance vs. class method detection
+  - Method modifiers (Moose-style before/after/around)
+
+=item * B<Heuristic Inference>
+
+Applies domain knowledge for:
+  - Boolean return type detection from method names (is_*, has_*, can_*)
+  - Common Perl patterns and idioms
+  - Semantic type detection (email, URL, filename)
+
+=back
+
+=head2 Generated Schema Structure
+
+The extracted schemas follow this YAML structure:
+
+    function: method_name
+    module: Package::Name
+    input:
+      param1:
+        type: string
+        min: 3
+        max: 50
+        optional: 0
+        position: 0
+      param2:
+        type: integer
+        min: 0
+        max: 100
+        optional: 1
+        position: 1
+    output:
+      type: boolean
+      value: 1
+    new: Package::Name # if object instantiation required
+    config:
+      test_empty: 1
+      test_nuls: 0
+      test_undef: 0
+      test_non_ascii: 0
+
+=head2 Confidence Scoring
+
+Each schema includes confidence assessments:
+
+=over 4
+
+=item * B<High Confidence>
+
+Multiple analysis sources agree on well-constrained parameters with explicit
+type information and validation logic.
+
+=item * B<Medium Confidence>
+
+Reasonable evidence from code patterns or documentation, but may lack
+comprehensive constraints.
+
+=item * B<Low Confidence>
+
+Minimal evidence - primarily based on naming conventions or default assumptions.
+
+=back
+
+=head2 Use Cases
+
+=over 4
+
+=item * B<Automated Test Generation>
+
+Generate comprehensive test suites with L<App::Test::Generator> using
+extracted schemas as input.
+
+=item * B<API Documentation>
+
+Supplement existing documentation with automatically inferred interface
+specifications.
+
+=item * B<Code Quality Assessment>
+
+Identify methods with poor documentation or inconsistent parameter handling.
+
+=item * B<Refactoring Assistance>
+
+Detect method dependencies and object instantiation requirements.
+
+=back
+
+=head2 Limitations
+
+=over 4
+
+=item * Dynamic code patterns may not be fully detected
+
+=item * Complex validation logic might require manual schema refinement
+
+=item * Confidence scores are heuristic and should be reviewed
+
+=item * Some Perl idioms may require custom pattern recognition
+
+=back
+
+=head2 Best Practices
+
+=over 4
+
+=item * Write comprehensive POD with explicit parameter documentation
+
+=item * Use consistent parameter validation patterns
+
+=item * Review and refine automatically generated schemas
+
+=item * Use descriptive method names that indicate purpose and return types
+
+=back
+
+The module is particularly valuable for large codebases where manual schema
+creation would be prohibitively time-consuming, and for maintaining test
+coverage as code evolves.
+
+=head1 new
+
+Private methods are not included, unless C<include_private> is used in C<new()>.
 
 =cut
 
@@ -52,8 +201,8 @@ sub new {
 		output_dir => $args{output_dir} || 'schemas',
 		verbose	=> $args{verbose} || 0,
 		confidence_threshold => $args{confidence_threshold} || 0.5,
-		include_private => $args{include_private} || 0,  # include _private methods
-		max_parameters => $args{max_parameters} || 20,   # safety limit
+		include_private => $args{include_private} || 0,	# include _private methods
+		max_parameters => $args{max_parameters} || 20,	# safety limit
 	};
 
 	# Validate input file exists
@@ -214,7 +363,7 @@ sub _extract_pod_before {
 				$pod .= "=item \$$1\n$2\n\n";
 			}
 		} elsif ($current->isa('PPI::Token::Whitespace') ||
-				 $current->isa('PPI::Token::Separator')) {
+			 $current->isa('PPI::Token::Separator')) {
 			# Skip whitespace and separators
 		} else {
 			# Hit non-POD, non-whitespace - stop
@@ -299,17 +448,26 @@ sub _detect_accessor_methods {
 
 	# Setter: $self->{field} = $value; return $self;
 	elsif ($body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*\$(\w+)\s*;/ &&
-		   $body =~ /return\s+\$self\s*;/) {
+	   $body =~ /return\s+\$self\s*;/) {
 		$schema->{_accessor} = { type => 'setter', field => $1, param => $2 };
 		$self->_log("  Detected setter accessor for field: $1");
 	}
 
 	# Getter/Setter combination
 	elsif ($body =~ /if\s*\(\s*\@_\s*>\s*1\s*\)/ &&
-		   $body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*shift\s*;/ &&
-		   $body =~ /return\s+\$self\s*->\s*\{[^}]+\}\s*;/) {
+	   $body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*shift\s*;/ &&
+	   $body =~ /return\s+\$self\s*->\s*\{[^}]+\}\s*;/) {
 		$schema->{_accessor} = { type => 'getset', field => $1 };
 		$self->_log("  Detected getter/setter accessor for field: $1");
+	}
+
+	if ($schema->{_accessor}) {
+		# Getters return the field type
+		# Setters take one parameter
+		if ($schema->{_accessor}{type} eq 'setter') {
+			my $param = $schema->{_accessor}{param};
+			$schema->{input}{$param} ||= { type => 'scalar' };
+		}
 	}
 }
 
@@ -594,8 +752,8 @@ sub _analyze_output_from_code
 	if ($code) {
 		my @return_statements;
 
-		# Detect blessed refs
 		if ($code =~ /return\s+bless\s*\{[^}]*\}\s*,\s*['"]?(\w+)['"]?/s) {
+			# Detect blessed refs
 			$output->{type} = 'object';
 			$output->{class} = $1;
 			$self->_log('  OUTPUT: Bless found, inferring type from code is object');
@@ -604,7 +762,7 @@ sub _analyze_output_from_code
 			$self->_log('  OUTPUT: Bless found, inferring type from code is object');
 		} elsif ($code =~ /return\s*\([^)]+,\s*[^)]+\)/) {
 			# Detect array context returns
-			$output->{type} = 'array';  # Not arrayref - actual array
+			$output->{type} = 'array';	# Not arrayref - actual array
 			$self->_log('  OUTPUT: Found array contect return');
 		} elsif ($code =~ /return\s+bless[^,]+,\s*__PACKAGE__/) {
 			# Detect: bless {}, __PACKAGE__
@@ -617,8 +775,17 @@ sub _analyze_output_from_code
 			}
 		} elsif ($code =~ /return\s*\(([^)]+)\)/) {
 			my $content = $1;
-			if ($content =~ /,/) {  # Has comma = multiple values
+			if ($content =~ /,/) {	# Has comma = multiple values
 				$output->{type} = 'array';
+			}
+		}
+		elsif ($code =~ /return\s+\$self\s*;/ && $code =~ /\$self\s*->\s*\{[^}]+\}\s*=/) {
+			# Returns $self for chaining
+			$output->{type} = 'object';
+			if ($self->{_document}) {
+				my $pkg = $self->{_document}->find_first('PPI::Statement::Package');
+				$output->{class} = $pkg ? $pkg->namespace : 'UNKNOWN';
+				$self->_log("  OUTPUT: Object chained into __PACKAGE__: " . ($output->{class} || 'UNKNOWN'));
 			}
 		}
 
@@ -751,15 +918,15 @@ sub _detect_list_context {
 		$self->_log("  OUTPUT: Method uses wantarray - context sensitive");
 
 		# Try to detect what's returned in list context
-		if ($code =~ /wantarray\s*\(\s*\)\s*\{\s*return\s+(?:\([^)]+\)|\@\w+)/) {
+		if ($code =~ /wantarray.*?\{\s*return\s+(?:\([^)]+\)|\@\w+)/) {
 			$output->{list_context} = { type => 'array' };
 			$self->_log('  OUTPUT: Detected list context return');
 		}
 	}
 
 	# Check for array returns
-	if ($code =~ /return\s*\(\s*[^)]+\s*,\s*[^)]+\s*\)/ &&
-		$code !~ /return\s*\(\s*[^)]*\b(?:bless|new|constructor)\b/) {
+	if(($code =~ /return\s*\(\s*[^),]+\s*,\s*[^)]+\s*\)/) &&
+	   ($code !~ /return\s*\(\s*[^)]*\b(?:bless|new|constructor)\b/)) {
 		$output->{type} = 'array';
 		$self->_log("  OUTPUT: Multiple values in return suggest array");
 	}
@@ -774,7 +941,7 @@ sub _validate_output {
 	}
 
 	if ($output->{value} && $output->{type} ne 'boolean') {
-		$self->_log('  WARNING: Value set but type is not boolean: $output->{type}');
+		$self->_log("  WARNING: Value set but type is not boolean: $output->{type}");
 	}
 }
 
@@ -838,7 +1005,10 @@ sub _analyze_code {
 
 	# Analyze each parameter (with safety limit)
 	foreach my $param (keys %params) {
-		last if $param_count++ > $self->{max_parameters};
+		if ($param_count++ > $self->{max_parameters}) {
+			$self->_log("  WARNING: Max parameters ($self->{max_parameters}) exceeded, skipping remaining");
+			last;
+		}
 
 		my $p = \$params{$param};
 
@@ -881,6 +1051,14 @@ sub _extract_parameters_from_signature {
 		foreach my $param (@params) {
 			next if $param =~ /^(self|class)$/i;
 			$params->{$param} ||= { _source => 'code' };
+		}
+	}
+
+	# De-duplicate
+	my %seen;
+	foreach my $param (keys %$params) {
+		if ($seen{$param}++) {
+			$self->_log("  WARNING: Duplicate parameter '$param' found");
 		}
 	}
 }
@@ -1095,9 +1273,10 @@ sub _merge_parameter_analyses {
 				next if $key eq 'position';
 
 				# Only override if POD didn't provide this info or it's a stronger signal
+				my $from_pod = exists $pod->{$param};
 				if (!exists $p->{$key} ||
-					($key eq 'type' && $p->{_source} && $p->{_source} eq 'pod' &&
-					 $p->{type} eq 'string' && $code->{$param}{$key} ne 'string')) {
+				   ($key eq 'type' && $from_pod && $p->{type} eq 'string' &&
+				   $code->{$param}{$key} ne 'string')) {
 					$p->{$key} = $code->{$param}{$key};
 				}
 			}
@@ -1302,7 +1481,7 @@ sub _write_schema {
 		print $fh "# Notes:\n";
 		foreach my $note (@{$schema->{_notes}}) {
 			print $fh "#   $note\n";
-	}
+		}
 	}
 	close $fh;
 
@@ -1388,6 +1567,26 @@ sub _log {
 This is pre-pre-alpha proof of concept code.
 Nevertheless,
 it is useful for creating a template which you can modify to create a working schema to pass into L<App::Test::Generator>.
+
+=head1 SEE ALSO
+
+=over 4
+
+=item * L<App::Test::Generator> - Generate fuzz and corpus-driven test harnesses
+
+Output from this module serves as input into that module.
+So with well documented code, you can automatically create your tests.
+
+=item * L<App::Test::Generator::Template> - Template of the file of tests created by C<App::Test::Generator>
+
+=back
+
+=head1 AUTHOR
+
+Nigel Horne, C<< <njh at nigelhorne.com> >>
+
+Portions of this module's initial design and documentation were created with the
+assistance of AI.
 
 =cut
 

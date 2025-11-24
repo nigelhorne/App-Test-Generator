@@ -2733,8 +2733,7 @@ C<seed> and C<iterations> really should be within C<config>.
 Nigel Horne, C<< <njh at nigelhorne.com> >>
 
 Portions of this module's initial design and documentation were created with the
-assistance of L<ChatGPT|https://openai.com/> (GPT-5), with final curation
-and authorship by Nigel Horne.
+assistance of AI.
 
 =cut
 
