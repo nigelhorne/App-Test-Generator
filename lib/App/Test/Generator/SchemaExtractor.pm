@@ -486,7 +486,7 @@ sub _analyze_output {
 		}
 
 		if (@return_statements) {
-			$self->_log("  OUTPUT: Found " . scalar(@return_statements) . " return statement(s)");
+			$self->_log('  OUTPUT: Found ' . scalar(@return_statements) . ' return statement(s)');
 
 			# Analyze return patterns
 			my %return_types;
@@ -517,7 +517,11 @@ sub _analyze_output {
 					if ($ret =~ /\\\@/ || $ret =~ /\[.*\]/) {
 						$return_types{arrayref}++;
 					} elsif ($ret =~ /\\\%/ || $ret =~ /\{.*\}/) {
-						$return_types{hashref}++;
+						if($ret =~ /bless\s+/) {
+							$return_types{object}++;
+						} else {
+							$return_types{hashref}++;
+						}
 					} else {
 						$return_types{scalar}++;
 					}
