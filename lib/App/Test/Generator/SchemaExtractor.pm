@@ -211,7 +211,7 @@ sub _extract_pod_before {
             if ($comment =~ /#\s*(?:param|arg|input)\s+\$(\w+)\s*:\s*(.+)/i) {
                 $pod .= "=item \$$1\n$2\n\n";
             }
-        } elsif ($current->isa('PPI::Token::Whitespace') || 
+        } elsif ($current->isa('PPI::Token::Whitespace') ||
                  $current->isa('PPI::Token::Separator')) {
             # Skip whitespace and separators
 		} else {
@@ -462,6 +462,8 @@ sub _analyze_output {
 
 	$self->_analyze_output_from_pod(\%output, $pod);
 	$self->_analyze_output_from_code(\%output, $code);
+	$self->_enhance_boolean_detection(\%output, $pod, $code);
+	$self->_detect_list_context(\%output, $code);
 
 	$self->_validate_output(\%output) if(keys %output);
 
@@ -659,6 +661,73 @@ sub _analyze_output_from_code
 			# No explicit return - might return nothing or implicit undef
 			$self->_log("  OUTPUT: No explicit return statement found");
 		}
+	}
+}
+
+sub _enhance_boolean_detection {
+	my ($self, $output, $pod, $code) = @_;
+
+	# Look for stronger boolean indicators
+	if ($pod && !$output->{type}) {
+		# Common boolean return patterns in POD
+		if ($pod =~ /returns?\s+(true|false|true|false|1|0)\s+(?:on|for|upon)\s+(success|failure|error|valid|invalid)/i) {
+			$output->{type} = 'boolean';
+			$self->_log("  OUTPUT: Strong boolean indicator in POD");
+		}
+
+		# Check for method names that suggest boolean returns
+		if ($pod =~ /(?:method|sub)\s+(\w+)/) {
+			my $method_name = $1;
+			if ($method_name =~ /^(is_|has_|can_|should_|contains_|exists_)/) {
+				$output->{type} = 'boolean';
+				$self->_log("  OUTPUT: Method name '$method_name' suggests boolean return");
+			}
+		}
+	}
+
+	# Analyze code for boolean patterns
+	if ($code && !$output->{type}) {
+		# Common boolean return idioms
+		if ($code =~ /return\s+(?:1|0)\s*;/) {
+			my $true_returns = () = $code =~ /return\s+1\s*;/g;
+			my $false_returns = () = $code =~ /return\s+0\s*;/g;
+
+			if ($true_returns + $false_returns >= 2) {
+				$output->{type} = 'boolean';
+				$self->_log('  OUTPUT: Multiple 1/0 returns suggest boolean');
+			}
+		}
+
+		# Ternary operators that return booleans
+		if ($code =~ /return\s+(?:\w+\s*[!=]=\s*\w+|\w+\s*>\s*\w+|\w+\s*<\s*\w+)\s*\?\s*(?:1|0)\s*:\s*(?:1|0)/) {
+			$output->{type} = 'boolean';
+			$self->_log('  OUTPUT: Ternary with 1/0 suggests boolean');
+		}
+	}
+}
+
+sub _detect_list_context {
+	my ($self, $output, $code) = @_;
+
+	return unless $code;
+
+	# Check for wantarray usage
+	if ($code =~ /wantarray/) {
+		$output->{context_aware} = 1;
+		$self->_log("  OUTPUT: Method uses wantarray - context sensitive");
+
+		# Try to detect what's returned in list context
+		if ($code =~ /wantarray\s*\(\s*\)\s*\{\s*return\s+(?:\([^)]+\)|\@\w+)/) {
+			$output->{list_context} = { type => 'array' };
+			$self->_log('  OUTPUT: Detected list context return');
+		}
+	}
+
+	# Check for array returns
+	if ($code =~ /return\s*\(\s*[^)]+\s*,\s*[^)]+\s*\)/ &&
+		$code !~ /return\s*\(\s*[^)]*\b(?:bless|new|constructor)\b/) {
+		$output->{type} = 'array';
+		$self->_log("  OUTPUT: Multiple values in return suggest array");
 	}
 }
 
