@@ -580,8 +580,8 @@ sub _analyze_pod {
 				}
 
 				$self->_log("  POD: Found parameter '$name' type=$type" .
-							($constraint ? " ($constraint)" : "") .
-							($desc ? " - $desc" : ""));
+						($constraint ? " ($constraint)" : "") .
+						($desc ? " - $desc" : ""));
 			}
 		}
 	}
@@ -631,6 +631,52 @@ sub _analyze_pod {
 
 		$self->_log("  POD: Found parameter '$name' type=$type" .
 					($constraint ? " ($constraint)" : ""));
+	}
+
+	# Pattern 3: Parse =over /=item list
+	if ($pod =~ /=over\b.*?=item\s+\$(\w+)\s*\n(.*?)(?==item\s+\$|\=back)/sig) {
+		my $name = $1;
+		my $desc = $2;
+		$desc =~ s/^\s+|\s+$//g;
+
+		# Skip common non-parameters
+		next if $name =~ /^(self|class|return|returns?)$/i;
+
+		$params{$name} ||= { _source => 'pod' };
+
+		# Try to extract type and constraints from description
+		if ($desc =~ /(\w+)(?:\s*\(([^)]+)\))?/) {
+			my $type = lc($1);
+			my $constraint = $2;
+
+			# Normalize type names
+			$type = 'integer' if $type eq 'int';
+			$type = 'number' if $type eq 'num' || $type eq 'float';
+			$type = 'boolean' if $type eq 'bool';
+			$type = 'arrayref' if $type eq 'array';
+			$type = 'hashref' if $type eq 'hash';
+
+			$params{$name}{type} = $type;
+
+			# Parse constraints
+			if ($constraint) {
+				$self->_parse_constraints($params{$name}, $constraint);
+			}
+		}
+
+		# Check for optional/required in description
+		if ($desc =~ /optional/i) {
+			$params{$name}{optional} = 1;
+		} elsif ($desc =~ /required|mandatory/i) {
+			$params{$name}{optional} = 0;
+		}
+
+		# Look for regex patterns
+		if ($desc =~ m{matches?\s+(/[^/]+/|qr/.+?/)}i) {
+			$params{$name}{matches} = $1;
+		}
+
+		$self->_log("  POD: Found parameter '$name' from =item list");
 	}
 
 	return \%params;
