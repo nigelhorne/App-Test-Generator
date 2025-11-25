@@ -49,34 +49,37 @@ The extractor combines multiple analysis approaches for comprehensive schema gen
 
 =item * B<POD Documentation Analysis>
 
-Parses method documentation to extract:
-  - Parameter names, types, and descriptions
-  - Return value specifications
-  - Constraints (ranges, patterns, requirements)
-  - Method purpose and usage examples
+Parses embedded documentation to extract:
+  - Parameter names, types, and descriptions from =head2 sections
+  - Method signatures with positional parameters
+  - Return value specifications from "Returns:" sections
+  - Constraints (ranges, patterns, required/optional status)
+  - Semantic type detection (email, URL, filename)
 
 =item * B<Code Pattern Detection>
 
-Analyzes source code to identify:
-  - Type checks (ref(), isa(), blessed())
-  - Validation patterns (length checks, regex matches)
-  - Parameter usage and constraints
-  - Return statements and value types
-  - Object instantiation requirements
+Analyzes source code using PPI to identify:
+  - Method signatures and parameter extraction patterns
+  - Type validation (ref(), isa(), blessed())
+  - Constraint patterns (length checks, numeric comparisons, regex matches)
+  - Return statement analysis and value type inference
+  - Object instantiation requirements and accessor methods
 
 =item * B<Signature Analysis>
 
-Examines method signatures for:
-  - Parameter names and positions
+Examines method declarations for:
+  - Parameter names and positional information
   - Instance vs. class method detection
   - Method modifiers (Moose-style before/after/around)
+  - Various parameter declaration styles (shift, @_ assignment)
 
 =item * B<Heuristic Inference>
 
-Applies domain knowledge for:
-  - Boolean return type detection from method names (is_*, has_*, can_*)
-  - Common Perl patterns and idioms
-  - Semantic type detection (email, URL, filename)
+Applies Perl-specific domain knowledge:
+  - Boolean return detection from method names (is_*, has_*, can_*)
+  - Common Perl idioms and coding patterns
+  - Context awareness (scalar vs list, wantarray usage)
+  - Object-oriented patterns (constructors, accessors, chaining)
 
 =back
 
@@ -109,25 +112,62 @@ The extracted schemas follow this YAML structure:
       test_undef: 0
       test_non_ascii: 0
 
+=head2 Advanced Detection Capabilities
+
+=over 4
+
+=item * B<Accessor Method Detection>
+
+Automatically identifies getter, setter, and combined accessor methods
+by analyzing common patterns like C<return $self-E<gt>{field}> and
+C<$self-E<gt>{field} = $value>.
+
+=item * B<Boolean Return Inference>
+
+Detects boolean-returning methods through multiple signals:
+  - Method name patterns (is_*, has_*, can_*)
+  - Return patterns (consistent 1/0 returns)
+  - POD descriptions ("returns true on success")
+  - Ternary operators with boolean results
+
+=item * B<Context Awareness>
+
+Identifies methods that use C<wantarray> and can return different
+values in scalar vs list context.
+
+=item * B<Object Lifecycle Management>
+
+Detects instance methods requiring object instantiation and
+automatically adds the C<new> field to schemas.
+
+=back
+
 =head2 Confidence Scoring
 
-Each schema includes confidence assessments:
+Each generated schema includes detailed confidence assessments:
 
 =over 4
 
 =item * B<High Confidence>
 
-Multiple analysis sources agree on well-constrained parameters with explicit
-type information and validation logic.
+Multiple independent analysis sources converge on consistent,
+well-constrained parameters with explicit validation logic and
+comprehensive documentation.
 
 =item * B<Medium Confidence>
 
-Reasonable evidence from code patterns or documentation, but may lack
-comprehensive constraints.
+Reasonable evidence from code patterns or partial documentation,
+but may lack comprehensive constraints or have some ambiguities.
 
 =item * B<Low Confidence>
 
-Minimal evidence - primarily based on naming conventions or default assumptions.
+Minimal evidence - primarily based on naming conventions,
+default assumptions, or single-source analysis.
+
+=item * B<Very Low Confidence>
+
+Barely any detectable signals - schema should be thoroughly
+reviewed before use in test generation.
 
 =back
 
@@ -138,58 +178,125 @@ Minimal evidence - primarily based on naming conventions or default assumptions.
 =item * B<Automated Test Generation>
 
 Generate comprehensive test suites with L<App::Test::Generator> using
-extracted schemas as input.
+extracted schemas as input. The schemas provide the necessary structure
+for generating both positive and negative test cases.
 
-=item * B<API Documentation>
+=item * B<API Documentation Generation>
 
 Supplement existing documentation with automatically inferred interface
-specifications.
+specifications, parameter requirements, and return types.
 
 =item * B<Code Quality Assessment>
 
-Identify methods with poor documentation or inconsistent parameter handling.
+Identify methods with poor documentation, inconsistent parameter handling,
+or unclear interfaces that may benefit from refactoring.
 
 =item * B<Refactoring Assistance>
 
-Detect method dependencies and object instantiation requirements.
+Detect method dependencies, object instantiation requirements, and
+parameter usage patterns to inform refactoring decisions.
+
+=item * B<Legacy Code Analysis>
+
+Quickly understand the interface contracts of legacy Perl codebases
+without extensive manual code reading.
 
 =back
 
-=head2 Limitations
+=head2 Integration with Testing Ecosystem
+
+The generated schemas are specifically designed to work with the
+L<App::Test::Generator> ecosystem:
+
+    # Extract schemas from your module
+    my $extractor = App::Test::Generator::SchemaExtractor->new(...);
+    my $schemas = $extractor->extract_all();
+
+    # Use with test generator (typically as separate steps)
+    # fuzz-harness-generator -r schemas/method_name.yaml
+
+=head2 Limitations and Considerations
 
 =over 4
 
-=item * Dynamic code patterns may not be fully detected
+=item * B<Dynamic Code Patterns>
 
-=item * Complex validation logic might require manual schema refinement
+Highly dynamic code (string evals, AUTOLOAD, symbolic references)
+may not be fully detected by static analysis.
 
-=item * Confidence scores are heuristic and should be reviewed
+=item * B<Complex Validation Logic>
 
-=item * Some Perl idioms may require custom pattern recognition
+Sophisticated validation involving multiple parameters or external
+dependencies may require manual schema refinement.
+
+=item * B<Confidence Heuristics>
+
+Confidence scores are based on heuristics and should be reviewed
+by developers familiar with the codebase.
+
+=item * B<Perl Idiom Recognition>
+
+Some Perl-specific idioms may require custom pattern recognition
+beyond the built-in detectors.
+
+=item * B<Documentation Dependency>
+
+Analysis quality improves significantly with comprehensive POD
+documentation following consistent patterns.
 
 =back
 
-=head2 Best Practices
+=head2 Best Practices for Optimal Results
 
 =over 4
 
-=item * Write comprehensive POD with explicit parameter documentation
+=item * B<Comprehensive POD Documentation>
 
-=item * Use consistent parameter validation patterns
+Write detailed POD with explicit parameter documentation using
+consistent patterns like C<$param - type (constraints), description>.
 
-=item * Review and refine automatically generated schemas
+=item * B<Consistent Coding Patterns>
 
-=item * Use descriptive method names that indicate purpose and return types
+Use consistent parameter validation patterns and method signatures
+throughout your codebase.
+
+=item * B<Schema Review Process>
+
+Review and refine automatically generated schemas, particularly
+those with low confidence scores.
+
+=item * B<Descriptive Naming>
+
+Use descriptive method and parameter names that clearly indicate
+purpose and expected types.
+
+=item * B<Progressive Enhancement>
+
+Start with automatically generated schemas and progressively
+refine them based on test results and code understanding.
 
 =back
 
 The module is particularly valuable for large codebases where manual schema
 creation would be prohibitively time-consuming, and for maintaining test
-coverage as code evolves.
+coverage as code evolves through continuous integration pipelines.
 
-=head1 new
+=head1 METHODS
+
+=head2 new
 
 Private methods are not included, unless C<include_private> is used in C<new()>.
+
+The extractor supports several configuration parameters:
+
+    my $extractor = App::Test::Generator::SchemaExtractor->new(
+        input_file          => 'lib/MyModule.pm',  # Required
+        output_dir          => 'schemas/',         # Default: 'schemas'
+        verbose             => 1,                  # Default: 0
+        include_private     => 1,                  # Default: 0
+        max_parameters      => 50,                 # Default: 20
+        confidence_threshold => 0.7,               # Default: 0.5
+    );
 
 =cut
 
@@ -951,7 +1058,7 @@ sub _enhance_boolean_detection {
 			$self->_log('  OUTPUT: Ternary with 1/0 suggests boolean');
 		}
 	}
-	
+
 	# Check method name for boolean indicators
 	if (!$output->{type} && $method_name) {
 		if ($method_name =~ /^(is_|has_|can_|should_|contains_|exists_)/) {
@@ -1069,6 +1176,24 @@ sub _analyze_code {
 		$self->_analyze_parameter_type($p, $param, $code);
 		$self->_analyze_parameter_constraints($p, $param, $code);
 		$self->_analyze_parameter_validation($p, $param, $code);
+
+		# Defined checks
+		if ($code =~ /defined\s*\(\s*\$$param\s*\)/) {
+			$p->{optional} = 0;
+			$self->_log("  CODE: $param is required (defined check)");
+		}
+
+		# Exists checks for hash keys
+		if ($code =~ /exists\s*\(\s*\$$param\s*\)/) {
+			$p->{type} = 'hashkey';
+			$self->_log("  CODE: $param is a hash key");
+		}
+
+		# Scalar context for arrays
+		if ($code =~ /scalar\s*\(\s*\@?\$$param\s*\)/) {
+			$p->{type} = 'array';
+			$self->_log("  CODE: $param used in scalar context (array)");
+		}
 	}
 
 	return \%params;
