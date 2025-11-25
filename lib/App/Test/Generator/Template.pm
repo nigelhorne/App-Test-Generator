@@ -497,14 +497,18 @@ sub fuzz_inputs
 				}
 			}
 			for (1..[% iterations_code %]) {
-				my %case_input = (%mandatory_args);
+				# Build a test of the mandatory args
+				push @cases, { _input => \%mandatory_args, status => 'OK' } if(keys %mandatory_args);
+				# One by one change each of the mandatory fields
 				foreach my $field (keys %input) {
 					my $spec = $input{$field} || {};
 					next if $spec->{'memberof'};	# Memberof data is created below
 					my $type = $spec->{type} || 'string';
 
+					my %case_input = (%mandatory_args);
 					# 1) Sometimes pick a field-specific edge-case
 					if (exists $edge_cases{$field} && rand() < PROB_EDGE_CASE) {
+						push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
 						$case_input{$field} = _pick_from($edge_cases{$field});
 						next;
 					}
@@ -512,6 +516,7 @@ sub fuzz_inputs
 					# 2) Sometimes pick a type-level edge-case
 					if (exists $type_edge_cases{$type} && rand() < 0.3) {
 						$case_input{$field} = _pick_from($type_edge_cases{$type});
+						push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
 						next;
 					}
 
@@ -590,8 +595,8 @@ sub fuzz_inputs
 					if ($spec->{optional} && rand() < 0.25) {
 						delete $case_input{$field};
 					}
+					push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
 				}
-				push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
 			}
 		}
 	}
