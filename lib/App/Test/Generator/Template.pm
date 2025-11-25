@@ -308,7 +308,7 @@ sub fuzz_inputs
 {
 	my @cases;
 
-	# Are any options manadatory?
+	# Are any options mandatory?
 	my $all_optional = 1;
 	my %mandatory_strings;	# List of mandatory strings to be added to all tests, always put at start so it can be overwritten
 	my %mandatory_objects;
@@ -322,7 +322,11 @@ sub fuzz_inputs
 				local $config{'test_undef'} = 0;
 				local $config{'test_nuls'} = 0;
 				local $config{'test_empty'} = 0;
-				$mandatory_strings{$field} = rand_ascii_str();
+				if($spec->{'matches'}) {
+					$mandatory_strings{$field} = Data::Random::String::Matches->create_random_string({ regex => $spec->{'matches'} });
+				} else {
+					$mandatory_strings{$field} = rand_ascii_str();
+				}
 			} elsif($spec->{'type'} eq 'object') {
 				my $method = $spec->{'can'};
 				if(!$class_simple_loaded) {
