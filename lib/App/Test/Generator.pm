@@ -29,7 +29,7 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 use constant {
 	DEFAULT_ITERATIONS => 50,
@@ -42,7 +42,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 =head1 VERSION
 
-Version 0.16
+Version 0.17
 
 =head1 SYNOPSIS
 

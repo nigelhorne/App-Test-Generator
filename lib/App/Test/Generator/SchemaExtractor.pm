@@ -12,7 +12,7 @@ use File::Basename;
 use File::Path qw(make_path);
 use Scalar::Util qw(looks_like_number);
 
-our $VERSION = '0.01';
+our $VERSION = '0.17';
 
 # Configure YAML::XS to not quote numeric strings
 $YAML::XS::QuoteNumericStrings = 0;
