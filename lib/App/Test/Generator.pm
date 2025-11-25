@@ -1369,7 +1369,8 @@ sub generate
 
 	# Setup / call code (always load module)
 	my $setup_code = ($module) ? "BEGIN { use_ok('$module') }" : '';
-	my $call_code;
+	my $call_code;	# Code to call the function being test when used with named arguments
+	my $position_code;	# Code to call the function being test when used with position arguments
 	if(defined($new)) {
 		# keep use_ok regardless (user found earlier issue)
 		if($new_code eq '') {
@@ -1378,10 +1379,13 @@ sub generate
 			$setup_code .= "\nmy \$obj = new_ok('$module' => [ { $new_code } ] );";
 		}
 		$call_code = "\$result = \$obj->$function(\$input);";
+		$position_code = "\$result = \$obj->$function(\@alist);";
 	} elsif(defined($module)) {
 		$call_code = "\$result = $module\->$function(\$input);";
+		$position_code = "\$result = $module\->$function(\@alist);";
 	} else {
 		$call_code = "\$result = $function(\$input);";
+		$position_code = "\$result = $function(\@alist);";
 	}
 
 	# Build static corpus code
@@ -1477,6 +1481,7 @@ sub generate
 		transforms_code => $transforms_code,
 		corpus_code => $corpus_code,
 		call_code => $call_code,
+		position_code => $position_code,
 		function => $function,
 		iterations_code => int($iterations),
 		use_properties => $use_properties,

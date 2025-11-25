@@ -1201,6 +1201,7 @@ sub run_test
 	my $name = delete local $case->{'_NAME'};
 	my $result;
 	my $mess;
+	my @alist = ();
 	if(defined($input) && !ref($input)) {
 		if($name) {
 			$mess = "[% function %]($name = '$input') %s";
@@ -1208,7 +1209,6 @@ sub run_test
 			$mess = "[% function %]('$input') %s";
 		}
 	} elsif(defined($input)) {
-		my @alist = ();
 		if($positions) {
 			# Positional args
 			foreach my $key (keys %{$input}) {
@@ -1251,6 +1251,8 @@ sub run_test
 		} else {
 			lives_ok { [% call_code %] } sprintf($mess, 'survives');
 		}
+	} elsif($positions) {
+		lives_ok { [% position_code %] } sprintf($mess, 'survives');
 	} else {
 		lives_ok { [% call_code %] } sprintf($mess, 'survives');
 	}
