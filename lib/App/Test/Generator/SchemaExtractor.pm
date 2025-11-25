@@ -686,9 +686,24 @@ sub _analyze_pod {
 					$params{$name}{matches} = $1;
 				}
 
-				$self->_log("  POD: Found parameter '$name' type=$type" .
+				$self->_log("  POD: Found parameter '$name' in parameters section, type=$type" .
 						($constraint ? " ($constraint)" : "") .
 						($desc ? " - $desc" : ""));
+
+				if(defined($constraint) && ($constraint =~ /(.+)?\s(.+)/)) {
+					my ($op, $val) = ($1, $2);
+					if(looks_like_number($val)) {
+						if ($op eq '<') {
+							$params{$name}{max} = $val - 1;
+						} elsif ($op eq '<=') {
+							$params{$name}{max} = $val;
+						} elsif ($op eq '>') {
+							$params{$name}{min} = $val + 1;
+						} elsif ($op eq '>=') {
+							$params{$name}{min} = $val;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -736,7 +751,7 @@ sub _analyze_pod {
 			}
 		}
 
-		$self->_log("  POD: Found parameter '$name' type=$type" .
+		$self->_log("  POD: Found parameter '$name' in the inline documentation, type=$type" .
 					($constraint ? " ($constraint)" : ""));
 	}
 
