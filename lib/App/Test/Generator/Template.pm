@@ -704,11 +704,12 @@ sub _generate_integer_cases {
 	my ($arg_name, $spec, $mandatory_args) = @_;
 	my @cases;
 
-	if((!defined $spec->{min}) || ($spec->{min} <= -1)) {
-		push @cases, { %{$mandatory_args}, ( $arg_name => -1, _LINE => __LINE__ ) };
-	}
-	if((!defined $spec->{min}) || ($spec->{min} <= 42)) {
-		push @cases, { %{$mandatory_args}, ( $arg_name => 42 ) };
+	foreach my $i (-42, -1, 42) {
+		if(((!defined $spec->{min}) || ($spec->{min} <= $i)) && ((!defined($spec->{max})) || ($spec->{max} >= $i))) {
+			push @cases, { %{$mandatory_args}, ( $arg_name => $i ) };
+		} else {
+			push @cases, { %{$mandatory_args}, ( $arg_name => $i, _STATUS => 'DIES' ) };
+		}
 	}
 
 	[% IF module %]

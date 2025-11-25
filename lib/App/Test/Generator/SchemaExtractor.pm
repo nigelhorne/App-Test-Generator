@@ -1120,6 +1120,11 @@ sub _parse_constraints {
 		$param->{min} = $1;
 		$param->{max} = $2;
 	}
+	elsif ($constraint =~ /(\d+)\s*\.\.\s*(\d+)/) {
+		# Range: 0..19
+		$param->{min} = $1;
+		$param->{max} = $2;
+	}
 	# Minimum: "min 3" or "at least 5"
 	elsif ($constraint =~ /(?:min|minimum|at least)\s*(\d+)/i) {
 		$param->{min} = $1;
