@@ -500,9 +500,9 @@ sub fuzz_inputs
 					}
 				}
 			}
+			# Build a test of the mandatory args
+			push @cases, { _input => \%mandatory_args, status => 'OK' } if(keys %mandatory_args);
 			for (1..[% iterations_code %]) {
-				# Build a test of the mandatory args
-				push @cases, { _input => \%mandatory_args, status => 'OK' } if(keys %mandatory_args);
 				# One by one change each of the mandatory fields
 				foreach my $field (keys %input) {
 					my $spec = $input{$field} || {};
