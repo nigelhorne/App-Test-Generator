@@ -4,7 +4,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 # VERSION
 
-Version 0.16
+Version 0.18
 
 # SYNOPSIS
 
@@ -1055,5 +1055,4 @@ Renders property definitions into Perl code for the template.
 Nigel Horne, `<njh at nigelhorne.com>`
 
 Portions of this module's initial design and documentation were created with the
-assistance of [ChatGPT](https://openai.com/) (GPT-5), with final curation
-and authorship by Nigel Horne.
+assistance of AI.
