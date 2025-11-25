@@ -411,7 +411,7 @@ sub _analyze_method {
 	);
 
 	# Analyze output/return values
-	$schema->{output} = $self->_analyze_output($method->{pod}, $method->{body});
+	$schema->{output} = $self->_analyze_output($method->{pod}, $method->{body}, $method->{name});
 
 	# Detect accessor methods
 	$self->_detect_accessor_methods($method, $schema);
@@ -648,13 +648,13 @@ Looks for:
 =cut
 
 sub _analyze_output {
-	my ($self, $pod, $code) = @_;
+	my ($self, $pod, $code, $method_name) = @_;
 
 	my %output;
 
 	$self->_analyze_output_from_pod(\%output, $pod);
 	$self->_analyze_output_from_code(\%output, $code);
-	$self->_enhance_boolean_detection(\%output, $pod, $code);
+	$self->_enhance_boolean_detection(\%output, $pod, $code, $method_name);
 	$self->_detect_list_context(\%output, $code);
 
 	$self->_validate_output(\%output) if(keys %output);
@@ -866,7 +866,7 @@ sub _analyze_output_from_code
 }
 
 sub _enhance_boolean_detection {
-	my ($self, $output, $pod, $code) = @_;
+	my ($self, $output, $pod, $code, $method_name) = @_;
 
 	# Look for stronger boolean indicators
 	if ($pod && !$output->{type}) {
@@ -878,10 +878,10 @@ sub _enhance_boolean_detection {
 
 		# Check for method names that suggest boolean returns
 		if ($pod =~ /(?:method|sub)\s+(\w+)/) {
-			my $method_name = $1;
-			if ($method_name =~ /^(is_|has_|can_|should_|contains_|exists_)/) {
+			my $inferred_method_name = $1;
+			if ($inferred_method_name =~ /^(is_|has_|can_|should_|contains_|exists_)/) {
 				$output->{type} = 'boolean';
-				$self->_log("  OUTPUT: Method name '$method_name' suggests boolean return");
+				$self->_log("  OUTPUT: Inferred method name '$inferred_method_name' suggests boolean return");
 			}
 		}
 	}
@@ -903,6 +903,14 @@ sub _enhance_boolean_detection {
 		if ($code =~ /return\s+(?:\w+\s*[!=]=\s*\w+|\w+\s*>\s*\w+|\w+\s*<\s*\w+)\s*\?\s*(?:1|0)\s*:\s*(?:1|0)/) {
 			$output->{type} = 'boolean';
 			$self->_log('  OUTPUT: Ternary with 1/0 suggests boolean');
+		}
+	}
+	
+	# Check method name for boolean indicators
+	if (!$output->{type} && $method_name) {
+		if ($method_name =~ /^(is_|has_|can_|should_|contains_|exists_)/) {
+			$output->{type} = 'boolean';
+			$self->_log("  OUTPUT: Method name '$method_name' suggests boolean return");
 		}
 	}
 }
