@@ -952,7 +952,8 @@ sub _generate_string_cases
 				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len + 1), _LINE => __LINE__, _STATUS => 'DIES' ) }; # outside
 			}
 		}
-	} else {
+	} elsif(!$spec->{matches}) {
+		# TODO: send them if they match the regex
 		if(exists($spec->{'min'})) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str(($spec->{'min'} + 1) * 1_000), _LINE => __LINE__ ) };
 		} else {
