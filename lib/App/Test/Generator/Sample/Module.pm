@@ -1,14 +1,14 @@
-package Sample::Module;
+package Test::App::Generator::Sample::Module;
 
 use strict;
 use warnings;
 use Carp qw(croak);
 
-our $VERSION = '0.17';
+our $VERSION = '0.18';
 
 =head1 NAME
 
-Sample::Module - Example module for schema extraction testing
+Test::App::Generator::Sample::Module - Example module for schema extraction testing
 
 =head1 SYNOPSIS
 
@@ -52,7 +52,7 @@ Returns:
 sub validate_email {
     my ($self, $email) = @_;
 
-    croak "Email is required" unless defined $email;
+    croak 'Email is required' unless defined $email;
     croak "Email too short" unless length($email) >= 5;
     croak "Email too long" unless length($email) <= 254;
     croak "Invalid email format" unless $email =~ /^[^@]+@[^@]+\.[^@]+$/;
