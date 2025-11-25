@@ -689,21 +689,6 @@ sub _analyze_pod {
 				$self->_log("  POD: Found parameter '$name' in parameters section, type=$type" .
 						($constraint ? " ($constraint)" : "") .
 						($desc ? " - $desc" : ""));
-
-				if(defined($constraint) && ($constraint =~ /(.+)?\s(.+)/)) {
-					my ($op, $val) = ($1, $2);
-					if(looks_like_number($val)) {
-						if ($op eq '<') {
-							$params{$name}{max} = $val - 1;
-						} elsif ($op eq '<=') {
-							$params{$name}{max} = $val;
-						} elsif ($op eq '>') {
-							$params{$name}{min} = $val + 1;
-						} elsif ($op eq '>=') {
-							$params{$name}{min} = $val;
-						}
-					}
-				}
 			}
 		}
 	}
@@ -1151,6 +1136,26 @@ sub _parse_constraints {
 	# Non-negative
 	elsif ($constraint =~ /non-negative/i) {
 		$param->{min} = 0;
+	} elsif($constraint =~ /(.+)?\s(.+)/) {
+		my ($op, $val) = ($1, $2);
+		if(looks_like_number($val)) {
+			if ($op eq '<') {
+				$param->{max} = $val - 1;
+			} elsif ($op eq '<=') {
+				$param->{max} = $val;
+			} elsif ($op eq '>') {
+				$param->{min} = $val + 1;
+			} elsif ($op eq '>=') {
+				$param->{min} = $val;
+			}
+		}
+	}
+
+	if(defined($param->{max})) {
+		$self->_log("  Set max to $param->{max}");
+	}
+	if(defined($param->{min})) {
+		$self->_log("  Set min to $param->{min}");
 	}
 }
 
