@@ -1779,8 +1779,8 @@ it is useful for creating a template which you can modify to create a working sc
 
 =item * L<App::Test::Generator> - Generate fuzz and corpus-driven test harnesses
 
-Output from this module serves as input into that module.
-So with well documented code, you can automatically create your tests.
+Output from this module serves as input to that module.
+So with well-documented code, you can automatically create your tests.
 
 =item * L<App::Test::Generator::Template> - Template of the file of tests created by C<App::Test::Generator>
 
