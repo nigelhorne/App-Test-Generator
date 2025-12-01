@@ -183,7 +183,8 @@ sub rand_unicode_char {
 # Generate a string: mostly ASCII, sometimes unicode, sometimes nul bytes or combining marks
 sub rand_str
 {
-	my $len = shift || int(rand(10)) + 1;
+	my $max = $_[0] // 10;          # default to 10 if arg is undef
+	my $len = 1 + int(rand($max));  # random integer in 1..$max
 
 	if(!$config{'test_non_ascii'}) {
 		return rand_ascii_str($len);
