@@ -1959,11 +1959,6 @@ sub _process_custom_properties {
 
 				# Build call code
 				my $call_code;
-				if ($module) {
-					$call_code = "$module\::$function";
-				} else {
-					$call_code = $function;
-				}
 				# Check if this is OO mode
 				if($module && defined($new)) {
 					$call_code = "my \$obj = new_ok('$module');";
@@ -2647,7 +2642,7 @@ sub _get_dominant_type {
 
 	return $spec->{type} if defined $spec->{type};
 
-	# For multi-field specs, return first type found
+	# For multi-field specs, return the first type found
 	for my $field (keys %$spec) {
 		next unless ref($spec->{$field}) eq 'HASH';
 		return $spec->{$field}{type} if defined $spec->{$field}{type};
