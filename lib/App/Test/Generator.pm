@@ -1715,7 +1715,7 @@ sub _validate_module {
 
 		if (!$loaded) {
 			carp("Warning: Module '$module' found but failed to load: $Module::Load::Conditional::ERROR");
-			carp("  This might indicate a broken installation or missing dependencies.");
+			carp('  This might indicate a broken installation or missing dependencies.');
 			return 0;
 		}
 
@@ -1962,11 +1962,11 @@ sub _process_custom_properties {
 				# Check if this is OO mode
 				if($module && defined($new)) {
 					$call_code = "my \$obj = new_ok('$module');";
-					$call_code .= "\$obj->$function";  # Method call
+					$call_code .= "\$obj->$function";	# Method call
 				} elsif($module && $module ne 'builtin') {
-					$call_code = "$module\::$function";  # Function call
+					$call_code = "$module\::$function";	# Function call
 				} else {
-					$call_code = $function;  # Builtin
+					$call_code = $function;	# Builtin
 				}
 
 				# Build args
