@@ -1021,49 +1021,73 @@ sub _analyze_output_from_code
 sub _enhance_boolean_detection {
 	my ($self, $output, $pod, $code, $method_name) = @_;
 
+	my $boolean_score = 0;	# Track evidence for boolean return
+
 	# Look for stronger boolean indicators
 	if ($pod && !$output->{type}) {
 		# Common boolean return patterns in POD
 		if ($pod =~ /returns?\s+(true|false|true|false|1|0)\s+(?:on|for|upon)\s+(success|failure|error|valid|invalid)/i) {
-			$output->{type} = 'boolean';
-			$self->_log("  OUTPUT: Strong boolean indicator in POD");
+			$boolean_score += 30;
+			$self->_log('  OUTPUT: Strong boolean indicator in POD (+30)');
 		}
 
 		# Check for method names that suggest boolean returns
 		if ($pod =~ /(?:method|sub)\s+(\w+)/) {
 			my $inferred_method_name = $1;
 			if ($inferred_method_name =~ /^(is_|has_|can_|should_|contains_|exists_)/) {
-				$output->{type} = 'boolean';
-				$self->_log("  OUTPUT: Inferred method name '$inferred_method_name' suggests boolean return");
+				$boolean_score += 20;
+				$self->_log("  OUTPUT: Inferred method name '$inferred_method_name' suggests boolean return (+20)");
 			}
 		}
 	}
 
 	# Analyze code for boolean patterns
-	if ($code && !$output->{type}) {
-		# Common boolean return idioms
-		if ($code =~ /return\s+(?:1|0)\s*;/) {
-			my $true_returns = () = $code =~ /return\s+1\s*;/g;
-			my $false_returns = () = $code =~ /return\s+0\s*;/g;
+	if ($code) {
+		# Count boolean return idioms
+		my $true_returns = () = $code =~ /return\s+1\s*;/g;
+		my $false_returns = () = $code =~ /return\s+0\s*;/g;
 
-			if ($true_returns + $false_returns >= 2) {
-				$output->{type} = 'boolean';
-				$self->_log('  OUTPUT: Multiple 1/0 returns suggest boolean');
-			}
+		if ($true_returns + $false_returns >= 2) {
+			$boolean_score += 40;
+			$self->_log('  OUTPUT: Multiple 1/0 returns suggest boolean (+40)');
+		} elsif ($true_returns + $false_returns == 1) {
+			$boolean_score += 10;
+			$self->_log('  OUTPUT: Single 1/0 return (+10)');
 		}
 
 		# Ternary operators that return booleans
 		if ($code =~ /return\s+(?:\w+\s*[!=]=\s*\w+|\w+\s*>\s*\w+|\w+\s*<\s*\w+)\s*\?\s*(?:1|0)\s*:\s*(?:1|0)/) {
-			$output->{type} = 'boolean';
-			$self->_log('  OUTPUT: Ternary with 1/0 suggests boolean');
+			$boolean_score += 25;
+			$self->_log('  OUTPUT: Ternary with 1/0 suggests boolean (+25)');
+		}
+
+		# Check for common boolean method patterns
+		if ($code =~ /return\s+[!\$\@\%]/) {
+			# Returns negation or existence check
+			$boolean_score += 15;
+			$self->_log('  OUTPUT: Returns negation/existence check (+15)');
 		}
 	}
 
 	# Check method name for boolean indicators
-	if (!$output->{type} && $method_name) {
-		if ($method_name =~ /^(is_|has_|can_|should_|contains_|exists_)/) {
+	if ($method_name) {
+		if ($method_name =~ /^(is_|has_|can_|should_|contains_|exists_|check_|verify_|validate_)/) {
+			$boolean_score += 25;
+			$self->_log("  OUTPUT: Method name '$method_name' suggests boolean return (+25)");
+		}
+		if ($method_name =~ /_ok$/) {
+			$boolean_score += 30;
+			$self->_log("  OUTPUT: Method name '$method_name' ends with '_ok' (+30)");
+		}
+	}
+
+	# Apply boolean type if we have strong evidence
+	# Override weak type assignments (like 'array' from false positive)
+	if ($boolean_score >= 30) {
+		if (!$output->{type} || $output->{type} eq 'scalar' || $output->{type} eq 'array' || $output->{type} eq 'undef') {
+			my $old_type = $output->{type} || 'none';
 			$output->{type} = 'boolean';
-			$self->_log("  OUTPUT: Method name '$method_name' suggests boolean return");
+			$self->_log("  OUTPUT: Boolean score $boolean_score >= 30, setting type to boolean (was: $old_type)");
 		}
 	}
 }
