@@ -903,6 +903,25 @@ sub _analyze_output_from_code
 	my ($self, $output, $code) = @_;
 
 	if ($code) {
+
+		# Early boolean detection - check for consistent 1/0 returns
+		my @all_returns = $code =~ /return\s+([^;]+);/g;
+		if (@all_returns) {
+			my $boolean_count = 0;
+			my $total_count = scalar(@all_returns);
+
+			foreach my $ret (@all_returns) {
+				$ret =~ s/^\s+|\s+$//g;
+				$boolean_count++ if ($ret eq '0' || $ret eq '1');
+			}
+
+			# If most returns are 0 or 1, strongly suggest boolean
+			if ($boolean_count >= 2 && $boolean_count >= $total_count * 0.8) {
+				$output->{type} = 'boolean';
+				$self->_log("  OUTPUT: Early detection - $boolean_count/$total_count returns are 0/1, setting boolean");
+			}
+		}
+
 		my @return_statements;
 
 		if ($code =~ /return\s+bless\s*\{[^}]*\}\s*,\s*['"]?(\w+)['"]?/s) {
