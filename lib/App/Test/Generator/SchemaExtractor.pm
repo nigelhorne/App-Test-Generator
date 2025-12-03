@@ -913,8 +913,8 @@ sub _analyze_output_from_code
 		} elsif ($code =~ /return\s+bless/s) {
 			$output->{type} = 'object';
 			$self->_log('  OUTPUT: Bless found, inferring type from code is object');
-		} elsif ($code =~ /return\s*\([^)]+,\s*[^)]+\)/) {
-			# Detect array context returns
+		} elsif ($code =~ /return\s*\(\s*[^)]+\s*,\s*[^)]+\s*\)\s*;/) {
+			# Detect array context returns - must end with semicolon to be actual return
 			$output->{type} = 'array';	# Not arrayref - actual array
 			$self->_log('  OUTPUT: Found array contect return');
 		} elsif ($code =~ /return\s+bless[^,]+,\s*__PACKAGE__/) {
@@ -924,7 +924,7 @@ sub _analyze_output_from_code
 			if ($self->{_document}) {
 				my $pkg = $self->{_document}->find_first('PPI::Statement::Package');
 				$output->{class} = $pkg ? $pkg->namespace : 'UNKNOWN';
-				$self->_log("  OUTPUT: Object blessed into __PACKAGE__: " . ($output->{class} || 'UNKNOWN'));
+				$self->_log('  OUTPUT: Object blessed into __PACKAGE__: ' . ($output->{class} || 'UNKNOWN'));
 			}
 		} elsif ($code =~ /return\s*\(([^)]+)\)/) {
 			my $content = $1;
@@ -938,7 +938,7 @@ sub _analyze_output_from_code
 			if ($self->{_document}) {
 				my $pkg = $self->{_document}->find_first('PPI::Statement::Package');
 				$output->{class} = $pkg ? $pkg->namespace : 'UNKNOWN';
-				$self->_log("  OUTPUT: Object chained into __PACKAGE__: " . ($output->{class} || 'UNKNOWN'));
+				$self->_log('  OUTPUT: Object chained into __PACKAGE__: ' . ($output->{class} || 'UNKNOWN'));
 			}
 		}
 
