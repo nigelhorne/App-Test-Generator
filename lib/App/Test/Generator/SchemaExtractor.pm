@@ -1100,7 +1100,7 @@ sub _detect_list_context {
 	# Check for wantarray usage
 	if ($code =~ /wantarray/) {
 		$output->{context_aware} = 1;
-		$self->_log("  OUTPUT: Method uses wantarray - context sensitive");
+		$self->_log('  OUTPUT: Method uses wantarray - context sensitive');
 
 		# Try to detect what's returned in list context
 		if ($code =~ /wantarray.*?\{\s*return\s+(?:\([^)]+\)|\@\w+)/) {
@@ -1109,11 +1109,15 @@ sub _detect_list_context {
 		}
 	}
 
-	# Check for array returns
-	if(($code =~ /return\s*\(\s*[^),]+\s*,\s*[^)]+\s*\)/) &&
-	   ($code !~ /return\s*\(\s*[^)]*\b(?:bless|new|constructor)\b/)) {
-		$output->{type} = 'array';
-		$self->_log("  OUTPUT: Multiple values in return suggest array");
+	# Check for array returns - must be a proper return statement
+	# This fixes the false positive from method calls like $TEST->ok(1, 'message')
+	if ($code =~ /return\s*\(\s*[^),]+\s*,\s*[^)]+\s*\)\s*;/ &&
+	    $code !~ /return\s*\(\s*[^)]*\b(?:bless|new|constructor)\b/) {
+		# Additional check: if we already detected boolean pattern, don't override
+		unless ($output->{type} && $output->{type} eq 'boolean') {
+			$output->{type} = 'array';
+			$self->_log('  OUTPUT: Multiple values in return suggest array');
+		}
 	}
 }
 
