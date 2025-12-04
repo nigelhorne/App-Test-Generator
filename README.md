@@ -137,7 +137,7 @@ The current supported variables are
 - `test_nuls`, inject NUL bytes into strings (default: 1)
 - `test_undef`, test with undefined value (default: 1)
 - `test_empty`, test with empty strings (default: 1)
-- `test_non_ascii`, test with strings that contain non ascii characaters (default: 1)
+- `test_non_ascii`, test with strings that contain non ascii characters (default: 1)
 - `dedup`, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 - `properties`, enable [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest) Property tests (default: 0)
 

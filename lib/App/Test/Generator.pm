@@ -197,7 +197,7 @@ The current supported variables are
 
 =item * C<test_empty>, test with empty strings (default: 1)
 
-=item * C<test_non_ascii>, test with strings that contain non ascii characaters (default: 1)
+=item * C<test_non_ascii>, test with strings that contain non ascii characters (default: 1)
 
 =item * C<dedup>, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 
