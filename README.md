@@ -50,7 +50,7 @@ produces a ready-to-run `.t` test script to run through `prove`.
 
 It reads configuration files in any format,
 and optional YAML corpus files.
-All of the examples in this documenation are in `YAML` format,
+All of the examples in this documentation are in `YAML` format,
 other formats may not work as they aren't so heavily tested.
 It then generates a [Test::Most](https://metacpan.org/pod/Test%3A%3AMost)-based fuzzing harness combining:
 
@@ -63,7 +63,7 @@ It then generates a [Test::Most](https://metacpan.org/pod/Test%3A%3AMost)-based 
 
 The configuration file,
 for each set of tests to be produced,
-is a file containng a schema that can be read by [Config::Abstraction](https://metacpan.org/pod/Config%3A%3AAbstraction).
+is a file containing a schema that can be read by [Config::Abstraction](https://metacpan.org/pod/Config%3A%3AAbstraction).
 
 ## SCHEMA
 

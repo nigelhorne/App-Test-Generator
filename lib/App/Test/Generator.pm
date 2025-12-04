@@ -98,7 +98,7 @@ produces a ready-to-run F<.t> test script to run through C<prove>.
 
 It reads configuration files in any format,
 and optional YAML corpus files.
-All of the examples in this documenation are in C<YAML> format,
+All of the examples in this documentation are in C<YAML> format,
 other formats may not work as they aren't so heavily tested.
 It then generates a L<Test::Most>-based fuzzing harness combining:
 
@@ -118,7 +118,7 @@ It then generates a L<Test::Most>-based fuzzing harness combining:
 
 The configuration file,
 for each set of tests to be produced,
-is a file containng a schema that can be read by L<Config::Abstraction>.
+is a file containing a schema that can be read by L<Config::Abstraction>.
 
 =head2 SCHEMA
 
