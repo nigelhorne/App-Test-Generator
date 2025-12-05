@@ -1724,7 +1724,7 @@ sub _write_schema {
 
 	# Add 'new' field if object instantiation is needed
 	if ($schema->{new}) {
-		$output->{new} = $schema->{new};
+		$output->{new} = $schema->{new} eq $package_name ? undef : $schema->{'new'};
 	}
 
 	open my $fh, '>', $filename;
