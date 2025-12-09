@@ -188,6 +188,8 @@ sub rand_str
 		$len = int(rand(10)) + 1;  # length random number between 1 and 10
 	}
 
+	return '' if($len == 0);
+
 	if(!$config{'test_non_ascii'}) {
 		return rand_ascii_str($len);
 	}
@@ -209,12 +211,13 @@ sub rand_str
 			push @chars, chr(97 + int(rand(26)));	# a-z
 		}
 	}
-	# Occasionally prepend/append a combining mark to produce combining sequences
+
 	if (rand() < 0.08) {
-		unshift @chars, chr(0x0301);
-	}
-	if (rand() < 0.08) {
-		push @chars, chr(0x0308);
+		# 8% chance to prepend combining acute accent (0301)
+		$chars[-1] = chr(0x0301);
+	} elsif (rand() < 0.08) {
+		# 8% chance to append combining diaeresis (0308)
+		$chars[-1] .= chr(0x0308);
 	}
 	return join('', @chars);
 }
