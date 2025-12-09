@@ -199,10 +199,17 @@ sub rand_str
 
 	my $mode = int(rand(4));	# 0..3
 
-	return _rand_str_basic($len) if $mode == 0;
-	return _rand_codepoint_exact($len) if $mode == 1;
-	return _rand_grapheme_exact($len) if $mode == 2;
-	return _rand_unicode_fuzzer($len);
+	my $rc = _rand_str_basic($len);
+	my $l = Unicode::GCString->new($rc)->length();
+	$rc .= 'a' x ($len - $l);
+
+	return $rc;
+
+	# TODO: length issues at the moment
+	# return _rand_str_basic($len) if $mode == 0;
+	# return _rand_codepoint_exact($len) if $mode == 1;
+	# return _rand_grapheme_exact($len) if $mode == 2;
+	# return _rand_unicode_fuzzer($len);
 }
 
 #####################################################

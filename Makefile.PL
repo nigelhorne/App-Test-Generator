@@ -54,7 +54,7 @@ WriteMakefile(
 		'Test::Most' => 0,
 		'Test::Needs' => 0,
 		'Test::Returns' => 0.02,
-		'Unicode::Normalize' => 0
+		'Unicode::Normalize' => 0,
 	}, dist => $dist,
 	clean	 => { FILES => 'App-Test-Generator-*' },
 	META_MERGE => {
