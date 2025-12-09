@@ -195,6 +195,8 @@ The current supported variables are
 
 =item * C<test_nuls>, inject NUL bytes into strings (default: 1)
 
+With this test enabled, the function is expected to die when a NUL byte is passed in.
+
 =item * C<test_undef>, test with undefined value (default: 1)
 
 =item * C<test_empty>, test with empty strings (default: 1)

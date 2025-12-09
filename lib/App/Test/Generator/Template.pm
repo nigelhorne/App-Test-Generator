@@ -1023,9 +1023,9 @@ sub _generate_string_cases
 		# --- Negative controls ---
 		foreach my $val (@candidate_bad) {
 			if(!defined($val)) {
-				push @cases, { _input => undef, _STATUS => 'DIES' } if($config{'test_undef'});
+				push @cases, { _input => undef, _STATUS => 'DIES', _LINE => __LINE__ } if($config{'test_undef'});
 			} elsif ($val !~ $re) {
-				push @cases, { _input => $val, _STATUS => 'DIES' };
+				push @cases, { _input => $val, _STATUS => 'DIES', _LINE => __LINE__ };
 			}
 		}
 		push @cases, { $arg_name => undef, _STATUS => 'DIES' } if($config{'test_undef'});
@@ -1057,8 +1057,11 @@ sub _generate_string_cases
 	}
 
 	# Send wrong data type
-	push @cases, { %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) } if($config{'test_empty'});
-	push @cases, { %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) } if($config{'test_empty'});
+	if($config{'test_empty'}) {
+		push @cases,
+			{ %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) },
+			{ %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) };
+	}
 
 	return \@cases;
 }

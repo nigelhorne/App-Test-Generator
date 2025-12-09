@@ -135,6 +135,9 @@ The keyword `undef` is used to indicate that the `function` returns nothing.
 The current supported variables are
 
 - `test_nuls`, inject NUL bytes into strings (default: 1)
+
+    With this test enabled, the function is expected to die when a NUL byte is passed in.
+
 - `test_undef`, test with undefined value (default: 1)
 - `test_empty`, test with empty strings (default: 1)
 - `test_non_ascii`, test with strings that contain non ascii characters (default: 1)
