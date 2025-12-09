@@ -48,11 +48,13 @@ WriteMakefile(
 		'IPC::Run3' => 0,
 		'IPC::System::Simple' => 0,
 		'JSON::MaybeXS' => 0,
+		'JSON::PP' => 0,
 		'Test::DescribeMe' => 0,
 		'Test::LectroTest' => 0,
 		'Test::Most' => 0,
 		'Test::Needs' => 0,
-		'Test::Returns' => 0.02
+		'Test::Returns' => 0.02,
+		'Unicode::Normalize' => 0
 	}, dist => $dist,
 	clean	 => { FILES => 'App-Test-Generator-*' },
 	META_MERGE => {

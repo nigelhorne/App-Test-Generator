@@ -67,6 +67,8 @@ use Data::Random qw(:all);
 use Data::Random::String;
 use Data::Random::String::Matches 0.02;
 use Data::Random::Structure;
+use Encode qw(decode_utf8);
+use Unicode::Normalize ();
 use Test::Most;
 use Test::Returns 0.02;
 
@@ -180,12 +182,13 @@ sub rand_unicode_char {
 	return chr($cp);
 }
 
-# Generate a string: mostly ASCII, sometimes unicode, sometimes nul bytes or combining marks
+# unified generator to randomly produces codepoint strings,
+#	grapheme clusters, ZWJ emoji sequences, or aggressive Unicode fuzz strings
 sub rand_str
 {
 	my $len = $_[0];
 	if(!defined($len)) {
-		$len = int(rand(10)) + 1;  # length random number between 1 and 10
+		$len = int(rand(10)) + 1;	# length random number between 1 and 10
 	}
 
 	return '' if($len == 0);
@@ -193,6 +196,22 @@ sub rand_str
 	if(!$config{'test_non_ascii'}) {
 		return rand_ascii_str($len);
 	}
+
+	my $mode = int(rand(4));	# 0..3
+
+	return _rand_str_basic($len) if $mode == 0;
+	return _rand_codepoint_exact($len) if $mode == 1;
+	return _rand_grapheme_exact($len) if $mode == 2;
+	return _rand_unicode_fuzzer($len);
+}
+
+#####################################################
+# 1. EXACT-LENGTH CODEPOINT MODE
+# Generate a random string: mostly ASCII, sometimes unicode, sometimes nul bytes or combining marks
+#####################################################
+sub _rand_str_basic
+{
+	my $len = $_[0];
 
 	my @chars;
 	for (1..$len) {
@@ -220,6 +239,147 @@ sub rand_str
 		$chars[-1] .= chr(0x0308);
 	}
 	return join('', @chars);
+}
+
+#####################################################
+# 2. EXACT-LENGTH CODEPOINT MODE
+# combining marks decorate characters but do not
+# increase base character count
+#####################################################
+sub _rand_codepoint_exact {
+	my $len = $_[0];
+	my @chars;
+
+	for (1..$len) {
+		my $c = _rand_base_char();
+		# prepend combining acute
+		$c = chr(0x0301) . $c if rand() < 0.08;
+		# append combining dieresis
+		$c .= chr(0x0308) if rand() < 0.08;
+		push @chars, $c;
+	}
+
+	return join('', @chars);
+}
+
+# helper for codepoint mode
+sub _rand_base_char {
+	my $r = rand();
+
+	if ($r < 0.70) { return chr(97 + int(rand(26))); }
+	if ($r < 0.88) { return chr(65 + int(rand(26))); }
+	if ($r < 0.95) { return chr(48 + int(rand(10))); }
+	return _rand_unicode_char();
+}
+
+#####################################################
+# 3. EXACT-LENGTH GRAPHEME-CLUSTER MODE
+# each "character" is a whole grapheme cluster:
+# - emoji with ZWJ sequences
+# - flags
+# - skin-tone variants
+# - accented characters
+#####################################################
+sub _rand_grapheme_exact {
+	my $len = $_[0];
+	my @clusters;
+
+	my @emoji_base = qw(
+		😀 😁 😂 🤣 😅 😊 😎 😍 😡 🥳
+		👍 👎 👋 🖐 🙏 💩 🧠 ❤️ 🫠
+	);
+
+	my @skin_tones = (
+		"\x{1F3FB}", "\x{1F3FC}", "\x{1F3FD}", "\x{1F3FE}", "\x{1F3FF}"
+	);
+
+	my @zwj_parts = (
+		"\x{200D}\x{1F33A}",	# ZWJ + Flower
+		"\x{200D}\x{1F4BB}",	# ZWJ + Laptop
+		"\x{200D}\x{1F9D1}",	# ZWJ + person
+	);
+
+	my @flags = (
+		"\x{1F1FA}\x{1F1F8}", # US
+		"\x{1F1EC}\x{1F1E7}", # UK
+		"\x{1F1E8}\x{1F1E6}", # CA
+		"\x{1F1E6}\x{1F1FA}", # AU
+	);
+
+	for (1..$len) {
+		my $type = rand();
+
+		if ($type < 0.4) {
+			# base emoji
+			my $e = $emoji_base[ rand @emoji_base ];
+
+			# maybe add skin tone
+			$e .= $skin_tones[rand @skin_tones] if rand() < 0.3;
+
+			# maybe add zwj sequence
+			$e .= $zwj_parts[rand @zwj_parts] if rand() < 0.15;
+
+			push @clusters, $e;
+		} elsif ($type < 0.55) {
+			# flag (always 1 grapheme cluster)
+			push @clusters, $flags[rand @flags];
+		} elsif ($type < 0.75) {
+			# accented letter (composed or decomposed)
+			my $base = chr(97 + int(rand(26))); # a-z
+			my $accented = $base . chr(0x0301);
+			$accented = Unicode::Normalize::NFC($accented) if rand() < 0.5;
+			push @clusters, $accented;
+		} else {
+			# fallback ASCII
+			push @clusters, chr(97 + int(rand(26)));
+		}
+	}
+
+	return join('', @clusters);
+}
+
+####################################################
+# 4. UNICODE FUZZER MODE
+# Extremely aggressive: invalid sequences, NULs,
+# bidirectional markers, Zalgo, unpaired surrogates
+####################################################
+sub _rand_unicode_fuzzer {
+	my $len = $_[0];
+	my @out;
+
+	my @zalgo_up = map { chr($_) } (0x030D..0x036F);
+	my @bidi = ("\x{202A}", "\x{202B}", "\x{202D}", "\x{202E}", "\x{2066}", "\x{2067}");
+	my @weird = $config{'test_nuls'} ? ("\x{0000}", "\x{FFFD}", "\x{FEFF}") : ("\x{FFFD}", "\x{FEFF}");
+
+	for (1..$len) {
+		my $r = rand();
+
+		if ($r < 0.25) {
+			push @out, chr( int(rand(0x10FFFF)) );	# random codepoint
+		} elsif ($r < 0.40) {
+			push @out, chr(65 + int(rand(26))) . $zalgo_up[rand @zalgo_up]; # Zalgo
+		} elsif ($r < 0.55) {
+			push @out, $bidi[rand @bidi];
+		} elsif ($r < 0.70) {
+			push @out, $weird[rand @weird];
+		} else {
+			push @out, _rand_unicode_char();
+		}
+	}
+
+	return join('', @out);
+}
+
+###################################################
+# Random Unicode character helper
+###################################################
+sub _rand_unicode_char {
+	my @pool = (
+		0x00A9, 0x00AE, 0x2600, 0x2601,
+		0x1F600 + int(rand(200)),	# emoji block
+		0x0300 + int(rand(80)),	# combining marks
+	);
+	return chr( $pool[int rand @pool] );
 }
 
 # Random character either upper or lower case
@@ -1076,8 +1236,9 @@ sub _dedup_cases
 {
 	my $cases = shift;
 
-	require JSON::MaybeXS;
-	JSON::MaybeXS->import();
+	# Do not use JSON::MaybeXS because it will fail on non utf-8 characters
+	require JSON::PP;
+	JSON::PP->import();
 
 	my %seen;
 	my @rc = grep {
