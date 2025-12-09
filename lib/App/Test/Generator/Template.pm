@@ -701,6 +701,7 @@ sub fuzz_inputs
 		push @cases, @{generate_tests(\%input, \%mandatory_args)};
 	}
 
+	# fuzzing can easily generate repeats
 	if($config{'dedup'}) {
 		return _dedup_cases(\@cases);
 	}

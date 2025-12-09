@@ -141,6 +141,8 @@ The current supported variables are
 - `dedup`, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 - `properties`, enable [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest) Property tests (default: 0)
 
+All values default to `true`.
+
 ### `%transforms` - list of transformations from input sets to output sets
 
 Transforms allow you to define how input data should be transformed into output data.

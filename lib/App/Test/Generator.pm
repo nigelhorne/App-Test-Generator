@@ -38,6 +38,8 @@ use constant {
 	DEFAULT_PROPERTY_TRIALS => 1000
 };
 
+use constant CONFIG_TYPES => ('test_nuls', 'test_undef', 'test_empty', 'test_non_ascii', 'dedup', 'properties');
+
 =head1 NAME
 
 App::Test::Generator - Generate fuzz and corpus-driven test harnesses
@@ -204,6 +206,8 @@ The current supported variables are
 =item * C<properties>, enable L<Test::LectroTest> Property tests (default: 0)
 
 =back
+
+All values default to C<true>.
 
 =head3 C<%transforms> - list of transformations from input sets to output sets
 
@@ -1225,8 +1229,10 @@ sub generate
 		croak 'Usage: generate(schema_file [, outfile])';
 	}
 
-	# dedup: fuzzing can easily generate repeats, default is to remove duplicates
-	foreach my $field ('test_nuls', 'test_undef', 'test_empty', 'test_non_ascii', 'dedup') {
+	# Handle the various possible boolean settings for config values
+	# Note that the default for everything is true
+	foreach my $field (CONFIG_TYPES) {
+		next if($field eq 'properties');	# Not a boolean
 		if(exists($config{$field})) {
 			if(($config{$field} eq 'false') || ($config{$field} eq 'off') || ($config{$field} eq 'no')) {
 				$config{$field} = 0;
@@ -1666,6 +1672,13 @@ sub _validate_config {
 					}
 				}
 			}
+		}
+	}
+
+	# Validate the config variables, checking that they are ones we know
+	foreach my ($k, $v) (%{$config->{'config'}}) {
+		if(!grep { $_ eq $k } (CONFIG_TYPES) ) {
+			croak "unknown config setting $k";
 		}
 	}
 }
