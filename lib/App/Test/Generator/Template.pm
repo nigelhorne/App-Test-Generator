@@ -202,7 +202,7 @@ sub rand_str
 	# return $rc;
 
 	# TODO: length issues at the moment
-	my $mode = int(rand(4));	# 0..3
+	my $mode = int(rand(5));	# 0..4
 
 	my $rc = _rand_str_basic($len);
 
@@ -210,6 +210,7 @@ sub rand_str
 	# $rc = _rand_codepoint_exact($len) if $mode == 1;	# FIXME: length is wrong
 	# $rc = _rand_grapheme_exact($len) if $mode == 2;	# FIXME: length is wrong
 	$rc = _rand_unicode_fuzzer($len) if $mode == 3;
+	$rc = rand_ascii_str($len) if($mode == 4);
 
 	my $l = Unicode::GCString->new($rc)->length();
 	if($len > $l) {
