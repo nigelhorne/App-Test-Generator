@@ -208,7 +208,7 @@ sub rand_str
 
 	$rc = _rand_str_basic($len) if $mode == 0;
 	$rc = _rand_codepoint_exact($len) if $mode == 1;
-	# $rc = _rand_grapheme_exact($len) if $mode == 2;	# FIXME: length is wrong
+	$rc = _rand_grapheme_exact($len) if $mode == 2;
 	$rc = _rand_unicode_fuzzer($len) if $mode == 3;
 	$rc = rand_ascii_str($len) if($mode == 4);
 
@@ -330,11 +330,13 @@ sub _rand_grapheme_exact {
 			# base emoji
 			my $e = $emoji_base[ rand @emoji_base ];
 
+			# TODO
 			# maybe add skin tone
-			$e .= $skin_tones[rand @skin_tones] if rand() < 0.3;
+			# $e .= $skin_tones[rand @skin_tones] if rand() < 0.3;
 
+			# TODO
 			# maybe add zwj sequence
-			$e .= $zwj_parts[rand @zwj_parts] if rand() < 0.15;
+			# $e .= $zwj_parts[rand @zwj_parts] if rand() < 0.15;
 
 			push @clusters, $e;
 		} elsif ($type < 0.55) {
