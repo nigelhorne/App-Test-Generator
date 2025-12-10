@@ -207,7 +207,7 @@ sub rand_str
 	my $rc = _rand_str_basic($len);
 
 	$rc = _rand_str_basic($len) if $mode == 0;
-	# $rc = _rand_codepoint_exact($len) if $mode == 1;	# FIXME: length is wrong
+	$rc = _rand_codepoint_exact($len) if $mode == 1;
 	# $rc = _rand_grapheme_exact($len) if $mode == 2;	# FIXME: length is wrong
 	$rc = _rand_unicode_fuzzer($len) if $mode == 3;
 	$rc = rand_ascii_str($len) if($mode == 4);
@@ -216,6 +216,9 @@ sub rand_str
 	if($len > $l) {
 		$rc .= 'a' x ($len - $l);	# Why is this needed?
 	}
+	
+	$l = Unicode::GCString->new($rc)->length();
+	die "BUG $l != $len (mode == $mode)" if($l != $len);
 
 	return $rc;
 }
@@ -258,8 +261,7 @@ sub _rand_str_basic
 
 #####################################################
 # 2. EXACT-LENGTH CODEPOINT MODE
-# combining marks decorate characters but do not
-# increase base character count
+# combining marks decorate characters
 #####################################################
 sub _rand_codepoint_exact {
 	my $len = $_[0];
@@ -268,9 +270,9 @@ sub _rand_codepoint_exact {
 	for (1..$len) {
 		my $c = _rand_base_char();
 		# prepend combining acute
-		$c = chr(0x0301) . $c if rand() < 0.08;
+		$c = chr(0x0301) if rand() < 0.08;
 		# append combining dieresis
-		$c .= chr(0x0308) if rand() < 0.08;
+		$c = chr(0x0308) if rand() < 0.08;
 		push @chars, $c;
 	}
 
