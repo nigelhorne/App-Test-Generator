@@ -177,11 +177,6 @@ my @regex_tests = (
 	"I:\\",
 );
 
-sub rand_unicode_char {
-	my $cp = $unicode_codepoints[ int(rand(@unicode_codepoints)) ];
-	return chr($cp);
-}
-
 # unified generator to randomly produces codepoint strings,
 #	grapheme clusters, ZWJ emoji sequences, or aggressive Unicode fuzz strings
 sub rand_str
@@ -197,19 +192,31 @@ sub rand_str
 		return rand_ascii_str($len);
 	}
 
-	my $rc = _rand_str_basic($len);
-	my $l = Unicode::GCString->new($rc)->length();
-	$rc .= 'a' x ($len - $l);	# Why is this needed?
+	# my $rc = _rand_str_basic($len);
+	# $rc = _rand_unicode_fuzzer($len);
+	# my $l = Unicode::GCString->new($rc)->length();
+	# if($len > $l) {
+		# $rc .= 'a' x ($len - $l);	# Why is this needed?
+	# }
 
-	return $rc;
+	# return $rc;
 
 	# TODO: length issues at the moment
-	# my $mode = int(rand(4));	# 0..3
+	my $mode = int(rand(4));	# 0..3
 
-	# return _rand_str_basic($len) if $mode == 0;
-	# return _rand_codepoint_exact($len) if $mode == 1;
-	# return _rand_grapheme_exact($len) if $mode == 2;
-	# return _rand_unicode_fuzzer($len);
+	my $rc = _rand_str_basic($len);
+
+	$rc = _rand_str_basic($len) if $mode == 0;
+	# $rc = _rand_codepoint_exact($len) if $mode == 1;	# FIXME: length is wrong
+	# $rc = _rand_grapheme_exact($len) if $mode == 2;	# FIXME: length is wrong
+	$rc = _rand_unicode_fuzzer($len) if $mode == 3;
+
+	my $l = Unicode::GCString->new($rc)->length();
+	if($len > $l) {
+		$rc .= 'a' x ($len - $l);	# Why is this needed?
+	}
+
+	return $rc;
 }
 
 #####################################################
@@ -230,7 +237,7 @@ sub _rand_str_basic
 		} elsif ($r < 0.95) {
 			push @chars, chr(48 + int(rand(10)));	# 0-9
 		} elsif($r < 0.975) {
-			push @chars, rand_unicode_char();	# occasional emoji/marks
+			push @chars, _rand_unicode_char();	# occasional emoji/marks
 		} elsif($config{'test_nuls'}) {
 			push @chars, chr(0);	# nul byte injection
 		} else {
@@ -380,7 +387,13 @@ sub _rand_unicode_fuzzer {
 ###################################################
 # Random Unicode character helper
 ###################################################
-sub _rand_unicode_char {
+sub _rand_unicode_char
+{
+	if(rand() < 0.5) {
+		my $cp = $unicode_codepoints[ int(rand(@unicode_codepoints)) ];
+		return chr($cp);
+	}
+
 	my @pool = (
 		0x00A9, 0x00AE, 0x2600, 0x2601,
 		0x1F600 + int(rand(200)),	# emoji block
