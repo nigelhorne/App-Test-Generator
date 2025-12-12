@@ -216,7 +216,7 @@ sub rand_str
 	if($len > $l) {
 		$rc .= 'a' x ($len - $l);	# Why is this needed?
 	}
-	
+
 	$l = Unicode::GCString->new($rc)->length();
 	die "BUG $l != $len (mode == $mode)" if($l != $len);
 
