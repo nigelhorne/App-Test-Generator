@@ -285,6 +285,50 @@ The module is particularly valuable for large codebases where manual schema
 creation would be prohibitively time-consuming, and for maintaining test
 coverage as code evolves through continuous integration pipelines.
 
+=head2 Advanced Type Detection
+
+The schema extractor includes enhanced type detection capabilities that identify specialized Perl types beyond basic strings and integers.
+L<DateTime> and L<Time::Piece> objects are detected through isa() checks and method call patterns, while date strings (ISO 8601, YYYY-MM-DD) and UNIX timestamps are recognized through regex validation and numeric range checks.
+File handles and file paths are identified via I/O operations and file test operators, coderefs are detected through ref() checks and invocation patterns, and enum-like parameters are extracted from validation code including regex patterns (C</^(a|b|c)$/>), hash lookups, grep statements, and if/elsif chains.
+These detected types are preserved in the generated YAML schemas with appropriate semantic annotations, enabling test generators to create more accurate and meaningful test cases.
+
+=head3 Example Advanced Type Schema
+
+For a method like:
+
+    sub process_event {
+        my ($self, $timestamp, $status, $callback) = @_;
+        croak unless $timestamp > 1000000000;
+        croak unless $status =~ /^(active|pending|complete)$/;
+        croak unless ref($callback) eq 'CODE';
+        $callback->($timestamp, $status);
+    }
+
+The extractor generates:
+
+    ---
+    function: process_event
+    module: MyModule
+    input:
+      timestamp:
+        type: integer
+        min: 0
+        max: 2147483647
+        position: 0
+        _note: Unix timestamp
+      status:
+        type: string
+        enum:
+          - active
+          - pending
+          - complete
+        position: 1
+        _note: 'Must be one of: active, pending, complete'
+      callback:
+        type: coderef
+        position: 2
+        _note: 'CODE reference - provide sub { } in tests'
+
 =head1 METHODS
 
 =head2 new
@@ -1320,18 +1364,14 @@ This adds semantic type information that can guide test generation.
 
 sub _analyze_advanced_types {
 	my ($self, $p_ref, $param, $code) = @_;
+
+	# Dereference once to get the hash reference
 	my $p = $$p_ref;
 
-	# DateTime detection
+	# Now pass the dereferenced hash to the detection methods
 	$self->_detect_datetime_type($p, $param, $code);
-
-	# File handle detection
 	$self->_detect_filehandle_type($p, $param, $code);
-
-	# Coderef detection
 	$self->_detect_coderef_type($p, $param, $code);
-
-	# Enum detection
 	$self->_detect_enum_type($p, $param, $code);
 }
 
@@ -1343,6 +1383,9 @@ Detect DateTime objects and date/time string parameters.
 
 sub _detect_datetime_type {
 	my ($self, $p, $param, $code) = @_;
+
+	# Validate param is just a simple word
+	return unless defined $param && $param =~ /^\w+$/;
 
 	# DateTime object detection via isa/UNIVERSAL checks
 	if ($code =~ /\$$param\s*->\s*isa\s*\(\s*['"]DateTime['"]\s*\)/i) {
@@ -1390,14 +1433,14 @@ sub _detect_datetime_type {
 		return;
 	}
 
-	# Unix timestamp detection (numeric with specific range)
-	if ($code =~ /\$$param\s*>\s*\d{9,}/ || # Unix timestamps are 10+ digits
+	# UNIX timestamp detection (numeric with specific range)
+	if ($code =~ /\$$param\s*>\s*\d{9,}/ || # UNIX timestamps are 10+ digits
 	    $code =~ /time\(\s*\)\s*-\s*\$$param/ ||
 	    $code =~ /\$$param\s*-\s*time\(\s*\)/) {
 		$p->{type} = 'integer';
 		$p->{semantic} = 'unix_timestamp';
 		$p->{min} = 0;
-		$self->_log("  ADVANCED: $param appears to be Unix timestamp");
+		$self->_log("  ADVANCED: $param appears to be UNIX timestamp");
 		return;
 	}
 
@@ -1419,6 +1462,8 @@ Detect file handle parameters and file path strings.
 
 sub _detect_filehandle_type {
 	my ($self, $p, $param, $code) = @_;
+
+	return unless defined $param && $param =~ /^\w+$/;
 
 	# File handle operations
 	if ($code =~ /(?:open|close|read|print|say|sysread|syswrite)\s*\(?\s*\$$param/) {
@@ -1483,18 +1528,20 @@ Detect coderef/callback parameters.
 sub _detect_coderef_type {
 	my ($self, $p, $param, $code) = @_;
 
+	return unless defined $param && $param =~ /^\w+$/;
+
 	# ref() check for CODE
-	if ($code =~ /ref\s*\(\s*\$param\s*\)\s*eq\s*['"]CODE['"]/i) {
+	if ($code =~ /ref\s*\(\s*\$$param\s*\)\s*eq\s*['"]CODE['"]/i) {
 		$p->{type} = 'coderef';
 		$p->{semantic} = 'callback';
 		$self->_log("  ADVANCED: $param is coderef (ref check)");
 		return;
 	}
 
-	# Invocation as coderef - escape the braces properly
-	if ($code =~ /\$param\s*->\s*\(/ ||
-	    $code =~ /\$param\s*->\(\@_\)/ ||
-	    $code =~ /&\{\s*\$param\s*\}/) {
+	# Invocation as coderef - note the escaped @ in \@_
+	if ($code =~ /\$$param\s*->\s*\(/ ||
+	    $code =~ /\$$param\s*->\s*\(\s*\@_\s*\)/ ||
+	    $code =~ /&\s*\{\s*\$$param\s*\}/) {
 		$p->{type} = 'coderef';
 		$p->{semantic} = 'callback';
 		$self->_log("  ADVANCED: $param invoked as coderef");
@@ -1510,8 +1557,8 @@ sub _detect_coderef_type {
 	}
 
 	# Blessed coderef (unusual but valid)
-	if ($code =~ /blessed\s*\(\s*\$param\s*\)/ &&
-	    $code =~ /ref\s*\(\s*\$param\s*\)\s*eq\s*['"]CODE['"]/i) {
+	if ($code =~ /blessed\s*\(\s*\$$param\s*\)/ &&
+	    $code =~ /ref\s*\(\s*\$$param\s*\)\s*eq\s*['"]CODE['"]/i) {
 		$p->{type} = 'object';
 		$p->{class} = 'blessed_coderef';
 		$p->{semantic} = 'callback';
@@ -1530,14 +1577,13 @@ sub _detect_enum_type {
 	my ($self, $p, $param, $code) = @_;
 
 	return unless defined $param && $param =~ /^\w+$/;
-	my $qparam = quotemeta($param);
 
 	# Pattern 1: die/croak unless value is in list
 	# die "Invalid status" unless $status =~ /^(active|inactive|pending)$/;
-	if ($code =~ /(?:die|croak|confess).*?unless\s+\$qparam\s*=~\s*\/\^\(([^)]+)\)/) {
+	if ($code =~ /unless\s+\$$param\s*=~\s*\/\^?\(([^)]+)\)/) {
 		my $values = $1;
 		my @enum_values = split(/\|/, $values);
-		$p->{type} = 'string';
+		$p->{type} = 'string' unless $p->{type};
 		$p->{enum} = \@enum_values;
 		$p->{semantic} = 'enum';
 		$self->_log("  ADVANCED: $param is enum with values: " . join(', ', @enum_values));
@@ -1550,9 +1596,9 @@ sub _detect_enum_type {
 	if ($code =~ /\%(\w+)\s*=.*?qw\s*[\(\[<{]([^)\]>}]+)[\)\]>}]/) {
 		my $hash_name = $1;
 		my $values_str = $2;
-		if (defined $values_str && $code =~ /\$hash_name\s*\{\s*\$qparam\s*\}/) {
+		if (defined $values_str && $code =~ /\$$hash_name\s*\{\s*\$$param\s*\}/) {
 			my @enum_values = split(/\s+/, $values_str);
-			$p->{type} = 'string';
+			$p->{type} = 'string' unless $p->{type};
 			$p->{enum} = \@enum_values;
 			$p->{semantic} = 'enum';
 			$self->_log("  ADVANCED: $param validated via hash lookup: " . join(', ', @enum_values));
@@ -1565,7 +1611,7 @@ sub _detect_enum_type {
 	if ($code =~ /grep\s*\{[^}]*\$$param[^}]*\}\s*qw\s*[\(\[<{]([^)\]>}]+)[\)\]>}]/) {
 		my $values_str = $1;
 		my @enum_values = split(/\s+/, $values_str);
-		$p->{type} = 'string';
+		$p->{type} = 'string' unless $p->{type};
 		$p->{enum} = \@enum_values;
 		$p->{semantic} = 'enum';
 		$self->_log("  ADVANCED: $param validated via grep: " . join(', ', @enum_values));
@@ -1579,7 +1625,7 @@ sub _detect_enum_type {
 			push @enum_values, $1;
 		}
 		if (@enum_values >= 2) {
-			$p->{type} = 'string';
+			$p->{type} = 'string' unless $p->{type};
 			$p->{enum} = \@enum_values;
 			$p->{semantic} = 'enum';
 			$self->_log("  ADVANCED: $param has enum values from given/when: " .
@@ -1596,8 +1642,8 @@ sub _detect_enum_type {
 	while ($code =~ /elsif\s*\(\s*\$$param\s*eq\s*['"]([^'"]+)['"]\s*\)/g) {
 		push @if_values, $1;
 	}
-	if (@if_values >= 3) {  # At least 3 values to be confident it's an enum
-		$p->{type} = 'string';
+	if (@if_values >= 3) {
+		$p->{type} = 'string' unless $p->{type};
 		$p->{enum} = \@if_values;
 		$p->{semantic} = 'enum';
 		$self->_log("  ADVANCED: $param appears to be enum from if/elsif: " .
@@ -1609,7 +1655,6 @@ sub _detect_enum_type {
 	if ($code =~ /\$$param\s*~~\s*\[([^\]]+)\]/ ||
 	    $code =~ /\$$param\s*~~\s*qw\s*[\(\[<{]([^)\]>}]+)[\)\]>}]/) {
 		my $values_str = $1;
-		# Handle both quoted and qw formats
 		my @enum_values;
 		if ($values_str =~ /['"]/) {
 			@enum_values = $values_str =~ /['"](.*?)['"]/g;
@@ -1617,11 +1662,11 @@ sub _detect_enum_type {
 			@enum_values = split(/\s+/, $values_str);
 		}
 		if (@enum_values) {
-			$p->{type} = 'string';
+			$p->{type} = 'string' unless $p->{type};
 			$p->{enum} = \@enum_values;
 			$p->{semantic} = 'enum';
 			$self->_log("  ADVANCED: $param validated with smart match: " .
-			           join(', ', @enum_values));
+				   join(', ', @enum_values));
 			return;
 		}
 	}
@@ -1637,7 +1682,6 @@ sub _extract_parameters_from_signature {
 			$params->{$1} ||= { _source => 'code' };
 		}
 	}
-
 	# Style 2: my $self = shift; my $arg1 = shift; ...
 	elsif ($code =~ /my\s+\$self\s*=\s*shift/) {
 		my @shifts;
@@ -1646,11 +1690,10 @@ sub _extract_parameters_from_signature {
 		}
 		# Skip $self and get parameters
 		shift @shifts if @shifts && $shifts[0] =~ /^(self|class)$/i;
-		foreach my $param (@shifts) {
+			foreach my $param (@shifts) {
 			$params->{$param} ||= { _source => 'code' };
 		}
 	}
-
 	# Style 3: Function parameters (no $self)
 	if ($code =~ /my\s*\(\s*([^)]+)\)\s*=\s*\@_/s) {
 		my $sig = $1;
@@ -2106,7 +2149,7 @@ sub _serialize_parameter_for_yaml {
 			$cleaned{type} = 'integer';
 			$cleaned{min} ||= 0;
 			$cleaned{max} ||= 2147483647;  # 32-bit max
-			$cleaned{_note} = 'Unix timestamp';
+			$cleaned{_note} = 'UNIX timestamp';
 
 		} elsif ($semantic eq 'datetime_parseable') {
 			$cleaned{type} = 'string';
