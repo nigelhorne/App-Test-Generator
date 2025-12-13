@@ -571,6 +571,8 @@ The generator will automatically create test cases for each allowed value (insid
 and at least one value outside the list (which should die or C<croak>, C<_STATUS = 'DIES'>).
 This works for strings, integers, and numbers.
 
+=item * C<enum> - synonym of C<memberof>
+
 =item * C<boolean> - automatic boundary tests for boolean fields
 
   input:
@@ -1630,15 +1632,20 @@ sub _validate_config {
 		}
 	}
 
-	# Validate semantic types
+	# Validate input types
 	my $semantic_generators = _get_semantic_generators();
 	for my $param (keys %{$config->{input}}) {
 		my $spec = $config->{input}{$param};
-		if (ref($spec) eq 'HASH' && defined($spec->{semantic})) {
-			my $semantic = $spec->{semantic};
-			unless (exists $semantic_generators->{$semantic}) {
-				carp "Warning: Unknown semantic type '$semantic' for parameter '$param'. Available types: ",
-					join(', ', sort keys %$semantic_generators);
+		if(ref($spec) eq 'HASH') {
+			if(defined($spec->{semantic})) {
+				my $semantic = $spec->{semantic};
+				unless (exists $semantic_generators->{$semantic}) {
+					carp "Warning: Unknown semantic type '$semantic' for parameter '$param'. Available types: ",
+						join(', ', sort keys %$semantic_generators);
+				}
+			}
+			if($spec->{'enum'} && $spec->{'memberof'}) {
+				croak "$param: has both enum and memberof";
 			}
 		}
 	}

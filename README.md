@@ -471,6 +471,7 @@ Supported constraint types:
     and at least one value outside the list (which should die or `croak`, `_STATUS = 'DIES'`).
     This works for strings, integers, and numbers.
 
+- `enum` - synonym of `memberof`
 - `boolean` - automatic boundary tests for boolean fields
 
         input:

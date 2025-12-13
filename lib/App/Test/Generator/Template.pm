@@ -573,10 +573,17 @@ sub fuzz_inputs
 			}
 		} else {
 			# our %input = ( str => { type => 'string' } );
+
 			foreach my $arg_name (keys %input) {
 				my $spec = $input{$arg_name} || {};
 				my $type = lc((!ref($spec)) ? $spec : $spec->{type}) || 'string';
 
+				if(ref($spec) && $spec->{'enum'}) {
+					if($spec->{'memberof'}) {
+						die "$arg_name has both enum and memberof";
+					}
+					$spec->{'memberof'} = delete $spec->{'enum'};
+				}
 				foreach my $field(keys %{$spec}) {
 					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'memberof', 'position'))) {
 						diag(__LINE__, ": TODO: handle schema keyword '$field'");
