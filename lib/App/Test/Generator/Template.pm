@@ -649,6 +649,20 @@ sub fuzz_inputs
 					push @cases, { %mandatory_args, ( $arg_name => $set[0], _STATUS => 'DIES' ) } if @set;
 					push @cases, { %mandatory_args, ( $arg_name => '_not_in_set_' ) };
 				}
+
+				# --- semantic ---
+				if(defined(my $semantic = $spec->{'semantic'})) {
+					if($semantic eq 'unix_timestamp') {
+						push @cases, { %mandatory_args, ( -1, _STATUS => 'DIES' ) },
+							{ %mandatory_args, ( 0 ) },
+							{ %mandatory_args, ( 1 ) },
+							{ %mandatory_args, ( time ) },
+							{ %mandatory_args, ( 2147483647 ) },
+							{ %mandatory_args, ( 2147483648, _STATUS => 'DIES' ) };
+					} else {
+						diag("semantic type $semantic is not yet supported");
+					}
+				}
 			}
 		}
 	}
@@ -1376,6 +1390,19 @@ sub generate_tests
 			push @cases, { %mandatory_args, ( $field => '_not_in_blacklist_' ) };
 		}
 
+		# semantic tests
+		if(defined(my $semantic = $spec->{'semantic'})) {
+			if($semantic eq 'unix_timestamp') {
+				push @cases, { %mandatory_args, ( -1, _STATUS => 'DIES' ) },
+					{ %mandatory_args, ( 0 ) },
+					{ %mandatory_args, ( 1 ) },
+					{ %mandatory_args, ( time ) },
+					{ %mandatory_args, ( 2147483647 ) },
+					{ %mandatory_args, ( 2147483648, _STATUS => 'DIES' ) };
+			} else {
+				diag("semantic type $semantic is not yet supported");
+			}
+		}
 		# TODO:	How do we generate tests for cross-field validation?
 	}
 

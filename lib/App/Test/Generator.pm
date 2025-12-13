@@ -443,7 +443,9 @@ During fuzzing iterations, there's a 40% probability that a test case will use a
 
 For property-based testing with L<Test::LectroTest>,
 you can use semantic generators to create realistic test data.
-Fuzz testing support for C<semantic> entries is being developed.
+
+C<unix_timestamp> is currently fully supported,
+other fuzz testing support for C<semantic> entries is being developed.
 
   input:
     email:
@@ -497,6 +499,8 @@ Fuzz testing support for C<semantic> entries is being developed.
 =item * C<md5> - MD5 hashes (32 hex chars)
 
 =item * C<sha256> - SHA-256 hashes (64 hex chars)
+
+=item * C<unix_timestamp>
 
 =back
 
@@ -2372,6 +2376,14 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'SHA-256 hashes (64 hex characters)',
+		},
+
+		unix_timestamp => {
+			code => q{
+				Gen {
+					time;
+				}
+			}
 		},
 	};
 }

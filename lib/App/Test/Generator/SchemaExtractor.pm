@@ -312,10 +312,11 @@ The extractor generates:
     input:
       timestamp:
         type: integer
-        min: 0
-        max: 2147483647
+        # min: 0
+        # max: 2147483647
         position: 0
         _note: Unix timestamp
+	semantic: unix_timestamp
       status:
         type: string
         enum:
