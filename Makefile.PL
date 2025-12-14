@@ -18,7 +18,7 @@ WriteMakefile(
 	AUTHOR => 'Nigel Horne <njh@nigelhorne.com>',
 	LICENSE => 'GPL',
 	EXE_FILES => ['bin/fuzz-harness-generator', 'bin/extract-schemas'],
-	MIN_PERL_VERSION => '5.014',
+	MIN_PERL_VERSION => '5.036',
 	PREREQ_PM => {
 		'autodie' => 0,
 		'Carp' => 0,

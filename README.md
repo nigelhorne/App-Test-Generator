@@ -4,7 +4,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 # VERSION
 
-Version 0.20
+Version 0.21
 
 # SYNOPSIS
 
@@ -370,7 +370,9 @@ During fuzzing iterations, there's a 40% probability that a test case will use a
 
 For property-based testing with [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest),
 you can use semantic generators to create realistic test data.
-Fuzz testing support for `semantic` entries is being developed.
+
+`unix_timestamp` is currently fully supported,
+other fuzz testing support for `semantic` entries is being developed.
 
     input:
       email:
@@ -405,6 +407,7 @@ Fuzz testing support for `semantic` entries is being developed.
 - `base64` - Base64-encoded strings
 - `md5` - MD5 hashes (32 hex chars)
 - `sha256` - SHA-256 hashes (64 hex chars)
+- `unix_timestamp`
 
 ## EDGE CASE GENERATION
 
