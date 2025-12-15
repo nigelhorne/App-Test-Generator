@@ -146,6 +146,36 @@ automatically adds the C<new> field to schemas.
 
 =back
 
+=item * B<Enhanced Object Detection>
+
+The extractor now includes sophisticated object detection capabilities that go beyond simple instance method identification:
+
+=over 4
+
+=item * B<Factory Method Recognition>
+
+Automatically identifies methods that create and return object instances, such as methods named C<create_*>, C<make_*>, C<build_*>, or C<get_*>. Factory methods are correctly classified as class methods that don't require pre-existing objects for testing.
+
+=item * B<Singleton Pattern Detection>
+
+Recognizes singleton patterns through multiple signals: method names like C<instance> or C<get_instance>, static variables holding instance references, lazy initialization patterns (C<$instance ||= new()>), and consistent return of the same instance variable.
+
+=item * B<Constructor Parameter Analysis>
+
+Examines C<new> methods to determine required and optional parameters, validation requirements, and default values. This enables test generators to provide appropriate constructor arguments when object instantiation is needed.
+
+=item * B<Inheritance Relationship Handling>
+
+Detects parent classes through C<use parent>, C<use base>, and C<@ISA> declarations. Identifies when methods use C<SUPER::> calls and determines whether the current class or a parent class constructor should be used for object instantiation.
+
+=item * B<External Object Dependency Detection>
+
+Identifies when methods create or depend on objects from other classes, enabling proper test setup with mock objects or real dependencies.
+
+=back
+
+These enhancements ensure that generated test schemas accurately reflect the object-oriented structure of the code, leading to more meaningful and effective test generation.
+
 =head2 Confidence Scoring
 
 Each generated schema includes detailed confidence assessments:
@@ -706,7 +736,7 @@ sub _analyze_method {
 	$self->_detect_accessor_methods($method, $schema);
 
 	# Detect if this is an instance method that needs object instantiation
-	my $needs_object = $self->_needs_object_instantiation($method->{name}, $method->{body});
+	my $needs_object = $self->_needs_object_instantiation($method->{name}, $method->{body}, $method);
 	if ($needs_object) {
 		$schema->{new} = $needs_object;
 		$self->_log("  Method requires object instantiation: $needs_object");
@@ -1720,7 +1750,7 @@ sub _detect_enum_type {
 	return unless defined $param && $param =~ /^\w+$/;
 
 	# Pattern 1: die/croak unless value is in list
-	# die "Invalid status" unless $status =~ /^(active|inactive|pending)$/;
+	# die 'Invalid status' unless $status =~ /^(active|inactive|pending)$/;
 	if ($code =~ /unless\s+\$$param\s*=~\s*\/\^?\(([^)]+)\)/) {
 		my $values = $1;
 		my @enum_values = split(/\|/, $values);
@@ -2482,7 +2512,7 @@ sub _detect_conditional_requirements {
 Detect simple parameter dependencies (X requires Y to exist).
 
 Patterns:
-  die "Port requires host" if $port && !$host
+  die 'Port requires host' if $port && !$host
 
 =cut
 
@@ -2873,62 +2903,616 @@ sub _format_relationship {
 
 =head2 _needs_object_instantiation
 
-Determine if a method needs object instantiation and return the class name.
+Enhanced object detection that:
+- Detects factory methods that return instances
+- Recognizes singleton patterns
+- Identifies when constructor needs specific parameters
+- Handles inheritance (when parent class new() is needed)
+- Detects both instance methods and class methods that require objects
 
-Returns the package name if this is an instance method, undef if it's a class method or constructor.
+Returns:
+- undef if no object needed
+- package name if object instantiation is needed
+- hashref with constructor details if specific parameters are needed
 
 =cut
 
 sub _needs_object_instantiation {
+	my ($self, $method_name, $method_body, $method_info) = @_;
+
+	# Allow method_info to be optional for backward compatibility
+	$method_info ||= {};
+
+	my $doc = $self->{_document};
+	return undef unless $doc;
+
+	# Get the current package name
+	my $package_stmt = $doc->find_first('PPI::Statement::Package');
+	my $current_package = $package_stmt ? $package_stmt->namespace : 'UNKNOWN';
+
+	# Skip constructors and destructors
+	return undef if $method_name eq 'new';
+	return undef if $method_name =~ /^(create|build|construct|init|DESTROY)$/i;
+
+	# Initialize result structure
+	my $result = {
+		package => $current_package,
+		needs_object => 0,
+		type => 'unknown',
+		details => {},
+		constructor_params => undef,
+	};
+
+	# 1. Check for factory methods that return instances
+	my $is_factory = $self->_detect_factory_method($method_name, $method_body, $current_package, $method_info);
+	if ($is_factory) {
+		$result->{needs_object} = 0;  # Factory methods CREATE objects, don't need them
+		$result->{type} = 'factory';
+		$result->{details} = $is_factory;
+		$self->_log("  OBJECT: Detected factory method '$method_name' returns $is_factory->{returns_class} objects") if $is_factory->{returns_class};
+		return undef;  # Factory methods don't need pre-existing objects
+	}
+
+	# 2. Check for singleton patterns
+	my $is_singleton = $self->_detect_singleton_pattern($method_name, $method_body);
+	if ($is_singleton) {
+		$result->{needs_object} = 0;  # Singleton methods return the singleton instance
+		$result->{type} = 'singleton_accessor';
+		$result->{details} = $is_singleton;
+		$self->_log("  OBJECT: Detected singleton accessor '$method_name'");
+		# Singleton accessors typically don't need object creation in tests
+		# as they're called on the class, not instance
+		return undef;
+	}
+
+	# 3. Check if this is an instance method that needs an object
+	my $is_instance_method = $self->_detect_instance_method($method_name, $method_body);
+	if ($is_instance_method && ($is_instance_method->{explicit_self} ||
+								$is_instance_method->{shift_self} ||
+								$is_instance_method->{accesses_object_data})) {
+		$result->{needs_object} = 1;
+		$result->{type} = 'instance_method';
+		$result->{details} = $is_instance_method;
+
+		# 4. Check for inheritance - if parent class constructor should be used
+		my $inheritance_info = $self->_check_inheritance_for_constructor($current_package, $method_body);
+		if ($inheritance_info && $inheritance_info->{use_parent_constructor}) {
+			$result->{package} = $inheritance_info->{parent_class};
+			$result->{details}{inheritance} = $inheritance_info;
+			$self->_log("  OBJECT: Method '$method_name' uses parent class constructor: $inheritance_info->{parent_class}");
+		}
+
+		# 5. Check if constructor needs specific parameters
+		my $constructor_needs = $self->_detect_constructor_requirements($current_package, $result->{package});
+		if ($constructor_needs) {
+			$result->{constructor_params} = $constructor_needs;
+			$result->{details}{constructor_requirements} = $constructor_needs;
+			$self->_log("  OBJECT: Constructor for $result->{package} requires parameters");
+		}
+
+		# Return the package name (or parent package) that needs instantiation
+		return $result->{package} if $result->{needs_object};
+	}
+
+	# 6. Check for class methods that might need objects from other classes
+	my $needs_other_object = $self->_detect_external_object_dependency($method_body);
+	if ($needs_other_object) {
+		$result->{needs_object} = 1;
+		$result->{type} = 'external_dependency';
+		$result->{package} = $needs_other_object->{package} if $needs_other_object->{package};
+		$result->{details} = $needs_other_object;
+
+		$self->_log("  OBJECT: Method '$method_name' depends on external object: $needs_other_object->{package}");
+		return $result->{package} if $result->{package};
+	}
+
+	return undef;
+}
+
+=head2 _detect_factory_method
+
+Detect factory methods that create and return instances.
+
+Patterns:
+- Returns blessed references
+- Returns objects created with ->new()
+- Method names like create_*, make_*, build_*
+- Returns $self->new(...) or Class->new(...)
+
+=cut
+
+sub _detect_factory_method {
+	my ($self, $method_name, $method_body, $current_package, $method_info) = @_;
+
+	my %factory_info;
+
+	# Check method name patterns
+	if ($method_name =~ /^(create_|make_|build_|get_)/i) {
+		$factory_info{name_pattern} = 1;
+	}
+
+	# Look for object creation patterns in the method body
+	if ($method_body) {
+		# Pattern 1: Returns a blessed reference
+		if ($method_body =~ /return\s+bless\s*\{[^}]*\},\s*['"]?(\w+(?:::\w+)*|\$\w+)['"]?/s ||
+			$method_body =~ /bless\s*\{[^}]*\},\s*['"]?(\w+(?:::\w+)*|\$\w+)['"]?.*return/s) {
+			my $class_name = $1;
+
+			# Handle variable class names
+			if ($class_name =~ /^\$(class|self|package)$/) {
+				$factory_info{returns_class} = $current_package;
+			} elsif ($class_name =~ /^\$/) {
+				$factory_info{returns_class} = 'VARIABLE';  # Unknown variable
+			} else {
+				$factory_info{returns_class} = $class_name;
+			}
+
+			$factory_info{returns_blessed} = 1;
+			$factory_info{confidence} = 'high';
+			return \%factory_info;
+		}
+
+		# Pattern 2: Returns ->new() call on class or $self
+		if ($method_body =~ /return\s+([\$\w:]+)->new\(/s ||
+			$method_body =~ /([\$\w:]+)->new\(.*return/s) {
+			my $target = $1;
+
+			# Determine what class is being instantiated
+			if ($target eq '$self' || $target eq 'shift' || $target =~ /^\$/) {
+				$factory_info{returns_class} = $current_package;
+				$factory_info{self_new} = 1;
+			} elsif ($target =~ /::/) {
+				$factory_info{returns_class} = $target;
+				$factory_info{external_class} = 1;
+			} else {
+				$factory_info{returns_class} = $target;
+			}
+
+			$factory_info{returns_new} = 1;
+			$factory_info{confidence} = 'medium';
+			return \%factory_info;
+		}
+
+		# Pattern 3: Returns an object from another factory method
+		if ($method_body =~ /return\s+([\$\w:]+)->(create_|make_|build_|get_)/i ||
+			$method_body =~ /([\$\w:]+)->(create_|make_|build_|get_).*return/si) {
+			$factory_info{returns_factory_result} = 1;
+			$factory_info{confidence} = 'low';
+			return \%factory_info;
+		}
+	}
+
+	# Check for return type hints in POD if available
+	if ($method_info && ref($method_info) eq 'HASH' && $method_info->{pod}) {
+		my $pod = $method_info->{pod};
+		if ($pod =~ /returns?\s+(?:an?\s+)?(object|instance|new\s+\w+)/i) {
+			$factory_info{pod_hint} = 1;
+			$factory_info{confidence} = 'low';
+			return \%factory_info;
+		}
+	}
+
+	return undef;
+}
+
+=head2 _detect_singleton_pattern
+
+Detect singleton patterns:
+- Class methods that return $instance or $_instance
+- Static variable holding instance
+- Method names like instance(), get_instance()
+
+=cut
+
+sub _detect_singleton_pattern {
 	my ($self, $method_name, $method_body) = @_;
 
-	# Skip constructors - they don't need object instantiation
-	return undef if $method_name eq 'new';
-	return undef if $method_name =~ /^(create|build|construct|init)$/i;
+	# Check method name patterns
+	return undef unless $method_name =~ /^(instance|get_instance|singleton|shared_instance)$/i;
 
-	# Check if method has $self as first parameter
+	my %singleton_info = (
+		name_pattern => 1,
+	);
+
+	# Look for singleton patterns in code
+	if ($method_body) {
+		# Pattern 1: Static/state variable holding instance
+		if ($method_body =~ /(?:my\s+)?(?:our\s+)?\$(?:instance|_instance|singleton)\b/s ||
+			$method_body =~ /state\s+\$(?:instance|_instance|singleton)\b/s) {
+			$singleton_info{static_variable} = 1;
+			$singleton_info{confidence} = 'high';
+		}
+
+		# Pattern 2: Returns $instance if defined (with better regex)
+		if ($method_body =~ /return\s+\$instance\s+if\s+(?:defined\s+)?\$instance/ ||
+			$method_body =~ /unless\s+\$instance.*?=\s*.*?new/) {
+			$singleton_info{returns_instance} = 1;
+			$singleton_info{confidence} = 'high';
+		}
+
+		# Pattern 3: ||= new() pattern (with better regex)
+		if ($method_body =~ /\$instance\s*\|\|=\s*.*?new/ ||
+			$method_body =~ /\$instance\s*=\s*.*?new\s+unless\s+(?:defined\s+)?\$instance/) {
+			$singleton_info{lazy_initialization} = 1;
+			$singleton_info{confidence} = 'medium';
+		}
+
+		# Pattern 4: Direct return of $instance variable
+		if ($method_body =~ /return\s+\$instance;/) {
+			$singleton_info{returns_instance} = 1;
+			$singleton_info{confidence} = 'high' unless $singleton_info{confidence};
+		}
+	}
+
+	return \%singleton_info if keys %singleton_info > 0;  # Need at least name pattern
+
+	return undef;
+}
+
+=head2 _detect_instance_method
+
+Detect if a method is an instance method that needs an object.
+
+Enhanced detection with multiple patterns.
+
+=cut
+
+sub _detect_instance_method {
+	my ($self, $method_name, $method_body) = @_;
+
+	my %instance_info;
+
 	# Pattern 1: my ($self, ...) = @_;
 	if ($method_body =~ /my\s*\(\s*\$self\s*[,)]/) {
-		# This is an instance method, get the package name
-		my $doc = $self->{_document};
-		if ($doc) {
-			my $package_stmt = $doc->find_first('PPI::Statement::Package');
-			if ($package_stmt) {
-				my $package_name = $package_stmt->namespace;
-				$self->_log("  Detected instance method in package: $package_name");
-				return $package_name;
-			}
-		}
-		# Fallback: couldn't determine package, but it's clearly an instance method
-		return 'UNKNOWN_PACKAGE';
+		$instance_info{explicit_self} = 1;
+		$instance_info{confidence} = 'high';
 	}
 
 	# Pattern 2: my $self = shift;
-	if ($method_body =~ /my\s+\$self\s*=\s*shift/) {
-		my $doc = $self->{_document};
-		if ($doc) {
-			my $package_stmt = $doc->find_first('PPI::Statement::Package');
-			if ($package_stmt) {
-				return $package_stmt->namespace;
-			}
-		}
-		return 'UNKNOWN_PACKAGE';
+	elsif ($method_body =~ /my\s+\$self\s*=\s*shift/) {
+		$instance_info{shift_self} = 1;
+		$instance_info{confidence} = 'high';
 	}
 
-	# Pattern 3: Check for $self-> method calls in body
-	if ($method_body =~ /\$self\s*->\s*\w+/) {
-		my $doc = $self->{_document};
-		if ($doc) {
-			my $package_stmt = $doc->find_first('PPI::Statement::Package');
-			if ($package_stmt) {
-				return $package_stmt->namespace;
-			}
-		}
-		return 'UNKNOWN_PACKAGE';
+	# Pattern 3: Uses $self->something (including hash/array access)
+	# This now catches $self->{value} and $self->[0] as well as $self->method()
+	elsif ($method_body =~ /\$self\s*->\s*(\w+|[\{\[])/) {
+		$instance_info{uses_self} = 1;
+		$instance_info{confidence} = 'medium';
 	}
 
-	# Not an instance method
+	# Pattern 4: Accesses object data: $self->{...}, $self->[...]
+	if ($method_body =~ /\$self\s*->\s*[\{\[]/) {
+		$instance_info{accesses_object_data} = 1;
+		$instance_info{confidence} = 'high' unless $instance_info{confidence} eq 'high';
+	}
+
+	# Pattern 5: Calls other instance methods on $self
+	if ($method_body =~ /\$self\s*->\s*(\w+)\s*\(/s) {
+		$instance_info{calls_instance_methods} = [];
+		while ($method_body =~ /\$self\s*->\s*(\w+)\s*\(/g) {
+			push @{$instance_info{calls_instance_methods}}, $1;
+		}
+		$instance_info{confidence} = 'high' if @{$instance_info{calls_instance_methods}};
+	}
+
+	# Pattern 6: Method name suggests instance method (not perfect but helpful)
+	if ($method_name =~ /^_/ && $method_name !~ /^_new/) {
+		# Private methods are usually instance methods
+		$instance_info{private_method} = 1;
+		$instance_info{confidence} = 'low' unless exists $instance_info{confidence};
+	}
+
+	return \%instance_info if keys %instance_info;
 	return undef;
+}
+
+=head2 _check_inheritance_for_constructor
+
+Check if inheritance affects which constructor should be used.
+
+Patterns:
+- use parent/base statements
+- @ISA array
+- SUPER::new calls
+- parent class methods
+
+=cut
+
+sub _check_inheritance_for_constructor {
+	my ($self, $current_package, $method_body) = @_;
+
+	my $doc = $self->{_document};
+	return undef unless $doc;
+
+	my %inheritance_info;
+
+	# 1. Look for parent/base statements
+	my @parent_classes;
+
+	# Find all 'use parent' or 'use base' statements
+	my $includes = $doc->find('PPI::Statement::Include') || [];
+	foreach my $inc (@$includes) {
+		my $content = $inc->content;
+		if ($content =~ /use\s+(parent|base)\s+['"]?([\w:]+)['"]?/) {
+			push @parent_classes, $2;
+			$inheritance_info{parent_statements} = \@parent_classes;
+		}
+		# Also check for multiple parents: use parent qw(Class1 Class2)
+		if ($content =~ /use\s+(parent|base)\s+qw?[\(\[]?(.+?)[\)\]]?;/) {
+			my $parents = $2;
+			my @multi_parents = split /\s+/, $parents;
+			push @parent_classes, @multi_parents;
+			$inheritance_info{parent_statements} = \@parent_classes;
+		}
+	}
+
+	# 2. Look for @ISA assignments (with or without 'our')
+	my $isas = $doc->find('PPI::Statement::Variable') || [];
+	foreach my $isa (@$isas) {
+		my $content = $isa->content();
+		# Match both "our @ISA = qw(...)" and "@ISA = qw(...)"
+		if ($content =~ /(?:our\s+)?\@ISA\s*=\s*qw?[\(\[]?(.+?)[\)\]]?/) {
+			my $parents = $1;
+			my @isa_parents = split(/\s+/, $parents);
+			push @parent_classes, @isa_parents;
+			$inheritance_info{isa_array} = \@isa_parents;
+		}
+	}
+
+	# Also look for @ISA in regular statements
+	my $statements = $doc->find('PPI::Statement') || [];
+	foreach my $stmt (@$statements) {
+		my $content = $stmt->content;
+		if ($content =~ /\@ISA\s*=\s*qw?[\(\[]?(.+?)[\)\]]?/) {
+			my $parents = $1;
+			my @isa_parents = split(/\s+/, $parents);
+			push @parent_classes, @isa_parents;
+			$inheritance_info{isa_array} = \@isa_parents;
+		}
+	}
+
+	# 3. Check if method uses SUPER:: calls
+	if ($method_body && $method_body =~ /SUPER::/) {
+		$inheritance_info{uses_super} = 1;
+		if ($method_body =~ /SUPER::new/) {
+			$inheritance_info{calls_super_new} = 1;
+		}
+	}
+
+	# 4. Check if current package has its own new method
+	my $has_own_new = $doc->find(sub {
+		$_[1]->isa('PPI::Statement::Sub') &&
+		$_[1]->name eq 'new'
+	});
+
+	if ($has_own_new) {
+		$inheritance_info{has_own_constructor} = 1;
+	} elsif (@parent_classes) {
+		# No own constructor, but has parents - might need parent constructor
+		$inheritance_info{use_parent_constructor} = 1;
+		$inheritance_info{parent_class} = $parent_classes[0];  # Use first parent
+	}
+
+	return \%inheritance_info if keys %inheritance_info;
+	return undef;
+}
+
+=head2 _detect_constructor_requirements
+
+Detect if constructor (new method) needs specific parameters.
+
+Analyzes the new method to determine required parameters.
+
+=cut
+
+sub _detect_constructor_requirements {
+	my ($self, $current_package, $target_package) = @_;
+
+	my $doc = $self->{_document};
+	return undef unless $doc;
+
+	# If target is different from current, we can't analyze it
+	# (external class, parent class in different file)
+	if ($target_package ne $current_package) {
+		return {
+			external_class => 1,
+			package => $target_package,
+			note => "Constructor for external class $target_package - parameters unknown"
+		};
+	}
+
+	# Find the new method in current package
+	my $new_method = $doc->find_first(sub {
+		$_[1]->isa('PPI::Statement::Sub') &&
+		$_[1]->name eq 'new'
+	});
+
+	return undef unless $new_method;
+
+	my %requirements;
+
+	# Get method body
+	my $body = $new_method->content;
+
+	# Look for parameter extraction patterns - handle both $self and $class
+	if ($body =~ /my\s*\(\s*\$(self|class)\s*,\s*(.+?)\)\s*=\s*\@_/s) {
+		my $params = $2;
+		my @param_names = $params =~ /\$(\w+)/g;
+
+		if (@param_names) {
+			$requirements{parameters} = \@param_names;
+			$requirements{parameter_count} = scalar @param_names;
+		}
+	}
+
+	# Look for shift patterns
+	my @shift_params;
+	while ($body =~ /my\s+\$(\w+)\s*=\s*shift/g) {
+		push @shift_params, $1;
+	}
+	# Remove $self or $class if present
+	@shift_params = grep { $_ !~ /^(self|class)$/i } @shift_params;
+
+	if (@shift_params) {
+		$requirements{parameters} = \@shift_params;
+		$requirements{parameter_count} = scalar @shift_params;
+		$requirements{shift_pattern} = 1;
+	}
+
+	# Look for validation of parameters (more flexible pattern)
+	my @required_params;
+	if ($body =~ /croak.*unless.*(?:defined\s+)?\$(\w+)/g) {
+		push @required_params, $1;
+	}
+	if ($body =~ /die.*unless.*(?:defined\s+)?\$(\w+)/g) {
+		push @required_params, $1;
+	}
+
+	if (@required_params) {
+		$requirements{required_parameters} = \@required_params;
+	}
+
+	# Look for default values (optional parameters)
+	my @optional_params;
+	if ($body =~ /\$(\w+)\s*=\s*\$(\w+)\s*\|\|\s*[^;]+/g) {
+		push @optional_params, $2;
+	}
+	if ($body =~ /\$(\w+)\s*\/\/=\s*[^;]+/g) {
+		push @optional_params, $1;
+	}
+	if ($body =~ /\$(\w+)\s*=\s*defined.*\$$1.*\?.*\$$1.*:/g) {
+		push @optional_params, $1;
+	}
+
+	if (@optional_params) {
+		$requirements{optional_parameters} = \@optional_params;
+	}
+
+	return \%requirements if keys %requirements;
+	return undef;
+}
+
+
+=head2 _detect_external_object_dependency
+
+Detect if method depends on objects from other classes.
+
+Patterns:
+- Creates objects of other classes
+- Calls methods on objects from other classes
+- Receives objects as parameters
+
+=cut
+
+sub _detect_external_object_dependency {
+	my ($self, $method_body) = @_;
+
+	return undef unless $method_body;
+
+	my %dependency_info;
+
+	# Pattern 1: Creates objects of other classes with ->new() or ->create()
+	# Reset pos for global match
+	pos($method_body) = 0;
+	while ($method_body =~ /(\w+(?:::\w+)*)->(?:new|create)\(/g) {
+		my $class = $1;
+		next if $class eq 'main' || $class eq '__PACKAGE__' || $class =~ /^\$/;
+		push @{$dependency_info{creates_objects}}, $class;
+	}
+
+	if ($dependency_info{creates_objects}) {
+		# Remove duplicates
+		my %seen;
+		$dependency_info{creates_objects} = [grep { !$seen{$_}++ } @{$dependency_info{creates_objects}}];
+		$dependency_info{package} = $dependency_info{creates_objects}[0];
+	}
+
+	# Pattern 2: Calls methods on objects from other classes
+	if ($method_body =~ /\$(\w+)->\w+\(/g) {
+		my %object_vars;
+		while ($method_body =~ /\$(\w+)->\w+\(/g) {
+			$object_vars{$1}++;
+		}
+
+		# Try to determine type of object variables
+		my @object_classes;
+		foreach my $var (keys %object_vars) {
+			# Look for type declarations or assignments
+			if ($method_body =~ /my\s+\$$var\s*=\s*(\w+(?:::\w+)+)->(?:new|create)/) {
+				push @object_classes, $1;
+			} elsif ($method_body =~ /my\s+\$$var\s*=\s*(\w+(?:::\w+)+)->/) {
+				push @object_classes, $1;
+			}
+		}
+
+		if (@object_classes) {
+			$dependency_info{uses_objects} = \@object_classes;
+			$dependency_info{package} = $object_classes[0] unless $dependency_info{package};
+		}
+	}
+
+	# Pattern 3: Receives objects as parameters (type hints in comments/POD)
+	# This would need integration with parameter analysis
+
+	return \%dependency_info if keys %dependency_info;
+	return undef;
+}
+
+sub _get_parent_class {
+	my $self = $_[0];
+
+	my $doc = $self->{_document};
+	return unless $doc;
+
+	# Look for use parent statements
+	my $parent_stmt = $doc->find_first(sub {
+		$_[1]->isa('PPI::Statement::Include') &&
+		$_[1]->type eq 'use' &&
+		$_[1]->module =~ /^(parent|base)$/ &&
+		$_[1]->arguments =~ /['"](\w+(?:::\w+)*)['"]/
+	});
+	if ($parent_stmt) {
+		my $parent = $1;
+		return $parent;
+	}
+
+	# Look for @ISA assignment
+	my $isa_stmt = $doc->find_first(sub {
+		$_[1]->isa('PPI::Statement') &&
+		$_[1]->content =~ /our\s+\@ISA\s*=\s*\(\s*['"](\w+(?:::\w+)*)['"]\s*\)/
+	});
+	if ($isa_stmt && $isa_stmt->content =~ /['"](\w+(?:::\w+)*)['"]/) {
+		return $1;
+	}
+
+	return;
+}
+
+sub _get_class_for_instance_method {
+	my $self = $_[0];
+
+	# Get the current package
+	my $doc = $self->{_document};
+	my $package_stmt = $doc->find_first('PPI::Statement::Package');
+	return 'UNKNOWN_PACKAGE' unless $package_stmt;
+	my $package_name = $package_stmt->namespace;
+
+	# Check if the current package has a 'new' method
+	my $has_new = $doc->find(sub {
+		$_[1]->isa('PPI::Statement::Sub') && $_[1]->name eq 'new'
+	});
+
+	if ($has_new) {
+		return $package_name;
+	}
+
+	# Otherwise, try to get the parent class
+	my $parent = $self->_get_parent_class();
+	return $parent if $parent;
+
+	# Fallback to current package
+	return $package_name;
 }
 
 =head2 _log
