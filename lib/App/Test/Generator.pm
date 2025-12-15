@@ -1840,7 +1840,7 @@ sub render_arrayref_map {
 sub q_wrap {
 	my $s = $_[0];
 	for my $p ( ['{','}'], ['(',')'], ['[',']'], ['<','>'] ) {
-		my ($l,$r) = @$p;
+		my ($l, $r) = @$p;
 		return "q$l$s$r" unless $s =~ /\Q$l\E|\Q$r\E/;
 	}
 	for my $d ('~', '!', '%', '^', '=', '+', ':', ',', ';', '|', '/', '#') {

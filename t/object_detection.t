@@ -14,7 +14,7 @@ BEGIN {
 
 # Helper to create a temporary Perl module file
 sub create_test_module {
-	my ($content) = @_;
+	my $content = $_[0];
 	my $dir = tempdir(CLEANUP => 1);
 	my $file = File::Spec->catfile($dir, 'TestModule.pm');
 	open my $fh, '>', $file or die "Cannot create $file: $!";
@@ -25,7 +25,7 @@ sub create_test_module {
 
 # Helper to create an extractor for testing
 sub create_extractor {
-	my ($module_content) = @_;
+	my $module_content = $_[0];
 	my $module_file = create_test_module($module_content);
 	return App::Test::Generator::SchemaExtractor->new(
 		input_file => $module_file,
