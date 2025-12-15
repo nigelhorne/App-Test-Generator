@@ -330,6 +330,139 @@ The extractor generates:
         position: 2
         _note: 'CODE reference - provide sub { } in tests'
 
+=head1 RELATIONSHIP DETECTION
+
+The schema extractor now detects relationships and dependencies between parameters,
+enabling more sophisticated validation and test generation.
+
+=head2 Relationship Types
+
+=over 4
+
+=item * B<mutually_exclusive>
+
+Parameters that cannot be used together.
+
+    die if $file && $content;  # Can't specify both
+
+Generated schema:
+
+    relationships:
+      - type: mutually_exclusive
+        params: [file, content]
+        description: Cannot specify both file and content
+
+=item * B<required_group>
+
+At least one parameter from the group must be specified (OR logic).
+
+    die unless $id || $name;  # Must provide one
+
+Generated schema:
+
+    relationships:
+      - type: required_group
+        params: [id, name]
+        logic: or
+        description: Must specify either id or name
+
+=item * B<conditional_requirement>
+
+If one parameter is specified, another becomes required (IF-THEN logic).
+
+    die if $async && !$callback;  # async requires callback
+
+Generated schema:
+
+    relationships:
+      - type: conditional_requirement
+        if: async
+        then_required: callback
+        description: When async is specified, callback is required
+
+=item * B<dependency>
+
+One parameter depends on another being present.
+
+    die "Port requires host" if $port && !$host;
+
+Generated schema:
+
+    relationships:
+      - type: dependency
+        param: port
+        requires: host
+        description: port requires host to be specified
+
+=item * B<value_constraint>
+
+Specific value requirements between parameters.
+
+    die if $ssl && $port != 443;  # ssl requires port 443
+
+Generated schema:
+
+    relationships:
+      - type: value_constraint
+        if: ssl
+        then: port
+        operator: ==
+        value: 443
+        description: When ssl is specified, port must equal 443
+
+=item * B<value_conditional>
+
+Parameter required when another has a specific value.
+
+    die if $mode eq 'secure' && !$key;
+
+Generated schema:
+
+    relationships:
+      - type: value_conditional
+        if: mode
+        equals: secure
+        then_required: key
+        description: When mode equals 'secure', key is required
+
+=back
+
+=head2 Example
+
+For a method like:
+
+    sub connect {
+        my ($self, $host, $port, $ssl, $file, $content) = @_;
+
+        die if $file && $content;                    # mutually exclusive
+        die unless $host || $file;                   # required group
+        die "Port requires host" if $port && !$host; # dependency
+        die if $ssl && $port != 443;                 # value constraint
+
+        # ... connection logic
+    }
+
+The extractor generates:
+
+    relationships:
+      - type: mutually_exclusive
+        params: [file, content]
+        description: Cannot specify both file and content
+      - type: required_group
+        params: [host, file]
+        logic: or
+        description: Must specify either host or file
+      - type: dependency
+        param: port
+        requires: host
+        description: port requires host to be specified
+      - type: value_constraint
+        if: ssl
+        then: port
+        operator: ==
+        value: 443
+        description: When ssl is specified, port must equal 443
+
 =head1 METHODS
 
 =head2 new
@@ -585,6 +718,13 @@ sub _analyze_method {
 
 	# Add metadata
 	$schema->{_notes} = $self->_generate_notes($schema->{input});
+
+	# Analyze parameter relationships
+	my $relationships = $self->_analyze_relationships($method);
+	if ($relationships && @{$relationships}) {
+		$schema->{relationships} = $relationships;
+		$self->_log("  Found " . scalar(@$relationships) . " parameter relationships");
+	}
 
 	return $schema;
 }
@@ -2038,6 +2178,411 @@ sub _generate_notes {
 	return \@notes;
 }
 
+=head2 _analyze_relationships
+
+Analyze relationships and dependencies between parameters.
+
+Detects:
+- Mutually exclusive parameters (can't use both)
+- Required parameter groups (must use one of)
+- Conditional requirements (if X then Y)
+- Parameter dependencies (X requires Y)
+- Value-based constraints (X=5 requires Y)
+
+=cut
+
+sub _analyze_relationships {
+	my ($self, $method) = @_;
+
+	my $code = $method->{body};
+	my @relationships;
+
+	# Extract all parameter names from the method
+	my @param_names;
+	if ($code =~ /my\s*\(\s*\$\w+\s*,\s*(.+?)\)\s*=\s*\@_/s) {
+		my $params = $1;
+		@param_names = $params =~ /\$(\w+)/g;
+	}
+
+	return [] unless @param_names;
+
+	# Detect mutually exclusive parameters
+	push @relationships, @{$self->_detect_mutually_exclusive($code, \@param_names)};
+
+	# Detect required groups (OR logic)
+	push @relationships, @{$self->_detect_required_groups($code, \@param_names)};
+
+	# Detect conditional requirements (IF-THEN)
+	push @relationships, @{$self->_detect_conditional_requirements($code, \@param_names)};
+
+	# Detect dependencies
+	push @relationships, @{$self->_detect_dependencies($code, \@param_names)};
+
+	# Detect value-based constraints
+	push @relationships, @{$self->_detect_value_constraints($code, \@param_names)};
+
+	# Deduplicate relationships
+	my @unique = $self->_deduplicate_relationships(\@relationships);
+
+	return \@unique;
+}
+
+=head2 _deduplicate_relationships
+
+Remove duplicate relationship entries.
+
+=cut
+
+sub _deduplicate_relationships {
+	my ($self, $relationships) = @_;
+
+	my @unique;
+	my %seen;
+
+	foreach my $rel (@$relationships) {
+		# Create a signature for this relationship
+		my $sig;
+		if ($rel->{type} eq 'mutually_exclusive') {
+			$sig = join(':', 'mutex', sort @{$rel->{params}});
+		} elsif ($rel->{type} eq 'required_group') {
+			$sig = join(':', 'reqgroup', sort @{$rel->{params}});
+		} elsif ($rel->{type} eq 'conditional_requirement') {
+			$sig = join(':', 'condreq', $rel->{if}, $rel->{then_required});
+		} elsif ($rel->{type} eq 'dependency') {
+			$sig = join(':', 'dep', $rel->{param}, $rel->{requires});
+		} elsif ($rel->{type} eq 'value_constraint') {
+			$sig = join(':', 'valcon', $rel->{if}, $rel->{then}, $rel->{operator}, $rel->{value});
+		} elsif ($rel->{type} eq 'value_conditional') {
+			$sig = join(':', 'valcond', $rel->{if}, $rel->{equals}, $rel->{then_required});
+		} else {
+			$sig = join(':', $rel->{type}, %$rel);
+		}
+
+		unless ($seen{$sig}++) {
+			push @unique, $rel;
+		}
+	}
+
+	return @unique;
+}
+
+=head2 _detect_mutually_exclusive
+
+Detect parameters that cannot be used together.
+
+Patterns:
+  die if $file && $content
+  croak "Cannot specify both" if $x && $y
+  die unless !($a && $b)
+
+=cut
+
+sub _detect_mutually_exclusive {
+	my ($self, $code, $param_names) = @_;
+
+	my @relationships;
+
+	# Pattern 1: die/croak if $x && $y
+	# Look for: die/croak ... if $param1 && $param2
+	foreach my $param1 (@$param_names) {
+		foreach my $param2 (@$param_names) {
+			next if $param1 eq $param2;
+
+			# Check various patterns
+			if ($code =~ /(?:die|croak|confess)[^;]*if\s+\$$param1\s+&&\s+\$$param2/ ||
+			    $code =~ /(?:die|croak|confess)[^;]*if\s+\$$param2\s+&&\s+\$$param1/) {
+
+				# Avoid duplicates (param1,param2 vs param2,param1)
+				my $found_reverse = 0;
+				foreach my $rel (@relationships) {
+					if ($rel->{type} eq 'mutually_exclusive' &&
+					    (($rel->{params}[0] eq $param2 && $rel->{params}[1] eq $param1))) {
+						$found_reverse = 1;
+						last;
+					}
+				}
+
+				next if $found_reverse;
+
+				push @relationships, {
+					type => 'mutually_exclusive',
+					params => [$param1, $param2],
+					description => "Cannot specify both $param1 and $param2"
+				};
+
+				$self->_log("  RELATIONSHIP: $param1 and $param2 are mutually exclusive");
+			}
+
+			# Pattern 2: die "Cannot specify both X and Y"
+			if ($code =~ /(?:die|croak|confess)\s+['"](Cannot|Can't)[^'"]*both[^'"]*$param1[^'"]*$param2/i ||
+			    $code =~ /(?:die|croak|confess)\s+['"](Cannot|Can't)[^'"]*both[^'"]*$param2[^'"]*$param1/i) {
+
+				my $found_reverse = 0;
+				foreach my $rel (@relationships) {
+					if ($rel->{type} eq 'mutually_exclusive' &&
+					    (($rel->{params}[0] eq $param2 && $rel->{params}[1] eq $param1))) {
+						$found_reverse = 1;
+						last;
+					}
+				}
+
+				next if $found_reverse;
+
+				push @relationships, {
+					type => 'mutually_exclusive',
+					params => [$param1, $param2],
+					description => "Cannot specify both $param1 and $param2"
+				};
+
+				$self->_log("  RELATIONSHIP: $param1 and $param2 are mutually exclusive (from error message)");
+			}
+		}
+	}
+
+	return \@relationships;
+}
+
+=head2 _detect_required_groups
+
+Detect parameter groups where at least one must be specified (OR logic).
+
+Patterns:
+  die unless $id || $name
+  croak "Must specify either X or Y" unless $x || $y
+
+=cut
+
+sub _detect_required_groups {
+	my ($self, $code, $param_names) = @_;
+
+	my @relationships;
+
+	# Pattern 1: die/croak unless $x || $y
+	foreach my $param1 (@$param_names) {
+		foreach my $param2 (@$param_names) {
+			next if $param1 eq $param2;
+
+			if ($code =~ /(?:die|croak|confess)[^;]*unless\s+\$$param1\s+\|\|\s+\$$param2/ ||
+			    $code =~ /(?:die|croak|confess)[^;]*unless\s+\$$param2\s+\|\|\s+\$$param1/) {
+
+				# Avoid duplicates
+				my $found_reverse = 0;
+				foreach my $rel (@relationships) {
+					if ($rel->{type} eq 'required_group' &&
+					    (($rel->{params}[0] eq $param2 && $rel->{params}[1] eq $param1))) {
+						$found_reverse = 1;
+						last;
+					}
+				}
+
+				next if $found_reverse;
+
+				push @relationships, {
+					type => 'required_group',
+					params => [$param1, $param2],
+					logic => 'or',
+					description => "Must specify either $param1 or $param2"
+				};
+
+				$self->_log("  RELATIONSHIP: Must specify either $param1 or $param2");
+			}
+
+			# Pattern 2: die "Must specify either X or Y"
+			if ($code =~ /(?:die|croak|confess)\s+['"]Must\s+specify\s+either[^'"]*$param1[^'"]*or[^'"]*$param2/i ||
+			    $code =~ /(?:die|croak|confess)\s+['"]Must\s+specify\s+either[^'"]*$param2[^'"]*or[^'"]*$param1/i) {
+
+				my $found_reverse = 0;
+				foreach my $rel (@relationships) {
+					if ($rel->{type} eq 'required_group' &&
+					    (($rel->{params}[0] eq $param2 && $rel->{params}[1] eq $param1))) {
+						$found_reverse = 1;
+						last;
+					}
+				}
+
+				next if $found_reverse;
+
+				push @relationships, {
+					type => 'required_group',
+					params => [$param1, $param2],
+					logic => 'or',
+					description => "Must specify either $param1 or $param2"
+				};
+
+				$self->_log("  RELATIONSHIP: Must specify either $param1 or $param2 (from error message)");
+			}
+		}
+	}
+
+	return \@relationships;
+}
+
+=head2 _detect_conditional_requirements
+
+Detect conditional requirements (IF-THEN logic).
+
+Patterns:
+  die if $async && !$callback
+  croak "X requires Y" if $x && !$y
+
+=cut
+
+sub _detect_conditional_requirements {
+	my ($self, $code, $param_names) = @_;
+
+	my @relationships;
+
+	foreach my $param1 (@$param_names) {
+		foreach my $param2 (@$param_names) {
+			next if $param1 eq $param2;
+
+			# Pattern 1: die if $x && !$y  (if x then y required)
+			if ($code =~ /(?:die|croak|confess)[^;]*if\s+\$$param1\s+&&\s+!\$$param2/) {
+				push @relationships, {
+					type => 'conditional_requirement',
+					if => $param1,
+					then_required => $param2,
+					description => "When $param1 is specified, $param2 is required"
+				};
+
+				$self->_log("  RELATIONSHIP: $param1 requires $param2");
+			}
+
+			# Pattern 2: die if $x && !defined($y)
+			if ($code =~ /(?:die|croak|confess)[^;]*if\s+\$$param1\s+&&\s+!defined\s*\(\s*\$$param2\s*\)/) {
+				push @relationships, {
+					type => 'conditional_requirement',
+					if => $param1,
+					then_required => $param2,
+					description => "When $param1 is specified, $param2 is required"
+				};
+
+				$self->_log("  RELATIONSHIP: $param1 requires $param2 (defined check)");
+			}
+
+			# Pattern 3: Error message "X requires Y"
+			if ($code =~ /(?:die|croak|confess)\s+['"]\w*$param1[^'"]*requires[^'"]*$param2/i) {
+				push @relationships, {
+					type => 'conditional_requirement',
+					if => $param1,
+					then_required => $param2,
+					description => "When $param1 is specified, $param2 is required"
+				};
+
+				$self->_log("  RELATIONSHIP: $param1 requires $param2 (from error message)");
+			}
+		}
+	}
+
+	return \@relationships;
+}
+
+=head2 _detect_dependencies
+
+Detect simple parameter dependencies (X requires Y to exist).
+
+Patterns:
+  die "Port requires host" if $port && !$host
+
+=cut
+
+sub _detect_dependencies {
+	my ($self, $code, $param_names) = @_;
+
+	my @relationships;
+
+	foreach my $param1 (@$param_names) {
+		foreach my $param2 (@$param_names) {
+			next if $param1 eq $param2;
+
+			# Pattern 1: Error message mentions "X requires Y" AND code checks $x && !$y
+			# Split into two checks to be more flexible
+			if (($code =~ /(?:die|croak|confess)\s+['"]\w*$param1[^'"]*requires[^'"]*$param2/i) &&
+			    ($code =~ /if\s+\$param1\s+&&\s+!\$param2/)) {
+
+				push @relationships, {
+					type => 'dependency',
+					param => $param1,
+					requires => $param2,
+					description => "$param1 requires $param2 to be specified"
+				};
+
+				$self->_log("  RELATIONSHIP: $param1 depends on $param2");
+			}
+		}
+	}
+
+	return \@relationships;
+}
+
+=head2 _detect_value_constraints
+
+Detect value-based constraints between parameters.
+
+Patterns:
+  die if $ssl && $port != 443
+  croak "Invalid combination" if $mode eq 'secure' && !$key
+
+=cut
+
+sub _detect_value_constraints {
+	my ($self, $code, $param_names) = @_;
+
+	my @relationships;
+
+	foreach my $param1 (@$param_names) {
+		foreach my $param2 (@$param_names) {
+			next if $param1 eq $param2;
+
+			# Pattern 1: die if $x && $y != value
+			if ($code =~ /(?:die|croak|confess)[^;]*if\s+\$$param1\s+&&\s+\$$param2\s*!=\s*(\d+)/) {
+				my $value = $1;
+				push @relationships, {
+					type => 'value_constraint',
+					if => $param1,
+					then => $param2,
+					operator => '==',
+					value => $value,
+					description => "When $param1 is specified, $param2 must equal $value"
+				};
+
+				$self->_log("  RELATIONSHIP: $param1 requires $param2 == $value");
+			}
+
+			# Pattern 2: die if $x && $y < value
+			if ($code =~ /(?:die|croak|confess)[^;]*if\s+\$$param1\s+&&\s+\$$param2\s*<\s*(\d+)/) {
+				my $value = $1;
+				push @relationships, {
+					type => 'value_constraint',
+					if => $param1,
+					then => $param2,
+					operator => '>=',
+					value => $value,
+					description => "When $param1 is specified, $param2 must be >= $value"
+				};
+
+				$self->_log("  RELATIONSHIP: $param1 requires $param2 >= $value");
+			}
+
+			# Pattern 3: die if $x eq 'value' && !$y
+			if ($code =~ /(?:die|croak|confess)[^;]*if\s+\$$param1\s+eq\s+['"]([^'"]+)['"]\s+&&\s+!\$$param2/) {
+				my $value = $1;
+				push @relationships, {
+					type => 'value_conditional',
+					if => $param1,
+					equals => $value,
+					then_required => $param2,
+					description => "When $param1 equals '$value', $param2 is required"
+				};
+
+				$self->_log("  RELATIONSHIP: $param1='$value' requires $param2");
+			}
+		}
+	}
+
+	return \@relationships;
+}
+
 =head2 _write_schema
 
 Write a schema to a YAML file.
@@ -2059,13 +2604,11 @@ sub _write_schema {
 		$package_name = $package_stmt ? $package_stmt->namespace : '';
 	}
 
-	# Clean up schema for output - use the format expected by App::Test::Generator
+	# Clean up schema for output - use the format expected by test generator
 	my $output = {
 		function => $method_name,
-		# confidence => $schema->{_confidence},
-		# notes => $schema->{_notes},
-		module => $package_name,	# Add module name
-		config => {	# err on the side of caution for now
+		module => $package_name,
+		config => {
 			test_nuls => 0,
 			test_undef => 0,
 			test_empty => 1,
@@ -2075,7 +2618,6 @@ sub _write_schema {
 
 	# Process input parameters with advanced type handling
 	if($schema->{'input'} && (scalar(keys %{$schema->{'input'}}))) {
-		# $output->{'input'} = $schema->{'input'};
 		$output->{'input'} = {};
 
 		foreach my $param_name (keys %{$schema->{'input'}}) {
@@ -2095,13 +2637,20 @@ sub _write_schema {
 		$output->{new} = $schema->{new} eq $package_name ? undef : $schema->{'new'};
 	}
 
+	# Add relationships if detected
+	if ($schema->{relationships} && @{$schema->{relationships}}) {
+		$output->{relationships} = $schema->{relationships};
+	}
+
 	open my $fh, '>', $filename;
 	print $fh YAML::XS::Dump($output);
 	print $fh $self->_generate_schema_comments($schema, $method_name);
 	close $fh;
 
+	my $rel_info = $schema->{relationships} ?
+		' [' . scalar(@{$schema->{relationships}}) . ' relationships]' : '';
 	$self->_log("  Wrote: $filename (input confidence: $schema->{_confidence}{input})" .
-				($schema->{new} ? " [requires: $schema->{new}]" : ""));
+				($schema->{new} ? " [requires: $schema->{new}]" : "") . $rel_info);
 }
 
 =head2 _serialize_parameter_for_yaml
@@ -2251,6 +2800,16 @@ sub _generate_schema_comments {
 		}
 	}
 
+	# Add relationship notes
+	if ($schema->{relationships} && @{$schema->{relationships}}) {
+		push @comments, "#";
+		push @comments, "# Parameter relationships detected:";
+		foreach my $rel (@{$schema->{relationships}}) {
+			my $desc = $rel->{description} || _format_relationship($rel);
+			push @comments, "#   - $desc";
+		}
+	}
+
 	# Add general notes
 	if ($schema->{_notes} && scalar(@{$schema->{_notes}})) {
 		push @comments, "#";
@@ -2291,6 +2850,25 @@ sub _generate_schema_comments {
 	push @comments, "";
 
 	return join("\n", @comments);
+}
+
+sub _format_relationship {
+	my ($rel) = @_;
+
+	if ($rel->{type} eq 'mutually_exclusive') {
+		return "Mutually exclusive: " . join(', ', @{$rel->{params}});
+	} elsif ($rel->{type} eq 'required_group') {
+		return "Required group (OR): " . join(', ', @{$rel->{params}});
+	} elsif ($rel->{type} eq 'conditional_requirement') {
+		return "If $rel->{if} then $rel->{then_required} required";
+	} elsif ($rel->{type} eq 'dependency') {
+		return "$rel->{param} depends on $rel->{requires}";
+	} elsif ($rel->{type} eq 'value_constraint') {
+		return "If $rel->{if} then $rel->{then} $rel->{operator} $rel->{value}";
+	} elsif ($rel->{type} eq 'value_conditional') {
+		return "If $rel->{if}='$rel->{equals}' then $rel->{then_required} required";
+	}
+	return "Unknown relationship";
 }
 
 =head2 _needs_object_instantiation
@@ -2364,8 +2942,6 @@ sub _log {
 	print "$msg\n" if $self->{verbose};
 }
 
-1;
-
 =head1 NOTES
 
 This is pre-pre-alpha proof of concept code.
@@ -2394,4 +2970,4 @@ assistance of AI.
 
 =cut
 
-__END__
+1;
