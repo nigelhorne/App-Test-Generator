@@ -144,8 +144,6 @@ values in scalar vs list context.
 Detects instance methods requiring object instantiation and
 automatically adds the C<new> field to schemas.
 
-=back
-
 =item * B<Enhanced Object Detection>
 
 The extractor now includes sophisticated object detection capabilities that go beyond simple instance method identification:
@@ -175,6 +173,8 @@ Identifies when methods create or depend on objects from other classes, enabling
 =back
 
 These enhancements ensure that generated test schemas accurately reflect the object-oriented structure of the code, leading to more meaningful and effective test generation.
+
+=back
 
 =head2 Confidence Scoring
 
