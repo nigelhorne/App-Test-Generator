@@ -5,6 +5,7 @@ use warnings;
 use autodie qw(:all);
 
 use Carp qw(carp croak);
+use Data::Dumper;	# For debugging
 use PPI;
 use Pod::Simple::Text;
 use YAML::XS;
@@ -456,6 +457,79 @@ Generated schema:
         description: When mode equals 'secure', key is required
 
 =back
+
+=head2 Default Value Extraction
+
+The extractor now comprehensively extracts default values from both code and POD documentation:
+
+=head3 Code Pattern Recognition
+
+Extracts defaults from multiple Perl idioms:
+
+=over 4
+
+=item * Logical OR operator: C<$param = $param || 'default'>
+
+=item * Defined-or operator: C<$param //= 'default'>
+
+=item * Ternary operator: C<$param = defined $param ? $param : 'default'>
+
+=item * Unless conditional: C<$param = 'default' unless defined $param>
+
+=item * Chained defaults: C<$param = $param || $self->{default} || 'fallback'>
+
+=item * Multi-line patterns: C<$param = {} unless $param>
+
+=back
+
+=head3 POD Pattern Recognition
+
+Extracts defaults from documentation:
+
+=over 4
+
+=item * Standard format: C<Default: 'value'>
+
+=item * Alternative format: C<Defaults to: 'value'>
+
+=item * Inline format: C<Optional, default: 'value'>
+
+=item * Parameter lists: C<$param - type, default 'value'>
+
+=back
+
+=head3 Value Processing
+
+Properly handles:
+
+=over 4
+
+=item * String literals with quotes and escape sequences
+
+=item * Numeric values (integers and floats)
+
+=item * Boolean values (true/false converted to 1/0)
+
+=item * Empty data structures ([] and {})
+
+=item * Special values (undef, __PACKAGE__)
+
+=item * Complex expressions (preserved as-is when unevaluatable)
+
+=item * Quote operators (q{}, qq{}, qw{})
+
+=back
+
+=head3 Type Inference
+
+When a parameter has a default value but no explicit type annotation,
+the type is automatically inferred from the default:
+
+    $options = {}        # inferred as hashref
+    $items = []          # inferred as arrayref
+    $count = 42          # inferred as integer
+    $ratio = 3.14        # inferred as number
+    $enabled = 1         # inferred as boolean
 
 =head2 Example
 
@@ -1005,6 +1079,18 @@ sub _analyze_pod {
 		$self->_log("  POD: Found parameter '$name' from =item list");
 	}
 
+	# Extract default values from POD
+	my $pod_defaults = $self->_extract_defaults_from_pod($pod);
+	foreach my $param (keys %$pod_defaults) {
+		if (exists $params{$param}) {
+			$params{$param}{default} = $pod_defaults->{$param};
+			$params{$param}{optional} = 1 unless defined $params{$param}{optional};
+			$self->_log(sprintf("  POD: %s has default value: %s",
+			    $param,
+			    defined($pod_defaults->{$param}) ? $pod_defaults->{$param} : 'undef'));
+		}
+	}
+
 	return \%params;
 }
 
@@ -1114,6 +1200,72 @@ sub _analyze_output_from_pod {
 		}
 	}
 
+}
+
+=head2 _extract_defaults_from_pod
+
+Extract default values from POD documentation.
+
+Looks for patterns like:
+  - Default: 'value'
+  - Defaults to: value
+  - Optional, default: value
+
+=cut
+
+sub _extract_defaults_from_pod {
+    my ($self, $pod) = @_;
+
+    return {} unless $pod;
+
+    my %defaults;
+
+    # Pattern 1: Default: 'value' or Defaults to: 'value'
+    while ($pod =~ /(?:Default(?:s? to)?|default(?:s? to)?)[:]\s*([^\n\r]+)/gi) {
+        my $default_text = $1;
+        my $match_pos = pos($pod);
+        $default_text =~ s/^\s+|\s+$//g;
+
+        # Look backwards in the POD to find the parameter name
+        my $context = substr($pod, 0, $match_pos);
+        my @param_matches = ($context =~ /\$(\w+)/g);
+        my $param = $param_matches[-1] if @param_matches;  # Last parameter before default
+
+        if ($param) {
+            # Always clean the default value - let _clean_default_value handle everything
+            if ($default_text =~ /(\w+)\s*=\s*(.+)$/) {
+                # Has explicit param = value format in the default text
+                my ($p, $value) = ($1, $2);
+                $defaults{$p} = $self->_clean_default_value($value);
+            } else {
+                # Just a value, associate with the found param
+		$defaults{$param} = $self->_clean_default_value($default_text, 0);  # NOT from code
+            }
+        }
+    }
+
+    # Pattern 2: Optional, default 'value'
+    while ($pod =~ /Optional(?:,)?\s+(?:default|value)\s*[:=]?\s*([^\n\r,;]+)/gi) {
+        my $default_text = $1;
+        my $match_pos = pos($pod);
+        $default_text =~ s/^\s+|\s+$//g;
+
+        # Look backwards for parameter name
+        my $context = substr($pod, 0, $match_pos);
+        my @param_matches = ($context =~ /\$(\w+)/g);
+        if (@param_matches) {
+            my $param = $param_matches[-1];  # Last parameter before the default
+            $defaults{$param} = $self->_clean_default_value($default_text, 0);
+        }
+    }
+
+    # Pattern 3: In parameter descriptions: $param - type, default 'value'
+    while ($pod =~ /\$(\w+)\s*-\s*\w+(?:\([^)]*\))?[,\s]+default\s+['"]?([^'",\n]+)['"]?/gi) {
+        my ($param, $value) = ($1, $2);
+        $defaults{$param} = $self->_clean_default_value($value, 0);
+    }
+
+    return \%defaults;
 }
 
 # Analyze code for return statements
@@ -1455,6 +1607,22 @@ sub _analyze_code {
 	# Extract parameter names from various signature styles
 	$self->_extract_parameters_from_signature(\%params, $code);
 
+	$self->_extract_defaults_from_code(\%params, $code);
+
+	    # Infer types from defaults
+    foreach my $param (keys %params) {
+        if ($params{$param}{default} && !$params{$param}{type}) {
+            my $default = $params{$param}{default};
+            if (ref($default) eq 'HASH') {
+                $params{$param}{type} = 'hashref';
+                $self->_log("  CODE: $param type inferred as hashref from default");
+            } elsif (ref($default) eq 'ARRAY') {
+                $params{$param}{type} = 'arrayref';
+                $self->_log("  CODE: $param type inferred as arrayref from default");
+            }
+        }
+    }
+
 	# Analyze each parameter (with safety limit)
 	foreach my $param (keys %params) {
 		if ($param_count++ > $self->{max_parameters}) {
@@ -1467,7 +1635,6 @@ sub _analyze_code {
 		$self->_analyze_parameter_type($p, $param, $code);
 		$self->_analyze_parameter_constraints($p, $param, $code);
 		$self->_analyze_parameter_validation($p, $param, $code);
-
 		$self->_analyze_advanced_types($p, $param, $code);
 
 		# Defined checks
@@ -1524,6 +1691,17 @@ sub _analyze_parameter_type {
 			$p->{type} = 'hashref';
 		}
 	}
+	# After extracting defaults, infer type from the default value if type is unknown
+    if (!$p->{type} && exists $p->{default}) {
+        my $default = $p->{default};
+        if (ref($default) eq 'HASH') {
+            $p->{type} = 'hashref';
+            $self->_log("  CODE: $param type inferred as hashref from default");
+        } elsif (ref($default) eq 'ARRAY') {
+            $p->{type} = 'arrayref';
+            $self->_log("  CODE: $param type inferred as arrayref from default");
+        }
+    }
 }
 
 =head2 _analyze_advanced_types
@@ -1846,13 +2024,13 @@ sub _detect_enum_type {
 sub _extract_parameters_from_signature {
 	my ($self, $params, $code) = @_;
 
-	# Style 1: my ($self, $arg1, $arg2) = @_;
-	if ($code =~ /my\s*\(\s*\$\w+\s*,\s*(.+?)\)\s*=\s*\@_/s) {
-		my $sig = $1;
-		while ($sig =~ /\$(\w+)/g) {
-			$params->{$1} ||= { _source => 'code' };
-		}
-	}
+    # Style 1: my ($self, $arg1, $arg2) = @_;
+    if ($code =~ /my\s*\(\s*\$\w+\s*,\s*([^)]+)\)\s*=\s*\@_/s) {
+        my $sig = $1;
+        while ($sig =~ /\$(\w+)/g) {
+            $params->{$1} ||= { _source => 'code' };
+        }
+    }
 	# Style 2: my $self = shift; my $arg1 = shift; ...
 	elsif ($code =~ /my\s+\$self\s*=\s*shift/) {
 		my @shifts;
@@ -1882,6 +2060,113 @@ sub _extract_parameters_from_signature {
 			$self->_log("  WARNING: Duplicate parameter '$param' found");
 		}
 	}
+}
+
+sub _extract_defaults_from_code {
+    my ($self, $params, $code) = @_;
+
+    # Pattern 1: my $param = value;
+    while ($code =~ /my\s+\$(\w+)\s*=\s*([^;]+);/g) {
+        my ($param, $value) = ($1, $2);
+        next unless exists $params->{$param};
+
+        $params->{$param}{default} = $self->_clean_default_value($value, 1);
+        $params->{$param}{optional} = 1;
+        $self->_log("  CODE: $param has default: " . $self->_format_default($params->{$param}{default}));
+    }
+
+    # Pattern 2: $param = value unless defined $param;
+    while ($code =~ /\$(\w+)\s*=\s*([^;]+?)\s+unless\s+(?:defined\s+)?\$\1/g) {
+        my ($param, $value) = ($1, $2);
+        next unless exists $params->{$param};
+
+        $params->{$param}{default} = $self->_clean_default_value($value, 1);
+        $params->{$param}{optional} = 1;
+        $self->_log("  CODE: $param has default (unless): " . $self->_format_default($params->{$param}{default}));
+    }
+
+    # Pattern 3: $param = value unless $param;
+    while ($code =~ /\$(\w+)\s*=\s*([^;]+?)\s+unless\s+\$\1/g) {
+        my ($param, $value) = ($1, $2);
+        next unless exists $params->{$param};
+
+        $params->{$param}{default} = $self->_clean_default_value($value, 1);
+        $params->{$param}{optional} = 1;
+        $self->_log("  CODE: $param has default (unless): " . $self->_format_default($params->{$param}{default}));
+    }
+
+    # Pattern 4: $param = $param || 'default';
+    while ($code =~ /\$(\w+)\s*=\s*\$\1\s*\|\|\s*([^;]+);/g) {
+        my ($param, $value) = ($1, $2);
+        next unless exists $params->{$param};
+
+        $params->{$param}{default} = $self->_clean_default_value($value, 1);
+        $params->{$param}{optional} = 1;
+        $self->_log("  CODE: $param has default (||): " . $self->_format_default($params->{$param}{default}));
+    }
+
+    # Pattern 5: $param ||= 'default';
+    while ($code =~ /\$(\w+)\s*\|\|=\s*([^;]+);/g) {
+        my ($param, $value) = ($1, $2);
+        next unless exists $params->{$param};
+
+        $params->{$param}{default} = $self->_clean_default_value($value, 1);
+        $params->{$param}{optional} = 1;
+        $self->_log("  CODE: $param has default (||=): " . $self->_format_default($params->{$param}{default}));
+    }
+
+    # Pattern 6: $param //= 'default';
+while ($code =~ /\$(\w+)\s*\/\/=\s*([^;]+);/g) {
+    my ($param, $value) = ($1, $2);
+    next unless exists $params->{$param};  # Using -> because $params is a reference
+
+    $params->{$param}{default} = $self->_clean_default_value($value, 1);
+
+	$params->{$param}{optional} = 1;
+	$self->_log("  CODE: $param has default (//=): " . $self->_format_default($params->{$param}{default}));
+}
+
+# Pattern 7: $param = defined $param ? $param : 'default';
+while ($code =~ /\$(\w+)\s*=\s*defined\s+\$\1\s*\?\s*\$\1\s*:\s*([^;]+);/g) {
+    my ($param, $value) = ($1, $2);
+
+    # Create param entry if it doesn't exist
+    $params->{$param} ||= {};
+
+    my $cleaned = $self->_clean_default_value($value, 1);
+
+    $params->{$param}{default} = $cleaned;
+    $params->{$param}{optional} = 1;
+    $self->_log("  CODE: $param has default (ternary): " . $self->_format_default($params->{$param}{default}));
+}
+
+    # Pattern 8: $param = $args{param} || 'default';
+    while ($code =~ /\$(\w+)\s*=\s*\$args\{['"]?\w+['"]?\}\s*\|\|\s*([^;]+);/g) {
+        my ($param, $value) = ($1, $2);
+        next unless exists $params->{$param};
+
+        $params->{$param}{default} = $self->_clean_default_value($value, 1);
+        $params->{$param}{optional} = 1;
+        $self->_log("  CODE: $param has default (from args): " . $self->_format_default($params->{$param}{default}));
+    }
+
+    # Pattern for non-empty hashref
+while ($code =~ /\$(\w+)\s*\|\|=\s*(\{[^}]+\})/gs) {
+    my ($param, $value) = ($1, $2);
+    next unless exists $params->{$param};
+
+    # Return empty hashref as placeholder (can't evaluate complex hashrefs)
+    $params->{$param}{default} = {};
+    $params->{$param}{optional} = 1;
+    $self->_log("  CODE: $param has hashref default (||=)");
+}
+}
+
+sub _format_default {
+    my ($self, $default) = @_;
+    return 'undef' unless defined $default;
+    return ref($default) . ' ref' if ref($default);
+    return $default;
 }
 
 sub _analyze_parameter_constraints {
@@ -1936,32 +2221,66 @@ sub _analyze_parameter_constraints {
 }
 
 sub _analyze_parameter_validation {
-	my ($self, $p_ref, $param, $code) = @_;
-	my $p = $$p_ref;
+    my ($self, $p_ref, $param, $code) = @_;
+    my $p = $$p_ref;
 
-	# Required/optional checks
-	my $is_required = 0;
+    # Required/optional checks
+    my $is_required = 0;
 
-	# Die/croak if not defined
-	if ($code =~ /(?:die|croak|confess)\s+[^;]*unless\s+(?:defined\s+)?\$$param/s) {
-		$is_required = 1;
-	}
+    # Die/croak if not defined
+    if ($code =~ /(?:die|croak|confess)\s+[^;]*unless\s+(?:defined\s+)?\$$param/s) {
+        $is_required = 1;
+    }
 
-	# Default values suggest optional
-	if ($code =~ /\$$param\s*=\s*\$$param\s*\|\|\s*[^;]+/ ||
-		$code =~ /\$$param\s*=\s*[^;]*unless\s+defined\s+\$$param/) {
-		$p->{optional} = 1;
-		$p->{default} = 'unknown'; # We could try to extract the actual default
-		$self->_log("  CODE: $param has default value (optional)");
-	}
+    # Extract default values with the new method
+    my $default_value = $self->_extract_default_value($param, $code);
+    if (defined $default_value && !exists $p->{default}) {
+        $p->{optional} = 1;
+        $p->{default} = $default_value;
 
-	# Explicit required check overrides default detection
-	if ($is_required) {
-		$p->{optional} = 0;
-		$self->_log("  CODE: $param is required (validation check)");
-	}
+        # Try to infer type from default value if not already set
+        unless ($p->{type}) {
+            if (looks_like_number($default_value)) {
+                $p->{type} = $default_value =~ /\./ ? 'number' : 'integer';
+            } elsif (ref($default_value) eq 'ARRAY') {
+                $p->{type} = 'arrayref';
+            } elsif (ref($default_value) eq 'HASH') {
+                $p->{type} = 'hashref';
+            } elsif ($default_value eq 'undef') {
+                $p->{type} = 'scalar';  # undef can be any scalar
+            } elsif (defined $default_value && !ref($default_value)) {
+                $p->{type} = 'string';
+            }
+        }
+
+        $self->_log("  CODE: $param has default value: " .
+                   (ref($default_value) ? Dumper($default_value) : $default_value));
+    }
+
+    # Also check for simple default assignment without condition
+    # Pattern: $param = 'value';
+    if (!$default_value && $code =~ /\$$param\s*=\s*([^;]+)(?!\s*(?:\|\||\/\/|\?))/s) {
+        my $assignment = $1;
+        # Make sure it's not part of a larger expression
+        if ($assignment !~ /\$$param/ && $assignment !~ /^shift/) {
+            my $possible_default = $assignment;
+            $possible_default =~ s/\s*;\s*$//;
+            $possible_default = $self->_clean_default_value($possible_default);
+            if (defined $possible_default) {
+                $p->{default} = $possible_default;
+                $p->{optional} = 1;
+                $self->_log("  CODE: $param has unconditional default: $possible_default");
+            }
+        }
+    }
+
+    # Explicit required check overrides default detection
+    if ($is_required) {
+        $p->{optional} = 0;
+        delete $p->{default} if exists $p->{default};
+        $self->_log("  CODE: $param is required (validation check)");
+    }
 }
-
 
 =head2 _analyze_signature
 
@@ -3374,20 +3693,25 @@ sub _detect_constructor_requirements {
 	}
 
 	# Look for default values (optional parameters)
-	my @optional_params;
-	if ($body =~ /\$(\w+)\s*=\s*\$(\w+)\s*\|\|\s*[^;]+/g) {
-		push @optional_params, $2;
-	}
-	if ($body =~ /\$(\w+)\s*\/\/=\s*[^;]+/g) {
-		push @optional_params, $1;
-	}
-	if ($body =~ /\$(\w+)\s*=\s*defined.*\$$1.*\?.*\$$1.*:/g) {
-		push @optional_params, $1;
-	}
+	    my @optional_params;
+    my %default_values;
 
-	if (@optional_params) {
-		$requirements{optional_parameters} = \@optional_params;
-	}
+    # Use the new _extract_default_value method
+    # Check for each parameter in the constructor body
+    if ($requirements{parameters}) {
+        foreach my $param (@{$requirements{parameters}}) {
+            my $default = $self->_extract_default_value($param, $body);
+            if (defined $default) {
+                push @optional_params, $param;
+                $default_values{$param} = $default;
+            }
+        }
+    }
+
+    if (@optional_params) {
+        $requirements{optional_parameters} = \@optional_params;
+        $requirements{default_values} = \%default_values;
+    }
 
 	return \%requirements if keys %requirements;
 	return undef;
@@ -3513,6 +3837,220 @@ sub _get_class_for_instance_method {
 
 	# Fallback to current package
 	return $package_name;
+}
+
+=head2 _extract_default_value
+
+Extract default values from common Perl patterns:
+
+Patterns:
+  - $param = $param || 'default_value'
+  - $param //= 'default_value'
+  - $param = defined $param ? $param : 'default'
+  - $param = 'default' unless defined $param;
+  - $param = $arg // 'default'
+  - $param ||= 'default'
+
+Returns the default value as a string if found, undef otherwise.
+
+=cut
+
+sub _extract_default_value {
+    my ($self, $param, $code) = @_;
+
+    return undef unless $param && $code;
+
+    # Clean up the code for easier pattern matching
+    # Remove comments to avoid false positives
+    my $clean_code = $code;
+    $clean_code =~ s/#.*$//gm;
+    $clean_code =~ s/^\s+|\s+$//g;
+
+    # Pattern 1: $param = $param || 'default_value'
+    # Also handles: $param = $arg || 'default'
+    if ($clean_code =~ /\$$param\s*=\s*(?:\$$param|\$[a-zA-Z_]\w*)\s*\|\|\s*([^;]+)/) {
+        my $default = $1;
+        $default =~ s/\s*;\s*$//;
+        $default = $self->_clean_default_value($default);
+        return $default if defined $default;
+    }
+
+    # Pattern 2: $param //= 'default_value'
+    if ($clean_code =~ /\$$param\s*\/\/=\s*([^;]+)/) {
+        my $default = $1;
+        $default =~ s/\s*;\s*$//;
+        $default = $self->_clean_default_value($default);
+        return $default if defined $default;
+    }
+
+    # Pattern 3: $param = defined $param ? $param : 'default'
+    # Also handles: $param = defined $arg ? $arg : 'default'
+    if ($clean_code =~ /\$$param\s*=\s*defined\s+(?:\$$param|\$[a-zA-Z_]\w*)\s*\?\s*(?:\$$param|\$[a-zA-Z_]\w*)\s*:\s*([^;]+)/) {
+        my $default = $1;
+        $default =~ s/\s*;\s*$//;
+        $default = $self->_clean_default_value($default);
+        return $default if defined $default;
+    }
+
+    # Pattern 4: $param = 'default' unless defined $param;
+    if ($clean_code =~ /\$$param\s*=\s*([^;]+?)\s+unless\s+defined\s+(?:\$$param|\$[a-zA-Z_]\w*)/) {
+        my $default = $1;
+        $default = $self->_clean_default_value($default);
+        return $default if defined $default;
+    }
+
+    # Pattern 5: $param ||= 'default'
+    if ($clean_code =~ /\$$param\s*\|\|=\s*([^;]+)/) {
+        my $default = $1;
+        $default =~ s/\s*;\s*$//;
+        $default = $self->_clean_default_value($default);
+        return $default if defined $default;
+    }
+
+    # Pattern 6: $param = $arg // 'default'
+    if ($clean_code =~ /\$$param\s*=\s*(?:\$$param|\$[a-zA-Z_]\w*)\s*\/\/\s*([^;]+)/) {
+        my $default = $1;
+        $default =~ s/\s*;\s*$//;
+        $default = $self->_clean_default_value($default);
+        return $default if defined $default;
+    }
+
+    # Pattern 7: Multi-line: if (!defined $param) { $param = 'default'; }
+    if ($clean_code =~ /if\s*\(\s*!defined\s+\$$param\s*\)\s*\{[^}]*\$$param\s*=\s*([^;]+)/s) {
+        my $default = $1;
+        $default =~ s/\s*;\s*$//;
+        $default = $self->_clean_default_value($default);
+        return $default if defined $default;
+    }
+
+    # Pattern 8: unless (defined $param) { $param = 'default'; }
+    if ($clean_code =~ /unless\s*\(\s*defined\s+\$$param\s*\)\s*\{[^}]*\$$param\s*=\s*([^;]+)/s) {
+        my $default = $1;
+        $default =~ s/\s*;\s*$//;
+        $default = $self->_clean_default_value($default);
+        return $default if defined $default;
+    }
+
+    return undef;
+}
+
+=head2 _clean_default_value
+
+Clean and normalize extracted default values.
+
+Handles:
+  - Removing quotes from strings
+  - Converting numeric strings to actual numbers
+  - Handling boolean values
+  - Removing parentheses
+
+=cut
+
+sub _clean_default_value
+{
+	my ($self, $value, $from_code) = @_;
+
+	return undef unless defined $value;
+
+    # Remove leading/trailing whitespace
+    $value =~ s/^\s+|\s+$//g;
+
+	# Remove parenthetical notes like "(no password)" only if there's content before them
+	$value =~ s/(\S+)\s*\([^)]+\)\s*$/$1/;
+	$value =~ s/^\s+|\s+$//g;
+
+    # Handle chained || or // operators - extract the rightmost value
+    if ($value =~ /\|\||\/{2}/) {
+        my @parts = split(/\s*(?:\|\||\/{2})\s*/, $value);
+        $value = $parts[-1];
+        $value =~ s/^\s+|\s+$//g;
+    }
+
+    # Remove trailing semicolon if present
+    $value =~ s/;\s*$//;
+
+    # Handle q{}, qq{}, qw{} quotes
+    if ($value =~ /^qq?\{(.*?)\}$/s) {
+        $value = $1;
+    } elsif ($value =~ /^qw\{(.*?)\}$/s) {
+        $value = $1;
+    } elsif ($value =~ /^q[qwx]?\s*([^a-zA-Z0-9\{\[])(.*?)\1$/s) {
+        $value = $2;
+    }
+
+    # Handle quoted strings
+if ($value =~ /^(['"])(.*)\1$/s) {
+    $value = $2;
+
+    if ($from_code) {
+        # In regex captures from source code, escape sequences are doubled
+        # \\n in capture needs to become \n for the test
+        $value =~ s/\\\\/\\/g;
+    }
+
+    # Only unescape the quote characters themselves
+    $value =~ s/\\"/"/g;
+    $value =~ s/\\'/'/g;
+
+    # If NOT from code (i.e., from POD), interpret escape sequences
+    unless ($from_code) {
+        $value =~ s/\\n/\n/g;
+        $value =~ s/\\r/\r/g;
+        $value =~ s/\\t/\t/g;
+        $value =~ s/\\\\/\\/g;
+    }
+}
+
+    # Handle Perl empty hash (must be before numeric/boolean checks)
+    if ($value =~ /^\{\s*\}$/) {
+        return {};
+    }
+
+    # Handle Perl empty list/array
+    if ($value =~ /^\[\s*\]$/) {
+        return [];
+    }
+
+    # Handle numeric values
+    if ($value =~ /^-?\d+(?:\.\d+)?$/) {
+        if ($value =~ /\./) {
+            return $value + 0;
+        } else {
+            return int($value);
+        }
+    }
+
+    # Handle boolean keywords
+    if ($value =~ /^(true|false)$/i) {
+        return lc($1) eq 'true' ? 1 : 0;
+    }
+
+    # Handle Perl boolean constants
+    if ($value eq '1') {
+        return 1;
+    } elsif ($value eq '0') {
+        return 0;
+    }
+
+    # Handle undef
+    if ($value eq 'undef') {
+        return undef;
+    }
+
+    # Handle __PACKAGE__ and similar constants
+    if ($value eq '__PACKAGE__') {
+        return '__PACKAGE__';
+    }
+
+    # Remove surrounding parentheses
+    $value =~ s/^\((.+)\)$/$1/;
+
+	# Handle expressions we can't evaluate
+	if ($value =~ /^\$[a-zA-Z_]/ || $value =~ /\(.*\)/) {
+		return $value;
+	}
+
+	return $value;
 }
 
 =head2 _log
