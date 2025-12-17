@@ -846,27 +846,34 @@ sub _detect_accessor_methods {
 		$self->_log("  Detected getter accessor for field: $1");
 	}
 	# Setter: $self->{field} = $value; return $self;
-	elsif ($body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*\$(\w+)\s*;/ &&
-	   $body =~ /return\s+\$self\s*;/) {
-		$schema->{_accessor} = { type => 'setter', field => $1, param => $2 };
-		$self->_log("  Detected setter accessor for field: $1");
-	}
-	# Getter/Setter combination
-	elsif ($body =~ /if\s*\(\s*\@_\s*>\s*1\s*\)/ &&
-	   $body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*shift\s*;/ &&
-	   $body =~ /return\s+\$self\s*->\s*\{[^}]+\}\s*;/) {
-		$schema->{_accessor} = { type => 'getset', field => $1 };
-		$self->_log("  Detected getter/setter accessor for field: $1");
-	}
-
-	if ($schema->{_accessor}) {
-		# Getters return the field type
-		# Setters take one parameter
-		if ($schema->{_accessor}{type} eq 'setter') {
-			my $param = $schema->{_accessor}{param};
-			$schema->{input}{$param} ||= { type => 'scalar' };
-		}
-	}
+elsif ($body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*\$(\w+)\s*;/ &&
+   $body =~ /return\s+\$self\s*;/) {
+    my ($field, $param) = ($1, $2);  # Capture before they get clobbered
+    if (defined $field && defined $param) {
+        $schema->{_accessor} = { type => 'setter', field => $field, param => $param };
+        $self->_log("  Detected setter accessor for field: $field");
+    }
+}
+# Getter/Setter combination
+elsif ($body =~ /if\s*\(\s*\@_\s*>\s*1\s*\)/ &&
+   $body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*shift\s*;/ &&
+   $body =~ /return\s+\$self\s*->\s*\{[^}]+\}\s*;/) {
+    my $field = $1;
+    if (defined $field) {
+        $schema->{_accessor} = { type => 'getset', field => $field };
+        $self->_log("  Detected getter/setter accessor for field: $field");
+    }
+}
+if ($schema->{_accessor}) {
+    # Getters return the field type
+    # Setters take one parameter
+    if ($schema->{_accessor}{type} eq 'setter') {
+        my $param = $schema->{_accessor}{param};
+        if (defined $param) {
+            $schema->{input}{$param} ||= { type => 'scalar' };
+        }
+    }
+}
 }
 
 =head2 _analyze_pod
@@ -1106,6 +1113,8 @@ Looks for:
 # Enhanced _analyze_output that incorporates all improvements
 sub _analyze_output {
     my ($self, $pod, $code, $method_name) = @_;
+# warn "=== _analyze_output for $method_name, code=" . (defined $code ? length($code) : 'UNDEF') . " bytes ===\n";
+    
     my %output;
 
     $self->_analyze_output_from_pod(\%output, $pod);
@@ -1486,23 +1495,40 @@ sub _enhance_boolean_detection {
 sub _detect_list_context {
     my ($self, $output, $code) = @_;
     return unless $code;
-
+    
     # Check for wantarray usage
     if ($code =~ /wantarray/) {
         $output->{context_aware} = 1;
         $self->_log('  OUTPUT: Method uses wantarray - context sensitive');
-
-        # Analyze what's returned in list vs scalar context
-        # Pattern: wantarray ? (list, items) : scalar_value
+        
+        # Debug: show what we're matching against
+        if ($code =~ /(wantarray[^;]+;)/s) {
+            warn("  DEBUG wantarray line: $1");
+        }
+        
+        # Pattern 1: wantarray ? (list, items) : scalar_value (with parens)
         if ($code =~ /wantarray\s*\?\s*\(([^)]+)\)\s*:\s*([^;]+)/s) {
             my ($list_return, $scalar_return) = ($1, $2);
-
+            warn("  DEBUG list (with parens): [$list_return], scalar: [$scalar_return]");
+            
             $output->{list_context} = $self->_infer_type_from_expression($list_return);
             $output->{scalar_context} = $self->_infer_type_from_expression($scalar_return);
-
-            $self->_log('  OUTPUT: Detected context-dependent returns');
+            $self->_log('  OUTPUT: Detected context-dependent returns (parenthesized)');
         }
-        # Pattern: return unless wantarray; return (list);
+        # Pattern 2: wantarray ? @array : scalar (no parens around list)
+        elsif ($code =~ /wantarray\s*\?\s*([^:]+?)\s*:\s*([^;]+)/s) {
+            my ($list_return, $scalar_return) = ($1, $2);
+            # Clean up
+            $list_return =~ s/^\s+|\s+$//g;
+            $scalar_return =~ s/^\s+|\s+$//g;
+            
+            warn("  DEBUG list (no parens): [$list_return], scalar: [$scalar_return]");
+            
+            $output->{list_context} = $self->_infer_type_from_expression($list_return);
+            $output->{scalar_context} = $self->_infer_type_from_expression($scalar_return);
+            $self->_log('  OUTPUT: Detected context-dependent returns (non-parenthesized)');
+        }
+        # Pattern 3: return unless wantarray; return (list);
         elsif ($code =~ /return[^;]*unless\s+wantarray.*?return\s*\(([^)]+)\)/s) {
             $output->{list_context} = { type => 'array' };
             $self->_log('  OUTPUT: Detected list context return after wantarray check');
@@ -1537,7 +1563,9 @@ sub _detect_list_context {
 sub _detect_void_context {
     my ($self, $output, $code, $method_name) = @_;
     return unless $code;
-
+    
+    $self->_log("  DEBUG _detect_void_context called for $method_name");
+    
     # Methods that typically don't return meaningful values
     my $void_patterns = {
         'setter' => qr/^set_\w+$/,
@@ -1545,7 +1573,7 @@ sub _detect_void_context {
         'logger' => qr/^(?:log|debug|warn|error|info)$/,
         'printer' => qr/^(?:print|say|dump)_/,
     };
-
+    
     # Check if method name suggests void context
     foreach my $type (keys %$void_patterns) {
         if ($method_name =~ $void_patterns->{$type}) {
@@ -1554,24 +1582,29 @@ sub _detect_void_context {
             last;
         }
     }
-
+    
     # Analyze return statements
     my @returns = $code =~ /return\s*([^;]*);/g;
-
+    
+    $self->_log("  DEBUG Found " . scalar(@returns) . " return statements");
+    
     # Count different return patterns
     my $no_value_returns = 0;
     my $true_returns = 0;
     my $self_returns = 0;
-
+    
     foreach my $ret (@returns) {
         $ret =~ s/^\s+|\s+$//g;
+        $self->_log("  DEBUG return value: [$ret]");
         $no_value_returns++ if $ret eq '';
         $true_returns++ if $ret eq '1';
         $self_returns++ if $ret eq '$self';
     }
-
+    
     my $total_returns = scalar(@returns);
-
+    
+    $self->_log("  DEBUG no_value=$no_value_returns, true=$true_returns, self=$self_returns, total=$total_returns");
+    
     # Void context indicators
     if ($no_value_returns > 0 && $no_value_returns == $total_returns) {
         $output->{void_context} = 1;
@@ -1626,23 +1659,28 @@ sub _detect_chaining_pattern {
 sub _detect_error_conventions {
     my ($self, $output, $code) = @_;
     return unless $code;
-
+    
+    $self->_log("  DEBUG _detect_error_conventions called");
+    
     my %error_patterns;
-
+    
     # Find all return statements in error conditions
     # Pattern 1: return undef if/unless condition
     while ($code =~ /return\s+undef\s+(?:if|unless)\s+([^;]+);/g) {
         push @{$error_patterns{undef_on_error}}, $1;
+        $self->_log("  DEBUG Found 'return undef' pattern");
     }
-
+    
     # Pattern 2: return if/unless (implicit undef)
     while ($code =~ /return\s+(?:if|unless)\s+([^;]+);/g) {
         push @{$error_patterns{implicit_undef}}, $1;
+        $self->_log("  DEBUG Found implicit undef pattern");
     }
-
+    
     # Pattern 3: return () in list context (empty list)
     if ($code =~ /return\s*\(\s*\)\s*;/) {
         $error_patterns{empty_list} = 1;
+        $self->_log("  DEBUG Found empty list return");
     }
 
     # Pattern 4: return 0 on error (with die/croak/confess nearby)
@@ -1690,35 +1728,77 @@ sub _detect_error_conventions {
 # Helper method: Infer type from an expression
 sub _infer_type_from_expression {
     my ($self, $expr) = @_;
-
+    
     return { type => 'scalar' } unless defined $expr;
-
+    
     $expr =~ s/^\s+|\s+$//g;
-
-    # Check for common patterns
+    
+    # Check for multiple comma-separated values (with or without outer parens)
+    # Count commas outside of nested structures
+    if ($expr =~ /,/) {
+        my $comma_count = 0;
+        my $depth = 0;
+        for my $char (split //, $expr) {
+            $depth++ if $char =~ /[\(\[\{]/;
+            $depth-- if $char =~ /[\)\]\}]/;
+            $comma_count++ if $char eq ',' && $depth == 0;
+        }
+        
+        if ($comma_count > 0) {
+            return { type => 'array' };
+        }
+    }
+    
+    # Check for @ prefix (array)
+    if ($expr =~ /^\@\w+/ || $expr =~ /^qw\(/ || $expr =~ /^\@\{/) {
+        return { type => 'array' };
+    }
+    
+    # Check for array reference
     if ($expr =~ /^\[/ || $expr =~ /^\\\@/) {
         return { type => 'arrayref' };
-    } elsif ($expr =~ /^\{/ || $expr =~ /^\\\%/) {
-        return { type => 'hashref' };
-    } elsif ($expr =~ /^['"]/ || $expr =~ /['"]$/) {
-        return { type => 'string' };
-    } elsif ($expr =~ /^-?\d+$/) {
-        return { type => 'integer' };
-    } elsif ($expr =~ /^-?\d+\.\d+$/) {
-        return { type => 'number' };
-    } elsif ($expr =~ /^[01]$/) {
-        return { type => 'boolean' };
-    } elsif ($expr =~ /^\@/ || $expr =~ /^qw\(/) {
-        return { type => 'array' };
-    } elsif ($expr =~ /scalar\s*\(?\s*\@/) {
-        return { type => 'integer' };
-    } elsif ($expr =~ /^\%/) {
-        return { type => 'hash' };
-    } elsif ($expr =~ /bless/) {
-        return { type => 'object' };
-    } else {
-        return { type => 'scalar' };
     }
+    
+    # Check for hash reference
+    if ($expr =~ /^\{/ || $expr =~ /^\\\%/) {
+        return { type => 'hashref' };
+    }
+    
+    # Check for hash
+    if ($expr =~ /^\%\w+/ || $expr =~ /^\%\{/) {
+        return { type => 'hash' };
+    }
+    
+    # Check for strings
+    if ($expr =~ /^['"]/ || $expr =~ /['"]$/) {
+        return { type => 'string' };
+    }
+    
+    # Check for numbers
+    if ($expr =~ /^-?\d+$/) {
+        return { type => 'integer' };
+    }
+    if ($expr =~ /^-?\d+\.\d+$/) {
+        return { type => 'number' };
+    }
+    
+    # Check for scalar() function - returns count
+    if ($expr =~ /scalar\s*\(/) {
+        return { type => 'integer' };
+    }
+    
+    # Check for booleans
+    if ($expr =~ /^[01]$/) {
+        return { type => 'boolean' };
+    }
+    
+    # Check for objects
+    if ($expr =~ /bless/) {
+        return { type => 'object' };
+    }
+    
+    # Default to scalar
+    return { type => 'scalar' };
 }
 
 # Addition to _analyze_output_from_pod to detect chaining documentation
@@ -1739,16 +1819,14 @@ sub _detect_chaining_from_pod {
 }
 
 sub _validate_output {
-	my ($self, $output) = @_;
-
-	# Warn about suspicious combinations
-	if ($output->{type} eq 'boolean' && !defined($output->{value})) {
-		$self->_log('  WARNING: Boolean type without value - may want to set value: 1');
-	}
-
-	if ($output->{value} && $output->{type} ne 'boolean') {
-		$self->_log("  WARNING: Value set but type is not boolean: $output->{type}");
-	}
+    my ($self, $output) = @_;
+    # Warn about suspicious combinations
+    if (defined $output->{type} && $output->{type} eq 'boolean' && !defined($output->{value})) {
+        $self->_log('  WARNING: Boolean type without value - may want to set value: 1');
+    }
+    if ($output->{value} && defined $output->{type} && $output->{type} ne 'boolean') {
+        $self->_log("  WARNING: Value set but type is not boolean: $output->{type}");
+    }
 }
 
 =head2 _parse_constraints
@@ -3208,7 +3286,7 @@ sub _write_schema {
 		$output->{'output'} = $schema->{'output'};
 	}
 
-	if($schema->{'output'}{'type'} eq 'scalar') {
+	if($schema->{'output'}{'type'} && ($schema->{'output'}{'type'} eq 'scalar')) {
 		$schema->{'output'}{'type'} = 'string';
 	}
 
