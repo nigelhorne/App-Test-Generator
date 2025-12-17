@@ -845,14 +845,12 @@ sub _detect_accessor_methods {
 		$schema->{_accessor} = { type => 'getter', field => $1 };
 		$self->_log("  Detected getter accessor for field: $1");
 	}
-
 	# Setter: $self->{field} = $value; return $self;
 	elsif ($body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*\$(\w+)\s*;/ &&
 	   $body =~ /return\s+\$self\s*;/) {
 		$schema->{_accessor} = { type => 'setter', field => $1, param => $2 };
 		$self->_log("  Detected setter accessor for field: $1");
 	}
-
 	# Getter/Setter combination
 	elsif ($body =~ /if\s*\(\s*\@_\s*>\s*1\s*\)/ &&
 	   $body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*shift\s*;/ &&
@@ -3210,6 +3208,10 @@ sub _write_schema {
 		$output->{'output'} = $schema->{'output'};
 	}
 
+	if($schema->{'output'}{'type'} eq 'scalar') {
+		$schema->{'output'}{'type'} = 'string';
+	}
+
 	# Add 'new' field if object instantiation is needed
 	if ($schema->{new}) {
 		$output->{new} = $schema->{new} eq $package_name ? undef : $schema->{'new'};
@@ -3922,8 +3924,8 @@ sub _detect_constructor_requirements {
 	}
 
 	# Look for default values (optional parameters)
-	    my @optional_params;
-    my %default_values;
+	my @optional_params;
+	my %default_values;
 
     # Use the new _extract_default_value method
     # Check for each parameter in the constructor body
@@ -3937,10 +3939,10 @@ sub _detect_constructor_requirements {
         }
     }
 
-    if (@optional_params) {
-        $requirements{optional_parameters} = \@optional_params;
-        $requirements{default_values} = \%default_values;
-    }
+	if (@optional_params) {
+		$requirements{optional_parameters} = \@optional_params;
+		$requirements{default_values} = \%default_values;
+	}
 
 	return \%requirements if keys %requirements;
 	return undef;
