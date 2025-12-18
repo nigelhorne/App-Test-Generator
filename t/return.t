@@ -194,7 +194,7 @@ END_MODULE
     ok($schemas->{set_width}{output}{chainable}, 'set_width is chainable');
     ok($schemas->{set_width}{output}{returns_self}, 'Returns self');
     is($schemas->{set_width}{output}{type}, 'object', 'Returns object type');
-    is($schemas->{set_width}{output}{class}, 'Test::Chainable', 'Returns correct class');
+    is($schemas->{set_width}{output}{isa}, 'Test::Chainable', 'Returns correct class');
 
     ok($schemas->{set_height}{output}{chainable}, 'POD indicates chainable');
 

@@ -1486,7 +1486,7 @@ sub _analyze_output_from_code
 		if ($code =~ /return\s+bless\s*\{[^}]*\}\s*,\s*['"]?(\w+)['"]?/s) {
 			# Detect blessed refs
 			$output->{type} = 'object';
-			$output->{class} = $1;
+			$output->{isa} = $1;
 			$self->_log('  OUTPUT: Bless found, inferring type from code is object');
 		} elsif ($code =~ /return\s+bless/s) {
 			$output->{type} = 'object';
@@ -1501,8 +1501,8 @@ sub _analyze_output_from_code
 			# Get package name from the extractor's stored document
 			if ($self->{_document}) {
 				my $pkg = $self->{_document}->find_first('PPI::Statement::Package');
-				$output->{class} = $pkg ? $pkg->namespace : 'UNKNOWN';
-				$self->_log('  OUTPUT: Object blessed into __PACKAGE__: ' . ($output->{class} || 'UNKNOWN'));
+				$output->{isa} = $pkg ? $pkg->namespace : 'UNKNOWN';
+				$self->_log('  OUTPUT: Object blessed into __PACKAGE__: ' . ($output->{isa} || 'UNKNOWN'));
 			}
 		} elsif ($code =~ /return\s*\(([^)]+)\)/) {
 			my $content = $1;
@@ -1515,8 +1515,8 @@ sub _analyze_output_from_code
 			$output->{type} = 'object';
 			if ($self->{_document}) {
 				my $pkg = $self->{_document}->find_first('PPI::Statement::Package');
-				$output->{class} = $pkg ? $pkg->namespace : 'UNKNOWN';
-				$self->_log('  OUTPUT: Object chained into __PACKAGE__: ' . ($output->{class} || 'UNKNOWN'));
+				$output->{isa} = $pkg ? $pkg->namespace : 'UNKNOWN';
+				$self->_log('  OUTPUT: Object chained into __PACKAGE__: ' . ($output->{isa} || 'UNKNOWN'));
 			}
 		}
 
@@ -1829,7 +1829,7 @@ sub _detect_chaining_pattern {
             # Get the class name
             if ($self->{_document}) {
                 my $pkg = $self->{_document}->find_first('PPI::Statement::Package');
-                $output->{class} = $pkg ? $pkg->namespace : 'UNKNOWN';
+                $output->{isa} = $pkg ? $pkg->namespace : 'UNKNOWN';
             }
 
             $self->_log("  OUTPUT: Chainable method - returns \$self ($self_returns/$total_returns returns)");
@@ -2177,7 +2177,7 @@ sub _analyze_parameter_type {
 	# ISA checks for objects
 	elsif ($code =~ /\$$param\s*->\s*isa\s*\(\s*['"]([^'"]+)['"]\s*\)/i) {
 		$p->{type} = 'object';
-		$p->{class} = $1;
+		$p->{isa} = $1;
 		$self->_log("  CODE: $param is object of class $1");
 	}
 	# Blessed references
@@ -2242,7 +2242,7 @@ sub _detect_datetime_type {
 	# DateTime object detection via isa/UNIVERSAL checks
 	if ($code =~ /\$$param\s*->\s*isa\s*\(\s*['"]DateTime['"]\s*\)/i) {
 		$p->{type} = 'object';
-		$p->{class} = 'DateTime';
+		$p->{isa} = 'DateTime';
 		$p->{semantic} = 'datetime_object';
 		$self->_log("  ADVANCED: $param is DateTime object");
 		return;
@@ -2251,7 +2251,7 @@ sub _detect_datetime_type {
 	# Check for DateTime method calls
 	if ($code =~ /\$$param\s*->\s*(ymd|dmy|mdy|hms|iso8601|epoch|strftime)/) {
 		$p->{type} = 'object';
-		$p->{class} = 'DateTime';
+		$p->{isa} = 'DateTime';
 		$p->{semantic} = 'datetime_object';
 		$self->_log("  ADVANCED: $param uses DateTime methods");
 		return;
@@ -2261,7 +2261,7 @@ sub _detect_datetime_type {
 	if ($code =~ /\$$param\s*->\s*isa\s*\(\s*['"]Time::Piece['"]\s*\)/i ||
 	    $code =~ /\$$param\s*->\s*(strftime|epoch|year|mon|mday)/) {
 		$p->{type} = 'object';
-		$p->{class} = 'Time::Piece';
+		$p->{isa} = 'Time::Piece';
 		$p->{semantic} = 'timepiece_object';
 		$self->_log("  ADVANCED: $param is Time::Piece object");
 		return;
@@ -2320,7 +2320,7 @@ sub _detect_filehandle_type {
 	# File handle operations
 	if ($code =~ /(?:open|close|read|print|say|sysread|syswrite)\s*\(?\s*\$$param/) {
 		$p->{type} = 'object';
-		$p->{class} = 'IO::Handle';
+		$p->{isa} = 'IO::Handle';
 		$p->{semantic} = 'filehandle';
 		$self->_log("  ADVANCED: $param is a file handle");
 		return;
@@ -2329,7 +2329,7 @@ sub _detect_filehandle_type {
 	# Filehandle-specific operations
 	if ($code =~ /\$$param\s*->\s*(readline|getline|print|say|close|flush|autoflush)/) {
 		$p->{type} = 'object';
-		$p->{class} = 'IO::Handle';
+		$p->{isa} = 'IO::Handle';
 		$p->{semantic} = 'filehandle';
 		$self->_log("  ADVANCED: $param uses filehandle methods");
 		return;
@@ -2364,7 +2364,7 @@ sub _detect_filehandle_type {
 	if ($code =~ /\$$param\s*->\s*isa\s*\(\s*['"]IO::File['"]\s*\)/ ||
 	    $code =~ /IO::File\s*->\s*new\s*\(\s*\$$param/) {
 		$p->{type} = 'object';
-		$p->{class} = 'IO::File';
+		$p->{isa} = 'IO::File';
 		$p->{semantic} = 'filehandle';
 		$self->_log("  ADVANCED: $param is IO::File object");
 		return;
@@ -2412,7 +2412,7 @@ sub _detect_coderef_type {
 	if ($code =~ /blessed\s*\(\s*\$$param\s*\)/ &&
 	    $code =~ /ref\s*\(\s*\$$param\s*\)\s*eq\s*['"]CODE['"]/i) {
 		$p->{type} = 'object';
-		$p->{class} = 'blessed_coderef';
+		$p->{isa} = 'blessed_coderef';
 		$p->{semantic} = 'callback';
 		$self->_log("  ADVANCED: $param is blessed coderef");
 		return;
@@ -2976,7 +2976,7 @@ sub _calculate_input_confidence {
 		$score += 15 if defined $p->{max};
 		$score += 20 if defined $p->{optional};	# Explicit optional/required is valuable
 		$score += 20 if $p->{matches};
-		$score += 25 if $p->{class};	# Specific class is high confidence
+		$score += 25 if $p->{isa};	# Specific class is high confidence
 
 		# Position information
 		$score += 10 if defined $p->{position};
@@ -2998,7 +2998,7 @@ sub _calculate_output_confidence {
 
 	return 'none' unless keys %$output;
 	return 'high' if $output->{type} && $output->{value};
-	return 'high' if $output->{type} && $output->{class};
+	return 'high' if $output->{type} && $output->{isa};
 	return 'medium' if $output->{type};
 	return 'low';
 }
@@ -3532,12 +3532,12 @@ sub _serialize_parameter_for_yaml {
 		if ($semantic eq 'datetime_object') {
 			# DateTime objects: test generator needs to know how to create them
 			$cleaned{type} = 'object';
-			$cleaned{class} = $param->{class} || 'DateTime';
+			$cleaned{isa} = $param->{isa} || 'DateTime';
 			$cleaned{_note} = 'Requires DateTime object';
 
 		} elsif ($semantic eq 'timepiece_object') {
 			$cleaned{type} = 'object';
-			$cleaned{class} = $param->{class} || 'Time::Piece';
+			$cleaned{isa} = $param->{isa} || 'Time::Piece';
 			$cleaned{_note} = 'Requires Time::Piece object';
 
 		} elsif ($semantic eq 'date_string') {
@@ -3554,7 +3554,7 @@ sub _serialize_parameter_for_yaml {
 		} elsif ($semantic eq 'unix_timestamp') {
 			$cleaned{type} = 'integer';
 			$cleaned{min} ||= 0;
-			$cleaned{max} ||= 2147483647;  # 32-bit max
+			$cleaned{max} ||= 2147483647;	# 32-bit max
 			$cleaned{_note} = 'UNIX timestamp';
 
 		} elsif ($semantic eq 'datetime_parseable') {
@@ -3564,7 +3564,7 @@ sub _serialize_parameter_for_yaml {
 		} elsif ($semantic eq 'filehandle') {
 			# File handles: special handling needed
 			$cleaned{type} = 'object';
-			$cleaned{class} = $param->{class} || 'IO::Handle';
+			$cleaned{isa} = $param->{isa} || 'IO::Handle';
 			$cleaned{_note} = 'File handle - may need mock in tests';
 
 		} elsif ($semantic eq 'filepath') {
@@ -3594,8 +3594,8 @@ sub _serialize_parameter_for_yaml {
 	}
 
 	# Handle object class
-	if ($param->{class} && !$cleaned{class}) {
-		$cleaned{class} = $param->{class};
+	if ($param->{isa} && !$cleaned{isa}) {
+		$cleaned{isa} = $param->{isa};
 	}
 
 	# Add format hints where available
@@ -3642,8 +3642,8 @@ sub _generate_schema_comments {
 				push @param_notes, "$param_name: enum with " . scalar(@{$p->{enum}}) . " values";
 			}
 
-			if ($p->{class}) {
-				push @param_notes, "$param_name: requires $p->{class} object";
+			if ($p->{isa}) {
+				push @param_notes, "$param_name: requires $p->{isa} object";
 			}
 		}
 
@@ -3689,7 +3689,7 @@ sub _generate_schema_comments {
 				push @warnings, "Parameter '$param_name' is a filehandle - consider using IO::String or mock";
 			}
 
-			if ($p->{class} && $p->{class} =~ /DateTime/) {
+			if ($p->{isa} && $p->{isa} =~ /DateTime/) {
 				push @warnings, "Parameter '$param_name' requires DateTime - ensure DateTime is loaded";
 			}
 		}
@@ -4518,14 +4518,14 @@ if ($value =~ /^(['"])(.*)\1$/s) {
         return [];
     }
 
-    # Handle numeric values
-    if ($value =~ /^-?\d+(?:\.\d+)?$/) {
-        if ($value =~ /\./) {
-            return $value + 0;
-        } else {
-            return int($value);
-        }
-    }
+	# Handle numeric values
+	if ($value =~ /^-?\d+(?:\.\d+)?$/) {
+		if ($value =~ /\./) {
+			return $value + 0;
+		} else {
+			return int($value);
+		}
+	}
 
 	# Handle boolean keywords
 	if ($value =~ /^(true|false)$/i) {
