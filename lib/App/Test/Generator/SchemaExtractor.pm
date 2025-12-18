@@ -1534,31 +1534,30 @@ sub _detect_list_context {
         }
     }
 
-    # Detect explicit list returns (multiple values in parentheses)
-    # Avoid false positives from function calls
-    if ($code =~ /return\s*\(\s*([^)]+)\s*\)\s*;/) {
-        my $content = $1;
-        # Count commas outside of nested structures
-        my $comma_count = 0;
-        my $depth = 0;
-        for my $char (split //, $content) {
-            $depth++ if $char eq '(' || $char eq '[' || $char eq '{';
-            $depth-- if $char eq ')' || $char eq ']' || $char eq '}';
-            $comma_count++ if $char eq ',' && $depth == 0;
-        }
+	# Detect explicit list returns (multiple values in parentheses)
+	# Avoid false positives from function calls
+	if ($code =~ /return\s*\(\s*([^)]+)\s*\)\s*;/) {
+		my $content = $1;
+		# Count commas outside of nested structures
+		my $comma_count = 0;
+		my $depth = 0;
+		for my $char (split //, $content) {
+			$depth++ if $char eq '(' || $char eq '[' || $char eq '{';
+			$depth-- if $char eq ')' || $char eq ']' || $char eq '}';
+			$comma_count++ if $char eq ',' && $depth == 0;
+		}
 
-        if ($comma_count > 0 && $content !~ /\b(?:bless|new)\b/) {
-            # Multiple values returned
-            unless ($output->{type} && $output->{type} eq 'boolean') {
-                $output->{type} = 'array';
-                $output->{list_return} = 1;
-                $self->_log("  OUTPUT: Returns list of " . ($comma_count + 1) . " values");
-            }
-        }
-    }
+		if ($comma_count > 0 && $content !~ /\b(?:bless|new)\b/) {
+			# Multiple values returned
+			unless ($output->{type} && $output->{type} eq 'boolean') {
+				$output->{type} = 'array';
+				$output->{list_return} = $comma_count + 1;
+				$self->_log('  OUTPUT: Returns list of ' . ($comma_count + 1) . ' values');
+			}
+		}
+	}
 }
 
-# New method: Detect void context methods
 sub _detect_void_context {
     my ($self, $output, $code, $method_name) = @_;
     return unless $code;
