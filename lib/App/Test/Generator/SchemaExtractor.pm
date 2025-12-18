@@ -1559,10 +1559,10 @@ sub _detect_list_context {
 }
 
 sub _detect_void_context {
-    my ($self, $output, $code, $method_name) = @_;
-    return unless $code;
+	my ($self, $output, $code, $method_name) = @_;
+	return unless $code;
 
-    $self->_log("  DEBUG _detect_void_context called for $method_name");
+	$self->_log("  DEBUG _detect_void_context called for $method_name");
 
     # Methods that typically don't return meaningful values
     my $void_patterns = {
@@ -1595,30 +1595,30 @@ sub _detect_void_context {
         $ret =~ s/^\s+|\s+$//g;
         $self->_log("  DEBUG return value: [$ret]");
         $no_value_returns++ if $ret eq '';
-        $no_value_returns++ if($ret =~ /^unless\s+/);
+        $no_value_returns++ if($ret =~ /^(if|unless)\s/);
         $true_returns++ if $ret eq '1';
         $self_returns++ if $ret eq '$self';
     }
 
-    my $total_returns = scalar(@returns);
+	my $total_returns = scalar(@returns);
 
-    $self->_log("  DEBUG no_value=$no_value_returns, true=$true_returns, self=$self_returns, total=$total_returns");
+	$self->_log("  DEBUG no_value=$no_value_returns, true=$true_returns, self=$self_returns, total=$total_returns");
 
-    # Void context indicators
-    if ($no_value_returns > 0 && $no_value_returns == $total_returns) {
-    $output->{void_context} = 1;
-    $output->{type} = 'void';  # This should override any previous type
-    $self->_log("  OUTPUT: All returns are empty - void context method");
-}
-    # Methods that always return true (success indicator)
-elsif ($true_returns > 0 && $true_returns == $total_returns && $total_returns >= 1) {
-    $output->{success_indicator} = 1;
-    # Don't override type if already set to boolean
-    unless ($output->{type} && $output->{type} eq 'boolean') {
-        $output->{type} = 'boolean';
-    }
-    $self->_log("  OUTPUT: Always returns 1 - success indicator pattern");
-}
+	# Void context indicators
+	if ($no_value_returns > 0 && $no_value_returns == $total_returns) {
+		$output->{void_context} = 1;
+		$output->{type} = 'void';  # This should override any previous type
+		$self->_log("  OUTPUT: All returns are empty - void context method");
+	}
+	# Methods that always return true (success indicator)
+	elsif ($true_returns > 0 && $true_returns == $total_returns && $total_returns >= 1) {
+		$output->{success_indicator} = 1;
+		# Don't override type if already set to boolean
+		unless ($output->{type} && $output->{type} eq 'boolean') {
+			$output->{type} = 'boolean';
+		}
+		$self->_log('  OUTPUT: Always returns 1 - success indicator pattern');
+	}
 }
 
 # New method: Detect method chaining patterns
