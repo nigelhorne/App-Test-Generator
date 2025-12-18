@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 
+use Test::DescribeMe qw(extended);
 use Test::Most;
 use File::Temp qw(tempdir);
 
@@ -418,7 +419,7 @@ END_MODULE
     # Debug logger (void context)
     is($schemas->{debug}{output}{type}, 'void', 'debug is void context');
 
-    done_testing();
+	done_testing();
 };
 
 done_testing();

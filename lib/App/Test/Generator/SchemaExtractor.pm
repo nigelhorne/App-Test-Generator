@@ -1677,10 +1677,10 @@ sub _detect_chaining_pattern {
 
 # Detect error return conventions
 sub _detect_error_conventions {
-    my ($self, $output, $code) = @_;
-    return unless $code;
+	my ($self, $output, $code) = @_;
+	return unless $code;
 
-    $self->_log("  DEBUG _detect_error_conventions called");
+	$self->_log('  DEBUG _detect_error_conventions called');
 
     my %error_patterns;
 
@@ -1703,19 +1703,20 @@ sub _detect_error_conventions {
     }
 
     # Pattern 4: return 0/1 pattern (indicates boolean with error handling)
-    my $zero_returns = 0;
+my $zero_returns = 0;
 my $one_returns = 0;
-while ($code =~ /return\s+(0|1)(?:\s+(?:if|unless|;))/g) {
+# Match "return 0" or "return 1" followed by anything (condition or semicolon)
+while ($code =~ /return\s+(0|1)\s*(?:;|if|unless)/g) {
     if ($1 eq '0') {
         $zero_returns++;
     } else {
         $one_returns++;
     }
 }
-    if ($zero_returns > 0 && $one_returns > 0) {
-        $error_patterns{zero_on_error} = 1;
-        $self->_log("  DEBUG Found 0/1 return pattern ($zero_returns zeros, $one_returns ones)");
-    }
+if ($zero_returns > 0 && $one_returns > 0) {
+    $error_patterns{zero_on_error} = 1;
+    $self->_log("  DEBUG Found 0/1 return pattern ($zero_returns zeros, $one_returns ones)");
+}
 
     # Pattern 5: Exception handling with eval
     if ($code =~ /eval\s*\{/) {
