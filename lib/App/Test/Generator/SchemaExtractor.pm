@@ -1112,13 +1112,6 @@ Looks for:
 sub _analyze_output {
     my ($self, $pod, $code, $method_name) = @_;
 
-    # Only debug specific failing methods
-    if ($method_name =~ /^(fetch_user|validate|get_items)$/) {
-        warn "\n" . "="x60 . "\n";
-        warn "=== ANALYZING $method_name ===\n";
-        warn "="x60 . "\n";
-    }
-
     my %output;
 
     $self->_analyze_output_from_pod(\%output, $pod);
@@ -1131,16 +1124,6 @@ sub _analyze_output {
 
     $self->_validate_output(\%output) if keys %output;
 
-    if ($method_name =~ /^(fetch_user|validate|get_items)$/) {
-        warn "=== FINAL OUTPUT for $method_name ===\n";
-        use Data::Dumper;
-        $Data::Dumper::Indent = 1;
-        $Data::Dumper::Sortkeys = 1;
-        warn Dumper(\%output);
-        warn "="x60 . "\n\n";
-    }
-
-    return (keys %output) ? \%output : {};
     # Don't return empty output
     return (keys %output) ? \%output : {};
 }
@@ -1520,13 +1503,13 @@ sub _detect_list_context {
 
         # Debug: show what we're matching against
         if ($code =~ /(wantarray[^;]+;)/s) {
-            warn("  DEBUG wantarray line: $1");
+            $self->_log("  DEBUG wantarray line: $1");
         }
 
         # Pattern 1: wantarray ? (list, items) : scalar_value (with parens)
         if ($code =~ /wantarray\s*\?\s*\(([^)]+)\)\s*:\s*([^;]+)/s) {
             my ($list_return, $scalar_return) = ($1, $2);
-            warn("  DEBUG list (with parens): [$list_return], scalar: [$scalar_return]");
+            $self->_log("  DEBUG list (with parens): [$list_return], scalar: [$scalar_return]");
 
             $output->{list_context} = $self->_infer_type_from_expression($list_return);
             $output->{scalar_context} = $self->_infer_type_from_expression($scalar_return);
@@ -1539,7 +1522,7 @@ sub _detect_list_context {
             $list_return =~ s/^\s+|\s+$//g;
             $scalar_return =~ s/^\s+|\s+$//g;
 
-            warn("  DEBUG list (no parens): [$list_return], scalar: [$scalar_return]");
+            $self->_log("  DEBUG list (no parens): [$list_return], scalar: [$scalar_return]");
 
             $output->{list_context} = $self->_infer_type_from_expression($list_return);
             $output->{scalar_context} = $self->_infer_type_from_expression($scalar_return);
@@ -1614,6 +1597,7 @@ sub _detect_void_context {
         $ret =~ s/^\s+|\s+$//g;
         $self->_log("  DEBUG return value: [$ret]");
         $no_value_returns++ if $ret eq '';
+        $no_value_returns++ if($ret =~ /^unless\s+/);
         $true_returns++ if $ret eq '1';
         $self_returns++ if $ret eq '$self';
     }
@@ -2615,12 +2599,12 @@ sub _analyze_parameter_validation {
         }
     }
 
-    # Explicit required check overrides default detection
-    if ($is_required) {
-        $p->{optional} = 0;
-        delete $p->{default} if exists $p->{default};
-        $self->_log("  CODE: $param is required (validation check)");
-    }
+	# Explicit required check overrides default detection
+	if ($is_required) {
+		$p->{optional} = 0;
+		delete $p->{default} if exists $p->{default};
+		$self->_log("  CODE: $param is required (validation check)");
+	}
 }
 
 =head2 _analyze_signature
@@ -3534,7 +3518,7 @@ sub _generate_schema_comments {
 	}
 
 	if (@warnings) {
-		push @comments, "#";
+		push @comments, '#';
 		push @comments, "# WARNINGS - Manual test setup may be required:";
 		foreach my $warning (@warnings) {
 			push @comments, "#   ! $warning";
@@ -4041,17 +4025,17 @@ sub _detect_constructor_requirements {
 	my @optional_params;
 	my %default_values;
 
-    # Use the new _extract_default_value method
-    # Check for each parameter in the constructor body
-    if ($requirements{parameters}) {
-        foreach my $param (@{$requirements{parameters}}) {
-            my $default = $self->_extract_default_value($param, $body);
-            if (defined $default) {
-                push @optional_params, $param;
-                $default_values{$param} = $default;
-            }
-        }
-    }
+	# Use the new _extract_default_value method
+	# Check for each parameter in the constructor body
+	if ($requirements{parameters}) {
+		foreach my $param (@{$requirements{parameters}}) {
+			my $default = $self->_extract_default_value($param, $body);
+			if (defined $default) {
+				push @optional_params, $param;
+				$default_values{$param} = $default;
+			}
+		}
+	}
 
 	if (@optional_params) {
 		$requirements{optional_parameters} = \@optional_params;
@@ -4370,25 +4354,25 @@ if ($value =~ /^(['"])(.*)\1$/s) {
         return lc($1) eq 'true' ? 1 : 0;
     }
 
-    # Handle Perl boolean constants
-    if ($value eq '1') {
-        return 1;
-    } elsif ($value eq '0') {
-        return 0;
-    }
+	# Handle Perl boolean constants
+	if ($value eq '1') {
+		return 1;
+	} elsif ($value eq '0') {
+		return 0;
+	}
 
-    # Handle undef
-    if ($value eq 'undef') {
-        return undef;
-    }
+	# Handle undef
+	if ($value eq 'undef') {
+		return undef;
+	}
 
-    # Handle __PACKAGE__ and similar constants
-    if ($value eq '__PACKAGE__') {
-        return '__PACKAGE__';
-    }
+	# Handle __PACKAGE__ and similar constants
+	if ($value eq '__PACKAGE__') {
+		return '__PACKAGE__';
+	}
 
-    # Remove surrounding parentheses
-    $value =~ s/^\((.+)\)$/$1/;
+	# Remove surrounding parentheses
+	$value =~ s/^\((.+)\)$/$1/;
 
 	# Handle expressions we can't evaluate
 	if ($value =~ /^\$[a-zA-Z_]/ || $value =~ /\(.*\)/) {

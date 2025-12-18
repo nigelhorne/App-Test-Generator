@@ -31,7 +31,7 @@ sub create_extractor {
 	return App::Test::Generator::SchemaExtractor->new(
 		input_file => $module_file,
 		output_dir => tempdir(CLEANUP => 1),
-		verbose	=> 1,
+		verbose	=> 0,
 	);
 }
 
