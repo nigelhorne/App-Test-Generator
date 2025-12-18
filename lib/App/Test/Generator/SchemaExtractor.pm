@@ -833,7 +833,6 @@ sub _analyze_method {
 	return $schema;
 }
 
-# Add method to detect accessor methods
 sub _detect_accessor_methods {
 	my ($self, $method, $schema) = @_;
 
@@ -846,32 +845,32 @@ sub _detect_accessor_methods {
 		$self->_log("  Detected getter accessor for field: $1");
 	}
 	# Setter: $self->{field} = $value; return $self;
-	elsif ($body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*\$(\w+)\s*;/ &&
-   $body =~ /return\s+\$self\s*;/) {
-    my ($field, $param) = ($1, $2);
-    if (defined $field && defined $param) {
-        $schema->{_accessor} = { type => 'setter', field => $field, param => $param };
-        $self->_log("  Detected setter accessor for field: $field");
-    }
-}
-# Getter/Setter combination
-elsif ($body =~ /if\s*\(\s*\@_\s*>\s*1\s*\)/ &&
-   $body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*shift\s*;/ &&
-   $body =~ /return\s+\$self\s*->\s*\{[^}]+\}\s*;/) {
-    my $field = $1;
-    if (defined $field) {
-        $schema->{_accessor} = { type => 'getset', field => $field };
-        $self->_log("  Detected getter/setter accessor for field: $field");
-    }
-}
-if ($schema->{_accessor}) {
-    if ($schema->{_accessor}{type} eq 'setter') {
-        my $param = $schema->{_accessor}{param};
-        if (defined $param) {
-            $schema->{input}{$param} ||= { type => 'scalar' };
-        }
-    }
-}
+	elsif ($body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*\$(\w+)\s*;/ && $body =~ /return\s+\$self\s*;/) {
+		my ($field, $param) = ($1, $2);
+		if (defined $field && defined $param) {
+			$schema->{_accessor} = { type => 'setter', field => $field, param => $param };
+			$self->_log("  Detected setter accessor for field: $field");
+		}
+	}
+	# Getter/Setter combination
+	elsif ($body =~ /if\s*\(\s*\@_\s*>\s*1\s*\)/ &&
+	       $body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*shift\s*;/ &&
+	       $body =~ /return\s+\$self\s*->\s*\{[^}]+\}\s*;/) {
+		my $field = $1;
+		if (defined $field) {
+			$schema->{_accessor} = { type => 'getset', field => $field };
+			$self->_log("  Detected getter/setter accessor for field: $field");
+		}
+	}
+
+	if ($schema->{_accessor}) {
+		if ($schema->{_accessor}{type} eq 'setter') {
+			my $param = $schema->{_accessor}{param};
+			if (defined $param) {
+				$schema->{input}{$param} ||= { type => 'scalar' };
+			}
+		}
+	}
 }
 
 =head2 _analyze_pod
@@ -983,8 +982,8 @@ sub _analyze_pod {
 				}
 
 				$self->_log("  POD: Found parameter '$name' in parameters section, type=$type" .
-						($constraint ? " ($constraint)" : "") .
-						($desc ? " - $desc" : ""));
+						($constraint ? " ($constraint)" : '') .
+						($desc ? " - $desc" : ''));
 			}
 		}
 	}
@@ -1033,7 +1032,7 @@ sub _analyze_pod {
 		}
 
 		$self->_log("  POD: Found parameter '$name' in the inline documentation, type=$type" .
-					($constraint ? " ($constraint)" : ""));
+					($constraint ? " ($constraint)" : ''));
 	}
 
 	# Pattern 3: Parse =over /=item list
@@ -3328,7 +3327,7 @@ sub _write_schema {
 	my $rel_info = $schema->{relationships} ?
 		' [' . scalar(@{$schema->{relationships}}) . ' relationships]' : '';
 	$self->_log("  Wrote: $filename (input confidence: $schema->{_confidence}{input})" .
-				($schema->{new} ? " [requires: $schema->{new}]" : "") . $rel_info);
+				($schema->{new} ? " [requires: $schema->{new}]" : '') . $rel_info);
 }
 
 =head2 _serialize_parameter_for_yaml
@@ -3525,16 +3524,16 @@ sub _generate_schema_comments {
 		}
 	}
 
-	push @comments, "";
+	push @comments, '';
 
 	return join("\n", @comments);
 }
 
 sub _format_relationship {
-	my ($rel) = @_;
+	my $rel = $_[0];
 
 	if ($rel->{type} eq 'mutually_exclusive') {
-		return "Mutually exclusive: " . join(', ', @{$rel->{params}});
+		return 'Mutually exclusive: ' . join(', ', @{$rel->{params}});
 	} elsif ($rel->{type} eq 'required_group') {
 		return "Required group (OR): " . join(', ', @{$rel->{params}});
 	} elsif ($rel->{type} eq 'conditional_requirement') {
@@ -3546,7 +3545,7 @@ sub _format_relationship {
 	} elsif ($rel->{type} eq 'value_conditional') {
 		return "If $rel->{if}='$rel->{equals}' then $rel->{then_required} required";
 	}
-	return "Unknown relationship";
+	return 'Unknown relationship';
 }
 
 =head2 _needs_object_instantiation
@@ -3690,7 +3689,7 @@ sub _detect_factory_method {
 			if ($class_name =~ /^\$(class|self|package)$/) {
 				$factory_info{returns_class} = $current_package;
 			} elsif ($class_name =~ /^\$/) {
-				$factory_info{returns_class} = 'VARIABLE';  # Unknown variable
+				$factory_info{returns_class} = 'VARIABLE';	# Unknown variable
 			} else {
 				$factory_info{returns_class} = $class_name;
 			}
@@ -3792,7 +3791,7 @@ sub _detect_singleton_pattern {
 		}
 	}
 
-	return \%singleton_info if keys %singleton_info > 0;  # Need at least name pattern
+	return \%singleton_info if keys %singleton_info > 0;	# Need at least name pattern
 
 	return undef;
 }
@@ -3939,7 +3938,7 @@ sub _check_inheritance_for_constructor {
 	} elsif (@parent_classes) {
 		# No own constructor, but has parents - might need parent constructor
 		$inheritance_info{use_parent_constructor} = 1;
-		$inheritance_info{parent_class} = $parent_classes[0];  # Use first parent
+		$inheritance_info{parent_class} = $parent_classes[0];	# Use first parent
 	}
 
 	return \%inheritance_info if keys %inheritance_info;
@@ -4185,48 +4184,48 @@ Returns the default value as a string if found, undef otherwise.
 =cut
 
 sub _extract_default_value {
-    my ($self, $param, $code) = @_;
+	my ($self, $param, $code) = @_;
 
-    return undef unless $param && $code;
+	return undef unless $param && $code;
 
-    # Clean up the code for easier pattern matching
-    # Remove comments to avoid false positives
-    my $clean_code = $code;
-    $clean_code =~ s/#.*$//gm;
-    $clean_code =~ s/^\s+|\s+$//g;
+	# Clean up the code for easier pattern matching
+	# Remove comments to avoid false positives
+	my $clean_code = $code;
+	$clean_code =~ s/#.*$//gm;
+	$clean_code =~ s/^\s+|\s+$//g;
 
-    # Pattern 1: $param = $param || 'default_value'
-    # Also handles: $param = $arg || 'default'
-    if ($clean_code =~ /\$$param\s*=\s*(?:\$$param|\$[a-zA-Z_]\w*)\s*\|\|\s*([^;]+)/) {
-        my $default = $1;
-        $default =~ s/\s*;\s*$//;
-        $default = $self->_clean_default_value($default);
-        return $default if defined $default;
-    }
+	# Pattern 1: $param = $param || 'default_value'
+	# Also handles: $param = $arg || 'default'
+	if ($clean_code =~ /\$$param\s*=\s*(?:\$$param|\$[a-zA-Z_]\w*)\s*\|\|\s*([^;]+)/) {
+		my $default = $1;
+		$default =~ s/\s*;\s*$//;
+		$default = $self->_clean_default_value($default);
+		return $default if defined $default;
+	}
 
-    # Pattern 2: $param //= 'default_value'
-    if ($clean_code =~ /\$$param\s*\/\/=\s*([^;]+)/) {
-        my $default = $1;
-        $default =~ s/\s*;\s*$//;
-        $default = $self->_clean_default_value($default);
-        return $default if defined $default;
-    }
+	# Pattern 2: $param //= 'default_value'
+	if ($clean_code =~ /\$$param\s*\/\/=\s*([^;]+)/) {
+		my $default = $1;
+		$default =~ s/\s*;\s*$//;
+		$default = $self->_clean_default_value($default);
+		return $default if defined $default;
+	}
 
-    # Pattern 3: $param = defined $param ? $param : 'default'
-    # Also handles: $param = defined $arg ? $arg : 'default'
-    if ($clean_code =~ /\$$param\s*=\s*defined\s+(?:\$$param|\$[a-zA-Z_]\w*)\s*\?\s*(?:\$$param|\$[a-zA-Z_]\w*)\s*:\s*([^;]+)/) {
-        my $default = $1;
-        $default =~ s/\s*;\s*$//;
-        $default = $self->_clean_default_value($default);
-        return $default if defined $default;
-    }
+	# Pattern 3: $param = defined $param ? $param : 'default'
+	# Also handles: $param = defined $arg ? $arg : 'default'
+	if ($clean_code =~ /\$$param\s*=\s*defined\s+(?:\$$param|\$[a-zA-Z_]\w*)\s*\?\s*(?:\$$param|\$[a-zA-Z_]\w*)\s*:\s*([^;]+)/) {
+		my $default = $1;
+		$default =~ s/\s*;\s*$//;
+		$default = $self->_clean_default_value($default);
+		return $default if defined $default;
+	}
 
-    # Pattern 4: $param = 'default' unless defined $param;
-    if ($clean_code =~ /\$$param\s*=\s*([^;]+?)\s+unless\s+defined\s+(?:\$$param|\$[a-zA-Z_]\w*)/) {
-        my $default = $1;
-        $default = $self->_clean_default_value($default);
-        return $default if defined $default;
-    }
+	# Pattern 4: $param = 'default' unless defined $param;
+	if ($clean_code =~ /\$$param\s*=\s*([^;]+?)\s+unless\s+defined\s+(?:\$$param|\$[a-zA-Z_]\w*)/) {
+		my $default = $1;
+		$default = $self->_clean_default_value($default);
+		return $default if defined $default;
+	}
 
     # Pattern 5: $param ||= 'default'
     if ($clean_code =~ /\$$param\s*\|\|=\s*([^;]+)/) {

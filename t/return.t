@@ -1,4 +1,3 @@
-
 #!/usr/bin/env perl
 use strict;
 use warnings;
@@ -416,8 +415,8 @@ END_MODULE
     # Context-aware search
     ok($schemas->{search}{output}{context_aware}, 'search is context-aware');
 
-    # Debug logger (void context)
-    is($schemas->{debug}{output}{type}, 'void', 'debug is void context');
+	# Debug logger (void context)
+	is($schemas->{debug}{output}{type}, 'void', 'debug is void context');
 
 	done_testing();
 };
