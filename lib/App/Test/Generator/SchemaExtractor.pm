@@ -531,6 +531,186 @@ the type is automatically inferred from the default:
     $ratio = 3.14        # inferred as number
     $enabled = 1         # inferred as boolean
 
+=head2 Context-Aware Return Analysis
+
+The extractor now provides comprehensive analysis of method return behavior,
+including context sensitivity, error handling conventions, and method chaining patterns.
+
+=head3 List vs Scalar Context Detection
+
+Automatically detects methods that return different values based on calling context:
+
+    sub get_items {
+        my ($self) = @_;
+        return wantarray ? @items : scalar(@items);
+    }
+
+Detection captures:
+
+=over 4
+
+=item * C<context_aware> flag - Method uses wantarray
+
+=item * C<list_context> - Type returned in list context (e.g., 'array')
+
+=item * C<scalar_context> - Type returned in scalar context (e.g., 'integer')
+
+=back
+
+Recognizes both ternary operator patterns and conditional return patterns.
+
+=head3 Void Context Methods
+
+Identifies methods that don't return meaningful values:
+
+=over 4
+
+=item * Setters (C<set_*> methods)
+
+=item * Mutators (C<add_*, remove_*, delete_*, clear_*, reset_*, update_*>)
+
+=item * Loggers (C<log, debug, warn, error, info>)
+
+=item * Methods with only empty returns
+
+=back
+
+Example:
+
+    sub set_name {
+        my ($self, $name) = @_;
+        $self->{name} = $name;
+        return;  # Void context
+    }
+
+Sets C<void_context> flag and C<type =E<gt> 'void'>.
+
+=head3 Method Chaining Detection
+
+Identifies chainable methods that return C<$self> for fluent interfaces:
+
+    sub set_width {
+        my ($self, $width) = @_;
+        $self->{width} = $width;
+        return $self;  # Chainable
+    }
+
+Detection provides:
+
+=over 4
+
+=item * C<chainable> flag - Method supports chaining
+
+=item * C<returns_self> - Returns invocant for chaining
+
+=item * C<class> - The class name being returned
+
+=back
+
+Also detects chaining documentation in POD (keywords: "chainable", "fluent interface",
+"returns self", "method chaining").
+
+=head3 Error Return Conventions
+
+Analyzes how methods signal errors:
+
+B<Pattern Detection:>
+
+=over 4
+
+=item * C<undef_on_error> - Explicit C<return undef if/unless condition>
+
+=item * C<implicit_undef> - Bare C<return if/unless condition>
+
+=item * C<empty_list> - C<return ()> for list context errors
+
+=item * C<zero_on_error> - Returns 0/false for boolean error indication
+
+=item * C<exception_handling> - Uses eval blocks with error checking
+
+=back
+
+B<Example Analysis:>
+
+    sub fetch_user {
+        my ($self, $id) = @_;
+
+        return undef unless $id;        # undef_on_error
+        return undef if $id < 0;        # undef_on_error
+
+        return $self->{users}{$id};
+    }
+
+Results in:
+
+    error_return: 'undef'
+    success_failure_pattern: 1
+    error_handling: {
+        undef_on_error: ['$id', '$id < 0']
+    }
+
+B<Success/Failure Pattern:>
+
+Methods that return different types for success vs. failure are flagged with
+C<success_failure_pattern>. Common patterns:
+
+=over 4
+
+=item * Returns value on success, undef on failure
+
+=item * Returns true on success, false on failure
+
+=item * Returns data on success, empty list on failure
+
+=back
+
+=head3 Success Indicator Detection
+
+Methods that always return true (typically for side effects):
+
+    sub update_status {
+        my ($self, $status) = @_;
+        $self->{status} = $status;
+        return 1;  # Success indicator
+    }
+
+Sets C<success_indicator> flag when method consistently returns 1.
+
+=head3 Schema Output
+
+Enhanced return analysis adds these fields to method schemas:
+
+    output:
+      type: boolean              # Inferred return type
+      context_aware: 1           # Uses wantarray
+      list_context:
+        type: array
+      scalar_context:
+        type: integer
+      chainable: 1               # Returns $self
+      returns_self: 1
+      void_context: 1            # No meaningful return
+      success_indicator: 1       # Always returns true
+      error_return: undef        # How errors are signaled
+      success_failure_pattern: 1 # Mixed return types
+      error_handling:            # Detailed error patterns
+        undef_on_error: [...]
+        exception_handling: 1
+
+This comprehensive analysis enables:
+
+=over 4
+
+=item * Better test generation (testing both contexts, error paths)
+
+=item * Documentation generation (clear error conventions)
+
+=item * API design validation (consistent error handling)
+
+=item * Contract specification (precise return behavior)
+
+=back
+
 =head2 Example
 
 For a method like:
@@ -4279,19 +4459,19 @@ sub _clean_default_value
 
 	return undef unless defined $value;
 
-    # Remove leading/trailing whitespace
-    $value =~ s/^\s+|\s+$//g;
+	# Remove leading/trailing whitespace
+	$value =~ s/^\s+|\s+$//g;
 
 	# Remove parenthetical notes like "(no password)" only if there's content before them
 	$value =~ s/(\S+)\s*\([^)]+\)\s*$/$1/;
 	$value =~ s/^\s+|\s+$//g;
 
-    # Handle chained || or // operators - extract the rightmost value
-    if ($value =~ /\|\||\/{2}/) {
-        my @parts = split(/\s*(?:\|\||\/{2})\s*/, $value);
-        $value = $parts[-1];
-        $value =~ s/^\s+|\s+$//g;
-    }
+	# Handle chained || or // operators - extract the rightmost value
+	if ($value =~ /\|\||\/{2}/) {
+		my @parts = split(/\s*(?:\|\||\/{2})\s*/, $value);
+		$value = $parts[-1];
+		$value =~ s/^\s+|\s+$//g;
+	}
 
     # Remove trailing semicolon if present
     $value =~ s/;\s*$//;
@@ -4347,10 +4527,10 @@ if ($value =~ /^(['"])(.*)\1$/s) {
         }
     }
 
-    # Handle boolean keywords
-    if ($value =~ /^(true|false)$/i) {
-        return lc($1) eq 'true' ? 1 : 0;
-    }
+	# Handle boolean keywords
+	if ($value =~ /^(true|false)$/i) {
+		return lc($1) eq 'true' ? 1 : 0;
+	}
 
 	# Handle Perl boolean constants
 	if ($value eq '1') {
