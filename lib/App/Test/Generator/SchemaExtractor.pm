@@ -1001,20 +1001,20 @@ Combines POD analysis, code pattern analysis, and signature analysis.
 =cut
 
 sub _analyze_method {
-  my ($self, $method) = @_;
-    
-    my $code = $method->{body};
-    my $pod = $method->{pod};
-    
+	my ($self, $method) = @_;
+
+	my $code = $method->{body};
+	my $pod = $method->{pod};
+
     # Extract modern features
     my $attributes = $self->_extract_subroutine_attributes($code);
     my $postfix_derefs = $self->_analyze_postfix_dereferencing($code);
     my $fields = $self->_extract_field_declarations($code);
-    
+
     # Extract parameters
     my %code_params;
     $self->_extract_parameters_from_signature(\%code_params, $code);
-    
+
     # Merge field declarations if present
     $self->_merge_field_declarations(\%code_params, $fields) if keys %$fields;
 
@@ -2630,22 +2630,20 @@ sub _detect_enum_type {
 	}
 }
 
-#!/usr/bin/env perl
-# Support for Modern Perl Features (5.20+, 5.36+, 5.38+)
-
 # Enhanced signature extraction with modern Perl support
 sub _extract_parameters_from_signature {
-    my ($self, $params, $code) = @_;
-    
-    # Modern Style 1: Subroutine signatures (Perl 5.20+)
-    # sub foo($x, $y = 5, $z = undef, %opts) { }
+	my ($self, $params, $code) = @_;
+
+	# Modern Style 1: Subroutine signatures (Perl 5.20+)
+	# sub foo($x, $y = 5, $z = undef, %opts) { }
+	# Match signature up to opening brace, not beyond
     if ($code =~ /sub\s+\w+\s*\(([^)]+)\)\s*(?::\w+(?:\([^)]*\))?\s*)*\{/s) {
         my $sig = $1;
         $self->_log("  SIG: Found modern signature: ($sig)");
         $self->_parse_modern_signature($params, $sig);
         return;
     }
-    
+
     # Modern Style 2: Signatures with attributes
     # sub foo :method($self, $x, $y) { }
     if ($code =~ /sub\s+\w+\s*:\w+\s*\(([^)]+)\)/s) {
@@ -2654,7 +2652,7 @@ sub _extract_parameters_from_signature {
         $self->_parse_modern_signature($params, $sig);
         return;
     }
-    
+
     # Traditional Style 1: my ($self, $arg1, $arg2) = @_;
     if ($code =~ /my\s*\(\s*\$\w+\s*,\s*([^)]+)\)\s*=\s*\@_/s) {
         my $sig = $1;
@@ -2663,7 +2661,6 @@ sub _extract_parameters_from_signature {
         }
         return;
     }
-    
     # Traditional Style 2: my $self = shift; my $arg1 = shift;
     elsif ($code =~ /my\s+\$self\s*=\s*shift/) {
         my @shifts;
@@ -2677,7 +2674,7 @@ sub _extract_parameters_from_signature {
         }
         return;
     }
-    
+
     # Traditional Style 3: Function parameters (no $self)
     if ($code =~ /my\s*\(\s*([^)]+)\)\s*=\s*\@_/s) {
         my $sig = $1;
@@ -2687,25 +2684,27 @@ sub _extract_parameters_from_signature {
             $params->{$param} ||= { _source => 'code' };
         }
     }
-    
-    # De-duplicate
-    my %seen;
-    foreach my $param (keys %$params) {
-        if ($seen{$param}++) {
-            $self->_log("  WARNING: Duplicate parameter '$param' found");
-        }
-    }
+
+	# De-duplicate
+	my %seen;
+	foreach my $param (keys %$params) {
+		if ($seen{$param}++) {
+			$self->_log("  WARNING: Duplicate parameter '$param' found");
+		}
+	}
 }
 
 # Parse modern Perl signatures (5.20+)
 sub _parse_modern_signature {
-    my ($self, $params, $sig) = @_;
-    
-    # Split signature by commas, but respect nested structures
-    my @parts;
-    my $current = '';
-    my $depth = 0;
-    
+	my ($self, $params, $sig) = @_;
+
+	$self->_log("  DEBUG: Parsing signature: [$sig]");
+
+	# Split signature by commas, but respect nested structures
+	my @parts;
+	my $current = '';
+	my $depth = 0;
+
     for my $char (split //, $sig) {
         if ($char eq '(' || $char eq '[' || $char eq '{') {
             $depth++;
@@ -2721,31 +2720,30 @@ sub _parse_modern_signature {
         }
     }
     push @parts, $current if $current =~ /\S/;
-    
+
     my $position = 0;
-    
+
     foreach my $part (@parts) {
         $part =~ s/^\s+|\s+$//g;
-        
+
         # Skip empty parts
         next unless $part;
-        
+
         # Parse different parameter types
         my $param_info = $self->_parse_signature_parameter($part, $position);
-        
+
         if ($param_info) {
             my $name = $param_info->{name};
-            
+
             # Skip self/class
             if ($name =~ /^(self|class)$/i) {
                 next;
             }
-            
+
             $params->{$name} = $param_info;
-            $self->_log("  SIG: $name has position $position" . 
+            $self->_log("  SIG: $name has position $position" .
                        ($param_info->{optional} ? " (optional)" : "") .
                        ($param_info->{default} ? ", default: $param_info->{default}" : ""));
-            
             $position++;
         }
     }
@@ -2753,20 +2751,30 @@ sub _parse_modern_signature {
 
 # Parse individual signature parameter
 sub _parse_signature_parameter {
-    my ($self, $part, $position) = @_;
-    
-    my %info = (
-        _source => 'signature',
-        position => $position
-    );
-    
-    # Scalar parameter: $name or $name = default
-    if ($part =~ /^\$(\w+)\s*=\s*(.+)$/) {
+	my ($self, $part, $position) = @_;
+
+	my %info = (
+		_source => 'signature',
+		position => $position
+	);
+
+	# Scalar parameter: $name or $name = default
+    if ($part =~ /^\$(\w+)\s*=\s*(.+)$/s) {
         my ($name, $default) = ($1, $2);
+        $default =~ s/^\s+|\s+$//g;
+
         $info{name} = $name;
         $info{optional} = 1;
-        $info{default} = $self->_clean_default_value($default, 1);
-        $info{type} = $self->_infer_type_from_default($info{default});
+
+        # Clean the default value
+        my $cleaned = $self->_clean_default_value($default, 1);
+        $info{default} = $cleaned;
+
+        # Infer type from default if we have the method
+        if ($self->can('_infer_type_from_default')) {
+            $info{type} = $self->_infer_type_from_default($cleaned);
+        }
+
         return \%info;
     }
     elsif ($part =~ /^\$(\w+)$/) {
@@ -2774,7 +2782,6 @@ sub _parse_signature_parameter {
         $info{optional} = 0;
         return \%info;
     }
-    
     # Array parameter: @name
     elsif ($part =~ /^\@(\w+)$/) {
         $info{name} = $1;
@@ -2783,7 +2790,6 @@ sub _parse_signature_parameter {
         $info{optional} = 1;  # Slurpy params are optional (can be empty)
         return \%info;
     }
-    
     # Hash parameter: %name
     elsif ($part =~ /^\%(\w+)$/) {
         $info{name} = $1;
@@ -2792,13 +2798,13 @@ sub _parse_signature_parameter {
         $info{optional} = 1;
         return \%info;
     }
-    
+
     # Prototype/type constraint (Perl 5.36+): $name :TypeName
     elsif ($part =~ /^\$(\w+)\s*:\s*(\w+)/) {
         $info{name} = $1;
         my $constraint = $2;
         $info{optional} = 0;
-        
+
         # Map common type constraints
         if ($constraint =~ /^(Int|Integer)$/i) {
             $info{type} = 'integer';
@@ -2817,19 +2823,19 @@ sub _parse_signature_parameter {
             $info{type} = 'object';
             $info{isa} = $constraint;
         }
-        
+
         return \%info;
     }
-    
+
     return undef;
 }
 
 # Helper: Infer type from default value
 sub _infer_type_from_default {
     my ($self, $default) = @_;
-    
+
     return undef unless defined $default;
-    
+
     if (ref($default) eq 'HASH') {
         return 'hashref';
     } elsif (ref($default) eq 'ARRAY') {
@@ -2848,17 +2854,17 @@ sub _infer_type_from_default {
 # Extract subroutine attributes
 sub _extract_subroutine_attributes {
     my ($self, $code) = @_;
-    
+
     my %attributes;
-    
+
     # Pattern: sub name :attr1 :attr2(value) { }
     if ($code =~ /sub\s+\w+\s*((?::\w+(?:\([^)]*\))?\s*)+)\{/s) {
         my $attr_string = $1;
-        
+
         # Parse individual attributes
         while ($attr_string =~ /:(\w+)(?:\(([^)]*)\))?/g) {
             my ($name, $value) = ($1, $2);
-            
+
             if (defined $value) {
                 $attributes{$name} = $value;
                 $self->_log("  ATTR: Found attribute :$name($value)");
@@ -2868,154 +2874,157 @@ sub _extract_subroutine_attributes {
             }
         }
     }
-    
+
     # Process common attributes
     if ($attributes{Returns}) {
         my $return_type = $attributes{Returns};
         $self->_log("  ATTR: Method declares return type: $return_type");
     }
-    
+
     if ($attributes{lvalue}) {
         $self->_log("  ATTR: Method is lvalue (can be assigned to)");
     }
-    
+
     if ($attributes{method}) {
         $self->_log("  ATTR: Method explicitly marked as :method");
     }
-    
+
     return \%attributes;
 }
 
 # Detect postfix dereferencing in code
 sub _analyze_postfix_dereferencing {
     my ($self, $code) = @_;
-    
+
     my %derefs;
-    
+
     # Array dereference: $ref->@*
     if ($code =~ /\$\w+\s*->\s*\@\*/) {
         $derefs{array_deref} = 1;
         $self->_log("  MODERN: Uses postfix array dereferencing (->@*)");
     }
-    
+
     # Hash dereference: $ref->%*
     if ($code =~ /\$\w+\s*->\s*\%\*/) {
         $derefs{hash_deref} = 1;
         $self->_log("  MODERN: Uses postfix hash dereferencing (->%*)");
     }
-    
+
     # Scalar dereference: $ref->$*
     if ($code =~ /\$\w+\s*->\s*\$\*/) {
         $derefs{scalar_deref} = 1;
         $self->_log('  MODERN: Uses postfix scalar dereferencing (->$*)');
     }
-    
+
     # Code dereference: $ref->&*
     if ($code =~ /\$\w+\s*->\s*\&\*/) {
         $derefs{code_deref} = 1;
         $self->_log("  MODERN: Uses postfix code dereferencing (->&*)");
     }
-    
+
     # Array element: $ref->@[0,2,4]
     if ($code =~ /\$\w+\s*->\s*\@\[/) {
         $derefs{array_slice} = 1;
         $self->_log("  MODERN: Uses postfix array slice (->@[...])");
     }
-    
+
     # Hash element: $ref->%{key1,key2}
     if ($code =~ /\$\w+\s*->\s*\%\{/) {
         $derefs{hash_slice} = 1;
         $self->_log("  MODERN: Uses postfix hash slice (->%{...})");
     }
-    
+
     return \%derefs;
 }
 
 # Extract field declarations (Perl 5.38+)
 sub _extract_field_declarations {
-    my ($self, $code) = @_;
-    
-    my %fields;
-    
+	my ($self, $code) = @_;
+
+	my %fields;
+
     # Pattern: field $name :param;
     # Pattern: field $name :param(name);
     # Pattern: field $name = default;
-    while ($code =~ /field\s+\$(\w+)\s*([^;]*);/g) {
+    # More lenient pattern to catch various formats
+    while ($code =~ /^\s*field\s+\$(\w+)\s*([^;]*);/gm) {
         my ($name, $modifiers) = ($1, $2);
-        
+
+        $self->_log("  FIELD: Found field \$$name with modifiers: [$modifiers]");
+
         my %field_info = (
             name => $name,
             _source => 'field'
         );
-        
+
         # Check for :param attribute
         if ($modifiers =~ /:param(?:\(([^)]+)\))?/) {
             $field_info{is_param} = 1;
-            
-            if ($1) {
+
+            if (defined $1) {
                 # Explicit parameter name
                 $field_info{param_name} = $1;
             } else {
                 # Implicit - field name is param name
                 $field_info{param_name} = $name;
             }
-            
+
             $self->_log("  FIELD: $name maps to parameter: $field_info{param_name}");
         }
-        
-        # Check for default value
-        if ($modifiers =~ /=\s*(.+)$/) {
+
+        # Check for default value - must come before type constraint check
+        if ($modifiers =~ /=\s*([^:;]+)(?::|;|$)/) {
             my $default = $1;
             $default =~ s/\s+$//;
             $field_info{default} = $self->_clean_default_value($default, 1);
             $field_info{optional} = 1;
-            $self->_log("  FIELD: $name has default: " . 
+            $self->_log("  FIELD: $name has default: " .
                        (defined $field_info{default} ? $field_info{default} : 'undef'));
         }
-        
+
         # Check for type constraints
         if ($modifiers =~ /:isa\(([^)]+)\)/) {
             $field_info{isa} = $1;
             $field_info{type} = 'object';
             $self->_log("  FIELD: $name has type constraint: $1");
         }
-        
+
         $fields{$name} = \%field_info;
     }
-    
-    return \%fields;
+
+	return \%fields;
 }
 
 # Integrate field declarations into parameters
 sub _merge_field_declarations {
-    my ($self, $params, $fields) = @_;
-    
+	my ($self, $params, $fields) = @_;
+
     foreach my $field_name (keys %$fields) {
         my $field = $fields->{$field_name};
-        
+
         # Only process fields that are parameters
         next unless $field->{is_param};
-        
+
         my $param_name = $field->{param_name};
-        
+
         # Create or update parameter info
         $params->{$param_name} ||= {};
         my $p = $params->{$param_name};
-        
+
         # Merge field information into parameter
         $p->{_source} = 'field' unless $p->{_source};
         $p->{field_name} = $field_name if $field_name ne $param_name;
-        
+
         if ($field->{default}) {
             $p->{default} = $field->{default};
             $p->{optional} = 1;
         }
-        
+
         if ($field->{isa}) {
             $p->{isa} = $field->{isa};
             $p->{type} = 'object';
         }
-        
+
         $self->_log("  MERGED: Field $field_name -> parameter $param_name");
     }
 }
@@ -3023,41 +3032,41 @@ sub _merge_field_declarations {
 # Main integration point - update _analyze_method to use new features
 sub _analyze_method_with_modern_features {
     my ($self, $method) = @_;
-    
+
     my $code = $method->{body};
-    
+
     # Extract modern Perl features
     my $attributes = $self->_extract_subroutine_attributes($code);
     my $postfix_derefs = $self->_analyze_postfix_dereferencing($code);
     my $fields = $self->_extract_field_declarations($code);
-    
+
     # Standard parameter extraction (now includes modern signatures)
     my %params;
     $self->_extract_parameters_from_signature(\%params, $code);
-    
+
     # Merge field declarations
     $self->_merge_field_declarations(\%params, $fields) if keys %$fields;
-    
+
     # Store modern feature information in schema
     my $schema = {
         # ... existing schema fields ...
     };
-    
+
     if (keys %$attributes) {
         $schema->{_attributes} = $attributes;
     }
-    
+
     if (keys %$postfix_derefs) {
         $schema->{_modern_features} = {
             postfix_dereferencing => $postfix_derefs
         };
     }
-    
-    if (keys %$fields) {
-        $schema->{_fields} = $fields;
-    }
-    
-    return $schema;
+
+	if (keys %$fields) {
+		$schema->{_fields} = $fields;
+	}
+
+	return $schema;
 }
 
 
