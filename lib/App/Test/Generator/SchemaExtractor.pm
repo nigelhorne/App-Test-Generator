@@ -1323,22 +1323,22 @@ Looks for:
 
 # Enhanced _analyze_output that incorporates all improvements
 sub _analyze_output {
-    my ($self, $pod, $code, $method_name) = @_;
+	my ($self, $pod, $code, $method_name) = @_;
 
-    my %output;
+	my %output;
 
-    $self->_analyze_output_from_pod(\%output, $pod);
-    $self->_analyze_output_from_code(\%output, $code);
-    $self->_enhance_boolean_detection(\%output, $pod, $code, $method_name);
-    $self->_detect_list_context(\%output, $code);
-    $self->_detect_void_context(\%output, $code, $method_name);
-    $self->_detect_chaining_pattern(\%output, $code, $method_name);
-    $self->_detect_error_conventions(\%output, $code);
+	$self->_analyze_output_from_pod(\%output, $pod);
+	$self->_analyze_output_from_code(\%output, $code, $method_name);
+	$self->_enhance_boolean_detection(\%output, $pod, $code, $method_name);
+	$self->_detect_list_context(\%output, $code);
+	$self->_detect_void_context(\%output, $code, $method_name);
+	$self->_detect_chaining_pattern(\%output, $code, $method_name);
+	$self->_detect_error_conventions(\%output, $code);
 
-    $self->_validate_output(\%output) if keys %output;
+	$self->_validate_output(\%output) if keys %output;
 
-    # Don't return empty output
-    return (keys %output) ? \%output : {};
+	# Don't return empty output
+	return (keys %output) ? \%output : {};
 }
 
 # Analyze POD for Returns section
@@ -1479,48 +1479,55 @@ sub _extract_defaults_from_pod {
         }
     }
 
-    # Pattern 3: In parameter descriptions: $param - type, default 'value'
-    while ($pod =~ /\$(\w+)\s*-\s*\w+(?:\([^)]*\))?[,\s]+default\s+['"]?([^'",\n]+)['"]?/gi) {
-        my ($param, $value) = ($1, $2);
-        $defaults{$param} = $self->_clean_default_value($value, 0);
-    }
+	# Pattern 3: In parameter descriptions: $param - type, default 'value'
+	while ($pod =~ /\$(\w+)\s*-\s*\w+(?:\([^)]*\))?[,\s]+default\s+['"]?([^'",\n]+)['"]?/gi) {
+		my ($param, $value) = ($1, $2);
+		$defaults{$param} = $self->_clean_default_value($value, 0);
+	}
 
-    return \%defaults;
+	return \%defaults;
 }
 
 # Analyze code for return statements
 sub _analyze_output_from_code
 {
-	my ($self, $output, $code) = @_;
+	my ($self, $output, $code, $method_name) = @_;
 
 	if ($code) {
 		# Early boolean detection - check for consistent 1/0 returns
-		        my @all_returns = $code =~ /return\s+([^;]+);/g;
-        if (@all_returns) {
-            my $boolean_count = 0;
-            my $total_count = scalar(@all_returns);
+		my @all_returns = $code =~ /return\s+([^;]+);/g;
+		if (@all_returns) {
+			my $boolean_count = 0;
+			my $total_count = scalar(@all_returns);
 
-            foreach my $ret (@all_returns) {
-                $ret =~ s/^\s+|\s+$//g;
-                # Match 0 or 1, even with conditions
-                $boolean_count++ if ($ret =~ /^(?:0|1)(?:\s|$)/);
-            }
+			foreach my $ret (@all_returns) {
+				$ret =~ s/^\s+|\s+$//g;
+				# Match 0 or 1, even with conditions
+				$boolean_count++ if ($ret =~ /^(?:0|1)(?:\s|$)/);
+			}
 
-            # If most returns are 0 or 1, strongly suggest boolean
-            if ($boolean_count >= 2 && $boolean_count >= $total_count * 0.8) {
-                unless ($output->{type}) {
-                    $output->{type} = 'boolean';
-                    $self->_log("  OUTPUT: Early detection - $boolean_count/$total_count returns are 0/1, setting boolean");
-                }
-            }
-        }
+			# If most returns are 0 or 1, strongly suggest boolean
+			if ($boolean_count >= 2 && $boolean_count >= $total_count * 0.8) {
+				unless ($output->{type}) {
+					$output->{type} = 'boolean';
+					$self->_log("  OUTPUT: Early detection - $boolean_count/$total_count returns are 0/1, setting boolean");
+				}
+			}
+		}
 
 		my @return_statements;
 
 		if ($code =~ /return\s+bless\s*\{[^}]*\}\s*,\s*['"]?(\w+)['"]?/s) {
 			# Detect blessed refs
 			$output->{type} = 'object';
-			$output->{isa} = $1;
+			if($method_name eq 'new') {
+				# If we found the new() method, the object we're returning should be a sensible one
+				if($self->{_document} && (my $package_stmt = $self->{_document}->find_first('PPI::Statement::Package'))) {
+					$output->{isa} = $package_stmt->namespace;
+				}
+			} else {
+				$output->{isa} = $1;
+			}
 			$self->_log('  OUTPUT: Bless found, inferring type from code is object');
 		} elsif ($code =~ /return\s+bless/s) {
 			$output->{type} = 'object';
@@ -1778,13 +1785,13 @@ sub _detect_void_context {
 
 	$self->_log("  DEBUG _detect_void_context called for $method_name");
 
-    # Methods that typically don't return meaningful values
-    my $void_patterns = {
-        'setter' => qr/^set_\w+$/,
-        'mutator' => qr/^(?:add|remove|delete|clear|reset|update)_/,
-        'logger' => qr/^(?:log|debug|warn|error|info)$/,
-        'printer' => qr/^(?:print|say|dump)_/,
-    };
+	# Methods that typically don't return meaningful values
+	my $void_patterns = {
+		'setter' => qr/^set_\w+$/,
+		'mutator' => qr/^(?:add|remove|delete|clear|reset|update)_/,
+		'logger' => qr/^(?:log|debug|warn|error|info)$/,
+		'printer' => qr/^(?:print|say|dump)_/,
+	};
 
     # Check if method name suggests void context
     foreach my $type (keys %$void_patterns) {
@@ -1795,10 +1802,10 @@ sub _detect_void_context {
         }
     }
 
-    # Analyze return statements
-    my @returns = $code =~ /return\s*([^;]*);/g;
+	# Analyze return statements
+	my @returns = $code =~ /return\s*([^;]*);/g;
 
-    $self->_log("  DEBUG Found " . scalar(@returns) . " return statements");
+	$self->_log('  DEBUG Found ' . scalar(@returns) . " return statements");
 
     # Count different return patterns
     my $no_value_returns = 0;
@@ -1986,10 +1993,10 @@ sub _infer_type_from_expression {
         return { type => 'array' };
     }
 
-    # Check for scalar() function - returns count
-    if ($expr =~ /scalar\s*\(/) {
-        return { type => 'integer' };
-    }
+	# Check for scalar() function - returns count
+	if ($expr =~ /scalar\s*\(/) {
+		return { type => 'integer' };
+	}
 
     # Check for array reference
     if ($expr =~ /^\[/ || $expr =~ /^\\\@/) {
