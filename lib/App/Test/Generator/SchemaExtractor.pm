@@ -1893,11 +1893,11 @@ sub _detect_error_conventions {
         $self->_log("  DEBUG Found 'return undef' pattern");
     }
 
-    # Pattern 2: return if/unless (implicit undef)
-    while ($code =~ /return\s+(?:if|unless)\s+([^;]+);/g) {
-        push @{$error_patterns{implicit_undef}}, $1;
-        $self->_log("  DEBUG Found implicit undef pattern");
-    }
+	# Pattern 2: return if/unless (implicit undef)
+	while ($code =~ /return\s+(?:if|unless)\s+([^;]+);/g) {
+		push @{$error_patterns{implicit_undef}}, $1;
+		$self->_log("  DEBUG Found implicit undef pattern");
+	}
 
     # Pattern 3: return () - matches with or without conditions
     if ($code =~ /return\s*\(\s*\)\s*(?:if|unless|;)/) {
@@ -2568,13 +2568,13 @@ sub _detect_enum_type {
 sub _extract_parameters_from_signature {
 	my ($self, $params, $code) = @_;
 
-    # Style 1: my ($self, $arg1, $arg2) = @_;
-    if ($code =~ /my\s*\(\s*\$\w+\s*,\s*([^)]+)\)\s*=\s*\@_/s) {
-        my $sig = $1;
-        while ($sig =~ /\$(\w+)/g) {
-            $params->{$1} ||= { _source => 'code' };
-        }
-    }
+	# Style 1: my ($self, $arg1, $arg2) = @_;
+	if ($code =~ /my\s*\(\s*\$\w+\s*,\s*([^)]+)\)\s*=\s*\@_/s) {
+		my $sig = $1;
+		while ($sig =~ /\$(\w+)/g) {
+			$params->{$1} ||= { _source => 'code' };
+		}
+	}
 	# Style 2: my $self = shift; my $arg1 = shift; ...
 	elsif ($code =~ /my\s+\$self\s*=\s*shift/) {
 		my @shifts;
@@ -2607,7 +2607,7 @@ sub _extract_parameters_from_signature {
 }
 
 sub _extract_defaults_from_code {
-    my ($self, $params, $code) = @_;
+	my ($self, $params, $code) = @_;
 
     # Pattern 1: my $param = value;
     while ($code =~ /my\s+\$(\w+)\s*=\s*([^;]+);/g) {
