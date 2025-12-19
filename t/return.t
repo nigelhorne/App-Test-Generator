@@ -34,7 +34,6 @@ sub create_extractor {
 	);
 }
 
-
 # Test 1: List vs Scalar Context Detection
 subtest 'List vs Scalar Context Detection' => sub {
     my $module = <<'END_MODULE';
