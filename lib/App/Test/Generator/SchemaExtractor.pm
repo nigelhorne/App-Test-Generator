@@ -997,11 +997,45 @@ sub _analyze_method {
 	}
 
 	# Calculate confidences
-	$schema->{_confidence}{'input'} = $self->_calculate_input_confidence($schema->{input});
-	$schema->{_confidence}{'output'} = $self->_calculate_output_confidence($schema->{output});
+	my $input_confidence = $schema->{_confidence}{'input'} = $self->_calculate_input_confidence($schema->{input});
+	my $output_confidence = $schema->{_confidence}{'output'} = $self->_calculate_output_confidence($schema->{output});
 
 	# Add metadata
 	$schema->{_notes} = $self->_generate_notes($schema->{input});
+
+	# Add analytics
+	$schema->{_analysis} = {
+		input_confidence => $input_confidence->{level},
+		output_confidence => $output_confidence->{level},
+		confidence_factors => {
+			input => $input_confidence->{factors},
+			output => $output_confidence->{factors}
+		}
+	};
+
+	# Optionally store detailed per-parameter analysis
+	if ($input_confidence->{per_parameter}) {
+		$schema->{_analysis}{per_parameter_scores} = $input_confidence->{per_parameter};
+	}
+
+	# Calculate overall confidence (for backward compatibility)
+	my $input_level = $input_confidence->{level};
+	my $output_level = $output_confidence->{level};
+
+	my %level_rank = (
+		none => 0,
+		very_low => 1,
+		low => 2,
+		medium => 3,
+		high => 4
+	);
+
+	# Overall is the lower of input and output
+	my $overall = $level_rank{$input_level} < $level_rank{$output_level}
+		? $input_level
+		: $output_level;
+
+	$schema->{_analysis}{overall_confidence} = $overall;
 
 	# Analyze parameter relationships
 	my $relationships = $self->_analyze_relationships($method);
@@ -2948,59 +2982,279 @@ Returns: 'high', 'medium', 'low'
 
 =cut
 
+# Enhanced confidence scoring with detailed factor tracking
+
 sub _calculate_input_confidence {
 	my ($self, $params) = @_;
 
-	return 'none' unless keys %$params;
+	my @factors;  # Track all confidence factors
+
+	return { level => 'none', factors => ['No parameters found'] } unless keys %$params;
 
 	my $total_score = 0;
 	my $count = 0;
+	my %param_details;	# Store per-parameter analysis
 
-	foreach my $param (keys %$params) {
-		my $p = $params->{$param};
-		my $score = 0;
+    foreach my $param (keys %$params) {
+        my $p = $params->{$param};
+        my $score = 0;
+        my @param_factors;
 
-		# Type information
-		if ($p->{type}) {
-			if ($p->{type} eq 'string' && ($p->{min} || $p->{max} || $p->{matches})) {
-				$score += 25;	# String with constraints
-			} elsif ($p->{type} eq 'string') {
-				$score += 10;	# Plain string (weak)
-			} else {
-				$score += 30;	# Non-string type
-			}
-		}
+        # Type information
+        if ($p->{type}) {
+            if ($p->{type} eq 'string' && ($p->{min} || $p->{max} || $p->{matches})) {
+                $score += 25;
+                push @param_factors, "Type: constrained string (+25)";
+            } elsif ($p->{type} eq 'string') {
+                $score += 10;
+                push @param_factors, "Type: plain string (+10)";
+            } else {
+                $score += 30;
+                push @param_factors, "Type: $p->{type} (+30)";
+            }
+        } else {
+            push @param_factors, "No type information (-0)";
+        }
 
-		# Constraints
-		$score += 15 if defined $p->{min};
-		$score += 15 if defined $p->{max};
-		$score += 20 if defined $p->{optional};	# Explicit optional/required is valuable
-		$score += 20 if $p->{matches};
-		$score += 25 if $p->{isa};	# Specific class is high confidence
+        # Constraints
+        if (defined $p->{min}) {
+            $score += 15;
+            push @param_factors, "Has min constraint (+15)";
+        }
+        if (defined $p->{max}) {
+            $score += 15;
+            push @param_factors, "Has max constraint (+15)";
+        }
+        if (defined $p->{optional}) {
+            $score += 20;
+            push @param_factors, "Optional/required explicitly defined (+20)";
+        }
+        if ($p->{matches}) {
+            $score += 20;
+            push @param_factors, "Has regex pattern constraint (+20)";
+        }
+        if ($p->{isa}) {
+            $score += 25;
+            push @param_factors, "Specific class constraint: $p->{isa} (+25)";
+        }
 
-		# Position information
-		$score += 10 if defined $p->{position};
+        # Position information
+        if (defined $p->{position}) {
+            $score += 10;
+            push @param_factors, "Position defined: $p->{position} (+10)";
+        }
 
-		$total_score += $score;
-		$count++;
-	}
+        # Default value
+        if (exists $p->{default}) {
+            $score += 10;
+            push @param_factors, "Has default value (+10)";
+        }
 
-	my $avg = $count ? ($total_score / $count) : 0;
+        # Semantic information
+        if ($p->{semantic}) {
+            $score += 15;
+            push @param_factors, "Semantic type: $p->{semantic} (+15)";
+        }
 
-	return 'high' if $avg >= 60;
-	return 'medium' if $avg >= 35;
-	return 'low'	if $avg >= 15;
-	return 'very_low';
+        $param_details{$param} = {
+            score => $score,
+            factors => \@param_factors
+        };
+
+        $total_score += $score;
+        $count++;
+    }
+
+    my $avg = $count ? ($total_score / $count) : 0;
+
+    # Build summary factors
+    push @factors, sprintf("Analyzed %d parameter%s", $count, $count == 1 ? '' : 's');
+    push @factors, sprintf("Average confidence score: %.1f", $avg);
+
+    # Add top contributing factors
+    my @sorted_params = sort { $param_details{$b}{score} <=> $param_details{$a}{score} } keys %param_details;
+
+    if (@sorted_params) {
+        my $highest = $sorted_params[0];
+        my $highest_score = $param_details{$highest}{score};
+        push @factors, sprintf("Highest scoring parameter: \$$highest (score: %d)", $highest_score);
+
+        if (@sorted_params > 1) {
+            my $lowest = $sorted_params[-1];
+            my $lowest_score = $param_details{$lowest}{score};
+            push @factors, sprintf("Lowest scoring parameter: \$$lowest (score: %d)", $lowest_score);
+        }
+    }
+
+    # Determine confidence level
+    my $level;
+    if ($avg >= 60) {
+        $level = 'high';
+        push @factors, "High confidence: comprehensive type and constraint information";
+    } elsif ($avg >= 35) {
+        $level = 'medium';
+        push @factors, "Medium confidence: some type or constraint information present";
+    } elsif ($avg >= 15) {
+        $level = 'low';
+        push @factors, "Low confidence: minimal type information";
+    } else {
+        $level = 'very_low';
+        push @factors, "Very low confidence: little to no type information";
+    }
+
+	return {
+		level => $level,
+		score => $avg,
+		factors => \@factors,
+		per_parameter => \%param_details
+	};
 }
 
 sub _calculate_output_confidence {
-	my ($self, $output) = @_;
+    my ($self, $output) = @_;
 
-	return 'none' unless keys %$output;
-	return 'high' if $output->{type} && $output->{value};
-	return 'high' if $output->{type} && $output->{isa};
-	return 'medium' if $output->{type};
-	return 'low';
+    my @factors;
+
+    return { level => 'none', factors => ['No return information found'] } unless keys %$output;
+
+    my $score = 0;
+
+    # Type information
+    if ($output->{type}) {
+        $score += 30;
+        push @factors, "Return type defined: $output->{type} (+30)";
+    } else {
+        push @factors, "No return type information (-0)";
+    }
+
+    # Specific value known
+    if (defined $output->{value}) {
+        $score += 30;
+        push @factors, "Specific return value: $output->{value} (+30)";
+    }
+
+    # Class information for objects
+    if ($output->{isa}) {
+        $score += 30;
+        push @factors, "Returns specific class: $output->{isa} (+30)";
+    }
+
+    # Context-aware returns
+    if ($output->{context_aware}) {
+        $score += 20;
+        push @factors, "Context-aware return (wantarray) (+20)";
+
+        if ($output->{list_context}) {
+            push @factors, "  List context: $output->{list_context}{type}";
+        }
+        if ($output->{scalar_context}) {
+            push @factors, "  Scalar context: $output->{scalar_context}{type}";
+        }
+    }
+
+    # Error handling information
+    if ($output->{error_return}) {
+        $score += 15;
+        push @factors, "Error return convention documented: $output->{error_return} (+15)";
+    }
+
+    # Success/failure pattern
+    if ($output->{success_failure_pattern}) {
+        $score += 10;
+        push @factors, "Success/failure pattern detected (+10)";
+    }
+
+    # Chainable methods
+    if ($output->{chainable}) {
+        $score += 15;
+        push @factors, "Chainable method (fluent interface) (+15)";
+    }
+
+    # Void context
+    if ($output->{void_context}) {
+        $score += 20;
+        push @factors, "Void context method (no meaningful return) (+20)";
+    }
+
+    # Exception handling
+    if ($output->{error_handling} && $output->{error_handling}{exception_handling}) {
+        $score += 10;
+        push @factors, "Exception handling present (+10)";
+    }
+
+    push @factors, sprintf("Total output confidence score: %d", $score);
+
+    # Determine confidence level
+    my $level;
+    if ($score >= 60) {
+        $level = 'high';
+        push @factors, "High confidence: detailed return type and behavior";
+    } elsif ($score >= 30) {
+        $level = 'medium';
+        push @factors, "Medium confidence: return type defined";
+    } elsif ($score >= 15) {
+        $level = 'low';
+        push @factors, "Low confidence: minimal return information";
+    } else {
+        $level = 'very_low';
+        push @factors, "Very low confidence: little return information";
+    }
+
+    return {
+        level => $level,
+        score => $score,
+        factors => \@factors
+    };
+}
+
+# Method to generate human-readable confidence report
+sub _generate_confidence_report
+{
+	my ($self, $schema) = @_;
+
+	return unless $schema->{_analysis};
+
+	my $analysis = $schema->{_analysis};
+	my @report;
+
+	push @report, "Confidence Analysis for " . ($schema->{method_name} || 'method');
+	push @report, '=' x 60;
+	push @report, '';
+
+	push @report, "Overall Confidence: " . uc($analysis->{overall_confidence});
+	push @report, '';
+
+    if ($analysis->{confidence_factors}{input}) {
+        push @report, "Input Parameters:";
+        push @report, "  Confidence Level: " . uc($analysis->{input_confidence});
+        foreach my $factor (@{$analysis->{confidence_factors}{input}}) {
+            push @report, "  - $factor";
+        }
+        push @report, '';
+    }
+
+    if ($analysis->{confidence_factors}{output}) {
+        push @report, "Return Value:";
+        push @report, "  Confidence Level: " . uc($analysis->{output_confidence});
+        foreach my $factor (@{$analysis->{confidence_factors}{output}}) {
+            push @report, "  - $factor";
+        }
+        push @report, '';
+    }
+
+    if ($analysis->{per_parameter_scores}) {
+        push @report, "Per-Parameter Analysis:";
+        foreach my $param (sort keys %{$analysis->{per_parameter_scores}}) {
+            my $details = $analysis->{per_parameter_scores}{$param};
+            push @report, "  \$$param (score: $details->{score}):";
+            foreach my $factor (@{$details->{factors}}) {
+                push @report, "    - $factor";
+            }
+        }
+        push @report, '';
+    }
+
+	return join("\n", @report);
 }
 
 =head2 _generate_notes
@@ -3505,7 +3759,7 @@ sub _write_schema {
 
 	my $rel_info = $schema->{relationships} ?
 		' [' . scalar(@{$schema->{relationships}}) . ' relationships]' : '';
-	$self->_log("  Wrote: $filename (input confidence: $schema->{_confidence}{input})" .
+	$self->_log("  Wrote: $filename (input confidence: $schema->{_confidence}{input}->{level})" .
 				($schema->{new} ? " [requires: $schema->{new}]" : '') . $rel_info);
 }
 
@@ -3625,8 +3879,8 @@ sub _generate_schema_comments {
 	push @comments, "# Generated by " . ref($self);
 	push @comments, "# Run: fuzz-harness-generator -r $self->{output_dir}/${method_name}.yaml";
 	push @comments, '#';
-	push @comments, "# Input confidence: $schema->{_confidence}{input}";
-	push @comments, "# Output confidence: $schema->{_confidence}{output}";
+	push @comments, "# Input confidence: $schema->{_confidence}{input}->{level}";
+	push @comments, "# Output confidence: $schema->{_confidence}{output}->{level}";
 
 	# Add notes about parameters
 	if ($schema->{input}) {
@@ -3648,8 +3902,8 @@ sub _generate_schema_comments {
 		}
 
 		if (@param_notes) {
-			push @comments, "#";
-			push @comments, "# Parameter types detected:";
+			push @comments, '#';
+			push @comments, '# Parameter types detected:';
 			foreach my $note (@param_notes) {
 				push @comments, "#   - $note";
 			}
@@ -3658,8 +3912,10 @@ sub _generate_schema_comments {
 
 	# Add relationship notes
 	if ($schema->{relationships} && @{$schema->{relationships}}) {
-		push @comments, "#";
-		push @comments, "# Parameter relationships detected:";
+		push @comments, (
+			'#',
+			'# Parameter relationships detected:'
+		);
 		foreach my $rel (@{$schema->{relationships}}) {
 			my $desc = $rel->{description} || _format_relationship($rel);
 			push @comments, "#   - $desc";
@@ -3668,11 +3924,29 @@ sub _generate_schema_comments {
 
 	# Add general notes
 	if ($schema->{_notes} && scalar(@{$schema->{_notes}})) {
-		push @comments, "#";
-		push @comments, "# Notes:";
+		push @comments, '#';
+		push @comments, '# Notes:';
 		foreach my $note (@{$schema->{_notes}}) {
 			push @comments, "#   - $note";
 		}
+	}
+
+	if($schema->{_analysis}) {
+		push @comments, (
+			'#',
+			'# Analysis:',
+			'# TODO:',
+		);
+		# confidence_factors:
+		#   input:
+		#   - No parameters found
+		#   output:
+		#   - 'Return type defined: object (+30)'
+		#   - 'Total output confidence score: 30'
+		#   - 'Medium confidence: return type defined'
+		#   input_confidence: none
+		#   output_confidence: medium
+		#   overall_confidence: none
 	}
 
 	# Add warnings for complex types
@@ -3697,7 +3971,7 @@ sub _generate_schema_comments {
 
 	if (@warnings) {
 		push @comments, '#';
-		push @comments, "# WARNINGS - Manual test setup may be required:";
+		push @comments, '# WARNINGS - Manual test setup may be required:';
 		foreach my $warning (@warnings) {
 			push @comments, "#   ! $warning";
 		}
@@ -3772,17 +4046,17 @@ sub _needs_object_instantiation {
 	# 1. Check for factory methods that return instances
 	my $is_factory = $self->_detect_factory_method($method_name, $method_body, $current_package, $method_info);
 	if ($is_factory) {
-		$result->{needs_object} = 0;  # Factory methods CREATE objects, don't need them
+		$result->{needs_object} = 0;	# Factory methods CREATE objects, don't need them
 		$result->{type} = 'factory';
 		$result->{details} = $is_factory;
 		$self->_log("  OBJECT: Detected factory method '$method_name' returns $is_factory->{returns_class} objects") if $is_factory->{returns_class};
-		return undef;  # Factory methods don't need pre-existing objects
+		return undef;	# Factory methods don't need pre-existing objects
 	}
 
 	# 2. Check for singleton patterns
 	my $is_singleton = $self->_detect_singleton_pattern($method_name, $method_body);
 	if ($is_singleton) {
-		$result->{needs_object} = 0;  # Singleton methods return the singleton instance
+		$result->{needs_object} = 0;	# Singleton methods return the singleton instance
 		$result->{type} = 'singleton_accessor';
 		$result->{details} = $is_singleton;
 		$self->_log("  OBJECT: Detected singleton accessor '$method_name'");
@@ -4406,39 +4680,39 @@ sub _extract_default_value {
 		return $default if defined $default;
 	}
 
-    # Pattern 5: $param ||= 'default'
-    if ($clean_code =~ /\$$param\s*\|\|=\s*([^;]+)/) {
-        my $default = $1;
-        $default =~ s/\s*;\s*$//;
-        $default = $self->_clean_default_value($default);
-        return $default if defined $default;
-    }
+	# Pattern 5: $param ||= 'default'
+	if ($clean_code =~ /\$$param\s*\|\|=\s*([^;]+)/) {
+		my $default = $1;
+		$default =~ s/\s*;\s*$//;
+		$default = $self->_clean_default_value($default);
+		return $default if defined $default;
+	}
 
-    # Pattern 6: $param = $arg // 'default'
-    if ($clean_code =~ /\$$param\s*=\s*(?:\$$param|\$[a-zA-Z_]\w*)\s*\/\/\s*([^;]+)/) {
-        my $default = $1;
-        $default =~ s/\s*;\s*$//;
-        $default = $self->_clean_default_value($default);
-        return $default if defined $default;
-    }
+	# Pattern 6: $param = $arg // 'default'
+	if ($clean_code =~ /\$$param\s*=\s*(?:\$$param|\$[a-zA-Z_]\w*)\s*\/\/\s*([^;]+)/) {
+		my $default = $1;
+		$default =~ s/\s*;\s*$//;
+		$default = $self->_clean_default_value($default);
+		return $default if defined $default;
+	}
 
-    # Pattern 7: Multi-line: if (!defined $param) { $param = 'default'; }
-    if ($clean_code =~ /if\s*\(\s*!defined\s+\$$param\s*\)\s*\{[^}]*\$$param\s*=\s*([^;]+)/s) {
-        my $default = $1;
-        $default =~ s/\s*;\s*$//;
-        $default = $self->_clean_default_value($default);
-        return $default if defined $default;
-    }
+	# Pattern 7: Multi-line: if (!defined $param) { $param = 'default'; }
+	if ($clean_code =~ /if\s*\(\s*!defined\s+\$$param\s*\)\s*\{[^}]*\$$param\s*=\s*([^;]+)/s) {
+		my $default = $1;
+		$default =~ s/\s*;\s*$//;
+		$default = $self->_clean_default_value($default);
+		return $default if defined $default;
+	}
 
-    # Pattern 8: unless (defined $param) { $param = 'default'; }
-    if ($clean_code =~ /unless\s*\(\s*defined\s+\$$param\s*\)\s*\{[^}]*\$$param\s*=\s*([^;]+)/s) {
-        my $default = $1;
-        $default =~ s/\s*;\s*$//;
-        $default = $self->_clean_default_value($default);
-        return $default if defined $default;
-    }
+	# Pattern 8: unless (defined $param) { $param = 'default'; }
+	if ($clean_code =~ /unless\s*\(\s*defined\s+\$$param\s*\)\s*\{[^}]*\$$param\s*=\s*([^;]+)/s) {
+		my $default = $1;
+		$default =~ s/\s*;\s*$//;
+		$default = $self->_clean_default_value($default);
+		return $default if defined $default;
+	}
 
-    return undef;
+	return undef;
 }
 
 =head2 _clean_default_value
@@ -4473,50 +4747,50 @@ sub _clean_default_value
 		$value =~ s/^\s+|\s+$//g;
 	}
 
-    # Remove trailing semicolon if present
-    $value =~ s/;\s*$//;
+	# Remove trailing semicolon if present
+	$value =~ s/;\s*$//;
 
-    # Handle q{}, qq{}, qw{} quotes
-    if ($value =~ /^qq?\{(.*?)\}$/s) {
-        $value = $1;
-    } elsif ($value =~ /^qw\{(.*?)\}$/s) {
-        $value = $1;
-    } elsif ($value =~ /^q[qwx]?\s*([^a-zA-Z0-9\{\[])(.*?)\1$/s) {
-        $value = $2;
-    }
+	# Handle q{}, qq{}, qw{} quotes
+	if ($value =~ /^qq?\{(.*?)\}$/s) {
+		$value = $1;
+	} elsif ($value =~ /^qw\{(.*?)\}$/s) {
+		$value = $1;
+	} elsif ($value =~ /^q[qwx]?\s*([^a-zA-Z0-9\{\[])(.*?)\1$/s) {
+		$value = $2;
+	}
 
-    # Handle quoted strings
-if ($value =~ /^(['"])(.*)\1$/s) {
-    $value = $2;
+	# Handle quoted strings
+	if ($value =~ /^(['"])(.*)\1$/s) {
+		$value = $2;
 
-    if ($from_code) {
-        # In regex captures from source code, escape sequences are doubled
-        # \\n in capture needs to become \n for the test
-        $value =~ s/\\\\/\\/g;
-    }
+		if ($from_code) {
+			# In regex captures from source code, escape sequences are doubled
+			# \\n in capture needs to become \n for the test
+			$value =~ s/\\\\/\\/g;
+		}
 
-    # Only unescape the quote characters themselves
-    $value =~ s/\\"/"/g;
-    $value =~ s/\\'/'/g;
+		# Only unescape the quote characters themselves
+		$value =~ s/\\"/"/g;
+		$value =~ s/\\'/'/g;
 
-    # If NOT from code (i.e., from POD), interpret escape sequences
-    unless ($from_code) {
-        $value =~ s/\\n/\n/g;
-        $value =~ s/\\r/\r/g;
-        $value =~ s/\\t/\t/g;
-        $value =~ s/\\\\/\\/g;
-    }
-}
+		# If NOT from code (i.e., from POD), interpret escape sequences
+		unless ($from_code) {
+			$value =~ s/\\n/\n/g;
+			$value =~ s/\\r/\r/g;
+			$value =~ s/\\t/\t/g;
+			$value =~ s/\\\\/\\/g;
+		}
+	}
 
-    # Handle Perl empty hash (must be before numeric/boolean checks)
-    if ($value =~ /^\{\s*\}$/) {
-        return {};
-    }
+	# Handle Perl empty hash (must be before numeric/boolean checks)
+	if ($value =~ /^\{\s*\}$/) {
+		return {};
+	}
 
-    # Handle Perl empty list/array
-    if ($value =~ /^\[\s*\]$/) {
-        return [];
-    }
+	# Handle Perl empty list/array
+	if ($value =~ /^\[\s*\]$/) {
+		return [];
+	}
 
 	# Handle numeric values
 	if ($value =~ /^-?\d+(?:\.\d+)?$/) {

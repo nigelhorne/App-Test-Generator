@@ -15,6 +15,11 @@ Revision history for App-Test-Generator
 		Better distinguish scalar vs list returns
 		Detect void context methods (those that modify state)
 		Recognize chaining patterns more reliably Identify error return conventions (undef on failure, etc.)
+	Add confidence scoring transparency, explain WHY confidence is what it is:
+		_analysis: confidence_factors:
+			- "POD documentation present (+30)"
+			- "Type validation in code (+20)"
+			- "No constraint information (-10)"
 
 0.21	Sun Dec 14 08:07:09 EST 2025
 	Schemaextractor: don't put the package name as the argument
@@ -173,4 +178,4 @@ Revision history for App-Test-Generator
 	Added edge case test generator for booleans and memberof
 
 0.01	Sun Sep 28 08:43:35 EDT 2025
-        First draft
+	First draft
