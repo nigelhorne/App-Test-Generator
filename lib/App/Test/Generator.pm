@@ -1217,18 +1217,18 @@ sub generate
 		my $params = Params::Validate::Strict::validate_strict({
 			args => Params::Get::get_params('schema_file', \@_),
 			schema => {
-				schema_file => { type => 'string', optional => 1 },
-				test_file => { type => 'string', optional => 1 },
+				input_file => { type => 'string', optional => 1 },
+				output_file => { type => 'string', optional => 1 },
 				schema => { type => 'hashref', optional => 1 }
 			}
 		});
-		if($params->{'schema_file'}) {
-			$schema_file = $params->{'schema_file'};
-			$test_file = $params->{'test_file'};
+		if($params->{'input_file'}) {
+			$schema_file = $params->{'input_file'};
+			$test_file = $params->{'output_file'};
 		} elsif($params->{'schema'}) {
 			$schema = $params->{'schema'};
 		} else {
-			croak(__PACKAGE__, ': Usage: generate(schema_file|schema [, outfile]');
+			croak(__PACKAGE__, ': Usage: generate(input_file|schema [, output_file]');
 		}
 	} else {
 		# Legacy API
