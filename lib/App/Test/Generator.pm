@@ -1283,12 +1283,13 @@ sub generate
 	}
 
 	# Guess module name from config file if not set
-	if($module eq 'builtin') {
+	if(!$module) {
+		if($schema_file) {
+			($module = basename($schema_file)) =~ s/\.(conf|pl|pm|yml|yaml)$//;
+			$module =~ s/-/::/g;
+		}
+	} elsif($module eq 'builtin') {
 		undef $module;
-	} elsif(!$module) {
-		(my $guess = basename($schema_file)) =~ s/\.(conf|pl|pm|yml|yaml)$//;
-		$guess =~ s/-/::/g;
-		$module = $guess || 'builtin';
 	}
 
 	if($module && ($module ne 'builtin')) {

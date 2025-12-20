@@ -1,9 +1,10 @@
 use strict;
 use warnings;
 
-use Test::Most;
-use File::Temp qw(tempdir);
 use File::Spec;
+use File::Temp qw(tempdir);
+use Test::DescribeMe qw(extended);
+use Test::Most;
 use YAML::XS qw(LoadFile);
 
 use App::Test::Generator::SchemaExtractor;
