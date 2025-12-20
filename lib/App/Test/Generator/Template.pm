@@ -560,6 +560,7 @@ sub fuzz_inputs
 			my $type = $input{'type'};
 
 			foreach my $field(keys %input) {
+				next if($field =~ /^_/);	# Ignore comments
 				if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can'))) {
 					die("TODO: handle schema keyword '$field'");
 				}
@@ -585,6 +586,7 @@ sub fuzz_inputs
 					$spec->{'memberof'} = delete $spec->{'enum'};
 				}
 				foreach my $field(keys %{$spec}) {
+					next if($field =~ /^_/);	# Ignore comments
 					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'memberof', 'position'))) {
 						diag(__LINE__, ": TODO: handle schema keyword '$field'");
 					}

@@ -50,9 +50,9 @@ my $schema = $extractor->extract_all();
 ok(ref $schema eq 'HASH', 'Schema extracted as hashref');
 ok(exists $schema->{add}, 'Schema contains add()');
 
-use Data::Dumper;
-diag(Dumper($schema->{'add'}));
-exit;
+# use Data::Dumper;
+# diag(Dumper($schema->{'add'}));
+# exit;
 
 # ------------------------------------------------------------------
 # Generate test from schema

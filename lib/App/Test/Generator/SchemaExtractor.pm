@@ -2745,6 +2745,35 @@ sub _analyze_parameter_type {
             $self->_log("  CODE: $param type inferred as arrayref from default");
         }
     }
+
+	# ------------------------------------------------------------
+	# Heuristic numeric inference (low confidence)
+	# ------------------------------------------------------------
+	if (!$p->{type}) {
+
+		# Numeric operators: + - * / % **
+		if (
+			$code =~ /\$$param\s*[\+\-\*\/%]/ ||
+			$code =~ /[\+\-\*\/%]\s*\$$param/ ||
+			$code =~ /\bint\s*\(\s*\$$param\s*\)/ ||
+			$code =~ /\babs\s*\(\s*\$$param\s*\)/
+		) {
+			$p->{type} = 'number';
+			$p->{_type_confidence} = 'heuristic';
+			$self->_log("  CODE: $param inferred as number (numeric operator)");
+		}
+
+		# Numeric comparison
+		elsif (
+			$code =~ /\$$param\s*(?:==|!=|<=|>=|<|>)/ ||
+			$code =~ /(?:==|!=|<=|>=|<|>)\s*\$$param/
+		) {
+			$p->{type} = 'number';
+			$p->{_type_confidence} = 'heuristic';
+			$self->_log("  CODE: $param inferred as number (numeric comparison)");
+		}
+	}
+    
 }
 
 =head2 _analyze_advanced_types
