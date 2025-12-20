@@ -1005,6 +1005,140 @@ All modern Perl feature detection is optional and automatic:
 
 =back
 
+=head2 yamltest_hints
+
+Each method schema returned by L</extract_all> now optionally includes a
+C<yamltest_hints> key, which provides guidance for automated test generation
+based on the code analysis.
+
+This is intended to help L<App::Test::Generator> create meaningful tests,
+including boundary and invalid input cases, without manually specifying them.
+
+The structure is a hashref with the following keys:
+
+=over 4
+
+=item * boundary_values
+
+An arrayref of numeric values that represent boundaries detected from
+comparisons in the code. These are derived from literals in statements
+like C<$x < 0> or C<$y >= 255>. The generator can use these to create
+boundary tests.
+
+Example:
+
+    yamltest_hints:
+      boundary_values: [0, 1, 100, 255]
+
+=item * invalid_inputs
+
+An arrayref of values that are likely to be rejected by the method,
+based on checks like C<defined>, empty strings, or numeric validations.
+
+Example:
+
+    yamltest_hints:
+      invalid_inputs: [undef, '', -1]
+
+=item * equivalence_classes
+
+An arrayref intended to capture detected equivalence classes or patterns
+among inputs. Currently this is empty by default, but future enhancements
+may populate it based on detected input groupings.
+
+Example:
+
+    yamltest_hints:
+      equivalence_classes: []
+
+=back
+
+=head3 Usage
+
+When calling C<extract_all>, each method schema will include
+C<yamltest_hints> if any hints were detected:
+
+    my $schemas = $extractor->extract_all;
+    my $hints  = $schemas->{example_method}->{yamltest_hints};
+
+You can then feed these hints into automated test generators to produce
+negative tests, boundary tests, and parameter-specific test cases.
+
+=head3 Notes
+
+=over 4
+
+=item * Hints are inferred heuristically from code and validation statements.
+
+=item * Not all inputs are guaranteed to be detected; the feature is additive
+and will never remove information from the schema.
+
+=item * Currently, equivalence classes are not populated, but the field exists
+for future extension.
+
+=item * Boundary and invalid input hints are deduplicated to avoid repeated
+test values.
+
+=back
+
+=head3 Examples
+
+Given a method like:
+
+    sub example {
+        my ($x) = @_;
+        die "negative" if $x < 0;
+        return unless defined($x);
+        return $x * 2;
+    }
+
+After running:
+
+    my $extractor = App::Test::Generator::SchemaExtractor->new(
+        input_file => 'TestHints.pm',
+        output_dir => '/tmp',
+        quiet      => 1,
+    );
+
+    my $schemas = $extractor->extract_all;
+
+The schema for the method "example" will include:
+
+    $schemas->{example} = {
+        _method_name => 'example',
+        _confidence => {
+            input  => 'unknown',
+            output => 'unknown',
+        },
+        input => {
+            x => {
+                type     => 'scalar',
+                optional => 0,
+            }
+        },
+        output => {
+            type => 'scalar',
+        },
+        yamltest_hints => {
+            boundary_values => [0, 1],
+            invalid_inputs  => [undef, -1],
+            equivalence_classes => [],
+        },
+        _notes => '...',
+        _analysis => {
+            input_confidence  => 'low',
+            output_confidence => 'unknown',
+            confidence_factors => {
+                input  => {...},
+                output => {...},
+            },
+            overall_confidence => 'low',
+        },
+        _fields => {},
+        _modern_features => {},
+        _attributes => {},
+    };
+
 =head1 METHODS
 
 =head2 new
@@ -1281,9 +1415,9 @@ Combines POD analysis, code pattern analysis, and signature analysis.
 =cut
 
 sub _analyze_method {
-    my ($self, $method) = @_;
-    my $code = $method->{body};
-    my $pod = $method->{pod};
+	my ($self, $method) = @_;
+	my $code = $method->{body};
+	my $pod = $method->{pod};
 
     # Extract modern features
     my $attributes = $self->_extract_subroutine_attributes($code);
@@ -1390,10 +1524,22 @@ sub _analyze_method {
     $schema->{_modern_features}{postfix_dereferencing} = $postfix_derefs if keys %$postfix_derefs;
     $schema->{_fields} = $fields if keys %$fields;
 
-    # Store class info if this is a class method
-    if ($method->{class}) {
-        $schema->{_class} = $method->{class};
-    }
+	# Store class info if this is a class method
+	if ($method->{class}) {
+		$schema->{_class} = $method->{class};
+	}
+
+	my $hints = $self->_extract_test_hints($method, $schema);
+
+	for my $k (qw(boundary_values invalid_inputs)) {
+		my %seen;
+		$hints->{$k} = [
+			grep { !$seen{ defined $_ ? $_ : '__undef__' }++ }
+			@{ $hints->{$k} }
+		];
+	}
+
+	$schema->{yamltest_hints} = $hints if keys %$hints;
 
 	return $schema;
 }
@@ -2534,19 +2680,19 @@ sub _analyze_code {
 
 		# Defined checks
 		if ($code =~ /defined\s*\(\s*\$$param\s*\)/) {
-			$p->{optional} = 0;
+			$$p->{optional} = 0;
 			$self->_log("  CODE: $param is required (defined check)");
 		}
 
 		# Exists checks for hash keys
 		if ($code =~ /exists\s*\(\s*\$$param\s*\)/) {
-			$p->{type} = 'hashkey';
+			$$p->{type} = 'hashkey';
 			$self->_log("  CODE: $param is a hash key");
 		}
 
 		# Scalar context for arrays
 		if ($code =~ /scalar\s*\(\s*\@?\$$param\s*\)/) {
-			$p->{type} = 'array';
+			$$p->{type} = 'array';
 			$self->_log("  CODE: $param used in scalar context (array)");
 		}
 	}
@@ -5510,6 +5656,75 @@ sub _extract_default_value {
 	}
 
 	return undef;
+}
+
+sub _extract_test_hints {
+    my ($self, $method, $schema) = @_;
+
+    my %hints = (
+        boundary_values     => [],
+        invalid_inputs      => [],
+        equivalence_classes => [],
+    );
+
+    my $code = $method->{body};
+    return {} unless $code;
+
+    $self->_extract_invalid_input_hints($code, \%hints);
+    $self->_extract_boundary_value_hints($code, \%hints);
+
+    # prune empties
+    for my $k (keys %hints) {
+        delete $hints{$k} unless @{$hints{$k}};
+    }
+
+    return \%hints;
+}
+
+sub _extract_invalid_input_hints {
+    my ($self, $code, $hints) = @_;
+
+    # undef invalid
+    if ($code =~ /defined\s*\(\s*\$/) {
+        push @{ $hints->{invalid_inputs} }, 'undef';
+    }
+
+    # empty string invalid
+    if ($code =~ /\beq\s*''/ || $code =~ /\blength\s*\(/) {
+        push @{ $hints->{invalid_inputs} }, '';
+    }
+
+    # negative number invalid
+    if ($code =~ /\$\w+\s*<\s*0/) {
+        push @{ $hints->{invalid_inputs} }, -1;
+    }
+}
+
+sub _extract_boundary_value_hints {
+	my ($self, $code, $hints) = @_;
+
+    while ($code =~ /\$\w+\s*(<=|<|>=|>)\s*(\d+)/g) {
+        my ($op, $n) = ($1, $2);
+
+        if ($op eq '<') {
+            push @{ $hints->{boundary_values} }, $n, $n+1;
+        }
+        elsif ($op eq '<=') {
+            push @{ $hints->{boundary_values} }, $n, $n+1;
+        }
+        elsif ($op eq '>') {
+            push @{ $hints->{boundary_values} }, $n, $n-1;
+        }
+        elsif ($op eq '>=') {
+            push @{ $hints->{boundary_values} }, $n, $n-1;
+        }
+    }
+
+    # Remove duplicates
+    my %seen;
+    $hints->{boundary_values} = [
+        grep { !$seen{$_}++ } @{ $hints->{boundary_values} }
+    ];
 }
 
 =head2 _clean_default_value
