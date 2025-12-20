@@ -24,6 +24,8 @@ use Data::Section::Simple;
 use File::Basename qw(basename);
 use File::Spec;
 use Module::Load::Conditional qw(check_install can_load);
+use Params::Get;
+use Params::Validate::Strict;
 use Template;
 use YAML::XS qw(LoadFile);
 
@@ -1200,8 +1202,9 @@ sub generate
 		shift;
 	}
 
-	my ($schema_file, $test_file) = @_;
+	my $args = $_[0];
 
+	my ($schema_file, $test_file, $schema);
 	# Globals loaded from the user's conf (all optional except function maybe)
 	my (%input, %output, %config, $module, $function, $new, %cases, $yaml_cases, %transforms);
 	my ($seed, $iterations);
@@ -1209,36 +1212,59 @@ sub generate
 
 	@edge_case_array = ();
 
-	if(defined($schema_file)) {
-		if(my $schema = _load_schema($schema_file)) {
-			# Parse the schema file and load into our structures
-			%input = %{_load_schema_section($schema, 'input', $schema_file)};
-			%output = %{_load_schema_section($schema, 'output', $schema_file)};
-			%transforms = %{_load_schema_section($schema, 'transforms', $schema_file)};
-
-			%cases = %{$schema->{cases}} if(exists($schema->{cases}));
-			%edge_cases = %{$schema->{edge_cases}} if(exists($schema->{edge_cases}));
-			%type_edge_cases = %{$schema->{type_edge_cases}} if(exists($schema->{type_edge_cases}));
-
-			$module = $schema->{module} if(exists($schema->{module}));
-			$function = $schema->{function} if(exists($schema->{function}));
-			if(exists($schema->{new})) {
-				$new = defined($schema->{'new'}) ? $schema->{new} : '_UNDEF';
+	if(ref($args)) {
+		# Modern API
+		my $params = Params::Validate::Strict::validate_strict({
+			args => Params::Get::get_params('schema_file', \@_),
+			schema => {
+				schema_file => { type => 'string', optional => 1 },
+				test_file => { type => 'string', optional => 1 },
+				schema => { type => 'hashref', optional => 1 }
 			}
-			$yaml_cases = $schema->{yaml_cases} if(exists($schema->{yaml_cases}));
-			$seed = $schema->{seed} if(exists($schema->{seed}));
-			$iterations = $schema->{iterations} if(exists($schema->{iterations}));
-
-			@edge_case_array = @{$schema->{edge_case_array}} if(exists($schema->{edge_case_array}));
-			_validate_config($schema);
-
-			%config = %{$schema->{config}} if(exists($schema->{config}));
+		});
+		if($params->{'schema_file'}) {
+			$schema_file = $params->{'schema_file'};
+			$test_file = $params->{'test_file'};
+		} elsif($params->{'schema'}) {
+			$schema = $params->{'schema'};
 		} else {
-			croak "Failed to load schema from $schema_file";
+			croak(__PACKAGE__, ': Usage: generate(schema_file|schema [, outfile]');
 		}
 	} else {
-		croak 'Usage: generate(schema_file [, outfile])';
+		# Legacy API
+		($schema_file, $test_file) = ($_[0], $_[1]);
+		if(defined($schema_file)) {
+			$schema = _load_schema($schema_file);
+			if(!defined($schema)) {
+				croak "Failed to load schema from $schema_file";
+			}
+		} else {
+			croak 'Usage: generate(schema_file [, outfile])';
+		}
 	}
+
+	# Parse the schema file and load into our structures
+	%input = %{_load_schema_section($schema, 'input', $schema_file)};
+	%output = %{_load_schema_section($schema, 'output', $schema_file)};
+	%transforms = %{_load_schema_section($schema, 'transforms', $schema_file)};
+
+	%cases = %{$schema->{cases}} if(exists($schema->{cases}));
+	%edge_cases = %{$schema->{edge_cases}} if(exists($schema->{edge_cases}));
+	%type_edge_cases = %{$schema->{type_edge_cases}} if(exists($schema->{type_edge_cases}));
+
+	$module = $schema->{module} if(exists($schema->{module}));
+	$function = $schema->{function} if(exists($schema->{function}));
+	if(exists($schema->{new})) {
+		$new = defined($schema->{'new'}) ? $schema->{new} : '_UNDEF';
+	}
+	$yaml_cases = $schema->{yaml_cases} if(exists($schema->{yaml_cases}));
+	$seed = $schema->{seed} if(exists($schema->{seed}));
+	$iterations = $schema->{iterations} if(exists($schema->{iterations}));
+
+	@edge_case_array = @{$schema->{edge_case_array}} if(exists($schema->{edge_case_array}));
+	_validate_config($schema);
+
+	%config = %{$schema->{config}} if(exists($schema->{config}));
 
 	# Handle the various possible boolean settings for config values
 	# Note that the default for everything is true
