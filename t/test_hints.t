@@ -81,8 +81,7 @@ cmp_deeply(
 # ---- equivalence_classes -------------------------------------------
 
 ok(
-    !exists($hints->{equivalence_classes})
-      || @{ $hints->{equivalence_classes} } == 0,
+    !exists($hints->{equivalence_classes}) || @{ $hints->{equivalence_classes} } == 0,
     'No equivalence classes inferred (expected)'
 );
 

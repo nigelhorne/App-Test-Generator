@@ -7,8 +7,10 @@ use Test::DescribeMe qw(extended);
 use Test::Most;
 use IPC::Run3 qw(run3);
 
-use App::Test::Generator;
-use App::Test::Generator::SchemaExtractor;
+BEGIN {
+	use_ok('App::Test::Generator');
+	use_ok('App::Test::Generator::SchemaExtractor');
+}
 
 # Temporary workspace
 my $dir = tempdir(CLEANUP => 1);
@@ -110,4 +112,4 @@ unlike(
     'No created test failed'
 );
 
-done_testing;
+done_testing();

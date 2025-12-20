@@ -1208,7 +1208,7 @@ sub extract_all {
 	$self->_log("Package: $package_name");
 
 	my $methods = $self->_find_methods($document);
-	$self->_log("Found " . scalar(@$methods) . " methods");
+	$self->_log("Found " . scalar(@$methods) . ' methods');
 
 	my %schemas;
 	foreach my $method (@{$methods}) {
@@ -1216,6 +1216,7 @@ sub extract_all {
 
 		my $schema = $self->_analyze_method($method);
 		$schemas{$method->{name}} = $schema;
+		$schema->{'module'} = $package_name;
 
 		# Write individual schema file
 		$self->_write_schema($method->{name}, $schema);
