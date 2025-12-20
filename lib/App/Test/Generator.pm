@@ -52,9 +52,12 @@ Version 0.21
 
 From the command line:
 
+  # Takes the formal definition of a routine, creates tests against that routine, and runs the test
   fuzz-harness-generator -r t/conf/add.yml
 
-  extract-schemas bin/extract-schemas lib/Sample/Module.pm; fuzz-harness-generator -r schemas/greet.yaml
+  # Attempt to create a formal definition from a routine package, then run tests against that formal definition
+  # This is the holy grail of automatic test generation just by looking at the source code
+  extract-schemas bin/extract-schemas lib/Sample/Module.pm && fuzz-harness-generator -r schemas/greet.yaml
 
 From Perl:
 

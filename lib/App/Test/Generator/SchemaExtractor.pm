@@ -40,7 +40,7 @@ Version 0.21
 
 =head1 DESCRIPTION
 
-App::Test::Generator::SchemaExtractor automatically analyzes Perl modules and generates
+App::Test::Generator::SchemaExtractor analyzes Perl modules and generates
 structured YAML schema files suitable for automated test generation by L<App::Test::Generator>.
 This module employs
 static analysis techniques to infer parameter types, constraints, and
@@ -840,19 +840,19 @@ Supported constraint types:
 
 =over 4
 
-=item * C<:Int, :Integer> → integer
+=item * C<:Int, :Integer> -> integer
 
-=item * C<:Num, :Number> → number
+=item * C<:Num, :Number> -> number
 
-=item * C<:Str, :String> → string
+=item * C<:Str, :String> -> string
 
-=item * C<:Bool, :Boolean> → boolean
+=item * C<:Bool, :Boolean> -> boolean
 
-=item * C<:ArrayRef, :Array> → arrayref
+=item * C<:ArrayRef, :Array> -> arrayref
 
-=item * C<:HashRef, :Hash> → hashref
+=item * C<:HashRef, :Hash> -> hashref
 
-=item * C<:ClassName> → object with isa constraint
+=item * C<:ClassName> -> object with isa constraint
 
 =back
 
@@ -3908,13 +3908,13 @@ sub _calculate_input_confidence {
 }
 
 sub _calculate_output_confidence {
-    my ($self, $output) = @_;
+	my ($self, $output) = @_;
 
-    my @factors;
+	my @factors;
 
-    return { level => 'none', factors => ['No return information found'] } unless keys %$output;
+	return { level => 'none', factors => ['No return information found'] } unless keys %$output;
 
-    my $score = 0;
+	my $score = 0;
 
     # Type information
     if ($output->{type}) {
@@ -4039,17 +4039,17 @@ sub _generate_confidence_report
         push @report, '';
     }
 
-    if ($analysis->{per_parameter_scores}) {
-        push @report, "Per-Parameter Analysis:";
-        foreach my $param (sort keys %{$analysis->{per_parameter_scores}}) {
-            my $details = $analysis->{per_parameter_scores}{$param};
-            push @report, "  \$$param (score: $details->{score}):";
-            foreach my $factor (@{$details->{factors}}) {
-                push @report, "    - $factor";
-            }
-        }
-        push @report, '';
-    }
+	if ($analysis->{per_parameter_scores}) {
+		push @report, 'Per-Parameter Analysis:';
+		foreach my $param (sort keys %{$analysis->{per_parameter_scores}}) {
+			my $details = $analysis->{per_parameter_scores}{$param};
+			push @report, "  \$$param (score: $details->{score}):";
+			foreach my $factor (@{$details->{factors}}) {
+				push @report, "    - $factor";
+			}
+		}
+		push @report, '';
+	}
 
 	return join("\n", @report);
 }
