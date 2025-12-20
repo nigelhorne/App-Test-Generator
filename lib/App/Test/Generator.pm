@@ -1754,7 +1754,7 @@ sub _validate_module {
 		# The module might not be installed on the generation machine
 		# but could be on the test machine
 		carp("Warning: Module '$module' not found in \@INC during generation.");
-		carp("  Config file: $schema_file");
+		carp("  Config file: $schema_file") if($schema_file);
 		carp("  This is OK if the module will be available when tests run.");
 		carp('  If this is unexpected, check your module name and installation.');
 		return 0;	# Not found, but not fatal
