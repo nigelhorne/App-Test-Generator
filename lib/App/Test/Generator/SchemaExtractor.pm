@@ -147,7 +147,7 @@ automatically adds the C<new> field to schemas.
 
 =item * B<Enhanced Object Detection>
 
-The extractor now includes sophisticated object detection capabilities that go beyond simple instance method identification:
+The extractor includes sophisticated object detection capabilities that go beyond simple instance method identification:
 
 =over 4
 
@@ -363,7 +363,7 @@ The extractor generates:
 
 =head1 RELATIONSHIP DETECTION
 
-The schema extractor now detects relationships and dependencies between parameters,
+The schema extractor detects relationships and dependencies between parameters,
 enabling more sophisticated validation and test generation.
 
 =head2 Relationship Types
@@ -460,7 +460,7 @@ Generated schema:
 
 =head2 Default Value Extraction
 
-The extractor now comprehensively extracts default values from both code and POD documentation:
+The extractor comprehensively extracts default values from both code and POD documentation:
 
 =head3 Code Pattern Recognition
 
@@ -533,7 +533,7 @@ the type is automatically inferred from the default:
 
 =head2 Context-Aware Return Analysis
 
-The extractor now provides comprehensive analysis of method return behavior,
+The extractor provides comprehensive analysis of method return behavior,
 including context sensitivity, error handling conventions, and method chaining patterns.
 
 =head3 List vs Scalar Context Detection
@@ -791,6 +791,220 @@ Tracks usage of modern dereferencing syntax
 
 Extracts fields and maps them to parameters
 
+=head2 Modern Perl Features Support
+
+The schema extractor supports modern Perl syntax introduced in versions 5.20, 5.36, and 5.38+.
+
+=head3 Subroutine Signatures (Perl 5.20+)
+
+Automatically extracts parameters from native Perl signatures:
+
+    use feature 'signatures';
+
+    sub connect($host, $port = 3306, $database = undef) {
+        ...
+    }
+
+Extracted schema includes:
+
+=over 4
+
+=item * Parameter positions
+
+=item * Optional vs required parameters
+
+=item * Default values from signature
+
+=item * Slurpy parameters (@array, %hash)
+
+=back
+
+B<Example:>
+
+    # Signature with defaults
+    sub process($file, %options) { ... }
+
+    # Extracts:
+    # $file: position 0, required
+    # %options: position 1, optional, slurpy hash
+
+=head3 Type Constraints in Signatures (Perl 5.36+)
+
+Recognizes type constraints in signature parameters:
+
+    sub calculate($x :Int, $y :Num, $name :Str = "result") {
+        return $x + $y;
+    }
+
+Supported constraint types:
+
+=over 4
+
+=item * C<:Int, :Integer> → integer
+
+=item * C<:Num, :Number> → number
+
+=item * C<:Str, :String> → string
+
+=item * C<:Bool, :Boolean> → boolean
+
+=item * C<:ArrayRef, :Array> → arrayref
+
+=item * C<:HashRef, :Hash> → hashref
+
+=item * C<:ClassName> → object with isa constraint
+
+=back
+
+Type constraints are combined with defaults when both are present.
+
+=head3 Subroutine Attributes
+
+Extracts and documents subroutine attributes:
+
+    sub get_value :lvalue {
+        my $self = shift;
+        return $self->{value};
+    }
+
+    sub calculate :Returns(Int) :method {
+        my ($self, $x, $y) = @_;
+        return $x + $y;
+    }
+
+Recognized attributes stored in C<_attributes> field:
+
+=over 4
+
+=item * C<:lvalue> - Method can be assigned to
+
+=item * C<:method> - Explicitly marked as method
+
+=item * C<:Returns(Type)> - Declares return type
+
+=item * Custom attributes with values: C<:MyAttr(value)>
+
+=back
+
+=head3 Postfix Dereferencing (Perl 5.20+)
+
+Detects usage of postfix dereferencing syntax:
+
+    use feature 'postderef';
+
+    sub process_array {
+        my ($self, $arrayref) = @_;
+        my @array = $arrayref->@*;        # Array dereference
+        my @slice = $arrayref->@[1,3,5];  # Array slice
+        return @array;
+    }
+
+    sub process_hash {
+        my ($self, $hashref) = @_;
+        my %hash = $hashref->%*;          # Hash dereference
+        return keys %hash;
+    }
+
+Tracked features stored in C<_modern_features>:
+
+=over 4
+
+=item * C<array_deref> - Uses C<-E<gt>@*>
+
+=item * C<hash_deref> - Uses C<-E<gt>%*>
+
+=item * C<scalar_deref> - Uses C<-E<gt>$*>
+
+=item * C<code_deref> - Uses C<-E<gt>&*>
+
+=item * C<array_slice> - Uses C<-E<gt>@[...]>
+
+=item * C<hash_slice> - Uses C<-E<gt>%{...}>
+
+=back
+
+=head3 Field Declarations (Perl 5.38+)
+
+Extracts field declarations from class syntax and maps them to method parameters:
+
+    use feature 'class';
+
+    class DatabaseConnection {
+        field $host :param = 'localhost';
+        field $port :param = 3306;
+        field $username :param(user);
+        field $password :param;
+        field $logger :param :isa(Log::Any);
+
+        method connect() {
+            # Fields available as instance variables
+        }
+    }
+
+Field attributes:
+
+=over 4
+
+=item * C<:param> - Field is a constructor parameter (uses field name)
+
+=item * C<:param(name)> - Field maps to parameter with different name
+
+=item * C<:isa(Class)> - Type constraint for the field
+
+=item * Default values in field declarations
+
+=back
+
+Extracted schema includes both field information in C<_fields> and merged parameter
+information in C<input>, allowing proper validation of class constructors.
+
+=head3 Mixed Modern and Traditional Syntax
+
+The extractor handles code that mixes modern and traditional syntax:
+
+    sub modern($x, $y = 5) {
+        # Modern signature with default
+    }
+
+    sub traditional {
+        my ($self, $x, $y) = @_;
+        $y //= 5;  # Traditional default in code
+        # Both extract same parameter information
+    }
+
+Priority order for parameter information:
+
+=over 4
+
+=item 1. Signature declarations (highest priority)
+
+=item 2. Field declarations (for class methods)
+
+=item 3. POD documentation
+
+=item 4. Code analysis (lowest priority)
+
+=back
+
+This ensures that explicit declarations in signatures take precedence over
+inferred information from code analysis.
+
+=head3 Backwards Compatibility
+
+All modern Perl feature detection is optional and automatic:
+
+=over 4
+
+=item * Traditional C<sub> declarations continue to work
+
+=item * Code without modern features extracts parameters as before
+
+=item * Modern features are additive - they enhance rather than replace existing extraction
+
+=item * Schemas include C<_source> field indicating where parameter info came from
+
+=back
+
 =head1 METHODS
 
 =head2 new
@@ -925,6 +1139,13 @@ sub _find_methods {
 		};
 	}
 
+	# Look for class { method } syntax (Perl 5.38+)
+	my $content = $document->content();
+	if ($content =~ /\bclass\b/) {
+		$self->_log("  Detecting class/method syntax...");
+		$self->_extract_class_methods($content, \@methods);
+	}
+
 	# Process method modifiers (Moose)
 	foreach my $decl (@$sub_decls) {
 		my $content = $decl->content;
@@ -955,6 +1176,65 @@ sub _find_methods {
 	}
 
 	return \@methods;
+}
+
+sub _extract_class_methods {
+	my ($self, $content, $methods) = @_;
+
+    # Simple pattern: find "class Name {" blocks
+    # This won't handle all edge cases but will work for simple classes
+    while ($content =~ /class\s+(\w+)\s*\{/g) {
+        my $class_name = $1;
+        my $start_pos = pos($content);
+
+        # Find the matching closing brace (simple brace counting)
+        my $depth = 1;
+        my $class_end = $start_pos;
+
+        while ($depth > 0 && $class_end < length($content)) {
+            my $char = substr($content, $class_end, 1);
+            $depth++ if $char eq '{';
+            $depth-- if $char eq '}';
+            $class_end++;
+        }
+
+        my $class_body = substr($content, $start_pos, $class_end - $start_pos - 1);
+
+        $self->_log("  Found class $class_name");
+
+        # Extract field declarations from class
+        my $fields = $self->_extract_field_declarations($class_body);
+
+        # Find methods in the class body
+        while ($class_body =~ /method\s+(\w+)\s*(\([^)]*\))?\s*\{/g) {
+            my ($method_name, $sig_with_parens) = ($1, $2 || '()');
+
+            # Skip private unless configured
+            if ($method_name =~ /^_/ && $method_name !~ /^_(new|init|build)/) {
+                next unless $self->{include_private};
+            }
+
+            # Reconstruct as sub for analysis
+            my $signature = $sig_with_parens;
+            $signature =~ s/^\(//;
+            $signature =~ s/\)$//;
+
+            # Build a fake sub declaration
+            my $fake_sub = "sub $method_name($signature) { }";
+
+            push @$methods, {
+                name => $method_name,
+                node => undef,
+                body => $fake_sub,  # Just the signature for now
+                pod => '',
+                type => 'method',
+                class => $class_name,
+                fields => $fields,
+            };
+
+            $self->_log("  Found method $method_name in class $class_name");
+        }
+    }
 }
 
 =head2 _extract_pod_before
@@ -1001,113 +1281,119 @@ Combines POD analysis, code pattern analysis, and signature analysis.
 =cut
 
 sub _analyze_method {
-	my ($self, $method) = @_;
-
-	my $code = $method->{body};
-	my $pod = $method->{pod};
+    my ($self, $method) = @_;
+    my $code = $method->{body};
+    my $pod = $method->{pod};
 
     # Extract modern features
     my $attributes = $self->_extract_subroutine_attributes($code);
     my $postfix_derefs = $self->_analyze_postfix_dereferencing($code);
     my $fields = $self->_extract_field_declarations($code);
 
-    # Extract parameters
-    my %code_params;
-    $self->_extract_parameters_from_signature(\%code_params, $code);
+    # If this method came from a class, use those field declarations
+    if ($method->{fields} && keys %{$method->{fields}}) {
+        $fields = $method->{fields};
+    }
 
-    # Merge field declarations if present
-    $self->_merge_field_declarations(\%code_params, $fields) if keys %$fields;
+    my $schema = {
+        _method_name => $method->{name},
+        _confidence => {
+            'input' => 'unknown',
+            'output' => 'unknown',
+        },
+        input => {},
+        output => {},
+        setup => undef,
+        transforms => {},
+    };
 
+    # Analyze different sources
+    my $pod_params = $self->_analyze_pod($method->{pod});
+    my $code_params = $self->_analyze_code($method->{body});
+    my $sig_params = $self->_analyze_signature($method->{body});
 
-	my $schema = {
-		_method_name => $method->{name},
-		_confidence => {
-			'input' => 'unknown',
-			'output' => 'unknown',
-		},
-		input => {},
-		output => {},
-		setup => undef,
-		transforms => {},
-	};
+    # Merge field declarations into code_params before merging analyses
+    if (keys %$fields) {
+        $self->_merge_field_declarations($code_params, $fields);
+    }
 
-	# Analyze different sources
-	my $pod_params = $self->_analyze_pod($method->{pod});
-	my $code_params = $self->_analyze_code($method->{body});
-	my $sig_params = $self->_analyze_signature($method->{body});
+    # Merge analyses
+    $schema->{input} = $self->_merge_parameter_analyses(
+        $pod_params,
+        $code_params,
+        $sig_params
+    );
 
-	# Merge analyses
-	$schema->{input} = $self->_merge_parameter_analyses(
-		$pod_params,
-		$code_params,
-		$sig_params
-	);
+    # Analyze output/return values
+    $schema->{output} = $self->_analyze_output($method->{pod}, $method->{body}, $method->{name});
 
-	# Analyze output/return values
-	$schema->{output} = $self->_analyze_output($method->{pod}, $method->{body}, $method->{name});
+    # Detect accessor methods
+    $self->_detect_accessor_methods($method, $schema);
 
-	# Detect accessor methods
-	$self->_detect_accessor_methods($method, $schema);
+    # Detect if this is an instance method that needs object instantiation
+    my $needs_object = $self->_needs_object_instantiation($method->{name}, $method->{body}, $method);
+    if ($needs_object) {
+        $schema->{new} = $needs_object;
+        $self->_log("  Method requires object instantiation: $needs_object");
+    }
 
-	# Detect if this is an instance method that needs object instantiation
-	my $needs_object = $self->_needs_object_instantiation($method->{name}, $method->{body}, $method);
-	if ($needs_object) {
-		$schema->{new} = $needs_object;
-		$self->_log("  Method requires object instantiation: $needs_object");
-	}
+    # Calculate confidences
+    my $input_confidence = $schema->{_confidence}{'input'} = $self->_calculate_input_confidence($schema->{input});
+    my $output_confidence = $schema->{_confidence}{'output'} = $self->_calculate_output_confidence($schema->{output});
 
-	# Calculate confidences
-	my $input_confidence = $schema->{_confidence}{'input'} = $self->_calculate_input_confidence($schema->{input});
-	my $output_confidence = $schema->{_confidence}{'output'} = $self->_calculate_output_confidence($schema->{output});
+    # Add metadata
+    $schema->{_notes} = $self->_generate_notes($schema->{input});
 
-	# Add metadata
-	$schema->{_notes} = $self->_generate_notes($schema->{input});
+    # Add analytics
+    $schema->{_analysis} = {
+        input_confidence => $input_confidence->{level},
+        output_confidence => $output_confidence->{level},
+        confidence_factors => {
+            input => $input_confidence->{factors},
+            output => $output_confidence->{factors}
+        }
+    };
 
-	# Add analytics
-	$schema->{_analysis} = {
-		input_confidence => $input_confidence->{level},
-		output_confidence => $output_confidence->{level},
-		confidence_factors => {
-			input => $input_confidence->{factors},
-			output => $output_confidence->{factors}
-		}
-	};
+    # Optionally store detailed per-parameter analysis
+    if ($input_confidence->{per_parameter}) {
+        $schema->{_analysis}{per_parameter_scores} = $input_confidence->{per_parameter};
+    }
 
-	# Optionally store detailed per-parameter analysis
-	if ($input_confidence->{per_parameter}) {
-		$schema->{_analysis}{per_parameter_scores} = $input_confidence->{per_parameter};
-	}
+    # Calculate overall confidence (for backward compatibility)
+    my $input_level = $input_confidence->{level};
+    my $output_level = $output_confidence->{level};
 
-	# Calculate overall confidence (for backward compatibility)
-	my $input_level = $input_confidence->{level};
-	my $output_level = $output_confidence->{level};
+    my %level_rank = (
+        none => 0,
+        very_low => 1,
+        low => 2,
+        medium => 3,
+        high => 4
+    );
 
-	my %level_rank = (
-		none => 0,
-		very_low => 1,
-		low => 2,
-		medium => 3,
-		high => 4
-	);
+    # Overall is the lower of input and output
+    my $overall = $level_rank{$input_level} < $level_rank{$output_level}
+        ? $input_level
+        : $output_level;
 
-	# Overall is the lower of input and output
-	my $overall = $level_rank{$input_level} < $level_rank{$output_level}
-		? $input_level
-		: $output_level;
+    $schema->{_analysis}{overall_confidence} = $overall;
 
-	$schema->{_analysis}{overall_confidence} = $overall;
+    # Analyze parameter relationships
+    my $relationships = $self->_analyze_relationships($method);
+    if ($relationships && @{$relationships}) {
+        $schema->{relationships} = $relationships;
+        $self->_log("  Found " . scalar(@$relationships) . " parameter relationships");
+    }
 
-	# Analyze parameter relationships
-	my $relationships = $self->_analyze_relationships($method);
-	if ($relationships && @{$relationships}) {
-		$schema->{relationships} = $relationships;
-		$self->_log("  Found " . scalar(@$relationships) . " parameter relationships");
-	}
+    # Store modern feature info in schema
+    $schema->{_attributes} = $attributes if keys %$attributes;
+    $schema->{_modern_features}{postfix_dereferencing} = $postfix_derefs if keys %$postfix_derefs;
+    $schema->{_fields} = $fields if keys %$fields;
 
-	# Store modern feature info in schema
-	$schema->{_attributes} = $attributes if keys %$attributes;
-	$schema->{_modern_features}{postfix_dereferencing} = $postfix_derefs if keys %$postfix_derefs;
-	$schema->{_fields} = $fields if keys %$fields;
+    # Store class info if this is a class method
+    if ($method->{class}) {
+        $schema->{_class} = $method->{class};
+    }
 
 	return $schema;
 }
@@ -2634,24 +2920,27 @@ sub _detect_enum_type {
 sub _extract_parameters_from_signature {
 	my ($self, $params, $code) = @_;
 
-	# Modern Style 1: Subroutine signatures (Perl 5.20+)
-	# sub foo($x, $y = 5, $z = undef, %opts) { }
-	# Match signature up to opening brace, not beyond
-    if ($code =~ /sub\s+\w+\s*\(([^)]+)\)\s*(?::\w+(?:\([^)]*\))?\s*)*\{/s) {
-        my $sig = $1;
-        $self->_log("  SIG: Found modern signature: ($sig)");
-        $self->_parse_modern_signature($params, $sig);
-        return;
-    }
+	# Modern Style: Subroutine signatures with attributes
+	# Handle multi-line signatures
+	# sub foo :attr1 :attr2(val) (
+	#     $self,
+	#     $x :Type,
+	#     $y = default
+	# ) { }
 
-    # Modern Style 2: Signatures with attributes
-    # sub foo :method($self, $x, $y) { }
-    if ($code =~ /sub\s+\w+\s*:\w+\s*\(([^)]+)\)/s) {
-        my $sig = $1;
-        $self->_log("  SIG: Found signature with attributes: ($sig)");
-        $self->_parse_modern_signature($params, $sig);
-        return;
-    }
+	# Try to match signature after attributes
+	# Look for the parameter list - it's the last (...) before the opening brace
+	# that contains sigils ($, %, @)
+	if ($code =~ /sub\s+\w+\s*(?::\w+(?:\([^)]*\))?\s*)*\(((?:[^()]|\([^)]*\))*)\)\s*\{/s) {
+		my $potential_sig = $1;
+
+		# Check if this looks like parameters (has sigils)
+		if ($potential_sig =~ /[\$\%\@]/) {
+			$self->_log("  SIG: Found modern signature: ($potential_sig)");
+			$self->_parse_modern_signature($params, $potential_sig);
+			return;
+		}
+	}
 
     # Traditional Style 1: my ($self, $arg1, $arg2) = @_;
     if ($code =~ /my\s*\(\s*\$\w+\s*,\s*([^)]+)\)\s*=\s*\@_/s) {
@@ -2661,13 +2950,13 @@ sub _extract_parameters_from_signature {
         }
         return;
     }
+
     # Traditional Style 2: my $self = shift; my $arg1 = shift;
     elsif ($code =~ /my\s+\$self\s*=\s*shift/) {
         my @shifts;
         while ($code =~ /my\s+\$(\w+)\s*=\s*shift/g) {
             push @shifts, $1;
         }
-        # Skip $self and get parameters
         shift @shifts if @shifts && $shifts[0] =~ /^(self|class)$/i;
         foreach my $param (@shifts) {
             $params->{$param} ||= { _source => 'code' };
@@ -2685,13 +2974,13 @@ sub _extract_parameters_from_signature {
         }
     }
 
-	# De-duplicate
-	my %seen;
-	foreach my $param (keys %$params) {
-		if ($seen{$param}++) {
-			$self->_log("  WARNING: Duplicate parameter '$param' found");
-		}
-	}
+    # De-duplicate
+    my %seen;
+    foreach my $param (keys %$params) {
+        if ($seen{$param}++) {
+            $self->_log("  WARNING: Duplicate parameter '$param' found");
+        }
+    }
 }
 
 # Parse modern Perl signatures (5.20+)
@@ -2753,59 +3042,21 @@ sub _parse_modern_signature {
 sub _parse_signature_parameter {
 	my ($self, $part, $position) = @_;
 
-	my %info = (
-		_source => 'signature',
-		position => $position
-	);
+    my %info = (
+        _source => 'signature',
+        position => $position
+    );
 
-	# Scalar parameter: $name or $name = default
-    if ($part =~ /^\$(\w+)\s*=\s*(.+)$/s) {
-        my ($name, $default) = ($1, $2);
+    # Pattern 1: Type constraint WITH default: $name :Type = default
+    if ($part =~ /^\$(\w+)\s*:\s*(\w+)\s*=\s*(.+)$/s) {
+        my ($name, $constraint, $default) = ($1, $2, $3);
         $default =~ s/^\s+|\s+$//g;
 
         $info{name} = $name;
         $info{optional} = 1;
+        $info{default} = $self->_clean_default_value($default, 1);
 
-        # Clean the default value
-        my $cleaned = $self->_clean_default_value($default, 1);
-        $info{default} = $cleaned;
-
-        # Infer type from default if we have the method
-        if ($self->can('_infer_type_from_default')) {
-            $info{type} = $self->_infer_type_from_default($cleaned);
-        }
-
-        return \%info;
-    }
-    elsif ($part =~ /^\$(\w+)$/) {
-        $info{name} = $1;
-        $info{optional} = 0;
-        return \%info;
-    }
-    # Array parameter: @name
-    elsif ($part =~ /^\@(\w+)$/) {
-        $info{name} = $1;
-        $info{type} = 'array';
-        $info{slurpy} = 1;
-        $info{optional} = 1;  # Slurpy params are optional (can be empty)
-        return \%info;
-    }
-    # Hash parameter: %name
-    elsif ($part =~ /^\%(\w+)$/) {
-        $info{name} = $1;
-        $info{type} = 'hash';
-        $info{slurpy} = 1;
-        $info{optional} = 1;
-        return \%info;
-    }
-
-    # Prototype/type constraint (Perl 5.36+): $name :TypeName
-    elsif ($part =~ /^\$(\w+)\s*:\s*(\w+)/) {
-        $info{name} = $1;
-        my $constraint = $2;
-        $info{optional} = 0;
-
-        # Map common type constraints
+        # Apply type constraint
         if ($constraint =~ /^(Int|Integer)$/i) {
             $info{type} = 'integer';
         } elsif ($constraint =~ /^(Num|Number)$/i) {
@@ -2819,7 +3070,6 @@ sub _parse_signature_parameter {
         } elsif ($constraint =~ /^(Hash|HashRef)$/i) {
             $info{type} = 'hashref';
         } else {
-            # Assume it's a class name
             $info{type} = 'object';
             $info{isa} = $constraint;
         }
@@ -2827,7 +3077,72 @@ sub _parse_signature_parameter {
         return \%info;
     }
 
-    return undef;
+    # Pattern 2: Type constraint WITHOUT default: $name :Type
+    elsif ($part =~ /^\$(\w+)\s*:\s*(\w+)\s*$/s) {
+        my ($name, $constraint) = ($1, $2);
+        $info{name} = $name;
+        $info{optional} = 0;
+
+        # Apply type constraint (same as above)
+        if ($constraint =~ /^(Int|Integer)$/i) {
+            $info{type} = 'integer';
+        } elsif ($constraint =~ /^(Num|Number)$/i) {
+            $info{type} = 'number';
+        } elsif ($constraint =~ /^(Str|String)$/i) {
+            $info{type} = 'string';
+        } elsif ($constraint =~ /^(Bool|Boolean)$/i) {
+            $info{type} = 'boolean';
+        } elsif ($constraint =~ /^(Array|ArrayRef)$/i) {
+            $info{type} = 'arrayref';
+        } elsif ($constraint =~ /^(Hash|HashRef)$/i) {
+            $info{type} = 'hashref';
+        } else {
+            $info{type} = 'object';
+            $info{isa} = $constraint;
+        }
+
+        return \%info;
+    }
+
+    # Pattern 3: Default WITHOUT type: $name = default
+    elsif ($part =~ /^\$(\w+)\s*=\s*(.+)$/s) {
+        my ($name, $default) = ($1, $2);
+        $default =~ s/^\s+|\s+$//g;
+
+        $info{name} = $name;
+        $info{optional} = 1;
+        $info{default} = $self->_clean_default_value($default, 1);
+        $info{type} = $self->_infer_type_from_default($info{default}) if $self->can('_infer_type_from_default');
+
+        return \%info;
+    }
+
+    # Pattern 4: Plain parameter: $name
+    elsif ($part =~ /^\$(\w+)$/s) {
+        $info{name} = $1;
+        $info{optional} = 0;
+        return \%info;
+    }
+
+    # Pattern 5: Array parameter: @name
+    elsif ($part =~ /^\@(\w+)$/s) {
+        $info{name} = $1;
+        $info{type} = 'array';
+        $info{slurpy} = 1;
+        $info{optional} = 1;
+        return \%info;
+    }
+
+    # Pattern 6: Hash parameter: %name
+    elsif ($part =~ /^\%(\w+)$/s) {
+        $info{name} = $1;
+        $info{type} = 'hash';
+        $info{slurpy} = 1;
+        $info{optional} = 1;
+        return \%info;
+    }
+
+	return undef;
 }
 
 # Helper: Infer type from default value
@@ -2853,19 +3168,28 @@ sub _infer_type_from_default {
 
 # Extract subroutine attributes
 sub _extract_subroutine_attributes {
-    my ($self, $code) = @_;
+	my ($self, $code) = @_;
 
-    my %attributes;
+	my %attributes;
 
-    # Pattern: sub name :attr1 :attr2(value) { }
-    if ($code =~ /sub\s+\w+\s*((?::\w+(?:\([^)]*\))?\s*)+)\{/s) {
-        my $attr_string = $1;
+    # Extract all attributes from the sub declaration
+    # Attributes are :name or :name(value) between sub name and either ( or {
+    # Pattern: sub name ATTRIBUTES ( params ) { }
+    # or:      sub name ATTRIBUTES { }
 
-        # Parse individual attributes
-        while ($attr_string =~ /:(\w+)(?:\(([^)]*)\))?/g) {
+    # First, find the attributes section (everything between sub name and ( or { )
+    my $attr_section = '';
+
+    if ($code =~ /sub\s+\w+\s+((?::\w+(?:\([^)]*\))?\s*)+)/s) {
+        $attr_section = $1;
+    }
+
+    # Parse individual attributes from the section
+    if ($attr_section) {
+        while ($attr_section =~ /:(\w+)(?:\(([^)]*)\))?/g) {
             my ($name, $value) = ($1, $2);
 
-            if (defined $value) {
+            if (defined $value && $value ne '') {
                 $attributes{$name} = $value;
                 $self->_log("  ATTR: Found attribute :$name($value)");
             } else {
@@ -2878,25 +3202,27 @@ sub _extract_subroutine_attributes {
     # Process common attributes
     if ($attributes{Returns}) {
         my $return_type = $attributes{Returns};
-        $self->_log("  ATTR: Method declares return type: $return_type");
+        if ($return_type ne '1') {  # Only log if it's an actual type, not just the flag
+            $self->_log("  ATTR: Method declares return type: $return_type");
+        }
     }
 
-    if ($attributes{lvalue}) {
-        $self->_log("  ATTR: Method is lvalue (can be assigned to)");
-    }
+	if ($attributes{lvalue}) {
+		$self->_log("  ATTR: Method is lvalue (can be assigned to)");
+	}
 
-    if ($attributes{method}) {
-        $self->_log("  ATTR: Method explicitly marked as :method");
-    }
+	if ($attributes{method}) {
+		$self->_log("  ATTR: Method explicitly marked as :method");
+	}
 
-    return \%attributes;
+	return \%attributes;
 }
 
 # Detect postfix dereferencing in code
 sub _analyze_postfix_dereferencing {
-    my ($self, $code) = @_;
+	my ($self, $code) = @_;
 
-    my %derefs;
+	my %derefs;
 
     # Array dereference: $ref->@*
     if ($code =~ /\$\w+\s*->\s*\@\*/) {
@@ -3229,8 +3555,8 @@ sub _analyze_parameter_constraints {
 }
 
 sub _analyze_parameter_validation {
-    my ($self, $p_ref, $param, $code) = @_;
-    my $p = $$p_ref;
+	my ($self, $p_ref, $param, $code) = @_;
+	my $p = $$p_ref;
 
     # Required/optional checks
     my $is_required = 0;
@@ -3267,7 +3593,7 @@ sub _analyze_parameter_validation {
 
     # Also check for simple default assignment without condition
     # Pattern: $param = 'value';
-    if (!$default_value && $code =~ /\$$param\s*=\s*([^;]+)(?!\s*(?:\|\||\/\/|\?))/s) {
+    if (!$default_value && !exists $p->{default} && $code =~ /\$$param\s*=\s*([^;{}]+?)(?:\s*[;}])/s) {
         my $assignment = $1;
         # Make sure it's not part of a larger expression
         if ($assignment !~ /\$$param/ && $assignment !~ /^shift/) {
@@ -4746,7 +5072,7 @@ sub _detect_instance_method {
 	}
 
 	# Pattern 3: Uses $self->something (including hash/array access)
-	# This now catches $self->{value} and $self->[0] as well as $self->method()
+	# This catches $self->{value} and $self->[0] as well as $self->method()
 	elsif ($method_body =~ /\$self\s*->\s*(\w+|[\{\[])/) {
 		$instance_info{uses_self} = 1;
 		$instance_info{confidence} = 'medium';
