@@ -1616,7 +1616,8 @@ sub _analyze_pod {
 
 		# Assign positions
 		foreach my $param (@sig_params) {
-			$params{$param}{position} = $position_counter++;
+			$params{$param}{position} = $position_counter unless(exists($params{$param}{position}));
+			$position_counter++;
 			$self->_log("  POD: $param has position $params{$param}{position}");
 		}
 	}
@@ -3090,14 +3091,27 @@ sub _extract_parameters_from_signature {
 	}
 
     # Traditional Style 1: my ($self, $arg1, $arg2) = @_;
-    if ($code =~ /my\s*\(\s*\$\w+\s*,\s*([^)]+)\)\s*=\s*\@_/s) {
-        my $sig = $1;
-        while ($sig =~ /\$(\w+)/g) {
-            $params->{$1} ||= { _source => 'code' };
-        }
-        return;
-    }
+if ($code =~ /my\s*\(\s*([^)]+)\)\s*=\s*\@_/s) {
+    my $sig = $1;
+    my $pos = 0;
 
+    while ($sig =~ /\$(\w+)/g) {
+        my $name = $1;
+
+        next if $name =~ /^(self|class)$/i;
+
+        $params->{$name} ||= {
+            _source  => 'code',
+            optional => 1,
+        };
+
+        $params->{$name}{position} = $pos
+            unless exists $params->{$name}{position};
+
+        $pos++;
+    }
+    return;
+}
     # Traditional Style 2: my $self = shift; my $arg1 = shift;
     elsif ($code =~ /my\s+\$self\s*=\s*shift/) {
         my @shifts;
@@ -3105,8 +3119,9 @@ sub _extract_parameters_from_signature {
             push @shifts, $1;
         }
         shift @shifts if @shifts && $shifts[0] =~ /^(self|class)$/i;
+	my $pos = 0;
         foreach my $param (@shifts) {
-            $params->{$param} ||= { _source => 'code' };
+            $params->{$param} ||= { _source => 'code', optional => 1, position => $pos++ };
         }
         return;
     }
@@ -3115,19 +3130,20 @@ sub _extract_parameters_from_signature {
     if ($code =~ /my\s*\(\s*([^)]+)\)\s*=\s*\@_/s) {
         my $sig = $1;
         my @param_names = $sig =~ /\$(\w+)/g;
+	my $pos = 0;
         foreach my $param (@param_names) {
             next if $param =~ /^(self|class)$/i;
-            $params->{$param} ||= { _source => 'code' };
+            $params->{$param} ||= { _source => 'code', optional => 1, position => $pos++ };
         }
     }
 
-    # De-duplicate
-    my %seen;
-    foreach my $param (keys %$params) {
-        if ($seen{$param}++) {
-            $self->_log("  WARNING: Duplicate parameter '$param' found");
-        }
-    }
+	# De-duplicate
+	my %seen;
+	foreach my $param (keys %$params) {
+		if ($seen{$param}++) {
+			$self->_log("  WARNING: Duplicate parameter '$param' found");
+		}
+	}
 }
 
 # Parse modern Perl signatures (5.20+)
@@ -3842,7 +3858,7 @@ sub _merge_parameter_analyses {
 			my %pos_count;
 			$pos_count{$_}++ for @positions;
 			my ($best_pos) = sort { $pos_count{$b} <=> $pos_count{$a} || $a <=> $b } keys %pos_count;
-			$p->{position} = $best_pos;
+			$p->{position} = $best_pos unless(exists($p->{position}));
 		}
 
 		# POD has highest priority for type info and explicit declarations

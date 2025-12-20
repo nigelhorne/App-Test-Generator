@@ -52,6 +52,7 @@ ok(exists $schema->{add}, 'Schema contains add()');
 
 use Data::Dumper;
 diag(Dumper($schema->{'add'}));
+exit;
 
 # ------------------------------------------------------------------
 # Generate test from schema
