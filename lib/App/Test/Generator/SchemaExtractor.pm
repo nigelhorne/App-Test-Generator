@@ -1105,7 +1105,7 @@ After running:
 The schema for the method "example" will include:
 
     $schemas->{example} = {
-        _method_name => 'example',
+        function => 'example',
         _confidence => {
             input  => 'unknown',
             output => 'unknown',
@@ -1419,10 +1419,10 @@ sub _analyze_method {
 	my $code = $method->{body};
 	my $pod = $method->{pod};
 
-    # Extract modern features
-    my $attributes = $self->_extract_subroutine_attributes($code);
-    my $postfix_derefs = $self->_analyze_postfix_dereferencing($code);
-    my $fields = $self->_extract_field_declarations($code);
+	# Extract modern features
+	my $attributes = $self->_extract_subroutine_attributes($code);
+	my $postfix_derefs = $self->_analyze_postfix_dereferencing($code);
+	my $fields = $self->_extract_field_declarations($code);
 
     # If this method came from a class, use those field declarations
     if ($method->{fields} && keys %{$method->{fields}}) {
@@ -1430,7 +1430,7 @@ sub _analyze_method {
     }
 
     my $schema = {
-        _method_name => $method->{name},
+        function => $method->{name},
         _confidence => {
             'input' => 'unknown',
             'output' => 'unknown',

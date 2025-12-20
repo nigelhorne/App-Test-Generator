@@ -1212,14 +1212,15 @@ sub generate
 
 	@edge_case_array = ();
 
-	if(ref($args)) {
+	if(ref($args) || defined($_[2])) {
 		# Modern API
 		my $params = Params::Validate::Strict::validate_strict({
-			args => Params::Get::get_params('schema_file', \@_),
+			args => Params::Get::get_params(undef, \@_),
 			schema => {
 				input_file => { type => 'string', optional => 1 },
 				output_file => { type => 'string', optional => 1 },
-				schema => { type => 'hashref', optional => 1 }
+				schema => { type => 'hashref', optional => 1 },
+				quiet => { type => 'boolean', optional => 1 },	# Not yet used
 			}
 		});
 		if($params->{'input_file'}) {
