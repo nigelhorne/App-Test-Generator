@@ -2557,14 +2557,15 @@ sub _detect_chaining_from_pod {
 }
 
 sub _validate_output {
-    my ($self, $output) = @_;
-    # Warn about suspicious combinations
-    if (defined $output->{type} && $output->{type} eq 'boolean' && !defined($output->{value})) {
-        $self->_log('  WARNING: Boolean type without value - may want to set value: 1');
-    }
-    if ($output->{value} && defined $output->{type} && $output->{type} ne 'boolean') {
-        $self->_log("  WARNING: Value set but type is not boolean: $output->{type}");
-    }
+	my ($self, $output) = @_;
+
+	# Warn about suspicious combinations
+	if (defined $output->{type} && $output->{type} eq 'boolean' && !defined($output->{value})) {
+		$self->_log('  WARNING: Boolean type without value - may want to set value: 1');
+	}
+	if ($output->{value} && defined $output->{type} && $output->{type} ne 'boolean') {
+		$self->_log("  WARNING: Value set but type is not boolean: $output->{type}");
+	}
 }
 
 =head2 _parse_constraints
@@ -2652,19 +2653,19 @@ sub _analyze_code {
 
 	$self->_extract_defaults_from_code(\%params, $code);
 
-	    # Infer types from defaults
-    foreach my $param (keys %params) {
-        if ($params{$param}{default} && !$params{$param}{type}) {
-            my $default = $params{$param}{default};
-            if (ref($default) eq 'HASH') {
-                $params{$param}{type} = 'hashref';
-                $self->_log("  CODE: $param type inferred as hashref from default");
-            } elsif (ref($default) eq 'ARRAY') {
-                $params{$param}{type} = 'arrayref';
-                $self->_log("  CODE: $param type inferred as arrayref from default");
-            }
-        }
-    }
+	# Infer types from defaults
+	foreach my $param (keys %params) {
+		if ($params{$param}{default} && !$params{$param}{type}) {
+			my $default = $params{$param}{default};
+			if (ref($default) eq 'HASH') {
+				$params{$param}{type} = 'hashref';
+				$self->_log("  CODE: $param type inferred as hashref from default");
+			} elsif (ref($default) eq 'ARRAY') {
+				$params{$param}{type} = 'arrayref';
+				$self->_log("  CODE: $param type inferred as arrayref from default");
+			}
+		}
+	}
 
 	# Analyze each parameter (with safety limit)
 	foreach my $param (keys %params) {
@@ -2729,28 +2730,27 @@ sub _analyze_parameter_type {
 	if (!$p->{type}) {
 		if ($code =~ /\@\{\s*\$$param\s*\}/ || $code =~ /push\s*\(\s*\@?\$$param/) {
 			$p->{type} = 'arrayref';
-		}
-		elsif ($code =~ /\%\{\s*\$$param\s*\}/ || $code =~ /\$$param\s*->\s*\{/) {
+		} elsif ($code =~ /\%\{\s*\$$param\s*\}/ || $code =~ /\$$param\s*->\s*\{/) {
 			$p->{type} = 'hashref';
 		}
 	}
-	# After extracting defaults, infer type from the default value if type is unknown
-    if (!$p->{type} && exists $p->{default}) {
-        my $default = $p->{default};
-        if (ref($default) eq 'HASH') {
-            $p->{type} = 'hashref';
-            $self->_log("  CODE: $param type inferred as hashref from default");
-        } elsif (ref($default) eq 'ARRAY') {
-            $p->{type} = 'arrayref';
-            $self->_log("  CODE: $param type inferred as arrayref from default");
-        }
-    }
+
+	# Infer type from the default value if type is unknown
+	if (!$p->{type} && exists $p->{default}) {
+		my $default = $p->{default};
+		if (ref($default) eq 'HASH') {
+			$p->{type} = 'hashref';
+			$self->_log("  CODE: $param type inferred as hashref from default");
+		} elsif (ref($default) eq 'ARRAY') {
+			$p->{type} = 'arrayref';
+			$self->_log("  CODE: $param type inferred as arrayref from default");
+		}
+	}
 
 	# ------------------------------------------------------------
 	# Heuristic numeric inference (low confidence)
 	# ------------------------------------------------------------
 	if (!$p->{type}) {
-
 		# Numeric operators: + - * / % **
 		if (
 			$code =~ /\$$param\s*[\+\-\*\/%]/ ||
@@ -2762,7 +2762,6 @@ sub _analyze_parameter_type {
 			$p->{_type_confidence} = 'heuristic';
 			$self->_log("  CODE: $param inferred as number (numeric operator)");
 		}
-
 		# Numeric comparison
 		elsif (
 			$code =~ /\$$param\s*(?:==|!=|<=|>=|<|>)/ ||
@@ -2773,7 +2772,6 @@ sub _analyze_parameter_type {
 			$self->_log("  CODE: $param inferred as number (numeric comparison)");
 		}
 	}
-    
 }
 
 =head2 _analyze_advanced_types
