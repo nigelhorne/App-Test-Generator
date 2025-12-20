@@ -25,9 +25,9 @@ print {$mod_fh} <<'EOF';
 package TestSchema;
 
 sub add {
-    my ($a, $b) = @_;
-    die "missing a" unless defined($a);
-    return $a + ($b // 0);
+	my ($a, $b) = @_;
+	die 'missing a' unless defined($a);
+	return $a + ($b // 0);
 }
 
 1;
@@ -45,7 +45,7 @@ my $extractor = App::Test::Generator::SchemaExtractor->new(
     quiet      => 1,
 );
 
-my $schema = $extractor->extract_all;
+my $schema = $extractor->extract_all();
 
 ok(ref $schema eq 'HASH', 'Schema extracted as hashref');
 ok(exists $schema->{add}, 'Schema contains add()');
@@ -57,8 +57,8 @@ diag(Dumper($schema->{'add'}));
 # Generate test from schema
 # ------------------------------------------------------------------
 my ($fh, $tempfile) = tempfile(
-    DIR    => $dir,
-    SUFFIX => '.t',
+	DIR    => $dir,
+	SUFFIX => '.t',
 );
 close $fh;
 
@@ -66,9 +66,9 @@ my $generator;
 
 lives_ok {
 	App::Test::Generator->generate(
-	    schema      => $schema->{'add'},
-	    output_file => $tempfile,
-	    quiet       => 1,
+		schema      => $schema->{'add'},
+		output_file => $tempfile,
+		quiet       => 1,
 	);
 } 'Generator runs successfully with schema input';
 
@@ -96,20 +96,11 @@ my ($stdout, $stderr);
 run3 [ $^X, $tempfile ], undef, \$stdout, \$stderr;
 
 ok($? == 0, 'Generated test script exits successfully')
-    or diag("STDOUT:\n$stdout\nSTDERR:\n$stderr");
+	or diag("STDOUT:\n$stdout\nSTDERR:\n$stderr");
 
 like($stderr, qr/test case created/, 'Test creation message present');
+like($stdout, qr/^ok \d/sm, 'At least one created test passed');
 
-like(
-    $stdout,
-    qr/^ok \d/sm,
-    'At least one created test passed'
-);
-
-unlike(
-    $stdout,
-    qr/^not ok \d/sm,
-    'No created test failed'
-);
+unlike($stdout, qr/^not ok \d/sm, 'No created test failed');
 
 done_testing();

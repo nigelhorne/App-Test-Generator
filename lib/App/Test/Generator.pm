@@ -1225,12 +1225,12 @@ sub generate
 		});
 		if($params->{'input_file'}) {
 			$schema_file = $params->{'input_file'};
-			$test_file = $params->{'output_file'};
 		} elsif($params->{'schema'}) {
 			$schema = $params->{'schema'};
 		} else {
 			croak(__PACKAGE__, ': Usage: generate(input_file|schema [, output_file]');
 		}
+		$test_file = $params->{'output_file'};
 	} else {
 		# Legacy API
 		($schema_file, $test_file) = ($_[0], $_[1]);
