@@ -1506,19 +1506,17 @@ sub _analyze_method {
         high => 4
     );
 
-    # Overall is the lower of input and output
-    my $overall = $level_rank{$input_level} < $level_rank{$output_level}
-        ? $input_level
-        : $output_level;
+	# Overall is the lower of input and output
+	my $overall = $level_rank{$input_level} < $level_rank{$output_level} ? $input_level : $output_level;
 
-    $schema->{_analysis}{overall_confidence} = $overall;
+	$schema->{_analysis}{overall_confidence} = $overall;
 
-    # Analyze parameter relationships
-    my $relationships = $self->_analyze_relationships($method);
-    if ($relationships && @{$relationships}) {
-        $schema->{relationships} = $relationships;
-        $self->_log("  Found " . scalar(@$relationships) . " parameter relationships");
-    }
+	# Analyze parameter relationships
+	my $relationships = $self->_analyze_relationships($method);
+	if ($relationships && @{$relationships}) {
+		$schema->{relationships} = $relationships;
+		$self->_log("  Found " . scalar(@$relationships) . " parameter relationships");
+	}
 
 	# Store modern feature info in schema
 	$schema->{_attributes} = $attributes if keys %$attributes;
@@ -1976,11 +1974,11 @@ Looks for patterns like:
 =cut
 
 sub _extract_defaults_from_pod {
-    my ($self, $pod) = @_;
+	my ($self, $pod) = @_;
 
-    return {} unless $pod;
+	return {} unless $pod;
 
-    my %defaults;
+	my %defaults;
 
     # Pattern 1: Default: 'value' or Defaults to: 'value'
     while ($pod =~ /(?:Default(?:s? to)?|default(?:s? to)?)[:]\s*([^\n\r]+)/gi) {

@@ -1358,6 +1358,41 @@ sub generate
 		}
 	}
 
+	# If the schema says the type is numeric, normalize
+	if ($schema->{type} && $schema->{type} =~ /^(integer|number|float)$/) {
+		for (@edge_case_array) {
+			next unless defined $_;
+			$_ += 0 if Scalar::Util::looks_like_number($_);
+		}
+	}
+
+	# Dedup the edge cases
+	my %seen;
+	@edge_case_array = grep {
+		my $key = defined($_) ? (Scalar::Util::looks_like_number($_) ? "N:$_" : "S:$_") : 'U';
+		!$seen{$key}++;
+	} @edge_case_array;
+
+	# Sort the edge cases to keep it consitent across runs
+	@edge_case_array = sort {
+		return -1 if !defined $a;
+		return 1 if !defined $b;
+
+		my $na = Scalar::Util::looks_like_number($a);
+		my $nb = Scalar::Util::looks_like_number($b);
+
+		return $a <=> $b if $na && $nb;
+		return -1 if $na;
+		return 1 if $nb;
+		return $a cmp $b;
+	} @edge_case_array;
+
+	# $self->_log(
+		# 'EDGE CASES: ' . join(', ',
+			# map { defined($_) ? $_ : 'undef' } @edge_case_array
+		# )
+	# );
+
 	# render edge case maps for inclusion in the .t
 	my $edge_cases_code = render_arrayref_map(\%edge_cases);
 	my $type_edge_cases_code = render_arrayref_map(\%type_edge_cases);
