@@ -45,9 +45,9 @@ ok(exists $schemas->{example}, 'Schema for method "example" exists');
 
 my $schema = $schemas->{example};
 
-ok(exists $schema->{yamltest_hints}, 'yamltest_hints present in schema');
+ok(exists $schema->{_yamltest_hints}, 'yamltest_hints present in schema');
 
-my $hints = $schema->{yamltest_hints};
+my $hints = $schema->{_yamltest_hints};
 
 # ---- invalid_inputs -------------------------------------------------
 

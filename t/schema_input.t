@@ -60,7 +60,7 @@ ok(ref $schema eq 'HASH', 'Schema extracted as hashref');
 ok(exists $schema->{add}, 'Schema contains add()');
 is($schema->{add}{output}{_type_confidence}, 'medium', 'Numeric expression output has medium confidence');
 cmp_bag(
-	$schema->{add}{yamltest_hints}{boundary_values},
+	$schema->{add}{_yamltest_hints}{boundary_values},
 	[ -1, 0, 1, 2, 100 ],
 	'Numeric boundary values added for numeric method'
 );

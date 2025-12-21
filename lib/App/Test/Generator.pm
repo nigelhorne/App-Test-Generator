@@ -1349,6 +1349,15 @@ sub generate
 		}
 	}
 
+	if(my $hints = delete $schema->{_yamltest_hints}) {
+		if(my $boundaries = $hints->{boundary_values}) {
+			push @edge_case_array, @{$boundaries};
+		}
+		if(my $invalid = $hints->{invalid}) {
+			carp('TODO: handle yamltest_hints->invalid');
+		}
+	}
+
 	# render edge case maps for inclusion in the .t
 	my $edge_cases_code = render_arrayref_map(\%edge_cases);
 	my $type_edge_cases_code = render_arrayref_map(\%type_edge_cases);

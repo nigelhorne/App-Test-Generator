@@ -1005,10 +1005,10 @@ All modern Perl feature detection is optional and automatic:
 
 =back
 
-=head2 yamltest_hints
+=head2 _yamltest_hints
 
 Each method schema returned by L</extract_all> now optionally includes a
-C<yamltest_hints> key, which provides guidance for automated test generation
+C<_yamltest_hints> key, which provides guidance for automated test generation
 based on the code analysis.
 
 This is intended to help L<App::Test::Generator> create meaningful tests,
@@ -1027,7 +1027,7 @@ boundary tests.
 
 Example:
 
-    yamltest_hints:
+    _yamltest_hints:
       boundary_values: [0, 1, 100, 255]
 
 =item * invalid_inputs
@@ -1037,7 +1037,7 @@ based on checks like C<defined>, empty strings, or numeric validations.
 
 Example:
 
-    yamltest_hints:
+    _yamltest_hints:
       invalid_inputs: [undef, '', -1]
 
 =item * equivalence_classes
@@ -1048,7 +1048,7 @@ may populate it based on detected input groupings.
 
 Example:
 
-    yamltest_hints:
+    _yamltest_hints:
       equivalence_classes: []
 
 =back
@@ -1056,10 +1056,10 @@ Example:
 =head3 Usage
 
 When calling C<extract_all>, each method schema will include
-C<yamltest_hints> if any hints were detected:
+C<_yamltest_hints> if any hints were detected:
 
     my $schemas = $extractor->extract_all;
-    my $hints  = $schemas->{example_method}->{yamltest_hints};
+    my $hints  = $schemas->{example_method}->{_yamltest_hints};
 
 You can then feed these hints into automated test generators to produce
 negative tests, boundary tests, and parameter-specific test cases.
@@ -1119,7 +1119,7 @@ The schema for the method "example" will include:
         output => {
             type => 'scalar',
         },
-        yamltest_hints => {
+        _yamltest_hints => {
             boundary_values => [0, 1],
             invalid_inputs  => [undef, -1],
             equivalence_classes => [],
@@ -1465,19 +1465,19 @@ sub _analyze_method {
 	# Detect accessor methods
 	$self->_detect_accessor_methods($method, $schema);
 
-    # Detect if this is an instance method that needs object instantiation
-    my $needs_object = $self->_needs_object_instantiation($method->{name}, $method->{body}, $method);
-    if ($needs_object) {
-        $schema->{new} = $needs_object;
-        $self->_log("  Method requires object instantiation: $needs_object");
-    }
+	# Detect if this is an instance method that needs object instantiation
+	my $needs_object = $self->_needs_object_instantiation($method->{name}, $method->{body}, $method);
+	if ($needs_object) {
+		$schema->{new} = $needs_object;
+		$self->_log("  Method requires object instantiation: $needs_object");
+	}
 
-    # Calculate confidences
-    my $input_confidence = $schema->{_confidence}{'input'} = $self->_calculate_input_confidence($schema->{input});
-    my $output_confidence = $schema->{_confidence}{'output'} = $self->_calculate_output_confidence($schema->{output});
+	# Calculate confidences
+	my $input_confidence = $schema->{_confidence}{'input'} = $self->_calculate_input_confidence($schema->{input});
+	my $output_confidence = $schema->{_confidence}{'output'} = $self->_calculate_output_confidence($schema->{output});
 
-    # Add metadata
-    $schema->{_notes} = $self->_generate_notes($schema->{input});
+	# Add metadata
+	$schema->{_notes} = $self->_generate_notes($schema->{input});
 
     # Add analytics
     $schema->{_analysis} = {
@@ -1520,10 +1520,10 @@ sub _analyze_method {
         $self->_log("  Found " . scalar(@$relationships) . " parameter relationships");
     }
 
-    # Store modern feature info in schema
-    $schema->{_attributes} = $attributes if keys %$attributes;
-    $schema->{_modern_features}{postfix_dereferencing} = $postfix_derefs if keys %$postfix_derefs;
-    $schema->{_fields} = $fields if keys %$fields;
+	# Store modern feature info in schema
+	$schema->{_attributes} = $attributes if keys %$attributes;
+	$schema->{_modern_features}{postfix_dereferencing} = $postfix_derefs if keys %$postfix_derefs;
+	$schema->{_fields} = $fields if keys %$fields;
 
 	# Store class info if this is a class method
 	if ($method->{class}) {
@@ -1544,15 +1544,15 @@ sub _analyze_method {
 	# YAML test hints: numeric boundaries
 	# --------------------------------------------------
 	if ($self->_method_has_numeric_intent($schema)) {
-		$schema->{yamltest_hints} ||= {};
+		$schema->{_yamltest_hints} ||= {};
 
 		# Do not override existing hints
-		$schema->{yamltest_hints}{boundary_values} ||= [];
+		$schema->{_yamltest_hints}{boundary_values} ||= [];
 
-		my %seen = map { $_ => 1 } @{ $schema->{yamltest_hints}{boundary_values} };
+		my %seen = map { $_ => 1 } @{ $schema->{_yamltest_hints}{boundary_values} };
 
 		foreach my $v (@{ $self->_numeric_boundary_values }) {
-			push @{ $schema->{yamltest_hints}{boundary_values} }, $v
+			push @{ $schema->{_yamltest_hints}{boundary_values} }, $v
 			unless $seen{$v}++;
 		}
 
@@ -1560,10 +1560,10 @@ sub _analyze_method {
 	}
 
 	if (keys %$hints) {
-		$schema->{yamltest_hints} ||= {};
+		$schema->{_yamltest_hints} ||= {};
 		foreach my $k (keys %$hints) {
-			$schema->{yamltest_hints}{$k} = $hints->{$k}
-			unless exists $schema->{yamltest_hints}{$k};
+			$schema->{_yamltest_hints}{$k} = $hints->{$k}
+			unless exists $schema->{_yamltest_hints}{$k};
 		}
 	}
 
@@ -4807,107 +4807,6 @@ sub _write_schema {
 				($schema->{new} ? " [requires: $schema->{new}]" : '') . $rel_info);
 }
 
-=head2 _serialize_parameter_for_yaml
-
-Convert parameter hash to YAML-serializable format with proper type handling.
-
-=cut
-
-sub _serialize_parameter_for_yaml {
-	my ($self, $param) = @_;
-
-	my %cleaned;
-
-	# Copy basic fields that App::Test::Generator expects
-	foreach my $field (qw(type position optional min max matches default)) {
-		$cleaned{$field} = $param->{$field} if defined $param->{$field};
-	}
-
-	# Handle advanced type mappings
-	my $semantic = $param->{semantic};
-
-	if ($semantic) {
-		if ($semantic eq 'datetime_object') {
-			# DateTime objects: test generator needs to know how to create them
-			$cleaned{type} = 'object';
-			$cleaned{isa} = $param->{isa} || 'DateTime';
-			$cleaned{_note} = 'Requires DateTime object';
-
-		} elsif ($semantic eq 'timepiece_object') {
-			$cleaned{type} = 'object';
-			$cleaned{isa} = $param->{isa} || 'Time::Piece';
-			$cleaned{_note} = 'Requires Time::Piece object';
-
-		} elsif ($semantic eq 'date_string') {
-			# Date strings: provide regex pattern
-			$cleaned{type} = 'string';
-			$cleaned{matches} ||= '/^\d{4}-\d{2}-\d{2}$/';
-			$cleaned{_example} = '2024-12-12';
-
-		} elsif ($semantic eq 'iso8601_string') {
-			$cleaned{type} = 'string';
-			$cleaned{matches} ||= '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?$/';
-			$cleaned{_example} = '2024-12-12T10:30:00Z';
-
-		} elsif ($semantic eq 'unix_timestamp') {
-			$cleaned{type} = 'integer';
-			$cleaned{min} ||= 0;
-			$cleaned{max} ||= 2147483647;	# 32-bit max
-			$cleaned{_note} = 'UNIX timestamp';
-
-		} elsif ($semantic eq 'datetime_parseable') {
-			$cleaned{type} = 'string';
-			$cleaned{_note} = 'Must be parseable as datetime';
-
-		} elsif ($semantic eq 'filehandle') {
-			# File handles: special handling needed
-			$cleaned{type} = 'object';
-			$cleaned{isa} = $param->{isa} || 'IO::Handle';
-			$cleaned{_note} = 'File handle - may need mock in tests';
-
-		} elsif ($semantic eq 'filepath') {
-			# File paths: string with path pattern
-			$cleaned{type} = 'string';
-			$cleaned{matches} ||= '/^[\\w\\/.\\-_]+$/';
-			$cleaned{_note} = 'File path';
-
-		} elsif ($semantic eq 'callback') {
-			# Coderefs: mark as special type
-			$cleaned{type} = 'coderef';
-			$cleaned{_note} = 'CODE reference - provide sub { } in tests';
-
-		} elsif ($semantic eq 'enum') {
-			# Enum: keep as string but add valid values
-			$cleaned{type} = 'string';
-			if ($param->{enum} && ref($param->{enum}) eq 'ARRAY') {
-				$cleaned{enum} = $param->{enum};
-				$cleaned{_note} = 'Must be one of: ' . join(', ', @{$param->{enum}});
-			}
-		}
-	}
-
-	# Handle enum even if not marked with semantic
-	if ($param->{enum} && ref($param->{enum}) eq 'ARRAY') {
-		$cleaned{enum} = $param->{enum};
-	}
-
-	# Handle object class
-	if ($param->{isa} && !$cleaned{isa}) {
-		$cleaned{isa} = $param->{isa};
-	}
-
-	# Add format hints where available
-	if ($param->{format}) {
-		$cleaned{_format} = $param->{format};
-	}
-
-	# Remove internal fields
-	delete $cleaned{_source};
-	delete $cleaned{semantic};
-
-	return \%cleaned;
-}
-
 =head2 _generate_schema_comments
 
 Generate helpful comments at the end of the YAML file.
@@ -5024,6 +4923,107 @@ sub _generate_schema_comments {
 	push @comments, '';
 
 	return join("\n", @comments);
+}
+
+=head2 _serialize_parameter_for_yaml
+
+Convert parameter hash to YAML-serializable format with proper type handling.
+
+=cut
+
+sub _serialize_parameter_for_yaml {
+	my ($self, $param) = @_;
+
+	my %cleaned;
+
+	# Copy basic fields that App::Test::Generator expects
+	foreach my $field (qw(type position optional min max matches default)) {
+		$cleaned{$field} = $param->{$field} if defined $param->{$field};
+	}
+
+	# Handle advanced type mappings
+	my $semantic = $param->{semantic};
+
+	if ($semantic) {
+		if ($semantic eq 'datetime_object') {
+			# DateTime objects: test generator needs to know how to create them
+			$cleaned{type} = 'object';
+			$cleaned{isa} = $param->{isa} || 'DateTime';
+			$cleaned{_note} = 'Requires DateTime object';
+
+		} elsif ($semantic eq 'timepiece_object') {
+			$cleaned{type} = 'object';
+			$cleaned{isa} = $param->{isa} || 'Time::Piece';
+			$cleaned{_note} = 'Requires Time::Piece object';
+
+		} elsif ($semantic eq 'date_string') {
+			# Date strings: provide regex pattern
+			$cleaned{type} = 'string';
+			$cleaned{matches} ||= '/^\d{4}-\d{2}-\d{2}$/';
+			$cleaned{_example} = '2024-12-12';
+
+		} elsif ($semantic eq 'iso8601_string') {
+			$cleaned{type} = 'string';
+			$cleaned{matches} ||= '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?$/';
+			$cleaned{_example} = '2024-12-12T10:30:00Z';
+
+		} elsif ($semantic eq 'unix_timestamp') {
+			$cleaned{type} = 'integer';
+			$cleaned{min} ||= 0;
+			$cleaned{max} ||= 2147483647;	# 32-bit max
+			$cleaned{_note} = 'UNIX timestamp';
+
+		} elsif ($semantic eq 'datetime_parseable') {
+			$cleaned{type} = 'string';
+			$cleaned{_note} = 'Must be parseable as datetime';
+
+		} elsif ($semantic eq 'filehandle') {
+			# File handles: special handling needed
+			$cleaned{type} = 'object';
+			$cleaned{isa} = $param->{isa} || 'IO::Handle';
+			$cleaned{_note} = 'File handle - may need mock in tests';
+
+		} elsif ($semantic eq 'filepath') {
+			# File paths: string with path pattern
+			$cleaned{type} = 'string';
+			$cleaned{matches} ||= '/^[\\w\\/.\\-_]+$/';
+			$cleaned{_note} = 'File path';
+
+		} elsif ($semantic eq 'callback') {
+			# Coderefs: mark as special type
+			$cleaned{type} = 'coderef';
+			$cleaned{_note} = 'CODE reference - provide sub { } in tests';
+
+		} elsif ($semantic eq 'enum') {
+			# Enum: keep as string but add valid values
+			$cleaned{type} = 'string';
+			if ($param->{enum} && ref($param->{enum}) eq 'ARRAY') {
+				$cleaned{enum} = $param->{enum};
+				$cleaned{_note} = 'Must be one of: ' . join(', ', @{$param->{enum}});
+			}
+		}
+	}
+
+	# Handle enum even if not marked with semantic
+	if ($param->{enum} && ref($param->{enum}) eq 'ARRAY') {
+		$cleaned{enum} = $param->{enum};
+	}
+
+	# Handle object class
+	if ($param->{isa} && !$cleaned{isa}) {
+		$cleaned{isa} = $param->{isa};
+	}
+
+	# Add format hints where available
+	if ($param->{format}) {
+		$cleaned{_format} = $param->{format};
+	}
+
+	# Remove internal fields
+	delete $cleaned{_source};
+	delete $cleaned{semantic};
+
+	return \%cleaned;
 }
 
 sub _format_relationship {
