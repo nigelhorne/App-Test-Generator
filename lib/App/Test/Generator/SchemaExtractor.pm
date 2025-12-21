@@ -1430,40 +1430,40 @@ sub _analyze_method {
 		$fields = $method->{fields};
 	}
 
-    my $schema = {
-        function => $method->{name},
-        _confidence => {
-            'input' => 'unknown',
-            'output' => 'unknown',
-        },
-        input => {},
-        output => {},
-        setup => undef,
-        transforms => {},
-    };
+	my $schema = {
+		function => $method->{name},
+		_confidence => {
+			'input' => 'unknown',
+			'output' => 'unknown',
+		},
+		input => {},
+		output => {},
+		setup => undef,
+		transforms => {},
+	};
 
-    # Analyze different sources
-    my $pod_params = $self->_analyze_pod($method->{pod});
-    my $code_params = $self->_analyze_code($method->{body});
-    my $sig_params = $self->_analyze_signature($method->{body});
+	# Analyze different sources
+	my $pod_params = $self->_analyze_pod($method->{pod});
+	my $code_params = $self->_analyze_code($method->{body});
+	my $sig_params = $self->_analyze_signature($method->{body});
 
-    # Merge field declarations into code_params before merging analyses
-    if (keys %$fields) {
-        $self->_merge_field_declarations($code_params, $fields);
-    }
+	# Merge field declarations into code_params before merging analyses
+	if (keys %$fields) {
+		$self->_merge_field_declarations($code_params, $fields);
+	}
 
-    # Merge analyses
-    $schema->{input} = $self->_merge_parameter_analyses(
-        $pod_params,
-        $code_params,
-        $sig_params
-    );
+	# Merge analyses
+	$schema->{input} = $self->_merge_parameter_analyses(
+		$pod_params,
+		$code_params,
+		$sig_params
+	);
 
-    # Analyze output/return values
-    $schema->{output} = $self->_analyze_output($method->{pod}, $method->{body}, $method->{name});
+	# Analyze output/return values
+	$schema->{output} = $self->_analyze_output($method->{pod}, $method->{body}, $method->{name});
 
-    # Detect accessor methods
-    $self->_detect_accessor_methods($method, $schema);
+	# Detect accessor methods
+	$self->_detect_accessor_methods($method, $schema);
 
     # Detect if this is an instance method that needs object instantiation
     my $needs_object = $self->_needs_object_instantiation($method->{name}, $method->{body}, $method);
@@ -1574,7 +1574,7 @@ sub _method_has_numeric_intent {
 	my ($self, $schema) = @_;
 
 	# Numeric output
-	return 1 if ($schema->{output} && $schema->{output}{type} =~ /^(number|integer)$/);
+	return 1 if ($schema->{output} && $schema->{output}{type} && $schema->{output}{type} =~ /^(number|integer)$/);
 
 	# Numeric inputs
 	foreach my $p (values %{ $schema->{input} || {} }) {

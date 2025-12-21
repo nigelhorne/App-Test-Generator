@@ -19,12 +19,12 @@ print {$fh} <<'EOF';
 package TestHints;
 
 sub example {
-    my ($x) = @_;
+	my ($x) = @_;
 
-    die "negative" if $x < 0;
-    return unless defined($x);
+	die 'negative' if $x < 0;
+	return unless defined($x);
 
-    return $x * 2;
+	return $x * 2;
 }
 
 1;
@@ -35,7 +35,7 @@ close $fh;
 my $extractor = App::Test::Generator::SchemaExtractor->new(
 	input_file => $module,
 	output_dir => $dir,
-	quiet      => 1,
+	quiet => 1,
 );
 
 my $schemas = $extractor->extract_all();
@@ -45,10 +45,7 @@ ok(exists $schemas->{example}, 'Schema for method "example" exists');
 
 my $schema = $schemas->{example};
 
-ok(
-    exists $schema->{yamltest_hints},
-    'yamltest_hints present in schema'
-);
+ok(exists $schema->{yamltest_hints}, 'yamltest_hints present in schema');
 
 my $hints = $schema->{yamltest_hints};
 
@@ -57,17 +54,14 @@ my $hints = $schema->{yamltest_hints};
 ok(exists $hints->{invalid_inputs}, 'invalid_inputs key exists');
 
 cmp_deeply(
-    [ sort @{ $hints->{invalid_inputs} } ],
-    bag('undef', -1),
-    'Detected invalid inputs: undef and -1'
+	[ sort @{ $hints->{invalid_inputs} } ],
+	bag('undef', -1),
+	'Detected invalid inputs: undef and -1'
 );
 
 # ---- boundary_values ------------------------------------------------
 
-ok(
-    exists $hints->{boundary_values},
-    'boundary_values key exists'
-);
+ok(exists $hints->{boundary_values}, 'boundary_values key exists');
 
 # use Data::Dumper;
 # diag(Dumper($hints));
@@ -82,8 +76,8 @@ cmp_deeply(
 # ---- equivalence_classes -------------------------------------------
 
 ok(
-    !exists($hints->{equivalence_classes}) || @{ $hints->{equivalence_classes} } == 0,
-    'No equivalence classes inferred (expected)'
+	!exists($hints->{equivalence_classes}) || @{ $hints->{equivalence_classes} } == 0,
+	'No equivalence classes inferred (expected)'
 );
 
 done_testing();
