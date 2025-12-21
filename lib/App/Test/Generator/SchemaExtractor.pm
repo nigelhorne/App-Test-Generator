@@ -1425,10 +1425,10 @@ sub _analyze_method {
 	my $postfix_derefs = $self->_analyze_postfix_dereferencing($code);
 	my $fields = $self->_extract_field_declarations($code);
 
-    # If this method came from a class, use those field declarations
-    if ($method->{fields} && keys %{$method->{fields}}) {
-        $fields = $method->{fields};
-    }
+	# If this method came from a class, use those field declarations
+	if ($method->{fields} && keys %{$method->{fields}}) {
+		$fields = $method->{fields};
+	}
 
     my $schema = {
         function => $method->{name},
@@ -1540,9 +1540,52 @@ sub _analyze_method {
 		];
 	}
 
-	$schema->{yamltest_hints} = $hints if keys %$hints;
+	# --------------------------------------------------
+	# YAML test hints: numeric boundaries
+	# --------------------------------------------------
+	if ($self->_method_has_numeric_intent($schema)) {
+		$schema->{yamltest_hints} ||= {};
+
+		# Do not override existing hints
+		$schema->{yamltest_hints}{boundary_values} ||= [];
+
+		my %seen = map { $_ => 1 } @{ $schema->{yamltest_hints}{boundary_values} };
+
+		foreach my $v (@{ $self->_numeric_boundary_values }) {
+			push @{ $schema->{yamltest_hints}{boundary_values} }, $v
+			unless $seen{$v}++;
+		}
+
+		$self->_log('  HINTS: Added numeric boundary values');
+	}
+
+	if (keys %$hints) {
+		$schema->{yamltest_hints} ||= {};
+		foreach my $k (keys %$hints) {
+			$schema->{yamltest_hints}{$k} = $hints->{$k}
+			unless exists $schema->{yamltest_hints}{$k};
+		}
+	}
 
 	return $schema;
+}
+
+sub _method_has_numeric_intent {
+	my ($self, $schema) = @_;
+
+	# Numeric output
+	return 1 if ($schema->{output} && $schema->{output}{type} =~ /^(number|integer)$/);
+
+	# Numeric inputs
+	foreach my $p (values %{ $schema->{input} || {} }) {
+		return 1 if ($p->{type} && $p->{type} =~ /^(number|integer)$/);
+	}
+
+	return 0;
+}
+
+sub _numeric_boundary_values {
+	return [ -1, 0, 1, 2, 100 ];
 }
 
 sub _detect_accessor_methods {
@@ -4120,19 +4163,19 @@ sub _calculate_output_confidence {
 
 	my $score = 0;
 
-    # Type information
-    if ($output->{type}) {
-        $score += 30;
-        push @factors, "Return type defined: $output->{type} (+30)";
-    } else {
-        push @factors, "No return type information (-0)";
-    }
+	# Type information
+	if ($output->{type}) {
+		$score += 30;
+		push @factors, "Return type defined: $output->{type} (+30)";
+	} else {
+		push @factors, 'No return type information (-0)';
+	}
 
-    # Specific value known
-    if (defined $output->{value}) {
-        $score += 30;
-        push @factors, "Specific return value: $output->{value} (+30)";
-    }
+	# Specific value known
+	if (defined $output->{value}) {
+		$score += 30;
+		push @factors, "Specific return value: $output->{value} (+30)";
+	}
 
     # Class information for objects
     if ($output->{isa}) {
@@ -5742,41 +5785,38 @@ sub _extract_test_hints {
 sub _extract_invalid_input_hints {
 	my ($self, $code, $hints) = @_;
 
-    # undef invalid
-    if ($code =~ /defined\s*\(\s*\$/) {
-        push @{ $hints->{invalid_inputs} }, 'undef';
-    }
+	# undef invalid
+	if ($code =~ /defined\s*\(\s*\$/) {
+		push @{ $hints->{invalid_inputs} }, 'undef';
+	}
 
-    # empty string invalid
-    if ($code =~ /\beq\s*''/ || $code =~ /\blength\s*\(/) {
-        push @{ $hints->{invalid_inputs} }, '';
-    }
+	# empty string invalid
+	if ($code =~ /\beq\s*''/ || $code =~ /\blength\s*\(/) {
+		push @{ $hints->{invalid_inputs} }, '';
+	}
 
-    # negative number invalid
-    if ($code =~ /\$\w+\s*<\s*0/) {
-        push @{ $hints->{invalid_inputs} }, -1;
-    }
+	# negative number invalid
+	if ($code =~ /\$\w+\s*<\s*0/) {
+		push @{ $hints->{invalid_inputs} }, -1;
+	}
 }
 
 sub _extract_boundary_value_hints {
 	my ($self, $code, $hints) = @_;
 
-    while ($code =~ /\$\w+\s*(<=|<|>=|>)\s*(\d+)/g) {
-        my ($op, $n) = ($1, $2);
+	while ($code =~ /\$\w+\s*(<=|<|>=|>)\s*(\d+)/g) {
+		my ($op, $n) = ($1, $2);
 
-        if ($op eq '<') {
-            push @{ $hints->{boundary_values} }, $n, $n+1;
-        }
-        elsif ($op eq '<=') {
-            push @{ $hints->{boundary_values} }, $n, $n+1;
-        }
-        elsif ($op eq '>') {
-            push @{ $hints->{boundary_values} }, $n, $n-1;
-        }
-        elsif ($op eq '>=') {
-            push @{ $hints->{boundary_values} }, $n, $n-1;
-        }
-    }
+		if ($op eq '<') {
+			push @{ $hints->{boundary_values} }, $n, $n+1;
+		} elsif ($op eq '<=') {
+			push @{ $hints->{boundary_values} }, $n, $n+1;
+		} elsif ($op eq '>') {
+			push @{ $hints->{boundary_values} }, $n, $n-1;
+		} elsif ($op eq '>=') {
+			push @{ $hints->{boundary_values} }, $n, $n-1;
+		}
+	}
 
 	# Remove duplicates
 	my %seen;

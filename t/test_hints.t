@@ -54,10 +54,7 @@ my $hints = $schema->{yamltest_hints};
 
 # ---- invalid_inputs -------------------------------------------------
 
-ok(
-    exists $hints->{invalid_inputs},
-    'invalid_inputs key exists'
-);
+ok(exists $hints->{invalid_inputs}, 'invalid_inputs key exists');
 
 cmp_deeply(
     [ sort @{ $hints->{invalid_inputs} } ],
@@ -72,10 +69,14 @@ ok(
     'boundary_values key exists'
 );
 
+# use Data::Dumper;
+# diag(Dumper($hints));
+# exit;
+
 cmp_deeply(
-    [ sort @{ $hints->{boundary_values} } ],
-    bag(0, 1),
-    'Detected numeric boundary values'
+	[ sort @{ $hints->{boundary_values} } ],
+	bag(-1, 0, 1, 2, 100),
+	'Detected numeric boundary values'
 );
 
 # ---- equivalence_classes -------------------------------------------
