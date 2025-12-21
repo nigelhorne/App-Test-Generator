@@ -2127,6 +2127,12 @@ sub _analyze_output_from_code
 				my ($most_common) = sort { $return_types{$b} <=> $return_types{$a} } keys %return_types;
 				unless ($output->{type}) {
 					$output->{type} = $most_common;
+
+					# Assign confidence for inferred numeric expressions
+					if ($most_common eq 'number') {
+						$output->{_type_confidence} ||= 'medium';
+					}
+
 					$self->_log("  OUTPUT: Inferred type from code: $most_common");
 				}
 			}
@@ -5772,11 +5778,9 @@ sub _extract_boundary_value_hints {
         }
     }
 
-    # Remove duplicates
-    my %seen;
-    $hints->{boundary_values} = [
-        grep { !$seen{$_}++ } @{ $hints->{boundary_values} }
-    ];
+	# Remove duplicates
+	my %seen;
+	$hints->{boundary_values} = [ grep { !$seen{$_}++ } @{ $hints->{boundary_values} } ];
 }
 
 =head2 _clean_default_value

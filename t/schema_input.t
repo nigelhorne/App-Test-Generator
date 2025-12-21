@@ -58,6 +58,7 @@ my $schema = $extractor->extract_all();
 
 ok(ref $schema eq 'HASH', 'Schema extracted as hashref');
 ok(exists $schema->{add}, 'Schema contains add()');
+is($schema->{add}{output}{_type_confidence}, 'medium', 'Numeric expression output has medium confidence');
 
 # use Data::Dumper;
 # diag(Dumper($schema->{'add'}));
