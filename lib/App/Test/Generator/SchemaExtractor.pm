@@ -2095,6 +2095,14 @@ sub _analyze_output_from_code
 					$return_types{arrayref}++;
 				} elsif ($ret =~ /^\{/) {
 					$return_types{hashref}++;
+				} elsif ($ret =~ m{
+					# Numeric expressions (heuristic, medium confidence)
+				    (?:
+					\+ | - | \* | / | %
+				      | \+\+ | --
+				    )
+				}x) {
+					$return_types{number} += 2;
 				}
 				# Variables/expressions
 				elsif ($ret =~ /\$\w+/) {
