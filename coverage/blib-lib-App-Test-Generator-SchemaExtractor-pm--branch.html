@@ -55,7 +55,7 @@ https://pjcj.net
 <tr><td class="h"><a id="L1546">1546</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($self-&gt;_method_has_numeric_intent($schema))</td></tr>
 <tr><td class="h"><a id="L1556">1556</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">unless $seen{$v}++</td></tr>
 <tr><td class="h"><a id="L1562">1562</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (keys %$hints)</td></tr>
-<tr><td class="h"><a id="L1566">1566</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless exists $schema-&gt;{&#39;yamltest_hints&#39;}{$k}</td></tr>
+<tr><td class="h"><a id="L1566">1566</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless exists $schema-&gt;{&#39;_yamltest_hints&#39;}{$k}</td></tr>
 <tr><td class="h"><a id="L1577">1577</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if $schema-&gt;{&#39;output&#39;} and $schema-&gt;{&#39;output&#39;}{&#39;type&#39;} and $schema-&gt;{&#39;output&#39;}{&#39;type&#39;} =~ /^(number|integer)$/</td></tr>
 <tr><td class="h"><a id="L1580">1580</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $schema-&gt;{&#39;input&#39;}</td></tr>
 <tr><td class="h"><a id="L1581">1581</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if $p-&gt;{&#39;type&#39;} and $p-&gt;{&#39;type&#39;} =~ /^(number|integer)$/</td></tr>
@@ -563,9 +563,22 @@ https://pjcj.net
 <tr><td class="h"><a id="L4795">4795</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($schema-&gt;{&#39;relationships&#39;} and @{$schema-&gt;{&#39;relationships&#39;};})</td></tr>
 <tr><td class="h"><a id="L4805">4805</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">$schema-&gt;{&#39;relationships&#39;} ? :</td></tr>
 <tr><td class="h"><a id="L4807">4807</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">$schema-&gt;{&#39;new&#39;} ? :</td></tr>
-<tr><td class="h"><a id="L4823">4823</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if defined $param-&gt;{$field}</td></tr>
-<tr><td class="h"><a id="L4829">4829</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($semantic)</td></tr>
-<tr><td class="h"><a id="L4830">4830</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($semantic eq &#39;datetime_object&#39;) { }</td></tr>
+<tr><td class="h"><a id="L4829">4829</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if ($schema-&gt;{&#39;input&#39;})</td></tr>
+<tr><td class="h"><a id="L4834">4834</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($p-&gt;{&#39;semantic&#39;})</td></tr>
+<tr><td class="h"><a id="L4838">4838</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($p-&gt;{&#39;enum&#39;})</td></tr>
+<tr><td class="h"><a id="L4842">4842</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($p-&gt;{&#39;isa&#39;})</td></tr>
+<tr><td class="h"><a id="L4847">4847</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (@param_notes)</td></tr>
+<tr><td class="h"><a id="L4857">4857</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($schema-&gt;{&#39;relationships&#39;} and @{$schema-&gt;{&#39;relationships&#39;};})</td></tr>
+<tr><td class="h"><a id="L4869">4869</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($schema-&gt;{&#39;_notes&#39;} and scalar @{$schema-&gt;{&#39;_notes&#39;};})</td></tr>
+<tr><td class="h"><a id="L4877">4877</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if ($schema-&gt;{&#39;_analysis&#39;})</td></tr>
+<tr><td class="h"><a id="L4897">4897</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if ($schema-&gt;{&#39;input&#39;})</td></tr>
+<tr><td class="h"><a id="L4901">4901</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($p-&gt;{&#39;type&#39;} and $p-&gt;{&#39;type&#39;} eq &quot;coderef&quot;)</td></tr>
+<tr><td class="h"><a id="L4905">4905</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($p-&gt;{&#39;semantic&#39;} and $p-&gt;{&#39;semantic&#39;} eq &quot;filehandle&quot;)</td></tr>
+<tr><td class="h"><a id="L4909">4909</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($p-&gt;{&#39;isa&#39;} and $p-&gt;{&#39;isa&#39;} =~ /DateTime/)</td></tr>
+<tr><td class="h"><a id="L4915">4915</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (@warnings)</td></tr>
+<tr><td class="h"><a id="L4941">4941</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if defined $param-&gt;{$field}</td></tr>
+<tr><td class="h"><a id="L4947">4947</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($semantic)</td></tr>
+<tr><td class="h"><a id="L4948">4948</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($semantic eq &#39;datetime_object&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($semantic eq &#39;timepiece_object&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($semantic eq &#39;date_string&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($semantic eq &#39;iso8601_string&#39;) { }</td></tr>
@@ -575,23 +588,10 @@ https://pjcj.net
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($semantic eq &#39;filepath&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($semantic eq &#39;callback&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($semantic eq &#39;enum&#39;) { }</td></tr>
-<tr><td class="h"><a id="L4882">4882</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($param-&gt;{&#39;enum&#39;} and ref $param-&gt;{&#39;enum&#39;} eq &quot;ARRAY&quot;)</td></tr>
-<tr><td class="h"><a id="L4890">4890</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($param-&gt;{&#39;enum&#39;} and ref $param-&gt;{&#39;enum&#39;} eq &quot;ARRAY&quot;)</td></tr>
-<tr><td class="h"><a id="L4895">4895</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($param-&gt;{&#39;isa&#39;} and not $cleaned{&#39;isa&#39;})</td></tr>
-<tr><td class="h"><a id="L4900">4900</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($param-&gt;{&#39;format&#39;})</td></tr>
-<tr><td class="h"><a id="L4930">4930</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if ($schema-&gt;{&#39;input&#39;})</td></tr>
-<tr><td class="h"><a id="L4935">4935</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($p-&gt;{&#39;semantic&#39;})</td></tr>
-<tr><td class="h"><a id="L4939">4939</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($p-&gt;{&#39;enum&#39;})</td></tr>
-<tr><td class="h"><a id="L4943">4943</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($p-&gt;{&#39;isa&#39;})</td></tr>
-<tr><td class="h"><a id="L4948">4948</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (@param_notes)</td></tr>
-<tr><td class="h"><a id="L4958">4958</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($schema-&gt;{&#39;relationships&#39;} and @{$schema-&gt;{&#39;relationships&#39;};})</td></tr>
-<tr><td class="h"><a id="L4970">4970</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($schema-&gt;{&#39;_notes&#39;} and scalar @{$schema-&gt;{&#39;_notes&#39;};})</td></tr>
-<tr><td class="h"><a id="L4978">4978</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if ($schema-&gt;{&#39;_analysis&#39;})</td></tr>
-<tr><td class="h"><a id="L4998">4998</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if ($schema-&gt;{&#39;input&#39;})</td></tr>
-<tr><td class="h"><a id="L5002">5002</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($p-&gt;{&#39;type&#39;} and $p-&gt;{&#39;type&#39;} eq &quot;coderef&quot;)</td></tr>
-<tr><td class="h"><a id="L5006">5006</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($p-&gt;{&#39;semantic&#39;} and $p-&gt;{&#39;semantic&#39;} eq &quot;filehandle&quot;)</td></tr>
-<tr><td class="h"><a id="L5010">5010</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($p-&gt;{&#39;isa&#39;} and $p-&gt;{&#39;isa&#39;} =~ /DateTime/)</td></tr>
-<tr><td class="h"><a id="L5016">5016</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (@warnings)</td></tr>
+<tr><td class="h"><a id="L5000">5000</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($param-&gt;{&#39;enum&#39;} and ref $param-&gt;{&#39;enum&#39;} eq &quot;ARRAY&quot;)</td></tr>
+<tr><td class="h"><a id="L5008">5008</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($param-&gt;{&#39;enum&#39;} and ref $param-&gt;{&#39;enum&#39;} eq &quot;ARRAY&quot;)</td></tr>
+<tr><td class="h"><a id="L5013">5013</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($param-&gt;{&#39;isa&#39;} and not $cleaned{&#39;isa&#39;})</td></tr>
+<tr><td class="h"><a id="L5018">5018</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($param-&gt;{&#39;format&#39;})</td></tr>
 <tr><td class="h"><a id="L5032">5032</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($rel-&gt;{&#39;type&#39;} eq &#39;mutually_exclusive&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($rel-&gt;{&#39;type&#39;} eq &#39;required_group&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($rel-&gt;{&#39;type&#39;} eq &#39;conditional_requirement&#39;) { }</td></tr>

@@ -20,7 +20,7 @@ https://pjcj.net
 <h1>Branch Coverage</h1>
 <table>
 <tr><td class="h" align="right">File:</td><td align="left">blib/lib/App/Test/Generator.pm</td></tr>
-<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">49.2%</td></tr>
+<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">48.6%</td></tr>
 </table>
 <div><br/></div>
 <table>
@@ -58,151 +58,154 @@ https://pjcj.net
 <tr><td class="h"><a id="L1333">1333</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless ($outputs and ref $outputs eq &quot;ARRAY&quot;)</td></tr>
 <tr><td class="h"><a id="L1339">1339</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if $valid_input</td></tr>
 <tr><td class="h"><a id="L1347">1347</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (exists $cases{$k} and ref $cases{$k} eq &quot;ARRAY&quot; and ref $yaml_corpus_data{$k} eq &quot;ARRAY&quot;)</td></tr>
-<tr><td class="h"><a id="L1357">1357</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (scalar @edge_case_array)</td></tr>
-<tr><td class="h"><a id="L1366">1366</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (ref $config{$key} eq &quot;HASH&quot;)</td></tr>
-<tr><td class="h"><a id="L1369">1369</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (not defined $config{$key} &amp;&amp; $config{$key}) { }</td></tr>
-<tr><td class="h"><a id="L1380">1380</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (scalar keys %input == 1 and exists $input{&#39;type&#39;} and not ref $input{&#39;type&#39;}) { }</td></tr>
-<tr><td class="h"><a id="L1389">1389</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined(my $re = $output{&#39;matches&#39;}))</td></tr>
-<tr><td class="h"><a id="L1390">1390</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (ref $re ne &quot;Regexp&quot;)</td></tr>
-<tr><td class="h"><a id="L1396">1396</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">$new &amp;&amp; ref $new eq &#39;HASH&#39; ? :</td></tr>
-<tr><td class="h"><a id="L1399">1399</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (keys %transforms)</td></tr>
-<tr><td class="h"><a id="L1401">1401</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($transforms_code)</td></tr>
-<tr><td class="h"><a id="L1417">1417</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (keys %transforms and $config{&#39;properties&#39;}{&#39;enable&#39;} // 0)</td></tr>
-<tr><td class="h"><a id="L1435">1435</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">$module ? :</td></tr>
-<tr><td class="h"><a id="L1438">1438</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (defined $new) { }</td></tr>
+<tr><td class="h"><a id="L1352">1352</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (my $hints = delete $schema-&gt;{&#39;_yamltest_hints&#39;})</td></tr>
+<tr><td class="h"><a id="L1353">1353</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (my $boundaries = $hints-&gt;{&#39;boundary_values&#39;})</td></tr>
+<tr><td class="h"><a id="L1356">1356</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (my $invalid = $hints-&gt;{&#39;invalid&#39;})</td></tr>
+<tr><td class="h"><a id="L1366">1366</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (scalar @edge_case_array)</td></tr>
+<tr><td class="h"><a id="L1375">1375</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (ref $config{$key} eq &quot;HASH&quot;)</td></tr>
+<tr><td class="h"><a id="L1378">1378</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (not defined $config{$key} &amp;&amp; $config{$key}) { }</td></tr>
+<tr><td class="h"><a id="L1389">1389</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (scalar keys %input == 1 and exists $input{&#39;type&#39;} and not ref $input{&#39;type&#39;}) { }</td></tr>
+<tr><td class="h"><a id="L1398">1398</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined(my $re = $output{&#39;matches&#39;}))</td></tr>
+<tr><td class="h"><a id="L1399">1399</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (ref $re ne &quot;Regexp&quot;)</td></tr>
+<tr><td class="h"><a id="L1405">1405</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">$new &amp;&amp; ref $new eq &#39;HASH&#39; ? :</td></tr>
+<tr><td class="h"><a id="L1408">1408</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (keys %transforms)</td></tr>
+<tr><td class="h"><a id="L1410">1410</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($transforms_code)</td></tr>
+<tr><td class="h"><a id="L1426">1426</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (keys %transforms and $config{&#39;properties&#39;}{&#39;enable&#39;} // 0)</td></tr>
+<tr><td class="h"><a id="L1444">1444</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">$module ? :</td></tr>
+<tr><td class="h"><a id="L1447">1447</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (defined $new) { }</td></tr>
 <tr><td class="h"></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">elsif (defined $module) { }</td></tr>
-<tr><td class="h"><a id="L1440">1440</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($new_code eq &#39;&#39;) { }</td></tr>
-<tr><td class="h"><a id="L1457">1457</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (%all_cases)</td></tr>
-<tr><td class="h"><a id="L1463">1463</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $inputs</td></tr>
-<tr><td class="h"><a id="L1467">1467</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($expected_str eq q[&#39;_STATUS:DIES&#39;]) { }</td></tr>
+<tr><td class="h"><a id="L1449">1449</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($new_code eq &#39;&#39;) { }</td></tr>
+<tr><td class="h"><a id="L1466">1466</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (%all_cases)</td></tr>
+<tr><td class="h"><a id="L1472">1472</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $inputs</td></tr>
+<tr><td class="h"><a id="L1476">1476</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($expected_str eq q[&#39;_STATUS:DIES&#39;]) { }</td></tr>
 <tr><td class="h"></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">elsif ($expected_str eq q[&#39;_STATUS:WARNS&#39;]) { }</td></tr>
-<tr><td class="h"><a id="L1473">1473</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (ref $inputs eq &quot;HASH&quot;)</td></tr>
-<tr><td class="h"><a id="L1477">1477</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (ref $inputs eq &#39;ARRAY&#39;) { }</td></tr>
+<tr><td class="h"><a id="L1482">1482</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (ref $inputs eq &quot;HASH&quot;)</td></tr>
+<tr><td class="h"><a id="L1486">1486</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (ref $inputs eq &#39;ARRAY&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif (ref $inputs eq &#39;HASH&#39;) { }</td></tr>
-<tr><td class="h"><a id="L1487">1487</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($input_str eq &quot;undef&quot; and not $config{&#39;test_undefs&#39;})</td></tr>
-<tr><td class="h"><a id="L1490">1490</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($new) { }</td></tr>
-<tr><td class="h"><a id="L1491">1491</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($status eq &#39;DIES&#39;) { }</td></tr>
+<tr><td class="h"><a id="L1496">1496</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($input_str eq &quot;undef&quot; and not $config{&#39;test_undefs&#39;})</td></tr>
+<tr><td class="h"><a id="L1499">1499</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($new) { }</td></tr>
+<tr><td class="h"><a id="L1500">1500</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($status eq &#39;DIES&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($status eq &#39;WARNS&#39;) { }</td></tr>
-<tr><td class="h"><a id="L1505">1505</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($status eq &#39;DIES&#39;) { }</td></tr>
+<tr><td class="h"><a id="L1514">1514</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($status eq &#39;DIES&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">elsif ($status eq &#39;WARNS&#39;) { }</td></tr>
-<tr><td class="h"><a id="L1513">1513</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">ref $inputs eq &#39;ARRAY&#39; ? :</td></tr>
-<tr><td class="h"><a id="L1524">1524</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $seed)</td></tr>
-<tr><td class="h"><a id="L1558">1558</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $tt-&gt;process($template, $vars, \$test)</td></tr>
-<tr><td class="h"><a id="L1560">1560</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($test_file) { }</td></tr>
-<tr><td class="h"><a id="L1561">1561</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless &amp;App::Test::Generator::open(my $fh, &quot;&gt;:encoding(UTF-8)&quot;, $test_file)</td></tr>
-<tr><td class="h"><a id="L1564">1564</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($module) { }</td></tr>
-<tr><td class="h"><a id="L1579">1579</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless (-r $schema_file)</td></tr>
-<tr><td class="h"><a id="L1589">1589</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (my $config = &quot;Config::Abstraction&quot;-&gt;new(&quot;config_dirs&quot;, [&quot;.&quot;, &quot;&quot;], &quot;config_file&quot;, $schema_file))</td></tr>
-<tr><td class="h"><a id="L1591">1591</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $config-&gt;{&#39;$module&#39;} or defined $config-&gt;{&#39;our $module&#39;} or not defined $config-&gt;{&#39;module&#39;})</td></tr>
-<tr><td class="h"><a id="L1602">1602</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (exists $schema-&gt;{$section})</td></tr>
-<tr><td class="h"><a id="L1603">1603</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (ref $schema-&gt;{$section} eq &#39;HASH&#39;) { }</td></tr>
+<tr><td class="h"><a id="L1522">1522</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">ref $inputs eq &#39;ARRAY&#39; ? :</td></tr>
+<tr><td class="h"><a id="L1533">1533</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $seed)</td></tr>
+<tr><td class="h"><a id="L1567">1567</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $tt-&gt;process($template, $vars, \$test)</td></tr>
+<tr><td class="h"><a id="L1569">1569</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($test_file) { }</td></tr>
+<tr><td class="h"><a id="L1570">1570</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless &amp;App::Test::Generator::open(my $fh, &quot;&gt;:encoding(UTF-8)&quot;, $test_file)</td></tr>
+<tr><td class="h"><a id="L1573">1573</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($module) { }</td></tr>
+<tr><td class="h"><a id="L1588">1588</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless (-r $schema_file)</td></tr>
+<tr><td class="h"><a id="L1598">1598</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (my $config = &quot;Config::Abstraction&quot;-&gt;new(&quot;config_dirs&quot;, [&quot;.&quot;, &quot;&quot;], &quot;config_file&quot;, $schema_file))</td></tr>
+<tr><td class="h"><a id="L1600">1600</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $config-&gt;{&#39;$module&#39;} or defined $config-&gt;{&#39;our $module&#39;} or not defined $config-&gt;{&#39;module&#39;})</td></tr>
+<tr><td class="h"><a id="L1611">1611</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (exists $schema-&gt;{$section})</td></tr>
+<tr><td class="h"><a id="L1612">1612</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (ref $schema-&gt;{$section} eq &#39;HASH&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">elsif (defined $schema-&gt;{$section} and $schema-&gt;{$section} ne &#39;undef&#39;) { }</td></tr>
-<tr><td class="h"><a id="L1607">1607</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (ref $schema-&gt;{$section} and length $schema-&gt;{$section}) { }</td></tr>
-<tr><td class="h"><a id="L1621">1621</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless (defined $config-&gt;{&#39;module&#39;} or defined $config-&gt;{&#39;function&#39;})</td></tr>
-<tr><td class="h"><a id="L1626">1626</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless (defined $config-&gt;{&#39;input&#39;} or defined $config-&gt;{&#39;output&#39;})</td></tr>
-<tr><td class="h"><a id="L1630">1630</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($config-&gt;{&#39;input&#39;} and ref $config-&gt;{&#39;input&#39;} ne &quot;HASH&quot;)</td></tr>
-<tr><td class="h"><a id="L1631">1631</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($config-&gt;{&#39;input&#39;} eq &#39;undef&#39;) { }</td></tr>
-<tr><td class="h"><a id="L1641">1641</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (ref $spec) { }</td></tr>
-<tr><td class="h"><a id="L1642">1642</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless _valid_type($spec-&gt;{&#39;type&#39;})</td></tr>
-<tr><td class="h"><a id="L1644">1644</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless _valid_type($spec)</td></tr>
-<tr><td class="h"><a id="L1654">1654</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (ref $spec eq &quot;HASH&quot; and defined $spec-&gt;{&#39;position&#39;})</td></tr>
-<tr><td class="h"><a id="L1659">1659</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $pos =~ /^\d+$/u</td></tr>
-<tr><td class="h"><a id="L1662">1662</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if exists $positions{$pos}</td></tr>
-<tr><td class="h"><a id="L1669">1669</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($has_positions)</td></tr>
-<tr><td class="h"><a id="L1672">1672</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless (ref $spec eq &quot;HASH&quot; and defined $spec-&gt;{&#39;position&#39;})</td></tr>
-<tr><td class="h"><a id="L1680">1680</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($sorted[$i] != $i)</td></tr>
-<tr><td class="h"><a id="L1691">1691</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (ref $spec eq &quot;HASH&quot;)</td></tr>
-<tr><td class="h"><a id="L1692">1692</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $spec-&gt;{&#39;semantic&#39;})</td></tr>
-<tr><td class="h"><a id="L1694">1694</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless (exists $semantic_generators-&gt;{$semantic})</td></tr>
-<tr><td class="h"><a id="L1699">1699</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($spec-&gt;{&#39;enum&#39;} and $spec-&gt;{&#39;memberof&#39;})</td></tr>
-<tr><td class="h"><a id="L1706">1706</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (exists $config-&gt;{&#39;transforms&#39;} and ref $config-&gt;{&#39;transforms&#39;} eq &quot;HASH&quot;)</td></tr>
-<tr><td class="h"><a id="L1712">1712</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (exists $transform-&gt;{&#39;properties&#39;})</td></tr>
-<tr><td class="h"><a id="L1713">1713</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless (ref $transform-&gt;{&#39;properties&#39;} eq &quot;ARRAY&quot;)</td></tr>
-<tr><td class="h"><a id="L1718">1718</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (not ref $prop) { }</td></tr>
+<tr><td class="h"><a id="L1616">1616</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (ref $schema-&gt;{$section} and length $schema-&gt;{$section}) { }</td></tr>
+<tr><td class="h"><a id="L1630">1630</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless (defined $config-&gt;{&#39;module&#39;} or defined $config-&gt;{&#39;function&#39;})</td></tr>
+<tr><td class="h"><a id="L1635">1635</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless (defined $config-&gt;{&#39;input&#39;} or defined $config-&gt;{&#39;output&#39;})</td></tr>
+<tr><td class="h"><a id="L1639">1639</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($config-&gt;{&#39;input&#39;} and ref $config-&gt;{&#39;input&#39;} ne &quot;HASH&quot;)</td></tr>
+<tr><td class="h"><a id="L1640">1640</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($config-&gt;{&#39;input&#39;} eq &#39;undef&#39;) { }</td></tr>
+<tr><td class="h"><a id="L1650">1650</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (ref $spec) { }</td></tr>
+<tr><td class="h"><a id="L1651">1651</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless _valid_type($spec-&gt;{&#39;type&#39;})</td></tr>
+<tr><td class="h"><a id="L1653">1653</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless _valid_type($spec)</td></tr>
+<tr><td class="h"><a id="L1663">1663</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (ref $spec eq &quot;HASH&quot; and defined $spec-&gt;{&#39;position&#39;})</td></tr>
+<tr><td class="h"><a id="L1668">1668</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $pos =~ /^\d+$/u</td></tr>
+<tr><td class="h"><a id="L1671">1671</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if exists $positions{$pos}</td></tr>
+<tr><td class="h"><a id="L1678">1678</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($has_positions)</td></tr>
+<tr><td class="h"><a id="L1681">1681</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless (ref $spec eq &quot;HASH&quot; and defined $spec-&gt;{&#39;position&#39;})</td></tr>
+<tr><td class="h"><a id="L1689">1689</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($sorted[$i] != $i)</td></tr>
+<tr><td class="h"><a id="L1700">1700</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (ref $spec eq &quot;HASH&quot;)</td></tr>
+<tr><td class="h"><a id="L1701">1701</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $spec-&gt;{&#39;semantic&#39;})</td></tr>
+<tr><td class="h"><a id="L1703">1703</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless (exists $semantic_generators-&gt;{$semantic})</td></tr>
+<tr><td class="h"><a id="L1708">1708</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($spec-&gt;{&#39;enum&#39;} and $spec-&gt;{&#39;memberof&#39;})</td></tr>
+<tr><td class="h"><a id="L1715">1715</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (exists $config-&gt;{&#39;transforms&#39;} and ref $config-&gt;{&#39;transforms&#39;} eq &quot;HASH&quot;)</td></tr>
+<tr><td class="h"><a id="L1721">1721</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (exists $transform-&gt;{&#39;properties&#39;})</td></tr>
+<tr><td class="h"><a id="L1722">1722</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless (ref $transform-&gt;{&#39;properties&#39;} eq &quot;ARRAY&quot;)</td></tr>
+<tr><td class="h"><a id="L1727">1727</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (not ref $prop) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif (ref $prop eq &#39;HASH&#39;) { }</td></tr>
-<tr><td class="h"><a id="L1720">1720</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless (exists $builtin_props-&gt;{$prop})</td></tr>
-<tr><td class="h"><a id="L1727">1727</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless ($prop-&gt;{&#39;name&#39;} and $prop-&gt;{&#39;code&#39;})</td></tr>
-<tr><td class="h"><a id="L1741">1741</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless (grep {$_ eq $k;} (&#39;test_nuls&#39;, &#39;test_undef&#39;, &#39;test_empty&#39;, &#39;test_non_ascii&#39;, &#39;dedup&#39;, &#39;properties&#39;))</td></tr>
-<tr><td class="h"><a id="L1764">1764</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $module</td></tr>
-<tr><td class="h"><a id="L1769">1769</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($schema_file and not $mod_info)</td></tr>
-<tr><td class="h"><a id="L1781">1781</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($ENV{&#39;TEST_VERBOSE&#39;} or $ENV{&#39;GENERATOR_VERBOSE&#39;})</td></tr>
-<tr><td class="h"><a id="L1787">1787</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($ENV{&#39;GENERATOR_VALIDATE_LOAD&#39;})</td></tr>
-<tr><td class="h"><a id="L1790">1790</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless ($loaded)</td></tr>
-<tr><td class="h"><a id="L1796">1796</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($ENV{&#39;TEST_VERBOSE&#39;} or $ENV{&#39;GENERATOR_VERBOSE&#39;})</td></tr>
-<tr><td class="h"><a id="L1812">1812</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless defined $v</td></tr>
-<tr><td class="h"><a id="L1813">1813</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (ref $v)</td></tr>
-<tr><td class="h"><a id="L1814">1814</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (ref $v eq &quot;ARRAY&quot;)</td></tr>
-<tr><td class="h"><a id="L1818">1818</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (ref $v eq &quot;Regexp&quot;)</td></tr>
-<tr><td class="h"><a id="L1822">1822</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless $s =~ /[{}]/u</td></tr>
-<tr><td class="h"><a id="L1825">1825</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless $s =~ m[/]u</td></tr>
-<tr><td class="h"><a id="L1838">1838</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">$v =~ /^-?\d+(\.\d+)?$/u ? :</td></tr>
-<tr><td class="h"><a id="L1843">1843</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $href and ref $href eq &quot;HASH&quot;</td></tr>
-<tr><td class="h"><a id="L1847">1847</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless ref $def eq &quot;HASH&quot;</td></tr>
-<tr><td class="h"><a id="L1850">1850</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless defined $def-&gt;{$subk}</td></tr>
-<tr><td class="h"><a id="L1851">1851</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (ref $def-&gt;{$subk})</td></tr>
-<tr><td class="h"><a id="L1852">1852</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless (ref $def-&gt;{$subk} eq &quot;ARRAY&quot; or ref $def-&gt;{$subk} eq &quot;Regexp&quot;)</td></tr>
-<tr><td class="h"><a id="L1856">1856</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($subk eq &#39;matches&#39; or $subk eq &#39;nomatch&#39;) { }</td></tr>
-<tr><td class="h"><a id="L1869">1869</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $href and ref $href eq &quot;HASH&quot;</td></tr>
-<tr><td class="h"><a id="L1876">1876</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $href and ref $href eq &quot;HASH&quot;</td></tr>
-<tr><td class="h"><a id="L1880">1880</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless ref $aref eq &quot;ARRAY&quot;</td></tr>
-<tr><td class="h"><a id="L1892">1892</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">unless $s =~ /\Q$l\E|\Q$r\E/u</td></tr>
-<tr><td class="h"><a id="L1895">1895</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless index($s, $d) != -1</td></tr>
-<tr><td class="h"><a id="L1920">1920</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (not ref $input_spec and $input_spec eq &quot;undef&quot;)</td></tr>
-<tr><td class="h"><a id="L1933">1933</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (exists $transform-&gt;{&#39;properties&#39;} and ref $transform-&gt;{&#39;properties&#39;} eq &quot;ARRAY&quot;)</td></tr>
-<tr><td class="h"><a id="L1948">1948</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless @all_props</td></tr>
-<tr><td class="h"><a id="L1956">1956</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless ref $spec eq &quot;HASH&quot;</td></tr>
-<tr><td class="h"><a id="L1967">1967</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($module) { }</td></tr>
-<tr><td class="h"><a id="L1976">1976</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (_has_positions($input_spec)) { }</td></tr>
-<tr><td class="h"><a id="L2017">2017</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">defined $schema-&gt;{&#39;new&#39;} ? :</td></tr>
-<tr><td class="h"><a id="L2024">2024</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (not ref $prop_def) { }</td></tr>
+<tr><td class="h"><a id="L1729">1729</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless (exists $builtin_props-&gt;{$prop})</td></tr>
+<tr><td class="h"><a id="L1736">1736</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless ($prop-&gt;{&#39;name&#39;} and $prop-&gt;{&#39;code&#39;})</td></tr>
+<tr><td class="h"><a id="L1750">1750</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless (grep {$_ eq $k;} (&#39;test_nuls&#39;, &#39;test_undef&#39;, &#39;test_empty&#39;, &#39;test_non_ascii&#39;, &#39;dedup&#39;, &#39;properties&#39;))</td></tr>
+<tr><td class="h"><a id="L1773">1773</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $module</td></tr>
+<tr><td class="h"><a id="L1778">1778</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($schema_file and not $mod_info)</td></tr>
+<tr><td class="h"><a id="L1790">1790</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($ENV{&#39;TEST_VERBOSE&#39;} or $ENV{&#39;GENERATOR_VERBOSE&#39;})</td></tr>
+<tr><td class="h"><a id="L1796">1796</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($ENV{&#39;GENERATOR_VALIDATE_LOAD&#39;})</td></tr>
+<tr><td class="h"><a id="L1799">1799</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless ($loaded)</td></tr>
+<tr><td class="h"><a id="L1805">1805</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($ENV{&#39;TEST_VERBOSE&#39;} or $ENV{&#39;GENERATOR_VERBOSE&#39;})</td></tr>
+<tr><td class="h"><a id="L1821">1821</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless defined $v</td></tr>
+<tr><td class="h"><a id="L1822">1822</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (ref $v)</td></tr>
+<tr><td class="h"><a id="L1823">1823</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (ref $v eq &quot;ARRAY&quot;)</td></tr>
+<tr><td class="h"><a id="L1827">1827</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (ref $v eq &quot;Regexp&quot;)</td></tr>
+<tr><td class="h"><a id="L1831">1831</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless $s =~ /[{}]/u</td></tr>
+<tr><td class="h"><a id="L1834">1834</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless $s =~ m[/]u</td></tr>
+<tr><td class="h"><a id="L1847">1847</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">$v =~ /^-?\d+(\.\d+)?$/u ? :</td></tr>
+<tr><td class="h"><a id="L1852">1852</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $href and ref $href eq &quot;HASH&quot;</td></tr>
+<tr><td class="h"><a id="L1856">1856</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless ref $def eq &quot;HASH&quot;</td></tr>
+<tr><td class="h"><a id="L1859">1859</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless defined $def-&gt;{$subk}</td></tr>
+<tr><td class="h"><a id="L1860">1860</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (ref $def-&gt;{$subk})</td></tr>
+<tr><td class="h"><a id="L1861">1861</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless (ref $def-&gt;{$subk} eq &quot;ARRAY&quot; or ref $def-&gt;{$subk} eq &quot;Regexp&quot;)</td></tr>
+<tr><td class="h"><a id="L1865">1865</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($subk eq &#39;matches&#39; or $subk eq &#39;nomatch&#39;) { }</td></tr>
+<tr><td class="h"><a id="L1878">1878</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $href and ref $href eq &quot;HASH&quot;</td></tr>
+<tr><td class="h"><a id="L1885">1885</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless $href and ref $href eq &quot;HASH&quot;</td></tr>
+<tr><td class="h"><a id="L1889">1889</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless ref $aref eq &quot;ARRAY&quot;</td></tr>
+<tr><td class="h"><a id="L1901">1901</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">unless $s =~ /\Q$l\E|\Q$r\E/u</td></tr>
+<tr><td class="h"><a id="L1904">1904</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless index($s, $d) != -1</td></tr>
+<tr><td class="h"><a id="L1929">1929</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (not ref $input_spec and $input_spec eq &quot;undef&quot;)</td></tr>
+<tr><td class="h"><a id="L1942">1942</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (exists $transform-&gt;{&#39;properties&#39;} and ref $transform-&gt;{&#39;properties&#39;} eq &quot;ARRAY&quot;)</td></tr>
+<tr><td class="h"><a id="L1957">1957</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless @all_props</td></tr>
+<tr><td class="h"><a id="L1965">1965</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless ref $spec eq &quot;HASH&quot;</td></tr>
+<tr><td class="h"><a id="L1976">1976</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($module) { }</td></tr>
+<tr><td class="h"><a id="L1985">1985</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (_has_positions($input_spec)) { }</td></tr>
+<tr><td class="h"><a id="L2026">2026</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">defined $schema-&gt;{&#39;new&#39;} ? :</td></tr>
+<tr><td class="h"><a id="L2033">2033</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (not ref $prop_def) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif (ref $prop_def eq &#39;HASH&#39;) { }</td></tr>
-<tr><td class="h"><a id="L2028">2028</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (exists $builtin_properties-&gt;{$prop_name}) { }</td></tr>
-<tr><td class="h"><a id="L2037">2037</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($module and defined $new) { }</td></tr>
+<tr><td class="h"><a id="L2037">2037</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (exists $builtin_properties-&gt;{$prop_name}) { }</td></tr>
+<tr><td class="h"><a id="L2046">2046</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($module and defined $new) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($module and $module ne &#39;builtin&#39;) { }</td></tr>
-<tr><td class="h"><a id="L2048">2048</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (_has_positions($input_spec)) { }</td></tr>
-<tr><td class="h"><a id="L2072">2072</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless ($prop_code)</td></tr>
-<tr><td class="h"><a id="L2078">2078</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless ($prop_code =~ /\$/u or $prop_code =~ /\w+/u)</td></tr>
-<tr><td class="h"><a id="L2110">2110</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if not ref $input_spec and $input_spec eq &quot;undef&quot;</td></tr>
-<tr><td class="h"><a id="L2113">2113</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (_is_numeric_transform($input_spec, $output_spec))</td></tr>
-<tr><td class="h"><a id="L2114">2114</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (defined $output_spec-&gt;{&#39;min&#39;})</td></tr>
-<tr><td class="h"><a id="L2122">2122</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $output_spec-&gt;{&#39;max&#39;})</td></tr>
-<tr><td class="h"><a id="L2132">2132</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($transform_name =~ /positive/iu)</td></tr>
-<tr><td class="h"><a id="L2141">2141</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $output_spec-&gt;{&#39;value&#39;})</td></tr>
-<tr><td class="h"><a id="L2150">2150</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (_is_string_transform($input_spec, $output_spec))</td></tr>
-<tr><td class="h"><a id="L2151">2151</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $output_spec-&gt;{&#39;min&#39;})</td></tr>
-<tr><td class="h"><a id="L2158">2158</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $output_spec-&gt;{&#39;max&#39;})</td></tr>
-<tr><td class="h"><a id="L2165">2165</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $output_spec-&gt;{&#39;matches&#39;})</td></tr>
-<tr><td class="h"><a id="L2175">2175</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (_same_type($input_spec, $output_spec))</td></tr>
-<tr><td class="h"><a id="L2178">2178</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($type eq &quot;number&quot; or $type eq &quot;integer&quot; or $type eq &quot;float&quot;)</td></tr>
-<tr><td class="h"><a id="L2187">2187</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">unless (($output_spec-&gt;{&#39;type&#39;} // &quot;&quot;) eq &quot;undef&quot;)</td></tr>
-<tr><td class="h"><a id="L2582">2582</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($type eq &quot;string&quot; and defined $spec-&gt;{&#39;semantic&#39;})</td></tr>
-<tr><td class="h"><a id="L2586">2586</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (exists $generators-&gt;{$semantic_type}) { }</td></tr>
-<tr><td class="h"><a id="L2599">2599</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($type eq &#39;integer&#39;) { }</td></tr>
+<tr><td class="h"><a id="L2057">2057</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (_has_positions($input_spec)) { }</td></tr>
+<tr><td class="h"><a id="L2081">2081</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless ($prop_code)</td></tr>
+<tr><td class="h"><a id="L2087">2087</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">unless ($prop_code =~ /\$/u or $prop_code =~ /\w+/u)</td></tr>
+<tr><td class="h"><a id="L2119">2119</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if not ref $input_spec and $input_spec eq &quot;undef&quot;</td></tr>
+<tr><td class="h"><a id="L2122">2122</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (_is_numeric_transform($input_spec, $output_spec))</td></tr>
+<tr><td class="h"><a id="L2123">2123</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (defined $output_spec-&gt;{&#39;min&#39;})</td></tr>
+<tr><td class="h"><a id="L2131">2131</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $output_spec-&gt;{&#39;max&#39;})</td></tr>
+<tr><td class="h"><a id="L2141">2141</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($transform_name =~ /positive/iu)</td></tr>
+<tr><td class="h"><a id="L2150">2150</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (defined $output_spec-&gt;{&#39;value&#39;})</td></tr>
+<tr><td class="h"><a id="L2159">2159</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (_is_string_transform($input_spec, $output_spec))</td></tr>
+<tr><td class="h"><a id="L2160">2160</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $output_spec-&gt;{&#39;min&#39;})</td></tr>
+<tr><td class="h"><a id="L2167">2167</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $output_spec-&gt;{&#39;max&#39;})</td></tr>
+<tr><td class="h"><a id="L2174">2174</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $output_spec-&gt;{&#39;matches&#39;})</td></tr>
+<tr><td class="h"><a id="L2184">2184</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (_same_type($input_spec, $output_spec))</td></tr>
+<tr><td class="h"><a id="L2187">2187</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($type eq &quot;number&quot; or $type eq &quot;integer&quot; or $type eq &quot;float&quot;)</td></tr>
+<tr><td class="h"><a id="L2196">2196</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">unless (($output_spec-&gt;{&#39;type&#39;} // &quot;&quot;) eq &quot;undef&quot;)</td></tr>
+<tr><td class="h"><a id="L2591">2591</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($type eq &quot;string&quot; and defined $spec-&gt;{&#39;semantic&#39;})</td></tr>
+<tr><td class="h"><a id="L2595">2595</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (exists $generators-&gt;{$semantic_type}) { }</td></tr>
+<tr><td class="h"><a id="L2608">2608</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($type eq &#39;integer&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">elsif ($type eq &#39;number&#39; or $type eq &#39;float&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($type eq &#39;string&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($type eq &#39;boolean&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($type eq &#39;arrayref&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($type eq &#39;hashref&#39;) { }</td></tr>
-<tr><td class="h"><a id="L2603">2603</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (not defined $min || defined $max) { }</td></tr>
+<tr><td class="h"><a id="L2612">2612</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (not defined $min || defined $max) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif (not defined $min) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif (not defined $max) { }</td></tr>
-<tr><td class="h"><a id="L2618">2618</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (not defined $min || defined $max) { }</td></tr>
+<tr><td class="h"><a id="L2627">2627</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (not defined $min || defined $max) { }</td></tr>
 <tr><td class="h"></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">elsif (not defined $min) { }</td></tr>
 <tr><td class="h"></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">elsif (not defined $max) { }</td></tr>
-<tr><td class="h"><a id="L2623">2623</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if ($max == 0) { }</td></tr>
+<tr><td class="h"><a id="L2632">2632</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if ($max == 0) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($max &gt; 0) { }</td></tr>
-<tr><td class="h"><a id="L2635">2635</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if ($min == 0) { }</td></tr>
+<tr><td class="h"><a id="L2644">2644</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if ($min == 0) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif ($min &gt; 0) { }</td></tr>
-<tr><td class="h"><a id="L2648">2648</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($range &lt;= 0)</td></tr>
-<tr><td class="h"><a id="L2660">2660</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $spec-&gt;{&#39;matches&#39;})</td></tr>
-<tr><td class="h"><a id="L2664">2664</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $spec-&gt;{&#39;max&#39;}) { }</td></tr>
+<tr><td class="h"><a id="L2657">2657</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($range &lt;= 0)</td></tr>
+<tr><td class="h"><a id="L2669">2669</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $spec-&gt;{&#39;matches&#39;})</td></tr>
+<tr><td class="h"><a id="L2673">2673</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $spec-&gt;{&#39;max&#39;}) { }</td></tr>
 <tr><td class="h"></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">elsif (defined $spec-&gt;{&#39;min&#39;}) { }</td></tr>
-<tr><td class="h"><a id="L2725">2725</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if defined $spec-&gt;{&#39;type&#39;}</td></tr>
-<tr><td class="h"><a id="L2729">2729</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless ref $spec-&gt;{$field} eq &quot;HASH&quot;</td></tr>
-<tr><td class="h"><a id="L2730">2730</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if defined $spec-&gt;{$field}{&#39;type&#39;}</td></tr>
-<tr><td class="h"><a id="L2740">2740</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless ref $spec-&gt;{$field} eq &quot;HASH&quot;</td></tr>
-<tr><td class="h"><a id="L2741">2741</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if defined $spec-&gt;{$field}{&#39;position&#39;}</td></tr>
-<tr><td class="h"><a id="L2765">2765</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($prop-&gt;{&#39;should_die&#39;}) { }</td></tr>
+<tr><td class="h"><a id="L2734">2734</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if defined $spec-&gt;{&#39;type&#39;}</td></tr>
+<tr><td class="h"><a id="L2738">2738</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless ref $spec-&gt;{$field} eq &quot;HASH&quot;</td></tr>
+<tr><td class="h"><a id="L2739">2739</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if defined $spec-&gt;{$field}{&#39;type&#39;}</td></tr>
+<tr><td class="h"><a id="L2749">2749</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless ref $spec-&gt;{$field} eq &quot;HASH&quot;</td></tr>
+<tr><td class="h"><a id="L2750">2750</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if defined $spec-&gt;{$field}{&#39;position&#39;}</td></tr>
+<tr><td class="h"><a id="L2774">2774</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($prop-&gt;{&#39;should_die&#39;}) { }</td></tr>
 </table>
 </body>
 </html>
