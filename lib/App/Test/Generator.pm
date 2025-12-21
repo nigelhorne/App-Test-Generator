@@ -71,6 +71,23 @@ From Perl:
   # Generate directly to a file
   App::Test::Generator::generate('t/conf/add.yml', 't/add_fuzz.t');
 
+  # Holy grail mode - read a Perl file, generate tests, and run them
+  # This is a long way away yet, but see t/schema_input.t for a proof of concept
+  my $extractor = App::Test::Generator::SchemaExtractor->new(
+    input_file => 'Foo.pm',
+    output_dir => $dir
+  );
+  my $schemas = $extractor->extract_all();
+  foreach my $schema(keys %{$schemas}) {
+    my $tempfile = '/var/tmp/foo.t';	# Use File::Temp in real life
+    App::Test::Generator->generate(
+      schema => $schemas->{$schema},
+      output_file => $tempfile,
+    );
+    system("$^X -I$dir $tempfile");
+    unlink $tempfile;
+  }
+
 =encoding utf8
 
 =head1 OVERVIEW
@@ -1749,12 +1766,12 @@ sub _validate_module {
 	# Check if the module can be found
 	my $mod_info = check_install(module => $module);
 
-	if (!$mod_info) {
+	if($schema_file && !$mod_info) {
 		# Module not found - this is just a warning, not an error
 		# The module might not be installed on the generation machine
 		# but could be on the test machine
 		carp("Warning: Module '$module' not found in \@INC during generation.");
-		carp("  Config file: $schema_file") if($schema_file);
+		carp("  Config file: $schema_file");
 		carp("  This is OK if the module will be available when tests run.");
 		carp('  If this is unexpected, check your module name and installation.');
 		return 0;	# Not found, but not fatal
@@ -2779,7 +2796,7 @@ C<seed> and C<iterations> really should be within C<config>.
 
 =item * L<App::Test::Generator::Template> - Template of the file of tests created by C<App::Test::Generator>
 
-=item * L<App::Test::Generator::SchemaExtractor> - Project to create schemas from Perl programs
+=item * L<App::Test::Generator::SchemaExtractor> - Create schemas from Perl programs
 
 =item * L<Params::Validate::Strict>: Schema Definition
 

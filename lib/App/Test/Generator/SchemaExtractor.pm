@@ -5703,30 +5703,30 @@ sub _extract_default_value {
 }
 
 sub _extract_test_hints {
-    my ($self, $method, $schema) = @_;
+	my ($self, $method, $schema) = @_;
 
-    my %hints = (
-        boundary_values     => [],
-        invalid_inputs      => [],
-        equivalence_classes => [],
-    );
+	my %hints = (
+		boundary_values     => [],
+		invalid_inputs      => [],
+		equivalence_classes => [],
+	);
 
-    my $code = $method->{body};
-    return {} unless $code;
+	my $code = $method->{body};
+	return {} unless $code;
 
-    $self->_extract_invalid_input_hints($code, \%hints);
-    $self->_extract_boundary_value_hints($code, \%hints);
+	$self->_extract_invalid_input_hints($code, \%hints);
+	$self->_extract_boundary_value_hints($code, \%hints);
 
-    # prune empties
-    for my $k (keys %hints) {
-        delete $hints{$k} unless @{$hints{$k}};
-    }
+	# prune empties
+	for my $k (keys %hints) {
+		delete $hints{$k} unless @{$hints{$k}};
+	}
 
-    return \%hints;
+	return \%hints;
 }
 
 sub _extract_invalid_input_hints {
-    my ($self, $code, $hints) = @_;
+	my ($self, $code, $hints) = @_;
 
     # undef invalid
     if ($code =~ /defined\s*\(\s*\$/) {

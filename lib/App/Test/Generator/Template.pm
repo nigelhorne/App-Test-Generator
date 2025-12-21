@@ -137,6 +137,7 @@ my @candidate_bad = (
 	# undef,	# undefined
 	# "\0",	# null byte
 );
+my $positions = populate_positions(\%input);
 
 # --- Fuzzer helpers ---
 sub _pick_from {
@@ -823,7 +824,7 @@ sub fuzz_inputs
 	# edge-cases
 	if($config{'test_undef'}) {
 		if($all_optional) {
-			push @cases, {};
+			push @cases, { '_NAME' => 'No args since all are optional' };
 		} else {
 			# Note that this is set on the input rather than output
 			push @cases, { '_STATUS' => 'DIES' };	# At least one argument is needed
@@ -833,11 +834,11 @@ sub fuzz_inputs
 	if(scalar keys %input) {
 		push @cases, { '_STATUS' => 'DIES', map { $_ => undef } keys %input } if($config{'test_undef'});
 	} else {
-		push @cases, { };	# Takes no input
+		push @cases, { '_NAME' => 'Takes no input' };	# Takes no input
 	}
 
 	# If it's not in mandatory_strings it sets to 'undef' which is the idea, to test { value => undef } in the args
-	push @cases, { map { $_ => $mandatory_strings{$_} } keys %input, %mandatory_objects } if($config{'test_undef'});
+	push @cases, { map { $_ => $mandatory_strings{$_} } keys %input, %mandatory_objects } if($config{'test_undef'} && !$positions);
 
 	push @candidate_bad, '' if($config{'test_empty'});
 	push @candidate_bad, undef if($config{'test_undef'});
@@ -999,13 +1000,11 @@ sub _generate_float_cases {
 		push @cases, { %{$mandatory_args}, ( $arg_name => 43.56 ) };
 	}
 
-
 	[% IF module %]
 		# Send wrong data type - builtins aren't good at checking this
 		push @cases,
-			{ %{$mandatory_args}, ( $arg_name => "test string in integer field $arg_name", _STATUS => 'DIES', _LINE => __LINE__ ) },
+			{ %{$mandatory_args}, ( $arg_name => "test string in float field $arg_name", _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) },
-			{ %{$mandatory_args}, ( $arg_name => 'abc', _STATUS => 'DIES' ) },
 			{ %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
 	[% END %]
 
@@ -1046,7 +1045,7 @@ sub _generate_float_cases {
 			{ %{$mandatory_args}, ( $arg_name => rand_num() ) },
 			{ %{$mandatory_args}, ( $arg_name => 1.23 ) },
 			{ %{$mandatory_args}, ( $arg_name => -42.1 ) },
-			{ %{$mandatory_args}, ( $arg_name => 0) };	# 0 is in range
+			{ %{$mandatory_args}, ( $arg_name => 0 ) };	# 0 is in range
 	}
 
 	return \@cases;
@@ -1491,10 +1490,14 @@ sub run_test
 		} elsif($status eq 'WARNS') {
 			warnings_exist { [% call_code %] } qr/./, sprintf($mess, 'warns');
 		} else {
-			lives_ok { [% call_code %] } sprintf($mess, 'survives');
+			lives_ok { [% call_code %] } sprintf($mess, 'survives (status = LIVES)');
 		}
 	} elsif($positions) {
-		lives_ok { [% position_code %] } sprintf($mess, 'survives');
+		if(defined($name)) {
+			lives_ok { [% position_code %] } sprintf($mess, "survives (position test) - $name");
+		} else {
+			lives_ok { [% position_code %] } sprintf($mess, 'survives (position test)');
+		}
 	} else {
 		lives_ok { [% call_code %] } sprintf($mess, 'survives');
 	}
@@ -1508,8 +1511,6 @@ sub run_test
 		returns_ok($result, $output, 'output validates');
 	}
 }
-
-my $positions = populate_positions(\%input);
 
 diag('Run Fuzz Tests') if($ENV{'TEST_VERBOSE'});
 
@@ -1565,7 +1566,7 @@ foreach my $transform (keys %transforms) {
 				if(defined $spec->{max}) {
 					$foundation->{$field} = $spec->{max};	# border
 				} else {
-					$foundation->{$field} = -0.1;	# No min, so -0.1 should be allowable
+					$foundation->{$field} = -0.01;	# No min, so -0.01 should be allowable
 				}
 			}
 		} elsif($type eq 'string') {

@@ -24,9 +24,18 @@ open my $mod_fh, '>', $module or die $!;
 print {$mod_fh} <<'EOF';
 package TestSchema;
 
+# This is the package that will be tested
+
+use Scalar::Util qw(looks_like_number);
+
 sub add {
+	if($_[0] && ($_[0] eq __PACKAGE__)) {
+		shift;
+	}
 	my ($a, $b) = @_;
 	die 'missing a' unless defined($a);
+	die 'not numeric' unless looks_like_number($a);
+	die 'not numeric' if defined($b) && !looks_like_number($b);
 	return $a + ($b // 0);
 }
 
@@ -40,9 +49,9 @@ ok(-e $module, 'Test module created');
 # Extract schema
 # ------------------------------------------------------------------
 my $extractor = App::Test::Generator::SchemaExtractor->new(
-    input_file => $module,
-    output_dir => $dir,
-    quiet      => 1,
+	input_file => $module,
+	output_dir => $dir,
+	quiet => 1,
 );
 
 my $schema = $extractor->extract_all();
@@ -58,7 +67,7 @@ ok(exists $schema->{add}, 'Schema contains add()');
 # Generate test from schema
 # ------------------------------------------------------------------
 my ($fh, $tempfile) = tempfile(
-	DIR    => $dir,
+	DIR => $dir,
 	SUFFIX => '.t',
 );
 close $fh;
@@ -67,9 +76,9 @@ my $generator;
 
 lives_ok {
 	App::Test::Generator->generate(
-		schema      => $schema->{'add'},
+		schema => $schema->{'add'},
 		output_file => $tempfile,
-		quiet       => 1,
+		quiet => 1,
 	);
 } 'Generator runs successfully with schema input';
 
@@ -87,20 +96,24 @@ like($content, qr/diag\(/, 'fuzz test has diag line');
 # ------------------------------------------------------------------
 # Syntax check
 # ------------------------------------------------------------------
-system("$^X -c $tempfile > /dev/null 2>&1");
+system("$^X -I$dir -c $tempfile > /dev/null 2>&1");
 is($?, 0, 'Generated test script compiles');
 
 # ------------------------------------------------------------------
 # Run generated test
 # ------------------------------------------------------------------
 my ($stdout, $stderr);
-run3 [ $^X, $tempfile ], undef, \$stdout, \$stderr;
+run3 [ $^X, "-I$dir", $tempfile ], undef, \$stdout, \$stderr;
 
 ok($? == 0, 'Generated test script exits successfully')
 	or diag("STDOUT:\n$stdout\nSTDERR:\n$stderr");
 
 like($stderr, qr/test case created/, 'Test creation message present');
 like($stdout, qr/^ok \d/sm, 'At least one created test passed');
+if($stdout =~ /1\.\.(\d+)/ms) {
+	# Show how many tests we ran on TestSchema::add
+	diag("$1 tests created and run");
+}
 
 unlike($stdout, qr/^not ok \d/sm, 'No created test failed');
 
