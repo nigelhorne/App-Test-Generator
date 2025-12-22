@@ -71,6 +71,7 @@ use Encode qw(decode_utf8);
 use Unicode::Normalize ();
 use Test::Most;
 use Test::Returns 0.02;
+use Unicode::GCString;
 
 if($^O ne 'MSWin32') {
 	close(STDIN);
