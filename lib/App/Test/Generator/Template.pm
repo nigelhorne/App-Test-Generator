@@ -563,7 +563,7 @@ sub fuzz_inputs
 
 			foreach my $field(keys %input) {
 				next if($field =~ /^_/);	# Ignore comments
-				if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can'))) {
+				if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'memberof', 'position'))) {
 					die("TODO: handle schema keyword '$field'");
 				}
 			}
@@ -712,7 +712,7 @@ sub fuzz_inputs
 				my $spec = $input{$field} || {};
 				foreach my $field(keys %{$spec}) {
 					next if($field =~ /^_/);	# Ignore comments
-					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'position', 'semantic'))) {
+					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'position', 'memberof', 'semantic'))) {
 						die("TODO: handle schema keyword '$field'");
 					}
 				}
