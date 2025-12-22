@@ -26,6 +26,7 @@ use File::Spec;
 use Module::Load::Conditional qw(check_install can_load);
 use Params::Get;
 use Params::Validate::Strict;
+use Scalar::Util qw(looks_like_number);
 use Template;
 use YAML::XS qw(LoadFile);
 
@@ -33,7 +34,7 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
-our $VERSION = '0.21';
+our $VERSION = '0.22';
 
 use constant {
 	DEFAULT_ITERATIONS => 50,
@@ -48,7 +49,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses
 
 =head1 VERSION
 
-Version 0.21
+Version 0.22
 
 =head1 SYNOPSIS
 

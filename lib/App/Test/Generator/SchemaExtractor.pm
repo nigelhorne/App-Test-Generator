@@ -13,7 +13,7 @@ use File::Basename;
 use File::Path qw(make_path);
 use Scalar::Util qw(looks_like_number);
 
-our $VERSION = '0.21';
+our $VERSION = '0.22';
 
 # Configure YAML::XS to not quote numeric strings
 $YAML::XS::QuoteNumericStrings = 0;
@@ -24,7 +24,7 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 
 =head1 VERSION
 
-Version 0.21
+Version 0.22
 
 =head1 SYNOPSIS
 
@@ -1980,29 +1980,29 @@ sub _extract_defaults_from_pod {
 
 	my %defaults;
 
-    # Pattern 1: Default: 'value' or Defaults to: 'value'
-    while ($pod =~ /(?:Default(?:s? to)?|default(?:s? to)?)[:]\s*([^\n\r]+)/gi) {
-        my $default_text = $1;
-        my $match_pos = pos($pod);
-        $default_text =~ s/^\s+|\s+$//g;
+	# Pattern 1: Default: 'value' or Defaults to: 'value'
+	while ($pod =~ /(?:Default(?:s? to)?|default(?:s? to)?)[:]\s*([^\n\r]+)/gi) {
+		my $default_text = $1;
+		my $match_pos = pos($pod);
+		$default_text =~ s/^\s+|\s+$//g;
 
-        # Look backwards in the POD to find the parameter name
-        my $context = substr($pod, 0, $match_pos);
-        my @param_matches = ($context =~ /\$(\w+)/g);
-        my $param = $param_matches[-1] if @param_matches;  # Last parameter before default
+		# Look backwards in the POD to find the parameter name
+		my $context = substr($pod, 0, $match_pos);
+		my @param_matches = ($context =~ /\$(\w+)/g);
+		my $param = $param_matches[-1] if @param_matches;  # Last parameter before default
 
-        if ($param) {
-            # Always clean the default value - let _clean_default_value handle everything
-            if ($default_text =~ /(\w+)\s*=\s*(.+)$/) {
-                # Has explicit param = value format in the default text
-                my ($p, $value) = ($1, $2);
-                $defaults{$p} = $self->_clean_default_value($value);
-            } else {
-                # Just a value, associate with the found param
-		$defaults{$param} = $self->_clean_default_value($default_text, 0);  # NOT from code
-            }
-        }
-    }
+		if ($param) {
+			# Always clean the default value - let _clean_default_value handle everything
+			if ($default_text =~ /(\w+)\s*=\s*(.+)$/) {
+				# Has explicit param = value format in the default text
+				my ($p, $value) = ($1, $2);
+				$defaults{$p} = $self->_clean_default_value($value);
+			} else {
+				# Just a value, associate with the found param
+				$defaults{$param} = $self->_clean_default_value($default_text, 0);  # NOT from code
+			}
+		}
+	}
 
     # Pattern 2: Optional, default 'value'
     while ($pod =~ /Optional(?:,)?\s+(?:default|value)\s*[:=]?\s*([^\n\r,;]+)/gi) {
@@ -3729,23 +3729,23 @@ while ($code =~ /\$(\w+)\s*=\s*defined\s+\$\1\s*\?\s*\$\1\s*:\s*([^;]+);/g) {
         $self->_log("  CODE: $param has default (from args): " . $self->_format_default($params->{$param}{default}));
     }
 
-    # Pattern for non-empty hashref
-while ($code =~ /\$(\w+)\s*\|\|=\s*(\{[^}]+\})/gs) {
-    my ($param, $value) = ($1, $2);
-    next unless exists $params->{$param};
+	# Pattern for non-empty hashref
+	while ($code =~ /\$(\w+)\s*\|\|=\s*(\{[^}]+\})/gs) {
+		my ($param, $value) = ($1, $2);
+		next unless exists $params->{$param};
 
-    # Return empty hashref as placeholder (can't evaluate complex hashrefs)
-    $params->{$param}{default} = {};
-    $params->{$param}{optional} = 1;
-    $self->_log("  CODE: $param has hashref default (||=)");
-}
+		# Return empty hashref as placeholder (can't evaluate complex hashrefs)
+		$params->{$param}{default} = {};
+		$params->{$param}{optional} = 1;
+		$self->_log("  CODE: $param has hashref default (||=)");
+	}
 }
 
 sub _format_default {
-    my ($self, $default) = @_;
-    return 'undef' unless defined $default;
-    return ref($default) . ' ref' if ref($default);
-    return $default;
+	my ($self, $default) = @_;
+	return 'undef' unless defined $default;
+	return ref($default) . ' ref' if ref($default);
+	return $default;
 }
 
 sub _analyze_parameter_constraints {
@@ -3803,13 +3803,13 @@ sub _analyze_parameter_validation {
 	my ($self, $p_ref, $param, $code) = @_;
 	my $p = $$p_ref;
 
-    # Required/optional checks
-    my $is_required = 0;
+	# Required/optional checks
+	my $is_required = 0;
 
-    # Die/croak if not defined
-    if ($code =~ /(?:die|croak|confess)\s+[^;]*unless\s+(?:defined\s+)?\$$param/s) {
-        $is_required = 1;
-    }
+	# Die/croak if not defined
+	if ($code =~ /(?:die|croak|confess)\s+[^;]*unless\s+(?:defined\s+)?\$$param/s) {
+		$is_required = 1;
+	}
 
     # Extract default values with the new method
     my $default_value = $self->_extract_default_value($param, $code);
@@ -4128,21 +4128,21 @@ sub _calculate_input_confidence {
         }
     }
 
-    # Determine confidence level
-    my $level;
-    if ($avg >= 60) {
-        $level = 'high';
-        push @factors, "High confidence: comprehensive type and constraint information";
-    } elsif ($avg >= 35) {
-        $level = 'medium';
-        push @factors, "Medium confidence: some type or constraint information present";
-    } elsif ($avg >= 15) {
-        $level = 'low';
-        push @factors, "Low confidence: minimal type information";
-    } else {
-        $level = 'very_low';
-        push @factors, "Very low confidence: little to no type information";
-    }
+	# Determine confidence level
+	my $level;
+	if ($avg >= 60) {
+		$level = 'high';
+		push @factors, "High confidence: comprehensive type and constraint information";
+	} elsif ($avg >= 35) {
+		$level = 'medium';
+		push @factors, "Medium confidence: some type or constraint information present";
+	} elsif ($avg >= 15) {
+		$level = 'low';
+		push @factors, "Low confidence: minimal type information";
+	} else {
+		$level = 'very_low';
+		push @factors, "Very low confidence: little to no type information";
+	}
 
 	return {
 		level => $level,
@@ -4218,29 +4218,29 @@ sub _calculate_output_confidence {
         push @factors, "Void context method (no meaningful return) (+20)";
     }
 
-    # Exception handling
-    if ($output->{error_handling} && $output->{error_handling}{exception_handling}) {
-        $score += 10;
-        push @factors, "Exception handling present (+10)";
-    }
+	# Exception handling
+	if ($output->{error_handling} && $output->{error_handling}{exception_handling}) {
+		$score += 10;
+		push @factors, 'Exception handling present (+10)';
+	}
 
-    push @factors, sprintf("Total output confidence score: %d", $score);
+	push @factors, sprintf("Total output confidence score: %d", $score);
 
-    # Determine confidence level
-    my $level;
-    if ($score >= 60) {
-        $level = 'high';
-        push @factors, "High confidence: detailed return type and behavior";
-    } elsif ($score >= 30) {
-        $level = 'medium';
-        push @factors, "Medium confidence: return type defined";
-    } elsif ($score >= 15) {
-        $level = 'low';
-        push @factors, "Low confidence: minimal return information";
-    } else {
-        $level = 'very_low';
-        push @factors, 'Very low confidence: little return information';
-    }
+	# Determine confidence level
+	my $level;
+	if ($score >= 60) {
+		$level = 'high';
+		push @factors, "High confidence: detailed return type and behavior";
+	} elsif ($score >= 30) {
+		$level = 'medium';
+		push @factors, "Medium confidence: return type defined";
+	} elsif ($score >= 15) {
+		$level = 'low';
+		push @factors, "Low confidence: minimal return information";
+	} else {
+		$level = 'very_low';
+		push @factors, 'Very low confidence: little return information';
+	}
 
 	return {
 		level => $level,
