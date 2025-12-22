@@ -121,16 +121,16 @@ print "  Input:\n";
 print "    High confidence:   $iconfidence_counts{high}\n";
 print "    Medium confidence: $iconfidence_counts{medium}\n";
 print "    Low confidence:    $iconfidence_counts{low}\n";
-print "  Outut:\n";
+print "  Output:\n";
 print "    High confidence:   $oconfidence_counts{high}\n";
 print "    Medium confidence: $oconfidence_counts{medium}\n";
 print "    Low confidence:    $oconfidence_counts{low}\n";
 print "\n";
 
 if ($iconfidence_counts{low} > 0 || $iconfidence_counts{medium} > 0) {
-	print "RECOMMENDATION:\n";
-	print "Review the generated schemas in $opts{output_dir}/\n";
-	print "Focus on methods with medium/low confidence ratings.\n\n";
+	print "RECOMMENDATION:\n",
+		"Review the generated schemas in $opts{output_dir}/\n",
+		"Focus on methods with medium/low confidence ratings.\n\n";
 }
 
 if($opts{'verbose'}) {

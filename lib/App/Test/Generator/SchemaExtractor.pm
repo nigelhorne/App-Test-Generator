@@ -1447,17 +1447,6 @@ sub _analyze_method {
 	my $code_params = $self->_analyze_code($method->{body});
 	my $sig_params = $self->_analyze_signature($method->{body});
 
-	my $validator_params = $self->_extract_validator_schema($method->{body});
-
-	if ($validator_params) {
-		$schema->{input} = $validator_params->{input};
-		$schema->{input_style} = 'hash';
-		$schema->{_confidence}{input} = 'high';
-		$schema->{_analysis}{confidence_factors}{input} = [
-			'Input schema extracted from validator'
-		];
-	}
-
 	# Merge field declarations into code_params before merging analyses
 	if (keys %$fields) {
 		$self->_merge_field_declarations($code_params, $fields);
@@ -1467,8 +1456,7 @@ sub _analyze_method {
 	$schema->{input} = $self->_merge_parameter_analyses(
 		$pod_params,
 		$code_params,
-		$sig_params,
-		$validator_params
+		$sig_params
 	);
 
 	# Analyze output/return values
@@ -1637,181 +1625,6 @@ sub _detect_accessor_methods {
 		}
 	}
 }
-
-# Look at the parameters validation that may exist in the code, and infer the input schema from that
-sub _extract_validator_schema {
-	my ($self, $code) = @_;
-
-	   return unless $code;
-
-	# Normalize to PPI::Document
-	if (!ref($code)) {
-		my $doc = PPI::Document->new(\$code);
-		return unless $doc;
-		$code = $doc;
-	}
-
-	$self->_log("  DEBUG: scanning for validator schema");
-	$self->_log("  DEBUG: code ref = " . ref($code));
-
-    return
-        $self->_extract_pvs_schema($code)
-     || $self->_extract_pv_schema($code)
-     || $self->_extract_type_params_schema($code)
-     || $self->_extract_moosex_params_schema($code);
-}
-
-# Normalize to PPI::Document if needed
-sub _ppi {
-	my ($self, $code) = @_;
-
-	return $code if ref($code) && $code->can('find');
-	return PPI::Document->new(\$code);
-}
-
-# Params::Validate::Strict
-sub _extract_pvs_schema {
-	my ($self, $code) = @_;
-
-	return unless $code->content =~ /\bvalidate_strict\s*\(/;
-
-	my $doc = $self->_ppi($code) or return;
-
-	my $calls = $doc->find(
-        sub {
-            $_[1]->isa('PPI::Token::Word')
-            && $_[1]->content eq 'validate_strict'
-        }
-    ) or return;
-
-    for my $call (@$calls) {
-        my $list = $call->parent;
-        while ($list && !$list->isa('PPI::Structure::List')) {
-            $list = $list->parent;
-        }
-        next unless $list;
-
-        my ($schema_block) = grep {
-            $_->isa('PPI::Structure::Block')
-        } $list->children;
-
-        next unless $schema_block;
-
-        my $schema = $self->_extract_schema_hash_from_block($schema_block);
-        return $self->_normalize_validator_schema($schema)
-            if $schema;
-    }
-
-if ($code->content =~ /validate_strict\s*\(\s*(\{.*?\})\s*\)/s) {
-    my $schema_text = $1;
-    my $schema = $self->_parse_perl_hashref($schema_text);
-    return {
-        input => $schema,
-        style => 'hash',
-        source => 'validator',
-    };
-}
-
-    return;
-}
-
-# Params::Validate
-sub _extract_pv_schema {
-	my ($self, $code) = @_;
-
-	my $doc = $self->_ppi($code) or return;
-
-	my $calls = $doc->find(
-        sub {
-            $_[1]->isa('PPI::Token::Word')
-            && $_[1]->content eq 'validate'
-        }
-    ) or return;
-
-    for my $call (@$calls) {
-        my $list = $call->parent;
-        while ($list && !$list->isa('PPI::Structure::List')) {
-            $list = $list->parent;
-        }
-        next unless $list;
-
-        my ($schema_block) = grep {
-            $_->isa('PPI::Structure::Block')
-        } $list->children;
-
-        next unless $schema_block;
-
-        my $schema = $self->_extract_schema_hash_from_block($schema_block);
-        return $self->_normalize_validator_schema($schema)
-            if $schema;
-    }
-
-    return;
-}
-
-sub _extract_type_params_schema {
-    my ($self, $code) = @_;
-
-	my $doc = $self->_ppi($code) or return;
-
-	my $calls = $doc->find(
-        sub {
-            $_[1]->isa('PPI::Token::Word')
-            && $_[1]->content eq 'compile'
-        }
-    ) or return;
-
-    # Conservative: treat Dict[...] as hash input
-    return {
-        input_style => 'hash',
-        input => {},
-        _notes => ['Type::Params detected (schema opaque)'],
-        _confidence => { input => 'medium' },
-    };
-}
-
-sub _extract_moosex_params_schema {
-    my ($self, $code) = @_;
-
-	my $doc = $self->_ppi($code) or return;
-
-	my $calls = $doc->find(
-        sub {
-            $_[1]->isa('PPI::Token::Word')
-            && $_[1]->content eq 'validated_hash'
-        }
-    ) or return;
-
-    return {
-        input_style => 'hash',
-        input => {},
-        _confidence => { input => 'medium' },
-        _notes => ['MooseX::Params::Validate detected'],
-    };
-}
-
-sub _normalize_validator_schema {
-	my ($self, $schema) = @_;
-
-	my %input;
-
-    for my $name (keys %$schema) {
-        my $spec = $schema->{$name};
-
-        $input{$name} = {
-            %$spec,
-            optional => $spec->{optional} // 0,
-            _source  => 'validator',
-            _type_confidence => 'high',
-        };
-    }
-
-    return {
-        input_style => 'hash',
-        input => \%input,
-    };
-}
-
 
 =head2 _analyze_pod
 
@@ -4300,20 +4113,20 @@ sub _calculate_input_confidence {
     push @factors, sprintf("Analyzed %d parameter%s", $count, $count == 1 ? '' : 's');
     push @factors, sprintf("Average confidence score: %.1f", $avg);
 
-    # Add top contributing factors
-    my @sorted_params = sort { $param_details{$b}{score} <=> $param_details{$a}{score} } keys %param_details;
+	# Add top contributing factors
+	my @sorted_params = sort { $param_details{$b}{score} <=> $param_details{$a}{score} } keys %param_details;
 
-    if (@sorted_params) {
-        my $highest = $sorted_params[0];
-        my $highest_score = $param_details{$highest}{score};
-        push @factors, sprintf("Highest scoring parameter: \$$highest (score: %d)", $highest_score);
+	if (@sorted_params) {
+		my $highest = $sorted_params[0];
+		my $highest_score = $param_details{$highest}{score};
+		push @factors, sprintf("Highest scoring parameter: \$$highest (score: %d)", $highest_score);
 
-        if (@sorted_params > 1) {
-            my $lowest = $sorted_params[-1];
-            my $lowest_score = $param_details{$lowest}{score};
-            push @factors, sprintf("Lowest scoring parameter: \$$lowest (score: %d)", $lowest_score);
-        }
-    }
+		if (@sorted_params > 1) {
+			my $lowest = $sorted_params[-1];
+			my $lowest_score = $param_details{$lowest}{score};
+			push @factors, sprintf("Lowest scoring parameter: \$$lowest (score: %d)", $lowest_score);
+		}
+	}
 
 	# Determine confidence level
 	my $level;
