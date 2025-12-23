@@ -1652,99 +1652,6 @@ sub _extract_validator_schema {
 		|| $self->_extract_moosex_params_schema($code);
 }
 
-
-sub __extract_validator_schema {
-	my ($self, $code) = @_;
-
-	# Ensure we have a PPI::Document
-	$code = PPI::Document->new(\$code) unless ref($code) && $code->isa('PPI::Document');
-
-	# Find calls to known validators
-	my $calls = $code->find(sub {
-		$_[1]->isa('PPI::Token::Word') && $_[1]->content =~ /(?:\w+::)*(?:validate_strict|validate|params|validated)$/;
-	});
-	return unless $calls && @$calls;
-
-	my $input_schema = {};
-
-	$self->_log("  DEBUG found " . scalar(@$calls) . " possible calls to validators");
-
-	for my $token (@$calls) {
-		my $arg_list = $token->snext_sibling;
-
-	# If it's a list, look inside it
-	if ($arg_list && $arg_list->isa('PPI::Structure::List')) {
-		$arg_list = ($arg_list->find_first('PPI::Structure::Constructor') // $arg_list);
-	}
-
-	next unless $arg_list && $arg_list->isa('PPI::Structure::Constructor');
-	
-	my @children = $arg_list->children;
-
-	# Look for hash keys that define input
-	for (my $i = 0; $i < @children; $i++) {
-		my $child = $children[$i];
-
-		# For Params::Validate::Strict or Params::Validate: look for 'schema' key
-		use PPI::Token::Quote;	# just for clarity
-
-		my $key;
-		if ($child->isa('PPI::Token::Word')) {
-			$key = $child->content;
-		} elsif ($child->isa('PPI::Token::Quote')) {
-			$key = $child->string;	# unquoted value
-		}
-
-if ($key && $key eq 'schema') {
-    $self->_log(__LINE__ . " matched schema key");
-    # Skip to the next non-whitespace sibling after the '=>' operator
-    my $next = $children[$i+1];
-    $next = $children[$i+2] if $next && $next->isa('PPI::Token::Whitespace');  # handle whitespace
-
-    if ($next && $next->isa('PPI::Token::Operator') && $next->content eq '=>') {
-        my $schema_val;
-        # Skip any whitespace after '=>'
-        for my $j ($i+2 .. $#children) {
-            next if $children[$j]->isa('PPI::Token::Whitespace');
-            $schema_val = $children[$j];
-            last;
-        }
-        # Finally, check if it's a constructor
-        if ($schema_val && $schema_val->isa('PPI::Structure::Constructor')) {
-            $input_schema = $self->_parse_schema_hash($schema_val);
-            last;
-        }
-    }
-}
-
-            # For Type::Params / MooseX::Params::Validate, look for 'validated' hash
-            if ($child->isa('PPI::Token::Word') && $child->content eq 'validated') {
-                my $val_hash = $children[$i+2];
-                if ($val_hash && $val_hash->isa('PPI::Structure::Constructor')) {
-                    $input_schema = $self->_parse_schema_hash($val_hash);
-                    last;
-                }
-            }
-
-            # Fallback: simple hash constructor
-            if ($child->isa('PPI::Structure::Constructor')) {
-                my $parsed = $self->_parse_schema_hash($child);
-                $input_schema = { %$input_schema, %$parsed } if $parsed;
-            }
-        }
-        last if keys %$input_schema;
-    }
-
-    return unless keys %$input_schema;
-
-    return {
-        input       => $input_schema,
-        input_style => 'hash',
-        _confidence => { input => 'high' },
-        _analysis   => { confidence_factors => { input => ['Input schema extracted from validator'] } },
-    };
-}
-
 sub _parse_schema_hash {
 	my ($self, $hash) = @_;
 
@@ -1760,17 +1667,17 @@ sub _parse_schema_hash {
 
 			my @tokens = $child->children;
 
-            # find key => value
-            for (my $i = 0; $i < @tokens; $i++) {
-                my $t = $tokens[$i];
-                if ($t->isa('PPI::Token::Word') || $t->isa('PPI::Token::Symbol')) {
-                    $key = $t->content;
-                }
-                if ($t->isa('PPI::Structure::Constructor')) {
-                    $val = $t;
-                    last;
-                }
-            }
+			# find key => value
+			for (my $i = 0; $i < @tokens; $i++) {
+				my $t = $tokens[$i];
+				if ($t->isa('PPI::Token::Word') || $t->isa('PPI::Token::Symbol')) {
+					$key = $t->content;
+				}
+				if ($t->isa('PPI::Structure::Constructor')) {
+					$val = $t;
+					last;
+				}
+			}
 
             if ($key && $val) {
                 # process inner hash (type, optional)
@@ -1876,35 +1783,60 @@ sub _extract_pvs_schema {
 }
 
 # Params::Validate
-sub _extract_pv_schema {
+sub _extract_pv_schema
+{
 	my ($self, $code) = @_;
+
+	return unless $code =~ /\bvalidate\s*\(/;
 
 	my $doc = $self->_ppi($code) or return;
 
 	my $calls = $doc->find(sub {
-		$_[1]->isa('PPI::Token::Word')
-		&& $_[1]->content eq 'validate'
+		$_[1]->isa('PPI::Token::Word') && ($_[1]->content eq 'validate' || $_[1]->content eq 'Params::Validate::validate')
 	}) or return;
 
-    for my $call (@$calls) {
-        my $list = $call->parent;
-        while ($list && !$list->isa('PPI::Structure::List')) {
-            $list = $list->parent;
-        }
-        next unless $list;
+	for my $call (@$calls) {
+		my $list = $call->parent;
+		while ($list && !$list->isa('PPI::Structure::List')) {
+			$list = $list->parent;
+		}
+		if(!defined($list)) {
+			my $next = $call->next_sibling();
+			if($next->content() =~ /schema\s*=>\s*(\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\})/s) {
+				my $schema_text = $1;
+				my $compartment = Safe->new();
+				$compartment->permit_only(qw(:base_core :base_mem :base_orig));
 
-        my ($schema_block) = grep {
-            $_->isa('PPI::Structure::Block')
-        } $list->children;
+				my $schema_str = "my \$schema = $schema_text";
+				my $schema = $compartment->reval($schema_str);
+				return {
+					input => $schema,
+					style => 'hash',
+					source => 'validator'
+				}
+			}
+		}
+		next unless $list;
 
-        next unless $schema_block;
+		my ($schema_block) = grep { $_->isa('PPI::Structure::Block') } $list->children;
 
-        my $schema = $self->_extract_schema_hash_from_block($schema_block);
-        return $self->_normalize_validator_schema($schema)
-            if $schema;
-    }
+		next unless $schema_block;
 
-    return;
+		my $schema = $self->_extract_schema_hash_from_block($schema_block);
+		return $self->_normalize_validator_schema($schema) if $schema;
+	}
+
+	if($code =~ /validate_strict\s*\(\s*(\{.*?\})\s*\)/s) {
+		my $schema_text = $1;
+		my $schema = $self->_parse_schema_hash($schema_text);
+		return {
+			input => $schema,
+			style => 'hash',
+			source => 'validator',
+		};
+	}
+
+	return;
 }
 
 sub _extract_type_params_schema {
@@ -4346,31 +4278,31 @@ sub _calculate_input_confidence {
 		my $score = 0;
 		my @param_factors;
 
-        # Type information
-        if ($p->{type}) {
-            if ($p->{type} eq 'string' && ($p->{min} || $p->{max} || $p->{matches})) {
-                $score += 25;
-                push @param_factors, "Type: constrained string (+25)";
-            } elsif ($p->{type} eq 'string') {
-                $score += 10;
-                push @param_factors, "Type: plain string (+10)";
-            } else {
-                $score += 30;
-                push @param_factors, "Type: $p->{type} (+30)";
-            }
-        } else {
-            push @param_factors, "No type information (-0)";
-        }
+		# Type information
+		if ($p->{type}) {
+			if ($p->{type} eq 'string' && ($p->{min} || $p->{max} || $p->{matches})) {
+				$score += 25;
+				push @param_factors, "Type: constrained string (+25)";
+			} elsif ($p->{type} eq 'string') {
+				$score += 10;
+				push @param_factors, "Type: plain string (+10)";
+			} else {
+				$score += 30;
+				push @param_factors, "Type: $p->{type} (+30)";
+			}
+		} else {
+			push @param_factors, "No type information (-0)";
+		}
 
-        # Constraints
-        if (defined $p->{min}) {
-            $score += 15;
-            push @param_factors, "Has min constraint (+15)";
-        }
-        if (defined $p->{max}) {
-            $score += 15;
-            push @param_factors, "Has max constraint (+15)";
-        }
+		# Constraints
+		if (defined $p->{min}) {
+			$score += 15;
+			push @param_factors, 'Has min constraint (+15)';
+		}
+		if (defined $p->{max}) {
+			$score += 15;
+			push @param_factors, "Has max constraint (+15)";
+		}
         if (defined $p->{optional}) {
             $score += 20;
             push @param_factors, "Optional/required explicitly defined (+20)";

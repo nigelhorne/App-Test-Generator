@@ -77,14 +77,13 @@ pod2usage(1) if $opts{help};
 pod2usage(-exitval => 0, -verbose => 2) if $opts{man};
 
 # Get input file
-my $input_file = shift @ARGV or pod2usage("Error: No input file specified");
+my $input_file = shift @ARGV or pod2usage('Error: No input file specified');
 
-die "Error: File not found: $input_file\n" unless -f $input_file;
+die "Error: File not found: $input_file" unless -f $input_file;
 
 # Run the extractor
 print "Extracting schemas from: $input_file\n";
-print "Output directory: $opts{output_dir}\n";
-print "\n";
+print "Output directory: $opts{output_dir}\n\n";
 
 my $extractor = App::Test::Generator::SchemaExtractor->new(
 	input_file => $input_file,
