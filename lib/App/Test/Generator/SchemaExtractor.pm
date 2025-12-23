@@ -1451,7 +1451,6 @@ sub _analyze_method {
 	my $validator_params = $self->_extract_validator_schema($method->{body});
 
 	if ($validator_params) {
-	$self->_log(__LINE__);
 		$schema->{input} = $validator_params->{input};
 		$schema->{input_style} = 'hash';
 		$schema->{_confidence}{input} = { 'factors' => [ 'Determined from validator' ], 'level' => 'high' };
@@ -1515,13 +1514,13 @@ sub _analyze_method {
 	my $input_level = $input_confidence->{level};
 	my $output_level = $output_confidence->{level};
 
-    my %level_rank = (
-        none => 0,
-        very_low => 1,
-        low => 2,
-        medium => 3,
-        high => 4
-    );
+	my %level_rank = (
+		none => 0,
+		very_low => 1,
+		low => 2,
+		medium => 3,
+		high => 4
+	);
 
 	# Overall is the lower of input and output
 	my $overall = $level_rank{$input_level} < $level_rank{$output_level} ? $input_level : $output_level;
@@ -1665,15 +1664,13 @@ sub __extract_validator_schema {
 		$_[1]->isa('PPI::Token::Word') && $_[1]->content =~ /(?:\w+::)*(?:validate_strict|validate|params|validated)$/;
 	});
 	return unless $calls && @$calls;
-	$self->_log(__LINE__);
 
 	my $input_schema = {};
 
 	$self->_log("  DEBUG found " . scalar(@$calls) . " possible calls to validators");
 
-    for my $token (@$calls) {
-        my $arg_list = $token->snext_sibling;
-	$self->_log(__LINE__);
+	for my $token (@$calls) {
+		my $arg_list = $token->snext_sibling;
 
 	# If it's a list, look inside it
 	if ($arg_list && $arg_list->isa('PPI::Structure::List')) {
@@ -1682,10 +1679,7 @@ sub __extract_validator_schema {
 
 	next unless $arg_list && $arg_list->isa('PPI::Structure::Constructor');
 	
-	$self->_log(__LINE__);
         my @children = $arg_list->children;
-
-	$self->_log(__LINE__);
 
         # Look for hash keys that define input
         for (my $i = 0; $i < @children; $i++) {
@@ -1701,8 +1695,6 @@ if ($child->isa('PPI::Token::Word')) {
     $key = $child->string;  # unquoted value
 }
 
-	$self->_log(__LINE__);
-	$self->_log($key) if($key);
 if ($key && $key eq 'schema') {
     $self->_log(__LINE__ . " matched schema key");
     # Skip to the next non-whitespace sibling after the '=>' operator
@@ -1727,7 +1719,6 @@ if ($key && $key eq 'schema') {
 
             # For Type::Params / MooseX::Params::Validate, look for 'validated' hash
             if ($child->isa('PPI::Token::Word') && $child->content eq 'validated') {
-	$self->_log(__LINE__);
                 my $val_hash = $children[$i+2];
                 if ($val_hash && $val_hash->isa('PPI::Structure::Constructor')) {
                     $input_schema = $self->_parse_schema_hash($val_hash);
@@ -1737,11 +1728,9 @@ if ($key && $key eq 'schema') {
 
             # Fallback: simple hash constructor
             if ($child->isa('PPI::Structure::Constructor')) {
-	$self->_log(__LINE__);
                 my $parsed = $self->_parse_schema_hash($child);
                 $input_schema = { %$input_schema, %$parsed } if $parsed;
             }
-	$self->_log(__LINE__);
         }
         last if keys %$input_schema;
     }
@@ -1761,18 +1750,11 @@ sub _parse_schema_hash {
 
 	my %result;
 
-	$self->_log(__LINE__);
-
 	for my $child ($hash->children) {
 		# skip whitespace and operators
-	$self->_log(__LINE__);
 		next if $child->isa('PPI::Token::Whitespace') || $child->isa('PPI::Token::Operator');
-	$self->_log(__LINE__);
 
 		if ($child->isa('PPI::Statement') || $child->isa('PPI::Statement::Expression')) {
-			$self->_log(__LINE__);
-			$self->_log($child->content());
-
 			my $key;
 			my $val;
 
@@ -1843,8 +1825,6 @@ sub _extract_pvs_schema {
 
 	return unless $code =~ /\bvalidate_strict\s*\(/;
 
-	$self->_log(__LINE__);
-
 	my $doc = $self->_ppi($code) or return;
 
 	my $calls = $doc->find(sub {
@@ -1858,49 +1838,31 @@ sub _extract_pvs_schema {
 		}
 		if(!defined($list)) {
 			my $next = $call->next_sibling();
-			$self->_log($next->content());
-			$self->_log(__LINE__);
 			if($next->content() =~ /schema\s*=>\s*(\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\})/s) {
 				my $schema_text = $1;
-				my $compartment = Safe->new;
-$compartment->permit_only(qw(:base_core :base_mem :base_orig)); 
+				my $compartment = Safe->new();
+				$compartment->permit_only(qw(:base_core :base_mem :base_orig));
 
-my $schema_str = "my \$schema = " . $schema_text;
-my $schema = $compartment->reval($schema_str);
-use Data::Dumper;
-			$self->_log(__LINE__);
-$self->_log(Dumper($schema));
-			$self->_log(__LINE__);
+				my $schema_str = "my \$schema = $schema_text";
+				my $schema = $compartment->reval($schema_str);
 				return {
 					input => $schema,
 					style => 'hash',
 					source => 'validator'
 				}
 			}
-			$self->_log(__LINE__);
-			return {
-				input => $self->_parse_schema_hash($next),
-				style => 'hash',
-				source => 'validator'
-			}
 		}
 		next unless $list;
-
-		$self->_log(__LINE__);
 
 		my ($schema_block) = grep { $_->isa('PPI::Structure::Block') } $list->children;
 
 		next unless $schema_block;
 
-		$self->_log(__LINE__);
-
 		my $schema = $self->_extract_schema_hash_from_block($schema_block);
 		return $self->_normalize_validator_schema($schema) if $schema;
 	}
 
-	$self->_log(__LINE__);
 	if($code =~ /validate_strict\s*\(\s*(\{.*?\})\s*\)/s) {
-		$self->_log(__LINE__);
 		my $schema_text = $1;
 		my $schema = $self->_parse_schema_hash($schema_text);
 		return {
@@ -1919,12 +1881,10 @@ sub _extract_pv_schema {
 
 	my $doc = $self->_ppi($code) or return;
 
-	my $calls = $doc->find(
-        sub {
-            $_[1]->isa('PPI::Token::Word')
-            && $_[1]->content eq 'validate'
-        }
-    ) or return;
+	my $calls = $doc->find(sub {
+		$_[1]->isa('PPI::Token::Word')
+		&& $_[1]->content eq 'validate'
+	}) or return;
 
     for my $call (@$calls) {
         my $list = $call->parent;
