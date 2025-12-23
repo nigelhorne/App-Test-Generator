@@ -1319,58 +1319,58 @@ sub _extract_class_methods {
 
 	# Simple pattern: find "class Name {" blocks
 	# This won't handle all edge cases but will work for simple classes
-    while ($content =~ /class\s+(\w+)\s*\{/g) {
-        my $class_name = $1;
-        my $start_pos = pos($content);
+	while ($content =~ /class\s+(\w+)\s*\{/g) {
+		my $class_name = $1;
+		my $start_pos = pos($content);
 
-        # Find the matching closing brace (simple brace counting)
-        my $depth = 1;
-        my $class_end = $start_pos;
+		# Find the matching closing brace (simple brace counting)
+		my $depth = 1;
+		my $class_end = $start_pos;
 
-        while ($depth > 0 && $class_end < length($content)) {
-            my $char = substr($content, $class_end, 1);
-            $depth++ if $char eq '{';
-            $depth-- if $char eq '}';
-            $class_end++;
-        }
+		while ($depth > 0 && $class_end < length($content)) {
+			my $char = substr($content, $class_end, 1);
+			$depth++ if $char eq '{';
+			$depth-- if $char eq '}';
+			$class_end++;
+		}
 
-        my $class_body = substr($content, $start_pos, $class_end - $start_pos - 1);
+		my $class_body = substr($content, $start_pos, $class_end - $start_pos - 1);
 
-        $self->_log("  Found class $class_name");
+		$self->_log("  Found class $class_name");
 
-        # Extract field declarations from class
-        my $fields = $self->_extract_field_declarations($class_body);
+		# Extract field declarations from class
+		my $fields = $self->_extract_field_declarations($class_body);
 
-        # Find methods in the class body
-        while ($class_body =~ /method\s+(\w+)\s*(\([^)]*\))?\s*\{/g) {
-            my ($method_name, $sig_with_parens) = ($1, $2 || '()');
+		# Find methods in the class body
+		while ($class_body =~ /method\s+(\w+)\s*(\([^)]*\))?\s*\{/g) {
+			my ($method_name, $sig_with_parens) = ($1, $2 || '()');
 
-            # Skip private unless configured
-            if ($method_name =~ /^_/ && $method_name !~ /^_(new|init|build)/) {
-                next unless $self->{include_private};
-            }
+			# Skip private unless configured
+			if ($method_name =~ /^_/ && $method_name !~ /^_(new|init|build)/) {
+				next unless $self->{include_private};
+			}
 
-            # Reconstruct as sub for analysis
-            my $signature = $sig_with_parens;
-            $signature =~ s/^\(//;
-            $signature =~ s/\)$//;
+			# Reconstruct as sub for analysis
+			my $signature = $sig_with_parens;
+			$signature =~ s/^\(//;
+			$signature =~ s/\)$//;
 
-            # Build a fake sub declaration
-            my $fake_sub = "sub $method_name($signature) { }";
+			# Build a fake sub declaration
+			my $fake_sub = "sub $method_name($signature) { }";
 
-            push @$methods, {
-                name => $method_name,
-                node => undef,
-                body => $fake_sub,  # Just the signature for now
-                pod => '',
-                type => 'method',
-                class => $class_name,
-                fields => $fields,
-            };
+			push @$methods, {
+				name => $method_name,
+				node => undef,
+				body => $fake_sub,  # Just the signature for now
+				pod => '',
+				type => 'method',
+				class => $class_name,
+				fields => $fields,
+			};
 
-            $self->_log("  Found method $method_name in class $class_name");
-        }
-    }
+			$self->_log("  Found method $method_name in class $class_name");
+		}
+	}
 }
 
 =head2 _extract_pod_before
@@ -1679,21 +1679,21 @@ sub __extract_validator_schema {
 
 	next unless $arg_list && $arg_list->isa('PPI::Structure::Constructor');
 	
-        my @children = $arg_list->children;
+	my @children = $arg_list->children;
 
-        # Look for hash keys that define input
-        for (my $i = 0; $i < @children; $i++) {
+	# Look for hash keys that define input
+	for (my $i = 0; $i < @children; $i++) {
 		my $child = $children[$i];
 
-            # For Params::Validate::Strict or Params::Validate: look for 'schema' key
-	    use PPI::Token::Quote;  # just for clarity
+		# For Params::Validate::Strict or Params::Validate: look for 'schema' key
+		use PPI::Token::Quote;	# just for clarity
 
-my $key;
-if ($child->isa('PPI::Token::Word')) {
-    $key = $child->content;
-} elsif ($child->isa('PPI::Token::Quote')) {
-    $key = $child->string;  # unquoted value
-}
+		my $key;
+		if ($child->isa('PPI::Token::Word')) {
+			$key = $child->content;
+		} elsif ($child->isa('PPI::Token::Quote')) {
+			$key = $child->string;	# unquoted value
+		}
 
 if ($key && $key eq 'schema') {
     $self->_log(__LINE__ . " matched schema key");

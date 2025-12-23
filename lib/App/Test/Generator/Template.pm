@@ -760,7 +760,7 @@ sub fuzz_inputs
 							} else {
 								diag(__LINE__, ": TODO: handle semantic type '$semantic'");
 							}
-						} else {
+						} elsif(!$spec->{'memberof'}) {
 							if(my $min = $spec->{min}) {
 								$case_input{$field} = rand_str($min);
 								if($config{'test_empty'} && ($min == 0)) {
@@ -1177,7 +1177,7 @@ sub _generate_string_cases
 				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len + 1), _LINE => __LINE__, _STATUS => 'DIES' ) }; # outside
 			}
 		}
-	} elsif(!$spec->{matches}) {
+	} elsif((!$spec->{matches}) && (!$spec->{memberof})) {
 		# TODO: send them if they match the regex
 		if(exists($spec->{'min'})) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str(($spec->{'min'} + 1) * 1_000), _LINE => __LINE__ ) };
