@@ -11,6 +11,7 @@ use Pod::Simple::Text;
 use YAML::XS;
 use File::Basename;
 use File::Path qw(make_path);
+use Safe;
 use Scalar::Util qw(looks_like_number);
 
 our $VERSION = '0.22';
@@ -1316,8 +1317,8 @@ sub _find_methods {
 sub _extract_class_methods {
 	my ($self, $content, $methods) = @_;
 
-    # Simple pattern: find "class Name {" blocks
-    # This won't handle all edge cases but will work for simple classes
+	# Simple pattern: find "class Name {" blocks
+	# This won't handle all edge cases but will work for simple classes
     while ($content =~ /class\s+(\w+)\s*\{/g) {
         my $class_name = $1;
         my $start_pos = pos($content);
@@ -1447,17 +1448,30 @@ sub _analyze_method {
 	my $code_params = $self->_analyze_code($method->{body});
 	my $sig_params = $self->_analyze_signature($method->{body});
 
-	# Merge field declarations into code_params before merging analyses
-	if (keys %$fields) {
-		$self->_merge_field_declarations($code_params, $fields);
-	}
+	my $validator_params = $self->_extract_validator_schema($method->{body});
 
-	# Merge analyses
-	$schema->{input} = $self->_merge_parameter_analyses(
-		$pod_params,
-		$code_params,
-		$sig_params
-	);
+	if ($validator_params) {
+	$self->_log(__LINE__);
+		$schema->{input} = $validator_params->{input};
+		$schema->{input_style} = 'hash';
+		$schema->{_confidence}{input} = { 'factors' => [ 'Determined from validator' ], 'level' => 'high' };
+		$schema->{_analysis}{confidence_factors}{input} = [
+			'Input schema extracted from validator'
+		];
+	} else {
+		# Merge field declarations into code_params before merging analyses
+		if (keys %$fields) {
+			$self->_merge_field_declarations($code_params, $fields);
+		}
+
+		# Merge analyses
+		$schema->{input} = $self->_merge_parameter_analyses(
+			$pod_params,
+			$code_params,
+			$sig_params,
+			$validator_params
+		);
+	}
 
 	# Analyze output/return values
 	$schema->{output} = $self->_analyze_output($method->{pod}, $method->{body}, $method->{name});
@@ -1473,7 +1487,10 @@ sub _analyze_method {
 	}
 
 	# Calculate confidences
-	my $input_confidence = $schema->{_confidence}{'input'} = $self->_calculate_input_confidence($schema->{input});
+	my $input_confidence = $schema->{_confidence}{'input'};
+	if(!ref($input_confidence)) {
+		$input_confidence = $schema->{_confidence}{'input'} = $self->_calculate_input_confidence($schema->{input});
+	}
 	my $output_confidence = $schema->{_confidence}{'output'} = $self->_calculate_output_confidence($schema->{output});
 
 	# Add metadata
@@ -1489,14 +1506,14 @@ sub _analyze_method {
         }
     };
 
-    # Optionally store detailed per-parameter analysis
-    if ($input_confidence->{per_parameter}) {
-        $schema->{_analysis}{per_parameter_scores} = $input_confidence->{per_parameter};
-    }
+	# Optionally store detailed per-parameter analysis
+	if ($input_confidence->{per_parameter}) {
+		$schema->{_analysis}{per_parameter_scores} = $input_confidence->{per_parameter};
+	}
 
-    # Calculate overall confidence (for backward compatibility)
-    my $input_level = $input_confidence->{level};
-    my $output_level = $output_confidence->{level};
+	# Calculate overall confidence (for backward compatibility)
+	my $input_level = $input_confidence->{level};
+	my $output_level = $output_confidence->{level};
 
     my %level_rank = (
         none => 0,
@@ -1625,6 +1642,374 @@ sub _detect_accessor_methods {
 		}
 	}
 }
+
+# Look at the parameters validation that may exist in the code, and infer the input schema from that
+sub _extract_validator_schema {
+	my ($self, $code) = @_;
+
+	return $self->_extract_pvs_schema($code)
+		|| $self->_extract_pv_schema($code)
+		|| $self->_extract_type_params_schema($code)
+		|| $self->_extract_moosex_params_schema($code);
+}
+
+
+sub __extract_validator_schema {
+	my ($self, $code) = @_;
+
+	# Ensure we have a PPI::Document
+	$code = PPI::Document->new(\$code) unless ref($code) && $code->isa('PPI::Document');
+
+	# Find calls to known validators
+	my $calls = $code->find(sub {
+		$_[1]->isa('PPI::Token::Word') && $_[1]->content =~ /(?:\w+::)*(?:validate_strict|validate|params|validated)$/;
+	});
+	return unless $calls && @$calls;
+	$self->_log(__LINE__);
+
+	my $input_schema = {};
+
+	$self->_log("  DEBUG found " . scalar(@$calls) . " possible calls to validators");
+
+    for my $token (@$calls) {
+        my $arg_list = $token->snext_sibling;
+	$self->_log(__LINE__);
+
+	# If it's a list, look inside it
+	if ($arg_list && $arg_list->isa('PPI::Structure::List')) {
+		$arg_list = ($arg_list->find_first('PPI::Structure::Constructor') // $arg_list);
+	}
+
+	next unless $arg_list && $arg_list->isa('PPI::Structure::Constructor');
+	
+	$self->_log(__LINE__);
+        my @children = $arg_list->children;
+
+	$self->_log(__LINE__);
+
+        # Look for hash keys that define input
+        for (my $i = 0; $i < @children; $i++) {
+		my $child = $children[$i];
+
+            # For Params::Validate::Strict or Params::Validate: look for 'schema' key
+	    use PPI::Token::Quote;  # just for clarity
+
+my $key;
+if ($child->isa('PPI::Token::Word')) {
+    $key = $child->content;
+} elsif ($child->isa('PPI::Token::Quote')) {
+    $key = $child->string;  # unquoted value
+}
+
+	$self->_log(__LINE__);
+	$self->_log($key) if($key);
+if ($key && $key eq 'schema') {
+    $self->_log(__LINE__ . " matched schema key");
+    # Skip to the next non-whitespace sibling after the '=>' operator
+    my $next = $children[$i+1];
+    $next = $children[$i+2] if $next && $next->isa('PPI::Token::Whitespace');  # handle whitespace
+
+    if ($next && $next->isa('PPI::Token::Operator') && $next->content eq '=>') {
+        my $schema_val;
+        # Skip any whitespace after '=>'
+        for my $j ($i+2 .. $#children) {
+            next if $children[$j]->isa('PPI::Token::Whitespace');
+            $schema_val = $children[$j];
+            last;
+        }
+        # Finally, check if it's a constructor
+        if ($schema_val && $schema_val->isa('PPI::Structure::Constructor')) {
+            $input_schema = $self->_parse_schema_hash($schema_val);
+            last;
+        }
+    }
+}
+
+            # For Type::Params / MooseX::Params::Validate, look for 'validated' hash
+            if ($child->isa('PPI::Token::Word') && $child->content eq 'validated') {
+	$self->_log(__LINE__);
+                my $val_hash = $children[$i+2];
+                if ($val_hash && $val_hash->isa('PPI::Structure::Constructor')) {
+                    $input_schema = $self->_parse_schema_hash($val_hash);
+                    last;
+                }
+            }
+
+            # Fallback: simple hash constructor
+            if ($child->isa('PPI::Structure::Constructor')) {
+	$self->_log(__LINE__);
+                my $parsed = $self->_parse_schema_hash($child);
+                $input_schema = { %$input_schema, %$parsed } if $parsed;
+            }
+	$self->_log(__LINE__);
+        }
+        last if keys %$input_schema;
+    }
+
+    return unless keys %$input_schema;
+
+    return {
+        input       => $input_schema,
+        input_style => 'hash',
+        _confidence => { input => 'high' },
+        _analysis   => { confidence_factors => { input => ['Input schema extracted from validator'] } },
+    };
+}
+
+sub _parse_schema_hash {
+	my ($self, $hash) = @_;
+
+	my %result;
+
+	$self->_log(__LINE__);
+
+	for my $child ($hash->children) {
+		# skip whitespace and operators
+	$self->_log(__LINE__);
+		next if $child->isa('PPI::Token::Whitespace') || $child->isa('PPI::Token::Operator');
+	$self->_log(__LINE__);
+
+		if ($child->isa('PPI::Statement') || $child->isa('PPI::Statement::Expression')) {
+			$self->_log(__LINE__);
+			$self->_log($child->content());
+
+			my $key;
+			my $val;
+
+			my @tokens = $child->children;
+
+            # find key => value
+            for (my $i = 0; $i < @tokens; $i++) {
+                my $t = $tokens[$i];
+                if ($t->isa('PPI::Token::Word') || $t->isa('PPI::Token::Symbol')) {
+                    $key = $t->content;
+                }
+                if ($t->isa('PPI::Structure::Constructor')) {
+                    $val = $t;
+                    last;
+                }
+            }
+
+            if ($key && $val) {
+                # process inner hash (type, optional)
+                my %param;
+                for my $inner ($val->children) {
+                    next if $inner->isa('PPI::Token::Whitespace') || $inner->isa('PPI::Token::Operator');
+                    if ($inner->isa('PPI::Statement') || $inner->isa('PPI::Statement::Expression')) {
+                        my ($k_token, $op, $v_token) = $inner->children;
+                        my $k = $k_token->content;
+                        my $v = $v_token->isa('PPI::Token::Word') ? $v_token->content : undef;
+
+                        if ($k eq 'type') {
+                            $param{type} = lc($v // 'string'); # Str -> string
+                        } elsif ($k eq 'optional') {
+                            $param{optional} = $v eq '1' ? 1 : 0;
+                        }
+                    }
+                }
+
+                # defaults
+                $param{type}     //= 'string';
+                $param{optional} //= 0;
+
+                $result{$key} = \%param;
+            }
+        }
+    }
+
+    return {
+        input       => \%result,
+        input_style => 'hash',
+        _confidence => {
+            input => {
+                level   => 'high',
+                factors => ['Input schema extracted from validator'],
+            },
+        },
+    };
+}
+
+# Normalize to PPI::Document if needed
+sub _ppi {
+	my ($self, $code) = @_;
+
+	return $code if ref($code) && $code->can('find');
+	return PPI::Document->new(\$code);
+}
+
+# Params::Validate::Strict
+sub _extract_pvs_schema {
+	my ($self, $code) = @_;
+
+	return unless $code =~ /\bvalidate_strict\s*\(/;
+
+	$self->_log(__LINE__);
+
+	my $doc = $self->_ppi($code) or return;
+
+	my $calls = $doc->find(sub {
+		$_[1]->isa('PPI::Token::Word') && ($_[1]->content eq 'validate_strict' || $_[1]->content eq 'Params::Validate::Strict::validate_strict')
+	}) or return;
+
+	for my $call (@$calls) {
+		my $list = $call->parent;
+		while ($list && !$list->isa('PPI::Structure::List')) {
+			$list = $list->parent;
+		}
+		if(!defined($list)) {
+			my $next = $call->next_sibling();
+			$self->_log($next->content());
+			$self->_log(__LINE__);
+			if($next->content() =~ /schema\s*=>\s*(\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\})/s) {
+				my $schema_text = $1;
+				my $compartment = Safe->new;
+$compartment->permit_only(qw(:base_core :base_mem :base_orig)); 
+
+my $schema_str = "my \$schema = " . $schema_text;
+my $schema = $compartment->reval($schema_str);
+use Data::Dumper;
+			$self->_log(__LINE__);
+$self->_log(Dumper($schema));
+			$self->_log(__LINE__);
+				return {
+					input => $schema,
+					style => 'hash',
+					source => 'validator'
+				}
+			}
+			$self->_log(__LINE__);
+			return {
+				input => $self->_parse_schema_hash($next),
+				style => 'hash',
+				source => 'validator'
+			}
+		}
+		next unless $list;
+
+		$self->_log(__LINE__);
+
+		my ($schema_block) = grep { $_->isa('PPI::Structure::Block') } $list->children;
+
+		next unless $schema_block;
+
+		$self->_log(__LINE__);
+
+		my $schema = $self->_extract_schema_hash_from_block($schema_block);
+		return $self->_normalize_validator_schema($schema) if $schema;
+	}
+
+	$self->_log(__LINE__);
+	if($code =~ /validate_strict\s*\(\s*(\{.*?\})\s*\)/s) {
+		$self->_log(__LINE__);
+		my $schema_text = $1;
+		my $schema = $self->_parse_schema_hash($schema_text);
+		return {
+			input => $schema,
+			style => 'hash',
+			source => 'validator',
+		};
+	}
+
+	return;
+}
+
+# Params::Validate
+sub _extract_pv_schema {
+	my ($self, $code) = @_;
+
+	my $doc = $self->_ppi($code) or return;
+
+	my $calls = $doc->find(
+        sub {
+            $_[1]->isa('PPI::Token::Word')
+            && $_[1]->content eq 'validate'
+        }
+    ) or return;
+
+    for my $call (@$calls) {
+        my $list = $call->parent;
+        while ($list && !$list->isa('PPI::Structure::List')) {
+            $list = $list->parent;
+        }
+        next unless $list;
+
+        my ($schema_block) = grep {
+            $_->isa('PPI::Structure::Block')
+        } $list->children;
+
+        next unless $schema_block;
+
+        my $schema = $self->_extract_schema_hash_from_block($schema_block);
+        return $self->_normalize_validator_schema($schema)
+            if $schema;
+    }
+
+    return;
+}
+
+sub _extract_type_params_schema {
+    my ($self, $code) = @_;
+
+	my $doc = $self->_ppi($code) or return;
+
+	my $calls = $doc->find(
+        sub {
+            $_[1]->isa('PPI::Token::Word')
+            && $_[1]->content eq 'compile'
+        }
+    ) or return;
+
+    # Conservative: treat Dict[...] as hash input
+    return {
+        input_style => 'hash',
+        input => {},
+        _notes => ['Type::Params detected (schema opaque)'],
+        _confidence => { input => 'medium' },
+    };
+}
+
+sub _extract_moosex_params_schema {
+    my ($self, $code) = @_;
+
+	my $doc = $self->_ppi($code) or return;
+
+	my $calls = $doc->find(
+        sub {
+            $_[1]->isa('PPI::Token::Word')
+            && $_[1]->content eq 'validated_hash'
+        }
+    ) or return;
+
+    return {
+        input_style => 'hash',
+        input => {},
+        _confidence => { input => 'medium' },
+        _notes => ['MooseX::Params::Validate detected'],
+    };
+}
+
+sub _normalize_validator_schema {
+	my ($self, $schema) = @_;
+
+	my %input;
+
+    for my $name (keys %$schema) {
+        my $spec = $schema->{$name};
+
+        $input{$name} = {
+            %$spec,
+            optional => $spec->{optional} // 0,
+            _source  => 'validator',
+            _type_confidence => 'high',
+        };
+    }
+
+    return {
+        input_style => 'hash',
+        input => \%input,
+    };
+}
+
 
 =head2 _analyze_pod
 
@@ -4113,20 +4498,20 @@ sub _calculate_input_confidence {
     push @factors, sprintf("Analyzed %d parameter%s", $count, $count == 1 ? '' : 's');
     push @factors, sprintf("Average confidence score: %.1f", $avg);
 
-	# Add top contributing factors
-	my @sorted_params = sort { $param_details{$b}{score} <=> $param_details{$a}{score} } keys %param_details;
+    # Add top contributing factors
+    my @sorted_params = sort { $param_details{$b}{score} <=> $param_details{$a}{score} } keys %param_details;
 
-	if (@sorted_params) {
-		my $highest = $sorted_params[0];
-		my $highest_score = $param_details{$highest}{score};
-		push @factors, sprintf("Highest scoring parameter: \$$highest (score: %d)", $highest_score);
+    if (@sorted_params) {
+        my $highest = $sorted_params[0];
+        my $highest_score = $param_details{$highest}{score};
+        push @factors, sprintf("Highest scoring parameter: \$$highest (score: %d)", $highest_score);
 
-		if (@sorted_params > 1) {
-			my $lowest = $sorted_params[-1];
-			my $lowest_score = $param_details{$lowest}{score};
-			push @factors, sprintf("Lowest scoring parameter: \$$lowest (score: %d)", $lowest_score);
-		}
-	}
+        if (@sorted_params > 1) {
+            my $lowest = $sorted_params[-1];
+            my $lowest_score = $param_details{$lowest}{score};
+            push @factors, sprintf("Lowest scoring parameter: \$$lowest (score: %d)", $lowest_score);
+        }
+    }
 
 	# Determine confidence level
 	my $level;
