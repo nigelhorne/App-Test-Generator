@@ -1752,10 +1752,12 @@ sub _extract_pvs_schema {
 
 				my $schema_str = "my \$schema = $schema_text";
 				my $schema = $compartment->reval($schema_str);
-				return {
-					input => $schema,
-					style => 'hash',
-					source => 'validator'
+				if(scalar keys %{$schema}) {
+					return {
+						input => $schema,
+						style => 'hash',
+						source => 'validator'
+					}
 				}
 			}
 		}
@@ -1802,17 +1804,33 @@ sub _extract_pv_schema
 		}
 		if(!defined($list)) {
 			my $next = $call->next_sibling();
-			if($next->content() =~ /schema\s*=>\s*(\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\})/s) {
-				my $schema_text = $1;
+			my ($arglist, $schema_text) = $self->_parse_pv_call($next);
+
+			if($schema_text) {
 				my $compartment = Safe->new();
 				$compartment->permit_only(qw(:base_core :base_mem :base_orig));
 
 				my $schema_str = "my \$schema = $schema_text";
 				my $schema = $compartment->reval($schema_str);
-				return {
-					input => $schema,
-					style => 'hash',
-					source => 'validator'
+
+				if(scalar keys %{$schema}) {
+					foreach my $arg(keys %{$schema}) {
+						my $field = $schema->{$arg};
+						if(my $type = $field->{'type'}) {
+							if($type eq 'ARRAYREF') {
+								$field->{'type'} = 'arrayref';
+							} elsif($type eq 'SCALAR') {
+								$field->{'type'} = 'string';
+							}
+						}
+						delete $field->{'callbacks'};
+					}
+
+					return {
+						input => $schema,
+						style => 'hash',
+						source => 'validator'
+					}
 				}
 			}
 		}
@@ -1837,6 +1855,49 @@ sub _extract_pv_schema
 	}
 
 	return;
+}
+
+# Parse the calls to Params::Validate
+# Usage:
+# my ($first, $hash) = parse_params_call($string);
+# returns:
+#	$first_arg = '@_'
+#	$hash_str = '{ username => { ... }, ... }'
+
+sub _parse_pv_call {
+	my ($self, $string) = @_;
+    
+	# Remove outer parentheses and whitespace
+	$string =~ s/^\s*\(\s*//;
+	$string =~ s/\s*\)\s*$//;
+    
+	# Find the first comma at brace-depth 0
+	my $depth = 0;
+	my $comma_pos;
+    
+	for my $i (0 .. length($string) - 1) {
+		my $char = substr($string, $i, 1);
+
+		if ($char eq '{') {
+			$depth++;
+		} elsif ($char eq '}') {
+			$depth--;
+		} elsif ($char eq ',' && $depth == 0) {
+			$comma_pos = $i;
+			last;
+		}
+	}
+
+	return unless defined $comma_pos;
+
+	my $first_arg = substr($string, 0, $comma_pos);
+	my $hash_str = substr($string, $comma_pos + 1);
+
+	# Trim whitespace
+	$first_arg =~ s/^\s+|\s+$//g;
+	$hash_str =~ s/^\s+|\s+$//g;
+
+	return ($first_arg, $hash_str);
 }
 
 sub _extract_type_params_schema {
