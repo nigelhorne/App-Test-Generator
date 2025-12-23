@@ -1706,16 +1706,16 @@ sub _parse_schema_hash {
         }
     }
 
-    return {
-        input       => \%result,
-        input_style => 'hash',
-        _confidence => {
-            input => {
-                level   => 'high',
-                factors => ['Input schema extracted from validator'],
-            },
-        },
-    };
+	return {
+		input => \%result,
+		input_style => 'hash',
+		_confidence => {
+			input => {
+				level => 'high',
+				factors => ['Input schema extracted from validator'],
+			},
+		},
+	};
 }
 
 # Normalize to PPI::Document if needed
@@ -1866,15 +1866,15 @@ sub _extract_pv_schema
 
 sub _parse_pv_call {
 	my ($self, $string) = @_;
-    
+
 	# Remove outer parentheses and whitespace
 	$string =~ s/^\s*\(\s*//;
 	$string =~ s/\s*\)\s*$//;
-    
+
 	# Find the first comma at brace-depth 0
 	my $depth = 0;
 	my $comma_pos;
-    
+
 	for my $i (0 .. length($string) - 1) {
 		my $char = substr($string, $i, 1);
 
@@ -1901,44 +1901,110 @@ sub _parse_pv_call {
 }
 
 sub _extract_type_params_schema {
-    my ($self, $code) = @_;
+	my ($self, $code) = @_;
 
 	my $doc = $self->_ppi($code) or return;
 
-	my $calls = $doc->find(
-        sub {
-            $_[1]->isa('PPI::Token::Word')
-            && $_[1]->content eq 'compile'
-        }
-    ) or return;
+	my $calls = $doc->find(sub {
+		$_[1]->isa('PPI::Token::Word') && $_[1]->content eq 'compile'
+	}) or return;
 
-    # Conservative: treat Dict[...] as hash input
-    return {
-        input_style => 'hash',
-        input => {},
-        _notes => ['Type::Params detected (schema opaque)'],
-        _confidence => { input => 'medium' },
-    };
+	# Conservative: treat Dict[...] as hash input
+	return {
+		input_style => 'hash',
+		input => {},
+		_notes => ['Type::Params detected (schema opaque)'],
+		_confidence => { input => 'medium' },
+	};
 }
 
-sub _extract_moosex_params_schema {
-    my ($self, $code) = @_;
+sub _extract_moosex_params_schema
+{
+	my ($self, $code) = @_;
+
+	return unless $code =~ /\bvalidated_hash\s*\(/;
 
 	my $doc = $self->_ppi($code) or return;
 
-	my $calls = $doc->find(
-        sub {
-            $_[1]->isa('PPI::Token::Word')
-            && $_[1]->content eq 'validated_hash'
-        }
-    ) or return;
+	my $calls = $doc->find(sub {
+		$_[1]->isa('PPI::Token::Word') && ($_[1]->content eq 'validated_hash')
+	}) or return;
 
-    return {
-        input_style => 'hash',
-        input => {},
-        _confidence => { input => 'medium' },
-        _notes => ['MooseX::Params::Validate detected'],
-    };
+	for my $call (@$calls) {
+		my $list = $call->parent;
+		while ($list && !$list->isa('PPI::Structure::List')) {
+			$list = $list->parent;
+		}
+		if(!defined($list)) {
+			my $next = $call->next_sibling();
+			my ($arglist, $schema_text) = $self->_parse_pv_call($next);
+
+			if($schema_text) {
+				my $compartment = Safe->new();
+				$compartment->permit_only(qw(:base_core :base_mem :base_orig));
+
+				my $schema_str = "my \$schema = { $schema_text }";
+				$schema_str =~ s/ArrayRef\[(.+?)\]/arrayref, element_type => $1/g;
+				my $schema = $compartment->reval($schema_str);
+
+				if(scalar keys %{$schema}) {
+					foreach my $arg(keys %{$schema}) {
+						my $field = $schema->{$arg};
+						if(my $isa = delete $field->{'isa'}) {
+							$field->{'type'} = $isa;
+						}
+						if(exists($field->{'required'})) {
+							my $required = delete $field->{'required'};
+							$field->{'optional'} = $required ? 0 : 1;
+						} else {
+							$field->{'optional'} = 1;
+						}
+						if(ref($field->{'default'}) eq 'CODE') {
+							delete $field->{'default'};	# TODO
+						}
+					}
+						
+					foreach my $arg(keys %{$schema}) {
+						my $field = $schema->{$arg};
+						if(my $type = $field->{'type'}) {
+							if($type eq 'ARRAYREF') {
+								$field->{'type'} = 'arrayref';
+							} elsif($type eq 'SCALAR') {
+								$field->{'type'} = 'string';
+							}
+						}
+						delete $field->{'callbacks'};
+					}
+
+					return {
+						input => $schema,
+						style => 'hash',
+						source => 'validator'
+					}
+				}
+			}
+		}
+		next unless $list;
+
+		my ($schema_block) = grep { $_->isa('PPI::Structure::Block') } $list->children;
+
+		next unless $schema_block;
+
+		my $schema = $self->_extract_schema_hash_from_block($schema_block);
+		return $self->_normalize_validator_schema($schema) if $schema;
+	}
+
+	if($code =~ /validate_strict\s*\(\s*(\{.*?\})\s*\)/s) {
+		my $schema_text = $1;
+		my $schema = $self->_parse_schema_hash($schema_text);
+		return {
+			input => $schema,
+			style => 'hash',
+			source => 'validator',
+		};
+	}
+
+	return;
 }
 
 sub _normalize_validator_schema {
@@ -1946,23 +2012,22 @@ sub _normalize_validator_schema {
 
 	my %input;
 
-    for my $name (keys %$schema) {
-        my $spec = $schema->{$name};
+	for my $name (keys %$schema) {
+		my $spec = $schema->{$name};
 
-        $input{$name} = {
-            %$spec,
-            optional => $spec->{optional} // 0,
-            _source  => 'validator',
-            _type_confidence => 'high',
-        };
-    }
+		$input{$name} = {
+			%$spec,
+			optional => $spec->{optional} // 0,
+			_source  => 'validator',
+			_type_confidence => 'high',
+		};
+	}
 
-    return {
-        input_style => 'hash',
-        input => \%input,
-    };
+	return {
+		input_style => 'hash',
+		input => \%input,
+	};
 }
-
 
 =head2 _analyze_pod
 
@@ -2342,20 +2407,20 @@ sub _extract_defaults_from_pod {
 		}
 	}
 
-    # Pattern 2: Optional, default 'value'
-    while ($pod =~ /Optional(?:,)?\s+(?:default|value)\s*[:=]?\s*([^\n\r,;]+)/gi) {
-        my $default_text = $1;
-        my $match_pos = pos($pod);
-        $default_text =~ s/^\s+|\s+$//g;
+	# Pattern 2: Optional, default 'value'
+	while ($pod =~ /Optional(?:,)?\s+(?:default|value)\s*[:=]?\s*([^\n\r,;]+)/gi) {
+		my $default_text = $1;
+		my $match_pos = pos($pod);
+		$default_text =~ s/^\s+|\s+$//g;
 
-        # Look backwards for parameter name
-        my $context = substr($pod, 0, $match_pos);
-        my @param_matches = ($context =~ /\$(\w+)/g);
-        if (@param_matches) {
-            my $param = $param_matches[-1];  # Last parameter before the default
-            $defaults{$param} = $self->_clean_default_value($default_text, 0);
-        }
-    }
+		# Look backwards for parameter name
+		my $context = substr($pod, 0, $match_pos);
+		my @param_matches = ($context =~ /\$(\w+)/g);
+		if (@param_matches) {
+			my $param = $param_matches[-1];  # Last parameter before the default
+			$defaults{$param} = $self->_clean_default_value($default_text, 0);
+		}
+	}
 
 	# Pattern 3: In parameter descriptions: $param - type, default 'value'
 	while ($pod =~ /\$(\w+)\s*-\s*\w+(?:\([^)]*\))?[,\s]+default\s+['"]?([^'",\n]+)['"]?/gi) {
@@ -2608,44 +2673,42 @@ sub _detect_list_context {
 	my ($self, $output, $code) = @_;
 	return unless $code;
 
-    # Check for wantarray usage
-    if ($code =~ /wantarray/) {
-        $output->{context_aware} = 1;
-        $self->_log('  OUTPUT: Method uses wantarray - context sensitive');
+	# Check for wantarray usage
+	if ($code =~ /wantarray/) {
+		$output->{context_aware} = 1;
+		$self->_log('  OUTPUT: Method uses wantarray - context sensitive');
 
-        # Debug: show what we're matching against
-        if ($code =~ /(wantarray[^;]+;)/s) {
-            $self->_log("  DEBUG wantarray line: $1");
-        }
+		# Debug: show what we're matching against
+		if ($code =~ /(wantarray[^;]+;)/s) {
+			$self->_log("  DEBUG wantarray line: $1");
+		}
 
-        # Pattern 1: wantarray ? (list, items) : scalar_value (with parens)
-        if ($code =~ /wantarray\s*\?\s*\(([^)]+)\)\s*:\s*([^;]+)/s) {
-            my ($list_return, $scalar_return) = ($1, $2);
-            $self->_log("  DEBUG list (with parens): [$list_return], scalar: [$scalar_return]");
+		if ($code =~ /wantarray\s*\?\s*\(([^)]+)\)\s*:\s*([^;]+)/s) {
+			# Pattern 1: wantarray ? (list, items) : scalar_value (with parens)
+			my ($list_return, $scalar_return) = ($1, $2);
+			$self->_log("  DEBUG list (with parens): [$list_return], scalar: [$scalar_return]");
 
-            $output->{list_context} = $self->_infer_type_from_expression($list_return);
-            $output->{scalar_context} = $self->_infer_type_from_expression($scalar_return);
-            $self->_log('  OUTPUT: Detected context-dependent returns (parenthesized)');
-        }
-        # Pattern 2: wantarray ? @array : scalar (no parens around list)
-        elsif ($code =~ /wantarray\s*\?\s*([^:]+?)\s*:\s*([^;]+)/s) {
-            my ($list_return, $scalar_return) = ($1, $2);
-            # Clean up
-            $list_return =~ s/^\s+|\s+$//g;
-            $scalar_return =~ s/^\s+|\s+$//g;
+			$output->{list_context} = $self->_infer_type_from_expression($list_return);
+			$output->{scalar_context} = $self->_infer_type_from_expression($scalar_return);
+			$self->_log('  OUTPUT: Detected context-dependent returns (parenthesized)');
+		} elsif ($code =~ /wantarray\s*\?\s*([^:]+?)\s*:\s*([^;]+)/s) {
+			# Pattern 2: wantarray ? @array : scalar (no parens around list)
+			my ($list_return, $scalar_return) = ($1, $2);
+			# Clean up
+			$list_return =~ s/^\s+|\s+$//g;
+			$scalar_return =~ s/^\s+|\s+$//g;
 
-            $self->_log("  DEBUG list (no parens): [$list_return], scalar: [$scalar_return]");
+			$self->_log("  DEBUG list (no parens): [$list_return], scalar: [$scalar_return]");
 
-            $output->{list_context} = $self->_infer_type_from_expression($list_return);
-            $output->{scalar_context} = $self->_infer_type_from_expression($scalar_return);
-            $self->_log('  OUTPUT: Detected context-dependent returns (non-parenthesized)');
-        }
-        # Pattern 3: return unless wantarray; return (list);
-        elsif ($code =~ /return[^;]*unless\s+wantarray.*?return\s*\(([^)]+)\)/s) {
-            $output->{list_context} = { type => 'array' };
-            $self->_log('  OUTPUT: Detected list context return after wantarray check');
-        }
-    }
+			$output->{list_context} = $self->_infer_type_from_expression($list_return);
+			$output->{scalar_context} = $self->_infer_type_from_expression($scalar_return);
+			$self->_log('  OUTPUT: Detected context-dependent returns (non-parenthesized)');
+		} elsif ($code =~ /return[^;]*unless\s+wantarray.*?return\s*\(([^)]+)\)/s) {
+			# Pattern 3: return unless wantarray; return (list);
+			$output->{list_context} = { type => 'array' };
+			$self->_log('  OUTPUT: Detected list context return after wantarray check');
+			}
+		}
 
 	# Detect explicit list returns (multiple values in parentheses)
 	# Avoid false positives from function calls
@@ -2699,10 +2762,10 @@ sub _detect_void_context {
 
 	$self->_log('  DEBUG Found ' . scalar(@returns) . " return statements");
 
-    # Count different return patterns
-    my $no_value_returns = 0;
-    my $true_returns = 0;
-    my $self_returns = 0;
+	# Count different return patterns
+	my $no_value_returns = 0;
+	my $true_returns = 0;
+	my $self_returns = 0;
 
     foreach my $ret (@returns) {
         $ret =~ s/^\s+|\s+$//g;
@@ -2750,24 +2813,24 @@ sub _detect_chaining_pattern {
 		$self_returns++ if $ret eq '$self';
 	}
 
-    # If most/all returns are $self, it's a chaining method
-    if ($self_returns > 0 && $total_returns > 0) {
-        my $ratio = $self_returns / $total_returns;
+	# If most/all returns are $self, it's a chaining method
+	if ($self_returns > 0 && $total_returns > 0) {
+		my $ratio = $self_returns / $total_returns;
 
-        if ($ratio >= 0.8) {
-            $output->{chainable} = 1;
-            $output->{type} = 'object';
-            $output->{returns_self} = 1;
+		if ($ratio >= 0.8) {
+			$output->{chainable} = 1;
+			$output->{type} = 'object';
+			$output->{returns_self} = 1;
 
-            # Get the class name
-            if ($self->{_document}) {
-                my $pkg = $self->{_document}->find_first('PPI::Statement::Package');
-                $output->{isa} = $pkg ? $pkg->namespace : 'UNKNOWN';
-            }
+			# Get the class name
+			if ($self->{_document}) {
+				my $pkg = $self->{_document}->find_first('PPI::Statement::Package');
+				$output->{isa} = $pkg ? $pkg->namespace : 'UNKNOWN';
+			}
 
-            $self->_log("  OUTPUT: Chainable method - returns \$self ($self_returns/$total_returns returns)");
-        }
-    }
+			$self->_log("  OUTPUT: Chainable method - returns \$self ($self_returns/$total_returns returns)");
+		}
+	}
 }
 
 # Detect error return conventions
@@ -2777,7 +2840,7 @@ sub _detect_error_conventions {
 
 	$self->_log('  DEBUG _detect_error_conventions called');
 
-    my %error_patterns;
+	my %error_patterns;
 
     # Pattern 1: return undef if/unless condition
     while ($code =~ /return\s+undef\s+(?:if|unless)\s+([^;]+);/g) {
@@ -3614,8 +3677,8 @@ sub _parse_modern_signature {
 
             $params->{$name} = $param_info;
             $self->_log("  SIG: $name has position $position" .
-                       ($param_info->{optional} ? " (optional)" : "") .
-                       ($param_info->{default} ? ", default: $param_info->{default}" : ""));
+                       ($param_info->{optional} ? " (optional)" : '') .
+                       ($param_info->{default} ? ", default: $param_info->{default}" : ''));
             $position++;
         }
     }
@@ -3625,19 +3688,19 @@ sub _parse_modern_signature {
 sub _parse_signature_parameter {
 	my ($self, $part, $position) = @_;
 
-    my %info = (
-        _source => 'signature',
-        position => $position
-    );
+	my %info = (
+		_source => 'signature',
+		position => $position
+	);
 
-    # Pattern 1: Type constraint WITH default: $name :Type = default
-    if ($part =~ /^\$(\w+)\s*:\s*(\w+)\s*=\s*(.+)$/s) {
-        my ($name, $constraint, $default) = ($1, $2, $3);
-        $default =~ s/^\s+|\s+$//g;
+	# Pattern 1: Type constraint WITH default: $name :Type = default
+	if ($part =~ /^\$(\w+)\s*:\s*(\w+)\s*=\s*(.+)$/s) {
+		my ($name, $constraint, $default) = ($1, $2, $3);
+		$default =~ s/^\s+|\s+$//g;
 
-        $info{name} = $name;
-        $info{optional} = 1;
-        $info{default} = $self->_clean_default_value($default, 1);
+		$info{name} = $name;
+		$info{optional} = 1;
+		$info{default} = $self->_clean_default_value($default, 1);
 
         # Apply type constraint
         if ($constraint =~ /^(Int|Integer)$/i) {
@@ -3852,19 +3915,19 @@ sub _extract_field_declarations {
 
 	my %fields;
 
-    # Pattern: field $name :param;
-    # Pattern: field $name :param(name);
-    # Pattern: field $name = default;
-    # More lenient pattern to catch various formats
-    while ($code =~ /^\s*field\s+\$(\w+)\s*([^;]*);/gm) {
-        my ($name, $modifiers) = ($1, $2);
+	# Pattern: field $name :param;
+	# Pattern: field $name :param(name);
+	# Pattern: field $name = default;
+	# More lenient pattern to catch various formats
+	while ($code =~ /^\s*field\s+\$(\w+)\s*([^;]*);/gm) {
+		my ($name, $modifiers) = ($1, $2);
 
-        $self->_log("  FIELD: Found field \$$name with modifiers: [$modifiers]");
+		$self->_log("  FIELD: Found field \$$name with modifiers: [$modifiers]");
 
-        my %field_info = (
-            name => $name,
-            _source => 'field'
-        );
+		my %field_info = (
+			name => $name,
+			_source => 'field'
+		);
 
         # Check for :param attribute
         if ($modifiers =~ /:param(?:\(([^)]+)\))?/) {
@@ -3909,16 +3972,16 @@ sub _merge_field_declarations {
 	my ($self, $params, $fields) = @_;
 
     foreach my $field_name (keys %$fields) {
-        my $field = $fields->{$field_name};
+	my $field = $fields->{$field_name};
 
         # Only process fields that are parameters
         next unless $field->{is_param};
 
-        my $param_name = $field->{param_name};
+	my $param_name = $field->{param_name};
 
         # Create or update parameter info
         $params->{$param_name} ||= {};
-        my $p = $params->{$param_name};
+	my $p = $params->{$param_name};
 
         # Merge field information into parameter
         $p->{_source} = 'field' unless $p->{_source};
@@ -4002,19 +4065,19 @@ while ($code =~ /\$(\w+)\s*\/\/=\s*([^;]+);/g) {
 	$self->_log("  CODE: $param has default (//=): " . $self->_format_default($params->{$param}{default}));
 }
 
-# Pattern 7: $param = defined $param ? $param : 'default';
-while ($code =~ /\$(\w+)\s*=\s*defined\s+\$\1\s*\?\s*\$\1\s*:\s*([^;]+);/g) {
-    my ($param, $value) = ($1, $2);
+	# Pattern 7: $param = defined $param ? $param : 'default';
+	while ($code =~ /\$(\w+)\s*=\s*defined\s+\$\1\s*\?\s*\$\1\s*:\s*([^;]+);/g) {
+		my ($param, $value) = ($1, $2);
 
-    # Create param entry if it doesn't exist
-    $params->{$param} ||= {};
+		# Create param entry if it doesn't exist
+		$params->{$param} ||= {};
 
-    my $cleaned = $self->_clean_default_value($value, 1);
+		my $cleaned = $self->_clean_default_value($value, 1);
 
-    $params->{$param}{default} = $cleaned;
-    $params->{$param}{optional} = 1;
-    $self->_log("  CODE: $param has default (ternary): " . $self->_format_default($params->{$param}{default}));
-}
+		$params->{$param}{default} = $cleaned;
+		$params->{$param}{optional} = 1;
+		$self->_log("  CODE: $param has default (ternary): " . $self->_format_default($params->{$param}{default}));
+	}
 
 	# Pattern 8: $param = $args{param} || 'default';
 	while ($code =~ /\$(\w+)\s*=\s*\$args\{['"]?\w+['"]?\}\s*\|\|\s*([^;]+);/g) {
@@ -4108,47 +4171,47 @@ sub _analyze_parameter_validation {
 		$is_required = 1;
 	}
 
-    # Extract default values with the new method
-    my $default_value = $self->_extract_default_value($param, $code);
-    if (defined $default_value && !exists $p->{default}) {
-        $p->{optional} = 1;
-        $p->{default} = $default_value;
+	# Extract default values with the new method
+	my $default_value = $self->_extract_default_value($param, $code);
+	if (defined $default_value && !exists $p->{default}) {
+		$p->{optional} = 1;
+		$p->{default} = $default_value;
 
-        # Try to infer type from default value if not already set
-        unless ($p->{type}) {
-            if (looks_like_number($default_value)) {
-                $p->{type} = $default_value =~ /\./ ? 'number' : 'integer';
-            } elsif (ref($default_value) eq 'ARRAY') {
-                $p->{type} = 'arrayref';
-            } elsif (ref($default_value) eq 'HASH') {
-                $p->{type} = 'hashref';
-            } elsif ($default_value eq 'undef') {
-                $p->{type} = 'scalar';  # undef can be any scalar
-            } elsif (defined $default_value && !ref($default_value)) {
-                $p->{type} = 'string';
-            }
-        }
+		# Try to infer type from default value if not already set
+		unless ($p->{type}) {
+			if (looks_like_number($default_value)) {
+				$p->{type} = $default_value =~ /\./ ? 'number' : 'integer';
+			} elsif (ref($default_value) eq 'ARRAY') {
+				$p->{type} = 'arrayref';
+			} elsif (ref($default_value) eq 'HASH') {
+				$p->{type} = 'hashref';
+			} elsif ($default_value eq 'undef') {
+				$p->{type} = 'scalar';  # undef can be any scalar
+			} elsif (defined $default_value && !ref($default_value)) {
+				$p->{type} = 'string';
+			}
+		}
 
-        $self->_log("  CODE: $param has default value: " .
-                   (ref($default_value) ? Dumper($default_value) : $default_value));
-    }
+		$self->_log("  CODE: $param has default value: " .
+		(ref($default_value) ? Dumper($default_value) : $default_value));
+	}
 
-    # Also check for simple default assignment without condition
-    # Pattern: $param = 'value';
-    if (!$default_value && !exists $p->{default} && $code =~ /\$$param\s*=\s*([^;{}]+?)(?:\s*[;}])/s) {
-        my $assignment = $1;
-        # Make sure it's not part of a larger expression
-        if ($assignment !~ /\$$param/ && $assignment !~ /^shift/) {
-            my $possible_default = $assignment;
-            $possible_default =~ s/\s*;\s*$//;
-            $possible_default = $self->_clean_default_value($possible_default);
-            if (defined $possible_default) {
-                $p->{default} = $possible_default;
-                $p->{optional} = 1;
-                $self->_log("  CODE: $param has unconditional default: $possible_default");
-            }
-        }
-    }
+	# Also check for simple default assignment without condition
+	# Pattern: $param = 'value';
+	if (!$default_value && !exists $p->{default} && $code =~ /\$$param\s*=\s*([^;{}]+?)(?:\s*[;}])/s) {
+		my $assignment = $1;
+		# Make sure it's not part of a larger expression
+		if ($assignment !~ /\$$param/ && $assignment !~ /^shift/) {
+			my $possible_default = $assignment;
+			$possible_default =~ s/\s*;\s*$//;
+			$possible_default = $self->_clean_default_value($possible_default);
+			if (defined $possible_default) {
+				$p->{default} = $possible_default;
+				$p->{optional} = 1;
+				$self->_log("  CODE: $param has unconditional default: $possible_default");
+			}
+		}
+	}
 
 	# Explicit required check overrides default detection
 	if ($is_required) {
@@ -4364,66 +4427,66 @@ sub _calculate_input_confidence {
 			$score += 15;
 			push @param_factors, "Has max constraint (+15)";
 		}
-        if (defined $p->{optional}) {
-            $score += 20;
-            push @param_factors, "Optional/required explicitly defined (+20)";
-        }
-        if ($p->{matches}) {
-            $score += 20;
-            push @param_factors, "Has regex pattern constraint (+20)";
-        }
-        if ($p->{isa}) {
-            $score += 25;
-            push @param_factors, "Specific class constraint: $p->{isa} (+25)";
-        }
+		if (defined $p->{optional}) {
+			$score += 20;
+			push @param_factors, "Optional/required explicitly defined (+20)";
+		}
+		if ($p->{matches}) {
+			$score += 20;
+			push @param_factors, "Has regex pattern constraint (+20)";
+		}
+		if ($p->{isa}) {
+			$score += 25;
+			push @param_factors, "Specific class constraint: $p->{isa} (+25)";
+		}
 
-        # Position information
-        if (defined $p->{position}) {
-            $score += 10;
-            push @param_factors, "Position defined: $p->{position} (+10)";
-        }
+		# Position information
+		if (defined $p->{position}) {
+			$score += 10;
+			push @param_factors, "Position defined: $p->{position} (+10)";
+		}
 
-        # Default value
-        if (exists $p->{default}) {
-            $score += 10;
-            push @param_factors, "Has default value (+10)";
-        }
+		# Default value
+		if (exists $p->{default}) {
+			$score += 10;
+			push @param_factors, "Has default value (+10)";
+		}
 
-        # Semantic information
-        if ($p->{semantic}) {
-            $score += 15;
-            push @param_factors, "Semantic type: $p->{semantic} (+15)";
-        }
+		# Semantic information
+		if ($p->{semantic}) {
+			$score += 15;
+			push @param_factors, "Semantic type: $p->{semantic} (+15)";
+		}
 
-        $param_details{$param} = {
-            score => $score,
-            factors => \@param_factors
-        };
+		$param_details{$param} = {
+			score => $score,
+			factors => \@param_factors
+		};
 
-        $total_score += $score;
-        $count++;
-    }
+		$total_score += $score;
+		$count++;
+	}
 
-    my $avg = $count ? ($total_score / $count) : 0;
+	my $avg = $count ? ($total_score / $count) : 0;
 
-    # Build summary factors
-    push @factors, sprintf("Analyzed %d parameter%s", $count, $count == 1 ? '' : 's');
-    push @factors, sprintf("Average confidence score: %.1f", $avg);
+	# Build summary factors
+	push @factors, sprintf("Analyzed %d parameter%s", $count, $count == 1 ? '' : 's');
+	push @factors, sprintf("Average confidence score: %.1f", $avg);
 
-    # Add top contributing factors
-    my @sorted_params = sort { $param_details{$b}{score} <=> $param_details{$a}{score} } keys %param_details;
+	# Add top contributing factors
+	my @sorted_params = sort { $param_details{$b}{score} <=> $param_details{$a}{score} } keys %param_details;
 
-    if (@sorted_params) {
-        my $highest = $sorted_params[0];
-        my $highest_score = $param_details{$highest}{score};
-        push @factors, sprintf("Highest scoring parameter: \$$highest (score: %d)", $highest_score);
+	if (@sorted_params) {
+		my $highest = $sorted_params[0];
+		my $highest_score = $param_details{$highest}{score};
+		push @factors, sprintf("Highest scoring parameter: \$$highest (score: %d)", $highest_score);
 
-        if (@sorted_params > 1) {
-            my $lowest = $sorted_params[-1];
-            my $lowest_score = $param_details{$lowest}{score};
-            push @factors, sprintf("Lowest scoring parameter: \$$lowest (score: %d)", $lowest_score);
-        }
-    }
+		if (@sorted_params > 1) {
+			my $lowest = $sorted_params[-1];
+			my $lowest_score = $param_details{$lowest}{score};
+			push @factors, sprintf("Lowest scoring parameter: \$$lowest (score: %d)", $lowest_score);
+		}
+	}
 
 	# Determine confidence level
 	my $level;
@@ -4472,11 +4535,11 @@ sub _calculate_output_confidence {
 		push @factors, "Specific return value: $output->{value} (+30)";
 	}
 
-    # Class information for objects
-    if ($output->{isa}) {
-        $score += 30;
-        push @factors, "Returns specific class: $output->{isa} (+30)";
-    }
+	# Class information for objects
+	if ($output->{isa}) {
+		$score += 30;
+		push @factors, "Returns specific class: $output->{isa} (+30)";
+	}
 
     # Context-aware returns
     if ($output->{context_aware}) {
@@ -6061,8 +6124,8 @@ sub _extract_test_hints {
 	my ($self, $method, $schema) = @_;
 
 	my %hints = (
-		boundary_values     => [],
-		invalid_inputs      => [],
+		boundary_values => [],
+		invalid_inputs => [],
 		equivalence_classes => [],
 	);
 
