@@ -1648,7 +1648,7 @@ sub _extract_validator_schema {
 
 	return $self->_extract_pvs_schema($code)
 		|| $self->_extract_pv_schema($code)
-		|| $self->_extract_type_params_schema($code)
+		# || $self->_extract_type_params_schema($code)
 		|| $self->_extract_moosex_params_schema($code);
 }
 
@@ -1900,23 +1900,24 @@ sub _parse_pv_call {
 	return ($first_arg, $hash_str);
 }
 
-sub _extract_type_params_schema {
-	my ($self, $code) = @_;
-
-	my $doc = $self->_ppi($code) or return;
-
-	my $calls = $doc->find(sub {
-		$_[1]->isa('PPI::Token::Word') && $_[1]->content eq 'compile'
-	}) or return;
-
-	# Conservative: treat Dict[...] as hash input
-	return {
-		input_style => 'hash',
-		input => {},
-		_notes => ['Type::Params detected (schema opaque)'],
-		_confidence => { input => 'medium' },
-	};
-}
+# TODO: Type::Params this may not be doable
+# sub _extract_type_params_schema {
+	# my ($self, $code) = @_;
+# 
+	# my $doc = $self->_ppi($code) or return;
+# 
+	# my $calls = $doc->find(sub {
+		# $_[1]->isa('PPI::Token::Word') && $_[1]->content eq 'compile'
+	# }) or return;
+# 
+	# # Conservative: treat Dict[...] as hash input
+	# return {
+		# input_style => 'hash',
+		# input => {},
+		# _notes => ['Type::Params detected (schema opaque)'],
+		# _confidence => { input => 'medium' },
+	# };
+# }
 
 sub _extract_moosex_params_schema
 {

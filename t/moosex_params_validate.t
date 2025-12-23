@@ -36,7 +36,7 @@ sub create_extractor {
 }
 
 # Basic default value patterns
-subtest 'Extact schema from Params::Validate' => sub {
+subtest 'Extact schema from Moose::Params::Validate' => sub {
 	my $module = <<'END_MODULE';
 use MooseX::Params::Validate qw(ValidatedMethod);
 use MooseX::Types::Moose qw(Str ArrayRef Bool);
