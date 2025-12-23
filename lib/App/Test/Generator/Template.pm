@@ -1152,8 +1152,13 @@ sub _generate_string_cases
 				push @cases, { %{$mandatory_args}, ( $arg_name => '0', _STATUS => 'DIES' ) };
 			}
 		}
-	} else {
-		push @cases, { %{$mandatory_args}, ( $arg_name => '', _LINE => __LINE__ ) } if($config{'test_empty'});	# No min, empty string should be allowable
+	} elsif($config{'test_empty'}) {
+		# No min, empty string should be allowable
+		if(defined($spec->{'memberof'}) && (!grep { $_ eq '' } @{$spec->{'memberof'}})) {
+			push @cases, { %{$mandatory_args}, ( $arg_name => '', _LINE => __LINE__, _STATUS => 'DIES' ) };
+		} else {
+			push @cases, { %{$mandatory_args}, ( $arg_name => '', _LINE => __LINE__ ) };
+		}
 	}
 	if (defined $spec->{max}) {
 		my $len = $spec->{max};
@@ -1193,15 +1198,15 @@ sub _generate_string_cases
 		} elsif(defined($spec->{'memberof'}) && !defined($spec->{'max'})) {
 			# Data::Random
 			push @cases, { %{$mandatory_args}, _input => (rand_set(set => $spec->{'memberof'}, size => 1))[0] }
-		} elsif($config{'test_empty'}) {
-			push @cases, { %{$mandatory_args}, ( $arg_name => '', _NAME => $arg_name, _LINE => __LINE__ ) } if((!exists($spec->{min})) || ($spec->{min} == 0));
+		} elsif($config{'test_empty'} && !$spec->{'memberof'}) {
+			push @cases, { %{$mandatory_args}, ( $arg_name => '', _NAME => $arg_name, _LINE => __LINE__ ) };
 		}
 	}
 	# push @cases, { $arg_name => "emoji \x{1F600}" };
 
 	unless(defined($spec->{memberof}) || defined($spec->{matches})) {
 		# --- min/max string/array boundaries ---
-		if (defined $spec->{min}) {
+		if(defined $spec->{min}) {
 			my $len = $spec->{min};
 			if($len == 1) {
 				if($config{'test_empty'}) {
