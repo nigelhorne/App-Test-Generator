@@ -249,7 +249,7 @@ L<App::Test::Generator> ecosystem:
     my $schemas = $extractor->extract_all();
 
     # Use with test generator (typically as separate steps)
-    # fuzz-harness-generator -r schemas/method_name.yaml
+    # fuzz-harness-generator -r schemas/method_name.yml
 
 =head2 Limitations and Considerations
 
@@ -2741,21 +2741,21 @@ sub _detect_void_context {
 	}
 }
 
-# New method: Detect method chaining patterns
+# Detect method chaining patterns
 sub _detect_chaining_pattern {
-    my ($self, $output, $code, $method_name) = @_;
-    return unless $code;
+	my ($self, $output, $code, $method_name) = @_;
+	return unless $code;
 
-    # Count returns of $self
-    my $self_returns = 0;
-    my $total_returns = 0;
+	# Count returns of $self
+	my $self_returns = 0;
+	my $total_returns = 0;
 
-    while ($code =~ /return\s+([^;]+);/g) {
-        my $ret = $1;
-        $ret =~ s/^\s+|\s+$//g;
-        $total_returns++;
-        $self_returns++ if $ret eq '$self';
-    }
+	while ($code =~ /return\s+([^;]+);/g) {
+		my $ret = $1;
+		$ret =~ s/^\s+|\s+$//g;
+		$total_returns++;
+		$self_returns++ if $ret eq '$self';
+	}
 
     # If most/all returns are $self, it's a chaining method
     if ($self_returns > 0 && $total_returns > 0) {
@@ -3517,10 +3517,10 @@ sub _extract_parameters_from_signature {
 		}
 	}
 
-    # Traditional Style 1: my ($self, $arg1, $arg2) = @_;
-if ($code =~ /my\s*\(\s*([^)]+)\)\s*=\s*\@_/s) {
-    my $sig = $1;
-    my $pos = 0;
+	# Traditional Style 1: my ($self, $arg1, $arg2) = @_;
+	if ($code =~ /my\s*\(\s*([^)]+)\)\s*=\s*\@_/s) {
+		my $sig = $1;
+		my $pos = 0;
 
     while ($sig =~ /\$(\w+)/g) {
         my $name = $1;
@@ -3945,47 +3945,6 @@ sub _merge_field_declarations {
     }
 }
 
-# Main integration point - update _analyze_method to use new features
-sub _analyze_method_with_modern_features {
-    my ($self, $method) = @_;
-
-    my $code = $method->{body};
-
-    # Extract modern Perl features
-    my $attributes = $self->_extract_subroutine_attributes($code);
-    my $postfix_derefs = $self->_analyze_postfix_dereferencing($code);
-    my $fields = $self->_extract_field_declarations($code);
-
-    # Standard parameter extraction (now includes modern signatures)
-    my %params;
-    $self->_extract_parameters_from_signature(\%params, $code);
-
-    # Merge field declarations
-    $self->_merge_field_declarations(\%params, $fields) if keys %$fields;
-
-    # Store modern feature information in schema
-    my $schema = {
-        # ... existing schema fields ...
-    };
-
-    if (keys %$attributes) {
-        $schema->{_attributes} = $attributes;
-    }
-
-    if (keys %$postfix_derefs) {
-        $schema->{_modern_features} = {
-            postfix_dereferencing => $postfix_derefs
-        };
-    }
-
-	if (keys %$fields) {
-		$schema->{_fields} = $fields;
-	}
-
-	return $schema;
-}
-
-
 sub _extract_defaults_from_code {
 	my ($self, $params, $code) = @_;
 
@@ -4064,15 +4023,15 @@ while ($code =~ /\$(\w+)\s*=\s*defined\s+\$\1\s*\?\s*\$\1\s*:\s*([^;]+);/g) {
     $self->_log("  CODE: $param has default (ternary): " . $self->_format_default($params->{$param}{default}));
 }
 
-    # Pattern 8: $param = $args{param} || 'default';
-    while ($code =~ /\$(\w+)\s*=\s*\$args\{['"]?\w+['"]?\}\s*\|\|\s*([^;]+);/g) {
-        my ($param, $value) = ($1, $2);
-        next unless exists $params->{$param};
+	# Pattern 8: $param = $args{param} || 'default';
+	while ($code =~ /\$(\w+)\s*=\s*\$args\{['"]?\w+['"]?\}\s*\|\|\s*([^;]+);/g) {
+		my ($param, $value) = ($1, $2);
+		next unless exists $params->{$param};
 
-        $params->{$param}{default} = $self->_clean_default_value($value, 1);
-        $params->{$param}{optional} = 1;
-        $self->_log("  CODE: $param has default (from args): " . $self->_format_default($params->{$param}{default}));
-    }
+		$params->{$param}{default} = $self->_clean_default_value($value, 1);
+		$params->{$param}{optional} = 1;
+		$self->_log("  CODE: $param has default (from args): " . $self->_format_default($params->{$param}{default}));
+	}
 
 	# Pattern for non-empty hashref
 	while ($code =~ /\$(\w+)\s*\|\|=\s*(\{[^}]+\})/gs) {
@@ -4382,10 +4341,10 @@ sub _calculate_input_confidence {
 	my $count = 0;
 	my %param_details;	# Store per-parameter analysis
 
-    foreach my $param (keys %$params) {
-        my $p = $params->{$param};
-        my $score = 0;
-        my @param_factors;
+	foreach my $param (keys %$params) {
+		my $p = $params->{$param};
+		my $score = 0;
+		my @param_factors;
 
         # Type information
         if ($p->{type}) {
@@ -5088,7 +5047,7 @@ sub _write_schema {
 	die if(!defined($self->{'output_dir'}));
 	make_path($self->{output_dir}) unless -d $self->{output_dir};
 
-	my $filename = "$self->{output_dir}/${method_name}.yaml";
+	my $filename = "$self->{output_dir}/${method_name}.yml";
 
 	# Extract package name for module field
 	my $package_name = '';
@@ -5163,7 +5122,7 @@ sub _generate_schema_comments {
 
 	push @comments, '';
 	push @comments, "# Generated by " . ref($self);
-	push @comments, "# Run: fuzz-harness-generator -r $self->{output_dir}/${method_name}.yaml";
+	push @comments, "# Run: fuzz-harness-generator -r $self->{output_dir}/${method_name}.yml";
 	push @comments, '#';
 	push @comments, "# Input confidence: $schema->{_confidence}{input}->{level}";
 	push @comments, "# Output confidence: $schema->{_confidence}{output}->{level}";
@@ -5347,9 +5306,12 @@ sub _serialize_parameter_for_yaml {
 		}
 	}
 
-	# Handle enum even if not marked with semantic
-	if ($param->{enum} && ref($param->{enum}) eq 'ARRAY') {
-		$cleaned{enum} = $param->{enum};
+	# Handle memberof even if not marked with semantic
+	if($param->{enum} && ref($param->{enum}) eq 'ARRAY') {
+		$cleaned{memberof} = $param->{enum};
+	}
+	if($param->{memberof} && ref($param->{memberof}) eq 'ARRAY') {
+		$cleaned{memberof} = $param->{memberof};
 	}
 
 	# Handle object class
