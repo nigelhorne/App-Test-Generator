@@ -14,7 +14,7 @@ use File::Path qw(make_path);
 use Safe;
 use Scalar::Util qw(looks_like_number);
 
-our $VERSION = '0.22';
+our $VERSION = '0.23';
 
 # Configure YAML::XS to not quote numeric strings
 $YAML::XS::QuoteNumericStrings = 0;
@@ -25,7 +25,7 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 
 =head1 VERSION
 
-Version 0.22
+Version 0.23
 
 =head1 SYNOPSIS
 
@@ -1419,7 +1419,7 @@ Combines POD analysis, code pattern analysis, and signature analysis.
 sub _analyze_method {
 	my ($self, $method) = @_;
 	my $code = $method->{body};
-	my $pod = $method->{pod};
+	# my $pod = $method->{pod};
 
 	# Extract modern features
 	my $attributes = $self->_extract_subroutine_attributes($code);
@@ -1903,13 +1903,13 @@ sub _parse_pv_call {
 # TODO: Type::Params this may not be doable
 # sub _extract_type_params_schema {
 	# my ($self, $code) = @_;
-# 
+#
 	# my $doc = $self->_ppi($code) or return;
-# 
+#
 	# my $calls = $doc->find(sub {
 		# $_[1]->isa('PPI::Token::Word') && $_[1]->content eq 'compile'
 	# }) or return;
-# 
+#
 	# # Conservative: treat Dict[...] as hash input
 	# return {
 		# input_style => 'hash',
@@ -1964,7 +1964,7 @@ sub _extract_moosex_params_schema
 							delete $field->{'default'};	# TODO
 						}
 					}
-						
+
 					foreach my $arg(keys %{$schema}) {
 						my $field = $schema->{$arg};
 						if(my $type = $field->{'type'}) {
@@ -2886,15 +2886,15 @@ if ($zero_returns > 0 && $one_returns > 0) {
         }
     }
 
-    # Detect success/failure return pattern
-    my @all_returns = $code =~ /return\s+([^;]+);/g;
-my $has_undef = grep { /^\s*undef\s*(?:if|unless|$)/ } @all_returns;
-    my $has_value = grep { !/^\s*undef\s*$/ && !/^\s*$/ } @all_returns;
+	# Detect success/failure return pattern
+	my @all_returns = $code =~ /return\s+([^;]+);/g;
+	my $has_undef = grep { /^\s*undef\s*(?:if|unless|$)/ } @all_returns;
+	my $has_value = grep { !/^\s*undef\s*$/ && !/^\s*$/ } @all_returns;
 
-    if ($has_undef && $has_value && scalar(@all_returns) >= 2) {
-        $output->{success_failure_pattern} = 1;
-        $self->_log("  OUTPUT: Uses success/failure return pattern");
-    }
+	if ($has_undef && $has_value && scalar(@all_returns) >= 2) {
+		$output->{success_failure_pattern} = 1;
+		$self->_log("  OUTPUT: Uses success/failure return pattern");
+	}
 
     # Store error conventions in output
     if (keys %error_patterns) {
@@ -4045,15 +4045,15 @@ sub _extract_defaults_from_code {
         $self->_log("  CODE: $param has default (||): " . $self->_format_default($params->{$param}{default}));
     }
 
-    # Pattern 5: $param ||= 'default';
-    while ($code =~ /\$(\w+)\s*\|\|=\s*([^;]+);/g) {
-        my ($param, $value) = ($1, $2);
-        next unless exists $params->{$param};
+	# Pattern 5: $param ||= 'default';
+	while ($code =~ /\$(\w+)\s*\|\|=\s*([^;]+);/g) {
+		my ($param, $value) = ($1, $2);
+		next unless exists $params->{$param};
 
-        $params->{$param}{default} = $self->_clean_default_value($value, 1);
-        $params->{$param}{optional} = 1;
-        $self->_log("  CODE: $param has default (||=): " . $self->_format_default($params->{$param}{default}));
-    }
+		$params->{$param}{default} = $self->_clean_default_value($value, 1);
+		$params->{$param}{optional} = 1;
+		$self->_log("  CODE: $param has default (||=): " . $self->_format_default($params->{$param}{default}));
+	}
 
 	# Pattern 6: $param //= 'default';
 	while ($code =~ /\$(\w+)\s*\/\/=\s*([^;]+);/g) {
