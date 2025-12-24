@@ -4055,16 +4055,16 @@ sub _extract_defaults_from_code {
         $self->_log("  CODE: $param has default (||=): " . $self->_format_default($params->{$param}{default}));
     }
 
-    # Pattern 6: $param //= 'default';
-while ($code =~ /\$(\w+)\s*\/\/=\s*([^;]+);/g) {
-    my ($param, $value) = ($1, $2);
-    next unless exists $params->{$param};  # Using -> because $params is a reference
+	# Pattern 6: $param //= 'default';
+	while ($code =~ /\$(\w+)\s*\/\/=\s*([^;]+);/g) {
+		my ($param, $value) = ($1, $2);
+		next unless exists $params->{$param};  # Using -> because $params is a reference
 
-    $params->{$param}{default} = $self->_clean_default_value($value, 1);
+		$params->{$param}{default} = $self->_clean_default_value($value, 1);
 
-	$params->{$param}{optional} = 1;
-	$self->_log("  CODE: $param has default (//=): " . $self->_format_default($params->{$param}{default}));
-}
+		$params->{$param}{optional} = 1;
+		$self->_log("  CODE: $param has default (//=): " . $self->_format_default($params->{$param}{default}));
+	}
 
 	# Pattern 7: $param = defined $param ? $param : 'default';
 	while ($code =~ /\$(\w+)\s*=\s*defined\s+\$\1\s*\?\s*\$\1\s*:\s*([^;]+);/g) {
@@ -5118,6 +5118,7 @@ sub _write_schema {
 		function => $method_name,
 		module => $package_name,
 		config => {
+			dedup => 1,
 			test_nuls => 0,
 			test_undef => 0,
 			test_empty => 1,
