@@ -1492,15 +1492,19 @@ sub _analyze_method {
 	# Add metadata
 	$schema->{_notes} = $self->_generate_notes($schema->{input});
 
-    # Add analytics
-    $schema->{_analysis} = {
-        input_confidence => $input_confidence->{level},
-        output_confidence => $output_confidence->{level},
-        confidence_factors => {
-            input => $input_confidence->{factors},
-            output => $output_confidence->{factors}
-        }
-    };
+	# Add analytics
+	$schema->{_analysis} = {
+		input_confidence => $input_confidence->{level},
+		output_confidence => $output_confidence->{level},
+		confidence_factors => {
+			input => $input_confidence->{factors},
+			output => $output_confidence->{factors}
+		}
+	};
+
+	foreach my $mode('input', 'output') {
+		$self->_set_defaults($schema, $mode);
+	}
 
 	# Optionally store detailed per-parameter analysis
 	if ($input_confidence->{per_parameter}) {
@@ -4022,15 +4026,15 @@ sub _extract_defaults_from_code {
         $self->_log("  CODE: $param has default (unless): " . $self->_format_default($params->{$param}{default}));
     }
 
-    # Pattern 3: $param = value unless $param;
-    while ($code =~ /\$(\w+)\s*=\s*([^;]+?)\s+unless\s+\$\1/g) {
-        my ($param, $value) = ($1, $2);
-        next unless exists $params->{$param};
+	# Pattern 3: $param = value unless $param;
+	while ($code =~ /\$(\w+)\s*=\s*([^;]+?)\s+unless\s+\$\1/g) {
+		my ($param, $value) = ($1, $2);
+		next unless exists $params->{$param};
 
-        $params->{$param}{default} = $self->_clean_default_value($value, 1);
-        $params->{$param}{optional} = 1;
-        $self->_log("  CODE: $param has default (unless): " . $self->_format_default($params->{$param}{default}));
-    }
+		$params->{$param}{default} = $self->_clean_default_value($value, 1);
+		$params->{$param}{optional} = 1;
+		$self->_log("  CODE: $param has default (unless): " . $self->_format_default($params->{$param}{default}));
+	}
 
 	# Pattern 4: $param = $param || 'default';
 	while ($code =~ /\$(\w+)\s*=\s*\$\1\s*\|\|\s*([^;]+);/g) {
@@ -4624,7 +4628,7 @@ sub _generate_notes {
 		my $p = $params->{$param};
 
 		unless ($p->{type}) {
-			push @notes, "$param: type unknown - please review";
+			push @notes, "$param: type unknown - please review - will set to 'string' as a default";
 		}
 
 		unless (defined $p->{optional}) {
@@ -4634,6 +4638,30 @@ sub _generate_notes {
 	}
 
 	return \@notes;
+}
+
+=head2 _set_defaults
+
+Set defaults in the schema, called after the schema has been set up
+
+=cut
+
+sub _set_defaults
+{
+	my ($self, $schema, $mode) = @_;
+
+	my $params = $schema->{$mode};
+
+	foreach my $param (keys %$params) {
+		my $p = $params->{$param};
+
+		next unless(ref($p) eq 'HASH');
+		unless ($p->{type}) {
+			$self->_log("  DEBUG ${mode}{$param}: Setting to 'string' as a default");
+			$p->{'type'} = 'string';
+			$schema->{_confidence}{mode}->{level} = 'low';	# Setting a default means it's a guess
+		}
+	}
 }
 
 =head2 _analyze_relationships
