@@ -4016,15 +4016,15 @@ sub _extract_defaults_from_code {
         $self->_log("  CODE: $param has default: " . $self->_format_default($params->{$param}{default}));
     }
 
-    # Pattern 2: $param = value unless defined $param;
-    while ($code =~ /\$(\w+)\s*=\s*([^;]+?)\s+unless\s+(?:defined\s+)?\$\1/g) {
-        my ($param, $value) = ($1, $2);
-        next unless exists $params->{$param};
+	# Pattern 2: $param = value unless defined $param;
+	while ($code =~ /\$(\w+)\s*=\s*([^;]+?)\s+unless\s+(?:defined\s+)?\$\1/g) {
+		my ($param, $value) = ($1, $2);
+		next unless exists $params->{$param};
 
-        $params->{$param}{default} = $self->_clean_default_value($value, 1);
-        $params->{$param}{optional} = 1;
-        $self->_log("  CODE: $param has default (unless): " . $self->_format_default($params->{$param}{default}));
-    }
+		$params->{$param}{default} = $self->_clean_default_value($value, 1);
+		$params->{$param}{optional} = 1;
+		$self->_log("  CODE: $param has default (unless): " . $self->_format_default($params->{$param}{default}));
+	}
 
 	# Pattern 3: $param = value unless $param;
 	while ($code =~ /\$(\w+)\s*=\s*([^;]+?)\s+unless\s+\$\1/g) {
@@ -6179,7 +6179,7 @@ sub _clean_default_value
 {
 	my ($self, $value, $from_code) = @_;
 
-	return undef unless defined $value;
+	return unless defined $value;
 
 	# Remove leading/trailing whitespace
 	$value =~ s/^\s+|\s+$//g;
@@ -6230,6 +6230,11 @@ sub _clean_default_value
 		}
 	}
 
+	# Sometimes trailing ) is left on
+	if($value !~ /^\(/) {
+		$value =~ s/\)$//;
+	}
+
 	# Handle Perl empty hash (must be before numeric/boolean checks)
 	if ($value =~ /^\{\s*\}$/) {
 		return {};
@@ -6276,7 +6281,8 @@ sub _clean_default_value
 
 	# Handle expressions we can't evaluate
 	if ($value =~ /^\$[a-zA-Z_]/ || $value =~ /\(.*\)/) {
-		return $value;
+		return if($value =~ /^\$|\@|\%/);	# The default is a value, so who knows its type?
+		# return $value;
 	}
 
 	return $value;

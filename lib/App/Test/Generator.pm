@@ -1930,8 +1930,12 @@ sub render_arrayref_map {
 }
 
 # Robustly quote a string (GitHub#1)
-sub q_wrap ($s) {
+sub q_wrap
+{
 	my $s = $_[0];
+
+	return "''" if(!defined($s));
+
 	for my $p ( ['{','}'], ['(',')'], ['[',']'], ['<','>'] ) {
 		my ($l, $r) = @$p;
 		return "q$l$s$r" unless $s =~ /\Q$l\E|\Q$r\E/;
