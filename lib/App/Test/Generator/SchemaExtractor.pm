@@ -3125,6 +3125,20 @@ sub _analyze_code {
 		}
 	}
 
+	if($code =~ /(croak|die)\(.*\)\s+if\s*\(\s*scalar\(\@_\)\s*<\s*(\d+)\s*\)/s) {
+		my $required_count = $2;
+		my @param_names = sort { $params{$a}{position} <=> $params{$b}{position} } keys %params;
+		for my $i (0 .. $required_count-1) {
+			$params{$param_names[$i]}{optional} = 0;
+			$self->_log("  CODE: $param_names[$i] marked required due to croak scalar check");
+		}
+	} elsif ($code =~ /(croak|die)\(.*\)\s+if\s*\(\s*scalar\(\@_\)\s*==\s*(0)\s*\)/s) {
+		foreach my $param (keys %params) {
+			$params{$param}{optional} = 0;
+			$self->_log("  CODE: $param: all parameters are required to so scalar check against 0");
+		}
+	}
+
 	# Analyze each parameter (with safety limit)
 	foreach my $param (keys %params) {
 		if ($param_count++ > $self->{max_parameters}) {
