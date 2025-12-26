@@ -3156,6 +3156,8 @@ sub _analyze_code {
 			$$p->{type} = 'array';
 			$self->_log("  CODE: $param used in scalar context (array)");
 		}
+
+		$self->_extract_error_constraints($p, $param, $code);
 	}
 
 	return \%params;
@@ -3547,6 +3549,90 @@ sub _detect_enum_type {
 				   join(', ', @enum_values));
 			return;
 		}
+	}
+}
+
+sub _extract_error_constraints {
+	my ($self, $p, $param, $code) = @_;
+
+	# Look for die/croak/confess with a condition involving this param
+	while ($code =~ /
+		(?:die|croak|confess)       # error call
+		\s*
+		(?:
+			["']([^"']+)["']        # captured error message
+		|
+			q[qw]?\s*[\(\[]([^)\]]+)[\)\]]  # q(), qq(), qw()
+		)?
+		\s*
+		if\s+
+		(.+?)                      # condition
+		\s*;
+	/gsx) {
+
+		my $message   = $1 || $2;
+		my $condition = $3;
+
+		# Only keep conditions that reference this parameter
+		next unless $condition =~ /\$$param\b/;
+
+		# Initialize storage
+		$$p->{_invalid} ||= [];
+		$$p->{_errors}  ||= [];
+
+		# Normalize condition (strip surrounding parens)
+		$condition =~ s/^\(|\)$//g;
+		$condition =~ s/\s+/ /g;
+
+		# Try to extract a meaningful invalid constraint
+		my $constraint;
+
+		# Examples:
+		#   $age <= 0
+		#   $x eq ''
+		#   length($s) < 3
+		if ($condition =~ /\$$param\s*([!<>=]=?|eq|ne|lt|gt|le|ge)\s*(.+)/) {
+			$constraint = "$1 $2";
+		}
+		elsif ($condition =~ /length\s*\(\s*\$$param\s*\)\s*([<>=!]+)\s*(\d+)/) {
+			$constraint = "length $1 $2";
+		}
+		elsif ($condition =~ /\$$param\s*==\s*0/) {
+			$constraint = '== 0';
+		}
+
+		# Store results
+		push @{ $$p->{_invalid} }, $constraint if $constraint;
+		push @{ $$p->{_errors}  }, $message   if defined $message;
+
+		$self->_log(
+			"  ERROR: $param invalid when [$condition]" .
+			(defined $message ? " => '$message'" : '')
+		);
+	}
+
+	# Numeric comparison with literal
+	if ($code =~ /\b\Q$param\E\s*(<=|<|>=|>)\s*(-?\d+)/) {
+		my ($op, $num) = ($1, $2);
+
+		# Mark required
+		$$p->{optional} = 0;
+
+		if ($op eq '<=') {
+			$$p->{min} = $num + 1;
+			# push @{ $$p->{_invalid} }, "<= $num";
+		} elsif ($op eq '<') {
+			$$p->{min} = $num;
+			# push @{ $$p->{_invalid} }, "< $num";
+		} elsif ($op eq '>=') {
+			$$p->{max} = $num - 1;
+			# push @{ $$p->{_invalid} }, ">= $num";
+		} elsif ($op eq '>') {
+			$$p->{max} = $num;
+			# push @{ $$p->{_invalid} }, "> $num";
+		}
+
+		$self->_log("  ERROR: $param normalized constraint from '$op $num'");
 	}
 }
 
@@ -4006,15 +4092,15 @@ sub _merge_field_declarations {
 sub _extract_defaults_from_code {
 	my ($self, $params, $code) = @_;
 
-    # Pattern 1: my $param = value;
-    while ($code =~ /my\s+\$(\w+)\s*=\s*([^;]+);/g) {
-        my ($param, $value) = ($1, $2);
-        next unless exists $params->{$param};
+	# Pattern 1: my $param = value;
+	while ($code =~ /my\s+\$(\w+)\s*=\s*([^;]+);/g) {
+		my ($param, $value) = ($1, $2);
+		next unless exists $params->{$param};
 
-        $params->{$param}{default} = $self->_clean_default_value($value, 1);
-        $params->{$param}{optional} = 1;
-        $self->_log("  CODE: $param has default: " . $self->_format_default($params->{$param}{default}));
-    }
+		$params->{$param}{default} = $self->_clean_default_value($value, 1);
+		$params->{$param}{optional} = 1;
+	$self->_log("  CODE: $param has default: " . $self->_format_default($params->{$param}{default}));
+	}
 
 	# Pattern 2: $param = value unless defined $param;
 	while ($code =~ /\$(\w+)\s*=\s*([^;]+?)\s+unless\s+(?:defined\s+)?\$\1/g) {
@@ -4114,6 +4200,12 @@ sub _analyze_parameter_constraints {
 	my ($self, $p_ref, $param, $code) = @_;
 	my $p = $$p_ref;
 
+	# Do not treat comparisons inside die/croak/confess as valid constraints
+	my $guarded = 0;
+		if ($code =~ /(die|croak|confess)\b[^{;]*\bif\b[^{;]*\$$param\b/s) {
+		$guarded = 1;
+	}
+
 	# Length checks for strings
 	if ($code =~ /length\s*\(\s*\$$param\s*\)\s*([<>]=?)\s*(\d+)/) {
 		my ($op, $val) = ($1, $2);
@@ -4130,10 +4222,14 @@ sub _analyze_parameter_constraints {
 		$self->_log("  CODE: $param length constraint $op $val");
 	}
 
-	# Numeric range checks
-	if ($code =~ /\$$param\s*([<>]=?)\s*([+-]?(?:\d+\.?\d*|\.\d+))/) {
+	# Numeric range checks (only if NOT part of error guard)
+	if (
+		!$guarded
+		&& $code =~ /\$$param\s*([<>]=?)\s*([+-]?(?:\d+\.?\d*|\.\d+))/
+	) {
 		my ($op, $val) = ($1, $2);
 		$p->{type} ||= looks_like_number($val) ? 'number' : 'integer';
+
 		if ($op eq '<') {
 			$p->{max} = $val - 1;
 		} elsif ($op eq '<=') {
@@ -4143,6 +4239,7 @@ sub _analyze_parameter_constraints {
 		} elsif ($op eq '>=') {
 			$p->{min} = $val;
 		}
+
 		$self->_log("  CODE: $param numeric constraint $op $val");
 	}
 
