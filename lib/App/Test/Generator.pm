@@ -1930,7 +1930,7 @@ sub render_arrayref_map {
 }
 
 # Robustly quote a string (GitHub#1)
-sub q_wrap {
+sub q_wrap ($s) {
 	my $s = $_[0];
 	for my $p ( ['{','}'], ['(',')'], ['[',']'], ['<','>'] ) {
 		my ($l, $r) = @$p;
@@ -1942,7 +1942,6 @@ sub q_wrap {
 	(my $esc = $s) =~ s/'/\\'/g;
 	return "'$esc'";
 }
-
 
 =head2 _generate_transform_properties
 

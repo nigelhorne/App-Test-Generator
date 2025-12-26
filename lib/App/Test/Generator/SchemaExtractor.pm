@@ -1446,7 +1446,6 @@ sub _analyze_method {
 	# Analyze different sources
 	my $pod_params = $self->_analyze_pod($method->{pod});
 	my $code_params = $self->_analyze_code($method->{body});
-	my $sig_params = $self->_analyze_signature($method->{body});
 
 	my $validator_params = $self->_extract_validator_schema($method->{body});
 
@@ -1467,8 +1466,6 @@ sub _analyze_method {
 		$schema->{input} = $self->_merge_parameter_analyses(
 			$pod_params,
 			$code_params,
-			$sig_params,
-			$validator_params
 		);
 	}
 
@@ -3377,10 +3374,11 @@ sub _detect_filehandle_type {
 	}
 
 	# Path validation patterns
-	if ($code =~ /\$$param\s*=~\s*\/.*?[\\\/].*?\//) {
+	# Only match a literal path assigned or defaulted to this variable
+	if(exists $p->{default} && $p->{default} =~ m{^([A-Za-z]:\\|/|\./|\.\./)}) {
 		$p->{type} = 'string';
 		$p->{semantic} = 'filepath';
-		$self->_log("  ADVANCED: $param validated with path pattern");
+		$self->_log("  ADVANCED: $param default looks like a path");
 		return;
 	}
 
@@ -3579,23 +3577,22 @@ sub _extract_parameters_from_signature {
 		my $sig = $1;
 		my $pos = 0;
 
-    while ($sig =~ /\$(\w+)/g) {
-        my $name = $1;
+		while ($sig =~ /\$(\w+)/g) {
+			my $name = $1;
 
-        next if $name =~ /^(self|class)$/i;
+			next if $name =~ /^(self|class)$/i;
 
-        $params->{$name} ||= {
-            _source  => 'code',
-            optional => 1,
-        };
+			$params->{$name} //= {
+				_source  => 'code',
+				optional => 1,
+			};
 
-        $params->{$name}{position} = $pos
-            unless exists $params->{$name}{position};
+			$params->{$name}{position} = $pos unless exists $params->{$name}{position};
 
-        $pos++;
-    }
-    return;
-}
+			$pos++;
+		}
+		return;
+	}
     # Traditional Style 2: my $self = shift; my $arg1 = shift;
     elsif ($code =~ /my\s+\$self\s*=\s*shift/) {
         my @shifts;
@@ -3691,7 +3688,8 @@ sub _parse_signature_parameter {
 
 	my %info = (
 		_source => 'signature',
-		position => $position
+		position => $position,
+		optional => 0,
 	);
 
 	# Pattern 1: Type constraint WITH default: $name :Type = default
@@ -3703,27 +3701,26 @@ sub _parse_signature_parameter {
 		$info{optional} = 1;
 		$info{default} = $self->_clean_default_value($default, 1);
 
-        # Apply type constraint
-        if ($constraint =~ /^(Int|Integer)$/i) {
-            $info{type} = 'integer';
-        } elsif ($constraint =~ /^(Num|Number)$/i) {
-            $info{type} = 'number';
-        } elsif ($constraint =~ /^(Str|String)$/i) {
-            $info{type} = 'string';
-        } elsif ($constraint =~ /^(Bool|Boolean)$/i) {
-            $info{type} = 'boolean';
-        } elsif ($constraint =~ /^(Array|ArrayRef)$/i) {
-            $info{type} = 'arrayref';
-        } elsif ($constraint =~ /^(Hash|HashRef)$/i) {
-            $info{type} = 'hashref';
-        } else {
-            $info{type} = 'object';
-            $info{isa} = $constraint;
-        }
+		# Apply type constraint
+		if ($constraint =~ /^(Int|Integer)$/i) {
+			$info{type} = 'integer';
+		} elsif ($constraint =~ /^(Num|Number)$/i) {
+			$info{type} = 'number';
+		} elsif ($constraint =~ /^(Str|String)$/i) {
+			$info{type} = 'string';
+		} elsif ($constraint =~ /^(Bool|Boolean)$/i) {
+			$info{type} = 'boolean';
+		} elsif ($constraint =~ /^(Array|ArrayRef)$/i) {
+			$info{type} = 'arrayref';
+		} elsif ($constraint =~ /^(Hash|HashRef)$/i) {
+			$info{type} = 'hashref';
+		} else {
+			$info{type} = 'object';
+			$info{isa} = $constraint;
+		}
 
-        return \%info;
-    }
-
+		return \%info;
+	}
     # Pattern 2: Type constraint WITHOUT default: $name :Type
     elsif ($part =~ /^\$(\w+)\s*:\s*(\w+)\s*$/s) {
         my ($name, $constraint) = ($1, $2);
@@ -3758,7 +3755,7 @@ sub _parse_signature_parameter {
 
         $info{name} = $name;
         $info{optional} = 1;
-        $info{default} = $self->_clean_default_value($default, 1);
+	$info{default} = $self->_clean_default_value($default, 1);
         $info{type} = $self->_infer_type_from_default($info{default}) if $self->can('_infer_type_from_default');
 
         return \%info;
@@ -4035,15 +4032,15 @@ sub _extract_defaults_from_code {
         $self->_log("  CODE: $param has default (unless): " . $self->_format_default($params->{$param}{default}));
     }
 
-    # Pattern 4: $param = $param || 'default';
-    while ($code =~ /\$(\w+)\s*=\s*\$\1\s*\|\|\s*([^;]+);/g) {
-        my ($param, $value) = ($1, $2);
-        next unless exists $params->{$param};
+	# Pattern 4: $param = $param || 'default';
+	while ($code =~ /\$(\w+)\s*=\s*\$\1\s*\|\|\s*([^;]+);/g) {
+		my ($param, $value) = ($1, $2);
+		next unless exists $params->{$param};
 
-        $params->{$param}{default} = $self->_clean_default_value($value, 1);
-        $params->{$param}{optional} = 1;
-        $self->_log("  CODE: $param has default (||): " . $self->_format_default($params->{$param}{default}));
-    }
+		$params->{$param}{default} = $self->_clean_default_value($value, 1);
+		$params->{$param}{optional} = 1;
+		$self->_log("  CODE: $param has default (||): " . $self->_format_default($params->{$param}{default}));
+	}
 
 	# Pattern 5: $param ||= 'default';
 	while ($code =~ /\$(\w+)\s*\|\|=\s*([^;]+);/g) {
@@ -4220,54 +4217,6 @@ sub _analyze_parameter_validation {
 		delete $p->{default} if exists $p->{default};
 		$self->_log("  CODE: $param is required (validation check)");
 	}
-}
-
-=head2 _analyze_signature
-
-Analyze method signature to extract parameter names.
-
-=cut
-
-sub _analyze_signature {
-	my ($self, $code) = @_;
-
-	my %params;
-	my $position = 0;
-
-	# Classic: my ($self, $arg1, $arg2) = @_;
-	if ($code =~ /my\s*\(\s*\$(\w+)\s*,\s*(.+?)\)\s*=\s*\@_/s) {
-		my $first_var = $1;
-		my $rest = $2;
-
-		# Skip $self or $class
-		if ($first_var =~ /^(self|class)$/i) {
-			# Extract remaining parameters with positions
-			while ($rest =~ /\$(\w+)/g) {
-				$params{$1} = {
-					_source => 'signature',
-					type => 'string',
-					position => $position++,
-				};
-				$self->_log("  SIG: $1 has position $params{$1}{position}");
-			}
-		} else {
-			# First parameter is not self/class, include it
-			$params{$first_var} = {
-				_source => 'signature',
-				type => 'string',
-				position => $position++,
-			};
-			while ($rest =~ /\$(\w+)/g) {
-				$params{$1} = {
-					_source => 'signature',
-					type => 'string',
-					position => $position++,
-				};
-			}
-		}
-	}
-
-	return \%params;
 }
 
 =head2 _merge_parameter_analyses
