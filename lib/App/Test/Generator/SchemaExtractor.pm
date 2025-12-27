@@ -1416,7 +1416,7 @@ Combines POD analysis, code pattern analysis, and signature analysis.
 sub _analyze_method {
 	my ($self, $method) = @_;
 	my $code = $method->{body};
-	# my $pod = $method->{pod};
+	my $pod = $method->{pod};
 
 	# Extract modern features
 	my $attributes = $self->_extract_subroutine_attributes($code);
@@ -1441,10 +1441,10 @@ sub _analyze_method {
 	};
 
 	# Analyze different sources
-	my $pod_params = $self->_analyze_pod($method->{pod});
-	my $code_params = $self->_analyze_code($method->{body});
+	my $pod_params = $self->_analyze_pod($pod);
+	my $code_params = $self->_analyze_code($code);
 
-	my $validator_params = $self->_extract_validator_schema($method->{body});
+	my $validator_params = $self->_extract_validator_schema($code);
 
 	if ($validator_params) {
 		$schema->{input} = $validator_params->{input};
@@ -1543,8 +1543,9 @@ sub _analyze_method {
 	}
 
 	my $hints = $self->_extract_test_hints($method, $schema);
+	$self->_extract_pod_examples($pod, $hints);
 
-	for my $k (qw(boundary_values invalid_inputs)) {
+	for my $k (qw(boundary_values invalid_inputs valid_inputs equivalence_classes)) {
 		my %seen;
 		$hints->{$k} = [
 			grep { !$seen{ defined $_ ? $_ : '__undef__' }++ }
@@ -3896,23 +3897,23 @@ sub _parse_signature_parameter {
 
 # Helper: Infer type from default value
 sub _infer_type_from_default {
-    my ($self, $default) = @_;
+	my ($self, $default) = @_;
 
-    return undef unless defined $default;
+	return undef unless defined $default;
 
-    if (ref($default) eq 'HASH') {
-        return 'hashref';
-    } elsif (ref($default) eq 'ARRAY') {
-        return 'arrayref';
-    } elsif ($default =~ /^-?\d+$/) {
-        return 'integer';
-    } elsif ($default =~ /^-?\d+\.\d+$/) {
-        return 'number';
-    } elsif ($default eq '1' || $default eq '0') {
-        return 'boolean';
-    } else {
-        return 'string';
-    }
+	if (ref($default) eq 'HASH') {
+		return 'hashref';
+	} elsif (ref($default) eq 'ARRAY') {
+		return 'arrayref';
+	} elsif ($default =~ /^-?\d+$/) {
+		return 'integer';
+	} elsif ($default =~ /^-?\d+\.\d+$/) {
+		return 'number';
+	} elsif ($default eq '1' || $default eq '0') {
+		return 'boolean';
+	} else {
+		return 'string';
+	}
 }
 
 # Extract subroutine attributes
@@ -6214,6 +6215,7 @@ sub _extract_test_hints {
 		boundary_values => [],
 		invalid_inputs => [],
 		equivalence_classes => [],
+		valid_inputs => [],
 	);
 
 	my $code = $method->{body};
@@ -6269,6 +6271,67 @@ sub _extract_boundary_value_hints {
 	# Remove duplicates
 	my %seen;
 	$hints->{boundary_values} = [ grep { !$seen{$_}++ } @{ $hints->{boundary_values} } ];
+}
+
+# --- POD example extraction (non-authoritative hints) ---
+sub _extract_pod_examples {
+	my ($self, $pod, $hints) = @_;
+
+	return $hints unless $pod;
+
+	my @examples;
+
+	# Extract SYNOPSIS
+	return $hints unless $pod =~ /=head2\s+SYNOPSIS\s*(.+?)(?=\n=head|\z)/s;
+	my $synopsis = $1;
+
+	# Constructor examples: ->wilma(foo => 'bar', count => 5)
+	while ($synopsis =~ /->([a-z_0-9A-Z]+)\s*\(\s*(.*?)\s*\)/sg) {
+		my ($method, $args) = ($1, $2);
+		my %kv;
+
+		while ($args =~ /(\w+)\s*=>\s*(?:'([^']*)'|"([^"]*)"|(\d+))/g) {
+			my $key = $1;
+			my $val = defined $2 ? $2 : defined $3 ? $3 : $4;
+			$kv{$key} = $val;
+		}
+
+		push @examples, {
+			style => 'named',
+			source => 'pod',
+			args => \%kv,
+			function => $method,	# TODO: add a sanity check this is what we expect
+		} if %kv;
+	}
+
+	unless(scalar(@examples)) {
+		# Positional calls: func($a, $b)
+		while ($synopsis =~ /\b(\w+)\s*\(\s*(.*?)\s*\)/sg) {
+			my ($func, $argstr) = ($1, $2);
+
+			# next if $func eq 'new';	# already handled
+
+			my @args = map { s/^\s+|\s+$//gr } split /\s*,\s*/, $argstr;
+
+			next unless @args;
+
+			push @examples, {
+				style	=> 'positional',
+				source	=> 'pod',
+				function => $func,
+				args	=> \@args,
+			};
+		}
+	}
+
+	if (scalar(@examples)) {
+		$hints->{valid_inputs} ||= [];
+		push @{ $hints->{valid_inputs} }, @examples;
+
+		$self->_log("  POD: extracted " . scalar(@examples) . " example call(s)");
+	}
+
+	return $hints;
 }
 
 =head2 _clean_default_value
