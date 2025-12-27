@@ -600,8 +600,6 @@ Detection provides:
 
 =over 4
 
-=item * C<chainable> flag - Method supports chaining
-
 =item * C<returns_self> - Returns invocant for chaining
 
 =item * C<class> - The class name being returned
@@ -2820,7 +2818,6 @@ sub _detect_chaining_pattern {
 		my $ratio = $self_returns / $total_returns;
 
 		if ($ratio >= 0.8) {
-			$output->{chainable} = 1;
 			$output->{type} = 'object';
 			$output->{returns_self} = 1;
 
@@ -2924,11 +2921,11 @@ if ($zero_returns > 0 && $one_returns > 0) {
 
 # Helper method: Infer type from an expression
 sub _infer_type_from_expression {
-    my ($self, $expr) = @_;
+	my ($self, $expr) = @_;
 
-    return { type => 'scalar' } unless defined $expr;
+	return { type => 'scalar' } unless defined $expr;
 
-    $expr =~ s/^\s+|\s+$//g;
+	$expr =~ s/^\s+|\s+$//g;
 
     # Check for multiple comma-separated values (indicates array/list)
     if ($expr =~ /,/) {
@@ -3008,7 +3005,6 @@ sub _detect_chaining_from_pod {
 		$pod =~ /fluent\s+interface/i ||
 		$pod =~ /method\s+chaining/i) {
 
-		$output->{chainable} = 1;
 		$output->{returns_self} = 1;
 		$self->_log("  OUTPUT: POD indicates chainable/fluent interface");
 	}
@@ -3953,13 +3949,13 @@ sub _extract_subroutine_attributes {
         }
     }
 
-    # Process common attributes
-    if ($attributes{Returns}) {
-        my $return_type = $attributes{Returns};
-        if ($return_type ne '1') {  # Only log if it's an actual type, not just the flag
-            $self->_log("  ATTR: Method declares return type: $return_type");
-        }
-    }
+	# Process common attributes
+	if ($attributes{Returns}) {
+		my $return_type = $attributes{Returns};
+		if ($return_type ne '1') {  # Only log if it's an actual type, not just the flag
+			$self->_log("  ATTR: Method declares return type: $return_type");
+		}
+	}
 
 	if ($attributes{lvalue}) {
 		$self->_log("  ATTR: Method is lvalue (can be assigned to)");
@@ -4054,23 +4050,22 @@ sub _extract_field_declarations {
 
         # Check for default value - must come before type constraint check
         if ($modifiers =~ /=\s*([^:;]+)(?::|;|$)/) {
-            my $default = $1;
-            $default =~ s/\s+$//;
-            $field_info{default} = $self->_clean_default_value($default, 1);
-            $field_info{optional} = 1;
-            $self->_log("  FIELD: $name has default: " .
-                       (defined $field_info{default} ? $field_info{default} : 'undef'));
-        }
+		my $default = $1;
+		$default =~ s/\s+$//;
+		$field_info{default} = $self->_clean_default_value($default, 1);
+		$field_info{optional} = 1;
+		$self->_log("  FIELD: $name has default: " .  (defined $field_info{default} ? $field_info{default} : 'undef'));
+	}
 
-        # Check for type constraints
-        if ($modifiers =~ /:isa\(([^)]+)\)/) {
-            $field_info{isa} = $1;
-            $field_info{type} = 'object';
-            $self->_log("  FIELD: $name has type constraint: $1");
-        }
+	# Check for type constraints
+	if ($modifiers =~ /:isa\(([^)]+)\)/) {
+	    $field_info{isa} = $1;
+	    $field_info{type} = 'object';
+	    $self->_log("  FIELD: $name has type constraint: $1");
+	}
 
-        $fields{$name} = \%field_info;
-    }
+		$fields{$name} = \%field_info;
+	}
 
 	return \%fields;
 }
@@ -4079,15 +4074,15 @@ sub _extract_field_declarations {
 sub _merge_field_declarations {
 	my ($self, $params, $fields) = @_;
 
-    foreach my $field_name (keys %$fields) {
-	my $field = $fields->{$field_name};
+	foreach my $field_name (keys %$fields) {
+		my $field = $fields->{$field_name};
 
-        # Only process fields that are parameters
-        next unless $field->{is_param};
+		# Only process fields that are parameters
+		next unless $field->{is_param};
 
 	my $param_name = $field->{param_name};
 
-        # Create or update parameter info
+	# Create or update parameter info
         $params->{$param_name} ||= {};
 	my $p = $params->{$param_name};
 
@@ -4638,7 +4633,7 @@ sub _calculate_output_confidence {
     }
 
     # Chainable methods
-    if ($output->{chainable}) {
+    if ($output->{returns_self}) {
         $score += 15;
         push @factors, "Chainable method (fluent interface) (+15)";
     }

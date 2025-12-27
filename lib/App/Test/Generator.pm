@@ -1488,6 +1488,9 @@ sub generate
 			$setup_code .= "\nmy \$obj = new_ok('$module' => [ { $new_code } ] );";
 		}
 		$call_code = "\$result = \$obj->$function(\$input);";
+		if($output{'returns_self'}) {
+			$call_code .= "ok(\$result eq \$self, \"$function returns self\"";
+		}
 		$position_code = "\$result = \$obj->$function(\@alist);";
 	} elsif(defined($module)) {
 		$call_code = "\$result = $module\->$function(\$input);";
@@ -2110,8 +2113,7 @@ sub _process_custom_properties {
 				carp "Unknown built-in property '$prop_name', skipping";
 				next;
 			}
-		}
-		elsif (ref($prop_def) eq 'HASH') {
+		} elsif (ref($prop_def) eq 'HASH') {
 			# Custom property with code
 			$prop_name = $prop_def->{name} || 'custom_property';
 			$prop_code = $prop_def->{code};
