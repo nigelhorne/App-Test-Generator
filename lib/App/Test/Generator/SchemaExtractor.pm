@@ -1605,7 +1605,7 @@ sub _detect_accessor_methods {
 	my ($self, $method, $schema) = @_;
 
 	my $body = $method->{body};
-	my $name = $method->{name};
+	# my $name = $method->{name};
 
 	# Simple getter: return $self->{field};
 	if ($body =~ /return\s+\$self\s*->\s*\{([^}]+)\}\s*;/) {
@@ -2927,25 +2927,25 @@ sub _infer_type_from_expression {
 
 	$expr =~ s/^\s+|\s+$//g;
 
-    # Check for multiple comma-separated values (indicates array/list)
-    if ($expr =~ /,/) {
-        my $comma_count = 0;
-        my $depth = 0;
-        for my $char (split //, $expr) {
-            $depth++ if $char =~ /[\(\[\{]/;
-            $depth-- if $char =~ /[\)\]\}]/;
-            $comma_count++ if $char eq ',' && $depth == 0;
-        }
+	# Check for multiple comma-separated values (indicates array/list)
+	if ($expr =~ /,/) {
+		my $comma_count = 0;
+		my $depth = 0;
+		for my $char (split //, $expr) {
+			$depth++ if $char =~ /[\(\[\{]/;
+			$depth-- if $char =~ /[\)\]\}]/;
+			$comma_count++ if $char eq ',' && $depth == 0;
+		}
 
-        if ($comma_count > 0) {
-            return { type => 'array' };
-        }
-    }
+		if ($comma_count > 0) {
+			return { type => 'array' };
+		}
+	}
 
-    # Check for @ prefix (array)
-    if ($expr =~ /^\@\w+/ || $expr =~ /^qw\(/ || $expr =~ /^\@\{/) {
-        return { type => 'array' };
-    }
+	# Check for @ prefix (array)
+	if ($expr =~ /^\@\w+/ || $expr =~ /^qw\(/ || $expr =~ /^\@\{/) {
+		return { type => 'array' };
+	}
 
 	# Check for scalar() function - returns count
 	if ($expr =~ /scalar\s*\(/) {
@@ -4193,8 +4193,8 @@ sub _extract_defaults_from_code {
 	}
 
 	# Pattern for non-empty hashref
-	while ($code =~ /\$(\w+)\s*\|\|=\s*(\{[^}]+\})/gs) {
-		my ($param, $value) = ($1, $2);
+	while ($code =~ /\$(\w+)\s*\|\|=\s*\{[^}]+\}/gs) {
+		my $param = $1;
 		next unless exists $params->{$param};
 
 		# Return empty hashref as placeholder (can't evaluate complex hashrefs)
