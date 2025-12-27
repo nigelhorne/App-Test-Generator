@@ -534,18 +534,19 @@ sub fuzz_inputs
 				$mandatory_objects{$field} = $obj;
 				$config{'dedup'} = 0;	# FIXME:	Can't yet dedup with class method calls
 			} elsif(($spec->{'type'} eq 'float') || ($spec->{'type'} eq 'number') || ($spec->{'type'} eq 'integer')) {
-				my $min = $spec->{'min'};
-				my $max = $spec->{'max'};
 				my $number;
-				if(defined($min)) {
+				if(defined(my $min = $spec->{min})) {
 					$number = rand($min);
 				} else {
 					$number = rand(100000);
 				}
-				if(defined($max)) {
+				if(defined(my $max = $spec->{max})) {
 					if($number > $max) {
 						$number = $max;
 					}
+				}
+				if($spec->{'type'} eq 'integer') {
+					$number = int($number);
 				}
 				$mandatory_numbers{$field} = $number;
 			} else {
@@ -697,6 +698,8 @@ sub fuzz_inputs
 					}
 				} elsif($type eq 'integer') {
 					$case_input = rand_int() + $input{'min'};
+					# If it's takes an integer, a float should die
+					push @cases, { _input => $case_input + 0.1, _STATUS => 'DIES', _LINE => __LINE__ };
 				} elsif(($type eq 'number') || ($type eq 'float')) {
 					$case_input = rand_num() + $input{'min'};
 				} elsif($type eq 'boolean') {
@@ -704,7 +707,7 @@ sub fuzz_inputs
 				} else {
 					die "TODO: type $type";
 				}
-				push @cases, { _input => $case_input, status => 'OK', _LINE => __LINE__ } if($case_input);
+				push @cases, { _input => $case_input, _STATUS => 'OK', _LINE => __LINE__ } if($case_input);
 			}
 		} else {
 			# our %input = ( str => { type => 'string' } );
@@ -791,6 +794,8 @@ sub fuzz_inputs
 							}
 						} else {
 							$case_input{$field} = rand_int();
+							# If it's takes an integer, a float should die
+							push @cases, { _input => rand_int() + 0.2, _STATUS => 'DIES', _LINE => __LINE__ };
 						}
 					}
 					elsif ($type eq 'boolean') {
