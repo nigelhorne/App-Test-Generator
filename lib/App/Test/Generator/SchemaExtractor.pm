@@ -3921,32 +3921,32 @@ sub _extract_subroutine_attributes {
 
 	my %attributes;
 
-    # Extract all attributes from the sub declaration
-    # Attributes are :name or :name(value) between sub name and either ( or {
-    # Pattern: sub name ATTRIBUTES ( params ) { }
-    # or:      sub name ATTRIBUTES { }
+	# Extract all attributes from the sub declaration
+	# Attributes are :name or :name(value) between sub name and either ( or {
+	# Pattern: sub name ATTRIBUTES ( params ) { }
+	# or:      sub name ATTRIBUTES { }
 
-    # First, find the attributes section (everything between sub name and ( or { )
-    my $attr_section = '';
+	# First, find the attributes section (everything between sub name and ( or { )
+	my $attr_section = '';
 
-    if ($code =~ /sub\s+\w+\s+((?::\w+(?:\([^)]*\))?\s*)+)/s) {
-        $attr_section = $1;
-    }
+	if ($code =~ /sub\s+\w+\s+((?::\w+(?:\([^)]*\))?\s*)+)/s) {
+		$attr_section = $1;
+	}
 
-    # Parse individual attributes from the section
-    if ($attr_section) {
-        while ($attr_section =~ /:(\w+)(?:\(([^)]*)\))?/g) {
-            my ($name, $value) = ($1, $2);
+	# Parse individual attributes from the section
+	if ($attr_section) {
+		while ($attr_section =~ /:(\w+)(?:\(([^)]*)\))?/g) {
+			my ($name, $value) = ($1, $2);
 
-            if (defined $value && $value ne '') {
-                $attributes{$name} = $value;
-                $self->_log("  ATTR: Found attribute :$name($value)");
-            } else {
-                $attributes{$name} = 1;
-                $self->_log("  ATTR: Found attribute :$name");
-            }
-        }
-    }
+			if (defined $value && $value ne '') {
+				$attributes{$name} = $value;
+				$self->_log("  ATTR: Found attribute :$name($value)");
+			} else {
+				$attributes{$name} = 1;
+				$self->_log("  ATTR: Found attribute :$name");
+			}
+		}
+	}
 
 	# Process common attributes
 	if ($attributes{Returns}) {
@@ -4244,17 +4244,14 @@ sub _analyze_parameter_constraints {
 		my ($op, $val) = ($1, $2);
 		$p->{type} ||= looks_like_number($val) ? 'number' : 'integer';
 
-		if ($op eq '<') {
-			$p->{max} = $val - 1;
-		} elsif ($op eq '<=') {
-			$p->{max} = $val;
-		} elsif ($op eq '>') {
-			$p->{min} = $val + 1;
-		} elsif ($op eq '>=') {
-			$p->{min} = $val;
+		if ($op eq '<' || $op eq '<=') {
+			# Only set max if it tightens the range
+			my $max = ($op eq '<') ? $val - 1 : $val;
+			$p->{max} = $max if !defined($p->{max}) || $max < $p->{max};
+		} elsif ($op eq '>' || $op eq '>=') {
+			my $min = ($op eq '>') ? $val + 1 : $val;
+			$p->{min} = $min if !defined($p->{min}) || $min > $p->{min};
 		}
-
-		$self->_log("  CODE: $param numeric constraint $op $val");
 	}
 
 	# Regex pattern matching with better capture
@@ -4299,7 +4296,7 @@ sub _analyze_parameter_validation {
 			} elsif (ref($default_value) eq 'HASH') {
 				$p->{type} = 'hashref';
 			} elsif ($default_value eq 'undef') {
-				$p->{type} = 'scalar';  # undef can be any scalar
+				$p->{type} = 'scalar';	# undef can be any scalar
 			} elsif (defined $default_value && !ref($default_value)) {
 				$p->{type} = 'string';
 			}
