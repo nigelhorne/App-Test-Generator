@@ -686,8 +686,7 @@ Enhanced return analysis adds these fields to method schemas:
         type: array
       scalar_context:
         type: integer
-      chainable: 1               # Returns $self
-      returns_self: 1
+      returns_self: 1               # Returns $self
       void_context: 1            # No meaningful return
       success_indicator: 1       # Always returns true
       error_return: undef        # How errors are signaled
