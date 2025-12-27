@@ -2999,19 +2999,19 @@ sub _infer_type_from_expression {
 
 # Addition to _analyze_output_from_pod to detect chaining documentation
 sub _detect_chaining_from_pod {
-    my ($self, $output, $pod) = @_;
-    return unless $pod;
+	my ($self, $output, $pod) = @_;
+	return unless $pod;
 
-    # Look for explicit chaining documentation
-    if ($pod =~ /returns?\s+(?:\$)?self\b/i ||
-        $pod =~ /chainable/i ||
-        $pod =~ /fluent\s+interface/i ||
-        $pod =~ /method\s+chaining/i) {
+	# Look for explicit chaining documentation
+	if ($pod =~ /returns?\s+(?:\$)?self\b/i ||
+		$pod =~ /chainable/i ||
+		$pod =~ /fluent\s+interface/i ||
+		$pod =~ /method\s+chaining/i) {
 
-        $output->{chainable} = 1;
-        $output->{returns_self} = 1;
-        $self->_log("  OUTPUT: POD indicates chainable/fluent interface");
-    }
+		$output->{chainable} = 1;
+		$output->{returns_self} = 1;
+		$self->_log("  OUTPUT: POD indicates chainable/fluent interface");
+	}
 }
 
 sub _validate_output {
@@ -3023,6 +3023,13 @@ sub _validate_output {
 	}
 	if ($output->{value} && defined $output->{type} && $output->{type} ne 'boolean') {
 		$self->_log("  WARNING: Value set but type is not boolean: $output->{type}");
+	}
+	my %valid_types = map { $_ => 1 } qw(string integer number boolean arrayref hashref object void);
+	if(exists $output->{type}) {
+		if(!$valid_types{$output->{type}}) {
+			$self->_log("  WARNING: Output value type is unknown: '$output->{type}', setting to string");
+			$output->{type} = 'string';
+		}
 	}
 }
 
@@ -3395,7 +3402,7 @@ sub _detect_filehandle_type {
 
 	# Path validation patterns
 	# Only match a literal path assigned or defaulted to this variable
-	if(exists $p->{default} && $p->{default} =~ m{^([A-Za-z]:\\|/|\./|\.\./)}) {
+	if(defined $p->{default} && $p->{default} =~ m{^([A-Za-z]:\\|/|\./|\.\./)}) {
 		$p->{type} = 'string';
 		$p->{semantic} = 'filepath';
 		$self->_log("  ADVANCED: $param default looks like a path");
@@ -3696,20 +3703,19 @@ sub _extract_parameters_from_signature {
 			$pos++;
 		}
 		return;
+	} elsif ($code =~ /my\s+\$self\s*=\s*shift/) {
+		# Traditional Style 2: my $self = shift; my $arg1 = shift;
+		my @shifts;
+		while ($code =~ /my\s+\$(\w+)\s*=\s*shift/g) {
+			push @shifts, $1;
+		}
+		shift @shifts if @shifts && $shifts[0] =~ /^(self|class)$/i;
+		my $pos = 0;
+		foreach my $param (@shifts) {
+			$params->{$param} ||= { _source => 'code', optional => 1, position => $pos++ };
+		}
+		return;
 	}
-    # Traditional Style 2: my $self = shift; my $arg1 = shift;
-    elsif ($code =~ /my\s+\$self\s*=\s*shift/) {
-        my @shifts;
-        while ($code =~ /my\s+\$(\w+)\s*=\s*shift/g) {
-            push @shifts, $1;
-        }
-        shift @shifts if @shifts && $shifts[0] =~ /^(self|class)$/i;
-	my $pos = 0;
-        foreach my $param (@shifts) {
-            $params->{$param} ||= { _source => 'code', optional => 1, position => $pos++ };
-        }
-        return;
-    }
 
     # Traditional Style 3: Function parameters (no $self)
     if ($code =~ /my\s*\(\s*([^)]+)\)\s*=\s*\@_/s) {
