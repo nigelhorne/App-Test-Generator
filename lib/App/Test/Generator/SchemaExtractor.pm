@@ -14,7 +14,7 @@ use File::Path qw(make_path);
 use Safe;
 use Scalar::Util qw(looks_like_number);
 
-our $VERSION = '0.23';
+our $VERSION = '0.24';
 
 # Configure YAML::XS to not quote numeric strings
 $YAML::XS::QuoteNumericStrings = 0;
@@ -25,7 +25,7 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 
 =head1 VERSION
 
-Version 0.23
+Version 0.24
 
 =head1 SYNOPSIS
 
@@ -1681,32 +1681,32 @@ sub _parse_schema_hash {
 				}
 			}
 
-            if ($key && $val) {
-                # process inner hash (type, optional)
-                my %param;
-                for my $inner ($val->children) {
-                    next if $inner->isa('PPI::Token::Whitespace') || $inner->isa('PPI::Token::Operator');
-                    if ($inner->isa('PPI::Statement') || $inner->isa('PPI::Statement::Expression')) {
-                        my ($k_token, $op, $v_token) = $inner->children;
-                        my $k = $k_token->content;
-                        my $v = $v_token->isa('PPI::Token::Word') ? $v_token->content : undef;
+			if ($key && $val) {
+				# process inner hash (type, optional)
+				my %param;
+				for my $inner ($val->children) {
+					next if $inner->isa('PPI::Token::Whitespace') || $inner->isa('PPI::Token::Operator');
+					if ($inner->isa('PPI::Statement') || $inner->isa('PPI::Statement::Expression')) {
+						my ($k_token, $op, $v_token) = $inner->children;
+						my $k = $k_token->content;
+						my $v = $v_token->isa('PPI::Token::Word') ? $v_token->content : undef;
 
-                        if ($k eq 'type') {
-                            $param{type} = lc($v // 'string'); # Str -> string
-                        } elsif ($k eq 'optional') {
-                            $param{optional} = $v eq '1' ? 1 : 0;
-                        }
-                    }
-                }
+						if ($k eq 'type') {
+							$param{type} = lc($v // 'string'); # Str -> string
+						} elsif ($k eq 'optional') {
+							$param{optional} = $v eq '1' ? 1 : 0;
+						}
+					}
+				}
 
-                # defaults
-                $param{type}     //= 'string';
-                $param{optional} //= 0;
+				# defaults
+				$param{type}     //= 'string';
+				$param{optional} //= 0;
 
-                $result{$key} = \%param;
-            }
-        }
-    }
+				$result{$key} = \%param;
+			}
+		}
+	}
 
 	return {
 		input => \%result,
@@ -2021,7 +2021,7 @@ sub _normalize_validator_schema {
 		$input{$name} = {
 			%$spec,
 			optional => $spec->{optional} // 0,
-			_source  => 'validator',
+			_source => 'validator',
 			_type_confidence => 'high',
 		};
 	}
@@ -3598,7 +3598,7 @@ sub _extract_error_constraints {
 		\s*;
 	/gsx) {
 
-		my $message   = $1 || $2;
+		my $message = $1 || $2;
 		my $condition = $3;
 
 		# Only keep conditions that reference this parameter
@@ -3701,7 +3701,7 @@ sub _extract_parameters_from_signature {
 			next if $name =~ /^(self|class)$/i;
 
 			$params->{$name} //= {
-				_source  => 'code',
+				_source => 'code',
 				optional => 1,
 			};
 
@@ -3773,30 +3773,30 @@ sub _parse_modern_signature {
 
 	my $position = 0;
 
-    foreach my $part (@parts) {
-        $part =~ s/^\s+|\s+$//g;
+	foreach my $part (@parts) {
+		$part =~ s/^\s+|\s+$//g;
 
-        # Skip empty parts
-        next unless $part;
+		# Skip empty parts
+		next unless $part;
 
-        # Parse different parameter types
-        my $param_info = $self->_parse_signature_parameter($part, $position);
+		# Parse different parameter types
+		my $param_info = $self->_parse_signature_parameter($part, $position);
 
-        if ($param_info) {
-            my $name = $param_info->{name};
+		if ($param_info) {
+			my $name = $param_info->{name};
 
-            # Skip self/class
-            if ($name =~ /^(self|class)$/i) {
-                next;
-            }
+			# Skip self/class
+			if ($name =~ /^(self|class)$/i) {
+				next;
+			}
 
-            $params->{$name} = $param_info;
-            $self->_log("  SIG: $name has position $position" .
-                       ($param_info->{optional} ? " (optional)" : '') .
-                       ($param_info->{default} ? ", default: $param_info->{default}" : ''));
-            $position++;
-        }
-    }
+			$params->{$name} = $param_info;
+			$self->_log("  SIG: $name has position $position" .
+				($param_info->{optional} ? " (optional)" : '') .
+				($param_info->{default} ? ", default: $param_info->{default}" : ''));
+			$position++;
+		}
+	}
 }
 
 # Parse individual signature parameter
