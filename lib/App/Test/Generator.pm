@@ -1547,7 +1547,17 @@ sub generate
 						perl_quote(join(', ', map { $_ // '' } @$inputs )),
 						$expected_str
 					);
-					$corpus_code .= "is(\$obj->$function($input_str), $expected_str, " . q_wrap($desc) . ");\n";
+					if($output{'type'} eq 'boolean') {
+						if($expected_str eq '1') {
+							$corpus_code .= "ok(\$obj->$function($input_str), " . q_wrap($desc) . ");\n";
+						} elsif($expected_str eq '0') {
+							$corpus_code .= "ok(!\$obj->$function($input_str), " . q_wrap($desc) . ");\n";
+						} else {
+							croak("Boolean is expected to return $expected_str");
+						}
+					} else {
+						$corpus_code .= "is(\$obj->$function($input_str), $expected_str, " . q_wrap($desc) . ");\n";
+					}
 				}
 			} else {
 				if($status eq 'DIES') {
@@ -1561,7 +1571,17 @@ sub generate
 						perl_quote((ref $inputs eq 'ARRAY') ? (join(', ', map { $_ // '' } @{$inputs})) : $inputs),
 						$expected_str
 					);
-					$corpus_code .= "is($module\::$function($input_str), $expected_str, 'Corpus $expected works');\n";
+					if($output{'type'} eq 'boolean') {
+						if($expected_str eq '1') {
+							$corpus_code .= "ok(\$obj->$function($input_str), " . q_wrap($desc) . ");\n";
+						} elsif($expected_str eq '0') {
+							$corpus_code .= "ok(!\$obj->$function($input_str), " . q_wrap($desc) . ");\n";
+						} else {
+							croak("Boolean is expected to return $expected_str");
+						}
+					} else {
+						$corpus_code .= "is(\$obj->$function($input_str), $expected_str, " . q_wrap($desc) . ");\n";
+					}
 				}
 			}
 		}
