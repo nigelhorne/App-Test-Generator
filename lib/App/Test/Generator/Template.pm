@@ -529,9 +529,9 @@ sub fuzz_inputs
 						$class_simple_loaded = 1;
 					};
 				}
-				my $obj = new_ok('Class::Simple');
-				$obj->$method(1);
-				$mandatory_objects{$field} = $obj;
+				my $simple_obj = new_ok('Class::Simple');
+				$simple_obj->$method(1);
+				$mandatory_objects{$field} = $simple_obj;
 				$config{'dedup'} = 0;	# FIXME:	Can't yet dedup with class method calls
 			} elsif(($spec->{'type'} eq 'float') || ($spec->{'type'} eq 'number') || ($spec->{'type'} eq 'integer')) {
 				my $number;

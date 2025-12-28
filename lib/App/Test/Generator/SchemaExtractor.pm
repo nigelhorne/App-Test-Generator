@@ -1476,7 +1476,7 @@ sub _analyze_method {
 	my $needs_object = $self->_needs_object_instantiation($method->{name}, $method->{body}, $method);
 	if ($needs_object) {
 		$schema->{new} = $needs_object;
-		$self->_log("  Method requires object instantiation: $needs_object");
+		$self->_log("  NEW: Method requires object instantiation: $needs_object");
 	}
 
 	# Calculate confidences
@@ -3018,15 +3018,15 @@ sub _validate_output {
 
 	# Warn about suspicious combinations
 	if (defined $output->{type} && $output->{type} eq 'boolean' && !defined($output->{value})) {
-		$self->_log('  WARNING: Boolean type without value - may want to set value: 1');
+		$self->_log('  WARNING Boolean type without value - may want to set value: 1');
 	}
 	if ($output->{value} && defined $output->{type} && $output->{type} ne 'boolean') {
-		$self->_log("  WARNING: Value set but type is not boolean: $output->{type}");
+		$self->_log("  WARNING Value set but type is not boolean: $output->{type}");
 	}
 	my %valid_types = map { $_ => 1 } qw(string integer number boolean arrayref hashref object void);
 	if(exists $output->{type}) {
 		if(!$valid_types{$output->{type}}) {
-			$self->_log("  WARNING: Output value type is unknown: '$output->{type}', setting to string");
+			$self->_log("  WARNING Output value type is unknown: '$output->{type}', setting to string");
 			$output->{type} = 'string';
 		}
 	}
@@ -3716,16 +3716,16 @@ sub _extract_parameters_from_signature {
 		return;
 	}
 
-    # Traditional Style 3: Function parameters (no $self)
-    if ($code =~ /my\s*\(\s*([^)]+)\)\s*=\s*\@_/s) {
-        my $sig = $1;
-        my @param_names = $sig =~ /\$(\w+)/g;
-	my $pos = 0;
-        foreach my $param (@param_names) {
-            next if $param =~ /^(self|class)$/i;
-            $params->{$param} ||= { _source => 'code', optional => 1, position => $pos++ };
-        }
-    }
+	# Traditional Style 3: Function parameters (no $self)
+	if ($code =~ /my\s*\(\s*([^)]+)\)\s*=\s*\@_/s) {
+		my $sig = $1;
+		my @param_names = $sig =~ /\$(\w+)/g;
+		my $pos = 0;
+		foreach my $param (@param_names) {
+			next if $param =~ /^(self|class)$/i;
+			$params->{$param} ||= { _source => 'code', optional => 1, position => $pos++ };
+		}
+	}
 
 	# De-duplicate
 	my %seen;
@@ -5234,7 +5234,14 @@ sub _write_schema {
 
 	# Add 'new' field if object instantiation is needed
 	if ($schema->{new}) {
-		$output->{new} = $schema->{new} eq $package_name ? undef : $schema->{'new'};
+		# Don't try to pull in other packages - FIXME: but that would be OK up the ISA chain
+		if(ref($schema->{new}) || ($schema->{new} eq $package_name)) {
+			$output->{new} = $schema->{new} eq $package_name ? undef : $schema->{'new'};
+		} else {
+			$self->_log("  NEW: Don't use $schema->{new} for object insantiation");
+			delete $schema->{new};
+			delete $output->{new};
+		}
 	}
 
 	# Add relationships if detected
