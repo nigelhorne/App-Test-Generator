@@ -3826,46 +3826,43 @@ sub _parse_signature_parameter {
 		}
 
 		return \%info;
-	}
-    # Pattern 2: Type constraint WITHOUT default: $name :Type
-    elsif ($part =~ /^\$(\w+)\s*:\s*(\w+)\s*$/s) {
-        my ($name, $constraint) = ($1, $2);
-        $info{name} = $name;
-        $info{optional} = 0;
+	} elsif ($part =~ /^\$(\w+)\s*:\s*(\w+)\s*$/s) {
+		# Pattern 2: Type constraint WITHOUT default: $name :Type
+		my ($name, $constraint) = ($1, $2);
+		$info{name} = $name;
+		$info{optional} = 0;
 
-        # Apply type constraint (same as above)
-        if ($constraint =~ /^(Int|Integer)$/i) {
-            $info{type} = 'integer';
-        } elsif ($constraint =~ /^(Num|Number)$/i) {
-            $info{type} = 'number';
-        } elsif ($constraint =~ /^(Str|String)$/i) {
-            $info{type} = 'string';
-        } elsif ($constraint =~ /^(Bool|Boolean)$/i) {
-            $info{type} = 'boolean';
-        } elsif ($constraint =~ /^(Array|ArrayRef)$/i) {
-            $info{type} = 'arrayref';
-        } elsif ($constraint =~ /^(Hash|HashRef)$/i) {
-            $info{type} = 'hashref';
-        } else {
-            $info{type} = 'object';
-            $info{isa} = $constraint;
-        }
+		# Apply type constraint (same as above)
+		if ($constraint =~ /^(Int|Integer)$/i) {
+			$info{type} = 'integer';
+		} elsif ($constraint =~ /^(Num|Number)$/i) {
+			$info{type} = 'number';
+		} elsif ($constraint =~ /^(Str|String)$/i) {
+			$info{type} = 'string';
+		} elsif ($constraint =~ /^(Bool|Boolean)$/i) {
+			$info{type} = 'boolean';
+		} elsif ($constraint =~ /^(Array|ArrayRef)$/i) {
+			$info{type} = 'arrayref';
+		} elsif ($constraint =~ /^(Hash|HashRef)$/i) {
+			$info{type} = 'hashref';
+		} else {
+			$info{type} = 'object';
+			$info{isa} = $constraint;
+		}
 
-        return \%info;
-    }
+		return \%info;
+	} elsif ($part =~ /^\$(\w+)\s*=\s*(.+)$/s) {
+		# Pattern 3: Default WITHOUT type: $name = default
+		my ($name, $default) = ($1, $2);
+		$default =~ s/^\s+|\s+$//g;
 
-    # Pattern 3: Default WITHOUT type: $name = default
-    elsif ($part =~ /^\$(\w+)\s*=\s*(.+)$/s) {
-        my ($name, $default) = ($1, $2);
-        $default =~ s/^\s+|\s+$//g;
-
-        $info{name} = $name;
-        $info{optional} = 1;
+	$info{name} = $name;
+	$info{optional} = 1;
 	$info{default} = $self->_clean_default_value($default, 1);
-        $info{type} = $self->_infer_type_from_default($info{default}) if $self->can('_infer_type_from_default');
+	$info{type} = $self->_infer_type_from_default($info{default}) if $self->can('_infer_type_from_default');
 
-        return \%info;
-    }
+	return \%info;
+	}
 
     # Pattern 4: Plain parameter: $name
     elsif ($part =~ /^\$(\w+)$/s) {

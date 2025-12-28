@@ -1489,7 +1489,7 @@ sub generate
 		}
 		$call_code = "\$result = \$obj->$function(\$input);";
 		if($output{'returns_self'}) {
-			$call_code .= "ok(\$result eq \$self, \"$function returns self\"";
+			$call_code .= "ok(\$result eq \$obj, \"$function returns self\")";
 		}
 		$position_code = "\$result = \$obj->$function(\@alist);";
 	} elsif(defined($module)) {
