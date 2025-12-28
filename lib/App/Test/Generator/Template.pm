@@ -562,6 +562,12 @@ sub fuzz_inputs
 			# our %input = ( type => 'string' );
 			my $type = $input{'type'};
 
+			if($input{'enum'}) {
+				if($input{'memberof'}) {
+					die 'input has both enum and memberof';
+				}
+				$input{'memberof'} = delete $input{'enum'};
+			}
 			foreach my $field(keys %input) {
 				next if($field =~ /^_/);	# Ignore comments
 				if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'memberof', 'position'))) {
