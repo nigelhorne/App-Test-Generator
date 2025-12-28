@@ -2336,12 +2336,15 @@ sub _analyze_output_from_pod {
 		if((!$output->{type}) && ($pod =~ /returns?\s+(?:an?\s+)?(\w+)/i)) {
 			my $type = lc($1);
 
+			$type = 'boolean' if $type =~ /^(true|false|bool)$/;
+
 			# Skip if it's just a number (like "returns 1")
 			$type = 'integer' if $type eq 'int';
 			$type = 'number' if $type =~ /^(num|float)$/;
 			$type = 'boolean' if $type eq 'bool';
 			$type = 'arrayref' if $type eq 'array';
 			$type = 'hashref' if $type eq 'hash';
+
 			if($type =~ /^\d+$/) {
 				if($type eq '1' || $type eq '0') {
 					# Try hard to guess if the result is a boolean
