@@ -1232,6 +1232,9 @@ Extract the package name from the document.
 sub _extract_package_name {
 	my ($self, $document) = @_;
 
+	if(!defined($document)) {
+		$document = $self->{_document};
+	}
 	my $package_stmt = $document->find_first('PPI::Statement::Package');
 	return $package_stmt ? $package_stmt->namespace : 'Unknown';
 }
@@ -2469,15 +2472,20 @@ sub _analyze_output_from_code
 			if($method_name eq 'new') {
 				# If we found the new() method, the object we're returning should be a sensible one
 				if($self->{_document} && (my $package_stmt = $self->{_document}->find_first('PPI::Statement::Package'))) {
-					$output->{isa} = $package_stmt->namespace;
+					$output->{isa} = $package_stmt->namespace();
 				}
 			} else {
 				$output->{isa} = $1;
 			}
-			$self->_log('  OUTPUT: Bless found, inferring type from code is object');
+			$self->_log("  OUTPUT: Bless found, inferring type from code is $output->{isa}");
 		} elsif ($code =~ /return\s+bless/s) {
 			$output->{type} = 'object';
-			$self->_log('  OUTPUT: Bless found, inferring type from code is object');
+			if($method_name eq 'new') {
+				$output->{isa} = $self->_extract_package_name();
+				$self->_log("  OUTPUT: Bless found, inferring type from code is $output->{isa}");
+			} else {
+				$self->_log('  OUTPUT: Bless found, inferring type from code is object');
+			}
 		} elsif ($code =~ /return\s*\(\s*[^)]+\s*,\s*[^)]+\s*\)\s*;/) {
 			# Detect array context returns - must end with semicolon to be actual return
 			$output->{type} = 'array';	# Not arrayref - actual array
@@ -3747,23 +3755,23 @@ sub _parse_modern_signature {
 	my $current = '';
 	my $depth = 0;
 
-    for my $char (split //, $sig) {
-        if ($char eq '(' || $char eq '[' || $char eq '{') {
-            $depth++;
-            $current .= $char;
-        } elsif ($char eq ')' || $char eq ']' || $char eq '}') {
-            $depth--;
-            $current .= $char;
-        } elsif ($char eq ',' && $depth == 0) {
-            push @parts, $current;
-            $current = '';
-        } else {
-            $current .= $char;
-        }
-    }
-    push @parts, $current if $current =~ /\S/;
+	for my $char (split //, $sig) {
+		if ($char eq '(' || $char eq '[' || $char eq '{') {
+			$depth++;
+			$current .= $char;
+		} elsif ($char eq ')' || $char eq ']' || $char eq '}') {
+			$depth--;
+			$current .= $char;
+		} elsif ($char eq ',' && $depth == 0) {
+			push @parts, $current;
+			$current = '';
+		} else {
+			$current .= $char;
+		}
+	}
+	push @parts, $current if $current =~ /\S/;
 
-    my $position = 0;
+	my $position = 0;
 
     foreach my $part (@parts) {
         $part =~ s/^\s+|\s+$//g;
