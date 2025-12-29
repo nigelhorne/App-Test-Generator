@@ -45,7 +45,7 @@ use constant CONFIG_TYPES => ('test_nuls', 'test_undef', 'test_empty', 'test_non
 
 =head1 NAME
 
-App::Test::Generator - Generate fuzz and corpus-driven test harnesses
+App::Test::Generator - Generate fuzz and corpus-driven test harnesses from test schemas
 
 =head1 VERSION
 

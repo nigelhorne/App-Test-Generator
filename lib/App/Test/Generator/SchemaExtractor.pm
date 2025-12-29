@@ -2759,33 +2759,40 @@ sub _detect_void_context {
 		'printer' => qr/^(?:print|say|dump)_/,
 	};
 
-    # Check if method name suggests void context
-    foreach my $type (keys %$void_patterns) {
-        if ($method_name =~ $void_patterns->{$type}) {
-            $output->{void_context_hint} = $type;
-            $self->_log("  OUTPUT: Method name suggests $type (typically void context)");
-            last;
-        }
-    }
+	# Check if method name suggests void context
+	foreach my $type (keys %$void_patterns) {
+		if ($method_name =~ $void_patterns->{$type}) {
+			$output->{void_context_hint} = $type;
+			$self->_log("  OUTPUT: Method name suggests $type (typically void context)");
+			last;
+		}
+	}
 
 	# Analyze return statements
 	my @returns = $code =~ /return\s*([^;]*);/g;
 
-	$self->_log('  DEBUG Found ' . scalar(@returns) . " return statements");
+	$self->_log('  DEBUG Found ' . scalar(@returns) . ' return statements');
 
 	# Count different return patterns
 	my $no_value_returns = 0;
 	my $true_returns = 0;
 	my $self_returns = 0;
 
-    foreach my $ret (@returns) {
-        $ret =~ s/^\s+|\s+$//g;
-        $self->_log("  DEBUG return value: [$ret]");
-        $no_value_returns++ if $ret eq '';
-        $no_value_returns++ if($ret =~ /^(if|unless)\s/);
-        $true_returns++ if $ret eq '1';
-        $self_returns++ if $ret eq '$self';
-    }
+	foreach my $ret (@returns) {
+		$ret =~ s/^\s+|\s+$//g;
+		$self->_log("  DEBUG return value: [$ret]");
+		$no_value_returns++ if $ret eq '';
+		$no_value_returns++ if($ret =~ /^(if|unless)\s/);
+		$true_returns++ if $ret eq '1';
+		$self_returns++ if $ret eq '$self';
+		if ($ret =~ /\?\s*1\s*:\s*0\b/) {
+			# Strong boolean signal: ternary returning 1/0
+			$true_returns++;
+			# $self->_log("  OUTPUT: Ternary 1:0 return detected, treating as boolean (+40)");
+			$self->_log('  OUTPUT: Ternary 1:0 return detected, treating as boolean');
+		}
+		
+	}
 
 	my $total_returns = scalar(@returns);
 
@@ -2796,9 +2803,8 @@ sub _detect_void_context {
 		$output->{void_context} = 1;
 		$output->{type} = 'void';  # This should override any previous type
 		$self->_log("  OUTPUT: All returns are empty - void context method");
-	}
-	# Methods that always return true (success indicator)
-	elsif ($true_returns > 0 && $true_returns == $total_returns && $total_returns >= 1) {
+	} elsif ($true_returns > 0 && $true_returns == $total_returns && $total_returns >= 1) {
+		# Methods that always return true (success indicator)
 		$output->{success_indicator} = 1;
 		# Don't override type if already set to boolean
 		unless ($output->{type} && $output->{type} eq 'boolean') {
@@ -2982,6 +2988,7 @@ sub _infer_type_from_expression {
     if ($expr =~ /^['"]/ || $expr =~ /['"]$/) {
         return { type => 'string' };
     }
+
 
     # Check for numbers
     if ($expr =~ /^-?\d+$/) {
