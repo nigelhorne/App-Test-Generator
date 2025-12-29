@@ -129,7 +129,7 @@ END_MODULE
 
 	# Success indicator (not void)
 	is($schemas->{update_status}{output}{type}, 'boolean', 'Update returns success indicator');
-	ok($schemas->{update_status}{output}{success_indicator}, 'Detected success indicator pattern');
+	ok($schemas->{update_status}{output}{_success_indicator}, 'Detected success indicator pattern');
 
 	done_testing();
 };

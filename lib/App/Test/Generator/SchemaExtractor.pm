@@ -673,7 +673,7 @@ Methods that always return true (typically for side effects):
         return 1;  # Success indicator
     }
 
-Sets C<success_indicator> flag when method consistently returns 1.
+Sets C<_success_indicator> flag when method consistently returns 1.
 
 =head3 Schema Output
 
@@ -688,7 +688,7 @@ Enhanced return analysis adds these fields to method schemas:
         type: integer
       returns_self: 1               # Returns $self
       void_context: 1            # No meaningful return
-      success_indicator: 1       # Always returns true
+      _success_indicator: 1       # Always returns true
       error_return: undef        # How errors are signaled
       success_failure_pattern: 1 # Mixed return types
       error_handling:            # Detailed error patterns
@@ -2802,10 +2802,10 @@ sub _detect_void_context {
 	if ($no_value_returns > 0 && $no_value_returns == $total_returns) {
 		$output->{void_context} = 1;
 		$output->{type} = 'void';  # This should override any previous type
-		$self->_log("  OUTPUT: All returns are empty - void context method");
+		$self->_log('  OUTPUT: All returns are empty - void context method');
 	} elsif ($true_returns > 0 && $true_returns == $total_returns && $total_returns >= 1) {
 		# Methods that always return true (success indicator)
-		$output->{success_indicator} = 1;
+		$output->{_success_indicator} = 1;
 		# Don't override type if already set to boolean
 		unless ($output->{type} && $output->{type} eq 'boolean') {
 			$output->{type} = 'boolean';
@@ -4713,14 +4713,14 @@ sub _generate_confidence_report
         push @report, '';
     }
 
-    if ($analysis->{confidence_factors}{output}) {
-        push @report, "Return Value:";
-        push @report, "  Confidence Level: " . uc($analysis->{output_confidence});
-        foreach my $factor (@{$analysis->{confidence_factors}{output}}) {
-            push @report, "  - $factor";
-        }
-        push @report, '';
-    }
+	if ($analysis->{confidence_factors}{output}) {
+		push @report, 'Return Value:',
+			"  Confidence Level: " . uc($analysis->{output_confidence});
+		foreach my $factor (@{$analysis->{confidence_factors}{output}}) {
+			push @report, "  - $factor";
+		}
+		push @report, '';
+	}
 
 	if ($analysis->{per_parameter_scores}) {
 		push @report, 'Per-Parameter Analysis:';
