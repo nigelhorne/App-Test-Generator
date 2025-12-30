@@ -2206,23 +2206,36 @@ sub _analyze_pod {
 
 		$params{$name} ||= { _source => 'pod' };
 
-		# Try to extract type and constraints from description
-		if ($desc =~ /(\w+)(?:\s*\(([^)]+)\))?/) {
+		# Explicit typed form only:
+		#   $param - type (constraints)
+		if ($desc =~ /^\s*(string|integer|int|number|num|float|boolean|bool|array|arrayref|hash|hashref)\b(?:\s*\(([^)]+)\))?/i) {
 			my $type = lc($1);
 			my $constraint = $2;
 
 			# Normalize type names
-			$type = 'integer' if $type eq 'int';
-			$type = 'number' if $type eq 'num' || $type eq 'float';
-			$type = 'boolean' if $type eq 'bool';
+			$type = 'integer'  if $type eq 'int';
+			$type = 'number'   if $type eq 'num' || $type eq 'float';
+			$type = 'boolean'  if $type eq 'bool';
 			$type = 'arrayref' if $type eq 'array';
-			$type = 'hashref' if $type eq 'hash';
+			$type = 'hashref'  if $type eq 'hash';
 
 			$params{$name}{type} = $type;
 
-			# Parse constraints
 			if ($constraint) {
 				$self->_parse_constraints($params{$name}, $constraint);
+			}
+
+			$self->_log("  POD: Explicit type '$type' for $name");
+		} else {
+			# Heuristic inference from description text
+			if ($desc =~ /\bstring\b/i) {
+				$params{$name}{type} = 'string';
+			} elsif ($desc =~ /\b(int|integer)\b/i) {
+				$params{$name}{type} = 'integer';
+			} elsif ($desc =~ /\b(num|number|float)\b/i) {
+				$params{$name}{type} = 'number';
+			} elsif ($desc =~ /\b(bool|boolean)\b/i) {
+				$params{$name}{type} = 'boolean';
 			}
 		}
 
@@ -2791,7 +2804,6 @@ sub _detect_void_context {
 			# $self->_log("  OUTPUT: Ternary 1:0 return detected, treating as boolean (+40)");
 			$self->_log('  OUTPUT: Ternary 1:0 return detected, treating as boolean');
 		}
-		
 	}
 
 	my $total_returns = scalar(@returns);
@@ -4650,11 +4662,11 @@ sub _calculate_output_confidence {
         push @factors, "Chainable method (fluent interface) (+15)";
     }
 
-    # Void context
-    if ($output->{void_context}) {
-        $score += 20;
-        push @factors, "Void context method (no meaningful return) (+20)";
-    }
+	# Void context
+	if ($output->{void_context}) {
+		$score += 20;
+		push @factors, "Void context method (no meaningful return) (+20)";
+	}
 
 	# Exception handling
 	if ($output->{error_handling} && $output->{error_handling}{exception_handling}) {
@@ -4704,14 +4716,16 @@ sub _generate_confidence_report
 	push @report, "Overall Confidence: " . uc($analysis->{overall_confidence});
 	push @report, '';
 
-    if ($analysis->{confidence_factors}{input}) {
-        push @report, "Input Parameters:";
-        push @report, "  Confidence Level: " . uc($analysis->{input_confidence});
-        foreach my $factor (@{$analysis->{confidence_factors}{input}}) {
-            push @report, "  - $factor";
-        }
-        push @report, '';
-    }
+	if ($analysis->{confidence_factors}{input}) {
+		push @report, (
+			"Input Parameters:",
+			 "  Confidence Level: " . uc($analysis->{input_confidence})
+		);
+		foreach my $factor (@{$analysis->{confidence_factors}{input}}) {
+			push @report, "  - $factor";
+		}
+		push @report, '';
+	}
 
 	if ($analysis->{confidence_factors}{output}) {
 		push @report, 'Return Value:',
@@ -5582,9 +5596,10 @@ sub _needs_object_instantiation {
 
 	# 3. Check if this is an instance method that needs an object
 	my $is_instance_method = $self->_detect_instance_method($method_name, $method_body);
-	if ($is_instance_method && ($is_instance_method->{explicit_self} ||
-								$is_instance_method->{shift_self} ||
-								$is_instance_method->{accesses_object_data})) {
+	if($is_instance_method &&
+	    ($is_instance_method->{explicit_self} ||
+			$is_instance_method->{shift_self} ||
+			$is_instance_method->{accesses_object_data})) {
 		$result->{needs_object} = 1;
 		$result->{type} = 'instance_method';
 		$result->{details} = $is_instance_method;
