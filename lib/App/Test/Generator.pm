@@ -1493,8 +1493,13 @@ sub generate
 		}
 		$position_code = "(\$result = scalar(\@alist) == 1) ? \$obj->$function(\$alist[0]) : (scalar(\@alist) == 0) ? \$obj->$function() : \$obj->$function(\@alist);";
 	} elsif(defined($module) && length($module)) {
-		$call_code = "\$result = ${module}::$function(\$input);";
-		$position_code = "(\$result = scalar(\@alist) == 1) ? ${module}::$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}::$function() : ${module}::$function(\@alist);";
+		if($function eq 'new') {
+			$call_code = "\$result = ${module}\->$function(\$input);";
+			$position_code = "(\$result = scalar(\@alist) == 1) ? ${module}\->$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}\->$function() : ${module}\->$function(\@alist);";
+		} else {
+			$call_code = "\$result = ${module}::$function(\$input);";
+			$position_code = "(\$result = scalar(\@alist) == 1) ? ${module}::$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}::$function() : ${module}::$function(\@alist);";
+		}
 	} else {
 		$call_code = "\$result = $function(\$input);";
 		$position_code = "\$result = $function(\@alist);";
