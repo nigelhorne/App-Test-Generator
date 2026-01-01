@@ -522,6 +522,9 @@ sub fuzz_inputs
 				}
 			} elsif($spec->{'type'} eq 'object') {
 				my $method = $spec->{'can'};
+				if(!defined($method)) {
+					die "$field: type is object, but 'can' is not specified which is needed to mock the object";
+				}
 				if(!$class_simple_loaded) {
 					require_ok('Class::Simple');
 					eval {
