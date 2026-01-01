@@ -14,7 +14,7 @@ use File::Path qw(make_path);
 use Safe;
 use Scalar::Util qw(looks_like_number);
 
-our $VERSION = '0.24';
+our $VERSION = '0.25';
 
 # Configure YAML::XS to not quote numeric strings
 $YAML::XS::QuoteNumericStrings = 0;
@@ -25,7 +25,7 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 
 =head1 VERSION
 
-Version 0.24
+Version 0.25
 
 =head1 SYNOPSIS
 
