@@ -1494,7 +1494,11 @@ sub _analyze_method {
 		my @validation_errors = $self->_validate_pod_code_agreement(
 			$pod_params,
 			$code_params,
-			$method->{name}
+			$method->{name},
+			{
+				ignore_self => 1,
+				allow_renames => 1,
+			}
 		);
 
 		if (@validation_errors) {
@@ -1506,13 +1510,14 @@ sub _analyze_method {
 
 			# Either croak immediately or log based on configuration
 			if ($self->{strict_pod} == 2) {  # 2 = fatal errors
-				croak($error_msg);
+				croak("[POD STRICT] $error_msg");
 			} else {  # 1 = warnings
-				carp($error_msg);
+				carp("[POD STRICT] $error_msg");
 				# Continue with analysis but mark as problematic
 				$schema->{_pod_disagreement} = 1;
 			}
 		}
+		$schema->{_strict_pod_level} = $self->{strict_pod};
 	}
 
 	my $validator_params = $self->_extract_validator_schema($code);
@@ -6589,54 +6594,52 @@ sub _validate_pod_code_agreement {
 		}
 
 		# Compare types if both exist
-if ($pod->{type} && $code->{type} && $pod->{type} ne $code->{type}) {
-    if (!$self->_types_are_compatible($pod->{type}, $code->{type})) {
-        push @errors, "Type mismatch for '\$$param': POD says '$pod->{type}', code suggests '$code->{type}' (incompatible)";
-    } else {
-        push @errors, "Type difference for '\$$param': POD says '$pod->{type}', code suggests '$code->{type}' (compatible)";
-    }
-}
+		if ($pod->{type} && $code->{type} && $pod->{type} ne $code->{type}) {
+			if (!$self->_types_are_compatible($pod->{type}, $code->{type})) {
+				push @errors, "Type mismatch for '\$$param': POD says '$pod->{type}', code suggests '$code->{type}' (incompatible)";
+			} else {
+				push @errors, "Type difference for '\$$param': POD says '$pod->{type}', code suggests '$code->{type}' (compatible)";
+			}
+		}
 
 	# Compare optional status if both exist
         if (exists $pod->{optional} && exists $code->{optional} &&
-            $pod->{optional} != $code->{optional}) {
-            my $pod_status = $pod->{optional} ? 'optional' : 'required';
-            my $code_status = $code->{optional} ? 'optional' : 'required';
-            push @errors, "Optional status mismatch for '\$$param': POD says '$pod_status', code suggests '$code_status'";
-        }
+		$pod->{optional} != $code->{optional}) {
+		my $pod_status = $pod->{optional} ? 'optional' : 'required';
+		my $code_status = $code->{optional} ? 'optional' : 'required';
+		push @errors, "Optional status mismatch for '\$$param': POD says '$pod_status', code suggests '$code_status'";
+	}
 
 	# Check constraints (min/max)
         if (defined $pod->{min} && defined $code->{min} && $pod->{min} != $code->{min}) {
 		push @errors, "Min constraint mismatch for '\$$param': POD says '$pod->{min}', code suggests '$code->{min}'";
         }
 
-        if (defined $pod->{max} && defined $code->{max} && $pod->{max} != $code->{max}) {
-            push @errors, "Max constraint mismatch for '\$$param': POD says '$pod->{max}', code suggests '$code->{max}'";
-        }
+		if (defined $pod->{max} && defined $code->{max} && $pod->{max} != $code->{max}) {
+			push @errors, "Max constraint mismatch for '\$$param': POD says '$pod->{max}', code suggests '$code->{max}'";
+		}
 
-	# Check regex patterns
-        if ($pod->{matches} && $code->{matches} && $pod->{matches} ne $code->{matches}) {
-            push @errors, "Pattern mismatch for '\$$param': POD says '$pod->{matches}', code suggests '$code->{matches}'";
-        }
-    }
+		# Check regex patterns
+		if ($pod->{matches} && $code->{matches} && $pod->{matches} ne $code->{matches}) {
+			push @errors, "Pattern mismatch for '\$$param': POD says '$pod->{matches}', code suggests '$code->{matches}'";
+		}
+	}
 
-    # Return errors (empty array if no errors)
-    return @errors;
+	# Return errors (empty array if no errors)
+	return @errors;
 }
 
 sub _validate_strictness_level {
-	my $level = $_[0];
+	my $val = $_[0];
 
-	# 0 = no checking (default)
-	# 1 = warnings only
-	# 2 = croak on disagreements
-	# 'relaxed' = only check existence, not types/constraints
+	return 0 unless defined $val;
 
-	return 0 if !defined $level;
-	return $level if $level =~ /^[012]$/;
-	return 1 if $level eq 'warn';
-	return 2 if $level eq 'strict';
-	return 0;  # default
+	# Numeric
+	return 0 if $val =~ /^(0|off|none)$/i;
+	return 1 if $val =~ /^(1|warn|warning)$/i;
+	return 2 if $val =~ /^(2|fatal|die|error)$/i;
+
+	croak "Invalid value for --strict-pod: '$val' (use off|warn|fatal)";
 }
 
 sub _types_are_compatible {
@@ -6677,14 +6680,15 @@ sub generate_pod_validation_report {
 
 		if (my $errors = $schema->{_pod_validation_errors}) {
 			push @reports, "Method: $method_name";
+			push @reports, "  Severity: " . ($schema->{_pod_disagreement} ? 'warning' : 'fatal');
 			push @reports, "  Errors:";
 			push @reports, map { "    - $_" } @$errors;
-			push @reports, "";
+			push @reports, '';
 		}
 	}
 
 	if (@reports) {
-		return join("\n", "POD/Code Validation Report:", "=" x 40, "", @reports);
+		return join("\n", "POD/Code Validation Report:", '=' x 40, '', @reports);
 	} else {
 		return "POD/Code Validation: All methods passed consistency checks.";
 	}

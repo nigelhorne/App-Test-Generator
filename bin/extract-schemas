@@ -69,7 +69,7 @@ my %opts = (
 
 GetOptions(
 	'output-dir|o=s' => \$opts{output_dir},
-	'strict-pod|s=i'	=> \$opts{'strict_pod'},
+	'strict-pod|s=s'	=> \$opts{'strict_pod'},
 	'verbose|v' => \$opts{verbose},
 	'help|h' => \$opts{help},
 	'man|m' => \$opts{man},
@@ -195,6 +195,15 @@ Extracts schemas to ./schemas/ directory.
     extract-schemas --verbose lib/MyModule.pm
 
 Shows detailed analysis of each method.
+
+=head2 Pod Checking
+
+  --strict-pod=LEVEL
+    Enforce POD/code consistency.
+    LEVEL may be:
+      off    - do not validate POD
+      warn   - warn on mismatches (default)
+      fatal  - abort on mismatches
 
 =head1 NEXT STEPS
 
