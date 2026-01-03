@@ -1271,7 +1271,7 @@ sub generate
 	%edge_cases = %{$schema->{edge_cases}} if(exists($schema->{edge_cases}));
 	%type_edge_cases = %{$schema->{type_edge_cases}} if(exists($schema->{type_edge_cases}));
 
-	$module = $schema->{module} if(exists($schema->{module}));
+	$module = $schema->{module} if(exists($schema->{module}) && length($schema->{module}));
 	$function = $schema->{function} if(exists($schema->{function}));
 	if(exists($schema->{new})) {
 		$new = defined($schema->{'new'}) ? $schema->{new} : '_UNDEF';
@@ -1310,7 +1310,7 @@ sub generate
 		undef $module;
 	}
 
-	if($module && ($module ne 'builtin')) {
+	if($module && length($module) && ($module ne 'builtin')) {
 		_validate_module($module, $schema_file)
 	}
 

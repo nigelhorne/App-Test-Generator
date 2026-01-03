@@ -1236,7 +1236,7 @@ sub _extract_package_name {
 		$document = $self->{_document};
 	}
 	my $package_stmt = $document->find_first('PPI::Statement::Package');
-	return $package_stmt ? $package_stmt->namespace : 'Unknown';
+	return $package_stmt ? $package_stmt->namespace : '';
 }
 
 =head2 _find_methods
