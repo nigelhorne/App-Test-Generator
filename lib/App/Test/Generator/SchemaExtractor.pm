@@ -1152,6 +1152,7 @@ The extractor supports several configuration parameters:
         include_private     => 1,                  # Default: 0
         max_parameters      => 50,                 # Default: 20
         confidence_threshold => 0.7,               # Default: 0.5
+	strict_pod	=> 0|1|2,	# Default: 0 (off)
     );
 
 =cut
@@ -1166,6 +1167,7 @@ sub new {
 		confidence_threshold => $args{confidence_threshold} || 0.5,
 		include_private => $args{include_private} || 0,	# include _private methods
 		max_parameters => $args{max_parameters} || 20,	# safety limit
+		strict_pod => _validate_strictness_level($args{strict_pod}),  # Enable strict POD checking
 	};
 
 	# Validate input file exists
@@ -1182,12 +1184,52 @@ Extract schemas for all methods in the module.
 
 Returns a hashref of method_name => schema.
 
+The extraction process performs comprehensive validation of the agreement between
+POD documentation and the actual code, controlled by the C<strict_pod> option
+specified in the constructor. This validation operates at three distinct levels:
+
+=over 4
+
+=item * C<0> (default, no validation)
+
+No POD/code validation is performed. Any disagreements between the documented
+parameters in POD and the actual parameters in the code are silently ignored.
+The extractor proceeds with schema generation regardless of inconsistencies.
+
+=item * C<1> (warning mode)
+
+Validation errors are collected and attached to each method's schema under the
+C<_pod_validation_errors> key. The extraction continues even when errors are found,
+allowing batch processing and comprehensive reporting. Errors include:
+  - Parameters documented in POD but not found in code signatures
+  - Parameters present in code but undocumented in POD
+  - Type mismatches (incompatible types flagged as "Type mismatch")
+  - Type differences (compatible but different types flagged as "Type difference")
+  - Optional/required status disagreements
+  - Constraint mismatches (min/max bounds, regex patterns)
+
+=item * C<2> (strict mode)
+
+The extraction immediately C<croak>s when the first validation error is encountered,
+providing a detailed error message. This mode is useful for enforcing documentation
+quality in development pipelines or CI/CD processes. Even compatible type differences
+(such as POD "integer" vs. code "number") will trigger failure in this mode.
+
+=back
+
+Validation checks encompass parameter existence, type compatibility, optional/required
+status, and constraint consistency. The system distinguishes between "compatible"
+type differences (e.g., "integer" and "number", "array" and "arrayref") which are
+tolerated in warning mode but still reported, and "incompatible" type mismatches
+(e.g., "string" vs. "hashref") which are always flagged as errors. A comprehensive
+validation report can be generated using the C<generate_pod_validation_report> method.
+
 =head3 Pseudo Code
 
   FOREACH method
   DO
-	analyze the method
-	write a schema file for that method
+    analyze the method
+    write a schema file for that method
   END
 
 =cut
@@ -1446,6 +1488,32 @@ sub _analyze_method {
 	# Analyze different sources
 	my $pod_params = $self->_analyze_pod($pod);
 	my $code_params = $self->_analyze_code($code);
+
+	# Validate POD/code agreement if strict mode is enabled
+	if ($self->{strict_pod}) {
+		my @validation_errors = $self->_validate_pod_code_agreement(
+			$pod_params,
+			$code_params,
+			$method->{name}
+		);
+
+		if (@validation_errors) {
+			my $error_msg = "POD/Code disagreement in method '$method->{name}':\n  " .
+				join("\n  ", @validation_errors);
+
+			# Add to schema for reference even if we croak
+			$schema->{_pod_validation_errors} = \@validation_errors;
+
+			# Either croak immediately or log based on configuration
+			if ($self->{strict_pod} == 2) {  # 2 = fatal errors
+				croak($error_msg);
+			} else {  # 1 = warnings
+				carp($error_msg);
+				# Continue with analysis but mark as problematic
+				$schema->{_pod_disagreement} = 1;
+			}
+		}
+	}
 
 	my $validator_params = $self->_extract_validator_schema($code);
 
@@ -2261,8 +2329,9 @@ sub _analyze_pod {
 			$params{$param}{default} = $pod_defaults->{$param};
 			$params{$param}{optional} = 1 unless defined $params{$param}{optional};
 			$self->_log(sprintf("  POD: %s has default value: %s",
-			    $param,
-			    defined($pod_defaults->{$param}) ? $pod_defaults->{$param} : 'undef'));
+				$param,
+				defined($pod_defaults->{$param}) ? $pod_defaults->{$param} : 'undef'
+			));
 		}
 	}
 
@@ -6494,6 +6563,131 @@ sub _clean_default_value
 	}
 
 	return $value;
+}
+
+sub _validate_pod_code_agreement {
+	my ($self, $pod_params, $code_params, $method_name) = @_;
+
+	my @errors;
+
+	# Get all parameter names from both sources
+	my %all_params = map { $_ => 1 } (keys %$pod_params, keys %$code_params);
+
+	foreach my $param (sort keys %all_params) {
+		my $pod = $pod_params->{$param} || {};
+		my $code = $code_params->{$param} || {};
+
+		# Check if parameter exists in both
+		if (exists $pod_params->{$param} && !exists $code_params->{$param}) {
+			push @errors, "Parameter '\$$param' documented in POD but not found in code signature";
+			next;
+		}
+
+		if (!exists $pod_params->{$param} && exists $code_params->{$param}) {
+			push @errors, "Parameter '\$$param' found in code but not documented in POD";
+			next;
+		}
+
+		# Compare types if both exist
+if ($pod->{type} && $code->{type} && $pod->{type} ne $code->{type}) {
+    if (!$self->_types_are_compatible($pod->{type}, $code->{type})) {
+        push @errors, "Type mismatch for '\$$param': POD says '$pod->{type}', code suggests '$code->{type}' (incompatible)";
+    } else {
+        push @errors, "Type difference for '\$$param': POD says '$pod->{type}', code suggests '$code->{type}' (compatible)";
+    }
+}
+
+        # Compare optional status if both exist
+        if (exists $pod->{optional} && exists $code->{optional} &&
+            $pod->{optional} != $code->{optional}) {
+            my $pod_status = $pod->{optional} ? 'optional' : 'required';
+            my $code_status = $code->{optional} ? 'optional' : 'required';
+            push @errors, "Optional status mismatch for '\$$param': POD says '$pod_status', code suggests '$code_status'";
+        }
+
+        # Check constraints (min/max)
+        if (defined $pod->{min} && defined $code->{min} && $pod->{min} != $code->{min}) {
+            push @errors, "Min constraint mismatch for '\$$param': POD says '$pod->{min}', code suggests '$code->{min}'";
+        }
+
+        if (defined $pod->{max} && defined $code->{max} && $pod->{max} != $code->{max}) {
+            push @errors, "Max constraint mismatch for '\$$param': POD says '$pod->{max}', code suggests '$code->{max}'";
+        }
+
+        # Check regex patterns
+        if ($pod->{matches} && $code->{matches} && $pod->{matches} ne $code->{matches}) {
+            push @errors, "Pattern mismatch for '\$$param': POD says '$pod->{matches}', code suggests '$code->{matches}'";
+        }
+    }
+
+    # Return errors (empty array if no errors)
+    return @errors;
+}
+
+sub _validate_strictness_level {
+	my $level = $_[0];
+
+	# 0 = no checking (default)
+	# 1 = warnings only
+	# 2 = croak on disagreements
+	# 'relaxed' = only check existence, not types/constraints
+
+    return 0 if !defined $level;
+    return $level if $level =~ /^[012]$/;
+    return 1 if $level eq 'warn';
+    return 2 if $level eq 'strict';
+    return 0;  # default
+}
+
+sub _types_are_compatible {
+	my ($self, $pod_type, $code_type) = @_;
+
+	# Exact match is always compatible
+	return 1 if $pod_type eq $code_type;
+
+    # Define compatibility matrix
+    my %compatible_types = (
+        'integer' => ['number', 'scalar'],
+        'number'  => ['scalar'],
+        'string'  => ['scalar'],
+        'scalar'  => ['string', 'integer', 'number'],
+        'arrayref' => ['array'],
+        'hashref'  => ['hash'],
+    );
+
+	# Check if code_type is compatible with pod_type
+	if (my $allowed = $compatible_types{$pod_type}) {
+		return grep { $_ eq $code_type } @$allowed;
+	}
+
+	# Check if pod_type is compatible with code_type
+	if (my $allowed = $compatible_types{$code_type}) {
+		return grep { $_ eq $pod_type } @$allowed;
+	}
+
+    return 0;  # Not compatible
+}
+
+sub generate_pod_validation_report {
+	my ($self, $schemas) = @_;
+
+	my @reports;
+	foreach my $method_name (sort keys %$schemas) {
+		my $schema = $schemas->{$method_name};
+
+		if (my $errors = $schema->{_pod_validation_errors}) {
+			push @reports, "Method: $method_name";
+			push @reports, "  Errors:";
+			push @reports, map { "    - $_" } @$errors;
+			push @reports, "";
+		}
+	}
+
+	if (@reports) {
+		return join("\n", "POD/Code Validation Report:", "=" x 40, "", @reports);
+	} else {
+		return "POD/Code Validation: All methods passed consistency checks.";
+	}
 }
 
 =head2 _log

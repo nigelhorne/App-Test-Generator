@@ -351,7 +351,8 @@ use warnings;
 
 =head2 connect
 
-Connects to the server. Returns connection object on success, undef on failure.
+Connects to the server.
+Returns a connection object on success, undef on failure.
 
 =cut
 
