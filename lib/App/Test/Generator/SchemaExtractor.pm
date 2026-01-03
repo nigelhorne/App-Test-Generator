@@ -49,7 +49,7 @@ method behaviors directly from your source code.
 
 =head2 Analysis Methods
 
-The extractor combines multiple analysis approaches for comprehensive schema generation:
+The extractor combines multiple analysis approaches for a comprehensive schema generation:
 
 =over 4
 
@@ -4719,17 +4719,17 @@ sub _calculate_output_confidence {
         push @factors, "Error return convention documented: $output->{error_return} (+15)";
     }
 
-    # Success/failure pattern
-    if ($output->{success_failure_pattern}) {
-        $score += 10;
-        push @factors, "Success/failure pattern detected (+10)";
-    }
+	# Success/failure pattern
+	if ($output->{success_failure_pattern}) {
+		$score += 10;
+		push @factors, "Success/failure pattern detected (+10)";
+	}
 
-    # Chainable methods
-    if ($output->{returns_self}) {
-        $score += 15;
-        push @factors, "Chainable method (fluent interface) (+15)";
-    }
+	# Chainable methods
+	if ($output->{returns_self}) {
+		$score += 15;
+		push @factors, "Chainable method (fluent interface) (+15)";
+	}
 
 	# Void context
 	if ($output->{void_context}) {
@@ -6597,7 +6597,7 @@ if ($pod->{type} && $code->{type} && $pod->{type} ne $code->{type}) {
     }
 }
 
-        # Compare optional status if both exist
+	# Compare optional status if both exist
         if (exists $pod->{optional} && exists $code->{optional} &&
             $pod->{optional} != $code->{optional}) {
             my $pod_status = $pod->{optional} ? 'optional' : 'required';
@@ -6605,16 +6605,16 @@ if ($pod->{type} && $code->{type} && $pod->{type} ne $code->{type}) {
             push @errors, "Optional status mismatch for '\$$param': POD says '$pod_status', code suggests '$code_status'";
         }
 
-        # Check constraints (min/max)
+	# Check constraints (min/max)
         if (defined $pod->{min} && defined $code->{min} && $pod->{min} != $code->{min}) {
-            push @errors, "Min constraint mismatch for '\$$param': POD says '$pod->{min}', code suggests '$code->{min}'";
+		push @errors, "Min constraint mismatch for '\$$param': POD says '$pod->{min}', code suggests '$code->{min}'";
         }
 
         if (defined $pod->{max} && defined $code->{max} && $pod->{max} != $code->{max}) {
             push @errors, "Max constraint mismatch for '\$$param': POD says '$pod->{max}', code suggests '$code->{max}'";
         }
 
-        # Check regex patterns
+	# Check regex patterns
         if ($pod->{matches} && $code->{matches} && $pod->{matches} ne $code->{matches}) {
             push @errors, "Pattern mismatch for '\$$param': POD says '$pod->{matches}', code suggests '$code->{matches}'";
         }
@@ -6632,11 +6632,11 @@ sub _validate_strictness_level {
 	# 2 = croak on disagreements
 	# 'relaxed' = only check existence, not types/constraints
 
-    return 0 if !defined $level;
-    return $level if $level =~ /^[012]$/;
-    return 1 if $level eq 'warn';
-    return 2 if $level eq 'strict';
-    return 0;  # default
+	return 0 if !defined $level;
+	return $level if $level =~ /^[012]$/;
+	return 1 if $level eq 'warn';
+	return 2 if $level eq 'strict';
+	return 0;  # default
 }
 
 sub _types_are_compatible {
@@ -6645,15 +6645,15 @@ sub _types_are_compatible {
 	# Exact match is always compatible
 	return 1 if $pod_type eq $code_type;
 
-    # Define compatibility matrix
-    my %compatible_types = (
-        'integer' => ['number', 'scalar'],
-        'number'  => ['scalar'],
-        'string'  => ['scalar'],
-        'scalar'  => ['string', 'integer', 'number'],
-        'arrayref' => ['array'],
-        'hashref'  => ['hash'],
-    );
+	# Define compatibility matrix
+	my %compatible_types = (
+		'integer' => ['number', 'scalar'],
+		'number'  => ['scalar'],
+		'string'  => ['scalar'],
+		'scalar'  => ['string', 'integer', 'number'],
+		'arrayref' => ['array'],
+		'hashref'  => ['hash'],
+	);
 
 	# Check if code_type is compatible with pod_type
 	if (my $allowed = $compatible_types{$pod_type}) {
@@ -6665,7 +6665,7 @@ sub _types_are_compatible {
 		return grep { $_ eq $pod_type } @$allowed;
 	}
 
-    return 0;  # Not compatible
+	return 0;  # Not compatible
 }
 
 sub generate_pod_validation_report {
