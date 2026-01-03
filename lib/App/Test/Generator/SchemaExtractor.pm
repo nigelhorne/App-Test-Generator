@@ -1238,6 +1238,7 @@ sub extract_all {
 	my $self = $_[0];
 
 	$self->_log("Parsing $self->{input_file}...");
+	$self->_log("Strict POD mode: " . (qw(off warn fatal))[$self->{strict_pod}]);
 
 	my $document = PPI::Document->new($self->{input_file}) or die "Failed to parse $self->{input_file}: $!";
 
@@ -6610,10 +6611,10 @@ sub _validate_pod_code_agreement {
 		push @errors, "Optional status mismatch for '\$$param': POD says '$pod_status', code suggests '$code_status'";
 	}
 
-	# Check constraints (min/max)
-        if (defined $pod->{min} && defined $code->{min} && $pod->{min} != $code->{min}) {
-		push @errors, "Min constraint mismatch for '\$$param': POD says '$pod->{min}', code suggests '$code->{min}'";
-        }
+		# Check constraints (min/max)
+		if (defined $pod->{min} && defined $code->{min} && $pod->{min} != $code->{min}) {
+			push @errors, "Min constraint mismatch for '\$$param': POD says '$pod->{min}', code suggests '$code->{min}'";
+		}
 
 		if (defined $pod->{max} && defined $code->{max} && $pod->{max} != $code->{max}) {
 			push @errors, "Max constraint mismatch for '\$$param': POD says '$pod->{max}', code suggests '$code->{max}'";
