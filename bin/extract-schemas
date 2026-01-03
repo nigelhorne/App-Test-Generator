@@ -60,17 +60,19 @@ on how much information it could infer.
 
 # Parse command line options
 my %opts = (
-    output_dir => 'schemas',
-    verbose    => 0,
-    help       => 0,
-    man        => 0,
+	output_dir => 'schemas',
+	strict_pod	=> 0,
+	verbose => 0,
+	help => 0,
+	man => 0,
 );
 
 GetOptions(
-    'output-dir|o=s' => \$opts{output_dir},
-    'verbose|v'      => \$opts{verbose},
-    'help|h'         => \$opts{help},
-    'man|m'          => \$opts{man},
+	'output-dir|o=s' => \$opts{output_dir},
+	'strict-pod|s=i'	=> \$opts{'strict_pod'},
+	'verbose|v' => \$opts{verbose},
+	'help|h' => \$opts{help},
+	'man|m' => \$opts{man},
 ) or pod2usage(2);
 
 pod2usage(1) if $opts{help};
@@ -87,8 +89,10 @@ print "Output directory: $opts{output_dir}\n\n";
 
 my $extractor = App::Test::Generator::SchemaExtractor->new(
 	input_file => $input_file,
-	output_dir => $opts{output_dir},
-	verbose    => $opts{verbose},
+	# output_dir => $opts{output_dir},
+	# verbose => $opts{verbose},
+	# strict_pod	=> $opts{strict_pod},
+	%opts,
 );
 
 my $schemas = $extractor->extract_all();
