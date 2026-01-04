@@ -3261,10 +3261,21 @@ sub _analyze_code {
 		$self->_analyze_parameter_validation($p, $param, $code);
 		$self->_analyze_advanced_types($p, $param, $code);
 
-		# Defined checks
-		if ($code =~ /defined\s*\(\s*\$$param\s*\)/) {
+		# Required parameter checks (undef causes error)
+
+		# Style 1: block form
+		if ($code =~ /if\s*\(\s*!\s*defined\s*\(\s*\$$param\s*\)\s*\)\s*\{([^}]+)\}/s) {
+			my $block = $1;
+			if ($block =~ /\b(croak|die|confess)\b/) {
+				$$p->{optional} = 0;
+				$self->_log("  CODE: $param is required (undef causes error)");
+			}
+		}
+
+		# Style 2: postfix unless
+		if ($code =~ /\b(croak|die|confess)\b[^;]*\bunless\s+defined\s*\(\s*\$$param\s*\)/) {
 			$$p->{optional} = 0;
-			$self->_log("  CODE: $param is required (defined check)");
+			$self->_log("  CODE: $param is required (postfix undef check)");
 		}
 
 		# Exists checks for hash keys
@@ -4719,16 +4730,16 @@ sub _calculate_output_confidence {
         }
     }
 
-    # Error handling information
-    if ($output->{error_return}) {
-        $score += 15;
-        push @factors, "Error return convention documented: $output->{error_return} (+15)";
-    }
+	# Error handling information
+	if ($output->{error_return}) {
+		$score += 15;
+		push @factors, "Error return convention documented: $output->{error_return} (+15)";
+	}
 
 	# Success/failure pattern
 	if ($output->{success_failure_pattern}) {
 		$score += 10;
-		push @factors, "Success/failure pattern detected (+10)";
+		push @factors, 'Success/failure pattern detected (+10)';
 	}
 
 	# Chainable methods
@@ -6603,13 +6614,13 @@ sub _validate_pod_code_agreement {
 			}
 		}
 
-	# Compare optional status if both exist
-        if (exists $pod->{optional} && exists $code->{optional} &&
-		$pod->{optional} != $code->{optional}) {
-		my $pod_status = $pod->{optional} ? 'optional' : 'required';
-		my $code_status = $code->{optional} ? 'optional' : 'required';
-		push @errors, "Optional status mismatch for '\$$param': POD says '$pod_status', code suggests '$code_status'";
-	}
+		# Compare optional status if both exist
+		if (exists $pod->{optional} && exists $code->{optional} &&
+			$pod->{optional} != $code->{optional}) {
+			my $pod_status = $pod->{optional} ? 'optional' : 'required';
+			my $code_status = $code->{optional} ? 'optional' : 'required';
+			push @errors, "Optional status mismatch for '\$$param': POD says '$pod_status', code suggests '$code_status'";
+		}
 
 		# Check constraints (min/max)
 		if (defined $pod->{min} && defined $code->{min} && $pod->{min} != $code->{min}) {
