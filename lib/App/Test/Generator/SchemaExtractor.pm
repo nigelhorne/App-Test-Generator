@@ -2287,11 +2287,11 @@ sub _analyze_pod {
 			my $constraint = $2;
 
 			# Normalize type names
-			$type = 'integer'  if $type eq 'int';
-			$type = 'number'   if $type eq 'num' || $type eq 'float';
-			$type = 'boolean'  if $type eq 'bool';
+			$type = 'integer' if $type eq 'int';
+			$type = 'number' if $type eq 'num' || $type eq 'float';
+			$type = 'boolean' if $type eq 'bool';
 			$type = 'arrayref' if $type eq 'array';
-			$type = 'hashref'  if $type eq 'hash';
+			$type = 'hashref' if $type eq 'hash';
 
 			$params{$name}{type} = $type;
 
@@ -2957,27 +2957,28 @@ sub _detect_error_conventions {
 		$self->_log("  DEBUG Found implicit undef pattern");
 	}
 
-    # Pattern 3: return () - matches with or without conditions
-    if ($code =~ /return\s*\(\s*\)\s*(?:if|unless|;)/) {
-        $error_patterns{empty_list} = 1;
-        $self->_log("  DEBUG Found empty list return");
-    }
+	# Pattern 3: return () - matches with or without conditions
+	if ($code =~ /return\s*\(\s*\)\s*(?:if|unless|;)/) {
+		$error_patterns{empty_list} = 1;
+		$self->_log("  DEBUG Found empty list return");
+	}
 
-    # Pattern 4: return 0/1 pattern (indicates boolean with error handling)
-my $zero_returns = 0;
-my $one_returns = 0;
-# Match "return 0" or "return 1" followed by anything (condition or semicolon)
-while ($code =~ /return\s+(0|1)\s*(?:;|if|unless)/g) {
-    if ($1 eq '0') {
-        $zero_returns++;
-    } else {
-        $one_returns++;
-    }
-}
-if ($zero_returns > 0 && $one_returns > 0) {
-    $error_patterns{zero_on_error} = 1;
-    $self->_log("  DEBUG Found 0/1 return pattern ($zero_returns zeros, $one_returns ones)");
-}
+	# Pattern 4: return 0/1 pattern (indicates boolean with error handling)
+	my $zero_returns = 0;
+	my $one_returns = 0;
+	# Match "return 0" or "return 1" followed by anything (condition or semicolon)
+	while ($code =~ /return\s+(0|1)\s*(?:;|if|unless)/g) {
+		if ($1 eq '0') {
+			$zero_returns++;
+		} else {
+			$one_returns++;
+		}
+	}
+
+	if ($zero_returns > 0 && $one_returns > 0) {
+		$error_patterns{zero_on_error} = 1;
+		$self->_log("  DEBUG Found 0/1 return pattern ($zero_returns zeros, $one_returns ones)");
+	}
 
     # Pattern 5: Exception handling with eval
     if ($code =~ /eval\s*\{/) {
@@ -3000,7 +3001,7 @@ if ($zero_returns > 0 && $one_returns > 0) {
 
     # Store error conventions in output
     if (keys %error_patterns) {
-        $output->{error_handling} = \%error_patterns;
+        $output->{_error_handling} = \%error_patterns;
 
         # Determine primary error convention
         if ($error_patterns{undef_on_error}) {
@@ -4755,7 +4756,7 @@ sub _calculate_output_confidence {
 	}
 
 	# Exception handling
-	if ($output->{error_handling} && $output->{error_handling}{exception_handling}) {
+	if ($output->{_error_handling} && $output->{_error_handling}{exception_handling}) {
 		$score += 10;
 		push @factors, 'Exception handling present (+10)';
 	}
