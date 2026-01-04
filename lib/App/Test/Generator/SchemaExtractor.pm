@@ -3243,7 +3243,7 @@ sub _analyze_code {
 	} elsif ($code =~ /(croak|die)\(.*\)\s+if\s*\(\s*scalar\(\@_\)\s*==\s*(0)\s*\)/s) {
 		foreach my $param (keys %params) {
 			$params{$param}{optional} = 0;
-			$self->_log("  CODE: $param: all parameters are required to so scalar check against 0");
+			$self->_log("  CODE: $param: all parameters are required due to 'scalar(@_) == 0' check");
 		}
 	}
 
