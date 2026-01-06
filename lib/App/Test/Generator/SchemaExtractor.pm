@@ -4718,18 +4718,18 @@ sub _calculate_output_confidence {
 		push @factors, "Returns specific class: $output->{isa} (+30)";
 	}
 
-    # Context-aware returns
-    if ($output->{context_aware}) {
-        $score += 20;
-        push @factors, "Context-aware return (wantarray) (+20)";
+	# Context-aware returns
+	if ($output->{context_aware}) {
+		$score += 20;
+		push @factors, "Context-aware return (wantarray) (+20)";
 
-        if ($output->{list_context}) {
-            push @factors, "  List context: $output->{list_context}{type}";
-        }
-        if ($output->{scalar_context}) {
-            push @factors, "  Scalar context: $output->{scalar_context}{type}";
-        }
-    }
+		if ($output->{list_context}) {
+			push @factors, "  List context: $output->{list_context}{type}";
+		}
+		if ($output->{scalar_context}) {
+			push @factors, "  Scalar context: $output->{scalar_context}{type}";
+		}
+	}
 
 	# Error handling information
 	if ($output->{error_return}) {
