@@ -82,14 +82,14 @@ END_MODULE
 
 	my $extractor = create_extractor($module, 0);  # strict_pod = 0 (default)
 	my $schemas = $extractor->extract_all();
-	
+
 	ok(exists $schemas->{calculate}, 'calculate method extracted');
 	ok(exists $schemas->{process}, 'process method extracted');
-	
+
 	# Should have no validation errors since strict_pod is 0
-	ok(!exists $schemas->{calculate}{_pod_validation_errors}, 
+	ok(!exists $schemas->{calculate}{_pod_validation_errors},
 	   'No POD validation errors with strict_pod=0');
-	
+
 	done_testing();
 };
 
@@ -154,37 +154,37 @@ END_MODULE
 
 	# Test with strict_pod = 2 (should not croak since POD and code agree)
 	my $extractor = create_extractor($module, 2);
-	
+
 	# This should not throw an exception because types are compatible
-	lives_ok { 
+	lives_ok {
 		my $schemas = $extractor->extract_all();
 		ok(exists $schemas->{add}, 'add method extracted');
 		ok(exists $schemas->{validate_email}, 'validate_email method extracted');
 		ok(exists $schemas->{get_config}, 'get_config method extracted');
-		
+
 		# Check that parameters were correctly extracted
 		is_deeply(
 			[sort keys %{$schemas->{add}{input}}],
 			['a', 'b'],
 			'add method has correct parameters'
 		);
-		
+
 		# Note: Code analyzer might infer 'number' instead of 'integer'
 		# This is OK since they're compatible
 		ok($schemas->{add}{input}{a}{type}, 'Parameter a has type');
 		ok($schemas->{add}{input}{b}{type}, 'Parameter b has type');
-		
+
 		# get_config should have optional parameter
-		ok($schemas->{get_config}{input}{key}{optional}, 
+		ok($schemas->{get_config}{input}{key}{optional},
 		   'key parameter is optional (from POD)');
-		
+
 		# The default value might have quotes - clean them for comparison
 		my $default = $schemas->{get_config}{input}{key}{default};
 		$default =~ s/^"|"$//g;  # Remove surrounding quotes if present
 		is($default, 'default',
 		   'key parameter has correct default');
 	} 'No croak when POD and code have compatible types in strict mode';
-	
+
 	done_testing();
 };
 
@@ -218,30 +218,30 @@ END_MODULE
 	# Test with strict_pod = 1 (warnings only)
 	my $extractor_warn = create_extractor($module, 1);
 	my $schemas_warn;
-	
+
 	# Should not croak, only warn
 	lives_ok {
 		$schemas_warn = $extractor_warn->extract_all();
 	} 'No croak with strict_pod=1 (warnings only)';
-	
+
 	ok(exists $schemas_warn->{process}{_pod_validation_errors},
 	   'Has POD validation errors with strict_pod=1');
-	
+
 	# Check the error message
 	my @errors = @{$schemas_warn->{process}{_pod_validation_errors} || []};
 	ok(scalar @errors > 0, 'Has validation errors');
-	
+
 	# Look for the specific error about missing $options
 	my ($options_error) = grep { /\$options.*not documented/ } @errors;
 	ok($options_error, 'Correct error message for missing POD parameter');
-	
+
 	# Test with strict_pod = 2 (should croak)
 	my $extractor_strict = create_extractor($module, 2);
-	
-	dies_ok { 
+
+	dies_ok {
 		$extractor_strict->extract_all();
 	} 'Croaks with strict_pod=2 when parameter missing in POD';
-	
+
 	done_testing();
 };
 
@@ -258,7 +258,7 @@ Calculates something.
 
 Parameters:
   $x - number, first value
-  $y - number, second value  
+  $y - number, second value
   $z - number, third value (for future use)
 
 Returns: integer, result
@@ -275,27 +275,27 @@ END_MODULE
 	# Test with strict_pod = 1 (warnings only)
 	my $extractor_warn = create_extractor($module, 1);
 	my $schemas_warn;
-	
+
 	lives_ok {
 		$schemas_warn = $extractor_warn->extract_all();
 	} 'No croak with strict_pod=1';
-	
+
 	ok(exists $schemas_warn->{calculate}{_pod_validation_errors},
 	   'Has POD validation errors');
-	
+
 	my @errors = @{$schemas_warn->{calculate}{_pod_validation_errors} || []};
-	
+
 	# Look for the specific error about $z
 	my ($z_error) = grep { /\$z.*documented.*not found/ } @errors;
 	ok($z_error, 'Correct error for parameter in POD but not in code');
-	
+
 	# Test with strict_pod = 2 (should croak)
 	my $extractor_strict = create_extractor($module, 2);
-	
-	dies_ok { 
+
+	dies_ok {
 		$extractor_strict->extract_all();
 	} 'Croaks with strict_pod=2 when parameter in POD but not in code';
-	
+
 	done_testing();
 };
 
@@ -348,32 +348,32 @@ END_MODULE
 	# Test with strict_pod = 1
 	my $extractor_warn = create_extractor($module, 1);
 	my $schemas_warn;
-	
+
 	lives_ok {
 		$schemas_warn = $extractor_warn->extract_all();
 	} 'No croak with strict_pod=1 for type mismatch';
-	
+
 	# Both methods should have validation errors
 	ok(exists $schemas_warn->{parse_number}{_pod_validation_errors},
 	   'parse_number has validation errors');
 	ok(exists $schemas_warn->{get_data}{_pod_validation_errors},
 	   'get_data has validation errors');
-	
+
 	my @parse_errors = @{$schemas_warn->{parse_number}{_pod_validation_errors} || []};
 	ok(scalar @parse_errors > 0, 'parse_number has type mismatch errors');
-	
+
 	# Look for type mismatch error in get_data
 	my @get_data_errors = @{$schemas_warn->{get_data}{_pod_validation_errors} || []};
 	my ($type_error) = grep { /Type mismatch/ } @get_data_errors;
 	ok($type_error, 'Found type mismatch error for get_data');
-	
+
 	# Test with strict_pod = 2 (should croak)
 	my $extractor_strict = create_extractor($module, 2);
-	
-	dies_ok { 
+
+	dies_ok {
 		$extractor_strict->extract_all();
 	} 'Croaks with strict_pod=2 for type mismatch';
-	
+
 	done_testing();
 };
 
@@ -408,18 +408,18 @@ END_MODULE
 
 	my $extractor = create_extractor($module, 1);
 	my $schemas;
-	
+
 	lives_ok {
 		$schemas = $extractor->extract_all();
 	} 'No croak with strict_pod=1 for optional mismatch';
-	
+
 	ok(exists $schemas->{create_user}{_pod_validation_errors},
 	   'create_user has validation errors');
-	
+
 	my @errors = @{$schemas->{create_user}{_pod_validation_errors} || []};
 	my ($optional_error) = grep { /Optional status mismatch.*username/ } @errors;
 	ok($optional_error, 'Found optional status mismatch error for username');
-	
+
 	done_testing();
 };
 
@@ -472,12 +472,12 @@ END_MODULE
 	# Use warning mode (1) for compatible types test
 	# Strict mode (2) would croak even for compatible differences
 	my $extractor_warn = create_extractor($module, 1);
-	
+
 	lives_ok {
 		my $schemas = $extractor_warn->extract_all();
 		ok(exists $schemas->{calculate_average}, 'calculate_average extracted');
 		ok(exists $schemas->{process_data}, 'process_data extracted');
-		
+
 		# calculate_average might have warnings about compatible types
 		# That's OK in warning mode
 		if (exists $schemas->{calculate_average}{_pod_validation_errors}) {
@@ -486,13 +486,13 @@ END_MODULE
 			my ($incompatible) = grep { /Type mismatch.*incompatible/ } @errors;
 			ok(!$incompatible, 'No incompatible type errors for calculate_average');
 		}
-		
+
 		# process_data should have no errors (exact match)
 		ok(!exists $schemas->{process_data}{_pod_validation_errors} ||
 		   (scalar @{$schemas->{process_data}{_pod_validation_errors} || []}) == 0,
 		   'No validation errors for exact type match (string)');
 	} 'No croak for compatible types in warning mode';
-	
+
 	done_testing();
 };
 
@@ -526,15 +526,15 @@ END_MODULE
 
 	my $extractor = create_extractor($module, 1);
 	my $schemas;
-	
+
 	lives_ok {
 		$schemas = $extractor->extract_all();
 	} 'No croak with strict_pod=1 for constraint mismatch';
-	
+
 	# Note: The current implementation may not capture constraint mismatches
 	# We're testing that it doesn't crash
 	ok(exists $schemas->{validate_age}, 'validate_age extracted');
-	
+
 	done_testing();
 };
 
@@ -601,27 +601,27 @@ END_MODULE
 	# Test with strict_pod = 1 (should collect errors for all methods)
 	my $extractor = create_extractor($module, 1);
 	my $schemas;
-	
+
 	lives_ok {
 		$schemas = $extractor->extract_all();
 	} 'No croak with strict_pod=1 for mixed agreement';
-	
+
 	# perfect_match might have warnings about type differences (compatible)
 	# That's OK
 	ok(exists $schemas->{perfect_match}, 'perfect_match extracted');
-	
+
 	# missing_param should have errors
 	ok(exists $schemas->{missing_param}{_pod_validation_errors},
 	   'missing_param has validation errors');
 	my @missing_errors = @{$schemas->{missing_param}{_pod_validation_errors} || []};
 	ok(scalar @missing_errors > 0, 'missing_param has at least one error');
-	
+
 	# wrong_type should have errors
 	ok(exists $schemas->{wrong_type}{_pod_validation_errors},
 	   'wrong_type has validation errors');
 	my @wrong_errors = @{$schemas->{wrong_type}{_pod_validation_errors} || []};
 	ok(scalar @wrong_errors > 0, 'wrong_type has at least one error');
-	
+
 	done_testing();
 };
 
@@ -665,16 +665,16 @@ END_MODULE
 
 	my $extractor = create_extractor($module, 1);
 	my $schemas = $extractor->extract_all();
-	
+
 	# Test if the report method exists
 	can_ok($extractor, 'generate_pod_validation_report');
-	
+
 	# Generate report
 	my $report = $extractor->generate_pod_validation_report($schemas);
-	
+
 	ok(defined $report, 'Report generated');
 	like($report, qr/POD\/Code Validation/, 'Report contains header');
-	
+
 	# Test with a module that has POD for all parameters
 	my $clean_module = <<'END_MODULE';
 package Test::Clean;
@@ -697,14 +697,14 @@ sub clean_method {
 	return $x * 2;
 }
 END_MODULE
-	
+
 	my $clean_extractor = create_extractor($clean_module, 1);
 	my $clean_schemas = $clean_extractor->extract_all();
 	my $clean_report = $clean_extractor->generate_pod_validation_report($clean_schemas);
-	
+
 	# The report should indicate all passed (or be empty)
 	ok(defined $clean_report, 'Clean report generated');
-	
+
 	done_testing();
 };
 
@@ -731,22 +731,22 @@ Returns: arrayref, query results
 
 sub real_world_example {
 	my ($self, $dbh, $query, $params, $options) = @_;
-	
+
 	# Complex validation
 	croak "Database handle required" unless $dbh && $dbh->isa('DBI::db');
 	croak "Query required" unless defined $query;
-	
+
 	$params ||= [];
 	$options ||= {};
-	
+
 	my $sth = $dbh->prepare($query);
 	$sth->execute(@$params);
-	
+
 	my @results;
 	while (my $row = $sth->fetchrow_hashref) {
 		push @results, $row;
 	}
-	
+
 	return \@results;
 }
 
@@ -771,18 +771,18 @@ END_MODULE
 
 	my $extractor = create_extractor($module, 1);
 	my $schemas;
-	
+
 	lives_ok {
 		$schemas = $extractor->extract_all();
 	} 'No croak with complex real-world examples';
-	
+
 	# real_world_example should have correct parameters
-	ok(exists $schemas->{real_world_example}{input}{dbh}, 
+	ok(exists $schemas->{real_world_example}{input}{dbh},
 	   'real_world_example has dbh parameter');
-	
+
 	# factory_method is a class method, might have different handling
 	note("factory_method extracted: " . (exists $schemas->{factory_method} ? 'yes' : 'no'));
-	
+
 	done_testing();
 };
 
