@@ -2378,6 +2378,8 @@ sub _analyze_output {
 # Analyze POD for Returns section
 sub _analyze_output_from_pod {
 	my ($self, $output, $pod) = @_;
+	my %VALID_OUTPUT_TYPES = map { $_ => 1 }
+		qw(string integer number boolean arrayref hashref object void undef);
 
 	if ($pod) {
 		# Pattern 1: Returns: section
@@ -2428,11 +2430,9 @@ sub _analyze_output_from_pod {
 			my $type = lc($1);
 
 			$type = 'boolean' if $type =~ /^(true|false|bool)$/;
-
 			# Skip if it's just a number (like "returns 1")
 			$type = 'integer' if $type eq 'int';
 			$type = 'number' if $type =~ /^(num|float)$/;
-			$type = 'boolean' if $type eq 'bool';
 			$type = 'arrayref' if $type eq 'array';
 			$type = 'hashref' if $type eq 'hash';
 
@@ -2452,11 +2452,15 @@ sub _analyze_output_from_pod {
 			}
 
 			$type = 'arrayref' if !$type && $pod =~ /returns?\s+.+\slist\b/i;
-			$output->{type} = $type if $type && $type !~ /^\d+$/;
-			$self->_log("  OUTPUT: Inferred type from POD: $type");
+			# $output->{type} = $type if $type && $type !~ /^\d+$/;
+			if ($VALID_OUTPUT_TYPES{$type}) {
+				$output->{type} = $type;
+				$self->_log("  OUTPUT: Inferred type from POD: $type");
+			} else {
+				$self->_log("  OUTPUT: POD return type '$type' is not a valid type, ignoring");
+			}
 		}
 	}
-
 }
 
 =head2 _extract_defaults_from_pod
@@ -2592,8 +2596,7 @@ sub _analyze_output_from_code
 			if ($content =~ /,/) {	# Has comma = multiple values
 				$output->{type} = 'array';
 			}
-		}
-		elsif ($code =~ /return\s+\$self\s*;/ && $code =~ /\$self\s*->\s*\{[^}]+\}\s*=/) {
+		} elsif ($code =~ /return\s+\$self\s*;/ && $code =~ /\$self\s*->\s*\{[^}]+\}\s*=/) {
 			# Returns $self for chaining
 			$output->{type} = 'object';
 			if ($self->{_document}) {
@@ -2632,9 +2635,8 @@ sub _analyze_output_from_code
 					$return_types{number}++;
 				} elsif ($ret eq 'undef') {
 					$return_types{undef}++;
-				}
+				} elsif ($ret =~ /^\[/) {
 				# Data structures
-				elsif ($ret =~ /^\[/) {
 					$return_types{arrayref}++;
 				} elsif ($ret =~ /^\{/) {
 					$return_types{hashref}++;
@@ -2646,6 +2648,19 @@ sub _analyze_output_from_code
 				    )
 				}x) {
 					$return_types{number} += 2;
+				} elsif ($ret =~ /\|\|\s*\d+\b/) {
+					# Logical-or fallback with numeric literal (e.g. $x || 200)
+					$return_types{integer} += 2;
+					$self->_log("  OUTPUT: Numeric fallback expression detected");
+				} elsif ($ret =~ /=/ && $ret =~ /\$\w+/) {
+					# Assignment returning a value (e.g. $self->{status} = $status)
+					# If assignment involves a numeric literal or variable, assume numeric intent
+					if ($ret =~ /\b\d+\b/) {
+						$return_types{integer} += 2;
+						$self->_log("  OUTPUT: Assignment with numeric value detected");
+					} else {
+						$return_types{scalar}++;
+					}
 				}
 				# Variables/expressions
 				elsif ($ret =~ /\$\w+/) {
@@ -2668,6 +2683,13 @@ sub _analyze_output_from_code
 			# Determine most common return type
 			if (keys %return_types) {
 				my ($most_common) = sort { $return_types{$b} <=> $return_types{$a} } keys %return_types;
+				# Prefer integer over scalar if numeric returns dominate
+				if ($return_types{integer} && (!$return_types{string})) {
+					if (!$output->{type} || $output->{type} eq 'scalar') {
+						$output->{type} = 'integer';
+						$self->_log("  OUTPUT: Numeric returns dominate, forcing integer");
+					}
+				}
 				unless ($output->{type}) {
 					$output->{type} = $most_common;
 
