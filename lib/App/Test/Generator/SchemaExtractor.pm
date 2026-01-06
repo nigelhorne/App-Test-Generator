@@ -477,7 +477,7 @@ Extracts defaults from multiple Perl idioms:
 
 =item * Unless conditional: C<$param = 'default' unless defined $param>
 
-=item * Chained defaults: C<$param = $param || $self->{default} || 'fallback'>
+=item * Chained defaults: C<$param = $param || $self->{_default} || 'fallback'>
 
 =item * Multi-line patterns: C<$param = {} unless $param>
 
@@ -2332,7 +2332,7 @@ sub _analyze_pod {
 	my $pod_defaults = $self->_extract_defaults_from_pod($pod);
 	foreach my $param (keys %$pod_defaults) {
 		if (exists $params{$param}) {
-			$params{$param}{default} = $pod_defaults->{$param};
+			$params{$param}{_default} = $pod_defaults->{$param};
 			$params{$param}{optional} = 1 unless defined $params{$param}{optional};
 			$self->_log(sprintf("  POD: %s has default value: %s",
 				$param,
@@ -3244,8 +3244,8 @@ sub _analyze_code {
 
 	# Infer types from defaults
 	foreach my $param (keys %params) {
-		if ($params{$param}{default} && !$params{$param}{type}) {
-			my $default = $params{$param}{default};
+		if ($params{$param}{_default} && !$params{$param}{type}) {
+			my $default = $params{$param}{_default};
 			if (ref($default) eq 'HASH') {
 				$params{$param}{type} = 'hashref';
 				$self->_log("  CODE: $param type inferred as hashref from default");
@@ -3352,8 +3352,8 @@ sub _analyze_parameter_type {
 	}
 
 	# Infer type from the default value if type is unknown
-	if (!$p->{type} && exists $p->{default}) {
-		my $default = $p->{default};
+	if (!$p->{type} && exists $p->{_default}) {
+		my $default = $p->{_default};
 		if (ref($default) eq 'HASH') {
 			$p->{type} = 'hashref';
 			$self->_log("  CODE: $param type inferred as hashref from default");
@@ -3537,7 +3537,7 @@ sub _detect_filehandle_type {
 
 	# Path validation patterns
 	# Only match a literal path assigned or defaulted to this variable
-	if(defined $p->{default} && $p->{default} =~ m{^([A-Za-z]:\\|/|\./|\.\./)}) {
+	if(defined $p->{_default} && $p->{_default} =~ m{^([A-Za-z]:\\|/|\./|\.\./)}) {
 		$p->{type} = 'string';
 		$p->{semantic} = 'filepath';
 		$self->_log("  ADVANCED: $param default looks like a path");
@@ -3921,7 +3921,7 @@ sub _parse_modern_signature {
 			$params->{$name} = $param_info;
 			$self->_log("  SIG: $name has position $position" .
 				($param_info->{optional} ? " (optional)" : '') .
-				($param_info->{default} ? ", default: $param_info->{default}" : ''));
+				($param_info->{_default} ? ", default: $param_info->{_default}" : ''));
 			$position++;
 		}
 	}
@@ -3944,7 +3944,7 @@ sub _parse_signature_parameter {
 
 		$info{name} = $name;
 		$info{optional} = 1;
-		$info{default} = $self->_clean_default_value($default, 1);
+		$info{_default} = $self->_clean_default_value($default, 1);
 
 		# Apply type constraint
 		if ($constraint =~ /^(Int|Integer)$/i) {
@@ -3997,8 +3997,8 @@ sub _parse_signature_parameter {
 
 	$info{name} = $name;
 	$info{optional} = 1;
-	$info{default} = $self->_clean_default_value($default, 1);
-	$info{type} = $self->_infer_type_from_default($info{default}) if $self->can('_infer_type_from_default');
+	$info{_default} = $self->_clean_default_value($default, 1);
+	$info{type} = $self->_infer_type_from_default($info{_default}) if $self->can('_infer_type_from_default');
 
 	return \%info;
 	}
@@ -4188,9 +4188,9 @@ sub _extract_field_declarations {
         if ($modifiers =~ /=\s*([^:;]+)(?::|;|$)/) {
 		my $default = $1;
 		$default =~ s/\s+$//;
-		$field_info{default} = $self->_clean_default_value($default, 1);
+		$field_info{_default} = $self->_clean_default_value($default, 1);
 		$field_info{optional} = 1;
-		$self->_log("  FIELD: $name has default: " .  (defined $field_info{default} ? $field_info{default} : 'undef'));
+		$self->_log("  FIELD: $name has default: " .  (defined $field_info{_default} ? $field_info{_default} : 'undef'));
 	}
 
 	# Check for type constraints
@@ -4226,8 +4226,8 @@ sub _merge_field_declarations {
         $p->{_source} = 'field' unless $p->{_source};
         $p->{field_name} = $field_name if $field_name ne $param_name;
 
-        if ($field->{default}) {
-            $p->{default} = $field->{default};
+        if ($field->{_default}) {
+            $p->{_default} = $field->{_default};
             $p->{optional} = 1;
         }
 
@@ -4248,9 +4248,9 @@ sub _extract_defaults_from_code {
 		my ($param, $value) = ($1, $2);
 		next unless exists $params->{$param};
 
-		$params->{$param}{default} = $self->_clean_default_value($value, 1);
+		$params->{$param}{_default} = $self->_clean_default_value($value, 1);
 		$params->{$param}{optional} = 1;
-	$self->_log("  CODE: $param has default: " . $self->_format_default($params->{$param}{default}));
+	$self->_log("  CODE: $param has default: " . $self->_format_default($params->{$param}{_default}));
 	}
 
 	# Pattern 2: $param = value unless defined $param;
@@ -4258,9 +4258,9 @@ sub _extract_defaults_from_code {
 		my ($param, $value) = ($1, $2);
 		next unless exists $params->{$param};
 
-		$params->{$param}{default} = $self->_clean_default_value($value, 1);
+		$params->{$param}{_default} = $self->_clean_default_value($value, 1);
 		$params->{$param}{optional} = 1;
-		$self->_log("  CODE: $param has default (unless): " . $self->_format_default($params->{$param}{default}));
+		$self->_log("  CODE: $param has default (unless): " . $self->_format_default($params->{$param}{_default}));
 	}
 
 	# Pattern 3: $param = value unless $param;
@@ -4268,9 +4268,9 @@ sub _extract_defaults_from_code {
 		my ($param, $value) = ($1, $2);
 		next unless exists $params->{$param};
 
-		$params->{$param}{default} = $self->_clean_default_value($value, 1);
+		$params->{$param}{_default} = $self->_clean_default_value($value, 1);
 		$params->{$param}{optional} = 1;
-		$self->_log("  CODE: $param has default (unless): " . $self->_format_default($params->{$param}{default}));
+		$self->_log("  CODE: $param has default (unless): " . $self->_format_default($params->{$param}{_default}));
 	}
 
 	# Pattern 4: $param = $param || 'default';
@@ -4278,9 +4278,9 @@ sub _extract_defaults_from_code {
 		my ($param, $value) = ($1, $2);
 		next unless exists $params->{$param};
 
-		$params->{$param}{default} = $self->_clean_default_value($value, 1);
+		$params->{$param}{_default} = $self->_clean_default_value($value, 1);
 		$params->{$param}{optional} = 1;
-		$self->_log("  CODE: $param has default (||): " . $self->_format_default($params->{$param}{default}));
+		$self->_log("  CODE: $param has default (||): " . $self->_format_default($params->{$param}{_default}));
 	}
 
 	# Pattern 5: $param ||= 'default';
@@ -4288,9 +4288,9 @@ sub _extract_defaults_from_code {
 		my ($param, $value) = ($1, $2);
 		next unless exists $params->{$param};
 
-		$params->{$param}{default} = $self->_clean_default_value($value, 1);
+		$params->{$param}{_default} = $self->_clean_default_value($value, 1);
 		$params->{$param}{optional} = 1;
-		$self->_log("  CODE: $param has default (||=): " . $self->_format_default($params->{$param}{default}));
+		$self->_log("  CODE: $param has default (||=): " . $self->_format_default($params->{$param}{_default}));
 	}
 
 	# Pattern 6: $param //= 'default';
@@ -4298,10 +4298,10 @@ sub _extract_defaults_from_code {
 		my ($param, $value) = ($1, $2);
 		next unless exists $params->{$param};  # Using -> because $params is a reference
 
-		$params->{$param}{default} = $self->_clean_default_value($value, 1);
+		$params->{$param}{_default} = $self->_clean_default_value($value, 1);
 
 		$params->{$param}{optional} = 1;
-		$self->_log("  CODE: $param has default (//=): " . $self->_format_default($params->{$param}{default}));
+		$self->_log("  CODE: $param has default (//=): " . $self->_format_default($params->{$param}{_default}));
 	}
 
 	# Pattern 7: $param = defined $param ? $param : 'default';
@@ -4313,9 +4313,9 @@ sub _extract_defaults_from_code {
 
 		my $cleaned = $self->_clean_default_value($value, 1);
 
-		$params->{$param}{default} = $cleaned;
+		$params->{$param}{_default} = $cleaned;
 		$params->{$param}{optional} = 1;
-		$self->_log("  CODE: $param has default (ternary): " . $self->_format_default($params->{$param}{default}));
+		$self->_log("  CODE: $param has default (ternary): " . $self->_format_default($params->{$param}{_default}));
 	}
 
 	# Pattern 8: $param = $args{param} || 'default';
@@ -4323,9 +4323,9 @@ sub _extract_defaults_from_code {
 		my ($param, $value) = ($1, $2);
 		next unless exists $params->{$param};
 
-		$params->{$param}{default} = $self->_clean_default_value($value, 1);
+		$params->{$param}{_default} = $self->_clean_default_value($value, 1);
 		$params->{$param}{optional} = 1;
-		$self->_log("  CODE: $param has default (from args): " . $self->_format_default($params->{$param}{default}));
+		$self->_log("  CODE: $param has default (from args): " . $self->_format_default($params->{$param}{_default}));
 	}
 
 	# Pattern for non-empty hashref
@@ -4334,7 +4334,7 @@ sub _extract_defaults_from_code {
 		next unless exists $params->{$param};
 
 		# Return empty hashref as placeholder (can't evaluate complex hashrefs)
-		$params->{$param}{default} = {};
+		$params->{$param}{_default} = {};
 		$params->{$param}{optional} = 1;
 		$self->_log("  CODE: $param has hashref default (||=)");
 	}
@@ -4420,9 +4420,9 @@ sub _analyze_parameter_validation {
 
 	# Extract default values with the new method
 	my $default_value = $self->_extract_default_value($param, $code);
-	if (defined $default_value && !exists $p->{default}) {
+	if (defined $default_value && !exists $p->{_default}) {
 		$p->{optional} = 1;
-		$p->{default} = $default_value;
+		$p->{_default} = $default_value;
 
 		# Try to infer type from default value if not already set
 		unless ($p->{type}) {
@@ -4445,7 +4445,7 @@ sub _analyze_parameter_validation {
 
 	# Also check for simple default assignment without condition
 	# Pattern: $param = 'value';
-	if (!$default_value && !exists $p->{default} && $code =~ /\$$param\s*=\s*([^;{}]+?)(?:\s*[;}])/s) {
+	if (!$default_value && !exists $p->{_default} && $code =~ /\$$param\s*=\s*([^;{}]+?)(?:\s*[;}])/s) {
 		my $assignment = $1;
 		# Make sure it's not part of a larger expression
 		if ($assignment !~ /\$$param/ && $assignment !~ /^shift/) {
@@ -4453,7 +4453,7 @@ sub _analyze_parameter_validation {
 			$possible_default =~ s/\s*;\s*$//;
 			$possible_default = $self->_clean_default_value($possible_default);
 			if (defined $possible_default) {
-				$p->{default} = $possible_default;
+				$p->{_default} = $possible_default;
 				$p->{optional} = 1;
 				$self->_log("  CODE: $param has unconditional default: $possible_default");
 			}
@@ -4463,7 +4463,7 @@ sub _analyze_parameter_validation {
 	# Explicit required check overrides default detection
 	if ($is_required) {
 		$p->{optional} = 0;
-		delete $p->{default} if exists $p->{default};
+		delete $p->{_default} if exists $p->{_default};
 		$self->_log("  CODE: $param is required (validation check)");
 	}
 }
@@ -4632,7 +4632,7 @@ sub _calculate_input_confidence {
 		}
 		if ($p->{matches}) {
 			$score += 20;
-			push @param_factors, "Has regex pattern constraint (+20)";
+			push @param_factors, 'Has regex pattern constraint (+20)';
 		}
 		if ($p->{isa}) {
 			$score += 25;
@@ -4646,7 +4646,7 @@ sub _calculate_input_confidence {
 		}
 
 		# Default value
-		if (exists $p->{default}) {
+		if (exists $p->{_default}) {
 			$score += 10;
 			push @param_factors, "Has default value (+10)";
 		}

@@ -179,7 +179,7 @@ END_MODULE
 		   'key parameter is optional (from POD)');
 
 		# The default value might have quotes - clean them for comparison
-		my $default = $schemas->{get_config}{input}{key}{default};
+		my $default = $schemas->{get_config}{input}{key}{_default};
 		$default =~ s/^"|"$//g;  # Remove surrounding quotes if present
 		is($default, 'default',
 		   'key parameter has correct default');
