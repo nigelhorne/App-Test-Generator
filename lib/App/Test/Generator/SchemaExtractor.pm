@@ -2379,7 +2379,7 @@ sub _analyze_output {
 sub _analyze_output_from_pod {
 	my ($self, $output, $pod) = @_;
 	my %VALID_OUTPUT_TYPES = map { $_ => 1 }
-		qw(string integer number boolean arrayref hashref object void undef);
+		qw(string integer number float boolean arrayref hashref object coderef void undef);
 
 	if ($pod) {
 		# Pattern 1: Returns: section
