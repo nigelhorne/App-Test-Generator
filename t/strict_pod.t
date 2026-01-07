@@ -463,6 +463,8 @@ Returns: string, processed data
 
 sub process_data {
 	my ($self, $data) = @_;
+
+	die if(!defined($data));
 	# Code infers string, POD says string - exact match
 	return "Processed: $data";
 }

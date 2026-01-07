@@ -2341,6 +2341,18 @@ sub _analyze_pod {
 		}
 	}
 
+	# Default undocumented optionality: documented params are REQUIRED unless stated otherwise
+	for my $name (keys %params) {
+		next if $name =~ /^(self|class)$/i;
+
+		# FIXME: not for now, it's sensible but breaks things
+		# If optionality was never explicitly set, assume required
+		# if (!exists $params{$name}{optional}) {
+			# $params{$name}{optional} = 0;
+			# $self->_log("  POD: $name assumed required (no optional/default specified)");
+		# }
+	}
+
 	return \%params;
 }
 
@@ -3285,6 +3297,30 @@ sub _analyze_code {
 		$self->_analyze_parameter_validation($p, $param, $code);
 		$self->_analyze_advanced_types($p, $param, $code);
 
+		# Defined checks
+		if ($code =~ /defined\s*\(\s*\$$param\s*\)/) {
+			$$p->{optional} = 0;
+			$self->_log("  CODE: $param is required (defined check)");
+		}
+
+		# Determine optional/required and numeric type from code
+		if ($code =~ /\s*\$$param\s*(?:\/\/|\|\|)=/) {
+			# e.g. $var //= 5; or $var ||= 5;
+			$$p->{optional} = 1;
+			$self->_log("  CODE: $param is optional (default value assigned in code)");
+		} elsif ($code =~ /\s*\$$param\s*(?:[\+\-\*\/%]|(?:\+\+)|(?:--)|(?:[\+\-\*\/%]=)|\+\$|\$[+-])/ ) {
+			# Covers arithmetic usage:
+			# $x + $param, $param++, $param--, $x += $param, $x -= $param, etc.
+			$$p->{optional} = 0;
+			$$p->{type} //= 'number';
+			$self->_log("  CODE: $param is required (used in arithmetic context)");
+		} elsif ($code =~ /\$\b$param\b\s*(?:\+0|\*1)/) {
+			# Forces numeric context, e.g., "$param + 0" or "$param * 1"
+			$$p->{optional} = 0;
+			$$p->{type} //= 'number';
+			$self->_log("  CODE: $param is required (numeric context)");
+		}
+
 		# Required parameter checks (undef causes error)
 
 		# Style 1: block form
@@ -3760,7 +3796,7 @@ sub _extract_error_constraints {
 
 		# Store results
 		push @{ $$p->{_invalid} }, $constraint if $constraint;
-		push @{ $$p->{_errors}  }, $message   if defined $message;
+		push @{ $$p->{_errors}  }, $message if defined $message;
 
 		$self->_log(
 			"  ERROR: $param invalid when [$condition]" .
@@ -4111,17 +4147,17 @@ sub _analyze_postfix_dereferencing {
 
 	my %derefs;
 
-    # Array dereference: $ref->@*
-    if ($code =~ /\$\w+\s*->\s*\@\*/) {
-        $derefs{array_deref} = 1;
-        $self->_log("  MODERN: Uses postfix array dereferencing (->@*)");
-    }
+	# Array dereference: $ref->@*
+	if ($code =~ /\$\w+\s*->\s*\@\*/) {
+		$derefs{array_deref} = 1;
+		$self->_log("  MODERN: Uses postfix array dereferencing (->@*)");
+	}
 
-    # Hash dereference: $ref->%*
-    if ($code =~ /\$\w+\s*->\s*\%\*/) {
-        $derefs{hash_deref} = 1;
-        $self->_log("  MODERN: Uses postfix hash dereferencing (->%*)");
-    }
+	# Hash dereference: $ref->%*
+	if ($code =~ /\$\w+\s*->\s*\%\*/) {
+		$derefs{hash_deref} = 1;
+		$self->_log("  MODERN: Uses postfix hash dereferencing (->%*)");
+	}
 
     # Scalar dereference: $ref->$*
     if ($code =~ /\$\w+\s*->\s*\$\*/) {
