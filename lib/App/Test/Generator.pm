@@ -1710,6 +1710,9 @@ sub _validate_config {
 
 	# Validate types, constraints, etc.
 	for my $param (keys %{$config->{input}}) {
+		if(!length($param)) {
+			croak 'Empty input parameter name';
+		}
 		my $spec = $config->{input}{$param};
 		if(ref($spec)) {
 			croak "Invalid type '$spec->{type}' for parameter '$param'" unless _valid_type($spec->{type});

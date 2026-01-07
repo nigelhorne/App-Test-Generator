@@ -4206,28 +4206,28 @@ sub _extract_field_declarations {
 			_source => 'field'
 		);
 
-        # Check for :param attribute
-        if ($modifiers =~ /:param(?:\(([^)]+)\))?/) {
-            $field_info{is_param} = 1;
+		# Check for :param attribute
+		if ($modifiers =~ /:param(?:\(([^)]+)\))?/) {
+			$field_info{is_param} = 1;
 
-            if (defined $1) {
-                # Explicit parameter name
-                $field_info{param_name} = $1;
-            } else {
-                # Implicit - field name is param name
-                $field_info{param_name} = $name;
-            }
+			if (defined $1) {
+				# Explicit parameter name
+				$field_info{param_name} = $1;
+			} else {
+				# Implicit - field name is param name
+				$field_info{param_name} = $name;
+			}
 
-            $self->_log("  FIELD: $name maps to parameter: $field_info{param_name}");
-        }
+			$self->_log("  FIELD: $name maps to parameter: $field_info{param_name}");
+		}
 
         # Check for default value - must come before type constraint check
-        if ($modifiers =~ /=\s*([^:;]+)(?::|;|$)/) {
+	if ($modifiers =~ /=\s*([^:;]+)(?::|;|$)/) {
 		my $default = $1;
 		$default =~ s/\s+$//;
 		$field_info{_default} = $self->_clean_default_value($default, 1);
 		$field_info{optional} = 1;
-		$self->_log("  FIELD: $name has default: " .  (defined $field_info{_default} ? $field_info{_default} : 'undef'));
+		$self->_log("  FIELD: $name has default: " . (defined $field_info{_default} ? $field_info{_default} : 'undef'));
 	}
 
 	# Check for type constraints
@@ -4253,28 +4253,28 @@ sub _merge_field_declarations {
 		# Only process fields that are parameters
 		next unless $field->{is_param};
 
-	my $param_name = $field->{param_name};
+		my $param_name = $field->{param_name};
 
-	# Create or update parameter info
-        $params->{$param_name} ||= {};
-	my $p = $params->{$param_name};
+		# Create or update parameter info
+		$params->{$param_name} ||= {};
+		my $p = $params->{$param_name};
 
-        # Merge field information into parameter
-        $p->{_source} = 'field' unless $p->{_source};
-        $p->{field_name} = $field_name if $field_name ne $param_name;
+		# Merge field information into parameter
+		$p->{_source} = 'field' unless $p->{_source};
+		$p->{field_name} = $field_name if $field_name ne $param_name;
 
-        if ($field->{_default}) {
-            $p->{_default} = $field->{_default};
-            $p->{optional} = 1;
-        }
+		if ($field->{_default}) {
+			$p->{_default} = $field->{_default};
+			$p->{optional} = 1;
+		}
 
-        if ($field->{isa}) {
-            $p->{isa} = $field->{isa};
-            $p->{type} = 'object';
-        }
+		if ($field->{isa}) {
+			$p->{isa} = $field->{isa};
+			$p->{type} = 'object';
+		}
 
-        $self->_log("  MERGED: Field $field_name -> parameter $param_name");
-    }
+		$self->_log("  MERGED: Field $field_name -> parameter $param_name");
+	}
 }
 
 sub _extract_defaults_from_code {
