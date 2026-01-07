@@ -2269,8 +2269,8 @@ sub _analyze_pod {
 					($constraint ? " ($constraint)" : ''));
 	}
 
-	# Pattern 3: Parse =over /=item list
-	if ($pod =~ /=over\b.*?=item\s+\$(\w+)\s*\n(.*?)(?==item\s+\$|\=back)/sig) {
+	# Pattern 3: Parse =over /=item list (supports bullets and C<>)
+	while ($pod =~ /=item\s+(?:\*\s*)?(?:C<)?\$(\w+)(?:>)?\s*(?:-.*)?\n?(.*?)(?==item|\=back)/sig) {
 		my $name = $1;
 		my $desc = $2;
 		$desc =~ s/^\s+|\s+$//g;
@@ -2961,17 +2961,18 @@ sub _detect_chaining_pattern {
 # Detect error return conventions
 sub _detect_error_conventions {
 	my ($self, $output, $code) = @_;
+
 	return unless $code;
 
 	$self->_log('  DEBUG _detect_error_conventions called');
 
 	my %error_patterns;
 
-    # Pattern 1: return undef if/unless condition
-    while ($code =~ /return\s+undef\s+(?:if|unless)\s+([^;]+);/g) {
-        push @{$error_patterns{undef_on_error}}, $1;
-        $self->_log("  DEBUG Found 'return undef' pattern");
-    }
+	# Pattern 1: return undef if/unless condition
+	while ($code =~ /return\s+undef\s+(?:if|unless)\s+([^;]+);/g) {
+		push @{$error_patterns{undef_on_error}}, $1;
+		$self->_log("  DEBUG Found 'return undef' pattern");
+	}
 
 	# Pattern 2: return if/unless (implicit undef)
 	while ($code =~ /return\s+(?:if|unless)\s+([^;]+);/g) {
