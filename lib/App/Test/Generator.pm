@@ -1821,6 +1821,8 @@ sub _valid_type
 {
 	my $type = $_[0];
 
+	return 0 if(!defined($type));
+
 	return(($type eq 'string') ||
 		($type eq 'boolean') ||
 		($type eq 'integer') ||
