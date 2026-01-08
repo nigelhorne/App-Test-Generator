@@ -1686,19 +1686,34 @@ sub _detect_accessor_methods {
 
 	# Simple getter: return $self->{field};
 	if ($body =~ /return\s+\$self\s*->\s*\{([^}]+)\}\s*;/) {
-		$schema->{_accessor} = { type => 'getter', field => $1 };
-		$self->_log("  Detected getter accessor for field: $1");
-	}
-	# Setter: $self->{field} = $value; return $self;
-	elsif ($body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*\$(\w+)\s*;/ && $body =~ /return\s+\$self\s*;/) {
+		my $field = $1;
+
+		$schema->{_accessor} = {
+			type  => 'getter',
+			field => $field,
+		};
+
+		$self->_log("  Detected getter accessor for field: $field");
+
+		# Getter/accessor methods do not take parameters
+		$schema->{input} = {};
+		$schema->{input_style} = 'none';
+
+		$schema->{_confidence}{input} = {
+			level   => 'high',
+			factors => ['Detected getter/accessor method'],
+		};
+
+		return;  # Critical: skip all parameter inference
+	} elsif ($body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*\$(\w+)\s*;/ && $body =~ /return\s+\$self\s*;/) {
+		# Setter: $self->{field} = $value; return $self;
 		my ($field, $param) = ($1, $2);
 		if (defined $field && defined $param) {
 			$schema->{_accessor} = { type => 'setter', field => $field, param => $param };
 			$self->_log("  Detected setter accessor for field: $field");
 		}
-	}
-	# Getter/Setter combination
-	elsif ($body =~ /if\s*\(\s*\@_\s*>\s*1\s*\)/ &&
+	} elsif ($body =~ /if\s*\(\s*\@_\s*>\s*1\s*\)/ &&
+		# Getter/Setter combination
 	       $body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*shift\s*;/ &&
 	       $body =~ /return\s+\$self\s*->\s*\{[^}]+\}\s*;/) {
 		my $field = $1;
@@ -2270,9 +2285,13 @@ sub _analyze_pod {
 	}
 
 	# Pattern 3: Parse =over /=item list (supports bullets and C<>)
-	while ($pod =~ /=item\s+(?:\*\s*)?(?:C<)?\$(\w+)(?:>)?\s*(?:-.*)?\n?(.*?)(?==item|\=back)/sig) {
+	while ($pod =~ /=item\s+(?:\*\s*)?(?:C<)?\$(\w+)\b(?:>)?\s*(?:-.*)?\n?(.*?)(?==item|\=back)/sig) {
 		my $name = $1;
 		my $desc = $2;
+
+		# Never allow empty or undefined parameter names
+		next unless defined $name && length $name;
+
 		$desc =~ s/^\s+|\s+$//g;
 
 		# Skip common non-parameters
@@ -3015,14 +3034,14 @@ sub _detect_error_conventions {
 		$self->_log("  DEBUG Found 0/1 return pattern ($zero_returns zeros, $one_returns ones)");
 	}
 
-    # Pattern 5: Exception handling with eval
-    if ($code =~ /eval\s*\{/) {
-        # Check if there's error handling after eval
-        if ($code =~ /eval\s*\{.*?\}[^}]*(?:if\s*\(\s*\$\@|catch|return\s+undef)/s) {
-            $error_patterns{exception_handling} = 1;
-            $self->_log("  DEBUG Found exception handling with eval");
-        }
-    }
+	# Pattern 5: Exception handling with eval
+	if ($code =~ /eval\s*\{/) {
+		# Check if there's error handling after eval
+		if ($code =~ /eval\s*\{.*?\}[^}]*(?:if\s*\(\s*\$\@|catch|return\s+undef)/s) {
+			$error_patterns{exception_handling} = 1;
+			$self->_log('  DEBUG Found exception handling with eval');
+		}
+	}
 
 	# Detect success/failure return pattern
 	my @all_returns = $code =~ /return\s+([^;]+);/g;
@@ -3034,29 +3053,29 @@ sub _detect_error_conventions {
 		$self->_log("  OUTPUT: Uses success/failure return pattern");
 	}
 
-    # Store error conventions in output
-    if (keys %error_patterns) {
-        $output->{_error_handling} = \%error_patterns;
+	# Store error conventions in output
+	if (keys %error_patterns) {
+		$output->{_error_handling} = \%error_patterns;
 
-        # Determine primary error convention
-        if ($error_patterns{undef_on_error}) {
-            $output->{error_return} = 'undef';
-            $self->_log("  OUTPUT: Returns undef on error");
-        } elsif ($error_patterns{implicit_undef}) {
-            $output->{error_return} = 'undef';
-            $self->_log("  OUTPUT: Returns implicit undef on error");
-        } elsif ($error_patterns{empty_list}) {
-            $output->{error_return} = 'empty_list';
-            $self->_log("  OUTPUT: Returns empty list on error");
-        } elsif ($error_patterns{zero_on_error}) {
-            $output->{error_return} = 'false';
-            $self->_log("  OUTPUT: Returns 0/false on error");
-        }
+		# Determine primary error convention
+		if ($error_patterns{undef_on_error}) {
+			$output->{error_return} = 'undef';
+			$self->_log("  OUTPUT: Returns undef on error");
+		} elsif ($error_patterns{implicit_undef}) {
+			$output->{error_return} = 'undef';
+			$self->_log("  OUTPUT: Returns implicit undef on error");
+		} elsif ($error_patterns{empty_list}) {
+			$output->{error_return} = 'empty_list';
+			$self->_log("  OUTPUT: Returns empty list on error");
+		} elsif ($error_patterns{zero_on_error}) {
+			$output->{error_return} = 'false';
+			$self->_log("  OUTPUT: Returns 0/false on error");
+		}
 
-        if ($error_patterns{exception_handling}) {
-            $self->_log("  OUTPUT: Has exception handling");
-        }
-    }
+		if ($error_patterns{exception_handling}) {
+			$self->_log("  OUTPUT: Has exception handling");
+		}
+	}
 }
 
 # Helper method: Infer type from an expression
@@ -4581,7 +4600,7 @@ sub _merge_parameter_analyses {
 		foreach my $param (sort { ($merged{$a}{position} || 999) <=> ($merged{$b}{position} || 999) } keys %merged) {
 			my $p = $merged{$param};
 			$self->_log("  MERGED $param: " .
-					"pos=" . ($p->{position} || 'none') .
+					'pos=' . ($p->{position} || 'none') .
 					", type=" . ($p->{type} || 'none') .
 					", optional=" . (defined($p->{optional}) ? $p->{optional} : 'undef'));
 		}
