@@ -97,7 +97,7 @@ sub run_cmd {
 # --------------------------------------------------------------------
 
 {
-	my ( $exit, $out, $err ) = run_cmd(
+	my ($exit, $out, $err) = run_cmd(
 		$script,
 		'--verbose',
 		$module
@@ -118,7 +118,7 @@ sub run_cmd {
 		$module
 	);
 
-	isnt( $exit, 0, 'invalid --strict-pod fails' );
+	isnt($exit, 0, 'invalid --strict-pod fails');
 	like($err . $out, qr/strict-pod/i, 'error mentions strict-pod');
 }
 

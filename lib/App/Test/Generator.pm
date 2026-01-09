@@ -1224,11 +1224,8 @@ sub generate
 
 	my ($schema_file, $test_file, $schema);
 	# Globals loaded from the user's conf (all optional except function maybe)
-	my (%input, %output, %config, $module, $function, $new, %cases, $yaml_cases, %transforms);
+	my (%config, $module, $function, $new, $yaml_cases);
 	my ($seed, $iterations);
-	my (%edge_cases, @edge_case_array, %type_edge_cases);
-
-	@edge_case_array = ();
 
 	if(ref($args) || defined($_[2])) {
 		# Modern API
@@ -1263,13 +1260,13 @@ sub generate
 	}
 
 	# Parse the schema file and load into our structures
-	%input = %{_load_schema_section($schema, 'input', $schema_file)};
-	%output = %{_load_schema_section($schema, 'output', $schema_file)};
-	%transforms = %{_load_schema_section($schema, 'transforms', $schema_file)};
+	my %input = %{_load_schema_section($schema, 'input', $schema_file)};
+	my %output = %{_load_schema_section($schema, 'output', $schema_file)};
+	my %transforms = %{_load_schema_section($schema, 'transforms', $schema_file)};
 
-	%cases = %{$schema->{cases}} if(exists($schema->{cases}));
-	%edge_cases = %{$schema->{edge_cases}} if(exists($schema->{edge_cases}));
-	%type_edge_cases = %{$schema->{type_edge_cases}} if(exists($schema->{type_edge_cases}));
+	my %cases = %{$schema->{cases}} if(exists($schema->{cases}));
+	my %edge_cases = %{$schema->{edge_cases}} if(exists($schema->{edge_cases}));
+	my %type_edge_cases = %{$schema->{type_edge_cases}} if(exists($schema->{type_edge_cases}));
 
 	$module = $schema->{module} if(exists($schema->{module}) && length($schema->{module}));
 	$function = $schema->{function} if(exists($schema->{function}));
@@ -1280,27 +1277,12 @@ sub generate
 	$seed = $schema->{seed} if(exists($schema->{seed}));
 	$iterations = $schema->{iterations} if(exists($schema->{iterations}));
 
-	@edge_case_array = @{$schema->{edge_case_array}} if(exists($schema->{edge_case_array}));
+	my @edge_case_array = @{$schema->{edge_case_array}} if(exists($schema->{edge_case_array}));
 	_validate_config($schema);
 
 	%config = %{$schema->{config}} if(exists($schema->{config}));
 
-	# Handle the various possible boolean settings for config values
-	# Note that the default for everything is true
-	foreach my $field (CONFIG_TYPES) {
-		next if($field eq 'properties');	# Not a boolean
-		if(exists($config{$field})) {
-			if(($config{$field} eq 'false') || ($config{$field} eq 'off') || ($config{$field} eq 'no')) {
-				$config{$field} = 0;
-			} elsif(($config{$field} eq 'true') || ($config{$field} eq 'on') || ($config{$field} eq 'yes')) {
-				$config{$field} = 1;
-			}
-		} else {
-			$config{$field} = 1;
-		}
-	}
-
-	$config{properties} = { enable => 0 } unless ref $config{properties} eq 'HASH';
+	_normalize_config(\%config);
 
 	# Guess module name from config file if not set
 	if(!$module) {
@@ -1313,7 +1295,7 @@ sub generate
 	}
 
 	if($module && length($module) && ($module ne 'builtin')) {
-		_validate_module($module, $schema_file)
+		_validate_module($module, $schema_file);
 	}
 
 	# sensible defaults
@@ -1640,7 +1622,7 @@ sub generate
 	};
 
 	my $test;
-	$tt->process($template, $vars, \$test) or die $tt->error();
+	$tt->process($template, $vars, \$test) or croak($tt->error());
 
 	if ($test_file) {
 		open my $fh, '>:encoding(UTF-8)', $test_file or die "Cannot open $test_file: $!";
@@ -1830,6 +1812,28 @@ sub _validate_config {
 			croak "unknown config setting $k";
 		}
 	}
+}
+
+# Handle the various possible boolean settings for config values
+# Note that the default for everything is true
+sub _normalize_config
+{
+	my $config = $_[0];
+
+	foreach my $field (CONFIG_TYPES) {
+		next if($field eq 'properties');	# Not a boolean
+		if(exists($config->{$field})) {
+			if(($config->{$field} eq 'false') || ($config->{$field} eq 'off') || ($config->{$field} eq 'no')) {
+				$config->{$field} = 0;
+			} elsif(($config->{$field} eq 'true') || ($config->{$field} eq 'on') || ($config->{$field} eq 'yes')) {
+				$config->{$field} = 1;
+			}
+		} else {
+			$config->{$field} = 1;
+		}
+	}
+
+	$config->{properties} = { enable => 0 } unless ref $config->{properties} eq 'HASH';
 }
 
 sub _valid_type
