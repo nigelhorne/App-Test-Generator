@@ -48,6 +48,7 @@ WriteMakefile(
 		'Encode' => 0,
 		'File::Temp' => 0,
 		'IPC::Run3' => 0,
+		'IPC::Open3' => 0,
 		'IPC::System::Simple' => 0,
 		'JSON::MaybeXS' => 0,
 		'JSON::PP' => 0,
@@ -58,6 +59,7 @@ WriteMakefile(
 		'Test::Returns' => 0.02,
 		'Unicode::Normalize' => 0,
 		'Unicode::GCString' => 0,
+		'Symbol' => 0,
 	}, dist => $dist,
 	clean	 => { FILES => 'App-Test-Generator-*' },
 	META_MERGE => {
