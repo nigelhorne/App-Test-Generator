@@ -60,24 +60,27 @@ on how much information it could infer.
 =cut
 
 # Parse command line options
-my %opts = (
-	output_dir => 'schemas',
-	strict_pod	=> 0,
-	verbose => 0,
+my %cli_opts = (
 	help => 0,
-	man => 0,
+	man  => 0,
+);
+
+my %extractor_opts = (
+	output_dir => 'schemas',
+	strict_pod => 'warn',
+	verbose => 0,
 );
 
 GetOptions(
-	'output-dir|o=s' => \$opts{output_dir},
-	'strict-pod|s=s'	=> \$opts{'strict_pod'},
-	'verbose|v' => \$opts{verbose},
-	'help|h' => \$opts{help},
-	'man|m' => \$opts{man},
+	'output-dir|o=s' => \$extractor_opts{output_dir},
+	'strict-pod|s=s' => \$extractor_opts{strict_pod},
+	'verbose|v' => \$extractor_opts{verbose},
+	'help|h' => \$cli_opts{help},
+	'man|m' => \$cli_opts{man},
 ) or pod2usage(2);
 
-pod2usage(1) if $opts{help};
-pod2usage(-exitval => 0, -verbose => 2) if $opts{man};
+pod2usage(1) if $cli_opts{help};
+pod2usage(-exitval => 0, -verbose => 2) if $cli_opts{man};
 
 # Get input file
 my $input_file = shift @ARGV or pod2usage('Error: No input file specified');
@@ -86,14 +89,14 @@ die "Error: File not found: $input_file" unless -f $input_file;
 
 # Run the extractor
 print "Extracting schemas from: $input_file\n";
-print "Output directory: $opts{output_dir}\n\n";
+print "Output directory: $extractor_opts{output_dir}\n\n";
 
 my $extractor = App::Test::Generator::SchemaExtractor->new(
 	input_file => $input_file,
 	# output_dir => $opts{output_dir},
 	# verbose => $opts{verbose},
 	# strict_pod	=> $opts{strict_pod},
-	%opts,
+	%extractor_opts,
 );
 
 my $schemas = $extractor->extract_all();
@@ -133,15 +136,15 @@ print "\n";
 
 if ($iconfidence_counts{low} > 0 || $iconfidence_counts{medium} > 0) {
 	print "RECOMMENDATION:\n",
-		"Review the generated schemas in $opts{output_dir}/\n",
+		"Review the generated schemas in $extractor_opts{output_dir}/\n",
 		"Focus on methods with medium/low confidence ratings.\n\n";
 }
 
-if($opts{'verbose'}) {
+if($extractor_opts{'verbose'}) {
 	print "Schemas:\n\t", Dumper($schemas);
 }
 
-print "Schema files written to: $opts{output_dir}/\n";
+print "Schema files written to: $extractor_opts{output_dir}/\n";
 
 __END__
 
