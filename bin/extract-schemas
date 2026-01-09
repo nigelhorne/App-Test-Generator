@@ -82,6 +82,10 @@ GetOptions(
 pod2usage(1) if $cli_opts{help};
 pod2usage(-exitval => 0, -verbose => 2) if $cli_opts{man};
 
+if($extractor_opts{strict_pod} !~ /^(off|warn|fatal)$/) {
+	die "Invalid --strict-pod value '$extractor_opts{strict_pod}'. Expected off, warn, or fatal";
+}
+
 # Get input file
 my $input_file = shift @ARGV or pod2usage('Error: No input file specified');
 
