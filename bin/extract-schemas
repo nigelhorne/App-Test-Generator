@@ -5,6 +5,7 @@ use warnings;
 
 use Data::Dumper;
 use Getopt::Long;
+use File::Path qw(make_path);
 use Pod::Usage;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
@@ -94,6 +95,8 @@ die "Error: File not found: $input_file" unless -f $input_file;
 # Run the extractor
 print "Extracting schemas from: $input_file\n";
 print "Output directory: $extractor_opts{output_dir}\n\n";
+
+make_path($extractor_opts{output_dir}) unless -d $extractor_opts{output_dir};
 
 my $extractor = App::Test::Generator::SchemaExtractor->new(
 	input_file => $input_file,

@@ -27,6 +27,7 @@ WriteMakefile(
 		'Config::Abstraction' => 0.36,
 		'Data::Dumper' => 0,
 		'Data::Section::Simple' => 0,
+		'File::Path' => 0,
 		'File::Spec' => 0,
 		'Getopt::Long' => 0,
 		'Module::Load::Conditional' => 0,

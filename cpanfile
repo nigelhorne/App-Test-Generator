@@ -6,6 +6,7 @@ requires 'Carp';
 requires 'Config::Abstraction', '0.36';
 requires 'Data::Dumper';
 requires 'Data::Section::Simple';
+requires 'File::Path';
 requires 'File::Spec';
 requires 'Getopt::Long';
 requires 'Module::Load::Conditional';
