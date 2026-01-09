@@ -1542,7 +1542,7 @@ sub generate
 			if(($input_str eq 'undef') && (!$config{'test_undef'})) {
 				carp('corpus case set to undef, yet test_undef is not set in config');
 			}
-			if ($new) {
+			if($new) {
 				if($status eq 'DIES') {
 					$corpus_code .= "dies_ok { \$obj->$function($input_str) } " .
 							"'$function(" . join(', ', map { $_ // '' } @$inputs ) . ") dies';\n";
@@ -1568,11 +1568,21 @@ sub generate
 				}
 			} else {
 				if($status eq 'DIES') {
-					$corpus_code .= "dies_ok { $module\::$function($input_str) } " .
-						"'Corpus $expected dies';\n";
+					if($module) {
+						$corpus_code .= "dies_ok { $module\::$function($input_str) } " .
+							"'Corpus $expected dies';\n";
+					} else {
+						$corpus_code .= "dies_ok { ::$function($input_str) } " .
+							"'Corpus $expected dies';\n";
+					}
 				} elsif($status eq 'WARNS') {
-					$corpus_code .= "warnings_exist { $module\::$function($input_str) } qr/./, " .
-						"'Corpus $expected warns';\n";
+					if($module) {
+						$corpus_code .= "warnings_exist { $module\::$function($input_str) } qr/./, " .
+							"'Corpus $expected warns';\n";
+					} else {
+						$corpus_code .= "warnings_exist { ::$function($input_str) } qr/./, " .
+							"'Corpus $expected warns';\n";
+					}
 				} else {
 					my $desc = sprintf("$function(%s) returns %s",
 						perl_quote((ref $inputs eq 'ARRAY') ? (join(', ', map { $_ // '' } @{$inputs})) : $inputs),
