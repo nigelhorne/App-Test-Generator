@@ -80,7 +80,7 @@ GetOptions(
 	'man|m' => \$cli_opts{man},
 ) or pod2usage(2);
 
-pod2usage(1) if $cli_opts{help};
+pod2usage(-exitval => 0, -verbose => 1) if($cli_opts{help});
 pod2usage(-exitval => 0, -verbose => 2) if $cli_opts{man};
 
 if($extractor_opts{strict_pod} !~ /^(off|warn|fatal)$/) {

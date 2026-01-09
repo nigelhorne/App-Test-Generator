@@ -29,6 +29,7 @@ on 'test' => sub {
 	requires 'Data::Random::Structure';
 	requires 'Encode';
 	requires 'File::Temp';
+	requires 'FindBin';
 	requires 'IPC::Open3';
 	requires 'IPC::Run3';
 	requires 'IPC::System::Simple';

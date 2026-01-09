@@ -47,6 +47,7 @@ WriteMakefile(
 		'Data::Random::String::Matches' => 0.02,
 		'Data::Random::Structure' => 0,
 		'Encode' => 0,
+		'FindBin' => 0,
 		'File::Temp' => 0,
 		'IPC::Run3' => 0,
 		'IPC::Open3' => 0,
