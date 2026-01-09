@@ -1300,6 +1300,8 @@ sub generate
 		}
 	}
 
+	$config{properties} = { enable => 0 } unless ref $config{properties} eq 'HASH';
+
 	# Guess module name from config file if not set
 	if(!$module) {
 		if($schema_file) {
@@ -1537,8 +1539,8 @@ sub generate
 			} else {
 				$input_str = $inputs;
 			}
-			if(($input_str eq 'undef') && (!$config{'test_undefs'})) {
-				carp('corpus case set to undef, yet test_undefs is not set in config');
+			if(($input_str eq 'undef') && (!$config{'test_undef'})) {
+				carp('corpus case set to undef, yet test_undef is not set in config');
 			}
 			if ($new) {
 				if($status eq 'DIES') {
