@@ -46,7 +46,7 @@ sub run_cmd {
 	waitpid $pid, 0;
 	my $exit = $? >> 8;
 
-	return ( $exit, $stdout, $stderr );
+	return ($exit, $stdout, $stderr);
 }
 
 # --------------------------------------------------------------------
@@ -54,7 +54,7 @@ sub run_cmd {
 # --------------------------------------------------------------------
 
 {
-	my ( $exit, $out, $err ) = run_cmd( $script, '--help' );
+	my ($exit, $out, $err) = run_cmd( $script, '--help' );
 
 	is($exit, 0, '--help exits cleanly');
 	like($out, qr/Usage:/i, '--help output looks correct' );
@@ -65,9 +65,9 @@ sub run_cmd {
 # --------------------------------------------------------------------
 
 {
-	my ( $exit, $out, $err ) = run_cmd( $script );
+	my ($exit, $out, $err) = run_cmd($script);
 
-	isnt( $exit, 0, 'missing input file exits non-zero' );
+	isnt($exit, 0, 'missing input file exits non-zero');
 	like( $err . $out, qr/input file/i, 'error mentions missing input file' );
 }
 
@@ -78,13 +78,13 @@ sub run_cmd {
 {
 	my $outdir = File::Spec->catdir( $tmpdir, 'schemas' );
 
-	my ( $exit, $out, $err ) = run_cmd(
+	my ($exit, $out, $err) = run_cmd(
 		$script,
 		'--output-dir', $outdir,
 		$module
 	);
 
-	is( $exit, 0, 'basic extraction succeeds' );
+	is($exit, 0, 'basic extraction succeeds');
 	like( $out, qr/EXTRACTION SUMMARY/, 'summary printed' );
 	ok( -d $outdir, 'output directory created' );
 
@@ -112,7 +112,7 @@ sub run_cmd {
 # --------------------------------------------------------------------
 
 {
-	my ( $exit, $out, $err ) = run_cmd(
+	my ($exit, $out, $err) = run_cmd(
 		$script,
 		'--strict-pod=banana',
 		$module

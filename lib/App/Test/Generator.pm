@@ -1654,11 +1654,12 @@ sub _load_schema {
 	# require $abs;
 
 	if(my $config = Config::Abstraction->new(config_dirs => ['.', ''], config_file => $schema_file)) {
-		$config = $config->all();
-		if(defined($config->{'$module'}) || defined($config->{'our $module'}) || !defined($config->{'module'})) {
-			croak("$schema_file: Loading perl files as configs is no longer supported");
+		if($config = $config->all()) {
+			if(defined($config->{'$module'}) || defined($config->{'our $module'}) || !defined($config->{'module'})) {
+				croak("$schema_file: Loading perl files as configs is no longer supported");
+			}
+			return $config;
 		}
-		return $config;
 	}
 }
 
@@ -1702,72 +1703,75 @@ sub _validate_config {
 		}
 	}
 
-	# Validate types, constraints, etc.
-	for my $param (keys %{$config->{input}}) {
-		if(!length($param)) {
-			croak 'Empty input parameter name';
+	if($config->{input}) {
+		# Validate types, constraints, etc.
+		for my $param (keys %{$config->{input}}) {
+			if(!length($param)) {
+				croak 'Empty input parameter name';
+			}
+			my $spec = $config->{input}{$param};
+			if(ref($spec)) {
+				croak("Missing type for parameter '$param'") unless(defined $spec->{type});
+				croak("Invalid type '$spec->{type}' for parameter '$param'") unless _valid_type($spec->{type});
+			} else {
+				croak "Invalid type '$spec' for parameter '$param'" unless _valid_type($spec);
+			}
 		}
-		my $spec = $config->{input}{$param};
-		if(ref($spec)) {
-			croak "Invalid type '$spec->{type}' for parameter '$param'" unless _valid_type($spec->{type});
-		} else {
-			croak "Invalid type '$spec' for parameter '$param'" unless _valid_type($spec);
-		}
-	}
 
-	# Check if using positional arguments
-	my $has_positions = 0;
-	my %positions;
+		# Check if using positional arguments
+		my $has_positions = 0;
+		my %positions;
 
-	for my $param (keys %{$config->{input}}) {
-		my $spec = $config->{input}{$param};
-		if (ref($spec) eq 'HASH' && defined($spec->{position})) {
-			$has_positions = 1;
-			my $pos = $spec->{position};
-
-			# Validate position is non-negative integer
-			croak "Position for '$param' must be a non-negative integer" unless $pos =~ /^\d+$/;
-
-			# Check for duplicate positions
-			croak "Duplicate position $pos for parameters '$positions{$pos}' and '$param'" if exists $positions{$pos};
-
-			$positions{$pos} = $param;
-		}
-	}
-
-	# If using positions, all params must have positions
-	if ($has_positions) {
 		for my $param (keys %{$config->{input}}) {
 			my $spec = $config->{input}{$param};
-			unless (ref($spec) eq 'HASH' && defined($spec->{position})) {
-				croak "Parameter '$param' missing position (all params must have positions if any do)";
+			if (ref($spec) eq 'HASH' && defined($spec->{position})) {
+				$has_positions = 1;
+				my $pos = $spec->{position};
+
+				# Validate position is non-negative integer
+				croak "Position for '$param' must be a non-negative integer" unless $pos =~ /^\d+$/;
+
+				# Check for duplicate positions
+				croak "Duplicate position $pos for parameters '$positions{$pos}' and '$param'" if exists $positions{$pos};
+
+				$positions{$pos} = $param;
 			}
 		}
 
-		# Check for gaps in positions (0, 1, 3 - missing 2)
-		my @sorted = sort { $a <=> $b } keys %positions;
-		for my $i (0..$#sorted) {
-			if ($sorted[$i] != $i) {
-				carp "Warning: Position sequence has gaps (positions: @sorted)";
-				last;
-			}
-		}
-	}
-
-	# Validate input types
-	my $semantic_generators = _get_semantic_generators();
-	for my $param (keys %{$config->{input}}) {
-		my $spec = $config->{input}{$param};
-		if(ref($spec) eq 'HASH') {
-			if(defined($spec->{semantic})) {
-				my $semantic = $spec->{semantic};
-				unless (exists $semantic_generators->{$semantic}) {
-					carp "Warning: Unknown semantic type '$semantic' for parameter '$param'. Available types: ",
-						join(', ', sort keys %$semantic_generators);
+		# If using positions, all params must have positions
+		if ($has_positions) {
+			for my $param (keys %{$config->{input}}) {
+				my $spec = $config->{input}{$param};
+				unless (ref($spec) eq 'HASH' && defined($spec->{position})) {
+					croak "Parameter '$param' missing position (all params must have positions if any do)";
 				}
 			}
-			if($spec->{'enum'} && $spec->{'memberof'}) {
-				croak "$param: has both enum and memberof";
+
+			# Check for gaps in positions (0, 1, 3 - missing 2)
+			my @sorted = sort { $a <=> $b } keys %positions;
+			for my $i (0..$#sorted) {
+				if ($sorted[$i] != $i) {
+					carp "Warning: Position sequence has gaps (positions: @sorted)";
+					last;
+				}
+			}
+		}
+
+		# Validate input types
+		my $semantic_generators = _get_semantic_generators();
+		for my $param (keys %{$config->{input}}) {
+			my $spec = $config->{input}{$param};
+			if(ref($spec) eq 'HASH') {
+				if(defined($spec->{semantic})) {
+					my $semantic = $spec->{semantic};
+					unless (exists $semantic_generators->{$semantic}) {
+						carp "Warning: Unknown semantic type '$semantic' for parameter '$param'. Available types: ",
+							join(', ', sort keys %$semantic_generators);
+					}
+				}
+				if($spec->{'enum'} && $spec->{'memberof'}) {
+					croak "$param: has both enum and memberof";
+				}
 			}
 		}
 	}
