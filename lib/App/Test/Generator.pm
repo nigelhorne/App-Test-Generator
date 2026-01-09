@@ -27,6 +27,7 @@ use Module::Load::Conditional qw(check_install can_load);
 use Params::Get;
 use Params::Validate::Strict;
 use Scalar::Util qw(looks_like_number);
+use re 'regexp_pattern';
 use Template;
 use YAML::XS qw(LoadFile);
 
@@ -1906,29 +1907,35 @@ sub _validate_module {
 
 sub perl_sq {
 	my $s = $_[0];
-	$s =~ s/\\/\\\\/g; $s =~ s/'/\\'/g; $s =~ s/\n/\\n/g; $s =~ s/\r/\\r/g; $s =~ s/\t/\\t/g;
+
+	return '' unless defined $s;
+
+	$s =~ s/\\/\\\\/g;
+	$s =~ s/'/\\'/g;
+	$s =~ s/\n/\\n/g;
+	$s =~ s/\r/\\r/g;
+	$s =~ s/\t/\\t/g;
+	$s =~ s/\f/\\f/g;
+	# $s =~ s/\b/\\b/g;
+	$s =~ s/\0/\\0/g;
 	return $s;
 }
 
 sub perl_quote {
 	my $v = $_[0];
 	return 'undef' unless defined $v;
+	return '!!1' if $v eq 'true';
 	if(ref($v)) {
 		if(ref($v) eq 'ARRAY') {
 			my @quoted_v = map { perl_quote($_) } @{$v};
 			return '[ ' . join(', ', @quoted_v) . ' ]';
 		}
 		if(ref($v) eq 'Regexp') {
-			my $s = "$v";
+			my ($pat, $mods) = regexp_pattern($v);
 
-			# default to qr{...}
-			return "qr{$s}" unless $s =~ /[{}]/;
-
-			# fallback: quote with slash if no slash inside
-			return "qr/$s/" unless $s =~ m{/};
-
-			# fallback: quote with # if slash inside
-			return "qr#$s#";
+			my $re = "qr{$pat}";
+			$re .= $mods if $mods;
+			return $re;
 		}
 		# Generic fallback
 		$v = Dumper($v);
@@ -1937,8 +1944,8 @@ sub perl_quote {
 		return $v;
 	}
 	$v =~ s/\\/\\\\/g;
-	# return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . ( $v =~ s/'/\\'/gr ) . "'";
-	return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . perl_sq($v) . "'";
+	# return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . perl_sq($v) . "'";
+	return looks_like_number($v) ? $v : "'" . perl_sq($v) . "'";
 }
 
 sub render_hash {

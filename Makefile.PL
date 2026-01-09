@@ -37,6 +37,7 @@ WriteMakefile(
 		'Pod::Simple' => 0,
 		'Pod::Usage' => 0,
 		'Return::Set' => 0.03,
+		're' => 0,
 		'Safe' => 0,
 		'Template' => 0,
 		'YAML::XS' => 0

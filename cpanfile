@@ -20,6 +20,7 @@ requires 'Safe';
 requires 'Template';
 requires 'YAML::XS';
 requires 'autodie';
+requires 're';
 
 on 'test' => sub {
 	requires 'Cwd';
