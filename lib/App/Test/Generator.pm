@@ -1653,12 +1653,13 @@ sub _load_schema {
 	# $abs = "./$abs" unless $abs =~ m{^/};
 	# require $abs;
 
-	if(my $config = Config::Abstraction->new(config_dirs => ['.', ''], config_file => $schema_file)) {
-		if($config = $config->all()) {
-			if(defined($config->{'$module'}) || defined($config->{'our $module'}) || !defined($config->{'module'})) {
+	if(my $schema = Config::Abstraction->new(config_dirs => ['.', ''], config_file => $schema_file)) {
+		if($schema = $schema->all()) {
+			if(defined($schema->{'$module'}) || defined($schema->{'our $module'}) || !defined($schema->{'module'})) {
 				croak("$schema_file: Loading perl files as configs is no longer supported");
 			}
-			return $config;
+			$schema->{'_source'} = $schema_file;
+			return $schema;
 		}
 	}
 }
@@ -1765,12 +1766,17 @@ sub _validate_config {
 				if(defined($spec->{semantic})) {
 					my $semantic = $spec->{semantic};
 					unless (exists $semantic_generators->{$semantic}) {
-						carp "Warning: Unknown semantic type '$semantic' for parameter '$param'. Available types: ",
+						carp "Warning: $config->{_source}: Unknown semantic type '$semantic' for parameter '$param'. Available types: ",
 							join(', ', sort keys %$semantic_generators);
 					}
 				}
 				if($spec->{'enum'} && $spec->{'memberof'}) {
 					croak "$param: has both enum and memberof";
+				}
+				for my $type('enum', 'memberof') {
+					if(exists $spec->{$type}) {
+						croak "$type must be arrayref" unless(ref($spec->{$type}) eq 'ARRAY');
+					}
 				}
 			}
 		}
@@ -1810,10 +1816,12 @@ sub _validate_config {
 		}
 	}
 
-	# Validate the config variables, checking that they are ones we know
-	foreach my ($k, $v) (%{$config->{'config'}}) {
-		if(!grep { $_ eq $k } (CONFIG_TYPES) ) {
-			croak "unknown config setting $k";
+	if(ref($config->{config}) eq 'HASH') {
+		# Validate the config variables, checking that they are ones we know
+		foreach my ($k, $v) (%{$config->{'config'}}) {
+			if(!grep { $_ eq $k } (CONFIG_TYPES) ) {
+				croak "unknown config setting $k";
+			}
 		}
 	}
 }
