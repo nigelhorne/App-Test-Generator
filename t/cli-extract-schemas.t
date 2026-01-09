@@ -12,8 +12,8 @@ my $script = File::Spec->catfile($FindBin::Bin, '..', 'bin', 'extract-schemas');
 ok(-x $script, 'extract-schemas script is executable');
 
 # We need a simple Perl module to extract from
-my $tmpdir = tempdir( CLEANUP => 1 );
-my $module = File::Spec->catfile( $tmpdir, 'TestModule.pm' );
+my $tmpdir = tempdir(CLEANUP => 1);
+my $module = File::Spec->catfile($tmpdir, 'TestModule.pm');
 
 open my $fh, '>', $module or die $!;
 print $fh <<'END_PM';
@@ -37,7 +37,7 @@ close $fh;
 sub run_cmd {
 	my (@cmd) = @_;
 	my $err = gensym;
-	my $pid = open3( undef, my $out, $err, @cmd );
+	my $pid = open3(undef, my $out, $err, @cmd);
 
 	local $/;
 	my $stdout = <$out> // '';

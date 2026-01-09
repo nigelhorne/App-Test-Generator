@@ -1854,14 +1854,10 @@ sub _valid_type
 
 	return 0 if(!defined($type));
 
-	return(($type eq 'string') ||
-		($type eq 'boolean') ||
-		($type eq 'integer') ||
-		($type eq 'number') ||
-		($type eq 'float') ||
-		($type eq 'hashref') ||
-		($type eq 'arrayref') ||
-		($type eq 'object'));
+	state %VALID = map { $_ => 1 } qw(
+		string boolean integer number float hashref arrayref object int bool
+	);
+	return $VALID{$type};
 }
 
 sub _validate_module {
@@ -1884,22 +1880,23 @@ sub _validate_module {
 	}
 
 	# Module was found
-	if ($ENV{TEST_VERBOSE} || $ENV{GENERATOR_VERBOSE}) {
+	if($ENV{TEST_VERBOSE} || $ENV{GENERATOR_VERBOSE}) {
 		print STDERR "Found module '$module' at: $mod_info->{file}\n",
 			'  Version: ', ($mod_info->{version} || 'unknown'), "\n";
 	}
 
 	# Optionally try to load it (disabled by default since it can have side effects)
-	if ($ENV{GENERATOR_VALIDATE_LOAD}) {
+	if($ENV{GENERATOR_VALIDATE_LOAD}) {
 		my $loaded = can_load(modules => { $module => undef }, verbose => 0);
 
-		if (!$loaded) {
-			carp("Warning: Module '$module' found but failed to load: $Module::Load::Conditional::ERROR");
+		if(!$loaded) {
+			my $err = $Module::Load::Conditional::ERROR || 'unknown error';
+			carp("Warning: Module '$module' found but failed to load: $err");
 			carp('  This might indicate a broken installation or missing dependencies.');
 			return 0;
 		}
 
-		if ($ENV{TEST_VERBOSE} || $ENV{GENERATOR_VERBOSE}) {
+		if($ENV{TEST_VERBOSE} || $ENV{GENERATOR_VERBOSE}) {
 			print STDERR "Successfully loaded module '$module'\n";
 		}
 	}
