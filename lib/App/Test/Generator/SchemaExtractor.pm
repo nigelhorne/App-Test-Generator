@@ -1378,6 +1378,8 @@ sub _find_methods {
 sub _extract_class_methods {
 	my ($self, $content, $methods) = @_;
 
+	# EXPERIMENTAL: regex-based parsing, may misbehave on complex code
+
 	# Simple pattern: find "class Name {" blocks
 	# This won't handle all edge cases but will work for simple classes
 	while ($content =~ /class\s+(\w+)\s*\{/g) {
@@ -1394,6 +1396,8 @@ sub _extract_class_methods {
 			$depth-- if $char eq '}';
 			$class_end++;
 		}
+
+		next if $depth != 0;  # unbalanced braces, skip class
 
 		my $class_body = substr($content, $start_pos, $class_end - $start_pos - 1);
 
@@ -1422,7 +1426,8 @@ sub _extract_class_methods {
 			push @$methods, {
 				name => $method_name,
 				node => undef,
-				body => $fake_sub,  # Just the signature for now
+				body => $fake_sub,	# Just the signature for now
+				is_stub => 1,
 				pod => '',
 				type => 'method',
 				class => $class_name,
