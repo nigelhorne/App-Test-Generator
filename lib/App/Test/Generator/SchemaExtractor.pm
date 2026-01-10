@@ -1248,7 +1248,7 @@ sub extract_all {
 	$self->_log("Package: $package_name");
 
 	my $methods = $self->_find_methods($document);
-	$self->_log("Found " . scalar(@$methods) . ' methods');
+	$self->_log('Found ' . scalar(@$methods) . ' methods (pre-dedup)');
 
 	my %schemas;
 	foreach my $method (@{$methods}) {
@@ -1450,25 +1450,29 @@ sub _extract_pod_before {
 
 	my $pod = '';
 	my $current = $sub->previous_sibling();
+	my $seen_code = 0;
+	my $steps = 0;
 
 	# Walk backwards collecting POD
-	while ($current) {
+	while ($current && $steps++ < 200) {
 		if ($current->isa('PPI::Token::Pod')) {
-			$pod = $current->content . $pod;
-					} elsif ($current->isa('PPI::Token::Comment')) {
+			$pod = $current->content() . $pod;
+		} elsif ($current->isa('PPI::Token::Comment')) {
 			# Include comments that might contain parameter info
-			my $comment = $current->content;
+			my $comment = $current->content();
 			if ($comment =~ /#\s*(?:param|arg|input)\s+\$(\w+)\s*:\s*(.+)/i) {
 				$pod .= "=item \$$1\n$2\n\n";
 			}
 		} elsif ($current->isa('PPI::Token::Whitespace') ||
 			 $current->isa('PPI::Token::Separator')) {
 			# Skip whitespace and separators
+		} elsif ($current->isa('PPI::Statement::Include')) {
+			# allow 'use strict', 'use warnings' between POD and sub
 		} else {
 			# Hit non-POD, non-whitespace - stop
 			last;
 		}
-		$current = $current->previous_sibling;
+		$current = $current->previous_sibling();
 	}
 
 	return $pod;
@@ -1723,7 +1727,7 @@ sub _detect_accessor_methods {
 		$schema->{input_style} = 'none';
 
 		$schema->{_confidence}{input} = {
-			level   => 'high',
+			level => 'high',
 			factors => ['Detected getter/accessor method'],
 		};
 
