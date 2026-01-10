@@ -86,7 +86,7 @@ sub run_cmd {
 
 	is($exit, 0, 'basic extraction succeeds');
 	like($out, qr/EXTRACTION SUMMARY/, 'summary printed');
-	ok( -d $outdir, 'output directory created' );
+	ok(-d $outdir, 'output directory created');
 
 	my @files = glob("$outdir/*.yml");
 	ok( @files >= 1, 'at least one schema file generated' );

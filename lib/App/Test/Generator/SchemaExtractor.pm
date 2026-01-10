@@ -1695,6 +1695,7 @@ sub _method_has_numeric_intent {
 
 	# Numeric inputs
 	foreach my $p (values %{ $schema->{input} || {} }) {
+		next if $p->{optional};
 		return 1 if ($p->{type} && $p->{type} =~ /^(number|integer)$/);
 	}
 
