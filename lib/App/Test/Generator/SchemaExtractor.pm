@@ -1594,14 +1594,12 @@ sub _analyze_method {
 	$schema->{_notes} = $self->_generate_notes($schema->{input});
 
 	# Add analytics
-	$schema->{_analysis} = {
-		input_confidence => $input_confidence->{level},
-		output_confidence => $output_confidence->{level},
-		confidence_factors => {
-			input => $input_confidence->{factors},
-			output => $output_confidence->{factors}
-		}
-	};
+	$schema->{_analysis} ||= {};
+	$schema->{_analysis}{input_confidence} = $input_confidence->{level};
+	$schema->{_analysis}{output_confidence} = $output_confidence->{level};
+	$schema->{_analysis}{confidence_factors} ||= {};
+	$schema->{_analysis}{confidence_factors}{input} ||= $input_confidence->{factors};
+	$schema->{_analysis}{confidence_factors}{output} ||= $output_confidence->{factors};
 
 	foreach my $mode('input', 'output') {
 		$self->_set_defaults($schema, $mode);
@@ -1625,6 +1623,8 @@ sub _analyze_method {
 	);
 
 	# Overall is the lower of input and output
+	$input_level //= 'none';
+	$output_level //= 'none';
 	my $overall = $level_rank{$input_level} < $level_rank{$output_level} ? $input_level : $output_level;
 
 	$schema->{_analysis}{overall_confidence} = $overall;
