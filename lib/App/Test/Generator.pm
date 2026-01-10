@@ -42,7 +42,7 @@ use constant {
 	DEFAULT_PROPERTY_TRIALS => 1000
 };
 
-use constant CONFIG_TYPES => ('test_nuls', 'test_undef', 'test_empty', 'test_non_ascii', 'dedup', 'properties');
+use constant CONFIG_TYPES => ('test_nuls', 'test_undef', 'test_empty', 'test_non_ascii', 'dedup', 'properties', 'close_stdin');
 
 =head1 NAME
 
@@ -216,6 +216,11 @@ The keyword C<undef> is used to indicate that the C<function> returns nothing.
 The current supported variables are
 
 =over 4
+
+=item * C<close_stdin)
+
+Tests should not attempt to read from STDIN (default: 1).
+This is ignored on Windows, when never closes STDIN.
 
 =item * C<test_nuls>, inject NUL bytes into strings (default: 1)
 
@@ -1024,6 +1029,7 @@ portion with a message.
     properties:
       enable: true
       trials: 200
+    close_stdin: true
     test_undef: no
     test_empty: no
     test_nuls: no

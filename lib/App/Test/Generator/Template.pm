@@ -73,18 +73,6 @@ use Test::Most;
 use Test::Returns 0.02;
 use Unicode::GCString;
 
-if($^O ne 'MSWin32') {
-	close(STDIN);
-	open(STDIN, '<', '/dev/null');
-}
-
-# TODO: add more, and remove magic numbers
-# perhaps allow them to be configurable?
-use constant {
-	PROB_LOWERCASE => 0.72,
-	PROB_EDGE_CASE => 0.4,
-};
-
 [% setup_code %]
 
 [% IF module %]
@@ -106,6 +94,18 @@ my %type_edge_cases = (
 my %config = (
 [% config_code %]
 );
+
+if($^O ne 'MSWin32' && $config{close_stdin}) {
+
+	close(STDIN);
+	open(STDIN, '<', '/dev/null');
+}
+
+# TODO: add more, and remove magic numbers
+use constant {
+	PROB_LOWERCASE => $config{prob_lowercase} // 0.72,
+	PROB_EDGE_CASE => $config{prob_edge_case} // 0.4,
+};
 
 # Seed for reproducible fuzzing (if provided)
 [% seed_code %]
@@ -190,7 +190,7 @@ sub rand_str
 
 	return '' if($len == 0);
 
-	if(!$config{'test_non_ascii'}) {
+	if(!($config{'test_non_ascii'} // 0)) {
 		return rand_ascii_str($len);
 	}
 
@@ -1504,7 +1504,8 @@ sub run_test
 		$mess = "[% function %] %s";
 	}
 
-	if(my $status = (delete $case->{'_STATUS'} || $output->{'_STATUS'})) {
+	my $status = delete $case->{'_STATUS'} || $output->{'_STATUS'};
+	if(defined($status)) {
 		if($status eq 'DIES') {
 			dies_ok { [% call_code %] } sprintf($mess, 'dies');
 			ok(!defined($result));
@@ -1512,6 +1513,7 @@ sub run_test
 		} elsif($status eq 'WARNS') {
 			warnings_exist { [% call_code %] } qr/./, sprintf($mess, 'warns');
 		} else {
+			ok(!$positions, 'TODO: status and positions both set');	# Sanity test
 			lives_ok { [% call_code %] } sprintf($mess, 'survives (status = LIVES)');
 		}
 	} elsif($positions) {
@@ -1531,6 +1533,13 @@ sub run_test
 			diag('result: ', Dumper($result));
 		}
 		returns_ok($result, $output, 'output validates');
+		if((!defined($status)) || ($status eq 'OK')) {
+			is(
+				Unicode::Normalize::NFC($result),
+				Unicode::Normalize::NFC(Unicode::Normalize::NFD($result)),
+				'Unicode normalization stable'
+			);
+		}
 	}
 }
 
