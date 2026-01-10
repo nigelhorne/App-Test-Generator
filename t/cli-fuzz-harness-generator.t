@@ -5,11 +5,11 @@ use Test::Most;
 use File::Temp qw(tempfile tempdir);
 use IPC::Open3;
 use Symbol qw(gensym);
+use FindBin;
 
-my $script = 'bin/fuzz-harness-generator';
-
+my $script = File::Spec->catfile($FindBin::Bin, '..', 'bin', 'fuzz-harness-generator');
 ok(-e $script, 'fuzz-harness-generator exists');
-ok(-x $script, 'fuzz-harness-generator is executable');
+ok(-x $script, "$script is executable") if ($^O ne 'MSWin32');
 
 my $valid_conf = $ENV{FUZZ_CONF} // 't/conf/abs.yml';
 ok(-e $valid_conf, 'Valid test config exists');

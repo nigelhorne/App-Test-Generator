@@ -9,7 +9,7 @@ use File::Spec;
 use FindBin;
 
 my $script = File::Spec->catfile($FindBin::Bin, '..', 'bin', 'extract-schemas');
-ok(-x $script, 'extract-schemas script is executable');
+ok(-x $script, "$script is executable") if ($^O ne 'MSWin32');
 
 # We need a simple Perl module to extract from
 my $tmpdir = tempdir(CLEANUP => 1);
