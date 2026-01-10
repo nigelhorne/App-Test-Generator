@@ -1305,6 +1305,8 @@ sub _find_methods {
 	foreach my $sub (@$subs) {
 		my $name = $sub->name();
 
+		next unless defined $name;	# Skip anonymous routines
+
 		# Skip private methods unless explicitly included, or they're special
 		if ($name =~ /^_/ && $name !~ /^_(new|init|build)/) {
 			next unless $self->{include_private};
