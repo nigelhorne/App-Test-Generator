@@ -363,8 +363,8 @@ sub _rand_grapheme_exact {
 
 ####################################################
 # 4. UNICODE FUZZER MODE
-# Extremely aggressive: invalid sequences, NULs,
-# bidirectional markers, Zalgo, unpaired surrogates
+# Extremely aggressive: invalid sequences, NULs, bidirectional markers, Zalgo
+# Exclude unpaired surrogates for now, since TAP::Harness complains about that
 ####################################################
 sub _rand_unicode_fuzzer {
 	my $len = $_[0];
@@ -378,7 +378,13 @@ sub _rand_unicode_fuzzer {
 		my $r = rand();
 
 		if ($r < 0.25) {
-			push @out, chr( int(rand(0x10FFFF)) );	# random codepoint
+			# push @out, chr( int(rand(0x10FFFF)) );	# random codepoint will include surragates
+			# Generate random codepoint, excluding surrogate range
+			my $cp;
+			do {
+				$cp = int(rand(0x10FFFF));
+			} while ($cp >= 0xD800 && $cp <= 0xDFFF);
+			push @out, chr($cp);
 		} elsif ($r < 0.40) {
 			push @out, chr(65 + int(rand(26))) . $zalgo_up[rand @zalgo_up]; # Zalgo
 		} elsif ($r < 0.55) {
@@ -1510,6 +1516,7 @@ sub run_test
 	}
 
 	my $status = delete $case->{'_STATUS'} || $output->{'_STATUS'};
+	die 'TODO: properties' if(scalar keys %{$properties});
 	if(defined($status)) {
 		if($status eq 'DIES') {
 			dies_ok { [% call_code %] } sprintf($mess, 'dies');
@@ -1518,7 +1525,6 @@ sub run_test
 		} elsif($status eq 'WARNS') {
 			warnings_exist { [% call_code %] } qr/./, sprintf($mess, 'warns');
 		} else {
-			die 'TODO: properties' if($properties);
 			if($positions) {
 				if(defined($name)) {
 					lives_ok { [% position_code %] } sprintf($mess, "survives (position test) - $name (status = LIVES)");
@@ -1546,13 +1552,13 @@ sub run_test
 			diag('result: ', Dumper($result));
 		}
 		returns_ok($result, $output, 'output validates');
-		# if((!defined($status)) || ($status eq 'OK')) {
-			# is(
-				# Unicode::Normalize::NFC($result),
-				# Unicode::Normalize::NFC(Unicode::Normalize::NFD($result)),
-				# 'Unicode normalization stable'
-			# );
-		# }
+		if((!defined($status)) || ($status eq 'OK')) {
+			is(
+				Unicode::Normalize::NFC($result),
+				Unicode::Normalize::NFC(Unicode::Normalize::NFD($result)),
+				'Unicode normalization stable'
+			);
+		}
 	}
 }
 
