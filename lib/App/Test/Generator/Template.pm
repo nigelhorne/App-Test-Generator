@@ -676,11 +676,11 @@ sub fuzz_inputs
 				if(defined(my $semantic = $spec->{'semantic'})) {
 					if($semantic eq 'unix_timestamp') {
 						push @cases, { %mandatory_args, ( -1, _STATUS => 'DIES' ) },
-							{ %mandatory_args, ( 0 ) },
-							{ %mandatory_args, ( 1 ) },
-							{ %mandatory_args, ( time ) },
-							{ %mandatory_args, ( 2147483647 ) },
-							{ %mandatory_args, ( 2147483648, _STATUS => 'DIES' ) };
+							{ %mandatory_args, ( $arg_name => 0 ) },
+							{ %mandatory_args, ( $arg_name => 1 ) },
+							{ %mandatory_args, ( $arg_name => time ) },
+							{ %mandatory_args, ( $arg_name => 2147483647 ) },
+							{ %mandatory_args, ( $arg_name => 2147483648, _STATUS => 'DIES' ) };
 					} else {
 						diag("semantic type $semantic is not yet supported");
 					}
@@ -714,7 +714,9 @@ sub fuzz_inputs
 						$case_input = rand_str();
 					}
 				} elsif($type eq 'integer') {
-					$case_input = rand_int() + $input{'min'};
+					my $min = $input{'min'} // 0;
+
+					$case_input = rand_int() + $min;
 					# If it's takes an integer, a float should die
 					push @cases, { _input => $case_input + 0.1, _STATUS => 'DIES', _LINE => __LINE__ };
 				} elsif(($type eq 'number') || ($type eq 'float')) {
@@ -1537,6 +1539,7 @@ sub run_test
 			if($properties->{idempotent} && (scalar(@alist) == 1)) {
 				[% UNLESS module %]
 					ok([% function %]($alist[0]) eq [% function %]([% function %]($alist[0])), 'function is idempotent');
+					ok([% function %]($alist[0]) eq [% function %]($alist[0]), 'function is idempotent');
 				[% END %]
 			}
 		} else {
