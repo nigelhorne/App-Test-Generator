@@ -2269,7 +2269,10 @@ sub _detect_transform_properties {
 		my $expected = $output_spec->{value};
 		push @properties, {
 			name => 'exact_value',
-			code => "\$result == $expected"
+			# code => "\$result == $expected"
+			(ref($expected))
+			? "\$result == $expected"  # maybe
+			: "\$result eq " . perl_quote($expected)
 		};
 	}
 
