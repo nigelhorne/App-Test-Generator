@@ -1277,8 +1277,13 @@ sub _extract_package_name {
 	if(!defined($document)) {
 		$document = $self->{_document};
 	}
-	my $package_stmt = $document->find_first('PPI::Statement::Package');
-	return $package_stmt ? $package_stmt->namespace : '';
+	my $pkgs = $document->find('PPI::Statement::Package') || [];
+	if(@$pkgs == 0) {
+		my $package_stmt = $document->find_first('PPI::Statement::Package');
+		return $package_stmt ? $package_stmt->namespace : '';
+	}
+	croak('More than one package declaration found') if @$pkgs > 1;
+	return $pkgs->[0]->namespace();
 }
 
 =head2 _find_methods
