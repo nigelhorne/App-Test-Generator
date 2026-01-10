@@ -1280,7 +1280,7 @@ sub _extract_package_name {
 	my $pkgs = $document->find('PPI::Statement::Package') || [];
 	if(@$pkgs == 0) {
 		my $package_stmt = $document->find_first('PPI::Statement::Package');
-		return $package_stmt ? $package_stmt->namespace : '';
+		return $package_stmt ? $package_stmt->namespace() : '';
 	}
 	croak('More than one package declaration found') if @$pkgs > 1;
 	return $pkgs->[0]->namespace();
@@ -1299,7 +1299,7 @@ sub _find_methods {
 	my ($self, $document) = @_;
 
 	my $subs = $document->find('PPI::Statement::Sub') || [];
-	my $sub_decls = $document->find('PPI::Statement::Scheduled') || []; # for method modifiers
+	my $sub_decls = $document->find('PPI::Statement') || [];
 
 	my @methods;
 	foreach my $sub (@$subs) {
@@ -1327,14 +1327,14 @@ sub _find_methods {
 	# Look for class { method } syntax (Perl 5.38+)
 	my $content = $document->content();
 	if ($content =~ /\bclass\b/) {
-		$self->_log("  Detecting class/method syntax...");
+		$self->_log('  Detecting class/method syntax...');
 		$self->_extract_class_methods($content, \@methods);
 	}
 
 	# Process method modifiers (Moose)
 	foreach my $decl (@$sub_decls) {
 		my $content = $decl->content;
-		if ($content =~ /^(before|after|around)\s+['"]?(\w+)['"]?\s*/) {
+		if ($content =~ /^\s*(before|after|around)\s+['"]?(\w+)['"]?\b/) {
 			my ($modifier, $method_name) = ($1, $2);
 			my $full_name = "${modifier}_$method_name";
 
@@ -1359,6 +1359,18 @@ sub _find_methods {
 			}
 		}
 	}
+
+	# Prevent silent duplicate method overwrites
+	my %seen;
+	@methods = grep {
+		my $n = $_->{name};
+		if ($seen{$n}++) {
+			$self->_log("  WARNING: duplicate method '$n' ignored");
+			0;
+		} else {
+			1;
+		}
+	} @methods;
 
 	return \@methods;
 }
