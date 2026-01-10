@@ -37,7 +37,7 @@ close $fh;
 sub run_cmd {
 	my (@cmd) = @_;
 	my $err = gensym;
-	my $pid = open3(undef, my $out, $err, @cmd);
+	my $pid = open3(undef, my $out, $err, ($^X, @cmd));
 
 	local $/;
 	my $stdout = <$out> // '';
@@ -68,7 +68,7 @@ sub run_cmd {
 	my ($exit, $out, $err) = run_cmd($script);
 
 	isnt($exit, 0, 'missing input file exits non-zero');
-	like( $err . $out, qr/input file/i, 'error mentions missing input file' );
+	like($err . $out, qr/input file/i, 'error mentions missing input file');
 }
 
 # --------------------------------------------------------------------
@@ -76,7 +76,7 @@ sub run_cmd {
 # --------------------------------------------------------------------
 
 {
-	my $outdir = File::Spec->catdir( $tmpdir, 'schemas' );
+	my $outdir = File::Spec->catdir($tmpdir, 'schemas');
 
 	my ($exit, $out, $err) = run_cmd(
 		$script,

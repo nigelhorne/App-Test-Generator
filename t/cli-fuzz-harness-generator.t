@@ -19,7 +19,7 @@ sub run_cmd {
 	my (@cmd) = @_;
 
 	my $stderr = gensym;
-	my $pid = open3(my $in, my $out, $stderr, @cmd);
+	my $pid = open3(my $in, my $out, $stderr, ($^X, @cmd));
 	close $in;
 
 	my $stdout = do { local $/; <$out> // '' };
@@ -95,15 +95,11 @@ sub run_cmd {
 
 # Invalid config fails
 {
-	my ($exit, $out, $err) = run_cmd(
-		$script,
-		'--dry-run',
-		'--input', 't/conf/does_not_exist.conf'
-	);
+	my ($exit, $out, $err) = run_cmd($script, '--dry-run', '--input', 't/conf/does_not_exist.conf');
 
 	isnt($exit, 0, 'Invalid config causes failure');
 	like($err, qr/(No such file|failed|error)/i,
 		'Error message shown for invalid input');
 }
 
-done_testing;
+done_testing();
