@@ -2239,7 +2239,8 @@ sub _detect_transform_properties {
 			my $min = $output_spec->{min};
 			push @properties, {
 				name => 'min_constraint',
-				code => "\$result >= $min"
+				# code => "\$result >= $min"
+				code => "defined(\$result) && looks_like_number(\$result) && \$result >= $min"
 			};
 		}
 
@@ -2247,7 +2248,8 @@ sub _detect_transform_properties {
 			my $max = $output_spec->{max};
 			push @properties, {
 				name => 'max_constraint',
-				code => "\$result <= $max"
+				# code => "\$result <= $max"
+				code => "defined(\$result) && looks_like_number(\$result) && \$result <= $max"
 			};
 		}
 
@@ -2256,7 +2258,8 @@ sub _detect_transform_properties {
 		if ($transform_name =~ /positive/i) {
 			push @properties, {
 				name => 'non_negative',
-				code => "\$result >= 0"
+				# code => "\$result >= 0"
+				code => "defined(\$result) && looks_like_number(\$result) && \$result >= 0"
 			};
 		}
 	}
