@@ -1109,13 +1109,6 @@ sub _generate_string_cases
 {
 	my ($arg_name, $spec, $mandatory_args, $properties_array_ref) = @_;
 
-	my $idempotent;
-
-	my $properties = {};
-	if($properties_array_ref) {
-		$properties->{idempotent} = grep { $_ eq 'idempotent'} @{$properties_array_ref};
-	}
-
 	my @cases;
 
 	if (defined $spec->{min}) {
@@ -1166,7 +1159,7 @@ sub _generate_string_cases
 				if(defined($spec->{'notmemberof'}) && (grep { $_ eq 'hello' } @{$spec->{'notmemberof'}})) {
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
 				} else {
-					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'OK', _PROPERTIES => $properties ) };
+					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'OK' ) };
 				}
 			} else {
 				push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
@@ -1225,7 +1218,7 @@ sub _generate_string_cases
 			# Data::Random
 			push @cases, { %{$mandatory_args}, _input => (rand_set(set => $spec->{'memberof'}, size => 1))[0] }
 		} elsif($config{'test_empty'} && !$spec->{'memberof'}) {
-			push @cases, { %{$mandatory_args}, ( $arg_name => '', _NAME => $arg_name, _LINE => __LINE__, _PROPERTIES => $properties ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => '', _NAME => $arg_name, _LINE => __LINE__ ) };
 		}
 	}
 	# push @cases, { $arg_name => "emoji \x{1F600}" };
@@ -1516,7 +1509,6 @@ sub run_test
 	}
 
 	my $status = delete $case->{'_STATUS'} || $output->{'_STATUS'};
-	die 'TODO: properties' if(scalar keys %{$properties});
 	if(defined($status)) {
 		if($status eq 'DIES') {
 			dies_ok { [% call_code %] } sprintf($mess, 'dies');
@@ -1525,6 +1517,7 @@ sub run_test
 		} elsif($status eq 'WARNS') {
 			warnings_exist { [% call_code %] } qr/./, sprintf($mess, 'warns');
 		} else {
+			die 'TODO: properties' if(scalar keys %{$properties});
 			if($positions) {
 				if(defined($name)) {
 					lives_ok { [% position_code %] } sprintf($mess, "survives (position test) - $name (status = LIVES)");
@@ -1538,10 +1531,17 @@ sub run_test
 	} elsif($positions) {
 		if(defined($name)) {
 			lives_ok { [% position_code %] } sprintf($mess, "survives (position test) - $name");
+			if($properties->{idempotent} && (scalar(@alist) == 1)) {
+				[% UNLESS module %]
+					ok([% function %]($alist[0]) eq [% function %]([% function %]($alist[0])), 'function is idempotent');
+				[% END %]
+			}
 		} else {
+			die 'TODO: properties' if(scalar keys %{$properties});
 			lives_ok { [% position_code %] } sprintf($mess, 'survives (position test)');
 		}
 	} else {
+		die 'TODO: properties' if(scalar keys %{$properties});
 		lives_ok { [% call_code %] } sprintf($mess, 'survives');
 	}
 
@@ -1683,15 +1683,13 @@ foreach my $transform (keys %transforms) {
 			next;
 		}
 
-		my $properties = $transforms{$transform}{properties};
-
 		# Generate edge cases based on type and contraints
 		if($type eq 'integer') {
 			push @tests, @{_generate_integer_cases($field, $spec, $foundation)};
 		} elsif(($type eq 'number') || ($type eq 'float')) {
 			push @tests, @{_generate_float_cases($field, $spec, $foundation)};
 		} elsif($type eq 'string') {
-			push @tests, @{_generate_string_cases($field, $spec, $foundation, $properties)};
+			push @tests, @{_generate_string_cases($field, $spec, $foundation)};
 		} elsif($type eq 'boolean') {
 			push @tests, @{_generate_boolean_cases($field, $spec, $foundation)};
 		} elsif ($type eq 'arrayref') {
@@ -1719,11 +1717,19 @@ foreach my $transform (keys %transforms) {
 	{
 		# local %ENV;
 		my $transform_output = $transforms{$transform}{'output'} || {};
+		my $properties_array_ref = $transforms{$transform}{properties};
+
+		my $properties = {};
+		if($properties_array_ref) {
+			$properties->{idempotent} = (grep { $_ eq 'idempotent'} @{$properties_array_ref}) ? 1 : 0;
+		}
+
 		foreach my $test(@tests) {
 			if(my $line = (delete $test->{'_LINE'} || delete $input{'_LINE'})) {
 				diag("Test case from line number $line") if($ENV{'TEST_VERBOSE'});
 			}
-			run_test({ _NAME => $transform }, $test, $transform_output, $positions);
+
+			run_test({ _NAME => $transform, _PROPERTIES => $properties }, $test, $transform_output, $positions);
 			# delete $ENV{'LANG'};
 			# delete $ENV{'LC_ALL'};
 			# run_test({ _NAME => $transform }, $test, \%output, $positions);
