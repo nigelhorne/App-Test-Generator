@@ -1819,7 +1819,7 @@ sub _validate_config {
 
 	if(ref($config->{config}) eq 'HASH') {
 		# Validate the config variables, checking that they are ones we know
-		foreach my ($k, $v) (%{$config->{'config'}}) {
+		foreach my $k (keys %{$config->{'config'}}) {
 			if(!grep { $_ eq $k } (CONFIG_TYPES) ) {
 				croak "unknown config setting $k";
 			}
