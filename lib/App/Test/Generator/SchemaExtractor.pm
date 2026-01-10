@@ -16,9 +16,6 @@ use Scalar::Util qw(looks_like_number);
 
 our $VERSION = '0.25';
 
-# Configure YAML::XS to not quote numeric strings
-$YAML::XS::QuoteNumericStrings = 0;
-
 =head1 NAME
 
 App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
@@ -1160,13 +1157,15 @@ The extractor supports several configuration parameters:
 sub new {
 	my ($class, %args) = @_;
 
+	croak(__PACKAGE__, ': input_file required') unless exists $args{input_file};
+
 	my $self = {
-		input_file => ($args{input_file} || die 'input_file required'),
+		input_file => $args{input_file},
 		output_dir => $args{output_dir} || 'schemas',
-		verbose	=> $args{verbose} || 0,
-		confidence_threshold => $args{confidence_threshold} || 0.5,
-		include_private => $args{include_private} || 0,	# include _private methods
-		max_parameters => $args{max_parameters} || 20,	# safety limit
+		verbose	=> $args{verbose} // 0,
+		confidence_threshold => $args{confidence_threshold} // 0.5,
+		include_private => $args{include_private} // 0,	# include _private methods
+		max_parameters => $args{max_parameters} // 20,	# safety limit
 		strict_pod => _validate_strictness_level($args{strict_pod}),  # Enable strict POD checking
 	};
 
@@ -5385,6 +5384,9 @@ sub _write_schema {
 	make_path($self->{output_dir}) unless -d $self->{output_dir};
 
 	my $filename = "$self->{output_dir}/${method_name}.yml";
+
+	# Configure YAML::XS to not quote numeric strings
+	local $YAML::XS::QuoteNumericStrings = 0;
 
 	# Extract package name for module field
 	my $package_name = '';
