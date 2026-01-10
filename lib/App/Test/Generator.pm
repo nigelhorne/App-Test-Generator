@@ -1434,10 +1434,7 @@ sub generate
 	my $transforms_code;
 	if(keys %transforms) {
 		foreach my $transform(keys %transforms) {
-			local $Data::Dumper::Terse = 1;
-			local $Data::Dumper::Indent = 0;
-			my $properties = Dumper($transforms{$transform}->{'properties'});
-			chomp $properties;
+			my $properties = render_fallback($transforms{$transform}->{'properties'});
 
 			if($transforms_code) {
 				$transforms_code .= "},\n";
@@ -1950,15 +1947,22 @@ sub perl_quote {
 			return $re;
 		}
 		# Generic fallback
-		local $Data::Dumper::Terse = 1;
-		local $Data::Dumper::Indent = 0;
-		my $s = Dumper($v);
-		chomp $s;
-		return $s;
+		return render_fallback($v);
 	}
 	$v =~ s/\\/\\\\/g;
 	# return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . perl_sq($v) . "'";
 	return looks_like_number($v) ? $v : "'" . perl_sq($v) . "'";
+}
+
+sub render_fallback
+{
+	my $v = $_[0];
+
+	local $Data::Dumper::Terse = 1;
+	local $Data::Dumper::Indent = 0;
+	my $s = Dumper($v);
+	chomp $s;
+	return $s;
 }
 
 sub render_hash {

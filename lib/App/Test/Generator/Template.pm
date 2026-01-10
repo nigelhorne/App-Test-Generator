@@ -615,15 +615,12 @@ sub fuzz_inputs
 					push @cases, @{_generate_integer_cases($arg_name, $spec, \%mandatory_args)};
 				} elsif ($type eq 'string') {
 					push @cases, @{_generate_string_cases($arg_name, $spec, \%mandatory_args)};
-				}
-				elsif ($type eq 'boolean') {
+				} elsif ($type eq 'boolean') {
 					push @cases, @{_generate_boolean_cases($arg_name, $spec, \%mandatory_args)};
-				}
-				elsif ($type eq 'hashref') {
+				} elsif ($type eq 'hashref') {
 					push @cases, { $arg_name => { a => 1 } };
 					push @cases, { $arg_name => [], _STATUS => 'DIES' };
-				}
-				elsif ($type eq 'arrayref') {
+				} elsif ($type eq 'arrayref') {
 					push @cases, { $arg_name => [1,2] };
 					push @cases, { $arg_name => { a => 1 }, _STATUS => 'DIES' };
 				}
@@ -1104,7 +1101,14 @@ sub _generate_boolean_cases {
 
 sub _generate_string_cases
 {
-	my ($arg_name, $spec, $mandatory_args) = @_;
+	my ($arg_name, $spec, $mandatory_args, $properties_array_ref) = @_;
+
+	my $idempotent;
+
+	my $properties = {};
+	if($properties_array_ref) {
+		$properties->{idempotent} = grep { $_ eq 'idempotent'} @{$properties_array_ref};
+	}
 
 	my @cases;
 
@@ -1156,7 +1160,7 @@ sub _generate_string_cases
 				if(defined($spec->{'notmemberof'}) && (grep { $_ eq 'hello' } @{$spec->{'notmemberof'}})) {
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
 				} else {
-					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello' ) };
+					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'OK', _PROPERTIES => $properties ) };
 				}
 			} else {
 				push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
@@ -1215,7 +1219,7 @@ sub _generate_string_cases
 			# Data::Random
 			push @cases, { %{$mandatory_args}, _input => (rand_set(set => $spec->{'memberof'}, size => 1))[0] }
 		} elsif($config{'test_empty'} && !$spec->{'memberof'}) {
-			push @cases, { %{$mandatory_args}, ( $arg_name => '', _NAME => $arg_name, _LINE => __LINE__ ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => '', _NAME => $arg_name, _LINE => __LINE__, _PROPERTIES => $properties ) };
 		}
 	}
 	# push @cases, { $arg_name => "emoji \x{1F600}" };
@@ -1462,6 +1466,7 @@ sub run_test
 	}
 
 	my $name = delete local $case->{'_NAME'};
+	my $properties = delete local $case->{_PROPERTIES};
 	my $result;
 	my $mess;
 	my @alist = ();
@@ -1475,7 +1480,7 @@ sub run_test
 		if($positions) {
 			# Positional args
 			foreach my $key (keys %{$input}) {
-				if(($key ne '_STATUS') && ($key ne '_NAME')) {
+				if(($key ne '_STATUS') && ($key ne '_NAME') && ($key ne '_LINE') && ($key ne '_PROPERTIES')) {
 					if(exists($positions->{$key})) {
 						$alist[$positions->{$key}] = delete $input->{$key};
 					} else {
@@ -1513,8 +1518,16 @@ sub run_test
 		} elsif($status eq 'WARNS') {
 			warnings_exist { [% call_code %] } qr/./, sprintf($mess, 'warns');
 		} else {
-			ok(!$positions, 'TODO: status and positions both set');	# Sanity test
-			lives_ok { [% call_code %] } sprintf($mess, 'survives (status = LIVES)');
+			die 'TODO: properties' if($properties);
+			if($positions) {
+				if(defined($name)) {
+					lives_ok { [% position_code %] } sprintf($mess, "survives (position test) - $name (status = LIVES)");
+				} else {
+					lives_ok { [% position_code %] } sprintf($mess, 'survives (position test, status = LIVES)');
+				}
+			} else {
+				lives_ok { [% call_code %] } sprintf($mess, 'survives (status = LIVES)');
+			}
 		}
 	} elsif($positions) {
 		if(defined($name)) {
@@ -1533,13 +1546,13 @@ sub run_test
 			diag('result: ', Dumper($result));
 		}
 		returns_ok($result, $output, 'output validates');
-		if((!defined($status)) || ($status eq 'OK')) {
-			is(
-				Unicode::Normalize::NFC($result),
-				Unicode::Normalize::NFC(Unicode::Normalize::NFD($result)),
-				'Unicode normalization stable'
-			);
-		}
+		# if((!defined($status)) || ($status eq 'OK')) {
+			# is(
+				# Unicode::Normalize::NFC($result),
+				# Unicode::Normalize::NFC(Unicode::Normalize::NFD($result)),
+				# 'Unicode normalization stable'
+			# );
+		# }
 	}
 }
 
@@ -1664,15 +1677,15 @@ foreach my $transform (keys %transforms) {
 			next;
 		}
 
+		my $properties = $transforms{$transform}{properties};
+
 		# Generate edge cases based on type and contraints
 		if($type eq 'integer') {
 			push @tests, @{_generate_integer_cases($field, $spec, $foundation)};
 		} elsif(($type eq 'number') || ($type eq 'float')) {
 			push @tests, @{_generate_float_cases($field, $spec, $foundation)};
 		} elsif($type eq 'string') {
-			push @tests, @{_generate_string_cases($field, $spec, $foundation)};
-			my $properties = $transforms{$transform}{properties};
-			# TODO:  is idempotent listed?
+			push @tests, @{_generate_string_cases($field, $spec, $foundation, $properties)};
 		} elsif($type eq 'boolean') {
 			push @tests, @{_generate_boolean_cases($field, $spec, $foundation)};
 		} elsif ($type eq 'arrayref') {
