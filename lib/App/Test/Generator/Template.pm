@@ -273,10 +273,13 @@ sub _rand_codepoint_exact {
 
 	for (1..$len) {
 		my $c = _rand_base_char();
-		# prepend combining acute
-		$c = chr(0x0301) if rand() < 0.08;
-		# append combining dieresis
-		$c = chr(0x0308) if rand() < 0.08;
+		if(rand() < 0.08) {
+			# prepend combining acute
+			$c = chr(0x0301)
+		} elsif(rand() < 0.08) {
+			# append combining dieresis
+			$c = chr(0x0308);
+		}
 		push @chars, $c;
 	}
 
