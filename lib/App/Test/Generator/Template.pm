@@ -1671,6 +1671,8 @@ foreach my $transform (keys %transforms) {
 			push @tests, @{_generate_float_cases($field, $spec, $foundation)};
 		} elsif($type eq 'string') {
 			push @tests, @{_generate_string_cases($field, $spec, $foundation)};
+			my $properties = $transforms{$transform}{properties};
+			# TODO:  is idempotent listed?
 		} elsif($type eq 'boolean') {
 			push @tests, @{_generate_boolean_cases($field, $spec, $foundation)};
 		} elsif ($type eq 'arrayref') {

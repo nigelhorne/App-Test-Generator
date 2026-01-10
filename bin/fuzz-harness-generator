@@ -63,6 +63,7 @@ my $infile;
 my $outfile;
 my $help;
 my $run;
+my $verbose;
 my $version;
 my $dry_run;
 
@@ -74,6 +75,7 @@ GetOptions(
 	'dry-run|n' => \$dry_run,
 	'output|o=s' => \$outfile,
 	'run|r' => \$run,
+	'verbose|v' => \$verbose,
 	'version|V' => \$version,
 ) or pod2usage(2);
 
@@ -96,6 +98,10 @@ if($dry_run && $run) {
 
 if ($dry_run && $outfile) {
 	warn '--dry-run specified; --output will be ignored';
+}
+
+if($verbose) {
+	$ENV{'TEST_VERBOSE'} = 1;
 }
 
 if($run && !$outfile) {

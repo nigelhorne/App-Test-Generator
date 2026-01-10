@@ -1434,6 +1434,11 @@ sub generate
 	my $transforms_code;
 	if(keys %transforms) {
 		foreach my $transform(keys %transforms) {
+			local $Data::Dumper::Terse = 1;
+			local $Data::Dumper::Indent = 0;
+			my $properties = Dumper($transforms{$transform}->{'properties'});
+			chomp $properties;
+
 			if($transforms_code) {
 				$transforms_code .= "},\n";
 			}
@@ -1441,8 +1446,9 @@ sub generate
 				"\t'input' => { " .
 				render_args_hash($transforms{$transform}->{'input'}) .
 				"\t}, 'output' => { " .
-			render_args_hash($transforms{$transform}->{'output'}) .
-			"\t},\n";
+				render_args_hash($transforms{$transform}->{'output'}) .
+				"\t}, 'properties' => $properties\n" .
+				"\t,\n";
 		}
 		$transforms_code .= "}\n";
 	}
