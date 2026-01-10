@@ -54,7 +54,7 @@ sub run_cmd {
 # --------------------------------------------------------------------
 
 {
-	my ($exit, $out, $err) = run_cmd( $script, '--help' );
+	my ($exit, $out, $err) = run_cmd($script, '--help');
 
 	is($exit, 0, '--help exits cleanly');
 	like($out, qr/Usage:/i, '--help output looks correct' );

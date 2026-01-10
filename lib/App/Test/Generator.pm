@@ -1938,10 +1938,11 @@ sub perl_quote {
 			return $re;
 		}
 		# Generic fallback
-		$v = Dumper($v);
-		$v =~ s/\$VAR1 =//;
-		$v =~ s/;//;
-		return $v;
+		local $Data::Dumper::Terse = 1;
+		local $Data::Dumper::Indent = 0;
+		my $s = Dumper($v);
+		chomp $s;
+		return $s;
 	}
 	$v =~ s/\\/\\\\/g;
 	# return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . perl_sq($v) . "'";
@@ -1964,7 +1965,8 @@ sub render_hash {
 				}
 			}
 			if(($subk eq 'matches') || ($subk eq 'nomatch')) {
-				push @pairs, "$subk => qr/$def->{$subk}/";
+				# push @pairs, "$subk => qr/$def->{$subk}/";
+				push @pairs, "$subk => " . perl_quote(qr/$def->{$subk}/);
 			} else {
 				push @pairs, "$subk => " . perl_quote($def->{$subk});
 			}
@@ -2060,6 +2062,8 @@ sub _generate_transform_properties {
 		# Skip if no properties detected or defined
 		next unless @all_props;
 
+		next unless ref($input_spec) eq 'HASH';
+
 		# Build LectroTest generator specification
 		my @generators;
 		my @var_names;
@@ -2068,18 +2072,24 @@ sub _generate_transform_properties {
 			my $spec = $input_spec->{$field};
 			next unless ref($spec) eq 'HASH';
 
-			my $gen = _schema_to_lectrotest_generator($field, $spec);
-			push @generators, $gen;
-			push @var_names, $field;
+			if(defined(my $gen = _schema_to_lectrotest_generator($field, $spec))) {
+				if(length($gen)) {
+					push @generators, $gen;
+					push @var_names, $field;
+				}
+			}
 		}
 
 		my $gen_spec = join(', ', @generators);
 
 		# Build the call code
 		my $call_code;
-		if ($module) {
-			# $call_code = "$module\::$function";
-			$call_code = "$module->$function";
+		if($module && defined($new)) {
+			$call_code = "my \$obj = new_ok('$module');";
+			$call_code .= "\$obj->$function";	# Method call
+		} elsif($module && $module ne 'builtin') {
+			# $call_code = "$module->$function";
+			$call_code = "$module\::$function";
 		} else {
 			$call_code = $function;
 		}
@@ -2102,6 +2112,7 @@ sub _generate_transform_properties {
 
 		# Handle _STATUS in output
 		my $should_die = ($output_spec->{_STATUS} // '') eq 'DIES';
+		my $should_warn = ($output_spec->{_STATUS} // '') eq 'WARN';
 
 		push @properties, {
 			name => $transform_name,
@@ -2109,6 +2120,7 @@ sub _generate_transform_properties {
 			call_code => "$call_code($args_str)",
 			property_checks => $property_checks,
 			should_die => $should_die,
+			should_warn => $should_warn,
 			trials => $config->{properties}{trials} // DEFAULT_PROPERTY_TRIALS,
 		};
 	}
@@ -2144,6 +2156,17 @@ sub _process_custom_properties {
 				# Get input variable names
 				my @var_names = sort keys %$input_spec;
 
+				# Build args
+				my @args;
+				if (_has_positions($input_spec)) {
+					my @sorted = sort {
+						$input_spec->{$a}{position} <=> $input_spec->{$b}{position}
+					} @var_names;
+					@args = map { "\$$_" } @sorted;
+				} else {
+					@args = map { "\$$_" } @var_names;
+				}
+
 				# Build call code
 				my $call_code;
 				# Check if this is OO mode
@@ -2154,17 +2177,6 @@ sub _process_custom_properties {
 					$call_code = "$module\::$function";	# Function call
 				} else {
 					$call_code = $function;	# Builtin
-				}
-
-				# Build args
-				my @args;
-				if (_has_positions($input_spec)) {
-					my @sorted = sort {
-						$input_spec->{$a}{position} <=> $input_spec->{$b}{position}
-					} @var_names;
-					@args = map { "\$$_" } @sorted;
-				} else {
-					@args = map { "\$$_" } @var_names;
 				}
 				$call_code .= '(' . join(', ', @args) . ')';
 
@@ -2239,7 +2251,7 @@ sub _detect_transform_properties {
 			};
 		}
 
-		# For transforms, add idempotence check where appropriate
+		# For transforms, add an idempotence check where appropriate
 		# e.g., abs(abs(x)) == abs(x)
 		if ($transform_name =~ /positive/i) {
 			push @properties, {
