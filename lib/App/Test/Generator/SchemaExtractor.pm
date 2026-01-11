@@ -1666,11 +1666,15 @@ sub _analyze_method {
 		# Do not override existing hints
 		$schema->{_yamltest_hints}{boundary_values} ||= [];
 
-		my %seen = map { $_ => 1 } @{ $schema->{_yamltest_hints}{boundary_values} };
+		my %seen = map { (defined $_ ? $_ : '__undef__') => 1 }
+			@{ $schema->{_yamltest_hints}{boundary_values} };
 
 		foreach my $v (@{ $self->_numeric_boundary_values }) {
 			push @{ $schema->{_yamltest_hints}{boundary_values} }, $v
 			unless $seen{$v}++;
+
+			my $key = defined $v ? $v : '__undef__';
+			push @{ $schema->{_yamltest_hints}{boundary_values} }, $v unless $seen{$key}++;
 		}
 
 		$self->_log('  HINTS: Added numeric boundary values');
