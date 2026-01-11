@@ -232,6 +232,10 @@ With this test enabled, the function is expected to die when a NUL byte is passe
 
 =item * C<test_non_ascii>, test with strings that contain non ascii characters (default: 1)
 
+=item * C<timeout>, ensure tests don't hang (default: 10)
+
+Setting this to 0 disables timeout testing.
+
 =item * C<dedup>, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 
 =item * C<properties>, enable L<Test::LectroTest> Property tests (default: 0)

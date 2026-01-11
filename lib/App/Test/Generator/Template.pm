@@ -1533,70 +1533,84 @@ sub run_test
 	my $status = delete $case->{'_STATUS'} || $output->{'_STATUS'};
 	my %ENV_before = %ENV;
 	my $cwd_before = Cwd::getcwd();
-	if(defined($status)) {
-		if($status eq 'DIES') {
-			my $err;
-			if($positions) {
-				if(defined($name)) {
-					dies_ok { [% position_code %] } sprintf($mess, "dies (position test) - $name (status = DIES)");
+
+	local $SIG{ALRM} = sub { die '__TIMEOUT__' };
+	if((!defined($config{timeout})) || ($config{timeout} > 0)) {
+		alarm($config{'timeout'} // 10);
+	}
+	my $ok = eval {
+		if(defined($status)) {
+			if($status eq 'DIES') {
+				my $err;
+				if($positions) {
+					if(defined($name)) {
+						dies_ok { [% position_code %] } sprintf($mess, "dies (position test) - $name (status = DIES)");
+					} else {
+						dies_ok { [% position_code %] } sprintf($mess, 'dies (position test, status = DIES)');
+					}
+					$err = $@;
 				} else {
-					dies_ok { [% position_code %] } sprintf($mess, 'dies (position test, status = DIES)');
+					dies_ok { [% call_code %] } sprintf($mess, 'dies');
+					$err = $@;
+					ok(!defined($result));
 				}
-				$err = $@;
+				ok(defined($err));
+				ok(length($err));
+				ok(!ref($err));
+				if(defined($name)) {
+					unlike($err, qr/unitialized/, "$name doesn't involve an uninitialized variable");
+				} else {
+					unlike($err, qr/unitialized/, "Test doesn't involve an uninitialized variable");
+				}
+				return;	# There should be no output to validate
+			} elsif($status eq 'WARNS') {
+				warnings_exist { [% call_code %] } qr/./, sprintf($mess, 'warns');
 			} else {
-				dies_ok { [% call_code %] } sprintf($mess, 'dies');
-				$err = $@;
-				ok(!defined($result));
+				die 'TODO: properties' if(scalar keys %{$properties});
+				if($positions) {
+					if(defined($name)) {
+						lives_ok { [% position_code %] } sprintf($mess, "survives (position test) - $name (status = LIVES)");
+					} else {
+						lives_ok { [% position_code %] } sprintf($mess, 'survives (position test, status = LIVES)');
+					}
+				} else {
+					lives_ok { [% call_code %] } sprintf($mess, 'survives (status = LIVES)');
+				}
+				if($properties->{idempotent}) {
+					[% determinism_code %]
+				}
 			}
-			ok(defined($err));
-			ok(length($err));
-			ok(!ref($err));
+		} elsif($positions) {
 			if(defined($name)) {
-				unlike($err, qr/unitialized/, "$name doesn't involve an uninitialized variable");
-			} else {
-				unlike($err, qr/unitialized/, "Test doesn't involve an uninitialized variable");
-			}
-			return;	# There should be no output to validate
-		} elsif($status eq 'WARNS') {
-			warnings_exist { [% call_code %] } qr/./, sprintf($mess, 'warns');
-		} else {
-			die 'TODO: properties' if(scalar keys %{$properties});
-			if($positions) {
-				if(defined($name)) {
-					lives_ok { [% position_code %] } sprintf($mess, "survives (position test) - $name (status = LIVES)");
-				} else {
-					lives_ok { [% position_code %] } sprintf($mess, 'survives (position test, status = LIVES)');
+				lives_ok { [% position_code %] } sprintf($mess, "survives (position test) - $name");
+				if($properties->{idempotent} && (scalar(@alist) == 1)) {
+					[% UNLESS module %]
+						ok([% function %]($alist[0]) eq [% function %]([% function %]($alist[0])), 'function is idempotent');
+						ok([% function %]($alist[0]) eq [% function %]($alist[0]), 'function is idempotent');
+					[% END %]
 				}
 			} else {
-				lives_ok { [% call_code %] } sprintf($mess, 'survives (status = LIVES)');
+				die 'TODO: properties' if(scalar keys %{$properties});
+				lives_ok { [% position_code %] } sprintf($mess, 'survives (position test)');
 			}
 			if($properties->{idempotent}) {
 				[% determinism_code %]
 			}
-		}
-	} elsif($positions) {
-		if(defined($name)) {
-			lives_ok { [% position_code %] } sprintf($mess, "survives (position test) - $name");
-			if($properties->{idempotent} && (scalar(@alist) == 1)) {
-				[% UNLESS module %]
-					ok([% function %]($alist[0]) eq [% function %]([% function %]($alist[0])), 'function is idempotent');
-					ok([% function %]($alist[0]) eq [% function %]($alist[0]), 'function is idempotent');
-				[% END %]
-			}
 		} else {
 			die 'TODO: properties' if(scalar keys %{$properties});
-			lives_ok { [% position_code %] } sprintf($mess, 'survives (position test)');
+			lives_ok { [% call_code %] } sprintf($mess, 'survives');
+			if($properties->{idempotent}) {
+				[% determinism_code %]
+			}
 		}
-		if($properties->{idempotent}) {
-			[% determinism_code %]
-		}
-	} else {
-		die 'TODO: properties' if(scalar keys %{$properties});
-		lives_ok { [% call_code %] } sprintf($mess, 'survives');
-		if($properties->{idempotent}) {
-			[% determinism_code %]
-		}
-	}
+		1;
+	};
+
+	alarm 0;
+
+	# Check the test did not timeout
+	diag($@) if($@);
+	ok((!defined($@)) || (length($@) == 0));
 
 	# Global side effect detection
 	is_deeply(\%ENV, \%ENV_before, 'ENV not modified');
