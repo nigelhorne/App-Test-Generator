@@ -2540,8 +2540,12 @@ sub _analyze_output_from_pod {
 			} elsif ($returns_desc =~ /dies\s+on\s+(?:error|failure)/i) {
 				$output->{_STATUS} = 'LIVES';
 				$self->_log('  OUTPUT: Should not die on success');
-			} elsif ($returns_desc =~ /\b(true|false)\b/i) {
+			}
+			if ($returns_desc =~ /\b(true|false)\b/i) {
 				$output->{type} ||= 'boolean';
+			}
+			if ($returns_desc =~ /\bundef\b/i) {
+				$output->{nullable} = 1;
 			}
 		}
 
@@ -2839,6 +2843,8 @@ sub _enhance_boolean_detection {
 	my ($self, $output, $pod, $code, $method_name) = @_;
 
 	my $boolean_score = 0;	# Track evidence for boolean return
+
+	return unless !$output->{type} || $output->{type} eq 'unknown';
 
 	# Look for stronger boolean indicators
 	if ($pod && !$output->{type}) {
