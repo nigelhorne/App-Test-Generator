@@ -1898,13 +1898,8 @@ sub _ppi {
 
 	return $code if ref($code) && $code->can('find');
 
-	my $doc = PPI::Document->new(\$code);
-	unless ($doc) {
-		carp "PPI failed to parse code fragment";
-		return;
-	}
-
-	return $doc;
+	$self->{_ppi_cache} ||= {};
+	return $self->{_ppi_cache}{$code} //= PPI::Document->new(\$code);
 }
 		
 # Params::Validate::Strict
@@ -2063,6 +2058,7 @@ sub _parse_pv_call {
 			$depth++;
 		} elsif ($char eq '}') {
 			$depth--;
+			return if $depth < 0;	# Broken source code
 		} elsif ($char eq ',' && $depth == 0) {
 			$comma_pos = $i;
 			last;
@@ -2176,7 +2172,7 @@ sub _extract_moosex_params_schema
 		return $self->_normalize_validator_schema($schema) if $schema;
 	}
 
-	if($code =~ /validate_strict\s*\(\s*(\{.*?\})\s*\)/s) {
+	if($code =~ /validated_hash\s*\(\s*(\{.*?\})\s*\)/s) {
 		my $schema_text = $1;
 		my $schema = $self->_parse_schema_hash($schema_text);
 		return {
