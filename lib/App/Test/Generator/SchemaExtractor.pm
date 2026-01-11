@@ -1688,6 +1688,11 @@ sub _analyze_method {
 		}
 	}
 
+	if(($level_rank{$overall} < $level_rank{medium}) &&
+	   ($level_rank{$overall} < ($self->{confidence_threshold} * 4))) {
+		$schema->{_low_confidence} = 1
+	}
+
 	return $schema;
 }
 
