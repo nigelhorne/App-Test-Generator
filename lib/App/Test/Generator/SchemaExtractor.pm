@@ -3206,10 +3206,10 @@ sub _infer_type_from_expression {
 		return { type => 'integer' };
 	}
 
-    # Check for array reference
-    if ($expr =~ /^\[/ || $expr =~ /^\\\@/) {
-        return { type => 'arrayref' };
-    }
+	# Check for array reference
+	if ($expr =~ /^\[/ || $expr =~ /^\\\@/) {
+		return { type => 'arrayref' };
+	}
 
     # Check for hash reference
     if ($expr =~ /^\{/ || $expr =~ /^\\\%/) {

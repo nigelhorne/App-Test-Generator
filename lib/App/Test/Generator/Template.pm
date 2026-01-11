@@ -1239,8 +1239,20 @@ sub _generate_string_cases
 			} elsif($len > 0) {
 				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len - 1), _STATUS => 'DIES' ) };
 			}
-			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len) ) };
-			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len + 1) ) };
+			push @cases,
+				{ %{$mandatory_args}, ( $arg_name => rand_str($len) ) },
+				{ %{$mandatory_args}, ( $arg_name => rand_str($len + 1) ) };
+			if($len <= 1) {
+				push @cases,
+					{ %{$mandatory_args}, ( $arg_name => "\n" ) },	# new lines are fun
+					{ %{$mandatory_args}, ( $arg_name => ' ' ) },
+					{ %{$mandatory_args}, ( $arg_name => " \n " ) };
+			}
+		} else {
+			push @cases,
+				{ %{$mandatory_args}, ( $arg_name => "\n" ) },	# new lines are fun
+				{ %{$mandatory_args}, ( $arg_name => ' ' ) },
+				{ %{$mandatory_args}, ( $arg_name => " \n " ) };
 		}
 		if (defined $spec->{max}) {
 			my $len = $spec->{max};
@@ -1303,6 +1315,11 @@ sub _generate_string_cases
 			{ %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) };
 	}
+	push @cases,
+		# { %{$mandatory_args}, ( $arg_name => sub { die 'boom' }, _STATUS => 'DIES', _LINE => __LINE__ ) },
+		# { %{$mandatory_args}, ( $arg_name => bless({}, 'Evil::Class'), _STATUS => 'DIES', _LINE => __LINE__ ) };
+		# { %{$mandatory_args}, ( $arg_name => [1, 2, 3], _STATUS => 'DIES', _LINE => __LINE__ ) };
+		# { %{$mandatory_args}, ( $arg_name => { a => 1 }, _STATUS => 'DIES', _LINE => __LINE__ ) };
 
 	return \@cases;
 }
