@@ -1535,15 +1535,26 @@ sub run_test
 	my $cwd_before = Cwd::getcwd();
 	if(defined($status)) {
 		if($status eq 'DIES') {
+			my $err;
 			if($positions) {
 				if(defined($name)) {
 					dies_ok { [% position_code %] } sprintf($mess, "dies (position test) - $name (status = DIES)");
 				} else {
 					dies_ok { [% position_code %] } sprintf($mess, 'dies (position test, status = DIES)');
 				}
+				$err = $@;
 			} else {
 				dies_ok { [% call_code %] } sprintf($mess, 'dies');
+				$err = $@;
 				ok(!defined($result));
+			}
+			ok(defined($err));
+			ok(length($err));
+			ok(!ref($err));
+			if(defined($name)) {
+				unlike($err, qr/unitialized/, "$name doesn't involve an uninitialized variable");
+			} else {
+				unlike($err, qr/unitialized/, "Test doesn't involve an uninitialized variable");
 			}
 			return;	# There should be no output to validate
 		} elsif($status eq 'WARNS') {
