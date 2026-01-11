@@ -1827,50 +1827,56 @@ sub _parse_schema_hash {
 
 	for my $child ($hash->children) {
 		# skip whitespace and operators
-		next if $child->isa('PPI::Token::Whitespace') || $child->isa('PPI::Token::Operator');
-
 		if ($child->isa('PPI::Statement') || $child->isa('PPI::Statement::Expression')) {
-			my $key;
-			my $val;
+			my ($key, $val);
 
-			my @tokens = $child->children;
+			my @tokens = grep {
+				!$_->isa('PPI::Token::Whitespace') &&
+				!$_->isa('PPI::Token::Operator')
+			} $child->children;
 
-			# find key => value
-			for (my $i = 0; $i < @tokens; $i++) {
-				my $t = $tokens[$i];
-				if ($t->isa('PPI::Token::Word') || $t->isa('PPI::Token::Symbol')) {
-					$key = $t->content;
-				}
-				if ($t->isa('PPI::Structure::Constructor')) {
-					$val = $t;
+			for (my $i = 0; $i < @tokens - 1; $i++) {
+				if(($tokens[$i]->isa('PPI::Token::Word') || $tokens[$i]->isa('PPI::Token::Quote')) &&
+				   $tokens[$i+1]->isa('PPI::Structure::Constructor')) {
+					$key = $tokens[$i]->content;
+					$key =~ s/^['"]|['"]$//g;
+					$val = $tokens[$i+1];
 					last;
 				}
 			}
 
-			if ($key && $val) {
-				# process inner hash (type, optional)
-				my %param;
-				for my $inner ($val->children) {
-					next if $inner->isa('PPI::Token::Whitespace') || $inner->isa('PPI::Token::Operator');
-					if ($inner->isa('PPI::Statement') || $inner->isa('PPI::Statement::Expression')) {
-						my ($k_token, $op, $v_token) = $inner->children;
-						my $k = $k_token->content;
-						my $v = $v_token->isa('PPI::Token::Word') ? $v_token->content : undef;
+			next unless $key && $val;
 
-						if ($k eq 'type') {
-							$param{type} = lc($v // 'string'); # Str -> string
-						} elsif ($k eq 'optional') {
-							$param{optional} = $v eq '1' ? 1 : 0;
-						}
-					}
+			my %param;
+			for my $inner ($val->children) {
+				next unless $inner->isa('PPI::Statement') || $inner->isa('PPI::Statement::Expression');
+
+				my ($k, undef, $v) = grep {
+					!$_->isa('PPI::Token::Whitespace') &&
+					!$_->isa('PPI::Token::Operator')
+				} $inner->children;
+
+				next unless $k && $v;
+
+				my $keyname = $k->content;
+				my $value   = $v->can('content') ? $v->content : undef;
+				$value =~ s/^['"]|['"]$//g if defined $value;
+
+				if ($keyname eq 'type') {
+					$param{type} = lc($value);
+				} elsif ($keyname eq 'optional') {
+					$param{optional} = $value ? 1 : 0;
+				} elsif ($keyname =~ /^(min|max)$/ && looks_like_number($value)) {
+					$param{$keyname} = 0 + $value;
+				} elsif ($keyname eq 'matches') {
+					$param{matches} = qr/$value/;
 				}
-
-				# defaults
-				$param{type} //= 'string';
-				$param{optional} //= 0;
-
-				$result{$key} = \%param;
 			}
+
+			$param{type}     //= 'string';
+			$param{optional} //= 0;
+
+			$result{$key} = \%param;
 		}
 	}
 
@@ -1891,8 +1897,16 @@ sub _ppi {
 	my ($self, $code) = @_;
 
 	return $code if ref($code) && $code->can('find');
-	return PPI::Document->new(\$code);
+
+	my $doc = PPI::Document->new(\$code);
+	unless ($doc) {
+		carp "PPI failed to parse code fragment";
+		return;
+	}
+
+	return $doc;
 }
+		
 
 # Params::Validate::Strict
 sub _extract_pvs_schema {
