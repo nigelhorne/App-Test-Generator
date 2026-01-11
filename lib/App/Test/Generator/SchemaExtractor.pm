@@ -1719,54 +1719,92 @@ sub _detect_accessor_methods {
 	my ($self, $method, $schema) = @_;
 
 	my $body = $method->{body};
-	# my $name = $method->{name};
 
-	# Simple getter: return $self->{field};
-	if ($body =~ /return\s+\$self\s*->\s*\{([^}]+)\}\s*;/) {
+	# Normalize whitespace for regex sanity
+	my $code = $body;
+	$code =~ s/\s+/ /g;
+
+	# -------------------------------
+	# Getter
+	# -------------------------------
+	if ($code =~ /(?:return\s+)?\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*;/) {
 		my $field = $1;
 
 		$schema->{_accessor} = {
-			type  => 'getter',
+			type => 'getter',
 			field => $field,
 		};
 
 		$self->_log("  Detected getter accessor for field: $field");
 
-		# Getter/accessor methods do not take parameters
 		$schema->{input} = {};
 		$schema->{input_style} = 'none';
-
 		$schema->{_confidence}{input} = {
 			level => 'high',
 			factors => ['Detected getter/accessor method'],
 		};
 
-		return;  # Critical: skip all parameter inference
-	} elsif ($body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*\$(\w+)\s*;/ && $body =~ /return\s+\$self\s*;/) {
-		# Setter: $self->{field} = $value; return $self;
-		my ($field, $param) = ($1, $2);
-		if (defined $field && defined $param) {
-			$schema->{_accessor} = { type => 'setter', field => $field, param => $param };
-			$self->_log("  Detected setter accessor for field: $field");
-		}
-	} elsif ($body =~ /if\s*\(\s*\@_\s*>\s*1\s*\)/ &&
-		# Getter/Setter combination
-	       $body =~ /\$self\s*->\s*\{([^}]+)\}\s*=\s*shift\s*;/ &&
-	       $body =~ /return\s+\$self\s*->\s*\{[^}]+\}\s*;/) {
-		my $field = $1;
-		if (defined $field) {
-			$schema->{_accessor} = { type => 'getset', field => $field };
-			$self->_log("  Detected getter/setter accessor for field: $field");
-		}
+		return; # hard stop
 	}
 
-	if ($schema->{_accessor}) {
-		if ($schema->{_accessor}{type} eq 'setter') {
-			my $param = $schema->{_accessor}{param};
-			if (defined $param) {
-				$schema->{input}{$param} ||= { type => 'scalar' };
-			}
-		}
+	# -------------------------------
+	# Setter
+	# -------------------------------
+	if (
+		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*\$(\w+)\s*;/ &&
+		$code =~ /return\s+\$self\b/
+	) {
+		my ($field, $param) = ($1, $2);
+
+		$schema->{_accessor} = {
+			type => 'setter',
+			field => $field,
+			param => $param,
+		};
+
+		$self->_log("  Detected setter accessor for field: $field");
+
+		$schema->{input} = {
+			$param => { type => 'string' }, # safe default
+		};
+		$schema->{input_style} = 'hash';
+
+		$schema->{_confidence}{input} = {
+			level => 'high',
+			factors => ['Detected setter/accessor method'],
+		};
+
+		return;
+	}
+
+	# -------------------------------
+	# Getter/Setter combo
+	# -------------------------------
+	if (
+		$code =~ /if\s*\(\s*\@_\s*>\s*1\s*\)/ &&
+		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*shift\s*;/ &&
+		$code =~ /return\s+\$self\s*->\s*\{/
+	) {
+		my $field = $1;
+
+		$schema->{_accessor} = {
+			type => 'getset',
+			field => $field,
+		};
+
+		$self->_log("  Detected getter/setter accessor for field: $field");
+
+		$schema->{input} = {
+			value => { type => 'string', optional => 1 },
+		};
+		$schema->{input_style} = 'hash';
+
+		$schema->{_confidence}{input} = {
+			level => 'high',
+			factors => ['Detected combined getter/setter accessor'],
+		};
+
+		return;
 	}
 }
 
@@ -1826,7 +1864,7 @@ sub _parse_schema_hash {
 				}
 
 				# defaults
-				$param{type}     //= 'string';
+				$param{type} //= 'string';
 				$param{optional} //= 0;
 
 				$result{$key} = \%param;

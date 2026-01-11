@@ -89,7 +89,7 @@ sub run_cmd {
 	ok(-d $outdir, 'output directory created');
 
 	my @files = glob("$outdir/*.yml");
-	ok( @files >= 1, 'at least one schema file generated' );
+	ok(@files >= 1, 'at least one schema file generated');
 }
 
 # --------------------------------------------------------------------
