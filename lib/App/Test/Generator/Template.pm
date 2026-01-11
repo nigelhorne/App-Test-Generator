@@ -1533,8 +1533,16 @@ sub run_test
 	my $status = delete $case->{'_STATUS'} || $output->{'_STATUS'};
 	if(defined($status)) {
 		if($status eq 'DIES') {
-			dies_ok { [% call_code %] } sprintf($mess, 'dies');
-			ok(!defined($result));
+			if($positions) {
+				if(defined($name)) {
+					dies_ok { [% position_code %] } sprintf($mess, "dies (position test) - $name (status = DIES)");
+				} else {
+					dies_ok { [% position_code %] } sprintf($mess, 'dies (position test, status = DIES)');
+				}
+			} else {
+				dies_ok { [% call_code %] } sprintf($mess, 'dies');
+				ok(!defined($result));
+			}
 			return;	# There should be no output to validate
 		} elsif($status eq 'WARNS') {
 			warnings_exist { [% call_code %] } qr/./, sprintf($mess, 'warns');

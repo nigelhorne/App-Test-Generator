@@ -154,6 +154,11 @@ The keyword `undef` is used to indicate that the `function` returns nothing.
 
 The current supported variables are
 
+- `close_stdin`
+
+    Tests should not attempt to read from STDIN (default: 1).
+    This is ignored on Windows, when never closes STDIN.
+
 - `test_nuls`, inject NUL bytes into strings (default: 1)
 
     With this test enabled, the function is expected to die when a NUL byte is passed in.
@@ -883,6 +888,7 @@ portion with a message.
       properties:
         enable: true
         trials: 200
+      close_stdin: true
       test_undef: no
       test_empty: no
       test_nuls: no
@@ -1028,6 +1034,8 @@ The generated test:
 - Runs [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest) tests
 
 # METHODS
+
+## generate
 
     generate($schema_file, $test_file)
 

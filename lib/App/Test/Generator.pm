@@ -217,7 +217,7 @@ The current supported variables are
 
 =over 4
 
-=item * C<close_stdin)
+=item * C<close_stdin>
 
 Tests should not attempt to read from STDIN (default: 1).
 This is ignored on Windows, when never closes STDIN.
@@ -1215,6 +1215,8 @@ The generated test:
 
 =head1 METHODS
 
+=head2 generate
+
   generate($schema_file, $test_file)
 
 Takes a schema file and produces a test file (or STDOUT).
@@ -1474,6 +1476,7 @@ sub generate
 	my $setup_code = ($module) ? "BEGIN { use_ok('$module') }" : '';
 	my $call_code;	# Code to call the function being test when used with named arguments
 	my $position_code;	# Code to call the function being test when used with position arguments
+	my $has_positions = _has_positions(\%input);
 	if(defined($new)) {
 		# keep use_ok regardless (user found earlier issue)
 		if($new_code eq '') {
@@ -1481,22 +1484,34 @@ sub generate
 		} else {
 			$setup_code .= "\nmy \$obj = new_ok('$module' => [ { $new_code } ] );";
 		}
-		$call_code = "\$result = \$obj->$function(\$input);";
-		if($output{'returns_self'}) {
-			$call_code .= "ok(\$result eq \$obj, \"$function returns self\")";
+		if($has_positions) {
+			$position_code = "(\$result = scalar(\@alist) == 1) ? \$obj->$function(\$alist[0]) : (scalar(\@alist) == 0) ? \$obj->$function() : \$obj->$function(\@alist);";
+		} else {
+			$call_code = "\$result = \$obj->$function(\$input);";
+			if($output{'returns_self'}) {
+				$call_code .= "ok(\$result eq \$obj, \"$function returns self\")";
+			}
 		}
-		$position_code = "(\$result = scalar(\@alist) == 1) ? \$obj->$function(\$alist[0]) : (scalar(\@alist) == 0) ? \$obj->$function() : \$obj->$function(\@alist);";
 	} elsif(defined($module) && length($module)) {
 		if($function eq 'new') {
-			$call_code = "\$result = ${module}\->$function(\$input);";
-			$position_code = "(\$result = scalar(\@alist) == 1) ? ${module}\->$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}\->$function() : ${module}\->$function(\@alist);";
+			if($has_positions) {
+				$position_code = "(\$result = scalar(\@alist) == 1) ? ${module}\->$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}\->$function() : ${module}\->$function(\@alist);";
+			} else {
+				$call_code = "\$result = ${module}\->$function(\$input);";
+			}
 		} else {
-			$call_code = "\$result = ${module}::$function(\$input);";
-			$position_code = "(\$result = scalar(\@alist) == 1) ? ${module}::$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}::$function() : ${module}::$function(\@alist);";
+			if($has_positions) {
+				$position_code = "(\$result = scalar(\@alist) == 1) ? ${module}::$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}::$function() : ${module}::$function(\@alist);";
+			} else {
+				$call_code = "\$result = ${module}::$function(\$input);";
+			}
 		}
 	} else {
-		$call_code = "\$result = $function(\$input);";
-		$position_code = "\$result = $function(\@alist);";
+		if($has_positions) {
+			$position_code = "\$result = $function(\@alist);";
+		} else {
+			$call_code = "\$result = $function(\$input);";
+		}
 	}
 
 	# Build static corpus code
@@ -2880,11 +2895,11 @@ sub _get_dominant_type {
 }
 
 sub _has_positions {
-	my $spec = $_[0];
+	my $input_spec = $_[0];
 
-	for my $field (keys %$spec) {
-		next unless ref($spec->{$field}) eq 'HASH';
-		return 1 if defined $spec->{$field}{position};
+	for my $field (keys %$input_spec) {
+		next unless ref($input_spec->{$field}) eq 'HASH';
+		return 1 if defined $input_spec->{$field}{position};
 	}
 
 	return 0;
