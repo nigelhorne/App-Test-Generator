@@ -6568,6 +6568,10 @@ sub _extract_pod_examples {
 		$self->_log("  POD: extracted " . scalar(@examples) . " example call(s)");
 	}
 
+	for my $k (qw(boundary_values invalid_inputs valid_inputs equivalence_classes)) {
+		$hints->{$k} //= [];
+	}
+
 	return $hints;
 }
 
