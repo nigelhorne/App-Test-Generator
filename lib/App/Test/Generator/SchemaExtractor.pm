@@ -1907,7 +1907,6 @@ sub _ppi {
 	return $doc;
 }
 		
-
 # Params::Validate::Strict
 sub _extract_pvs_schema {
 	my ($self, $code) = @_;
@@ -2026,7 +2025,7 @@ sub _extract_pv_schema
 		return $self->_normalize_validator_schema($schema) if $schema;
 	}
 
-	if($code =~ /validate_strict\s*\(\s*(\{.*?\})\s*\)/s) {
+	if($code =~ /validate\s*\(\s*(\{.*?\})\s*\)/s) {
 		my $schema_text = $1;
 		my $schema = $self->_parse_schema_hash($schema_text);
 		return {
