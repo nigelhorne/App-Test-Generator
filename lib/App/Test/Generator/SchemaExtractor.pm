@@ -2195,7 +2195,7 @@ sub _normalize_validator_schema {
 
 		$input{$name} = {
 			%$spec,
-			optional => $spec->{optional} // 0,
+			optional => exists $spec->{optional} ? $spec->{optional} : 0,
 			_source => 'validator',
 			_type_confidence => 'high',
 		};
@@ -2238,9 +2238,9 @@ sub _analyze_pod {
 
 		# Assign positions
 		foreach my $param (@sig_params) {
-			$params{$param}{position} = $position_counter unless(exists($params{$param}{position}));
-			$position_counter++;
+			$params{$param}{position} //= $position_counter;
 			$self->_log("  POD: $param has position $params{$param}{position}");
+			$position_counter++;
 		}
 	}
 
@@ -2249,7 +2249,7 @@ sub _analyze_pod {
 	# Pattern 1: Parse line-by-line in Parameters section
 	# First, extract the Parameters section
 	my $param_section;
-	if ($pod =~ /(?:Parameters?|Arguments?|Inputs?):?\s*\n(.*?)(?=\n\n|\n=[a-z]|$)/si) {
+	if($pod =~ /(?:Parameters?|Arguments?|Inputs?):?\s*\n((?:\s*\$.*\n)+)/si) {
 		$param_section = $1;
 	} elsif ($pod =~ /^=head\d+\s+(?:Parameters?|Arguments?|Inputs?)\b.*?\n(.*?)(?=^=head|\Z)/msi) {
 		$param_section = $1;
@@ -2371,7 +2371,7 @@ sub _analyze_pod {
 	}
 
 	# Pattern 3: Parse =over /=item list (supports bullets and C<>)
-	while ($pod =~ /=item\s+(?:\*\s*)?(?:C<)?\$(\w+)\b(?:>)?\s*(?:-.*)?\n?(.*?)(?==item|\=back)/sig) {
+	while ($pod =~ /=item\s+(?:\*\s*)?(?:C<)?\$(\w+)\b(?:>)?\s*(?:-.*)?\n?(.*?)(?==item|\=back|\=head)/sig) {
 		my $name = $1;
 		my $desc = $2;
 

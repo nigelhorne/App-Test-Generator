@@ -1558,7 +1558,7 @@ sub run_test
 			diag('result: ', Dumper($result));
 		}
 		returns_ok($result, $output, 'output validates');
-		if((!defined($status)) || ($status eq 'OK')) {
+		if(((!defined($status)) || ($status eq 'OK')) && defined($result)) {
 			is(
 				Unicode::Normalize::NFC($result),
 				Unicode::Normalize::NFC(Unicode::Normalize::NFD($result)),
