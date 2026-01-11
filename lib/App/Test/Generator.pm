@@ -1618,6 +1618,12 @@ sub generate
 		$seed = int($seed);
 		$seed_code = "srand($seed);\n";
 	}
+
+	my $determinism_code = 'my $result2;' .
+		'eval { $result2 = do { ' . (defined($position_code) ? $position_code : $call_code) . " }; };\n" .
+		'is_deeply($result2, $result, "deterministic result for same input");' .
+		"\n";
+	
 	# Generate the test content
 	my $tt = Template->new({ ENCODING => 'utf8', TRIM => 1 });
 
@@ -1638,6 +1644,7 @@ sub generate
 		corpus_code => $corpus_code,
 		call_code => $call_code,
 		position_code => $position_code,
+		determinism_code => $determinism_code,
 		function => $function,
 		iterations_code => int($iterations),
 		use_properties => $use_properties,

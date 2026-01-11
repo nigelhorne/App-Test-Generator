@@ -1531,6 +1531,8 @@ sub run_test
 	}
 
 	my $status = delete $case->{'_STATUS'} || $output->{'_STATUS'};
+	my %ENV_before = %ENV;
+	my $cwd_before = Cwd::getcwd();
 	if(defined($status)) {
 		if($status eq 'DIES') {
 			if($positions) {
@@ -1557,6 +1559,9 @@ sub run_test
 			} else {
 				lives_ok { [% call_code %] } sprintf($mess, 'survives (status = LIVES)');
 			}
+			if($properties->{idempotent}) {
+				[% determinism_code %]
+			}
 		}
 	} elsif($positions) {
 		if(defined($name)) {
@@ -1571,10 +1576,20 @@ sub run_test
 			die 'TODO: properties' if(scalar keys %{$properties});
 			lives_ok { [% position_code %] } sprintf($mess, 'survives (position test)');
 		}
+		if($properties->{idempotent}) {
+			[% determinism_code %]
+		}
 	} else {
 		die 'TODO: properties' if(scalar keys %{$properties});
 		lives_ok { [% call_code %] } sprintf($mess, 'survives');
+		if($properties->{idempotent}) {
+			[% determinism_code %]
+		}
 	}
+
+	# Global side effect detection
+	is_deeply(\%ENV, \%ENV_before, 'ENV not modified');
+	is(Cwd::getcwd(), $cwd_before, 'cwd not modified');
 
 	delete local $output->{'_STATUS'};
 

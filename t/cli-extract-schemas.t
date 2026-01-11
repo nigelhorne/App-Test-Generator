@@ -103,8 +103,8 @@ sub run_cmd {
 		$module
 	);
 
-	is( $exit, 0, '--verbose succeeds' );
-	like( $out, qr/Schemas:/, 'verbose output includes schema dump' );
+	is($exit, 0, '--verbose succeeds');
+	like($out, qr/Schemas:/, 'verbose output includes schema dump');
 }
 
 # --------------------------------------------------------------------
