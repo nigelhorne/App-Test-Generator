@@ -2500,7 +2500,8 @@ sub _analyze_output_from_pod {
 
 	if ($pod) {
 		# Pattern 1: Returns: section
-		if ($pod =~ /Returns?:\s+(.+?)(?=\n\n|\n=[a-z]|$)/si) {
+		# Up to 3 lines
+		if ($pod =~ /Returns?:\s+([^\n]+(?:\n[^\n]+){0,2})/si) {
 			my $returns_desc = $1;
 			$returns_desc =~ s/^\s+|\s+$//g;
 
@@ -2509,7 +2510,7 @@ sub _analyze_output_from_pod {
 			# Try to infer type from description
 			if ($returns_desc =~ /\b(string|text)\b/i) {
 				$output->{type} = 'string';
-			} elsif ($returns_desc =~ /\b(integer|int|number|count)\b/i) {
+			} elsif ($returns_desc =~ /\b(integer|int|count)\b/i) {
 				$output->{type} = 'integer';
 			} elsif ($returns_desc =~ /\b(float|decimal|number)\b/i) {
 				$output->{type} = 'number';
@@ -2539,6 +2540,8 @@ sub _analyze_output_from_pod {
 			} elsif ($returns_desc =~ /dies\s+on\s+(?:error|failure)/i) {
 				$output->{_STATUS} = 'LIVES';
 				$self->_log('  OUTPUT: Should not die on success');
+			} elsif ($returns_desc =~ /\b(true|false)\b/i) {
+				$output->{type} ||= 'boolean';
 			}
 		}
 
