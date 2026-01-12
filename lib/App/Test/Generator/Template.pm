@@ -1613,8 +1613,8 @@ sub run_test
 	ok((!defined($@)) || (length($@) == 0));
 
 	# Global side effect detection
-	is_deeply(\%ENV, \%ENV_before, 'ENV not modified');
 	is(Cwd::getcwd(), $cwd_before, 'cwd not modified');
+	is_deeply(_filtered_env(\%ENV), _filtered_env(\%ENV_before), 'ENV not modified');
 
 	delete local $output->{'_STATUS'};
 
@@ -1631,6 +1631,24 @@ sub run_test
 			);
 		}
 	}
+}
+
+# On Windows $PWD etc are not stable
+sub _filtered_env {
+	my %env = %{ shift() };
+
+	if($^O eq 'MSWin32') {
+		delete @env{
+			qw(
+				PWD
+				OLDPWD
+				_
+				SHLVL
+			)
+		};
+	}
+
+	return \%env;
 }
 
 diag('Run Fuzz Tests') if($ENV{'TEST_VERBOSE'});
