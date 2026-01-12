@@ -3,7 +3,7 @@ use warnings;
 
 use Test::DescribeMe qw(extended);
 use Test::Most;
-use IPC::Open3;
+use IPC::Run3;
 use Symbol qw(gensym);
 use File::Temp qw(tempdir);
 use File::Spec;
@@ -37,17 +37,10 @@ close $fh;
 
 sub run_cmd {
 	my (@cmd) = @_;
-	my $err = gensym;
-	my $pid = open3(undef, my $out, $err, ($^X, @cmd));
-
-	local $/;
-	my $stdout = <$out> // '';
-	my $stderr = <$err> // '';
-
-	waitpid $pid, 0;
+	my ($stdout, $stderr);
+	run3([$^X, @cmd], \undef, \$stdout, \$stderr);
 	my $exit = $? >> 8;
-
-	return ($exit, $stdout, $stderr);
+	return ($exit, $stdout // '', $stderr // '');
 }
 
 # --------------------------------------------------------------------

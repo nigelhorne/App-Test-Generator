@@ -31,7 +31,6 @@ on 'test' => sub {
 	requires 'Encode';
 	requires 'File::Temp';
 	requires 'FindBin';
-	requires 'IPC::Open3';
 	requires 'IPC::Run3';
 	requires 'IPC::System::Simple';
 	requires 'JSON::MaybeXS';

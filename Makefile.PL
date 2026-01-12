@@ -51,7 +51,6 @@ WriteMakefile(
 		'FindBin' => 0,
 		'File::Temp' => 0,
 		'IPC::Run3' => 0,
-		'IPC::Open3' => 0,
 		'IPC::System::Simple' => 0,
 		'JSON::MaybeXS' => 0,
 		'JSON::PP' => 0,
