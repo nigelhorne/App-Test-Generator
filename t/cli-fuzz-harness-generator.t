@@ -3,7 +3,7 @@ use warnings;
 
 use Test::Most;
 use File::Temp qw(tempfile tempdir);
-use IPC::Open3;
+use IPC::Run3;
 use Symbol qw(gensym);
 use FindBin;
 
@@ -17,18 +17,10 @@ ok(-e $valid_conf, 'Valid test config exists');
 # Helper to run the CLI
 sub run_cmd {
 	my (@cmd) = @_;
-
-	my $stderr = gensym;
-	my $pid = open3(my $in, my $out, $stderr, ($^X, @cmd));
-	close $in;
-
-	my $stdout = do { local $/; <$out> // '' };
-	my $err	= do { local $/; <$stderr> // '' };
-
-	waitpid($pid, 0);
+	my ($stdout, $stderr);
+	run3([$^X, @cmd], \undef, \$stdout, \$stderr);
 	my $exit = $? >> 8;
-
-	return ($exit, $stdout, $err);
+	return ($exit, $stdout // '', $stderr // '');
 }
 
 # --help
