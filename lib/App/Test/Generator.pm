@@ -35,7 +35,7 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
-our $VERSION = '0.25';
+our $VERSION = '0.26';
 
 use constant {
 	DEFAULT_ITERATIONS => 50,
@@ -50,7 +50,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses from test 
 
 =head1 VERSION
 
-Version 0.25
+Version 0.26
 
 =head1 SYNOPSIS
 
@@ -2993,4 +2993,24 @@ assistance of AI.
 
 =cut
 
-__END__
+=head1 LICENCE AND COPYRIGHT
+
+Copyright 2025-2026 Nigel Horne.
+
+Usage is subject to licence terms.
+
+The licence terms of this software are as follows:
+
+=over 4
+
+=item * Personal single user, single computer use: GPL2
+
+=item * All other users (including Commercial, Charity, Educational, Government)
+  must apply in writing for a licence for use from Nigel Horne at the
+  above e-mail.
+
+=back
+
+=cut
+
+1;

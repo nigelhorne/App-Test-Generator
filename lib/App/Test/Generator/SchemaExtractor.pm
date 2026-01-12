@@ -14,7 +14,7 @@ use File::Path qw(make_path);
 use Safe;
 use Scalar::Util qw(looks_like_number);
 
-our $VERSION = '0.25';
+our $VERSION = '0.26';
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 
 =head1 VERSION
 
-Version 0.25
+Version 0.26
 
 =head1 SYNOPSIS
 
