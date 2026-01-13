@@ -1751,8 +1751,8 @@ sub _detect_accessor_methods {
 	# Setter
 	# -------------------------------
 	if (
-		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*\$(\w+)\s*;/ &&
-		$code =~ /return\s+\$self\b/
+		$code =~ /return\s+\$self\b/ &&
+		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*\$(\w+)\s*;/
 	) {
 		my ($field, $param) = ($1, $2);
 
@@ -1781,9 +1781,9 @@ sub _detect_accessor_methods {
 	# Getter/Setter combo
 	# -------------------------------
 	if (
-		$code =~ /if\s*\(\s*\@_\s*>\s*1\s*\)/ &&
 		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*shift\s*;/ &&
-		$code =~ /return\s+\$self\s*->\s*\{/
+		$code =~ /return\s+\$self\s*->\s*\{/ &&
+		$code =~ /if\s*\(\s*\@_\s*>\s*1\s*\)/
 	) {
 		my $field = $1;
 
