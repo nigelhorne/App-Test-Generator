@@ -1513,6 +1513,9 @@ sub run_test
 			$input = join(', ', @alist);
 		} else {
 			# Named args
+			if(ref($input) ne 'HASH') {
+				die('Input is missing list of arguments (perhaps you only listed types)');
+			}
 			foreach my $key (sort keys %{$input}) {
 				if($key ne '_STATUS') {
 					if(defined($input->{$key})) {

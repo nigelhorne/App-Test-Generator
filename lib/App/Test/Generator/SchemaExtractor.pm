@@ -2260,10 +2260,16 @@ sub _analyze_pod {
 		$self->_log("  POD: Scan for named parameters in '$param_section'");
 		# Now parse each line that starts with $varname
 		foreach my $line (split /\n/, $param_section) {
+			if ($line =~ /C<\$(\w+)>\s*\((Required|Mandatory)\)/i) {
+				$params{$1}{optional} = 0;
+				$self->_log("  POD: $1 marked required from item header");
+			}
+
 			# Match: $name - type (constraints), description
 			# or:	$name - type, description
 			# or:	$name - type
-			if ($line =~ /^\s*\$(\w+)\s*-\s*(\w+)(?:\s*\(([^)]+)\))?\s*,?\s*(.*)$/i) {
+			if(($line =~ /^\s*\$(\w+)\s*-\s*(\w+)(?:\s*\(([^)]+)\))?\s*,?\s*(.*)$/i) ||
+			   ($line =~ /^\s*C<\$(\w+)>\s*-\s*(\w+)(?:\s*\(([^)]+)\))?\s*,?\s*(.*)$/i)) {
 				my ($name, $type, $constraint, $desc) = ($1, lc($2), $3, $4);
 
 				# Clean up
