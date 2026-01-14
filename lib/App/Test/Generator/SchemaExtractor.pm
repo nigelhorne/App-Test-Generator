@@ -5822,10 +5822,6 @@ sub _needs_object_instantiation {
 	my $package_stmt = $doc->find_first('PPI::Statement::Package');
 	my $current_package = $package_stmt ? $package_stmt->namespace : 'UNKNOWN';
 
-	# Skip constructors and destructors
-	return undef if $method_name eq 'new';
-	return undef if $method_name =~ /^(create|build|construct|init|DESTROY)$/i;
-
 	# Initialize result structure
 	my $result = {
 		package => $current_package,
@@ -5835,15 +5831,19 @@ sub _needs_object_instantiation {
 		constructor_params => undef,
 	};
 
+	# Track whether we should explicitly skip object instantiation
+	my $skip_object = 0;
+
+	# Skip constructors and destructors
+	if ($method_name eq 'new' ||
+	    $method_name =~ /^(create|build|construct|init|DESTROY)$/i) {
+		$skip_object = 1;
+	}
+
 	# 1. Check for factory methods that return instances
-	my $is_factory = $self->_detect_factory_method($method_name, $method_body, $current_package, $method_info);
-	# if ($is_factory) {
-		# $result->{needs_object} = 0;	# Factory methods CREATE objects, don't need them
-		# $result->{type} = 'factory';
-		# $result->{details} = $is_factory;
-		# $self->_log("  OBJECT: Detected factory method '$method_name' returns $is_factory->{returns_class} objects") if $is_factory->{returns_class};
-		# return undef;	# Factory methods don't need pre-existing objects
-	# }
+	my $is_factory = $self->_detect_factory_method(
+		$method_name, $method_body, $current_package, $method_info
+	);
 
 	# 2. Check for singleton patterns
 	my $is_singleton = $self->_detect_singleton_pattern($method_name, $method_body);
@@ -5854,43 +5854,53 @@ sub _needs_object_instantiation {
 		$self->_log("  OBJECT: Detected singleton accessor '$method_name'");
 		# Singleton accessors typically don't need object creation in tests
 		# as they're called on the class, not instance
-		return undef;
+		$skip_object = 1;
 	}
 
 	# 3. Check if this is an instance method that needs an object
 	my $is_instance_method = $self->_detect_instance_method($method_name, $method_body);
-	if($is_instance_method &&
+	if ($is_instance_method &&
 	    ($is_instance_method->{explicit_self} ||
 	     $is_instance_method->{shift_self} ||
 	     $is_instance_method->{accesses_object_data})) {
-	     # Instance-only methods override factory detection
+
+		# Instance-only methods override factory detection
 		if ($is_factory) {
 			$self->_log(
-			"  OBJECT: Instance-only method '$method_name' overrides factory detection"
+				"  OBJECT: Instance-only method '$method_name' overrides factory detection"
 			);
 		}
+
 		$result->{needs_object} = 1;
 		$result->{type} = 'instance_method';
 		$result->{details} = $is_instance_method;
 
 		# 4. Check for inheritance - if parent class constructor should be used
-		my $inheritance_info = $self->_check_inheritance_for_constructor($current_package, $method_body);
+		my $inheritance_info = $self->_check_inheritance_for_constructor(
+			$current_package, $method_body
+		);
 		if ($inheritance_info && $inheritance_info->{use_parent_constructor}) {
 			$result->{package} = $inheritance_info->{parent_class};
 			$result->{details}{inheritance} = $inheritance_info;
-			$self->_log("  OBJECT: Method '$method_name' uses parent class constructor: $inheritance_info->{parent_class}");
+			$self->_log(
+				"  OBJECT: Method '$method_name' uses parent class constructor: $inheritance_info->{parent_class}"
+			);
 		}
 
 		# 5. Check if constructor needs specific parameters
-		my $constructor_needs = $self->_detect_constructor_requirements($current_package, $result->{package});
+		my $constructor_needs = $self->_detect_constructor_requirements(
+			$current_package, $result->{package}
+		);
 		if ($constructor_needs) {
 			$result->{constructor_params} = $constructor_needs;
 			$result->{details}{constructor_requirements} = $constructor_needs;
-			$self->_log("  OBJECT: Constructor for $result->{package} requires parameters");
+			$self->_log(
+				"  OBJECT: Constructor for $result->{package} requires parameters"
+			);
 		}
 
 		# Return the package name (or parent package) that needs instantiation
-		return $result->{package} if $result->{needs_object};
+		return $result->{package};
 	}
 
 	# 6. Check for class methods that might need objects from other classes
@@ -5898,25 +5908,24 @@ sub _needs_object_instantiation {
 	if ($needs_other_object) {
 		$result->{needs_object} = 1;
 		$result->{type} = 'external_dependency';
-		$result->{package} = $needs_other_object->{package} if $needs_other_object->{package};
+		$result->{package} = $needs_other_object->{package}
+			if $needs_other_object->{package};
 		$result->{details} = $needs_other_object;
 
-		$self->_log("  OBJECT: Method '$method_name' depends on external object: $needs_other_object->{package}");
+		$self->_log(
+			"  OBJECT: Method '$method_name' depends on external object: $needs_other_object->{package}"
+		);
 		return $result->{package} if $result->{package};
 	}
 
 	# Factory method only if NOT instance-based
-	if ($is_factory) {
+	if ($is_factory && !$skip_object) {
 		$result->{needs_object} = 0;
 		$result->{type} = 'factory';
 		$result->{details} = $is_factory;
-		if(($is_factory->{confidence} // '') ne 'low') {
-			$self->_log(
-				"  OBJECT: Detected factory method '$method_name' returns $is_factory->{returns_class} objects"
-			) if $is_factory->{returns_class};
-		}
-
-		return undef;
+		$self->_log(
+			"  OBJECT: Detected factory method '$method_name' returns $is_factory->{returns_class} objects"
+		) if $is_factory->{returns_class};
 	}
 
 	return undef;
