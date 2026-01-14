@@ -1901,7 +1901,7 @@ sub _ppi {
 	$self->{_ppi_cache} ||= {};
 	return $self->{_ppi_cache}{$code} //= PPI::Document->new(\$code);
 }
-		
+
 # Params::Validate::Strict
 sub _extract_pvs_schema {
 	my ($self, $code) = @_;
@@ -2551,7 +2551,8 @@ sub _analyze_output_from_pod {
 				$output->{type} ||= 'boolean';
 			}
 			if ($returns_desc =~ /\bundef\b/i) {
-				$output->{nullable} = 1;
+				# $output->{nullable} = 1;
+				$output->{optional} = 1;
 			}
 		}
 
@@ -5712,39 +5713,32 @@ sub _serialize_parameter_for_yaml {
 			$cleaned{type} = 'string';
 			$cleaned{matches} ||= '/^\d{4}-\d{2}-\d{2}$/';
 			$cleaned{_example} = '2024-12-12';
-
 		} elsif ($semantic eq 'iso8601_string') {
 			$cleaned{type} = 'string';
 			$cleaned{matches} ||= '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?$/';
 			$cleaned{_example} = '2024-12-12T10:30:00Z';
-
 		} elsif ($semantic eq 'unix_timestamp') {
 			$cleaned{type} = 'integer';
 			$cleaned{min} ||= 0;
 			$cleaned{max} ||= 2147483647;	# 32-bit max
 			$cleaned{_note} = 'UNIX timestamp';
-
 		} elsif ($semantic eq 'datetime_parseable') {
 			$cleaned{type} = 'string';
 			$cleaned{_note} = 'Must be parseable as datetime';
-
 		} elsif ($semantic eq 'filehandle') {
 			# File handles: special handling needed
 			$cleaned{type} = 'object';
 			$cleaned{isa} = $param->{isa} || 'IO::Handle';
 			$cleaned{_note} = 'File handle - may need mock in tests';
-
 		} elsif ($semantic eq 'filepath') {
 			# File paths: string with path pattern
 			$cleaned{type} = 'string';
 			$cleaned{matches} ||= '/^[\\w\\/.\\-_]+$/';
 			$cleaned{_note} = 'File path';
-
 		} elsif ($semantic eq 'callback') {
 			# Coderefs: mark as special type
 			$cleaned{type} = 'coderef';
 			$cleaned{_note} = 'CODE reference - provide sub { } in tests';
-
 		} elsif ($semantic eq 'enum') {
 			# Enum: keep as string but add valid values
 			$cleaned{type} = 'string';
@@ -5843,13 +5837,13 @@ sub _needs_object_instantiation {
 
 	# 1. Check for factory methods that return instances
 	my $is_factory = $self->_detect_factory_method($method_name, $method_body, $current_package, $method_info);
-	if ($is_factory) {
-		$result->{needs_object} = 0;	# Factory methods CREATE objects, don't need them
-		$result->{type} = 'factory';
-		$result->{details} = $is_factory;
-		$self->_log("  OBJECT: Detected factory method '$method_name' returns $is_factory->{returns_class} objects") if $is_factory->{returns_class};
-		return undef;	# Factory methods don't need pre-existing objects
-	}
+	# if ($is_factory) {
+		# $result->{needs_object} = 0;	# Factory methods CREATE objects, don't need them
+		# $result->{type} = 'factory';
+		# $result->{details} = $is_factory;
+		# $self->_log("  OBJECT: Detected factory method '$method_name' returns $is_factory->{returns_class} objects") if $is_factory->{returns_class};
+		# return undef;	# Factory methods don't need pre-existing objects
+	# }
 
 	# 2. Check for singleton patterns
 	my $is_singleton = $self->_detect_singleton_pattern($method_name, $method_body);
@@ -5867,8 +5861,14 @@ sub _needs_object_instantiation {
 	my $is_instance_method = $self->_detect_instance_method($method_name, $method_body);
 	if($is_instance_method &&
 	    ($is_instance_method->{explicit_self} ||
-			$is_instance_method->{shift_self} ||
-			$is_instance_method->{accesses_object_data})) {
+	     $is_instance_method->{shift_self} ||
+	     $is_instance_method->{accesses_object_data})) {
+	     # Instance-only methods override factory detection
+		if ($is_factory) {
+			$self->_log(
+			"  OBJECT: Instance-only method '$method_name' overrides factory detection"
+			);
+		}
 		$result->{needs_object} = 1;
 		$result->{type} = 'instance_method';
 		$result->{details} = $is_instance_method;
@@ -5903,6 +5903,20 @@ sub _needs_object_instantiation {
 
 		$self->_log("  OBJECT: Method '$method_name' depends on external object: $needs_other_object->{package}");
 		return $result->{package} if $result->{package};
+	}
+
+	# Factory method only if NOT instance-based
+	if ($is_factory) {
+		$result->{needs_object} = 0;
+		$result->{type} = 'factory';
+		$result->{details} = $is_factory;
+		if(($is_factory->{confidence} // '') ne 'low') {
+			$self->_log(
+				"  OBJECT: Detected factory method '$method_name' returns $is_factory->{returns_class} objects"
+			) if $is_factory->{returns_class};
+		}
+
+		return undef;
 	}
 
 	return undef;
