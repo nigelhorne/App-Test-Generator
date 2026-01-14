@@ -8,11 +8,12 @@ use Carp qw(carp croak);
 use Data::Dumper;	# For debugging
 use PPI;
 use Pod::Simple::Text;
-use YAML::XS;
 use File::Basename;
 use File::Path qw(make_path);
+use Params::Get;
 use Safe;
 use Scalar::Util qw(looks_like_number);
+use YAML::XS;
 
 our $VERSION = '0.26';
 
@@ -1155,18 +1156,21 @@ The extractor supports several configuration parameters:
 =cut
 
 sub new {
-	my ($class, %args) = @_;
+	my $class = shift;
 
-	croak(__PACKAGE__, ': input_file required') unless exists $args{input_file};
+	# Handle hash or hashref arguments
+	my $params = Params::Get::get_params('input_file', @_) || {};
+
+	croak(__PACKAGE__, ': input_file required') unless exists $params->{input_file};
 
 	my $self = {
-		input_file => $args{input_file},
-		output_dir => $args{output_dir} || 'schemas',
-		verbose	=> $args{verbose} // 0,
-		confidence_threshold => $args{confidence_threshold} // 0.5,
-		include_private => $args{include_private} // 0,	# include _private methods
-		max_parameters => $args{max_parameters} // 20,	# safety limit
-		strict_pod => _validate_strictness_level($args{strict_pod}),  # Enable strict POD checking
+		input_file => $params->{input_file},
+		output_dir => $params->{output_dir} || 'schemas',
+		verbose	=> $params->{verbose} // 0,
+		confidence_threshold => $params->{confidence_threshold} // 0.5,
+		include_private => $params->{include_private} // 0,	# include _private methods
+		max_parameters => $params->{max_parameters} // 20,	# safety limit
+		strict_pod => _validate_strictness_level($params->{strict_pod}),  # Enable strict POD checking
 	};
 
 	# Validate input file exists
