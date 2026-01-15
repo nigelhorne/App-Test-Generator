@@ -5839,8 +5839,11 @@ sub _needs_object_instantiation {
 	my $skip_object = 0;
 
 	# Skip constructors and destructors
-	if ($method_name eq 'new' ||
-	    $method_name =~ /^(create|build|construct|init|DESTROY)$/i) {
+	if ($method_name eq 'new') {
+		$self->_log("  OBJECT: Constructor '$method_name' detected; skipping instantiation analysis");
+		return undef;
+	}
+	if($method_name =~ /^(create|build|construct|init|DESTROY)$/i) {
 		$skip_object = 1;
 	}
 
