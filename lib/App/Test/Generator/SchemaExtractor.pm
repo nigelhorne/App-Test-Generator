@@ -1581,8 +1581,9 @@ sub _analyze_method {
 	$self->_detect_accessor_methods($method, $schema);
 
 	# Detect if this is an instance method that needs object instantiation
+	# Constructors never require object instantiation
 	my $needs_object = $self->_needs_object_instantiation($method->{name}, $method->{body}, $method);
-	if ($needs_object) {
+	if($method->{name} ne 'new' && $needs_object) {
 		$schema->{new} = $needs_object;
 		$self->_log("  NEW: Method requires object instantiation: $needs_object");
 	}
