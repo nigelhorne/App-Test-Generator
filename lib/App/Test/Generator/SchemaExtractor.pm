@@ -598,7 +598,7 @@ Detection provides:
 
 =over 4
 
-=item * C<returns_self> - Returns invocant for chaining
+=item * C<_returns_self> - Returns invocant for chaining
 
 =item * C<class> - The class name being returned
 
@@ -684,7 +684,7 @@ Enhanced return analysis adds these fields to method schemas:
         type: array
       scalar_context:
         type: integer
-      returns_self: 1               # Returns $self
+      _returns_self: 1               # Returns $self
       void_context: 1            # No meaningful return
       _success_indicator: 1       # Always returns true
       _error_return: undef        # How errors are signaled
@@ -3083,7 +3083,7 @@ sub _detect_chaining_pattern {
 
 		if ($ratio >= 0.8) {
 			$output->{type} = 'object';
-			$output->{returns_self} = 1;
+			$output->{_returns_self} = 1;
 
 			# Get the class name
 			if ($self->{_document}) {
@@ -3272,7 +3272,7 @@ sub _detect_chaining_from_pod {
 		$pod =~ /fluent\s+interface/i ||
 		$pod =~ /method\s+chaining/i) {
 
-		$output->{returns_self} = 1;
+		$output->{_returns_self} = 1;
 		$self->_log("  OUTPUT: POD indicates chainable/fluent interface");
 	}
 }
@@ -4929,7 +4929,7 @@ sub _calculate_output_confidence {
 	}
 
 	# Chainable methods
-	if ($output->{returns_self}) {
+	if ($output->{_returns_self}) {
 		$score += 15;
 		push @factors, "Chainable method (fluent interface) (+15)";
 	}

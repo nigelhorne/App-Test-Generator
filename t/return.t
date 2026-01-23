@@ -190,16 +190,16 @@ END_MODULE
 	my $schemas = $extractor->extract_all();
 
 	# Fully chainable methods
-	ok($schemas->{set_width}{output}{returns_self}, 'Returns self');
+	ok($schemas->{set_width}{output}{_returns_self}, 'Returns self');
 	is($schemas->{set_width}{output}{type}, 'object', 'Returns object type');
 	is($schemas->{set_width}{output}{isa}, 'Test::Chainable', 'Returns correct class');
 
-	ok($schemas->{set_height}{output}{returns_self}, 'POD indicates returns_self');
+	ok($schemas->{set_height}{output}{_returns_self}, 'POD indicates _returns_self');
 
-	ok($schemas->{configure}{output}{returns_self}, 'configure is returns_self');
+	ok($schemas->{configure}{output}{_returns_self}, 'configure is _returns_self');
 
-	# Mixed returns - not consistently returns_self
-	ok(!$schemas->{mixed_returns}{output}{returns_self}, 'Mixed returns not marked returns_self');
+	# Mixed returns - not consistently _returns_self
+	ok(!$schemas->{mixed_returns}{output}{_returns_self}, 'Mixed returns not marked _returns_self');
 
 	done_testing();
 };
@@ -333,8 +333,8 @@ END_MODULE
 	is($schemas->{get_status}{output}{list_context}{type}, 'array', 'List context returns array');
 	is($schemas->{get_status}{output}{scalar_context}{type}, 'scalar', 'Scalar context returns scalar');
 
-	# Getter/setter pattern (not consistently returns_self)
-	ok(!$schemas->{builder_method}{output}{returns_self}, 'Getter/setter not marked returns_self');
+	# Getter/setter pattern (not consistently _returns_self)
+	ok(!$schemas->{builder_method}{output}{_returns_self}, 'Getter/setter not marked _returns_self');
 
 	# Conditional list returns
 	ok($schemas->{conditional_list}{output}{_error_handling}{empty_list}, 'Can return empty list');
@@ -421,8 +421,8 @@ END_MODULE
 	ok($schemas->{connect}{output}{success_failure_pattern}, 'Has success/failure pattern');
 
 	# Chainable setter
-	ok($schemas->{set_timeout}{output}{returns_self}, 'POD indicates returns_self');
-	ok($schemas->{set_timeout}{output}{returns_self}, 'Returns self for chaining');
+	ok($schemas->{set_timeout}{output}{_returns_self}, 'POD indicates _returns_self');
+	ok($schemas->{set_timeout}{output}{_returns_self}, 'Returns self for chaining');
 
 	# Context-aware search
 	ok($schemas->{search}{output}{context_aware}, 'search is context-aware');

@@ -1492,8 +1492,8 @@ sub generate
 			$position_code = "(\$result = scalar(\@alist) == 1) ? \$obj->$function(\$alist[0]) : (scalar(\@alist) == 0) ? \$obj->$function() : \$obj->$function(\@alist);";
 		} else {
 			$call_code = "\$result = \$obj->$function(\$input);";
-			if($output{'returns_self'}) {
-				$call_code .= "ok(\$result eq \$obj, \"$function returns self\")";
+			if($output{'_returns_self'}) {
+				$call_code .= "ok(defined(\$result)); ok(\$result eq \$obj, '$function returns self')";
 			}
 		}
 	} elsif(defined($module) && length($module)) {
