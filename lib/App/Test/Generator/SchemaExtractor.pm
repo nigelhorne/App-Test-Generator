@@ -2792,6 +2792,17 @@ sub _analyze_output_from_code
 				} elsif($ret =~ /^length[\s\(]/) {
 					$return_types{integer}++;
 					$min = 0;
+				} elsif($ret =~ /^pos[\s\(]/) {
+					$return_types{integer}++;
+					$min = 0;
+				} elsif($ret =~ /^index[\s\(]/) {
+					$return_types{integer}++;
+					$min = -1;
+				} elsif($ret =~ /^rindex[\s\(]/) {
+					$return_types{integer}++;
+					$min = -1;
+				} elsif($ret =~ /^ord[\s\(]/) {
+					$return_types{integer}++;
 				} elsif ($ret =~ /=/ && $ret =~ /\$\w+/) {
 					# Assignment returning a value (e.g. $self->{status} = $status)
 					# If assignment involves a numeric literal or variable, assume numeric intent
