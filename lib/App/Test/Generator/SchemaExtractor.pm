@@ -2757,6 +2757,7 @@ sub _analyze_output_from_code
 			if($output->{'type'}) {
 				$return_types{$output->{'type'}} += 3;	# Add weighting to what's already been found
 			}
+			my $min;
 			foreach my $ret (@return_statements) {
 				$ret =~ s/^\s+|\s+$//g;
 
@@ -2788,6 +2789,9 @@ sub _analyze_output_from_code
 					# Logical-or fallback with numeric literal (e.g. $x || 200)
 					$return_types{integer} += 2;
 					$self->_log("  OUTPUT: Numeric fallback expression detected");
+				} elsif($ret =~ /^length[\s\(]/) {
+					$return_types{integer}++;
+					$min = 0;
 				} elsif ($ret =~ /=/ && $ret =~ /\$\w+/) {
 					# Assignment returning a value (e.g. $self->{status} = $status)
 					# If assignment involves a numeric literal or variable, assume numeric intent
@@ -2824,6 +2828,10 @@ sub _analyze_output_from_code
 					if (!$output->{type} || $output->{type} eq 'scalar') {
 						$output->{type} = 'integer';
 						$self->_log("  OUTPUT: Numeric returns dominate, forcing integer");
+						$output->{_type_confidence} ||= 'low';
+						if(defined($min)) {
+							$output->{min} = $min;
+						}
 					}
 				}
 				unless ($output->{type}) {
@@ -2832,6 +2840,9 @@ sub _analyze_output_from_code
 					# Assign confidence for inferred numeric expressions
 					if ($most_common eq 'number') {
 						$output->{_type_confidence} ||= 'medium';
+						if(defined($min)) {
+							$output->{min} = $min;
+						}
 					}
 
 					$self->_log("  OUTPUT: Inferred type from code: $most_common");
@@ -3215,7 +3226,7 @@ sub _infer_type_from_expression {
 
 	# Check for scalar() function - returns count
 	if ($expr =~ /scalar\s*\(/) {
-		return { type => 'integer' };
+		return { type => 'integer', min => 0 };
 	}
 
 	# Check for array reference
@@ -3233,11 +3244,10 @@ sub _infer_type_from_expression {
         return { type => 'hash' };
     }
 
-    # Check for strings
-    if ($expr =~ /^['"]/ || $expr =~ /['"]$/) {
-        return { type => 'string' };
-    }
-
+	# Check for strings
+	if ($expr =~ /^['"]/ || $expr =~ /['"]$/) {
+		return { type => 'string' };
+	}
 
     # Check for numbers
     if ($expr =~ /^-?\d+$/) {
@@ -3252,13 +3262,17 @@ sub _infer_type_from_expression {
         return { type => 'boolean' };
     }
 
-    # Check for objects
-    if ($expr =~ /bless/) {
-        return { type => 'object' };
-    }
+	# Check for objects
+	if ($expr =~ /bless/) {
+		return { type => 'object' };
+	}
+    
+	if($expr =~ /\blength\s*\(/) {
+		return { type => 'integer', min => 0 };
+	}
 
-    # Default to scalar
-    return { type => 'scalar' };
+	# Default to scalar
+	return { type => 'scalar' };
 }
 
 # Addition to _analyze_output_from_pod to detect chaining documentation
