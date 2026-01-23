@@ -640,9 +640,9 @@ B<Example Analysis:>
 
 Results in:
 
-    error_return: 'undef'
+    _error_return: 'undef'
     success_failure_pattern: 1
-    error_handling: {
+    _error_handling: {
         undef_on_error: ['$id', '$id < 0']
     }
 
@@ -687,9 +687,9 @@ Enhanced return analysis adds these fields to method schemas:
       returns_self: 1               # Returns $self
       void_context: 1            # No meaningful return
       _success_indicator: 1       # Always returns true
-      error_return: undef        # How errors are signaled
+      _error_return: undef        # How errors are signaled
       success_failure_pattern: 1 # Mixed return types
-      error_handling:            # Detailed error patterns
+      _error_handling:            # Detailed error patterns
         undef_on_error: [...]
         exception_handling: 1
 
@@ -1813,7 +1813,7 @@ sub _detect_accessor_methods {
 	}
 }
 
-# Look at the parameters validation that may exist in the code, and infer the input schema from that
+# Look at the parameter validation that may exist in the code, and infer the input schema from that
 sub _extract_validator_schema {
 	my ($self, $code) = @_;
 
@@ -3010,7 +3010,7 @@ sub _detect_void_context {
 	# Check if method name suggests void context
 	foreach my $type (keys %$void_patterns) {
 		if ($method_name =~ $void_patterns->{$type}) {
-			$output->{void_context_hint} = $type;
+			$output->{_void_context_hint} = $type;
 			$self->_log("  OUTPUT: Method name suggests $type (typically void context)");
 			last;
 		}
@@ -3166,16 +3166,16 @@ sub _detect_error_conventions {
 
 		# Determine primary error convention
 		if ($error_patterns{undef_on_error}) {
-			$output->{error_return} = 'undef';
+			$output->{_error_return} = 'undef';
 			$self->_log("  OUTPUT: Returns undef on error");
 		} elsif ($error_patterns{implicit_undef}) {
-			$output->{error_return} = 'undef';
+			$output->{_error_return} = 'undef';
 			$self->_log("  OUTPUT: Returns implicit undef on error");
 		} elsif ($error_patterns{empty_list}) {
-			$output->{error_return} = 'empty_list';
+			$output->{_error_return} = 'empty_list';
 			$self->_log("  OUTPUT: Returns empty list on error");
 		} elsif ($error_patterns{zero_on_error}) {
-			$output->{error_return} = 'false';
+			$output->{_error_return} = 'false';
 			$self->_log("  OUTPUT: Returns 0/false on error");
 		}
 
@@ -4917,9 +4917,9 @@ sub _calculate_output_confidence {
 	}
 
 	# Error handling information
-	if ($output->{error_return}) {
+	if ($output->{_error_return}) {
 		$score += 15;
-		push @factors, "Error return convention documented: $output->{error_return} (+15)";
+		push @factors, "Error return convention documented: $output->{_error_return} (+15)";
 	}
 
 	# Success/failure pattern

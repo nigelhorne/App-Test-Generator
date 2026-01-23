@@ -120,10 +120,10 @@ END_MODULE
 
 	# Void context methods
 	is($schemas->{set_name}{output}{type}, 'void', 'Setter is void context');
-	ok($schemas->{set_name}{output}{void_context_hint}, 'Detected setter pattern');
+	ok($schemas->{set_name}{output}{_void_context_hint}, 'Detected setter pattern');
 
 	is($schemas->{add_item}{output}{type}, 'void', 'Mutator is void context');
-	ok($schemas->{add_item}{output}{void_context_hint}, 'Detected mutator pattern');
+	ok($schemas->{add_item}{output}{_void_context_hint}, 'Detected mutator pattern');
 
 	is($schemas->{log_message}{output}{type}, 'void', 'Logger is void context');
 
@@ -265,20 +265,20 @@ END_MODULE
 	my $schemas = $extractor->extract_all();
 
 	# Explicit undef on error
-	is($schemas->{fetch_user}{output}{error_return}, 'undef', 'Returns undef on error');
+	is($schemas->{fetch_user}{output}{_error_return}, 'undef', 'Returns undef on error');
 	ok($schemas->{fetch_user}{output}{_error_handling}{undef_on_error}, 'Detected explicit undef returns');
 	ok($schemas->{fetch_user}{output}{success_failure_pattern}, 'Has success/failure pattern');
 
 	# Implicit undef (bare return)
-	is($schemas->{process_data}{output}{error_return}, 'undef', 'Returns implicit undef');
+	is($schemas->{process_data}{output}{_error_return}, 'undef', 'Returns implicit undef');
 	ok($schemas->{process_data}{output}{_error_handling}{implicit_undef}, 'Detected bare returns');
 
 	# Boolean return (0/1)
 	is($schemas->{validate}{output}{type}, 'boolean', 'Validation returns boolean');
-	is($schemas->{validate}{output}{error_return}, 'false', 'Returns false on error');
+	is($schemas->{validate}{output}{_error_return}, 'false', 'Returns false on error');
 
 	# Empty list on error
-	is($schemas->{get_items}{output}{error_return}, 'empty_list', 'Returns empty list on error');
+	is($schemas->{get_items}{output}{_error_return}, 'empty_list', 'Returns empty list on error');
 	ok($schemas->{get_items}{output}{_error_handling}{empty_list}, 'Detected empty list return');
 
 	# Exception handling
@@ -417,7 +417,7 @@ END_MODULE
 	my $schemas = $extractor->extract_all();
 
 	# Connection method
-	is($schemas->{connect}{output}{error_return}, 'undef', 'connect returns undef on error');
+	is($schemas->{connect}{output}{_error_return}, 'undef', 'connect returns undef on error');
 	ok($schemas->{connect}{output}{success_failure_pattern}, 'Has success/failure pattern');
 
 	# Chainable setter
