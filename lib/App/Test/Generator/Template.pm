@@ -528,6 +528,9 @@ sub fuzz_inputs
 				local $config{'test_empty'} = 0;
 				if($spec->{'matches'}) {
 					$mandatory_strings{$field} = Data::Random::String::Matches->create_random_string({ regex => $spec->{'matches'} });
+				} elsif(defined $spec->{memberof}) {
+					my @set = @{$spec->{memberof}};
+					$mandatory_strings{$field} = $set[-1];
 				} else {
 					$mandatory_strings{$field} = rand_ascii_str();
 				}
