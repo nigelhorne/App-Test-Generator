@@ -35,7 +35,7 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
-our $VERSION = '0.26';
+our $VERSION = '0.27';
 
 use constant {
 	DEFAULT_ITERATIONS => 50,
@@ -50,7 +50,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses from test 
 
 =head1 VERSION
 
-Version 0.26
+Version 0.27
 
 =head1 SYNOPSIS
 
@@ -2964,7 +2964,7 @@ C<seed> and C<iterations> really should be within C<config>.
 
 =over 4
 
-=item * L<https://nigelhorne.github.io/App-Test-Generator/coverage/>: Test Coverage Report
+=item * L<Test Coverage Report|https://nigelhorne.github.io/App-Test-Generator/coverage/>
 
 =item * L<App::Test::Generator::Template> - Template of the file of tests created by C<App::Test::Generator>
 

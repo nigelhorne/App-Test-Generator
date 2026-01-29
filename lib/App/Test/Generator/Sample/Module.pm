@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp qw(croak);
 
-our $VERSION = '0.26';
+our $VERSION = '0.27';
 
 =head1 NAME
 
@@ -206,10 +206,10 @@ Does something with a thing.
 =cut
 
 sub mysterious_method {
-    my ($self, $thing) = @_;
+	my ($self, $thing) = @_;
 
-    # No validation - extractor should flag this as low confidence
-    return $thing * 2;
+	# No validation - extractor should flag this as low confidence
+	return $thing * 2;
 }
 
 1;
