@@ -1,15 +1,24 @@
 #!/usr/bin/env perl
 
+# Generates the HTML for use as a testing dashboard on GitHub
+# The location will be https://nigelhorne.github.io/$config{github_repo}/coverage/
+# The script is automatically run by each 'git push' by the script .github/workflows/dashboard.yml
+
 use strict;
 use warnings;
 use autodie qw(:all);
 
-use JSON::MaybeXS;
 use File::Glob ':glob';
 use File::Slurp;
 use File::stat;
+use IPC::Run3;
+use JSON::MaybeXS;
 use POSIX qw(strftime);
 use Readonly;
+use HTTP::Tiny;
+use Time::HiRes qw(sleep);
+use URI::Escape qw(uri_escape);
+use version;
 
 Readonly my %config => (
 	github_user => 'nigelhorne',
@@ -19,19 +28,25 @@ Readonly my %config => (
 	med_threshold => 90,
 	max_points => 10,	# Only display the last 10 commits in the coverage trend graph
 	cover_db => 'cover_db/cover.json',
-	output => 'cover_html/index.html'
+	output => 'cover_html/index.html',
+	max_retry => 3
 );
 
+# -------------------------------
+# Dependency correlation analysis
+# -------------------------------
+my $MAX_REPORTS_PER_GRADE = 20;	# safety rail
+my $ENABLE_DEP_ANALYSIS = 1;
+
 # Read and decode coverage data
-my $json_text = read_file($config{cover_db});
-my $data = decode_json($json_text);
+my $data = eval { decode_json(read_file($config{cover_db})) };
 
 my $coverage_pct = 0;
 my $badge_color = 'red';
 
 if(my $total_info = $data->{summary}{Total}) {
 	$coverage_pct = int($total_info->{total}{percentage} // 0);
-	$badge_color = $coverage_pct > 80 ? 'brightgreen' : $coverage_pct > 50 ? 'yellow' : 'red';
+	$badge_color = $coverage_pct > $config{med_threshold} ? 'brightgreen' : $coverage_pct > $config{low_threshold} ? 'yellow' : 'red';
 }
 
 Readonly my $coverage_badge_url => "https://img.shields.io/badge/coverage-${coverage_pct}%25-${badge_color}";
@@ -80,7 +95,7 @@ push @html, <<"HTML";
 		td.positive { color: green; font-weight: bold; }
 		td.negative { color: red; font-weight: bold; }
 		td.neutral { color: gray; }
-		// Show cursor points on the headers to show that they are clickable
+		/* Show cursor points on the headers to show that they are clickable */
 		th { background-color: #f2f2f2; cursor: pointer; }
 		th.sortable {
 			cursor: pointer;
@@ -99,6 +114,42 @@ push @html, <<"HTML";
 			display: inline-block;
 			vertical-align: middle;
 		}
+		tr.cpan-fail td {
+			background-color: #fdd;
+		}
+		tr.cpan-unknown td {
+			background-color: #eee;
+			color: #666;
+		}
+		.new-failure {
+			background: #c00;
+			color: #fff;
+			font-weight: bold;
+			padding: 2px 6px;
+			border-radius: 4px;
+			font-size: 0.85em;
+		}
+		.notice {
+			padding: 8px 12px;
+			margin: 10px 0;
+			border-radius: 4px;
+			font-size: 0.95em;
+		}
+		.notice strong {
+			font-weight: bold;
+		}
+		.notice.perl-version-cliff {
+			background-color: #fff3cd;   /* soft amber */
+			border: 1px solid #ffeeba;
+			color: #856404;
+		}
+		.notice.perl-version-cliff a {
+			color: #533f03;
+			text-decoration: underline;
+		}
+		.notice.perl-version-cliff a:hover {
+			text-decoration: none;
+		}
 	</style>
 </head>
 <body>
@@ -113,13 +164,13 @@ push @html, <<"HTML";
 <!-- Make the column headers clickable -->
 <thead>
 <tr>
-	<th class="sortable" onclick="sortTable(0)"><span class="label">File</span> <span class="arrow active">&#x25B2;</span></th>
-	<th class="sortable" onclick="sortTable(1)"><span class="label">Stmt</span> <span class="arrow">&#x25B2;</span></th>
-	<th class="sortable" onclick="sortTable(2)"><span class="label">Branch</span> <span class="arrow">&#x25B2;</span></th>
-	<th class="sortable" onclick="sortTable(3)"><span class="label">Cond</span> <span class="arrow">&#x25B2;</span></th>
-	<th class="sortable" onclick="sortTable(4)"><span class="label">Sub</span> <span class="arrow">&#x25B2;</span></th>
-	<th class="sortable" onclick="sortTable(5)"><span class="label">Total</span> <span class="arrow">&#x25B2;</span></th>
-	<th class="sortable" onclick="sortTable(6)"><span class="label">&Delta;</span> <span class="arrow">&#x25B2;</span></th>
+	<th class="sortable" onclick="sortTable(this, 0)"><span class="label">File</span> <span class="arrow active">&#x25B2;</span></th>
+	<th class="sortable" onclick="sortTable(this, 1)"><span class="label">Stmt</span> <span class="arrow">&#x25B2;</span></th>
+	<th class="sortable" onclick="sortTable(this, 2)"><span class="label">Branch</span> <span class="arrow">&#x25B2;</span></th>
+	<th class="sortable" onclick="sortTable(this, 3)"><span class="label">Cond</span> <span class="arrow">&#x25B2;</span></th>
+	<th class="sortable" onclick="sortTable(this, 4)"><span class="label">Sub</span> <span class="arrow">&#x25B2;</span></th>
+	<th class="sortable" onclick="sortTable(this, 5)"><span class="label">Total</span> <span class="arrow">&#x25B2;</span></th>
+	<th class="sortable" onclick="sortTable(this, 6)"><span class="label">&Delta;</span> <span class="arrow">&#x25B2;</span></th>
 </tr>
 </thead>
 
@@ -136,7 +187,7 @@ for my $hist_file (@history_files) {
 }
 
 # Load previous snapshot for delta comparison
-my @history = sort { $a cmp $b } bsd_glob("coverage_history/*.json");
+my @history = sort { $a cmp $b } @history_files;
 my $prev_data;
 
 if (@history >= 1) {
@@ -155,8 +206,15 @@ if ($prev_data) {
 	}
 }
 
-my $commit_sha = `git rev-parse HEAD`;
-chomp $commit_sha;
+# Check if we're in a git repository first
+unless (run_git('rev-parse', '--git-dir')) {
+	die 'Error: Not in a git repository or git is not available';
+}
+
+my $commit_sha = run_git('rev-parse', 'HEAD');
+unless (defined $commit_sha && $commit_sha =~ /^[0-9a-f]{40}$/i) {
+	die 'Error: Could not get valid git commit SHA';
+}
 my $github_base = "https://github.com/$config{github_user}/$config{github_repo}/blob/$commit_sha/";
 
 # Add rows
@@ -221,26 +279,29 @@ for my $file (sort keys %{$data->{summary}}) {
 		? sprintf('<a href="%s" class="icon-link" title="View source on GitHub">&#128269;</a>', $source_url)
 		: '<span class="disabled-icon" title="No coverage data">&#128269;</span>';
 
-	# Create the sparkline
-	# There's probably some duplication of code here
+	# Create the sparkline - limit to last N points like the main trend chart
 	my @file_history;
-	my @history_files = sort <coverage_history/*.json>;
 
-	my %history;
-	for my $hist_file (sort @history_files) {
+	# Get the last max_points history files (same as trend chart)
+	my @limited_history = (scalar(@history_files) > $config{max_points})
+		? @history_files[-$config{max_points} .. -1]
+		: @history_files;
+
+	# Use the already-cached historical data
+	for my $hist_file (sort @limited_history) {
 		my $json = $historical_cache{$hist_file};
-
-		$history{$hist_file} = $json;
+		next unless $json;	# Skip if not cached (shouldn't happen, but be safe)
 
 		if($json->{summary}{$file}) {
 			my $pct = $json->{summary}{$file}{total}{percentage} // 0;
 			push @file_history, sprintf('%.1f', $pct);
 		}
 	}
+
 	my $points_attr = join(',', @file_history);
 
 	push @html, sprintf(
-		qq{<tr class="%s"><td><a href="%s" title="View coverage line by line" target="_blank">%s</a> %s<canvas class="sparkline" width="80" height="20" data-points="$points_attr"></canvas></td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%s</td>%s</tr>\n},
+		qq{<tr class="%s"><td><a href="%s" title="View coverage line by line" target="_blank">%s</a> %s<canvas class="sparkline" width="80" height="20" data-points="$points_attr"></canvas></td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%s</td>%s</tr>},
 		$row_class, $html_file, $file, $source_link,
 		$info->{statement}{percentage} // 0,
 		$info->{branch}{percentage} // 0,
@@ -255,7 +316,7 @@ for my $file (sort keys %{$data->{summary}}) {
 my $avg_coverage = $total_files ? int($total_coverage / $total_files) : 0;
 
 push @html, sprintf(
-	qq{<tr class="summary-row nosort"><td colspan="2"><strong>Summary</strong></td><td colspan="2">%d files</td><td colspan="3">Avg: %d%%, Low: %d</td></tr>\n},
+	qq{<tr class="summary-row nosort"><td colspan="2"><strong>Summary</strong></td><td colspan="2">%d files</td><td colspan="3">Avg: %d%%, Low: %d</td></tr>},
 	$total_files, $avg_coverage, $low_coverage_count
 );
 
@@ -265,7 +326,7 @@ if (my $total_info = $data->{summary}{Total}) {
 	my $class = $total_pct > 80 ? 'high' : $total_pct > 50 ? 'med' : 'low';
 
 	push @html, sprintf(
-		qq{<tr class="%s nosort"><td><strong>Total</strong></td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td colspan="2"><strong>%.1f</strong></td></tr>\n},
+		qq{<tr class="%s nosort"><td><strong>Total</strong></td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td colspan="2"><strong>%.1f</strong></td></tr>},
 		$class,
 		$total_info->{statement}{percentage} // 0,
 		$total_info->{branch}{percentage} // 0,
@@ -273,11 +334,6 @@ if (my $total_info = $data->{summary}{Total}) {
 		$total_info->{subroutine}{percentage} // 0,
 		$total_pct
 	);
-}
-
-my $timestamp = 'Unknown';
-if (my $stat = stat($config{cover_db})) {
-	$timestamp = strftime('%Y-%m-%d %H:%M:%S', localtime($stat->mtime));
 }
 
 Readonly my $commit_url => "https://github.com/$config{github_user}/$config{github_repo}/commit/$commit_sha";
@@ -294,31 +350,33 @@ foreach my $file (sort @history_files) {
 
 	my $pct = $json->{summary}{Total}{total}{percentage} // 0;
 	my ($date) = $file =~ /(\d{4}-\d{2}-\d{2})/;
-	push @trend_points, { date => $date, coverage => sprintf('%.1f', $pct) };
+	if(defined($date)) {
+		push @trend_points, { date => $date, coverage => sprintf('%.1f', $pct) };
+	}
 }
 
 # Inject chart if we have data
 my %commit_times;
-open(my $log, '-|', 'git log --all --pretty=format:"%H %h %ci"') or die "Can't run git log: $!";
-while (<$log>) {
-	chomp;
-	my ($full_sha, $short_sha, $datetime) = split ' ', $_, 3;
-	$commit_times{$short_sha} = $datetime;
-}
-close $log;
-
-my %commit_messages;
-open($log, '-|', 'git log --pretty=format:"%h %s"') or die "Can't run git log: $!";
-while (<$log>) {
-	chomp;
-	my ($short_sha, $message) = /^(\w+)\s+(.*)$/;
-	if($message =~ /^Merge branch /) {
-		delete $commit_times{$short_sha};
-	} else {
-		$commit_messages{$short_sha} = $message;
+my $log_output = run_git('log', '--all', '--pretty=format:%H %h %ci');
+if ($log_output) {
+	for my $line (split /\n/, $log_output) {
+		my ($full_sha, $short_sha, $datetime) = split ' ', $line, 3;
+		$commit_times{$short_sha} = $datetime if $short_sha;
 	}
 }
-close $log;
+
+my %commit_messages;
+$log_output = run_git('log', '--pretty=format:%h %s');
+if ($log_output) {
+	for my $line (split /\n/, $log_output) {
+		my ($short_sha, $message) = $line =~ /^(\w+)\s+(.*)$/;
+		if ($message && $message =~ /^Merge branch /) {
+			delete $commit_times{$short_sha};
+		} else {
+			$commit_messages{$short_sha} = $message if $message;
+		}
+	}
+}
 
 # Collect data points from non-merge commits
 my @data_points_with_time;
@@ -334,9 +392,18 @@ foreach my $file (reverse sort @history_files) {
 	next unless $commit_messages{$sha};	# Skip merge commits
 
 	my $timestamp = $commit_times{$sha} // strftime('%Y-%m-%dT%H:%M:%S', localtime((stat($file))->mtime));
-	$timestamp =~ s/ /T/;
-	$timestamp =~ s/\s+([+-]\d{2}):?(\d{2})$/$1:$2/;	# Fix space before timezone
-	$timestamp =~ s/ //g;	# Remove any remaining spaces
+
+	# Git log returns format like: "2024-01-15 14:30:45 -0500" or "2024-01-15 14:30:45 +0000"
+	# We need ISO 8601 format: "2024-01-15T14:30:45-05:00"
+
+	# Replace space between date and time with 'T'
+	$timestamp =~ s/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})/$1T$2/;
+
+	# Fix timezone format: convert "-0500" to "-05:00" or " -05:00" to "-05:00"
+	$timestamp =~ s/\s*([+-])(\d{2}):?(\d{2})$/$1$2:$3/;
+
+	# Remove any remaining spaces (safety cleanup)
+	$timestamp =~ s/\s+//g;
 
 	my $pct = $json->{summary}{Total}{total}{percentage} // 0;
 	my $color = 'gray';	# Will be set properly after sorting
@@ -367,7 +434,8 @@ foreach my $point (@data_points_with_time) {
 
 	my $color = $delta > 0 ? 'green' : $delta < 0 ? 'red' : 'gray';
 
-	push @data_points, qq{{ x: "$point->{timestamp}", y: $point->{pct}, delta: $delta, url: "$point->{url}", label: "$point->{timestamp}", pointBackgroundColor: "$color", comment: "$point->{comment}" }};
+	my $comment = js_escape($point->{comment});
+	push @data_points, qq{{ x: "$point->{timestamp}", y: $point->{pct}, delta: $delta, url: "$point->{url}", label: "$point->{timestamp}", pointBackgroundColor: "$color", comment: "$comment" }};
 }
 
 my $js_data = join(",\n", @data_points);
@@ -410,6 +478,9 @@ function linearRegression(data) {
 	const sumXY = xs.reduce((acc, val, i) => acc + val * ys[i], 0);
 	const sumX2 = xs.reduce((acc, val) => acc + val * val, 0);
 
+	if (n < 2 || (n * sumX2 - sumX * sumX) === 0) {
+		return [];
+	}
 	const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
 	const intercept = (sumY - slope * sumX) / n;
 
@@ -545,35 +616,30 @@ if (resetBtn) {
 	});
 }
 
-function sortTable(n) {
-	const table = document.querySelector("table");
-	if (!table || !table.tBodies || !table.tBodies[0]) return;
+function sortTable(th, colIndex) {
+	const table = th.closest("table");
+	if (!table || !table.tBodies.length) return;
 
-	// All rows in tbody
-	const allBodyRows = Array.from(table.tBodies[0].rows);
+	const tbody = table.tBodies[0];
+	const rows = Array.from(tbody.rows);
 
-	// Separate normal (sortable) rows and fixed (nosort) rows.
-	const normalRows = allBodyRows.filter(r => !r.classList.contains("nosort"));
-	const fixedRows = allBodyRows.filter(r => r.classList.contains("nosort"));
-
-	// Decide numeric vs text column (column 0 = File => text)
-	const isNumeric = n > 0;
-
-	// Determine ascending/descending toggle logic
 	const prevCol = table.getAttribute("data-sort-col");
 	const prevOrder = table.getAttribute("data-sort-order") || "desc";
-	const asc = (prevCol != n) ? true : (prevOrder === "desc");
+	const asc = (prevCol != colIndex) ? true : (prevOrder === "desc");
+
+	const isNumeric = colIndex === 0; // Date column
+
+	const normalRows = rows.filter(r => !r.classList.contains("nosort"));
+	const fixedRows = rows.filter(r => r.classList.contains("nosort"));
 
 	normalRows.sort((a, b) => {
-		let x = (a.cells[n] && a.cells[n].innerText) ? a.cells[n].innerText.trim() : "";
-		let y = (b.cells[n] && b.cells[n].innerText) ? b.cells[n].innerText.trim() : "";
+		let x = a.cells[colIndex]?.innerText.trim() || "";
+		let y = b.cells[colIndex]?.innerText.trim() || "";
 
 		if (isNumeric) {
-			// Remove non-number characters (arrows, percent signs, bullets, etc.)
-			x = parseFloat(x.replace(/[^0-9.\-+eE]/g, '')) || 0;
-			y = parseFloat(y.replace(/[^0-9.\-+eE]/g, '')) || 0;
+			x = Date.parse(x) || 0;
+			y = Date.parse(y) || 0;
 		} else {
-			// Text compare (case-insensitive)
 			x = x.toLowerCase();
 			y = y.toLowerCase();
 		}
@@ -583,30 +649,28 @@ function sortTable(n) {
 		return 0;
 	});
 
-	// Reattach rows: sorted normalRows first, then fixedRows (keeps summary/total last)
-	normalRows.forEach(r => table.tBodies[0].appendChild(r));
-	fixedRows.forEach(r => table.tBodies[0].appendChild(r));
+	normalRows.forEach(r => tbody.appendChild(r));
+	fixedRows.forEach(r => tbody.appendChild(r));
 
-	// Update header arrows
+	// Update arrows
 	const headers = table.tHead.rows[0].cells;
 	for (let i = 0; i < headers.length; i++) {
 		const arrow = headers[i].querySelector(".arrow");
 		if (!arrow) continue;
-		if (i === n) {
-			// active column: bold arrow, direction ▲ or ▼
+
+		if (i === colIndex) {
 			arrow.textContent = asc ? "▲" : "▼";
 			arrow.classList.add("active");
 		} else {
-			// inactive column: always ▲, dimmed
 			arrow.textContent = "▲";
 			arrow.classList.remove("active");
 		}
 	}
 
-	// Remember state (so clicking same column toggles)
-	table.setAttribute("data-sort-col", n);
+	table.setAttribute("data-sort-col", colIndex);
 	table.setAttribute("data-sort-order", asc ? "asc" : "desc");
 }
+
 
 // Initial display.
 // The table has been set up sorted in ascending order on the filename; reflect that in the GUI
@@ -680,15 +744,576 @@ function refresh(){
 </script>
 HTML
 
+push @html, '<p><center>Use mouse wheel or pinch to zoom; drag to pan</center></p>';
+
+# -------------------------------
+# Add CPAN Testers failing reports table
+# -------------------------------
+my $dist_name = $config{github_repo};	# e.g., App-Test-Generator
+my $cpan_api = "https://api.cpantesters.org/v3/summary/"
+		. uri_escape($dist_name);
+
+my $http = HTTP::Tiny->new(agent => 'cpan-coverage-html/1.0', timeout => 15);
+
+my $retry = 0;
+my $success = 0;
+
+my $res;
+
+# Try a number of times because the cpantesters website can get overloaded
+while($retry < $config{max_retry}) {
+	$res = $http->get($cpan_api);
+	if($res->{success}) {
+		$success = 1;
+		last;
+	}
+	$retry++;
+	sleep(2 ** $retry);
+}
+
+my $version;	# current version
+my $prev_version;	# may be undef
+
+if($success) {
+	my $releases = eval { decode_json($res->{content}) };
+	my @versions;
+
+	foreach my $release (@{$releases}) {
+		next unless defined $release->{version};
+		push @versions, $release->{version};
+	}
+
+	@versions = sort { version->parse($b) <=> version->parse($a) } @versions;
+
+	$version = $versions[0];	# current
+	$prev_version = $versions[1];	# previous (may be undef)
+
+	# push @html, "<p>CPAN Release: $version</p>";
+} else {
+	push @html, "<p><a href=\"$cpan_api\">$cpan_api</a>: $res->{status} $res->{reason}</p>";
+}
+
+# $version ||= 'latest';
+my @fail_reports;
+my @pass_reports;
+if($version) {
+	@fail_reports = fetch_reports_by_grades(
+		$dist_name,
+		$version,
+		'fail',
+		'unknown',
+	);
+	@pass_reports = fetch_reports_by_grades(
+		$dist_name,
+		$version,
+		'pass',
+	);
+
+	if(scalar(@fail_reports)) {
+		push @html, "<h2>CPAN Testers Failures for $dist_name $version</h2>";
+		my @prev_fail_reports;
+		if ($prev_version) {
+			@prev_fail_reports = fetch_reports_by_grades(
+				$dist_name,
+				$prev_version,
+				'fail',
+				'unknown',
+			);
+		}
+
+		if ($ENABLE_DEP_ANALYSIS) {
+			my %dep_stats;
+
+			# Split GUIDs by grade
+			my @fail_guids = map { $_->{guid} } grep { ($_->{grade} // '') eq 'FAIL' } @fail_reports;
+			my @unknown_guids = map { $_->{guid} } grep { ($_->{grade} // '') eq 'UNKNOWN' } @fail_reports;
+
+			# FAIL reports
+			aggregate_dependency_stats(
+				guids => \@fail_guids,
+				grade => 'fail',
+				stats_ref => \%dep_stats,
+			);
+
+			# UNKNOWN reports (optional but useful)
+			aggregate_dependency_stats(
+				guids => \@unknown_guids,
+				grade => 'unknown',
+				stats_ref => \%dep_stats,
+			);
+
+			my @suspects = find_suspected_dependencies(\%dep_stats);
+
+			if (@suspects) {
+				push @html, '<h3>Suspected Dependency Interactions</h3>';
+				push @html, '<ul>';
+
+				for my $s (@suspects) {
+					my $line = sprintf(
+						'%s — FAIL: %d%s (%s)',
+						$s->{module},
+						$s->{fail},
+						defined $s->{pass} ? ", PASS: $s->{pass}" : '',
+						$s->{reason},
+					);
+					push @html, "<li>$line</li>";
+				}
+
+				push @html, '</ul>';
+			}
+			my %dep_versions;
+
+			collect_dependency_versions(
+				reports => \@fail_reports,
+				grade => 'fail',
+				store => \%dep_versions,
+			);
+
+			collect_dependency_versions(
+				reports => \@pass_reports,
+				grade => 'pass',
+				store => \%dep_versions,
+			);
+
+			my @cliffs = detect_version_cliffs(\%dep_versions);
+
+			if (@cliffs) {
+				push @html, '<h3>Dependency Version Cliffs</h3>';
+				push @html, '<ul>';
+
+				for my $c (@cliffs) {
+					push @html, sprintf(
+						'<li><b>%s</b>: %s</li>',
+						$c->{module},
+						$c->{message},
+					);
+				}
+
+				push @html, '</ul>';
+			}
+
+			my $perl_cliff = detect_perl_version_cliff(
+				\@fail_reports,
+				\@pass_reports,
+			);
+
+			if ($perl_cliff) {
+				my $delta = perldelta_url($perl_cliff->{passes_from});
+
+				push @html,
+					'<p class="notice perl-version-cliff">',
+					sprintf(
+						'Fails on Perl &leq; %s; passes on Perl &geq; %s. ',
+						$perl_cliff->{fails_up_to},
+						$perl_cliff->{passes_from},
+					),
+					sprintf(
+						'<a href="%s" target="_blank">See perldelta for this release</a>',
+						$delta,
+					),
+					'</p>';
+			}
+		}
+
+		push @html, <<"HTML";
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+	const toggleFail = document.getElementById('toggleFail');
+	const toggleUnknown = document.getElementById('toggleUnknown');
+	const toggleNew = document.getElementById('toggleNew');
+
+	function update() {
+		if (toggleFail) {
+			document.querySelectorAll('tr.cpan-fail')
+				.forEach(r => r.style.display = toggleFail.checked ? '' : 'none');
+		}
+		if (toggleUnknown) {
+			document.querySelectorAll('tr.cpan-unknown')
+				.forEach(r => r.style.display = toggleUnknown.checked ? '' : 'none');
+		}
+		if (toggleNew) {
+			document.querySelectorAll('tr').forEach(row => {
+				const cell = row.querySelector('.new-failure');
+				if (!cell) return;
+				row.style.display = toggleNew.checked ? '' : 'none';
+			});
+		}
+	}
+
+	[toggleFail, toggleUnknown, toggleNew].forEach(cb => {
+		if (cb) cb.addEventListener('change', update);
+	});
+
+	update();
+});
+document.addEventListener("DOMContentLoaded", () => {
+	const th = document.querySelector("table.sortable-table th");
+	if (th) sortTable(th, 0);
+});
+</script>
+
+<p><em>Showing one failure per OS/Perl combination.</em></p>
+<div style="margin-bottom: 0.5em;">
+	<label>
+		<input type="checkbox" id="toggleFail" checked>
+		FAIL
+	</label>
+	<label style="margin-left: 1em;">
+		<input type="checkbox" id="toggleUnknown">
+		UNKNOWN
+	</label>
+	<label style="margin-left: 1em;">
+		<input type="checkbox" id="toggleNew">
+		NEW only
+	</label>
+</div>
+
+<table class="sortable-table" data-sort-col="0" data-sort-order="asc">
+<thead>
+<tr>
+	<th class="sortable" onclick="sortTable(this, 0)">
+		<span class="label">Date</span> <span class="arrow">&#x25B2;</span>
+	</th>
+	<th class="sortable" onclick="sortTable(this, 1)">
+		<span class="label">OS</span> <span class="arrow">&#x25B2;</span>
+	</th>
+	<th class="sortable" onclick="sortTable(this, 2)">
+		<span class="label">Perl</span> <span class="arrow">&#x25B2;</span>
+	</th>
+	<th class="sortable" onclick="sortTable(this, 3)">
+		<span class="label">Reporter</span> <span class="arrow">&#x25B2;</span>
+	</th>
+	<th class="sortable" onclick="sortTable(this, 4)">
+		<span class="label">New</span> <span class="arrow">&#x25B2;</span>
+	</th>
+	<th>Report</th>
+</tr>
+</thead>
+<tbody>
+HTML
+
+		my %best;
+
+		for my $r (@fail_reports) {
+			my $os = $r->{osname} // 'unknown';
+			my $perl = $r->{perl} // 'unknown';
+			my $grade = lc($r->{grade} // 'unknown');
+
+			my $key = join '|', $os, $perl, $grade;
+
+			if(!exists $best{$key} || (!$best{$key}{guid} && $r->{guid})) {
+				$best{$key} = $r;
+			}
+		}
+
+		my @deduped = values %best;
+
+		my %prev_fail_set;
+
+		for my $r (@prev_fail_reports) {
+			my $key = join '|', $r->{osname} // '', $r->{perl} // '', $r->{arch} // '';
+
+			$prev_fail_set{$key} = 1;
+		}
+
+		for my $r (@deduped) {
+			my $date = $r->{date} // '';
+			my $perl = $r->{perl} // '';
+			my $os = $r->{osname} // '';
+			my $grade = lc($r->{grade} // 'unknown');
+			my $row_class = "cpan-$grade";	# cpan-fail or cpan-unknown
+			my $reporter = $r->{reporter} // '';
+			$reporter =~ s/"//g;
+			$reporter =~ s/<.+>//g;
+			$reporter =~ s/\s+$//g;
+			my $guid = $r->{guid} // '';
+			my $url = $guid ? "https://www.cpantesters.org/cpan/report/$guid" : '#';
+
+			my $is_new = !$prev_fail_set{ join '|', $r->{osname} // '', $r->{perl} // '', $r->{arch} // '' };
+			my $new_html = $is_new ? '<span class="new-failure">NEW</span>' : '';
+
+			push @html, sprintf(
+				qq{<tr class="%s"><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>
+				<td><a href="%s" target="_blank">View</a></td></tr>},
+				$row_class,
+				$date,
+				$os,
+				$perl,
+				$reporter,
+				$new_html,
+				$url
+			);
+		}
+
+		push @html, '</tbody></table>';
+	} else {
+		# @fail_reports is empty
+		push @html, "<p>No CPAN Testers failures reported for $dist_name $version.</p>";
+	}
+} elsif($res->{status} == 404) {	# 404 means no fail reports
+	# push @html, "<A HREF=\"$cpan_api\">$cpan_api</A>";
+	push @html, "<p>No CPAN Testers failures reported for $dist_name $version.</p>";
+} else {
+	push @html, "<a href=\"$cpan_api\">$cpan_api</a>: $res->{status} $res->{reason}";
+}
+
+my $timestamp = 'Unknown';
+if (my $stat = stat($config{cover_db})) {
+	$timestamp = strftime('%Y-%m-%d %H:%M:%S', localtime($stat->mtime));
+}
+
 push @html, <<"HTML";
 <footer>
-	<p><span style="margin-left:8px;color:#666;font-size:0.9em;">Use mouse wheel or pinch to zoom; drag to pan</span></p>
 	<p>Project: <a href="https://github.com/$config{github_user}/$config{github_repo}">$config{github_repo}</a></p>
 	<p><em>Last updated: $timestamp - <a href="$commit_url">commit <code>$short_sha</code></a></em></p>
 </footer>
+
 </body>
 </html>
 HTML
 
 # Write to index.html
 write_file($config{output}, join("\n", @html));
+
+# Safe git command execution
+sub run_git {
+	my @cmd = @_;
+	my ($out, $err);
+	run3 ['git', @cmd], \undef, \$out, \$err;
+	return unless $? == 0;
+	chomp $out;
+	return $out;
+}
+
+sub js_escape {
+	my $str = $_[0];
+	$str =~ s/\\/\\\\/g;
+	$str =~ s/"/\\"/g;
+	$str =~ s/\n/\\n/g;
+	return $str;
+}
+
+sub fetch_reports_by_grades {
+	my ($dist, $version, @grades) = @_;
+
+	my %seen;
+	my @reports;
+
+	for my $grade (@grades) {
+		my $url = 'https://api.cpantesters.org/v3/summary/'
+			. uri_escape($dist)
+			. '/' . uri_escape($version)
+			. "?grade=$grade";
+
+		my $res = $http->get($url);
+		next unless $res->{success};
+
+		my $arr = eval { decode_json($res->{content}) };
+		next unless ref $arr eq 'ARRAY';
+
+		for my $r (@$arr) {
+			my $key = join '|',
+				$r->{osname} // '',
+				$r->{perl} // '',
+				$r->{arch} // '';
+
+			next if $seen{$key}++;
+			push @reports, $r;
+		}
+	}
+
+	return @reports;
+}
+
+sub fetch_report_html {
+	my ($guid) = @_;
+	return unless $guid;
+
+	my $url = "https://www.cpantesters.org/cpan/report/$guid";
+	v("    fetching report HTML $guid");
+
+	my $res = $http->get($url);
+	return unless $res->{success};
+
+	return $res->{content};
+}
+
+sub aggregate_dependency_stats {
+	my (%args) = @_;
+
+	my $guids = $args{guids} || [];
+	my $grade = $args{grade} || 'fail';
+	my $stats = $args{stats_ref} || {};
+
+	my $count = 0;
+
+	for my $guid (@$guids) {
+		last if $count++ >= $MAX_REPORTS_PER_GRADE;
+
+		my $html = fetch_report_html($guid) or next;
+		my $mods = extract_installed_modules($html);
+
+		for my $m (keys %$mods) {
+			$stats->{$m}{$grade}++;
+			$stats->{$m}{versions}{ $mods->{$m} }{$grade}++;
+		}
+	}
+
+	return $stats;
+}
+
+sub extract_installed_modules {
+	my ($html) = @_;
+	my %mods;
+
+	return \%mods unless $html;
+
+	while ($html =~ /^\s*([A-Z]\w*(?:::\w+)*)\s+v?([\d._]+)/mg) {
+		my ($module, $version) = ($1, $2);
+
+		# skip obvious noise
+		next if $module =~ /^(Perl|OS|Reporter|Tester)$/;
+
+		$mods{$module} = $version;
+	}
+
+	return \%mods;
+}
+
+sub find_suspected_dependencies {
+	my ($stats) = @_;
+	my @suspects;
+
+	for my $mod (sort keys %$stats) {
+		my $fail = $stats->{$mod}{fail} || 0;
+		my $pass = $stats->{$mod}{pass} || 0;
+
+		next unless $fail >= 2;
+
+		# signal 1: fail-only
+		if ($fail && !$pass) {
+			push @suspects, {
+				module => $mod,
+				fail => $fail,
+				pass => 0,
+				reason => 'Seen only in FAIL reports',
+			};
+			next;
+		}
+
+		# signal 2: strong skew
+		my $ratio = $fail / ($fail + $pass);
+		if ($fail >= 3 && $ratio >= 0.7) {
+			push @suspects, {
+				module => $mod,
+				fail => $fail,
+				pass => $pass,
+				ratio => sprintf("%.2f", $ratio),
+				reason => 'Strong FAIL skew',
+			};
+		}
+	}
+
+	return @suspects;
+}
+
+sub collect_dependency_versions {
+	my (%args) = @_;
+
+	my $reports = $args{reports};	# arrayref of report hashrefs
+	my $dep_store = $args{store};	# hashref
+	my $grade = lc($args{grade});	# fail / pass / unknown
+
+	for my $r (@$reports) {
+		my $pr = $r->{prereqs} or next;
+		my $rt = $pr->{runtime}{requires} or next;
+
+		while (my ($mod, $ver) = each %$rt) {
+			next unless defined $ver && $ver =~ /\d/;
+			push @{ $dep_store->{$mod}{$grade} }, $ver;
+		}
+	}
+}
+
+sub detect_version_cliffs {
+	my ($deps) = @_;
+	my @suspects;
+
+	for my $mod (sort keys %$deps) {
+		my $d = $deps->{$mod};
+
+		next unless $d->{fail} && $d->{pass};
+
+		my @fail = sort { version->parse($a) <=> version->parse($b) } @{ $d->{fail} };
+		my @pass = sort { version->parse($a) <=> version->parse($b) } @{ $d->{pass} };
+
+		my $fail_min = version->parse($fail[0]);
+		my $pass_max = version->parse($pass[-1]);
+
+		# Classic cliff: PASS versions entirely below FAIL versions
+		if ($pass_max < $fail_min) {
+			push @suspects, {
+				module => $mod,
+				type => 'hard',
+				message => sprintf(
+					'PASS ≤ %s, FAIL ≥ %s',
+					$pass[-1],
+					$fail[0],
+				),
+			};
+			next;
+		}
+
+		# Soft cliff: FAIL skewed higher than PASS
+		my $fail_median = $fail[ int(@fail / 2) ];
+		my $pass_median = $pass[ int(@pass / 2) ];
+
+		if (version->parse($fail_median) > version->parse($pass_median)) {
+			push @suspects, {
+				module => $mod,
+				type => 'soft',
+				message => sprintf(
+					'FAIL median %s &gt; PASS median %s',
+					$fail_median,
+					$pass_median,
+				),
+			};
+		}
+	}
+
+	return @suspects;
+}
+
+sub detect_perl_version_cliff {
+	my ($fail_reports, $pass_reports) = @_;
+
+	my @fail_perls = extract_perl_versions($fail_reports);
+	my @pass_perls = extract_perl_versions($pass_reports);
+
+	return unless @fail_perls && @pass_perls;
+
+	my $max_fail = (sort { $b <=> $a } @fail_perls)[0];
+	my $min_pass = (sort { $a <=> $b } @pass_perls)[0];
+
+	return unless $min_pass > $max_fail;
+
+	return { fails_up_to => $max_fail, passes_from => $min_pass };
+}
+
+sub extract_perl_versions {
+	my ($reports) = @_;
+	my @v;
+
+	for my $r (@$reports) {
+		next unless $r->{perl};
+		push @v, version->parse($r->{perl});
+	}
+
+	return @v;
+}
+
+sub perldelta_url {
+	my ($v) = @_;
+	my ($maj, $min) = $v =~ /^v?(\d+)\.(\d+)/;
+	return "https://perldoc.perl.org/perl${maj}${min}0delta";
+}
