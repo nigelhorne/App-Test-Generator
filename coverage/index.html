@@ -39,7 +39,7 @@
 		td.positive { color: green; font-weight: bold; }
 		td.negative { color: red; font-weight: bold; }
 		td.neutral { color: gray; }
-		// Show cursor points on the headers to show that they are clickable
+		/* Show cursor points on the headers to show that they are clickable */
 		th { background-color: #f2f2f2; cursor: pointer; }
 		th.sortable {
 			cursor: pointer;
@@ -58,6 +58,42 @@
 			display: inline-block;
 			vertical-align: middle;
 		}
+		tr.cpan-fail td {
+			background-color: #fdd;
+		}
+		tr.cpan-unknown td {
+			background-color: #eee;
+			color: #666;
+		}
+		.new-failure {
+			background: #c00;
+			color: #fff;
+			font-weight: bold;
+			padding: 2px 6px;
+			border-radius: 4px;
+			font-size: 0.85em;
+		}
+		.notice {
+			padding: 8px 12px;
+			margin: 10px 0;
+			border-radius: 4px;
+			font-size: 0.95em;
+		}
+		.notice strong {
+			font-weight: bold;
+		}
+		.notice.perl-version-cliff {
+			background-color: #fff3cd;   /* soft amber */
+			border: 1px solid #ffeeba;
+			color: #856404;
+		}
+		.notice.perl-version-cliff a {
+			color: #533f03;
+			text-decoration: underline;
+		}
+		.notice.perl-version-cliff a:hover {
+			text-decoration: none;
+		}
 	</style>
 </head>
 <body>
@@ -65,35 +101,30 @@
 	<a href="https://github.com/nigelhorne/App-Test-Generator">
 		<img src="https://img.shields.io/github/stars/nigelhorne/App-Test-Generator?style=social" alt="GitHub stars">
 	</a>
-	<img src="https://img.shields.io/badge/coverage-60%25-yellow" alt="Coverage badge">
+	<img src="https://img.shields.io/badge/coverage-60%25-red" alt="Coverage badge">
 </div>
 <h1>App::Test::Generator</h1><h2>Coverage Report</h2>
 <table data-sort-col="0" data-sort-order="asc">
 <!-- Make the column headers clickable -->
 <thead>
 <tr>
-	<th class="sortable" onclick="sortTable(0)"><span class="label">File</span> <span class="arrow active">&#x25B2;</span></th>
-	<th class="sortable" onclick="sortTable(1)"><span class="label">Stmt</span> <span class="arrow">&#x25B2;</span></th>
-	<th class="sortable" onclick="sortTable(2)"><span class="label">Branch</span> <span class="arrow">&#x25B2;</span></th>
-	<th class="sortable" onclick="sortTable(3)"><span class="label">Cond</span> <span class="arrow">&#x25B2;</span></th>
-	<th class="sortable" onclick="sortTable(4)"><span class="label">Sub</span> <span class="arrow">&#x25B2;</span></th>
-	<th class="sortable" onclick="sortTable(5)"><span class="label">Total</span> <span class="arrow">&#x25B2;</span></th>
-	<th class="sortable" onclick="sortTable(6)"><span class="label">&Delta;</span> <span class="arrow">&#x25B2;</span></th>
+	<th class="sortable" onclick="sortTable(this, 0)"><span class="label">File</span> <span class="arrow active">&#x25B2;</span></th>
+	<th class="sortable" onclick="sortTable(this, 1)"><span class="label">Stmt</span> <span class="arrow">&#x25B2;</span></th>
+	<th class="sortable" onclick="sortTable(this, 2)"><span class="label">Branch</span> <span class="arrow">&#x25B2;</span></th>
+	<th class="sortable" onclick="sortTable(this, 3)"><span class="label">Cond</span> <span class="arrow">&#x25B2;</span></th>
+	<th class="sortable" onclick="sortTable(this, 4)"><span class="label">Sub</span> <span class="arrow">&#x25B2;</span></th>
+	<th class="sortable" onclick="sortTable(this, 5)"><span class="label">Total</span> <span class="arrow">&#x25B2;</span></th>
+	<th class="sortable" onclick="sortTable(this, 6)"><span class="label">&Delta;</span> <span class="arrow">&#x25B2;</span></th>
 </tr>
 </thead>
 
 <tbody>
 
-<tr class="med"><td><a href="bin-fuzz-harness-generator.html" title="View coverage line by line" target="_blank">bin/fuzz-harness-generator</a> <a href="https://github.com/nigelhorne/App-Test-Generator/blob/bfbfe8be9c478159b13bf3d07811f17d36b0da69/bin/fuzz-harness-generator" class="icon-link" title="View source on GitHub">&#128269;</a><canvas class="sparkline" width="80" height="20" data-points="74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8"></canvas></td><td>84.6</td><td>66.7</td><td>47.6</td><td>100.0</td><td><span class="coverage-badge badge-warn" title="Moderate coverage">74.8%</span></td><td class="neutral" title="Previous: 74.8%">&#9679; 0.0%</td></tr>
-
-<tr class="low"><td><a href="blib-lib-App-Test-Generator-pm.html" title="View coverage line by line" target="_blank">blib/lib/App/Test/Generator.pm</a> <a href="https://github.com/nigelhorne/App-Test-Generator/blob/bfbfe8be9c478159b13bf3d07811f17d36b0da69/blib/lib/App/Test/Generator.pm" class="icon-link" title="View source on GitHub">&#128269;</a><canvas class="sparkline" width="80" height="20" data-points="53.5,53.5,52.7,53.5,52.7,52.7,53.5,52.7,53.5,53.5,53.5,53.5,52.7,55.2,55.0,55.2,55.2,52.8,54.8,13.4,14.2,14.2,14.2,14.2,13.4,14.2,13.3,13.4,11.3,11.3,13.0,11.3,13.0,13.0,11.0,11.2,10.9,11.1,11.0,10.9,11.0,11.2,10.9,10.9,11.2,10.9,10.5,10.9,10.5,10.9,10.9,10.9,11.7,64.9,64.1,13.0,64.1,64.1,64.1,65.0,64.1,64.1,64.1,64.1,64.1,66.9,66.9,66.9,66.9,66.9,67.2,67.2,66.9,67.2,67.2,68.0,68.0,66.9,66.2,67.7,68.0,68.0,66.5,66.2,66.5,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,66.2,65.4,65.4,65.4,65.4,65.4,64.1,64.2,64.1,64.2,64.1,64.1,63.1,64.1,64.1,63.1,63.1,63.1,63.1,62.6,62.6,63.1,62.6,62.6,62.6,62.6,62.6,62.6,61.0,61.0,62.6,62.6,60.9,62.6,61.0,61.0,60.4,61.0,60.4,60.4,61.0,61.0,60.4,60.4,60.4,60.4,60.4,60.8,58.8,67.6,60.5,65.7,61.1,67.6,59.9,60.1,64.7,60.6,60.4,67.6,67.6,67.6,67.6,66.3,66.7,66.3,66.3,67.6,67.6,66.5,66.5,66.5,66.5,66.5,66.5,66.5,66.6,66.6,66.5,66.5,66.4,66.3,66.6,66.6,66.6,66.6,66.6,61.7,61.7,61.7,55.8,55.8,62.4,56.0,55.8,63.1,61.7,55.1,55.8,55.8,55.1,55.8,55.6,55.8,55.1,55.1,55.1,55.1,55.6,55.0,55.1,55.1,55.1,55.1,55.1,55.1,55.8,55.8,57.0,57.0,55.8,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.0,57.1,57.0,57.1,57.1,57.1,57.0,57.0,57.0,57.0,57.1,57.2,57.2,57.2,57.2,57.5,57.5,57.5,57.5,57.5,57.5,57.5,57.5,57.5,57.5,57.7,57.7,57.7,57.7,57.7,57.7,57.7,57.7,57.7,57.7,57.7,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.6,57.5,57.6,57.5,57.5,57.6,57.5,57.5,57.6,57.6,57.5,57.5,57.5,57.5,57.5,57.5,57.5,57.5,57.1,57.5,57.1,57.2,57.2,57.2,57.2,57.2,57.2,57.2,57.2,57.2,57.2,57.2,57.2,57.2,57.2,57.2,57.2,57.2,57.2,57.2,57.3,57.3,57.2,57.2,57.2,57.2,57.2,57.2,57.2,57.2,56.5,57.2,56.5,56.5,56.5,57.2,56.5,56.5,56.5,56.5,56.5,56.5,56.5,56.5,56.4,56.4,56.3,56.3,56.3,56.3,56.3,56.3,56.3,56.3,56.3,56.3,56.3,56.3,56.3,56.3,56.3,56.3,56.3,56.3,59.0,59.0,58.9,59.0,58.8,59.0,59.0,59.0,59.0,59.0,59.0,59.0,59.0,59.0,59.0,59.0,59.0,59.0,59.0,59.0"></canvas></td><td>67.0</td><td>50.7</td><td>44.0</td><td>77.4</td><td><span class="coverage-badge badge-bad" title="Needs improvement">59.0%</span></td><td class="neutral" title="Previous: 59.0%">&#9679; 0.0%</td></tr>
-
-<tr class="med"><td><a href="blib-lib-App-Test-Generator-Template-pm.html" title="View coverage line by line" target="_blank">blib/lib/App/Test/Generator/Template.pm</a> <a href="https://github.com/nigelhorne/App-Test-Generator/blob/bfbfe8be9c478159b13bf3d07811f17d36b0da69/blib/lib/App/Test/Generator/Template.pm" class="icon-link" title="View source on GitHub">&#128269;</a><canvas class="sparkline" width="80" height="20" data-points="89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7"></canvas></td><td>100.0</td><td>50.0</td><td>33.3</td><td>100.0</td><td><span class="coverage-badge badge-warn" title="Moderate coverage">89.7%</span></td><td class="neutral" title="Previous: 89.7%">&#9679; 0.0%</td></tr>
-
+<tr class="med"><td><a href="bin-fuzz-harness-generator.html" title="View coverage line by line" target="_blank">bin/fuzz-harness-generator</a> <a href="https://github.com/nigelhorne/App-Test-Generator/blob/4da5c1f5d01d82338ac75f9e4fcb5e0b136dc908/bin/fuzz-harness-generator" class="icon-link" title="View source on GitHub">&#128269;</a><canvas class="sparkline" width="80" height="20" data-points="74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8"></canvas></td><td>84.6</td><td>66.7</td><td>47.6</td><td>100.0</td><td><span class="coverage-badge badge-warn" title="Moderate coverage">74.8%</span></td><td class="neutral" title="Previous: 74.8%">&#9679; 0.0%</td></tr>
+<tr class="low"><td><a href="blib-lib-App-Test-Generator-pm.html" title="View coverage line by line" target="_blank">blib/lib/App/Test/Generator.pm</a> <a href="https://github.com/nigelhorne/App-Test-Generator/blob/4da5c1f5d01d82338ac75f9e4fcb5e0b136dc908/blib/lib/App/Test/Generator.pm" class="icon-link" title="View source on GitHub">&#128269;</a><canvas class="sparkline" width="80" height="20" data-points="59.0,59.0,59.0,59.0,59.0,59.0,59.0,59.0,59.0,59.0"></canvas></td><td>67.0</td><td>50.7</td><td>44.0</td><td>77.4</td><td><span class="coverage-badge badge-bad" title="Needs improvement">59.0%</span></td><td class="neutral" title="Previous: 59.0%">&#9679; 0.0%</td></tr>
+<tr class="med"><td><a href="blib-lib-App-Test-Generator-Template-pm.html" title="View coverage line by line" target="_blank">blib/lib/App/Test/Generator/Template.pm</a> <a href="https://github.com/nigelhorne/App-Test-Generator/blob/4da5c1f5d01d82338ac75f9e4fcb5e0b136dc908/blib/lib/App/Test/Generator/Template.pm" class="icon-link" title="View source on GitHub">&#128269;</a><canvas class="sparkline" width="80" height="20" data-points="89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7"></canvas></td><td>100.0</td><td>50.0</td><td>33.3</td><td>100.0</td><td><span class="coverage-badge badge-warn" title="Moderate coverage">89.7%</span></td><td class="neutral" title="Previous: 89.7%">&#9679; 0.0%</td></tr>
 <tr class="summary-row nosort"><td colspan="2"><strong>Summary</strong></td><td colspan="2">3 files</td><td colspan="3">Avg: 74%, Low: 1</td></tr>
-
 <tr class="med nosort"><td><strong>Total</strong></td><td>69.1</td><td>51.7</td><td>44.1</td><td>81.3</td><td colspan="2"><strong>60.7</strong></td></tr>
-
 </tbody></table>
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1em;">
 	<div>
@@ -128,6 +159,9 @@ function linearRegression(data) {
 	const sumXY = xs.reduce((acc, val, i) => acc + val * ys[i], 0);
 	const sumX2 = xs.reduce((acc, val) => acc + val * val, 0);
 
+	if (n < 2 || (n * sumX2 - sumX * sumX) === 0) {
+		return [];
+	}
 	const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
 	const intercept = (sumY - slope * sumX) / n;
 
@@ -139,14 +173,14 @@ function linearRegression(data) {
 
 const dataPoints = [ { x: "2026-01-11T19:38:33-05:00", y: 35.7961968355349, delta: 0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/78bbd1b", label: "2026-01-11T19:38:33-05:00", pointBackgroundColor: "gray", comment: "Fix CI tests on Windows" },
 { x: "2026-01-11T21:28:42-05:00", y: 60.6837606837607, delta: 24.9, url: "https://github.com/nigelhorne/App-Test-Generator/commit/fa3c7d5", label: "2026-01-11T21:28:42-05:00", pointBackgroundColor: "green", comment: "SchemaExtractor testing is in Extended mode only" },
-{ x: "2026-01-12T07:41:45-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/0828454", label: "2026-01-12T07:41:45-05:00", pointBackgroundColor: "gray", comment: "Try fixing CI on Windows" },
 { x: "2026-01-12T07:47:57-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/a2e1c2c", label: "2026-01-12T07:47:57-05:00", pointBackgroundColor: "gray", comment: "Fix CI on Windows" },
-{ x: "2026-01-12T21:58:44-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/828d29e", label: "2026-01-12T21:58:44-05:00", pointBackgroundColor: "gray", comment: "Fewer false positives for "optional"" },
+{ x: "2026-01-12T21:58:44-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/828d29e", label: "2026-01-12T21:58:44-05:00", pointBackgroundColor: "gray", comment: "Fewer false positives for \"optional\"" },
 { x: "2026-01-13T07:15:47-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/36f0fa0", label: "2026-01-13T07:15:47-05:00", pointBackgroundColor: "gray", comment: "Fix uninitialized variable" },
 { x: "2026-01-14T13:21:12-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/5ed5311", label: "2026-01-14T13:21:12-05:00", pointBackgroundColor: "gray", comment: "Refactor _needs_object_instantiation" },
 { x: "2026-01-15T07:40:07-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/6b25b3c", label: "2026-01-15T07:40:07-05:00", pointBackgroundColor: "gray", comment: "Added GHGen CI script" },
 { x: "2026-01-22T21:21:20-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/bc1ec3a", label: "2026-01-22T21:21:20-05:00", pointBackgroundColor: "gray", comment: "Hide hints" },
-{ x: "2026-01-27T11:16:24-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/4178d03", label: "2026-01-27T11:16:24-05:00", pointBackgroundColor: "gray", comment: "Rerun with latest GHGen" } ];
+{ x: "2026-01-27T11:16:24-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/4178d03", label: "2026-01-27T11:16:24-05:00", pointBackgroundColor: "gray", comment: "Rerun with latest GHGen" },
+{ x: "2026-01-29T07:55:49-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/bfbfe8b", label: "2026-01-29T07:55:49-05:00", pointBackgroundColor: "gray", comment: "Release 0.27" } ];
 
 const regressionPoints = linearRegression(dataPoints);
 // Try to register the zoom plugin (handles different UMD builds)
@@ -270,35 +304,30 @@ if (resetBtn) {
 	});
 }
 
-function sortTable(n) {
-	const table = document.querySelector("table");
-	if (!table || !table.tBodies || !table.tBodies[0]) return;
+function sortTable(th, colIndex) {
+	const table = th.closest("table");
+	if (!table || !table.tBodies.length) return;
 
-	// All rows in tbody
-	const allBodyRows = Array.from(table.tBodies[0].rows);
+	const tbody = table.tBodies[0];
+	const rows = Array.from(tbody.rows);
 
-	// Separate normal (sortable) rows and fixed (nosort) rows.
-	const normalRows = allBodyRows.filter(r => !r.classList.contains("nosort"));
-	const fixedRows = allBodyRows.filter(r => r.classList.contains("nosort"));
-
-	// Decide numeric vs text column (column 0 = File => text)
-	const isNumeric = n > 0;
-
-	// Determine ascending/descending toggle logic
 	const prevCol = table.getAttribute("data-sort-col");
 	const prevOrder = table.getAttribute("data-sort-order") || "desc";
-	const asc = (prevCol != n) ? true : (prevOrder === "desc");
+	const asc = (prevCol != colIndex) ? true : (prevOrder === "desc");
+
+	const isNumeric = colIndex === 0; // Date column
+
+	const normalRows = rows.filter(r => !r.classList.contains("nosort"));
+	const fixedRows = rows.filter(r => r.classList.contains("nosort"));
 
 	normalRows.sort((a, b) => {
-		let x = (a.cells[n] && a.cells[n].innerText) ? a.cells[n].innerText.trim() : "";
-		let y = (b.cells[n] && b.cells[n].innerText) ? b.cells[n].innerText.trim() : "";
+		let x = a.cells[colIndex]?.innerText.trim() || "";
+		let y = b.cells[colIndex]?.innerText.trim() || "";
 
 		if (isNumeric) {
-			// Remove non-number characters (arrows, percent signs, bullets, etc.)
-			x = parseFloat(x.replace(/[^0-9.\-+eE]/g, '')) || 0;
-			y = parseFloat(y.replace(/[^0-9.\-+eE]/g, '')) || 0;
+			x = Date.parse(x) || 0;
+			y = Date.parse(y) || 0;
 		} else {
-			// Text compare (case-insensitive)
 			x = x.toLowerCase();
 			y = y.toLowerCase();
 		}
@@ -308,30 +337,28 @@ function sortTable(n) {
 		return 0;
 	});
 
-	// Reattach rows: sorted normalRows first, then fixedRows (keeps summary/total last)
-	normalRows.forEach(r => table.tBodies[0].appendChild(r));
-	fixedRows.forEach(r => table.tBodies[0].appendChild(r));
+	normalRows.forEach(r => tbody.appendChild(r));
+	fixedRows.forEach(r => tbody.appendChild(r));
 
-	// Update header arrows
+	// Update arrows
 	const headers = table.tHead.rows[0].cells;
 	for (let i = 0; i < headers.length; i++) {
 		const arrow = headers[i].querySelector(".arrow");
 		if (!arrow) continue;
-		if (i === n) {
-			// active column: bold arrow, direction ▲ or ▼
+
+		if (i === colIndex) {
 			arrow.textContent = asc ? "▲" : "▼";
 			arrow.classList.add("active");
 		} else {
-			// inactive column: always ▲, dimmed
 			arrow.textContent = "▲";
 			arrow.classList.remove("active");
 		}
 	}
 
-	// Remember state (so clicking same column toggles)
-	table.setAttribute("data-sort-col", n);
+	table.setAttribute("data-sort-col", colIndex);
 	table.setAttribute("data-sort-order", asc ? "asc" : "desc");
 }
+
 
 // Initial display.
 // The table has been set up sorted in ascending order on the filename; reflect that in the GUI
@@ -404,10 +431,12 @@ function refresh(){
 }
 </script>
 
+<p><center>Use mouse wheel or pinch to zoom; drag to pan</center></p>
+<p>No CPAN Testers failures reported for App-Test-Generator 0.27.</p>
 <footer>
-	<p><span style="margin-left:8px;color:#666;font-size:0.9em;">Use mouse wheel or pinch to zoom; drag to pan</span></p>
 	<p>Project: <a href="https://github.com/nigelhorne/App-Test-Generator">App-Test-Generator</a></p>
-	<p><em>Last updated: 2026-01-29 12:59:13 - <a href="https://github.com/nigelhorne/App-Test-Generator/commit/bfbfe8be9c478159b13bf3d07811f17d36b0da69">commit <code>bfbfe8b</code></a></em></p>
+	<p><em>Last updated: 2026-01-31 22:44:54 - <a href="https://github.com/nigelhorne/App-Test-Generator/commit/4da5c1f5d01d82338ac75f9e4fcb5e0b136dc908">commit <code>4da5c1f</code></a></em></p>
 </footer>
+
 </body>
 </html>
