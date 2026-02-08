@@ -1,11 +1,14 @@
 use strict;
 use warnings;
 
-use Test::Most;
+use Test::DescribeMe qw(extended);	# New features
 use File::Temp qw(tempfile);
-use YAML qw(LoadFile);
+use Test::Most;
+use YAML::XS qw(LoadFile);
 
-use App::Test::Generator::SchemaExtractor;
+BEGIN {
+	use_ok('App::Test::Generator::SchemaExtractor');
+}
 
 # -------------------------------
 # Test input: getter/setter method
@@ -36,6 +39,43 @@ sub ua {
     }
 
     return $self->{ua};
+}
+
+sub getter_only {
+    my $self = shift;
+    return $self->{foo};
+}
+
+sub setter_only {
+    my $self = shift;
+    my $foo = shift;
+    $self->{foo} = $foo;
+    return $self;
+}
+
+=head2 agent
+
+Returns UserAgent object
+
+=cut
+
+sub agent {
+    my $self = shift;
+    return $self->{ua};
+}
+
+sub ua2 {
+    my $self = shift;
+    if (@_) {
+        my $p = Params::Validate::Strict::validate_strict({
+            args => Params::Get::get_params('ua', @_),
+            schema => {
+                ua => { type => 'object' }
+            }
+        });
+        $self->{ua2} = $p->{ua};
+    }
+    return $self->{ua2};
 }
 
 1;
@@ -117,5 +157,45 @@ is(
     'Setter input correctly typed as object'
 );
 
-done_testing;
+is(
+    $schemas->{getter_only}{_accessor}{type},
+    'getter',
+    'Detected getter-only accessor'
+);
 
+ok(
+    defined($schemas->{getter_only}{output}{type}),
+    'Getter-only returns something'
+);
+
+is(
+    $schemas->{setter_only}{_accessor}{type},
+    'setter',
+    'Detected setter-only accessor'
+);
+
+is(
+    $schemas->{setter_only}{input}{foo}{type},
+    'string',
+    'Setter-only input defaulted sanely'
+);
+
+is(
+    $schemas->{agent}{output}{isa},
+    'LWP::UserAgent',
+    'POD-derived object isa propagated'
+);
+
+is(
+    $schemas->{ua2}{_accessor}{type},
+    'getset',
+    'PVS-based getter/setter detected'
+);
+
+is(
+    $schemas->{ua2}{output}{type},
+    'object',
+    'Object type propagated from validator'
+);
+
+done_testing;

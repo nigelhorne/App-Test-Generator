@@ -21,4 +21,4 @@ ok(-e $conf_file, 'config file exists: $conf_file');
 	like($output, qr/use Test::Most;/, 'output looks like a test file');
 }
 
-done_testing;
+done_testing();

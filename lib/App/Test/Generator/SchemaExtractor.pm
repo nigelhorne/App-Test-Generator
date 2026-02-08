@@ -1508,8 +1508,8 @@ sub _analyze_method {
 	my $schema = {
 		function => $method->{name},
 		_confidence => {
-			'input' => 'unknown',
-			'output' => 'unknown',
+			'input' => {},
+			'output' => {}
 		},
 		input => {},
 		output => {},
@@ -1840,7 +1840,7 @@ sub _detect_accessor_methods {
 		$schema->{input_style} = 'none';
 		$schema->{_confidence}{input} = {
 			level => 'high',
-			factors => ['Detected getter/accessor method'],
+			factors => ['Detected getter method'],
 		};
 	} elsif (
 		$code =~ /return\s+\$self\b/ &&
@@ -1870,7 +1870,7 @@ sub _detect_accessor_methods {
 		};
 	}
 
-	if($schema->{_accessor}{type} =~ /setter|getset/ && $schema->{input}) {
+	if($schema->{_accessor}{type} && $schema->{_accessor}{type} =~ /setter|getset/ && $schema->{input}) {
 		for my $param (keys %{ $schema->{input} }) {
 			my $in = $schema->{input}{$param};
 
@@ -1881,9 +1881,24 @@ sub _detect_accessor_methods {
 				};
 
 				$schema->{_confidence}{output} = {
-					level   => 'high',
+					level => 'high',
 					factors => ['Output type propagated from setter input'],
 				};
+			}
+		}
+	}
+
+	if($schema->{_accessor}{type} && ($schema->{_accessor}{type} =~ /getter|getset/) &&
+	   ((!defined($schema->{output}{type})) || ($schema->{output}{type} eq 'string'))) {
+		if (my $pod = $method->{pod}) {
+			# POD says "UserAgent object"
+			if ($pod =~ /\bUser[- ]?Agent\b.*\bobject\b/i) {
+				$schema->{output}{type} = 'object';
+				$schema->{output}{isa} = 'LWP::UserAgent';
+
+				push @{ $schema->{_confidence}{output}{factors} }, 'POD indicates UserAgent object';
+
+				$schema->{_confidence}{output}{level} = 'high';
 			}
 		}
 	}
@@ -2377,7 +2392,7 @@ sub _analyze_pod {
 				$params{$name}{type} = $type;
 
 				# Parse constraints
-				if ($constraint) {
+				if($constraint) {
 					$self->_parse_constraints($params{$name}, $constraint);
 				}
 
@@ -2855,8 +2870,9 @@ sub _analyze_output_from_code
 					$return_types{hashref}++;
 				} elsif ($ret =~ m{
 					# Numeric expressions (heuristic, medium confidence)
+					# Don't match ->
 				    (?:
-					\+ | - | \* | / | %
+					\+ | -\b | \* | / | %
 				      | \+\+ | --
 				    )
 				}x) {
@@ -4839,7 +4855,7 @@ sub _determine_optional_status {
 }
 
 
-=head2 _calculate_confidence
+=head2 _calculate_input_confidence
 
 Calculate confidence score for parameter analysis.
 
@@ -5635,6 +5651,7 @@ sub _write_schema {
 
 	if($schema->{'output'}{'type'} && ($schema->{'output'}{'type'} eq 'scalar')) {
 		$schema->{'output'}{'type'} = 'string';
+		$schema->{_confidence}{output}->{level} = 'low';	# A guess
 	}
 
 	# Add 'new' field if object instantiation is needed
@@ -5647,6 +5664,13 @@ sub _write_schema {
 			delete $schema->{new};
 			delete $output->{new};
 		}
+	}
+
+	if(!defined($schema->{_confidence}{input}->{level})) {
+		$schema->{_confidence}{input} = $self->_calculate_input_confidence($schema->{input});
+	}
+	if(!defined($schema->{_confidence}{output}->{level})) {
+		$schema->{_confidence}{output} = $self->_calculate_output_confidence($schema->{output});
 	}
 
 	# Add relationships if detected
