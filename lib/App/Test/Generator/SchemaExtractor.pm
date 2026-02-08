@@ -1739,6 +1739,12 @@ sub _detect_accessor_methods {
 	) {
 		my $field = $1;
 
+		if(!defined($field)) {
+			if($code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*shift\s*;/) {
+				$field = $1;
+			}
+		}
+
 		$schema->{_accessor} = {
 			type => 'getset',
 			field => $field,
@@ -1755,6 +1761,21 @@ sub _detect_accessor_methods {
 			level => 'high',
 			factors => ['Detected combined getter/setter accessor'],
 		};
+		if (my $pod = $method->{pod}) {
+			if ($pod =~ /\b(LWP::UserAgent(::\w+)*)\b/) {
+				$schema->{output} = {
+					type => 'object',
+					isa  => $1,
+				};
+
+				$schema->{_confidence}{output} = {
+					level   => 'high',
+					factors => ['POD specifies UserAgent object'],
+				};
+
+				return;
+			}
+		}
 
 		return;
 	}
