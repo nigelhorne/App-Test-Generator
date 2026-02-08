@@ -1768,14 +1768,57 @@ sub _detect_accessor_methods {
 					type => 'object',
 					isa => $class,
 				};
-				$schema->{input} = {
+				$schema->{input}{$field} = {
 					type => 'object',
 					isa => $class,
 					optional => 1,
 				};
 
 				$schema->{_confidence}{output} = {
-					level   => 'high',
+					level => 'high',
+					factors => ['POD specifies UserAgent object'],
+				};
+			}
+		}
+	} elsif (
+		$code =~ /if\s*\(\s*\@_\s*\)/ &&
+		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=/ &&
+		$code =~ /return\s+\$self\s*->\s*\{/
+	) {
+		# -------------------------------
+		# Getter/Setter (validated input)
+		# -------------------------------
+		my $field = $1;
+
+		if(!defined($field)) {
+			if($code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=/) {
+				$field = $1;
+			}
+		}
+		if ($code =~ /validate_strict/) {
+			push @{ $schema->{_confidence}{input}{factors} }, 'Setter uses Params::Validate::Strict';
+		}
+		$schema->{_accessor} = {
+			type => 'getset',
+			field => $field,
+		};
+
+		$self->_log("  Detected getter/setter accessor for field: $field");
+		if (my $pod = $method->{pod}) {
+			if ($pod =~ /\b(LWP::UserAgent(::\w+)*)\b/) {
+				my $class = $1;
+				$schema->{output} = {
+					type => 'object',
+					isa => $class,
+				};
+				$schema->{input}{$field} = {
+					type => 'object',
+					isa => $class,
+					optional => 1,
+				};
+
+				$schema->{_confidence}{output} = {
+					level => 'high',
 					factors => ['POD specifies UserAgent object'],
 				};
 			}
@@ -1826,14 +1869,12 @@ sub _detect_accessor_methods {
 			factors => ['Detected setter/accessor method'],
 		};
 	}
-	if (
-		$schema->{_accessor}{type} =~ /setter|getset/ &&
-		$schema->{input}
-	) {
+
+	if($schema->{_accessor}{type} =~ /setter|getset/ && $schema->{input}) {
 		for my $param (keys %{ $schema->{input} }) {
 			my $in = $schema->{input}{$param};
 
-			if ($in->{type} && $in->{type} eq 'object') {
+			if ($in->{type} && ($in->{type} eq 'object')) {
 				$schema->{output} = {
 					type => 'object',
 					($in->{isa} ? (isa => $in->{isa}) : ()),
@@ -5616,9 +5657,6 @@ sub _write_schema {
 	if($schema->{_accessor}) {
 		$output->{_accessor} = $schema->{_accessor};
 	}
-
-	use Data::Dumper;
-	warn Dumper($schema->{_accessor}) if($schema->{_accessor});
 
 	open my $fh, '>', $filename;
 	print $fh YAML::XS::Dump($output);
