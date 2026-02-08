@@ -55,7 +55,11 @@ my $extractor = App::Test::Generator::SchemaExtractor->new(
     input_file => $filename,
 );
 
-my $schemas = $extractor->extract_all;
+my $schemas;
+lives_ok {
+    $schemas = $extractor->extract_all;
+} 'Schema extraction did not die';
+
 
 ok($schemas, 'Schemas extracted');
 
