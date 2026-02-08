@@ -1776,14 +1776,10 @@ sub _detect_accessor_methods {
 				return;
 			}
 		}
-
-		return;
-	}
-
-	# -------------------------------
-	# Getter
-	# -------------------------------
-	if($code =~ /(?:return\s+)?\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*;/) {
+	} elsif($code =~ /(?:return\s+)?\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*;/) {
+		# -------------------------------
+		# Getter
+		# -------------------------------
 		my $field = $1;
 
 		$schema->{_accessor} = {
@@ -1799,17 +1795,13 @@ sub _detect_accessor_methods {
 			level => 'high',
 			factors => ['Detected getter/accessor method'],
 		};
-
-		return; # hard stop
-	}
-
-	# -------------------------------
-	# Setter
-	# -------------------------------
-	if (
+	} elsif (
 		$code =~ /return\s+\$self\b/ &&
 		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*\$(\w+)\s*;/
 	) {
+		# -------------------------------
+		# Setter
+		# -------------------------------
 		my ($field, $param) = ($1, $2);
 
 		$schema->{_accessor} = {
@@ -1829,8 +1821,6 @@ sub _detect_accessor_methods {
 			level => 'high',
 			factors => ['Detected setter/accessor method'],
 		};
-
-		return;
 	}
 }
 
@@ -1885,7 +1875,7 @@ sub _parse_schema_hash {
 				next unless $k && $v;
 
 				my $keyname = $k->content;
-				my $value   = $v->can('content') ? $v->content : undef;
+				my $value = $v->can('content') ? $v->content : undef;
 				$value =~ s/^['"]|['"]$//g if defined $value;
 
 				if ($keyname eq 'type') {
@@ -1899,7 +1889,7 @@ sub _parse_schema_hash {
 				}
 			}
 
-			$param{type}     //= 'string';
+			$param{type} //= 'string';
 			$param{optional} //= 0;
 
 			$result{$key} = \%param;
@@ -2418,7 +2408,7 @@ sub _analyze_pod {
 		$params{$name} ||= { _source => 'pod' };
 
 		# Explicit typed form only:
-		#   $param - type (constraints)
+		#	$param - type (constraints)
 		if ($desc =~ /^\s*(string|integer|int|number|num|float|boolean|bool|array|arrayref|hash|hashref)\b(?:\s*\(([^)]+)\))?/i) {
 			my $type = lc($1);
 			my $constraint = $2;
@@ -3266,10 +3256,10 @@ sub _infer_type_from_expression {
 		return { type => 'arrayref' };
 	}
 
-    # Check for hash reference
-    if ($expr =~ /^\{/ || $expr =~ /^\\\%/) {
-        return { type => 'hashref' };
-    }
+	# Check for hash reference
+	if ($expr =~ /^\{/ || $expr =~ /^\\\%/) {
+		return { type => 'hashref' };
+	}
 
     # Check for hash
     if ($expr =~ /^\%\w+/ || $expr =~ /^\%\{/) {
@@ -5598,6 +5588,13 @@ sub _write_schema {
 	if ($schema->{relationships} && @{$schema->{relationships}}) {
 		$output->{relationships} = $schema->{relationships};
 	}
+
+	if($schema->{_accessor}) {
+		$output->{_accessor} = $schema->{_accessor};
+	}
+
+	# use Data::Dumper;
+	# warn Dumper($schema->{_accessor}) if($schema->{_accessor});
 
 	open my $fh, '>', $filename;
 	print $fh YAML::XS::Dump($output);
