@@ -1730,6 +1730,36 @@ sub _detect_accessor_methods {
 	$code =~ s/\s+/ /g;
 
 	# -------------------------------
+	# Getter/Setter combo
+	# -------------------------------
+	if (
+		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*shift\s*;/ &&
+		$code =~ /return\s+\$self\s*->\s*\{/ &&
+		$code =~ /if\s*\(\s*\@_\s*(?:>\s*1)?\s*\)/
+	) {
+		my $field = $1;
+
+		$schema->{_accessor} = {
+			type => 'getset',
+			field => $field,
+		};
+
+		$self->_log("  Detected getter/setter accessor for field: $field");
+
+		$schema->{input} = {
+			value => { type => 'string', optional => 1 },
+		};
+		$schema->{input_style} = 'hash';
+
+		$schema->{_confidence}{input} = {
+			level => 'high',
+			factors => ['Detected combined getter/setter accessor'],
+		};
+
+		return;
+	}
+
+	# -------------------------------
 	# Getter
 	# -------------------------------
 	if($code =~ /(?:return\s+)?\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*;/) {
@@ -1777,36 +1807,6 @@ sub _detect_accessor_methods {
 		$schema->{_confidence}{input} = {
 			level => 'high',
 			factors => ['Detected setter/accessor method'],
-		};
-
-		return;
-	}
-
-	# -------------------------------
-	# Getter/Setter combo
-	# -------------------------------
-	if (
-		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*shift\s*;/ &&
-		$code =~ /return\s+\$self\s*->\s*\{/ &&
-		$code =~ /if\s*\(\s*\@_\s*(?:>\s*1)?\s*\)/
-	) {
-		my $field = $1;
-
-		$schema->{_accessor} = {
-			type => 'getset',
-			field => $field,
-		};
-
-		$self->_log("  Detected getter/setter accessor for field: $field");
-
-		$schema->{input} = {
-			value => { type => 'string', optional => 1 },
-		};
-		$schema->{input_style} = 'hash';
-
-		$schema->{_confidence}{input} = {
-			level => 'high',
-			factors => ['Detected combined getter/setter accessor'],
 		};
 
 		return;
