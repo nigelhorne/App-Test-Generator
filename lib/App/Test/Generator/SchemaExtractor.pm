@@ -1732,7 +1732,7 @@ sub _detect_accessor_methods {
 	# -------------------------------
 	# Getter
 	# -------------------------------
-	if ($code =~ /(?:return\s+)?\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*;/) {
+	if($code =~ /(?:return\s+)?\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*;/) {
 		my $field = $1;
 
 		$schema->{_accessor} = {
@@ -1788,7 +1788,7 @@ sub _detect_accessor_methods {
 	if (
 		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*shift\s*;/ &&
 		$code =~ /return\s+\$self\s*->\s*\{/ &&
-		$code =~ /if\s*\(\s*\@_\s*>\s*1\s*\)/
+		$code =~ /if\s*\(\s*\@_\s*(?:>\s*1)?\s*\)/
 	) {
 		my $field = $1;
 
@@ -3268,16 +3268,16 @@ sub _infer_type_from_expression {
         return { type => 'number' };
     }
 
-    # Check for booleans
-    if ($expr =~ /^[01]$/) {
-        return { type => 'boolean' };
-    }
+	# Check for booleans
+	if ($expr =~ /^[01]$/) {
+		return { type => 'boolean' };
+	}
 
 	# Check for objects
 	if ($expr =~ /bless/) {
 		return { type => 'object' };
 	}
-    
+
 	if($expr =~ /\blength\s*\(/) {
 		return { type => 'integer', min => 0 };
 	}
