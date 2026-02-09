@@ -4,7 +4,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses from test 
 
 # VERSION
 
-Version 0.26
+Version 0.27
 
 # SYNOPSIS
 
@@ -174,6 +174,22 @@ The current supported variables are
 - `properties`, enable [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest) Property tests (default: 0)
 
 All values default to `true`.
+
+### `%accessor` - this is an accessor routine
+
+    accessor:
+      property: ua
+      type: getset
+
+Has two mandatory elements:
+
+- `property`
+
+    The name of the property in the object that the routine controls.
+
+- `type`
+
+    One of `getter`, `setter`, `getset`.
 
 ### `%transforms` - list of transformations from input sets to output sets
 
@@ -1081,7 +1097,7 @@ Renders property definitions into Perl code for the template.
 
 # SEE ALSO
 
-- [https://nigelhorne.github.io/App-Test-Generator/coverage/](https://nigelhorne.github.io/App-Test-Generator/coverage/): Test Coverage Report
+- [Test Coverage Report](https://nigelhorne.github.io/App-Test-Generator/coverage/)
 - [App::Test::Generator::Template](https://metacpan.org/pod/App%3A%3ATest%3A%3AGenerator%3A%3ATemplate) - Template of the file of tests created by `App::Test::Generator`
 - [App::Test::Generator::SchemaExtractor](https://metacpan.org/pod/App%3A%3ATest%3A%3AGenerator%3A%3ASchemaExtractor) - Create schemas from Perl programs
 - [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict): Schema Definition
