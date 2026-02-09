@@ -114,6 +114,10 @@ my %input = (
 [% input_code %]
 );
 
+my %accessor = (
+[% accessor_code %]
+);
+
 my %output = (
 [% output_code %]
 );

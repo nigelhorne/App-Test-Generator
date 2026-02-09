@@ -1436,6 +1436,7 @@ sub generate
 		}
 	}
 	my $output_code = render_args_hash(\%output);
+	my $accessor_code = (scalar keys %accessor) ? render_args_hash(\%accessor) : '';
 	my $new_code = ($new && (ref $new eq 'HASH')) ? render_args_hash($new) : '';
 
 	my $transforms_code;
@@ -1664,6 +1665,7 @@ sub generate
 		seed_code => $seed_code,
 		input_code => $input_code,
 		output_code => $output_code,
+		accessor_code => $accessor_code,
 		transforms_code => $transforms_code,
 		corpus_code => $corpus_code,
 		call_code => $call_code,
