@@ -95,6 +95,10 @@ my %config = (
 [% config_code %]
 );
 
+[% IF new_code %]
+my $new_code = [% new_code %];
+[% END %]
+
 if($^O ne 'MSWin32' && $config{close_stdin}) {
 
 	close(STDIN);
@@ -613,7 +617,7 @@ sub fuzz_inputs
 				}
 				foreach my $field(keys %{$spec}) {
 					next if($field =~ /^_/);	# Ignore comments
-					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'memberof', 'position'))) {
+					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'memberof', 'position', 'isa'))) {
 						diag(__LINE__, ": TODO: handle schema keyword '$field'");
 					}
 				}
@@ -635,6 +639,14 @@ sub fuzz_inputs
 				} elsif ($type eq 'arrayref') {
 					push @cases, { $arg_name => [1,2] };
 					push @cases, { $arg_name => { a => 1 }, _STATUS => 'DIES' };
+				} elsif($type eq 'object') {
+					if($spec->{'isa'}) {
+						[% IF new_code %]
+							push @cases, { $arg_name => [% new_code %] };
+						[% ELSE %]
+							diag(__LINE__, "TODO: create an object of type $spec->{isa} and pass that");
+						[% END %]
+					}
 				}
 
 				# --- matches (regex) ---
@@ -737,7 +749,7 @@ sub fuzz_inputs
 				my $spec = $input{$field} || {};
 				foreach my $field(keys %{$spec}) {
 					next if($field =~ /^_/);	# Ignore comments
-					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'position', 'memberof', 'semantic'))) {
+					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'position', 'memberof', 'semantic', 'isa'))) {
 						die("TODO: handle schema keyword '$field'");
 					}
 				}

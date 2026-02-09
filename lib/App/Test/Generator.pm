@@ -1503,10 +1503,11 @@ sub generate
 	if(defined($new)) {
 		# keep use_ok regardless (user found earlier issue)
 		if($new_code eq '') {
-			$setup_code .= "\nmy \$obj = new_ok('$module');";
+			$new_code = "new_ok('$module')";
 		} else {
-			$setup_code .= "\nmy \$obj = new_ok('$module' => [ { $new_code } ] );";
+			$new_code = "new_ok('$module' => [ { $new_code } ] )";
 		}
+		$setup_code .= "\nmy \$obj = $new_code;";
 		if($has_positions) {
 			$position_code = "(\$result = scalar(\@alist) == 1) ? \$obj->$function(\$alist[0]) : (scalar(\@alist) == 0) ? \$obj->$function() : \$obj->$function(\@alist);";
 			if(defined($accessor{type}) && ($accessor{type} eq 'getset')) {
@@ -1679,6 +1680,7 @@ sub generate
 		use_properties => $use_properties,
 		transform_properties_code => $transform_properties_code,
 		property_trials => $config{properties}{trials} // DEFAULT_PROPERTY_TRIALS,
+		new_code => $new_code,
 		module => $module
 	};
 
