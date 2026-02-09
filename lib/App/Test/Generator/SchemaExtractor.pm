@@ -123,8 +123,8 @@ The extracted schemas follow this YAML structure:
 =item * B<Accessor Method Detection>
 
 Automatically identifies getter, setter, and combined accessor methods
-by analyzing common patterns like C<return $self-E<gt>{field}> and
-C<$self-E<gt>{field} = $value>.
+by analyzing common patterns like C<return $self-E<gt>{property}> and
+C<$self-E<gt>{property} = $value>.
 
 =item * B<Boolean Return Inference>
 
@@ -1737,20 +1737,20 @@ sub _detect_accessor_methods {
 		$code =~ /return\s+\$self\s*->\s*\{/ &&
 		$code =~ /if\s*\(\s*\@_\s*(?:>\s*1)?\s*\)/
 	) {
-		my $field = $1;
+		my $property = $1;
 
-		if(!defined($field)) {
+		if(!defined($property)) {
 			if($code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*shift\s*;/) {
-				$field = $1;
+				$property = $1;
 			}
 		}
 
 		$schema->{accessor} = {
 			type => 'getset',
-			field => $field,
+			property => $property,
 		};
 
-		$self->_log("  Detected getter/setter accessor for field: $field");
+		$self->_log("  Detected getter/setter accessor for property: $property");
 
 		$schema->{input} = {
 			value => { type => 'string', optional => 1 },
@@ -1768,7 +1768,7 @@ sub _detect_accessor_methods {
 					type => 'object',
 					isa => $class,
 				};
-				$schema->{input}{$field} = {
+				$schema->{input}{$property} = {
 					type => 'object',
 					isa => $class,
 					optional => 1,
@@ -1788,11 +1788,11 @@ sub _detect_accessor_methods {
 		# -------------------------------
 		# Getter/Setter (validated input)
 		# -------------------------------
-		my $field = $1;
+		my $property = $1;
 
-		if(!defined($field)) {
+		if(!defined($property)) {
 			if($code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=/) {
-				$field = $1;
+				$property = $1;
 			}
 		}
 		if ($code =~ /validate_strict/) {
@@ -1800,10 +1800,10 @@ sub _detect_accessor_methods {
 		}
 		$schema->{accessor} = {
 			type => 'getset',
-			field => $field,
+			property => $property,
 		};
 
-		$self->_log("  Detected getter/setter accessor for field: $field");
+		$self->_log("  Detected getter/setter accessor for property: $property");
 		if (my $pod = $method->{pod}) {
 			if ($pod =~ /\b(LWP::UserAgent(::\w+)*)\b/) {
 				my $class = $1;
@@ -1811,7 +1811,7 @@ sub _detect_accessor_methods {
 					type => 'object',
 					isa => $class,
 				};
-				$schema->{input}{$field} = {
+				$schema->{input}{$property} = {
 					type => 'object',
 					isa => $class,
 					optional => 1,
@@ -1827,19 +1827,19 @@ sub _detect_accessor_methods {
 		if(scalar keys(%input) > 1) {
 			croak(__PACKAGE__, ': A getset accessor function can have at most one argument');
 		}
-		$schema->{input}{$field}->{position} = 0;
+		$schema->{input}{$property}->{position} = 0;
 	} elsif($code =~ /(?:return\s+)?\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*;/) {
 		# -------------------------------
 		# Getter
 		# -------------------------------
-		my $field = $1;
+		my $property = $1;
 
 		$schema->{accessor} = {
 			type => 'getter',
-			field => $field,
+			property => $property,
 		};
 
-		$self->_log("  Detected getter accessor for field: $field");
+		$self->_log("  Detected getter accessor for property: $property");
 
 		$schema->{input} = {};
 		$schema->{input_style} = 'none';
@@ -1851,7 +1851,7 @@ sub _detect_accessor_methods {
 		if(scalar keys(%input) > 1) {
 			croak(__PACKAGE__, ': A getter accessor function can have at most one argument');
 		}
-		$schema->{input}{$field}->{position} = 0;
+		$schema->{input}{$property}->{position} = 0;
 	} elsif (
 		$code =~ /return\s+\$self\b/ &&
 		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*\$(\w+)\s*;/
@@ -1859,15 +1859,15 @@ sub _detect_accessor_methods {
 		# -------------------------------
 		# Setter
 		# -------------------------------
-		my ($field, $param) = ($1, $2);
+		my ($property, $param) = ($1, $2);
 
 		$schema->{accessor} = {
 			type => 'setter',
-			field => $field,
+			property => $property,
 			param => $param,
 		};
 
-		$self->_log("  Detected setter accessor for field: $field");
+		$self->_log("  Detected setter accessor for property: $property");
 
 		$schema->{input} = {
 			$param => { type => 'string' }, # safe default

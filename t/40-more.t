@@ -91,7 +91,7 @@ subtest 'builtin functions' => sub {
 
 	my $content = slurp('t/builtin_test.t');
 	like($content, qr/length\(/, 'should generate test for builtin function');
-	unlike($content, qr/use_ok/, 'should not use_ok for builtin functions');
+	unlike($content, qr/use_ok\('length/, 'should not use_ok for builtin functions');
 
 	unlink $builtin_conf, 't/builtin_test.t';
 };
@@ -297,7 +297,7 @@ subtest 'builtin functions' => sub {
 
 	my $content = slurp('t/builtin_test.t');
 	like($content, qr/length\(/, 'should generate test for builtin function');
-	unlike($content, qr/use_ok/, 'should not use_ok for builtin functions');
+	unlike($content, qr/use_ok\('length/, 'should not use_ok for builtin functions');
 
 	unlink $builtin_conf, 't/builtin_test.t';
 };

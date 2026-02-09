@@ -244,6 +244,26 @@ Setting this to 0 disables timeout testing.
 
 All values default to C<true>.
 
+=head3 C<%accessor> - this is an accessor routine
+
+  accessor:
+    property: ua
+    type: getset
+
+Has two mandatory elements:
+
+=over 4
+
+=item * C<property>
+
+The name of the property in the object that the routine controls.
+
+=item * C<type>
+
+One of C<getter>, C<setter>, C<getset>.
+
+=back
+
 =head3 C<%transforms> - list of transformations from input sets to output sets
 
 Transforms allow you to define how input data should be transformed into output data.
@@ -1479,18 +1499,18 @@ sub generate
 
 	if(keys %accessor) {
 		# Sanity test
-		my $field = $accessor{field};
+		my $property = $accessor{property};
 		my $type = $accessor{type};
 
 		if(!defined($new)) {
-			croak("$field: accessor $type can only work on an object");
+			croak("$property: accessor $type can only work on an object");
 		}
 		if($type eq 'getset') {
 			if(scalar(keys %input) != 1) {
-				croak("$field: getset must take one input argument");
+				croak("$property: getset must take one input argument");
 			}
 			if(scalar(keys %output) == 0) {
-				croak("$field: getset must give one output");
+				croak("$property: getset must give one output");
 			}
 		}
 	}
@@ -1509,9 +1529,11 @@ sub generate
 		}
 		$setup_code .= "\nmy \$obj = $new_code;";
 		if($has_positions) {
-			$position_code = "(\$result = scalar(\@alist) == 1) ? \$obj->$function(\$alist[0]) : (scalar(\@alist) == 0) ? \$obj->$function() : \$obj->$function(\@alist);";
+			$position_code = "\$result = (scalar(\@alist) == 1) ? \$obj->$function(\$alist[0]) : (scalar(\@alist) == 0) ? \$obj->$function() : \$obj->$function(\@alist);";
 			if(defined($accessor{type}) && ($accessor{type} eq 'getset')) {
-				$position_code .= "ok(\$result eq \$alist[0]); ok(\$obj->$function() eq \$result, 'test getset accessor');"
+				$position_code .= 'if(scalar(@alist) == 1) { ';
+				$position_code .= "cmp_ok(\$result, 'eq', \$alist[0], 'getset function returns what was put in'); ok(\$obj->$function() eq \$result, 'test getset accessor');";
+				$position_code .= '}';
 			}
 		} else {
 			$call_code = "\$result = \$obj->$function(\$input);";
@@ -1525,13 +1547,13 @@ sub generate
 	} elsif(defined($module) && length($module)) {
 		if($function eq 'new') {
 			if($has_positions) {
-				$position_code = "(\$result = scalar(\@alist) == 1) ? ${module}\->$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}\->$function() : ${module}\->$function(\@alist);";
+				$position_code = "\$result = (scalar(\@alist) == 1) ? ${module}\->$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}\->$function() : ${module}\->$function(\@alist);";
 			} else {
 				$call_code = "\$result = ${module}\->$function(\$input);";
 			}
 		} else {
 			if($has_positions) {
-				$position_code = "(\$result = scalar(\@alist) == 1) ? ${module}::$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}::$function() : ${module}::$function(\@alist);";
+				$position_code = "\$result = (scalar(\@alist) == 1) ? ${module}::$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}::$function() : ${module}::$function(\@alist);";
 			} else {
 				$call_code = "\$result = ${module}::$function(\$input);";
 			}
@@ -1680,7 +1702,6 @@ sub generate
 		use_properties => $use_properties,
 		transform_properties_code => $transform_properties_code,
 		property_trials => $config{properties}{trials} // DEFAULT_PROPERTY_TRIALS,
-		new_code => $new_code,
 		module => $module
 	};
 

@@ -120,9 +120,9 @@ is(
 );
 
 is(
-    $schema->{accessor}{field},
+    $schema->{accessor}{property},
     'ua',
-    'Correct accessor field detected'
+    'Correct accessor property detected'
 );
 
 # -------------------------------

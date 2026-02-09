@@ -95,10 +95,6 @@ my %config = (
 [% config_code %]
 );
 
-[% IF new_code %]
-my $new_code = [% new_code %];
-[% END %]
-
 if($^O ne 'MSWin32' && $config{close_stdin}) {
 
 	close(STDIN);
@@ -641,11 +637,18 @@ sub fuzz_inputs
 					push @cases, { $arg_name => { a => 1 }, _STATUS => 'DIES' };
 				} elsif($type eq 'object') {
 					if($spec->{'isa'}) {
-						[% IF new_code %]
-							push @cases, { $arg_name => [% new_code %] };
-						[% ELSE %]
-							diag(__LINE__, "TODO: create an object of type $spec->{isa} and pass that");
-						[% END %]
+						push @cases, { $arg_name => { a => 1 }, _STATUS => 'DIES', _LINE => __LINE__ };
+						push @cases, { $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ };
+
+						# Test dies when given the wrong type of object
+						push @cases, { $arg_name => new_ok('MyTestPackage'), _STATUS => 'DIES', _LINE => __LINE__ };
+
+						use_ok($spec->{isa});
+						push @cases, { $arg_name => new_ok($spec->{isa}) };
+						# The dedup mechanism will be confused by the object
+						delete $config{dedup};
+					} else {
+						carp("'isa' is not defined - what type of object should be sent?");
 					}
 				}
 
@@ -1873,4 +1876,12 @@ diag('Run property-based transform tests') if($ENV{'TEST_VERBOSE'});
 [% corpus_code %]
 
 done_testing();
+
+1;
+
+package MyTestPackage;
+
+sub new { return bless {}, 'MyTestPackage' }
+
+1;
 __END__
