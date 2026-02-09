@@ -114,10 +114,6 @@ my %input = (
 [% input_code %]
 );
 
-my %accessor = (
-[% accessor_code %]
-);
-
 my %output = (
 [% output_code %]
 );
@@ -1553,12 +1549,16 @@ sub run_test
 			if($status eq 'DIES') {
 				my $err;
 				if($positions) {
-					if(defined($name)) {
-						dies_ok { [% position_code %] } sprintf($mess, "dies (position test) - $name (status = DIES)");
-					} else {
-						dies_ok { [% position_code %] } sprintf($mess, 'dies (position test, status = DIES)');
-					}
-					$err = $@;
+					[% IF position_code %]
+						if(defined($name)) {
+							dies_ok { [% position_code %] } sprintf($mess, "dies (position test) - $name (status = DIES)");
+						} else {
+							dies_ok { [% position_code %] } sprintf($mess, 'dies (position test, status = DIES)');
+						}
+						$err = $@;
+					[% ELSE %]
+						ok(0, 'dies: position_code not defined');
+					[% END %]
 				} else {
 					dies_ok { [% call_code %] } sprintf($mess, 'dies');
 					$err = $@;
@@ -1578,11 +1578,15 @@ sub run_test
 			} else {
 				die 'TODO: properties' if(scalar keys %{$properties});
 				if($positions) {
-					if(defined($name)) {
-						lives_ok { [% position_code %] } sprintf($mess, "survives (position test) - $name (status = LIVES)");
-					} else {
-						lives_ok { [% position_code %] } sprintf($mess, 'survives (position test, status = LIVES)');
-					}
+					[% IF position_code %]
+						if(defined($name)) {
+							lives_ok { [% position_code %] } sprintf($mess, "survives (position test) - $name (status = LIVES)");
+						} else {
+							lives_ok { [% position_code %] } sprintf($mess, 'survives (position test, status = LIVES)');
+						}
+					[% ELSE %]
+						ok(0, 'position_code not defined');
+					[% END %]
 				} else {
 					lives_ok { [% call_code %] } sprintf($mess, 'survives (status = LIVES)');
 				}

@@ -1436,7 +1436,6 @@ sub generate
 		}
 	}
 	my $output_code = render_args_hash(\%output);
-	my $accessor_code = (scalar keys %accessor) ? render_args_hash(\%accessor) : '';
 	my $new_code = ($new && (ref $new eq 'HASH')) ? render_args_hash($new) : '';
 
 	my $transforms_code;
@@ -1494,7 +1493,6 @@ sub generate
 				croak("$field: getset must give one output");
 			}
 		}
-		carp('TODO: handle accessor routines');
 	}
 
 	# Setup / call code (always load module)
@@ -1511,10 +1509,16 @@ sub generate
 		}
 		if($has_positions) {
 			$position_code = "(\$result = scalar(\@alist) == 1) ? \$obj->$function(\$alist[0]) : (scalar(\@alist) == 0) ? \$obj->$function() : \$obj->$function(\@alist);";
+			if(defined($accessor{type}) && ($accessor{type} eq 'getset')) {
+				$position_code .= "ok(\$result eq \$alist[0]); ok(\$obj->$function() eq \$result, 'test getset accessor');"
+			}
 		} else {
 			$call_code = "\$result = \$obj->$function(\$input);";
 			if($output{'_returns_self'}) {
 				$call_code .= "ok(defined(\$result)); ok(\$result eq \$obj, '$function returns self')";
+			}
+			if(defined($accessor{type}) && ($accessor{type} eq 'getset')) {
+				$call_code .= "ok(\$obj->$function() eq \$result, 'test getset accessor');"
 			}
 		}
 	} elsif(defined($module) && length($module)) {
@@ -1665,7 +1669,6 @@ sub generate
 		seed_code => $seed_code,
 		input_code => $input_code,
 		output_code => $output_code,
-		accessor_code => $accessor_code,
 		transforms_code => $transforms_code,
 		corpus_code => $corpus_code,
 		call_code => $call_code,
@@ -2335,7 +2338,7 @@ sub _detect_transform_properties {
 			name => 'exact_value',
 			# code => "\$result == $expected"
 			(ref($expected))
-			? "\$result == $expected"  # maybe
+			? "\$result == $expected"	# maybe
 			: "\$result eq " . perl_quote($expected)
 		};
 	}

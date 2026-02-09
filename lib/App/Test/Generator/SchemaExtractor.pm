@@ -1823,6 +1823,11 @@ sub _detect_accessor_methods {
 				};
 			}
 		}
+		my %input = $schema->{input};
+		if(scalar keys(%input) > 1) {
+			croak(__PACKAGE__, ': A getset accessor function can have at most one argument');
+		}
+		$schema->{input}{$field}->{position} = 0;
 	} elsif($code =~ /(?:return\s+)?\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*;/) {
 		# -------------------------------
 		# Getter
@@ -1842,6 +1847,11 @@ sub _detect_accessor_methods {
 			level => 'high',
 			factors => ['Detected getter method'],
 		};
+		my %input = $schema->{input};
+		if(scalar keys(%input) > 1) {
+			croak(__PACKAGE__, ': A getter accessor function can have at most one argument');
+		}
+		$schema->{input}{$field}->{position} = 0;
 	} elsif (
 		$code =~ /return\s+\$self\b/ &&
 		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*\$(\w+)\s*;/
