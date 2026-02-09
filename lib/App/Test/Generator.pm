@@ -1276,6 +1276,7 @@ sub generate
 	my %input = %{_load_schema_section($schema, 'input', $schema_file)};
 	my %output = %{_load_schema_section($schema, 'output', $schema_file)};
 	my %transforms = %{_load_schema_section($schema, 'transforms', $schema_file)};
+	my %accessor = %{_load_schema_section($schema, 'accessor', $schema_file)};
 
 	my %cases = %{$schema->{cases}} if(exists($schema->{cases}));
 	my %edge_cases = %{$schema->{edge_cases}} if(exists($schema->{edge_cases}));
@@ -1474,6 +1475,25 @@ sub generate
 
 		# Convert to code for template
 		$transform_properties_code = _render_properties($properties);
+	}
+
+	if(keys %accessor) {
+		# Sanity test
+		my $field = $accessor{field};
+		my $type = $accessor{type};
+
+		if(!defined($new)) {
+			croak("$field: accessor $type can only work on an object");
+		}
+		if($type eq 'getset') {
+			if(scalar(keys %input) != 1) {
+				croak("$field: getset must take one input argument");
+			}
+			if(scalar(keys %output) == 0) {
+				croak("$field: getset must give one output");
+			}
+		}
+		carp('TODO: handle accessor routines');
 	}
 
 	# Setup / call code (always load module)

@@ -1745,7 +1745,7 @@ sub _detect_accessor_methods {
 			}
 		}
 
-		$schema->{_accessor} = {
+		$schema->{accessor} = {
 			type => 'getset',
 			field => $field,
 		};
@@ -1798,7 +1798,7 @@ sub _detect_accessor_methods {
 		if ($code =~ /validate_strict/) {
 			push @{ $schema->{_confidence}{input}{factors} }, 'Setter uses Params::Validate::Strict';
 		}
-		$schema->{_accessor} = {
+		$schema->{accessor} = {
 			type => 'getset',
 			field => $field,
 		};
@@ -1829,7 +1829,7 @@ sub _detect_accessor_methods {
 		# -------------------------------
 		my $field = $1;
 
-		$schema->{_accessor} = {
+		$schema->{accessor} = {
 			type => 'getter',
 			field => $field,
 		};
@@ -1851,7 +1851,7 @@ sub _detect_accessor_methods {
 		# -------------------------------
 		my ($field, $param) = ($1, $2);
 
-		$schema->{_accessor} = {
+		$schema->{accessor} = {
 			type => 'setter',
 			field => $field,
 			param => $param,
@@ -1870,7 +1870,7 @@ sub _detect_accessor_methods {
 		};
 	}
 
-	if($schema->{_accessor}{type} && $schema->{_accessor}{type} =~ /setter|getset/ && $schema->{input}) {
+	if($schema->{accessor}{type} && $schema->{accessor}{type} =~ /setter|getset/ && $schema->{input}) {
 		for my $param (keys %{ $schema->{input} }) {
 			my $in = $schema->{input}{$param};
 
@@ -1888,7 +1888,7 @@ sub _detect_accessor_methods {
 		}
 	}
 
-	if($schema->{_accessor}{type} && ($schema->{_accessor}{type} =~ /getter|getset/) &&
+	if($schema->{accessor}{type} && ($schema->{accessor}{type} =~ /getter|getset/) &&
 	   ((!defined($schema->{output}{type})) || ($schema->{output}{type} eq 'string'))) {
 		if (my $pod = $method->{pod}) {
 			# POD says "UserAgent object"
@@ -5678,8 +5678,8 @@ sub _write_schema {
 		$output->{relationships} = $schema->{relationships};
 	}
 
-	if($schema->{_accessor}) {
-		$output->{_accessor} = $schema->{_accessor};
+	if($schema->{accessor}) {
+		$output->{accessor} = $schema->{accessor};
 	}
 
 	open my $fh, '>', $filename;

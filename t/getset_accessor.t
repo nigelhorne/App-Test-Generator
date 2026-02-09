@@ -114,13 +114,13 @@ my $schema = $schemas->{ua};
 # Assertions: accessor detection
 # -------------------------------
 is(
-    $schema->{_accessor}{type},
+    $schema->{accessor}{type},
     'getset',
     'Detected getter/setter accessor'
 );
 
 is(
-    $schema->{_accessor}{field},
+    $schema->{accessor}{field},
     'ua',
     'Correct accessor field detected'
 );
@@ -158,7 +158,7 @@ is(
 );
 
 is(
-    $schemas->{getter_only}{_accessor}{type},
+    $schemas->{getter_only}{accessor}{type},
     'getter',
     'Detected getter-only accessor'
 );
@@ -169,7 +169,7 @@ ok(
 );
 
 is(
-    $schemas->{setter_only}{_accessor}{type},
+    $schemas->{setter_only}{accessor}{type},
     'setter',
     'Detected setter-only accessor'
 );
@@ -187,7 +187,7 @@ is(
 );
 
 is(
-    $schemas->{ua2}{_accessor}{type},
+    $schemas->{ua2}{accessor}{type},
     'getset',
     'PVS-based getter/setter detected'
 );
