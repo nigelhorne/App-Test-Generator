@@ -65,6 +65,10 @@
 			background-color: #eee;
 			color: #666;
 		}
+		tr.cpan-na td {
+			background-color: #f77f50;
+			color: #666;
+		}
 		.new-failure {
 			background: #c00;
 			color: #fff;
@@ -83,7 +87,7 @@
 			font-weight: bold;
 		}
 		.notice.perl-version-cliff {
-			background-color: #fff3cd;   /* soft amber */
+			background-color: #fff3cd; /* soft amber */
 			border: 1px solid #ffeeba;
 			color: #856404;
 		}
@@ -93,6 +97,35 @@
 		}
 		.notice.perl-version-cliff a:hover {
 			text-decoration: none;
+		}
+		.notice.locale-cliff {
+			border-left: 4px solid #d97706;
+			background: #fffbeb;
+			padding: 0.5em 1em;
+		}
+		.notice.rt-issues {
+			background: #fff6e5;
+			border-left: 4px solid #d9822b;
+		}
+		table.root-causes {
+			border-collapse: collapse;
+			width: 100%;
+			margin-bottom: 1.5em;
+		}
+		table.root-causes th,
+		table.root-causes td {
+			border: 1px solid #ccc;
+			padding: 8px;
+			vertical-align: top;
+		}
+		table.root-causes tr.high {
+			background-color: #dfd;
+		}
+		table.root-causes tr.med {
+			background-color: #ffd;
+		}
+		table.root-causes tr.low {
+			background-color: #fdd;
 		}
 	</style>
 </head>
@@ -120,11 +153,11 @@
 
 <tbody>
 
-<tr class="med"><td><a href="bin-fuzz-harness-generator.html" title="View coverage line by line" target="_blank">bin/fuzz-harness-generator</a> <a href="https://github.com/nigelhorne/App-Test-Generator/blob/aa6e1c290841c5a3a017f523fae4ea8919c6a063/bin/fuzz-harness-generator" class="icon-link" title="View source on GitHub">&#128269;</a><canvas class="sparkline" width="80" height="20" data-points="74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8"></canvas></td><td>84.6</td><td>66.7</td><td>47.6</td><td>100.0</td><td><span class="coverage-badge badge-warn" title="Moderate coverage">74.8%</span></td><td class="neutral" title="Previous: 74.8%">&#9679; 0.0%</td></tr>
-<tr class="low"><td><a href="blib-lib-App-Test-Generator-pm.html" title="View coverage line by line" target="_blank">blib/lib/App/Test/Generator.pm</a> <a href="https://github.com/nigelhorne/App-Test-Generator/blob/aa6e1c290841c5a3a017f523fae4ea8919c6a063/blib/lib/App/Test/Generator.pm" class="icon-link" title="View source on GitHub">&#128269;</a><canvas class="sparkline" width="80" height="20" data-points="59.0,59.0,59.0,59.0,59.0,59.0,59.0,59.0,58.3,58.3"></canvas></td><td>66.1</td><td>49.6</td><td>43.3</td><td>77.4</td><td><span class="coverage-badge badge-bad" title="Needs improvement">58.0%</span></td><td class="negative" title="Previous: 58.3%">&#9660; 0.3%</td></tr>
-<tr class="med"><td><a href="blib-lib-App-Test-Generator-Template-pm.html" title="View coverage line by line" target="_blank">blib/lib/App/Test/Generator/Template.pm</a> <a href="https://github.com/nigelhorne/App-Test-Generator/blob/aa6e1c290841c5a3a017f523fae4ea8919c6a063/blib/lib/App/Test/Generator/Template.pm" class="icon-link" title="View source on GitHub">&#128269;</a><canvas class="sparkline" width="80" height="20" data-points="89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7"></canvas></td><td>100.0</td><td>50.0</td><td>33.3</td><td>100.0</td><td><span class="coverage-badge badge-warn" title="Moderate coverage">89.7%</span></td><td class="neutral" title="Previous: 89.7%">&#9679; 0.0%</td></tr>
+<tr class="med"><td><a href="bin-fuzz-harness-generator.html" title="View coverage line by line" target="_blank">bin/fuzz-harness-generator</a> <a href="https://github.com/nigelhorne/App-Test-Generator/blob/37b5293e99752d0ce965277ac8a7f69e61e6095f/bin/fuzz-harness-generator" class="icon-link" title="View source on GitHub">&#128269;</a><canvas class="sparkline" width="80" height="20" data-points="74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8,74.8"></canvas></td><td>84.6</td><td>66.7</td><td>47.6</td><td>100.0</td><td><span class="coverage-badge badge-warn" title="Moderate coverage">74.8%</span></td><td class="neutral" title="Previous: 74.8%">&#9679; 0.0%</td></tr>
+<tr class="low"><td><a href="blib-lib-App-Test-Generator-pm.html" title="View coverage line by line" target="_blank">blib/lib/App/Test/Generator.pm</a> <a href="https://github.com/nigelhorne/App-Test-Generator/blob/37b5293e99752d0ce965277ac8a7f69e61e6095f/blib/lib/App/Test/Generator.pm" class="icon-link" title="View source on GitHub">&#128269;</a><canvas class="sparkline" width="80" height="20" data-points="59.0,59.0,59.0,59.0,59.0,59.0,59.0,58.3,58.3,58.0"></canvas></td><td>66.0</td><td>49.6</td><td>43.3</td><td>77.4</td><td><span class="coverage-badge badge-bad" title="Needs improvement">58.0%</span></td><td class="negative" title="Previous: 58.0%">&#9660; 0.1%</td></tr>
+<tr class="med"><td><a href="blib-lib-App-Test-Generator-Template-pm.html" title="View coverage line by line" target="_blank">blib/lib/App/Test/Generator/Template.pm</a> <a href="https://github.com/nigelhorne/App-Test-Generator/blob/37b5293e99752d0ce965277ac8a7f69e61e6095f/blib/lib/App/Test/Generator/Template.pm" class="icon-link" title="View source on GitHub">&#128269;</a><canvas class="sparkline" width="80" height="20" data-points="89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7,89.7"></canvas></td><td>100.0</td><td>50.0</td><td>33.3</td><td>100.0</td><td><span class="coverage-badge badge-warn" title="Moderate coverage">89.7%</span></td><td class="neutral" title="Previous: 89.7%">&#9679; 0.0%</td></tr>
 <tr class="summary-row nosort"><td colspan="2"><strong>Summary</strong></td><td colspan="2">3 files</td><td colspan="3">Avg: 74%, Low: 1</td></tr>
-<tr class="med nosort"><td><strong>Total</strong></td><td>68.3</td><td>50.6</td><td>43.5</td><td>81.3</td><td colspan="2"><strong>59.8</strong></td></tr>
+<tr class="med nosort"><td><strong>Total</strong></td><td>68.1</td><td>50.6</td><td>43.5</td><td>81.3</td><td colspan="2"><strong>59.7</strong></td></tr>
 </tbody></table>
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1em;">
 	<div>
@@ -171,8 +204,7 @@ function linearRegression(data) {
 	}));
 }
 
-const dataPoints = [ { x: "2026-01-31T17:41:41-05:00", y: 60.6837606837607, delta: 0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/4da5c1f", label: "2026-01-31T17:41:41-05:00", pointBackgroundColor: "gray", comment: "Latest test dashboard" },
-{ x: "2026-02-02T09:38:26-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/3d0ca56", label: "2026-02-02T09:38:26-05:00", pointBackgroundColor: "gray", comment: "Fix \"skipped: (no reason given)\" https://www.cpantesters.org/cpan/report/6af2b33e-fef6-11f0-9424-b5d717f4d45d" },
+const dataPoints = [ { x: "2026-02-02T09:38:26-05:00", y: 60.6837606837607, delta: 0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/3d0ca56", label: "2026-02-02T09:38:26-05:00", pointBackgroundColor: "gray", comment: "Fix \"skipped: (no reason given)\" https://www.cpantesters.org/cpan/report/6af2b33e-fef6-11f0-9424-b5d717f4d45d" },
 { x: "2026-02-07T21:25:56-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/80bcfab", label: "2026-02-07T21:25:56-05:00", pointBackgroundColor: "gray", comment: "Some getter/setter routines where missed" },
 { x: "2026-02-07T21:40:13-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/01b61c1", label: "2026-02-07T21:40:13-05:00", pointBackgroundColor: "gray", comment: "Some getter/setters were misdiagnosed as setters" },
 { x: "2026-02-08T09:22:02-05:00", y: 60.6837606837607, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/d9e128b", label: "2026-02-08T09:22:02-05:00", pointBackgroundColor: "gray", comment: "Pave the way for more accessor testing" },
@@ -180,7 +212,8 @@ const dataPoints = [ { x: "2026-01-31T17:41:41-05:00", y: 60.6837606837607, delt
 { x: "2026-02-08T13:22:23-05:00", y: 29.273936939543, delta: -31.4, url: "https://github.com/nigelhorne/App-Test-Generator/commit/5378800", label: "2026-02-08T13:22:23-05:00", pointBackgroundColor: "red", comment: "Fix filename" },
 { x: "2026-02-08T15:12:39-05:00", y: 60.6837606837607, delta: 31.4, url: "https://github.com/nigelhorne/App-Test-Generator/commit/d48ec3f", label: "2026-02-08T15:12:39-05:00", pointBackgroundColor: "green", comment: "Improved handling of getter/setter confidence levels" },
 { x: "2026-02-08T19:01:04-05:00", y: 60.0842865743528, delta: -0.6, url: "https://github.com/nigelhorne/App-Test-Generator/commit/432f15e", label: "2026-02-08T19:01:04-05:00", pointBackgroundColor: "red", comment: "Prep for adding accessor testing code" },
-{ x: "2026-02-08T19:19:05-05:00", y: 60.0961538461538, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/0651f16", label: "2026-02-08T19:19:05-05:00", pointBackgroundColor: "gray", comment: "Addedd accessor_code" } ];
+{ x: "2026-02-08T19:19:05-05:00", y: 60.0961538461538, delta: 0.0, url: "https://github.com/nigelhorne/App-Test-Generator/commit/0651f16", label: "2026-02-08T19:19:05-05:00", pointBackgroundColor: "gray", comment: "Addedd accessor_code" },
+{ x: "2026-02-09T13:28:59-05:00", y: 59.8208955223881, delta: -0.3, url: "https://github.com/nigelhorne/App-Test-Generator/commit/aa6e1c2", label: "2026-02-09T13:28:59-05:00", pointBackgroundColor: "red", comment: "Started isa code" } ];
 
 const regressionPoints = linearRegression(dataPoints);
 // Try to register the zoom plugin (handles different UMD builds)
@@ -432,10 +465,208 @@ function refresh(){
 </script>
 
 <p><center>Use mouse wheel or pinch to zoom; drag to pan</center></p>
-<p>No CPAN Testers failures reported for App-Test-Generator 0.27.</p>
+<p>No issues active on <a href="https://rt.cpan.org/Public/Dist/Display.html?Name=App-Test-Generator">RT</a></p>
+<h2>CPAN Testers Failures for App-Test-Generator 0.27</h2>
+<p class="notice perl-version-cliff">
+Fails on Perl &leq; 5.34.1; passes on Perl &geq; 5.36.0. 
+<a href="https://perldoc.perl.org/perl5360delta" target="_blank">See perldelta for this release</a>
+ <span class="coverage-badge badge-good" title="38 fails, 0 passes">Strong confidence</span></p>
+<h3>Failure Summary</h3>
+<ul>
+<li><b>Perl 5.22.x</b>: 7 failures</li>
+<li><b>freebsd</b>: 20 failures</li>
+<li><b>5.20 / freebsd</b>: 4 failures</li>
+</ul>
+<h3>Likely Root Causes</h3>
+<table class="root-causes">
+<thead>
+<tr>
+	<th>Cause</th>
+	<th>Confidence</th>
+	<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+
+<tr class="high">
+	<td halign="center"><strong>Perl version regression (Perl &lt; 5.36.0) (<a href="https://perldoc.perl.org/perldelta5.36.0" target="_blank">perldelta</a>)</strong></td>
+	<td halign="center">Strong (100%)</td>
+	<td halign="center"><ul><li>All failures on Perl &leq; 5.34.1</li><li>All passes on Perl &geq; 5.36.0</li></ul></td>
+</tr>
+
+</tbody>
+</table>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+	const toggleFail = document.getElementById('toggleFail');
+	const toggleUnknown = document.getElementById('toggleUnknown');
+	const toggleNA = document.getElementById('toggleNA');
+	const toggleNew = document.getElementById('toggleNew');
+
+	function update() {
+		document.querySelectorAll('tr').forEach(row => {
+			// Skip header rows
+			if (row.querySelector('th')) return;
+
+			// Determine row status
+			const isFail = row.classList.contains('cpan-fail');
+			const isUnknown = row.classList.contains('cpan-unknown');
+			const isNA = row.classList.contains('cpan-na');
+			const isNew = !!row.querySelector('.new-failure');
+
+			// Decide whether to show the row
+			let show = true;
+
+			if (toggleFail && !toggleFail.checked && isFail) show = false;
+			if (toggleUnknown && !toggleUnknown.checked && isUnknown) show = false;
+			if (toggleNA && !toggleNA.checked && isNA) show = false;
+			if (toggleNew && toggleNew.checked && !isNew) show = false;
+
+			row.style.display = show ? '' : 'none';
+		});
+	}
+
+	[toggleFail, toggleUnknown, toggleNA, toggleNew].forEach(cb => {
+		if (cb) cb.addEventListener('change', update);
+	});
+
+	update();
+});
+document.addEventListener("DOMContentLoaded", () => {
+	const th = document.querySelector("table.sortable-table th");
+	if (th) sortTable(th, 0);
+});
+</script>
+
+<p><em>Showing one failure per OS/Perl combination.</em></p>
+<div style="margin-bottom: 0.5em;">
+	<label>
+		<input type="checkbox" id="toggleFail" checked>
+		FAIL
+	</label>
+	<label style="margin-left: 1em;">
+		<input type="checkbox" id="toggleUnknown">
+		UNKNOWN
+	</label>
+	<label style="margin-left: 1em;">
+		<input type="checkbox" id="toggleNA">
+		NA
+	</label>
+	<label style="margin-left: 1em;">
+	<label style="margin-left: 1em;">
+		<input type="checkbox" id="toggleNew">
+		NEW only
+	</label>
+</div>
+
+<table class="sortable-table" data-sort-col="0" data-sort-order="asc">
+<thead>
+<tr>
+	<th class="sortable" onclick="sortTable(this, 0)">
+		<span class="label">Date</span> <span class="arrow">&#x25B2;</span>
+	</th>
+	<th class="sortable" onclick="sortTable(this, 1)">
+		<span class="label">OS</span> <span class="arrow">&#x25B2;</span>
+	</th>
+	<th class="sortable" onclick="sortTable(this, 2)">
+		<span class="label">Perl</span> <span class="arrow">&#x25B2;</span>
+	</th>
+	<th class="sortable" onclick="sortTable(this, 3)">
+		<span class="label">Reporter</span> <span class="arrow">&#x25B2;</span>
+	</th>
+	<th class="sortable" onclick="sortTable(this, 4)" title="Marks failures that did not occur in the previous release. The same OS, Perl version, architecture, and platform were passing before.">
+		<span class="label">New</span> <span class="arrow">&#x25B2;</span>
+	</th>
+	<th>Report</th>
+</tr>
+</thead>
+<tbody>
+
+<tr class="cpan-na"><td>2026-01-30T15:01:00Z</td><td>freebsd</td><td>5.22.3</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/82e6bb8a-fdec-11f0-9be8-f5d66d8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T13:42:00Z</td><td>linux</td><td>5.24.4</td><td>Andreas J. K&ouml;nig (ANDK)</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/7ee0ee44-fde1-11f0-936d-fd2d9c87a64b" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-02-01T02:11:00Z</td><td>freebsd</td><td>5.8.9</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/41afcb2a-ff13-11f0-91f8-82056e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-02-01T02:02:00Z</td><td>linux</td><td>5.24.0</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/20e7dc76-ff12-11f0-93f7-250f6e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T15:01:00Z</td><td>linux</td><td>5.32.1</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/866fdd86-fdec-11f0-9be8-f5d66d8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T13:45:00Z</td><td>linux</td><td>5.18.4</td><td>Andreas J. K&ouml;nig (ANDK)</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/e69e4edc-fde1-11f0-9cc4-b4450439c0d9" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-31T04:14:00Z</td><td>freebsd</td><td>5.18.2</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/4cb6952a-fe5b-11f0-8c85-15da6d8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T02:23:00Z</td><td>freebsd</td><td>5.28.1</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/aa61bfb2-fd82-11f0-bdf6-27f36d8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-31T12:20:00Z</td><td>freebsd</td><td>5.14.4</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/362e2842-fe9f-11f0-abc0-e80e6e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T13:47:00Z</td><td>linux</td><td>5.12.5</td><td>Andreas J. K&ouml;nig (ANDK)</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/29039160-fde2-11f0-ae10-9bda659fb94a" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T13:41:00Z</td><td>linux</td><td>5.32.0</td><td>Andreas J. K&ouml;nig (ANDK)</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/704075c6-fde1-11f0-936d-fd2d9c87a64b" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-02-01T22:00:00Z</td><td>freebsd</td><td>5.20.1</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/6e818d5e-ffb9-11f0-a524-0bf96d8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T02:23:00Z</td><td>linux</td><td>5.20.0</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/ab9bf190-fd82-11f0-bdf6-27f36d8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T15:01:00Z</td><td>linux</td><td>5.34.0</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/85625ba8-fdec-11f0-9be8-f5d66d8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T14:27:00Z</td><td>linux</td><td>5.34.1</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/c77c47d8-fde7-11f0-bfe5-56346e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T13:46:00Z</td><td>linux</td><td>5.12.5</td><td>Andreas J. K&ouml;nig (ANDK)</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/1a2352ca-fde2-11f0-b49c-d637ebf38a5a" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T15:01:00Z</td><td>linux</td><td>5.22.2</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/88841114-fdec-11f0-9be8-f5d66d8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-02-01T18:06:00Z</td><td>freebsd</td><td>5.20.3</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/b7e81452-ff98-11f0-80e4-27496e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-02-07T09:37:00Z</td><td>freebsd</td><td>5.30.3</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/a59ea8d2-0408-11f1-9a8c-efd96d8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T13:42:00Z</td><td>linux</td><td>5.26.0</td><td>Andreas J. K&ouml;nig (ANDK)</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/7ada6492-fde1-11f0-936d-fd2d9c87a64b" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-31T23:14:00Z</td><td>freebsd</td><td>5.10.1</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/a649b1e0-fefa-11f0-b3fe-8f376e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-02-01T04:26:00Z</td><td>freebsd</td><td>5.24.1</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/307ff538-ff26-11f0-9e41-39326e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T06:07:00Z</td><td>freebsd</td><td>5.18.4</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/01fd9a7e-fda2-11f0-8cc1-27346e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-31T08:11:00Z</td><td>freebsd</td><td>5.16.3</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/6aa83694-fe7c-11f0-86c0-79166e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T13:43:00Z</td><td>linux</td><td>5.22.4</td><td>Andreas J. K&ouml;nig (ANDK)</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/a4fdb788-fde1-11f0-ab0f-c1cea7b3d8c2" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T13:46:00Z</td><td>linux</td><td>5.16.3</td><td>Andreas J. K&ouml;nig (ANDK)</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/18cada38-fde2-11f0-b49c-d637ebf38a5a" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-02-02T03:11:00Z</td><td>freebsd</td><td>5.20.2</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/cdd272fc-ffe4-11f0-b08c-4f0b6e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T13:42:00Z</td><td>linux</td><td>5.28.2</td><td>Andreas J. K&ouml;nig (ANDK)</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/74f6d718-fde1-11f0-936d-fd2d9c87a64b" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-29T13:08:00Z</td><td>linux</td><td>5.32.1</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/ac3f6d6c-fd13-11f0-8655-812a6e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-31T12:26:00Z</td><td>linux</td><td>5.12.3</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/212b7d4a-fea0-11f0-8a4c-5ce96d8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T13:41:00Z</td><td>linux</td><td>5.34.1</td><td>Andreas J. K&ouml;nig (ANDK)</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/6c98895e-fde1-11f0-936d-fd2d9c87a64b" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-31T00:05:00Z</td><td>freebsd</td><td>5.20.0</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/9f9d7dd0-fe38-11f0-9d60-35e26d8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-02-02T00:10:00Z</td><td>freebsd</td><td>5.22.1</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/84147192-ffcb-11f0-b01f-8d0e6e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T15:01:00Z</td><td>freebsd</td><td>5.26.1</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/842864c6-fdec-11f0-9be8-f5d66d8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-02-01T15:03:00Z</td><td>freebsd</td><td>5.22.2</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/34aecdba-ff7f-11f0-9212-ee056e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-02-01T06:50:00Z</td><td>freebsd</td><td>5.22.0</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/5dd0e524-ff3a-11f0-be8e-10246e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-30T13:44:00Z</td><td>linux</td><td>5.22.3</td><td>Andreas J. K&ouml;nig (ANDK)</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/cb3e89f4-fde1-11f0-bcbe-b352d55d9aeb" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-29T13:34:00Z</td><td>linux</td><td>5.32.1</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/4acb7bc6-fd17-11f0-9593-4be26d8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-01-29T13:07:00Z</td><td>freebsd</td><td>5.28.3</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/888444e2-fd13-11f0-981b-3d136e8775ea" target="_blank">View</a></td></tr>
+<tr class="cpan-na"><td>2026-02-01T08:29:00Z</td><td>freebsd</td><td>5.24.0</td><td>Slaven Rezi&#x107;</td><td></td>
+				<td><a href="https://www.cpantesters.org/cpan/report/1578b1f4-ff48-11f0-97fe-51406e8775ea" target="_blank">View</a></td></tr>
+</tbody></table>
 <footer>
 	<p>Project: <a href="https://github.com/nigelhorne/App-Test-Generator">App-Test-Generator</a></p>
-	<p><em>Last updated: 2026-02-09 18:33:10 - <a href="https://github.com/nigelhorne/App-Test-Generator/commit/aa6e1c290841c5a3a017f523fae4ea8919c6a063">commit <code>aa6e1c2</code></a></em></p>
+	<p><em>Last updated: 2026-02-09 20:54:38 - <a href="https://github.com/nigelhorne/App-Test-Generator/commit/37b5293e99752d0ce965277ac8a7f69e61e6095f">commit <code>37b5293</code></a></em></p>
 </footer>
 
 </body>
