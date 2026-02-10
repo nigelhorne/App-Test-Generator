@@ -35,7 +35,7 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
-our $VERSION = '0.27';
+our $VERSION = '0.28';
 
 use constant {
 	DEFAULT_ITERATIONS => 50,
@@ -50,7 +50,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses from test 
 
 =head1 VERSION
 
-Version 0.27
+Version 0.28
 
 =head1 SYNOPSIS
 
@@ -1683,7 +1683,7 @@ sub generate
 		'eval { $result2 = do { ' . (defined($position_code) ? $position_code : $call_code) . " }; };\n" .
 		'is_deeply($result2, $result, "deterministic result for same input");' .
 		"\n";
-	
+
 	# Generate the test content
 	my $tt = Template->new({ ENCODING => 'utf8', TRIM => 1 });
 

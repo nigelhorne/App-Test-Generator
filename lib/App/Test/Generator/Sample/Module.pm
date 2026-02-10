@@ -4,11 +4,15 @@ use strict;
 use warnings;
 use Carp qw(croak);
 
-our $VERSION = '0.27';
+our $VERSION = '0.28';
 
 =head1 NAME
 
 Test::App::Generator::Sample::Module - Example module for schema extraction testing
+
+=head1 VERSION
+
+Version 0.28
 
 =head1 SYNOPSIS
 

@@ -15,7 +15,7 @@ use Safe;
 use Scalar::Util qw(looks_like_number);
 use YAML::XS;
 
-our $VERSION = '0.27';
+our $VERSION = '0.28';
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 
 =head1 VERSION
 
-Version 0.27
+Version 0.28
 
 =head1 SYNOPSIS
 
