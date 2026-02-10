@@ -1,9 +1,5 @@
 package App::Test::Generator::SchemaExtractor;
 
-# FIXME:
-#	Sometimes schema->{input} is a hash, sometimes a hashref.
-#	Make it always a hash and remove the patch to the _detect_accessor_methods routine.
-
 use strict;
 use warnings;
 use autodie qw(:all);
@@ -1827,16 +1823,12 @@ sub _detect_accessor_methods {
 				};
 			}
 		}
-		my %input;
 		if(ref($schema->{input}) eq 'HASH') {
-			%input = %{$schema->{input}};
-		} else {
-			%input = $schema->{input};
+			if(scalar keys(%{$schema->{input}}) > 1) {
+				croak(__PACKAGE__, ': A getset accessor function can have at most one argument');
+			}
 		}
-		if(scalar keys(%input) > 1) {
-			croak(__PACKAGE__, ': A getset accessor function can have at most one argument');
-		}
-		$schema->{input}{$property}->{position} = 0;
+		$schema->{input}->{$property}->{position} = 0;
 	} elsif (
 		$code =~ /return\s+\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*;/ &&
 		$code !~ /return\s+(?!\$self\s*->\s*\{\s*['"]?\Q$1\E['"]?\s*\})/
@@ -1857,16 +1849,12 @@ sub _detect_accessor_methods {
 			level => 'high',
 			factors => ['Detected getter method'],
 		};
-		my %input;
 		if(ref($schema->{input}) eq 'HASH') {
-			%input = %{$schema->{input}};
-		} else {
-			%input = $schema->{input};
+			if(scalar keys(%{$schema->{input}}) > 1) {
+				croak(__PACKAGE__, ': A getter accessor function can have at most one argument');
+			}
 		}
-		if(scalar keys(%input) > 1) {
-			croak(__PACKAGE__, ': A getter accessor function can have at most one argument');
-		}
-		$schema->{input}{$property}->{position} = 0;
+		$schema->{input}->{$property}->{position} = 0;
 	} elsif (
 		$code =~ /return\s+\$self\b/ &&
 		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*\$(\w+)\s*;/
