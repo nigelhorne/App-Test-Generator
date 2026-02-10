@@ -2,7 +2,7 @@ package App::Test::Generator::SchemaExtractor;
 
 # FIXME:
 #	Sometimes schema->{input} is a hash, sometimes a hashref.
-#	Make it always a hashref and remove the patch to the _detect_accessor_methods routine.
+#	Make it always a hash and remove the patch to the _detect_accessor_methods routine.
 
 use strict;
 use warnings;
@@ -1837,7 +1837,10 @@ sub _detect_accessor_methods {
 			croak(__PACKAGE__, ': A getset accessor function can have at most one argument');
 		}
 		$schema->{input}{$property}->{position} = 0;
-	} elsif($code =~ /(?:return\s+)?\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*;/) {
+	} elsif (
+		$code =~ /return\s+\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*;/ &&
+		$code !~ /return\s+(?!\$self\s*->\s*\{\s*['"]?\Q$1\E['"]?\s*\})/
+	) {
 		# -------------------------------
 		# Getter
 		# -------------------------------
@@ -5700,7 +5703,7 @@ sub _write_schema {
 		$output->{relationships} = $schema->{relationships};
 	}
 
-	if($schema->{accessor}) {
+	if($schema->{accessor} && scalar(keys %{$schema->{accessor}})) {
 		$output->{accessor} = $schema->{accessor};
 	}
 
@@ -7049,7 +7052,7 @@ sub _types_are_compatible {
 		return grep { $_ eq $pod_type } @$allowed;
 	}
 
-	return 0;  # Not compatible
+	return 0;	# Not compatible
 }
 
 sub generate_pod_validation_report {
