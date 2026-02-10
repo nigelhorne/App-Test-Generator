@@ -1530,10 +1530,18 @@ sub generate
 		$setup_code .= "\nmy \$obj = $new_code;";
 		if($has_positions) {
 			$position_code = "\$result = (scalar(\@alist) == 1) ? \$obj->$function(\$alist[0]) : (scalar(\@alist) == 0) ? \$obj->$function() : \$obj->$function(\@alist);";
-			if(defined($accessor{type}) && ($accessor{type} eq 'getset')) {
-				$position_code .= 'if(scalar(@alist) == 1) { ';
-				$position_code .= "cmp_ok(\$result, 'eq', \$alist[0], 'getset function returns what was put in'); ok(\$obj->$function() eq \$result, 'test getset accessor');";
-				$position_code .= '}';
+			if(defined($accessor{type})) {
+				if($accessor{type} eq 'getset') {
+					$position_code .= 'if(scalar(@alist) == 1) { ';
+					$position_code .= "cmp_ok(\$result, 'eq', \$alist[0], 'getset function returns what was put in'); ok(\$obj->$function() eq \$result, 'test getset accessor');";
+					$position_code .= '}';
+				}
+				if(($accessor{type} eq 'getset') || ($accessor{type} eq 'getter')) {
+					# Since Perl doesn't support data encapsulation, we can test the getter returns the correct item
+					$position_code .= 'if(scalar(@alist) == 1) { ';
+					$position_code .= "cmp_ok(\$result, 'eq', \$obj->{$function}, 'getset function returns correct item');";
+					$position_code .= '}';
+				}
 			}
 		} else {
 			$call_code = "\$result = \$obj->$function(\$input);";
