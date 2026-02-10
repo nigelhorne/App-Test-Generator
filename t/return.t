@@ -71,13 +71,13 @@ END_MODULE
 	my $schemas = $extractor->extract_all();
 
 	my $get_items = $schemas->{get_items};
-	ok($get_items->{output}{context_aware}, 'Detects wantarray usage');
-	is($get_items->{output}{list_context}{type}, 'array', 'List context returns array');
-	is($get_items->{output}{scalar_context}{type}, 'integer', 'Scalar context returns integer');
+	ok($get_items->{output}{_context_aware}, 'Detects wantarray usage');
+	is($get_items->{output}{_list_context}{type}, 'array', 'List context returns array');
+	is($get_items->{output}{_scalar_context}{type}, 'integer', 'Scalar context returns integer');
 
 	my $fetch_data = $schemas->{fetch_data};
-	ok($fetch_data->{output}{context_aware}, 'Detects wantarray in conditional');
-	ok($fetch_data->{output}{list_context}, 'Has list context return');
+	ok($fetch_data->{output}{_context_aware}, 'Detects wantarray in conditional');
+	ok($fetch_data->{output}{_list_context}, 'Has list context return');
 
 	done_testing();
 };
@@ -329,9 +329,9 @@ END_MODULE
 	my $schemas = $extractor->extract_all();
 
 	# Context-aware with ternary
-	ok($schemas->{get_status}{output}{context_aware}, 'Ternary wantarray detected');
-	is($schemas->{get_status}{output}{list_context}{type}, 'array', 'List context returns array');
-	is($schemas->{get_status}{output}{scalar_context}{type}, 'scalar', 'Scalar context returns scalar');
+	ok($schemas->{get_status}{output}{_context_aware}, 'Ternary wantarray detected');
+	is($schemas->{get_status}{output}{_list_context}{type}, 'array', 'List context returns array');
+	is($schemas->{get_status}{output}{_scalar_context}{type}, 'scalar', 'Scalar context returns scalar');
 
 	# Getter/setter pattern (not consistently _returns_self)
 	ok(!$schemas->{builder_method}{output}{_returns_self}, 'Getter/setter not marked _returns_self');
@@ -425,7 +425,7 @@ END_MODULE
 	ok($schemas->{set_timeout}{output}{_returns_self}, 'Returns self for chaining');
 
 	# Context-aware search
-	ok($schemas->{search}{output}{context_aware}, 'search is context-aware');
+	ok($schemas->{search}{output}{_context_aware}, 'search is context-aware');
 
 	# Debug logger (void context)
 	is($schemas->{debug}{output}{type}, 'void', 'debug is void context');

@@ -548,11 +548,11 @@ Detection captures:
 
 =over 4
 
-=item * C<context_aware> flag - Method uses wantarray
+=item * C<_context_aware> flag - Method uses wantarray
 
-=item * C<list_context> - Type returned in list context (e.g., 'array')
+=item * C<_list_context> - Type returned in list context (e.g., 'array')
 
-=item * C<scalar_context> - Type returned in scalar context (e.g., 'integer')
+=item * C<_scalar_context> - Type returned in scalar context (e.g., 'integer')
 
 =back
 
@@ -582,7 +582,7 @@ Example:
         return;  # Void context
     }
 
-Sets C<void_context> flag and C<type =E<gt> 'void'>.
+Sets C<_void_context> flag and C<type =E<gt> 'void'>.
 
 =head3 Method Chaining Detection
 
@@ -679,13 +679,13 @@ Enhanced return analysis adds these fields to method schemas:
 
     output:
       type: boolean              # Inferred return type
-      context_aware: 1           # Uses wantarray
-      list_context:
+      _context_aware: 1           # Uses wantarray
+      _list_context:
         type: array
-      scalar_context:
+      _scalar_context:
         type: integer
       _returns_self: 1               # Returns $self
-      void_context: 1            # No meaningful return
+      _void_context: 1            # No meaningful return
       _success_indicator: 1       # Always returns true
       _error_return: undef        # How errors are signaled
       success_failure_pattern: 1 # Mixed return types
@@ -3058,7 +3058,7 @@ sub _detect_list_context {
 
 	# Check for wantarray usage
 	if ($code =~ /wantarray/) {
-		$output->{context_aware} = 1;
+		$output->{_context_aware} = 1;
 		$self->_log('  OUTPUT: Method uses wantarray - context sensitive');
 
 		# Debug: show what we're matching against
@@ -3071,8 +3071,8 @@ sub _detect_list_context {
 			my ($list_return, $scalar_return) = ($1, $2);
 			$self->_log("  DEBUG list (with parens): [$list_return], scalar: [$scalar_return]");
 
-			$output->{list_context} = $self->_infer_type_from_expression($list_return);
-			$output->{scalar_context} = $self->_infer_type_from_expression($scalar_return);
+			$output->{_list_context} = $self->_infer_type_from_expression($list_return);
+			$output->{_scalar_context} = $self->_infer_type_from_expression($scalar_return);
 			$self->_log('  OUTPUT: Detected context-dependent returns (parenthesized)');
 		} elsif ($code =~ /wantarray\s*\?\s*([^:]+?)\s*:\s*([^;]+)/s) {
 			# Pattern 2: wantarray ? @array : scalar (no parens around list)
@@ -3083,12 +3083,12 @@ sub _detect_list_context {
 
 			$self->_log("  DEBUG list (no parens): [$list_return], scalar: [$scalar_return]");
 
-			$output->{list_context} = $self->_infer_type_from_expression($list_return);
-			$output->{scalar_context} = $self->_infer_type_from_expression($scalar_return);
+			$output->{_list_context} = $self->_infer_type_from_expression($list_return);
+			$output->{_scalar_context} = $self->_infer_type_from_expression($scalar_return);
 			$self->_log('  OUTPUT: Detected context-dependent returns (non-parenthesized)');
 		} elsif ($code =~ /return[^;]*unless\s+wantarray.*?return\s*\(([^)]+)\)/s) {
 			# Pattern 3: return unless wantarray; return (list);
-			$output->{list_context} = { type => 'array' };
+			$output->{_list_context} = { type => 'array' };
 			$self->_log('  OUTPUT: Detected list context return after wantarray check');
 			}
 		}
@@ -3110,7 +3110,7 @@ sub _detect_list_context {
 			# Multiple values returned
 			unless ($output->{type} && $output->{type} eq 'boolean') {
 				$output->{type} = 'array';
-				$output->{list_return} = $comma_count + 1;
+				$output->{_list_return} = $comma_count + 1;
 				$self->_log('  OUTPUT: Returns list of ' . ($comma_count + 1) . ' values');
 			}
 		}
@@ -3171,7 +3171,7 @@ sub _detect_void_context {
 
 	# Void context indicators
 	if ($no_value_returns > 0 && $no_value_returns == $total_returns) {
-		$output->{void_context} = 1;
+		$output->{_void_context} = 1;
 		$output->{type} = 'void';  # This should override any previous type
 		$self->_log('  OUTPUT: All returns are empty - void context method');
 	} elsif ($true_returns > 0 && $true_returns == $total_returns && $total_returns >= 1) {
@@ -5031,15 +5031,15 @@ sub _calculate_output_confidence {
 	}
 
 	# Context-aware returns
-	if ($output->{context_aware}) {
+	if ($output->{_context_aware}) {
 		$score += 20;
 		push @factors, "Context-aware return (wantarray) (+20)";
 
-		if ($output->{list_context}) {
-			push @factors, "  List context: $output->{list_context}{type}";
+		if ($output->{_list_context}) {
+			push @factors, "  List context: $output->{_list_context}{type}";
 		}
-		if ($output->{scalar_context}) {
-			push @factors, "  Scalar context: $output->{scalar_context}{type}";
+		if ($output->{_scalar_context}) {
+			push @factors, "  Scalar context: $output->{_scalar_context}{type}";
 		}
 	}
 
@@ -5062,7 +5062,7 @@ sub _calculate_output_confidence {
 	}
 
 	# Void context
-	if ($output->{void_context}) {
+	if ($output->{_void_context}) {
 		$score += 20;
 		push @factors, "Void context method (no meaningful return) (+20)";
 	}
