@@ -1,5 +1,9 @@
 package App::Test::Generator::SchemaExtractor;
 
+# FIXME:
+#	Sometimes schema->{input} is a hash, sometimes a hashref.
+#	Make it always a hashref and remove the patch to the _detect_accessor_methods routine.
+
 use strict;
 use warnings;
 use autodie qw(:all);
@@ -1823,7 +1827,12 @@ sub _detect_accessor_methods {
 				};
 			}
 		}
-		my %input = $schema->{input};
+		my %input;
+		if(ref($schema->{input}) eq 'HASH') {
+			%input = %{$schema->{input}};
+		} else {
+			%input = $schema->{input};
+		}
 		if(scalar keys(%input) > 1) {
 			croak(__PACKAGE__, ': A getset accessor function can have at most one argument');
 		}
@@ -1841,13 +1850,16 @@ sub _detect_accessor_methods {
 
 		$self->_log("  Detected getter accessor for property: $property");
 
-		$schema->{input} = {};
-		$schema->{input_style} = 'none';
 		$schema->{_confidence}{input} = {
 			level => 'high',
 			factors => ['Detected getter method'],
 		};
-		my %input = $schema->{input};
+		my %input;
+		if(ref($schema->{input}) eq 'HASH') {
+			%input = %{$schema->{input}};
+		} else {
+			%input = $schema->{input};
+		}
 		if(scalar keys(%input) > 1) {
 			croak(__PACKAGE__, ': A getter accessor function can have at most one argument');
 		}
