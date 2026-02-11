@@ -178,6 +178,7 @@ my @regex_tests = (
 	"/etc/passwd\0",
 	"D:\\dos_path",
 	"I:\\",
+	'/(?{ exit 1 })/',
 );
 
 # unified generator to randomly produces codepoint strings,
@@ -460,8 +461,12 @@ sub rand_num {
 		return (rand() * 200 - 100);	# -100 .. 100
 	} elsif ($r < 0.9) {
 		return (rand() * 1e12) - 5e11;	# large-ish
-	} elsif ($r < 0.98) {
+	} elsif ($r < 0.95) {
+		return -0.0;	# Negative 0
+	} elsif ($r < 0.96) {
 		return (rand() * 1e308) - 5e307;	# very large floats
+	} elsif($r < 0.97) {
+		return 9**9**9;	# Infinity
 	} else {
 		return 1e-308 * (rand() * 1000);	# tiny float, subnormal-like
 	}
@@ -902,6 +907,9 @@ sub _generate_integer_cases {
 				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_int()) ) };	# Any positive integer
 			}
 		}
+		if($min <= 0) {
+			push @cases, { %{$mandatory_args}, ( $arg_name => -0.0, _STATUS => 'OK' ) };	# Negative 0
+		}
 	}
 	if (defined $spec->{max}) {
 		my $max = $spec->{max};
@@ -1129,6 +1137,7 @@ sub _generate_string_cases
 		} else {
 			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str(10_000), _LINE => __LINE__ ) };
 		}
+		push @cases, { %{$mandatory_args}, ( $arg_name => "\x{FEFF}", _STATUS => 'OK', _LINE => __LINE__, _NAME => 'Byte order marker' ) };
 	}
 
 	if((!exists($spec->{min})) || ($spec->{min} == 0)) {
@@ -1232,7 +1241,7 @@ sub _generate_string_cases
 			{ %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) };
 	}
 	push @cases,
-		{ %{$mandatory_args}, ( $arg_name => \'george', _STATUS => 'DIES', _LINE => __LINE__ ) },
+		{ %{$mandatory_args}, ( $arg_name => \'ref to scalar', _STATUS => 'DIES', _LINE => __LINE__ ) },
 		{ %{$mandatory_args}, ( $arg_name => sub { die 'boom' }, _STATUS => 'DIES', _LINE => __LINE__ ) },
 		{ %{$mandatory_args}, ( $arg_name => bless({}, 'Evil::Class'), _STATUS => 'DIES', _LINE => __LINE__ ) },
 		# { %{$mandatory_args}, ( $arg_name => [1, 2, 3], _STATUS => 'DIES', _LINE => __LINE__ ) },	# Generates false positives.  Why?
@@ -1574,6 +1583,8 @@ sub run_test
 	if((!defined($config{timeout})) || ($config{timeout} > 0)) {
 		alarm($config{'timeout'} // 10);
 	}
+	my $old_warn = $SIG{__WARN__};
+	my $old_die = $SIG{__DIE__};
 	my $ok = eval {
 		if(defined($status)) {
 			if($status eq 'DIES') {
@@ -1665,6 +1676,8 @@ sub run_test
 	# Global side effect detection
 	is(Cwd::getcwd(), $cwd_before, 'cwd not modified');
 	is_deeply(_filtered_env(\%ENV), _filtered_env(\%ENV_before), 'ENV not modified');
+	is($SIG{__WARN__}, $old_warn, 'warn handler is not changed');
+	is($SIG{__DIE__}, $old_die, 'die handler is not changed');
 
 	delete local $output->{'_STATUS'};
 
