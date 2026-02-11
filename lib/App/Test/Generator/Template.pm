@@ -570,6 +570,12 @@ sub fuzz_inputs
 			}
 		}
 	}
+
+	# Don't do for now, until transform object code is added
+	# my %mandatory_args;
+	# if(my $foundation = _fill_foundation()) {
+		# %mandatory_args = %{$foundation};
+	# }
 	my %mandatory_args = (%mandatory_strings, %mandatory_objects, %mandatory_numbers);
 
 	if(($all_optional) || ((scalar keys %input) > 1)) {
@@ -747,119 +753,8 @@ sub fuzz_inputs
 			}
 		} else {
 			# our %input = ( str => { type => 'string' } );
-			foreach my $field (keys %input) {
-				my $spec = $input{$field} || {};
-				foreach my $field(keys %{$spec}) {
-					next if($field =~ /^_/);	# Ignore comments
-					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'position', 'memberof', 'semantic', 'isa'))) {
-						die("TODO: handle schema keyword '$field'");
-					}
-				}
-			}
-			# Build a test of the mandatory args
-			push @cases, { _input => \%mandatory_args, status => 'OK' } if(keys %mandatory_args);
-			for (1..[% iterations_code %]) {
-				# One by one change each of the mandatory fields
-				foreach my $field (keys %input) {
-					my $spec = $input{$field} || {};
-					next if $spec->{'memberof'};	# Memberof data is created below
-					my $type = $spec->{type} || 'string';
+			push @cases, @{generate_tests(\%input, \%mandatory_args)};
 
-					my %case_input = (%mandatory_args);
-					# 1) Sometimes pick a field-specific edge-case
-					if (exists $edge_cases{$field} && rand() < PROB_EDGE_CASE) {
-						push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
-						$case_input{$field} = _pick_from($edge_cases{$field});
-						next;
-					}
-
-					# 2) Sometimes pick a type-level edge-case
-					if (exists $type_edge_cases{$type} && rand() < 0.3) {
-						$case_input{$field} = _pick_from($type_edge_cases{$type});
-						push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
-						next;
-					}
-
-					# 3) Sormal random generation by type
-					if ($type eq 'string') {
-						if(my $re = $spec->{matches}) {
-							if(ref($re) ne 'Regexp') {
-								$re = qr/$re/;
-							}
-							if($spec->{'max'}) {
-								$case_input{$field} = Data::Random::String::Matches->create_random_string({ length => $spec->{'max'}, regex => $re });
-							} elsif($spec->{'min'}) {
-								$case_input{$field} = Data::Random::String::Matches->create_random_string({ length => $spec->{'min'}, regex => $re });
-							} else {
-								$case_input{$field} = Data::Random::String::Matches->create_random_string({ regex => $re });
-							}
-						} elsif(my $semantic = $spec->{'semantic'}) {
-							if($semantic eq 'email') {
-								$case_input{$field} = rand_email($spec->{'max'} // $spec->{'min'});
-							} else {
-								diag(__LINE__, ": TODO: handle semantic type '$semantic'");
-							}
-						} elsif(!$spec->{'memberof'}) {
-							if(my $min = $spec->{min}) {
-								$case_input{$field} = rand_str($min);
-								if($config{'test_empty'} && ($min == 0)) {
-									push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
-									$case_input{$field} = '';
-								}
-							} else {
-								$case_input{$field} = rand_str();
-								if($config{'test_empty'}) {
-									push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
-									$case_input{$field} = '';
-								}
-							}
-						}
-					} elsif ($type eq 'integer') {
-						if(my $min = $spec->{min}) {
-							if(my $max = $spec->{'max'}) {
-								$case_input{$field} = int(rand($max - $min + 1)) + $min;
-							} else {
-								$case_input{$field} = rand_int() + $min;
-							}
-						} elsif(exists($spec->{min})) {
-							# min == 0
-							if(my $max = $spec->{'max'}) {
-								$case_input{$field} = int(rand($max + 1));
-							} else {
-								$case_input{$field} = abs(rand_int());
-							}
-						} else {
-							$case_input{$field} = rand_int();
-							# If it's takes an integer, a float should die
-							push @cases, { _input => rand_int() + 0.2, _STATUS => 'DIES', _LINE => __LINE__ };
-						}
-					}
-					elsif ($type eq 'boolean') {
-						$case_input{$field} = rand_bool();
-					}
-					elsif ($type eq 'number') {
-						if(my $min = $spec->{min}) {
-							$case_input{$field} = rand_num() + $min;
-						} else {
-							$case_input{$field} = rand_num();
-						}
-					}
-					elsif ($type eq 'arrayref') {
-						$case_input{$field} = rand_arrayref();
-					}
-					elsif ($type eq 'hashref') {
-						$case_input{$field} = rand_hashref();
-					} elsif($config{'test_undef'}) {
-						$case_input{$field} = undef;
-					}
-
-					# 4) occasionally drop optional fields
-					if ($spec->{optional} && rand() < 0.25) {
-						delete $case_input{$field};
-					}
-					push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
-				}
-			}
 		}
 	}
 
@@ -1370,106 +1265,220 @@ sub generate_tests
 
 	foreach my $field (keys %input) {
 		my $spec = $input{$field} || {};
-		my $type = $spec->{type} || 'string';
-
-		if (exists $spec->{memberof} && ref $spec->{memberof} eq 'ARRAY' && @{$spec->{memberof}}) {
-			# Generate edge cases for memberof
-			# inside values
-			foreach my $val (@{$spec->{memberof}}) {
-				push @cases, { %mandatory_args, ( $field => $val ) };
-			}
-			# outside value
-			my $outside;
-			if ($type eq 'integer' || $type eq 'number') {
-				$outside = (sort { $a <=> $b } @{$spec->{memberof}})[-1] + 1;
-			} else {
-				$outside = 'INVALID_MEMBEROF';
-			}
-			push @cases, { %mandatory_args, ( $field => $outside, _STATUS => 'DIES' ) };
-		} else {
-			# Generate edge cases for min/max
-			if($type eq 'integer') {
-				push @cases, @{_generate_integer_cases($field, $spec, \%mandatory_args)};
-			} elsif(($type eq 'number') || ($type eq 'float')) {
-				push @cases, @{_generate_float_cases($field, $spec, \%mandatory_args)};
-			} elsif($type eq 'string') {
-				push @cases, @{_generate_string_cases($field, $spec, \%mandatory_args)};
-			} elsif ($type eq 'arrayref') {
-				if (defined $spec->{min}) {
-					my $len = $spec->{min};
-					push @cases,
-						{ $field => [ (1) x ($len + 1) ] },	# just inside
-						{ $field => [ (1) x $len ] };	# border
-					push @cases, { $field => [ (1) x ($len - 1) ], _STATUS => 'DIES' } if $len > 0; # outside
-				} else {
-					push @cases, { $field => [] } if($config{'test_empty'});	# No min, empty array should be allowable
-				}
-				if (defined $spec->{max}) {
-					my $len = $spec->{max};
-					push @cases,
-						{ $field => [ (1) x ($len - 1) ] },	# just inside
-						{ $field => [ (1) x $len ] },	# border
-						{ $field => [ (1) x ($len + 1) ], _STATUS => 'DIES' }; # outside
-				}
-			} elsif ($type eq 'hashref') {
-				if (defined $spec->{min}) {
-					my $len = $spec->{min};
-					push @cases,
-						{ $field => { map { "k$_" => 1 }, 1 .. ($len + 1) } },
-						{ $field => { map { "k$_" => 1 }, 1 .. $len } };
-					push @cases, { $field => { map { "k$_" => 1 }, 1 .. ($len - 1) }, _STATUS => 'DIES' } if $len > 0;
-				} else {
-					push @cases, { $field => {} } if($config{'test_empty'});	# No min, empty hash should be allowable
-				}
-				if (defined $spec->{max}) {
-					my $len = $spec->{max};
-					push @cases,
-						{ $field => { map { "k$_" => 1 }, 1 .. ($len - 1) } },
-						{ $field => { map { "k$_" => 1 }, 1 .. $len } },
-						{ $field => { map { "k$_" => 1 }, 1 .. ($len + 1) }, _STATUS => 'DIES' };
-				}
-			} elsif ($type eq 'boolean') {
-				push @cases, @{_generate_boolean_cases($field, $spec, \%mandatory_args)};
+		foreach my $field(keys %{$spec}) {
+			next if($field =~ /^_/);	# Ignore comments
+			if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'position', 'memberof', 'semantic', 'isa'))) {
+				die("TODO: handle schema keyword '$field'");
 			}
 		}
+	}
 
-		# case_sensitive tests for memberof
-		if (defined $spec->{memberof} && exists $spec->{case_sensitive}) {
-			if (!$spec->{case_sensitive}) {
-				# Generate mixed-case versions of memberof values
+	# Build a test of the mandatory args
+	push @cases, { _input => \%mandatory_args, status => 'OK' } if(keys %mandatory_args);
+
+	for (1..[% iterations_code %]) {
+		# One by one change each of the mandatory fields
+		foreach my $field (keys %input) {
+			my $spec = $input{$field} || {};
+			next if $spec->{'memberof'};	# Memberof data is created below
+			my $type = $spec->{type} || 'string';
+
+			my %case_input = (%mandatory_args);
+			# 1) Sometimes pick a field-specific edge-case
+			if (exists $edge_cases{$field} && rand() < PROB_EDGE_CASE) {
+				push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
+				$case_input{$field} = _pick_from($edge_cases{$field});
+				next;
+			}
+
+			# 2) Sometimes pick a type-level edge-case
+			if (exists $type_edge_cases{$type} && rand() < 0.3) {
+				$case_input{$field} = _pick_from($type_edge_cases{$type});
+				push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
+				next;
+			}
+
+			# 3) Sormal random generation by type
+			if ($type eq 'string') {
+				if(my $re = $spec->{matches}) {
+					if(ref($re) ne 'Regexp') {
+						$re = qr/$re/;
+					}
+					if($spec->{'max'}) {
+						$case_input{$field} = Data::Random::String::Matches->create_random_string({ length => $spec->{'max'}, regex => $re });
+					} elsif($spec->{'min'}) {
+						$case_input{$field} = Data::Random::String::Matches->create_random_string({ length => $spec->{'min'}, regex => $re });
+					} else {
+						$case_input{$field} = Data::Random::String::Matches->create_random_string({ regex => $re });
+					}
+				} elsif(my $semantic = $spec->{'semantic'}) {
+					if($semantic eq 'email') {
+						$case_input{$field} = rand_email($spec->{'max'} // $spec->{'min'});
+					} else {
+						diag(__LINE__, ": TODO: handle semantic type '$semantic'");
+					}
+				} elsif(!$spec->{'memberof'}) {
+					if(my $min = $spec->{min}) {
+						$case_input{$field} = rand_str($min);
+						if($config{'test_empty'} && ($min == 0)) {
+							push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
+							$case_input{$field} = '';
+						}
+					} else {
+						$case_input{$field} = rand_str();
+						if($config{'test_empty'}) {
+							push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
+							$case_input{$field} = '';
+						}
+					}
+				}
+			} elsif ($type eq 'integer') {
+				if(my $min = $spec->{min}) {
+					if(my $max = $spec->{'max'}) {
+						$case_input{$field} = int(rand($max - $min + 1)) + $min;
+					} else {
+						$case_input{$field} = rand_int() + $min;
+					}
+				} elsif(exists($spec->{min})) {
+					# min == 0
+					if(my $max = $spec->{'max'}) {
+						$case_input{$field} = int(rand($max + 1));
+					} else {
+						$case_input{$field} = abs(rand_int());
+					}
+				} else {
+					$case_input{$field} = rand_int();
+					# If it's takes an integer, a float should die
+					push @cases, { _input => rand_int() + 0.2, _STATUS => 'DIES', _LINE => __LINE__ };
+				}
+			}
+			elsif ($type eq 'boolean') {
+				$case_input{$field} = rand_bool();
+			}
+			elsif ($type eq 'number') {
+				if(my $min = $spec->{min}) {
+					$case_input{$field} = rand_num() + $min;
+				} else {
+					$case_input{$field} = rand_num();
+				}
+			}
+			elsif ($type eq 'arrayref') {
+				$case_input{$field} = rand_arrayref();
+			}
+			elsif ($type eq 'hashref') {
+				$case_input{$field} = rand_hashref();
+			} elsif($config{'test_undef'}) {
+				$case_input{$field} = undef;
+			}
+
+			# 4) occasionally drop optional fields
+			if ($spec->{optional} && rand() < 0.25) {
+				delete $case_input{$field};
+			}
+			push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
+
+			#####################
+			# FIXME: Start of duplicated code from the above part of the loop.
+			#	Go through and remove duplications then remove this code
+			if (exists $spec->{memberof} && ref $spec->{memberof} eq 'ARRAY' && @{$spec->{memberof}}) {
+				# Generate edge cases for memberof
+				# inside values
 				foreach my $val (@{$spec->{memberof}}) {
-					push @cases, { %mandatory_args, ( $field => uc($val) ) },
-						{ %mandatory_args, ( $field => lc($val) ) },
-						{ %mandatory_args, ( $field => ucfirst(lc($val)) ) };
+					push @cases, { %mandatory_args, ( $field => $val ) };
+				}
+				# outside value
+				my $outside;
+				if ($type eq 'integer' || $type eq 'number') {
+					$outside = (sort { $a <=> $b } @{$spec->{memberof}})[-1] + 1;
+				} else {
+					$outside = 'INVALID_MEMBEROF';
+				}
+				push @cases, { %mandatory_args, ( $field => $outside, _STATUS => 'DIES' ) };
+			} else {
+				# Generate edge cases for min/max
+				if($type eq 'integer') {
+					push @cases, @{_generate_integer_cases($field, $spec, \%mandatory_args)};
+				} elsif(($type eq 'number') || ($type eq 'float')) {
+					push @cases, @{_generate_float_cases($field, $spec, \%mandatory_args)};
+				} elsif($type eq 'string') {
+					push @cases, @{_generate_string_cases($field, $spec, \%mandatory_args)};
+				} elsif ($type eq 'arrayref') {
+					if (defined $spec->{min}) {
+						my $len = $spec->{min};
+						push @cases,
+							{ $field => [ (1) x ($len + 1) ] },	# just inside
+							{ $field => [ (1) x $len ] };	# border
+						push @cases, { $field => [ (1) x ($len - 1) ], _STATUS => 'DIES' } if $len > 0; # outside
+					} else {
+						push @cases, { $field => [] } if($config{'test_empty'});	# No min, empty array should be allowable
+					}
+					if (defined $spec->{max}) {
+						my $len = $spec->{max};
+						push @cases,
+							{ $field => [ (1) x ($len - 1) ] },	# just inside
+							{ $field => [ (1) x $len ] },	# border
+							{ $field => [ (1) x ($len + 1) ], _STATUS => 'DIES' }; # outside
+					}
+				} elsif ($type eq 'hashref') {
+					if (defined $spec->{min}) {
+						my $len = $spec->{min};
+						push @cases,
+							{ $field => { map { "k$_" => 1 }, 1 .. ($len + 1) } },
+							{ $field => { map { "k$_" => 1 }, 1 .. $len } };
+						push @cases, { $field => { map { "k$_" => 1 }, 1 .. ($len - 1) }, _STATUS => 'DIES' } if $len > 0;
+					} else {
+						push @cases, { $field => {} } if($config{'test_empty'});	# No min, empty hash should be allowable
+					}
+					if (defined $spec->{max}) {
+						my $len = $spec->{max};
+						push @cases,
+							{ $field => { map { "k$_" => 1 }, 1 .. ($len - 1) } },
+							{ $field => { map { "k$_" => 1 }, 1 .. $len } },
+							{ $field => { map { "k$_" => 1 }, 1 .. ($len + 1) }, _STATUS => 'DIES' };
+					}
+				} elsif ($type eq 'boolean') {
+					push @cases, @{_generate_boolean_cases($field, $spec, \%mandatory_args)};
 				}
 			}
-		}
 
-		# Add notmemberof tests
-		if (defined $spec->{notmemberof}) {
-			my @blacklist = @{$spec->{notmemberof}};
-			# Each blacklisted value should die
-			foreach my $val (@blacklist) {
-				push @cases, { %mandatory_args, ( $field => $val, _STATUS => 'DIES' ) };
+			# case_sensitive tests for memberof
+			if (defined $spec->{memberof} && exists $spec->{case_sensitive}) {
+				if (!$spec->{case_sensitive}) {
+					# Generate mixed-case versions of memberof values
+					foreach my $val (@{$spec->{memberof}}) {
+						push @cases, { %mandatory_args, ( $field => uc($val) ) },
+							{ %mandatory_args, ( $field => lc($val) ) },
+							{ %mandatory_args, ( $field => ucfirst(lc($val)) ) };
+					}
+				}
 			}
-			# Non-blacklisted value should pass
-			push @cases, { %mandatory_args, ( $field => '_not_in_blacklist_' ) };
-		}
 
-		# semantic tests
-		if(defined(my $semantic = $spec->{'semantic'})) {
-			if($semantic eq 'unix_timestamp') {
-				push @cases, { %mandatory_args, ( -1, _STATUS => 'DIES' ) },
-					{ %mandatory_args, ( 0 ) },
-					{ %mandatory_args, ( 1 ) },
-					{ %mandatory_args, ( time ) },
-					{ %mandatory_args, ( 2147483647 ) },
-					{ %mandatory_args, ( 2147483648, _STATUS => 'DIES' ) };
-			} else {
-				diag("semantic type $semantic is not yet supported");
+			# Add notmemberof tests
+			if (defined $spec->{notmemberof}) {
+				my @blacklist = @{$spec->{notmemberof}};
+				# Each blacklisted value should die
+				foreach my $val (@blacklist) {
+					push @cases, { %mandatory_args, ( $field => $val, _STATUS => 'DIES' ) };
+				}
+				# Non-blacklisted value should pass
+				push @cases, { %mandatory_args, ( $field => '_not_in_blacklist_' ) };
 			}
+
+			# semantic tests
+			if(defined(my $semantic = $spec->{'semantic'})) {
+				if($semantic eq 'unix_timestamp') {
+					push @cases, { %mandatory_args, ( -1, _STATUS => 'DIES' ) },
+						{ %mandatory_args, ( 0 ) },
+						{ %mandatory_args, ( 1 ) },
+						{ %mandatory_args, ( time ) },
+						{ %mandatory_args, ( 2147483647 ) },
+						{ %mandatory_args, ( 2147483648, _STATUS => 'DIES' ) };
+				} else {
+					diag("semantic type $semantic is not yet supported");
+				}
+			}
+			# TODO:	How do we generate tests for cross-field validation?
 		}
-		# TODO:	How do we generate tests for cross-field validation?
 	}
 
 	return \@cases;
@@ -1716,52 +1725,7 @@ if(scalar(keys %transforms)) {
 
 # Build the foundation - which is a basic test with sensible defaults in the field
 foreach my $transform (keys %transforms) {
-	my $foundation;	# basic set of data with every field filled in with a sensible default value
-
-	foreach my $field (keys %input) {
-		my $spec = $input{$field} || {};
-		my $type = $spec->{type} || 'string';
-
-		if(($type eq 'number') || ($type eq 'float')) {
-			if(defined $spec->{min}) {
-				if(defined $spec->{max}) {
-					$foundation->{$field} = $spec->{max};	# border
-				} else {
-					$foundation->{$field} = rand_num() + $spec->{'min'};
-				}
-			} else {
-				if(defined $spec->{max}) {
-					$foundation->{$field} = $spec->{max};	# border
-				} else {
-					$foundation->{$field} = -0.01;	# No min, so -0.01 should be allowable
-				}
-			}
-		} elsif($type eq 'string') {
-			if(defined $spec->{min} && $spec->{min} > 0) {
-				$foundation->{$field} = rand_str($spec->{min});
-			} elsif(defined $spec->{max} && $spec->{max} > 0) {
-				$foundation->{$field} = rand_str($spec->{max});
-			} else {
-				$foundation->{$field} = 'test_value';
-			}
-		} elsif ($type eq 'integer') {
-			if (defined $spec->{min}) {
-				$foundation->{$field} = $spec->{min};
-			} elsif (defined $spec->{max}) {
-				$foundation->{$field} = rand_int() + $spec->{max};
-			} else {
-				$foundation->{$field} = rand_int();
-			}
-		} elsif ($type eq 'boolean') {
-			$foundation->{$field} = 1;
-		} elsif ($type eq 'arrayref') {
-			$foundation->{$field} = rand_arrayref(defined($spec->{'min'}) ? $spec->{'min'} : ($spec->{'max'} // 5));
-		} elsif ($type eq 'hashref') {
-			$foundation->{$field} = { key => 'value' };
-		} else {
-			die("TODO: transform type $type for foundation");
-		}
-	}
+	my $foundation = _fill_foundation();	# basic set of data with every field filled in with a sensible default value
 
 	# The foundation should work
 	my $case = { _NAME => "basic $transform test", _LINE => __LINE__ };
@@ -1855,6 +1819,57 @@ foreach my $transform (keys %transforms) {
 			# run_test({ _NAME => $transform }, $test, \%output, $positions);
 		}
 	}
+}
+
+sub _fill_foundation
+{
+	my $foundation;
+
+	foreach my $field (keys %input) {
+		my $spec = $input{$field} || {};
+		my $type = $spec->{type} || 'string';
+
+		if(($type eq 'number') || ($type eq 'float')) {
+			if(defined $spec->{min}) {
+				if(defined $spec->{max}) {
+					$foundation->{$field} = $spec->{max};	# border
+				} else {
+					$foundation->{$field} = rand_num() + $spec->{'min'};
+				}
+			} else {
+				if(defined $spec->{max}) {
+					$foundation->{$field} = $spec->{max};	# border
+				} else {
+					$foundation->{$field} = -0.01;	# No min, so -0.01 should be allowable
+				}
+			}
+		} elsif($type eq 'string') {
+			if(defined $spec->{min} && $spec->{min} > 0) {
+				$foundation->{$field} = rand_str($spec->{min});
+			} elsif(defined $spec->{max} && $spec->{max} > 0) {
+				$foundation->{$field} = rand_str($spec->{max});
+			} else {
+				$foundation->{$field} = 'test_value';
+			}
+		} elsif ($type eq 'integer') {
+			if (defined $spec->{min}) {
+				$foundation->{$field} = $spec->{min};
+			} elsif (defined $spec->{max}) {
+				$foundation->{$field} = rand_int() + $spec->{max};
+			} else {
+				$foundation->{$field} = rand_int();
+			}
+		} elsif ($type eq 'boolean') {
+			$foundation->{$field} = 1;
+		} elsif ($type eq 'arrayref') {
+			$foundation->{$field} = rand_arrayref(defined($spec->{'min'}) ? $spec->{'min'} : ($spec->{'max'} // 5));
+		} elsif ($type eq 'hashref') {
+			$foundation->{$field} = { key => 'value' };
+		} else {
+			die("TODO: transform type $type for foundation");
+		}
+	}
+	return $foundation;
 }
 
 [% IF use_properties %]
