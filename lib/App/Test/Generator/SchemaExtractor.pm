@@ -1401,7 +1401,7 @@ sub _extract_class_methods {
 			$class_end++;
 		}
 
-		next if $depth != 0;  # unbalanced braces, skip class
+		next if $depth != 0;	# unbalanced braces, skip class
 
 		my $class_body = substr($content, $start_pos, $class_end - $start_pos - 1);
 
@@ -1541,9 +1541,9 @@ sub _analyze_method {
 			$schema->{_pod_validation_errors} = \@validation_errors;
 
 			# Either croak immediately or log based on configuration
-			if ($self->{strict_pod} == 2) {  # 2 = fatal errors
+			if ($self->{strict_pod} == 2) {	# 2 = fatal errors
 				croak("[POD STRICT] $error_msg");
-			} else {  # 1 = warnings
+			} else {	# 1 = warnings
 				carp("[POD STRICT] $error_msg");
 				# Continue with analysis but mark as problematic
 				$schema->{_pod_disagreement} = 1;

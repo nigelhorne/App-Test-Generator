@@ -217,9 +217,8 @@ sub rand_str
 	my $l = Unicode::GCString->new($rc)->length();
 	if($len > $l) {
 		$rc .= 'a' x ($len - $l);	# Why is this needed?
+		$l = Unicode::GCString->new($rc)->length();
 	}
-
-	$l = Unicode::GCString->new($rc)->length();
 	# die "BUG $l != $len (mode == $mode)" if($l != $len);
 	ok($l == $len, "Unicode length preserved (mode=$mode)") or
 		diag("BUG $l != $len (mode == $mode)");
@@ -1535,7 +1534,7 @@ sub run_test
 				die('Input is missing list of arguments (perhaps you only listed types)');
 			}
 			foreach my $key (sort keys %{$input}) {
-				if($key ne '_STATUS') {
+				if(($key ne '_STATUS') && ($key ne '_NAME') && ($key ne '_LINE') && ($key ne '_PROPERTIES')) {
 					if(defined($input->{$key})) {
 						push @alist, "'$key' => '$input->{$key}'";
 					} else {
@@ -1781,7 +1780,7 @@ foreach my $transform (keys %transforms) {
 	# CALL FUNCTION
 	# CHECK STATUS CORRECT
 	# IF STATUS EQ LIVES
-	#   CHECK OUTPUT USING returns_ok
+	#	CHECK OUTPUT USING returns_ok
 	# FI
 
 	my $transform_input = $transforms{$transform}{'input'} || {};
