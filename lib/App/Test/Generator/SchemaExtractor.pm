@@ -1912,7 +1912,7 @@ sub _detect_accessor_methods {
 		}
 	}
 
-	if($schema->{accessor}{type} && ($schema->{accessor}{type} =~ /getter|getset/) &&
+	if($schema->{accessor}{type} && $schema->{accessor}{property} && ($schema->{accessor}{type} =~ /getter|getset/) &&
 	   ((!defined($schema->{output}{type})) || ($schema->{output}{type} eq 'string'))) {
 		if (my $pod = $method->{pod}) {
 			# POD says "UserAgent object"
