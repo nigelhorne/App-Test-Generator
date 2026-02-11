@@ -1729,6 +1729,16 @@ sub _detect_accessor_methods {
 	my $code = $body;
 	$code =~ s/\s+/ /g;
 
+	# If a method touches more than one $self->{...}, it’s not an accessor.
+	my %fields_seen;
+	while ($code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}/g) {
+		$fields_seen{$1}++;
+	}
+	if (keys(%fields_seen) > 1) {
+		$self->_log("  Skipping accessor detection: multiple fields accessed");
+		return;
+	}
+
 	# -------------------------------
 	# Getter/Setter combo
 	# -------------------------------
