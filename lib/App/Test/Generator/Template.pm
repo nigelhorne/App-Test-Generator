@@ -132,6 +132,7 @@ my @candidate_bad = (
 	"a\nb",	# newline in middle
 	"é",	# E acute
 	'x' x 5000,	# huge string
+	*STDOUT,
 
 	# Added later if the configuration says so
 	# '',	# empty
@@ -882,6 +883,8 @@ sub _generate_integer_cases {
 			{ %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => 3.14, _STATUS => 'DIES' ) },	# Float
 			{ %{$mandatory_args}, ( $arg_name => 'xyz', _STATUS => 'DIES' ) },
+			{ %{$mandatory_args}, ( $arg_name => \42, _STATUS => 'DIES' ) },	# Scalar ref
+			{ %{$mandatory_args}, ( $arg_name => *STDOUT, _STATUS => 'DIES' ) },	# Global variable
 			{ %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
 	[% END %]
 
@@ -942,6 +945,7 @@ sub _generate_float_cases {
 		push @cases,
 			{ %{$mandatory_args}, ( $arg_name => "test string in float field $arg_name", _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) },
+			{ %{$mandatory_args}, ( $arg_name => \42.1, _STATUS => 'DIES' ) },	# Scalar ref
 			{ %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
 	[% END %]
 
@@ -1228,10 +1232,11 @@ sub _generate_string_cases
 			{ %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) };
 	}
 	push @cases,
-		# { %{$mandatory_args}, ( $arg_name => sub { die 'boom' }, _STATUS => 'DIES', _LINE => __LINE__ ) },
-		# { %{$mandatory_args}, ( $arg_name => bless({}, 'Evil::Class'), _STATUS => 'DIES', _LINE => __LINE__ ) };
-		# { %{$mandatory_args}, ( $arg_name => [1, 2, 3], _STATUS => 'DIES', _LINE => __LINE__ ) };
-		# { %{$mandatory_args}, ( $arg_name => { a => 1 }, _STATUS => 'DIES', _LINE => __LINE__ ) };
+		{ %{$mandatory_args}, ( $arg_name => \'george', _STATUS => 'DIES', _LINE => __LINE__ ) },
+		{ %{$mandatory_args}, ( $arg_name => sub { die 'boom' }, _STATUS => 'DIES', _LINE => __LINE__ ) },
+		{ %{$mandatory_args}, ( $arg_name => bless({}, 'Evil::Class'), _STATUS => 'DIES', _LINE => __LINE__ ) },
+		# { %{$mandatory_args}, ( $arg_name => [1, 2, 3], _STATUS => 'DIES', _LINE => __LINE__ ) },	# Generates false positives.  Why?
+		{ %{$mandatory_args}, ( $arg_name => { a => 1 }, _STATUS => 'DIES', _LINE => __LINE__ ) };
 
 	return \@cases;
 }
@@ -1242,6 +1247,8 @@ sub _generate_string_cases
 sub _dedup_cases
 {
 	my $cases = shift;
+
+	return $cases;	# FIXME: The JSON encoding fails on various data types that are sent (e.g. scalar refs, objects) so don't bother
 
 	# Do not use JSON::MaybeXS because it will fail on non utf-8 characters
 	require JSON::PP;
@@ -1347,9 +1354,9 @@ sub generate_tests
 						$case_input{$field} = abs(rand_int());
 					}
 				} else {
-					$case_input{$field} = rand_int();
 					# If it's takes an integer, a float should die
 					push @cases, { _input => rand_int() + 0.2, _STATUS => 'DIES', _LINE => __LINE__ };
+					$case_input{$field} = rand_int();
 				}
 			}
 			elsif ($type eq 'boolean') {
@@ -1629,6 +1636,12 @@ sub run_test
 			} else {
 				die 'TODO: properties' if(scalar keys %{$properties});
 				lives_ok { [% position_code %] } sprintf($mess, 'survives (position test)');
+
+				# An extra argument should be ignored, except for getsetters, so only test if there's more than one arg
+				if(scalar(@alist) > 1) {
+					push(@alist, 'foo');
+					lives_ok { [% position_code %] } sprintf($mess, 'survives (position test, with extra argument)');
+				}
 			}
 			if($properties->{idempotent}) {
 				[% determinism_code %]
