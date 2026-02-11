@@ -1743,9 +1743,10 @@ sub _detect_accessor_methods {
 	# Getter/Setter combo
 	# -------------------------------
 	if (
+		# Require get/set of the same property
 		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*shift\s*;/ &&
-		$code =~ /return\s+\$self\s*->\s*\{/ &&
-		$code =~ /if\s*\(\s*\@_\s*(?:>\s*1)?\s*\)/
+		$code =~ /return\s+\$self\s*->\s*\{\s*['"]?\Q$1\E['"]?\s*\}\s*;/ &&
+		$code =~ /if\s*\(\s*\@_/
 	) {
 		my $property = $1;
 
