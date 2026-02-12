@@ -1249,6 +1249,7 @@ sub extract_all {
 	$self->{_document} = $document;
 
 	my $package_name = $self->_extract_package_name($document);
+	$self->{_package_name} //= $package_name;
 	$self->_log("Package: $package_name");
 
 	my $methods = $self->_find_methods($document);
@@ -1287,6 +1288,7 @@ sub _extract_package_name {
 		return $package_stmt ? $package_stmt->namespace() : '';
 	}
 	croak('More than one package declaration found') if @$pkgs > 1;
+	$self->{_package_name} //= $pkgs->[0]->namespace();
 	return $pkgs->[0]->namespace();
 }
 
@@ -2197,11 +2199,11 @@ sub _parse_pv_call {
 	return ($first_arg, $hash_str);
 }
 
-# TODO: Type::Params this may not be doable
-#	The declaration isn't in $code, it's in a 'signature_for' declaration elsewhere in the file
-#	So need to parse $self->{_document} to find the 'signature_for $method =>'
+# TODO: Type::Params with more than one function
 #	See https://github.com/nigelhorne/App-Test-Generator/issues/4
 
+# The declaration isn't in $code, it's in a 'signature_for' declaration elsewhere in the file
+# So need to parse $self->{_document} to find the 'signature_for $method =>'
 sub _extract_type_params_schema {
 	my ($self, $code) = @_;
 
@@ -2213,24 +2215,75 @@ sub _extract_type_params_schema {
 
 	return if(!ref($calls));
 
+	my $function;
+	if($code =~ /^sub\s+([a-z0-9_]+)\s/i) {
+		$function = $1;
+	}
+
 	if(scalar(@{$calls}) == 1) {
 		# Simple case, the module just contains one routine, no need to find what's what
 		# Though later, once I've added the code for more than one routine, remove this since we'll have a safety check then
+		my $call = $calls->[0];
+		my $list = $call->parent();
+		while ($list && !$list->isa('PPI::Structure::List')) {
+			$list = $list->parent();
+		}
+		if(!defined($list)) {
+			if($call->content() ne 'signature_for') {
+				croak("expected 'signature_for' got '$call->content()'");
+			}
+			my $next = $call->next_sibling();
+			if($next->content() !~ /\s+/) {
+				croak("expected space got '$call->content()'");
+			}
+			$next = $next->next_sibling();
+			if($next->content() ne $function) {
+				croak("expected '$function' got '$call->content()'");
+			}
+			$next = $next->next_sibling();
+			if($next->content() !~ /\s+/) {
+				croak("expected space got '$call->content()'");
+			}
+			$next = $next->next_sibling();
+			if($next->content() ne '=>') {
+				croak("expected '=>' got '$call->content()'");
+			}
+			$next = $next->next_sibling();
+			if($next->content() !~ /\s+/) {
+				croak("expected space got '$call->content()'");
+			}
+			$next = $next->next_sibling();
+			my $package_name = $self->{_package_name};
+			my $content = $next->content();
+			my $sig_code = "package Original::Package;\n" .
+				"use Type::Params -sigs;\n" .
+				"use Types::Common -types;\n" .
+				"signature_for $function => $content;\n" .
+				"sub $function { }\n";
+			my $sig = eval $sig_code;
+			if($@) {
+				croak("$sig_code: $@");
+			}
+			my $parameters = $sig->parameters();
+			my $input;
+			my $position = 0;
+			foreach my $parameter(@{$parameters}) {
+				my $arg_name = "arg$position";
+				$input->{$arg_name}->{type} = ($parameter->{type}->name()) eq 'Num' ? 'number' : 'string';
+				$input->{$arg_name}->{position} = $position;
+				$input->{$arg_name}->{optional} = 0;
+				$position++;
+			}
+			return {
+				input => $input,
+				style => 'hash',
+				source => 'validator',
+				_notes => ['Type::Params detected (schema opaque)'],
+				_confidence => { input => 'medium' },
+			};
+		}
 	}
-#
-	# my $doc = $self->_ppi($code) or return;
-#
-	# my $calls = $doc->find(sub {
-		# $_[1]->isa('PPI::Token::Word') && $_[1]->content eq 'compile'
-	# }) or return;
-#
-	# # Conservative: treat Dict[...] as hash input
-	# return {
-		# input_style => 'hash',
-		# input => {},
-		# _notes => ['Type::Params detected (schema opaque)'],
-		# _confidence => { input => 'medium' },
-	# };
+	croak('TODO: Type::Params with more than one function in the module');
 }
 
 sub _extract_moosex_params_schema
@@ -2833,6 +2886,7 @@ sub _analyze_output_from_code
 				# If we found the new() method, the object we're returning should be a sensible one
 				if($self->{_document} && (my $package_stmt = $self->{_document}->find_first('PPI::Statement::Package'))) {
 					$output->{isa} = $package_stmt->namespace();
+					$self->{_package_name} //= $output->{isa};
 				}
 			} else {
 				$output->{isa} = $1;
@@ -2858,6 +2912,7 @@ sub _analyze_output_from_code
 				my $pkg = $self->{_document}->find_first('PPI::Statement::Package');
 				$output->{isa} = $pkg ? $pkg->namespace : 'UNKNOWN';
 				$self->_log('  OUTPUT: Object blessed into __PACKAGE__: ' . ($output->{isa} || 'UNKNOWN'));
+				$self->{_package_name} //= $output->{isa};
 			}
 		} elsif ($code =~ /return\s*\(([^)]+)\)/) {
 			my $content = $1;
@@ -2871,6 +2926,7 @@ sub _analyze_output_from_code
 				my $pkg = $self->{_document}->find_first('PPI::Statement::Package');
 				$output->{isa} = $pkg ? $pkg->namespace : 'UNKNOWN';
 				$self->_log('  OUTPUT: Object chained into __PACKAGE__: ' . ($output->{isa} || 'UNKNOWN'));
+				$self->{_package_name} //= $output->{isa};
 			}
 		}
 
@@ -3244,6 +3300,7 @@ sub _detect_chaining_pattern {
 			if ($self->{_document}) {
 				my $pkg = $self->{_document}->find_first('PPI::Statement::Package');
 				$output->{isa} = $pkg ? $pkg->namespace : 'UNKNOWN';
+				$self->{_package_name} //= $output->{isa};
 			}
 
 			$self->_log("  OUTPUT: Chainable method - returns \$self ($self_returns/$total_returns returns)");
@@ -5693,6 +5750,7 @@ sub _write_schema {
 	if ($self->{_document}) {
 		my $package_stmt = $self->{_document}->find_first('PPI::Statement::Package');
 		$package_name = $package_stmt ? $package_stmt->namespace : '';
+		$self->{_package_name} //= $package_name;
 	}
 
 	# Clean up schema for output - use the format expected by test generator
@@ -6030,6 +6088,7 @@ sub _needs_object_instantiation {
 	# Get the current package name
 	my $package_stmt = $doc->find_first('PPI::Statement::Package');
 	my $current_package = $package_stmt ? $package_stmt->namespace : 'UNKNOWN';
+	$self->{_package_name} //= $current_package;
 
 	# Initialize result structure
 	my $result = {
@@ -6636,6 +6695,7 @@ sub _get_class_for_instance_method {
 	my $package_stmt = $doc->find_first('PPI::Statement::Package');
 	return 'UNKNOWN_PACKAGE' unless $package_stmt;
 	my $package_name = $package_stmt->namespace;
+	$self->{_package_name} //= $package_name;
 
 	# Check if the current package has a 'new' method
 	my $has_new = $doc->find(sub {

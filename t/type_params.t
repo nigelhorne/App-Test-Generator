@@ -14,8 +14,6 @@ BEGIN {
 }
 
 TODO: {
-	local $TODO = 'Type::Params extraction not yet implemented';
-
 	# Helper to create a temporary Perl module file
 	sub create_test_module {
 		my ($content) = @_;
@@ -39,7 +37,9 @@ TODO: {
 	}
 
 	# Basic default value patterns
-	subtest 'Extact schema from Type::Params' => sub {
+	subtest 'Extact schema from Type::Params - using compiles' => sub {
+		local $TODO = 'compile type of Types::Params not yet implemented';
+
 		my $module = <<'END_MODULE';
 use Types::Standard qw(Str ArrayRef Bool);
 use Type::Params qw(compile);
@@ -110,7 +110,7 @@ signature_for add_numbers => (
 );
 
 sub add_numbers ( $self, $first, $second ) {
-    return $first + $second;
+	return $first + $second;
 }
 
 END_MODULE
@@ -121,6 +121,24 @@ END_MODULE
 		my $schemas = $extractor->extract_all();
 
 		ok(defined($schemas));
+
+		my $schema = $schemas->{add_numbers};
+		ok($schema, 'Found add_numbers method schema');
+
+		my $input = $schema->{input};
+		ok($input, 'Found input method schema');
+
+		cmp_deeply($input, {
+			'arg0' => {
+				'type' => 'number',
+				'optional' => 0,
+				'position' => 0,
+			}, 'arg1' => {
+				'type' => 'number',
+				'optional' => 0,
+				'position' => 1,
+			}
+		});
 
 		done_testing();
 	};
