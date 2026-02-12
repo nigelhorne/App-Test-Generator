@@ -1093,7 +1093,7 @@ After running:
     my $extractor = App::Test::Generator::SchemaExtractor->new(
         input_file => 'TestHints.pm',
         output_dir => '/tmp',
-        quiet      => 1,
+        quiet    => 1,
     );
 
     my $schemas = $extractor->extract_all;
@@ -2198,6 +2198,7 @@ sub _parse_pv_call {
 }
 
 # TODO: Type::Params this may not be doable
+# But see https://github.com/nigelhorne/App-Test-Generator/issues/4
 # sub _extract_type_params_schema {
 	# my ($self, $code) = @_;
 #
@@ -7076,11 +7077,11 @@ sub _types_are_compatible {
 	# Define compatibility matrix
 	my %compatible_types = (
 		'integer' => ['number', 'scalar'],
-		'number'  => ['scalar'],
-		'string'  => ['scalar'],
-		'scalar'  => ['string', 'integer', 'number'],
+		'number' => ['scalar'],
+		'string' => ['scalar'],
+		'scalar' => ['string', 'integer', 'number'],
 		'arrayref' => ['array'],
-		'hashref'  => ['hash'],
+		'hashref' => ['hash'],
 	);
 
 	# Check if code_type is compatible with pod_type

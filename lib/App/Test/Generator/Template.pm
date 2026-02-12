@@ -554,7 +554,6 @@ sub fuzz_inputs
 				my $simple_obj = new_ok('Class::Simple');
 				$simple_obj->$method(1);
 				$mandatory_objects{$field} = $simple_obj;
-				$config{'dedup'} = 0;	# FIXME:	Can't yet dedup with class method calls
 			} elsif(($spec->{'type'} eq 'float') || ($spec->{'type'} eq 'number') || ($spec->{'type'} eq 'integer')) {
 				my $number;
 				if(defined(my $min = $spec->{min})) {
@@ -656,8 +655,6 @@ sub fuzz_inputs
 
 						use_ok($spec->{isa});
 						push @cases, { $arg_name => new_ok($spec->{isa}) };
-						# The dedup mechanism will be confused by the object
-						delete $config{dedup};
 					} else {
 						carp("'isa' is not defined - what type of object should be sent?");
 					}
@@ -1244,7 +1241,7 @@ sub _generate_string_cases
 		{ %{$mandatory_args}, ( $arg_name => \'ref to scalar', _STATUS => 'DIES', _LINE => __LINE__ ) },
 		{ %{$mandatory_args}, ( $arg_name => sub { die 'boom' }, _STATUS => 'DIES', _LINE => __LINE__ ) },
 		{ %{$mandatory_args}, ( $arg_name => bless({}, 'Evil::Class'), _STATUS => 'DIES', _LINE => __LINE__ ) },
-		# { %{$mandatory_args}, ( $arg_name => [1, 2, 3], _STATUS => 'DIES', _LINE => __LINE__ ) },	# Generates false positives.  Why?
+		# { %{$mandatory_args}, ( $arg_name => [1, 2, 3], _STATUS => 'DIES', _LINE => __LINE__ ) },	# Generates false positives. Why?
 		{ %{$mandatory_args}, ( $arg_name => { a => 1 }, _STATUS => 'DIES', _LINE => __LINE__ ) };
 
 	return \@cases;
@@ -1253,23 +1250,27 @@ sub _generate_string_cases
 # dedup, fuzzing can easily generate repeats
 # FIXME: I don't think this catches them all
 # FIXME: Handle cases with Class::Simple calls
+# FIXME: The JSON encoding fails on various data types that are sent (e.g. scalar refs, objects) so don't bother
 sub _dedup_cases
 {
 	my $cases = shift;
-
-	return $cases;	# FIXME: The JSON encoding fails on various data types that are sent (e.g. scalar refs, objects) so don't bother
 
 	# Do not use JSON::MaybeXS because it will fail on non utf-8 characters
 	require JSON::PP;
 	JSON::PP->import();
 
-	my %seen;
-	my @rc = grep {
-		my $dump = encode_json($_);
-		!$seen{$dump}++
-	} @{$cases};
+	eval {
+		my %seen;
+		my @rc = grep {
+			my $dump = encode_json($_);
+			!$seen{$dump}++
+		} @{$cases};
 
-	return \@rc;
+		return \@rc;
+	};
+	# Carp::carp(__PACKAGE__, ": disabling deduping: $@");
+
+	return $cases;
 }
 
 sub generate_tests
@@ -1817,7 +1818,7 @@ foreach my $transform (keys %transforms) {
 		}
 	}
 
-	if($config{'dedup'}) {
+	if($config{dedup}) {
 		@tests = @{_dedup_cases(\@tests)};
 	}
 
