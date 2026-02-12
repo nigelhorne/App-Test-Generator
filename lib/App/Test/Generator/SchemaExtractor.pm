@@ -2035,9 +2035,9 @@ sub _extract_pvs_schema {
 	}) or return;
 
 	for my $call (@$calls) {
-		my $list = $call->parent;
+		my $list = $call->parent();
 		while ($list && !$list->isa('PPI::Structure::List')) {
-			$list = $list->parent;
+			$list = $list->parent();
 		}
 		if(!defined($list)) {
 			my $next = $call->next_sibling();
@@ -2204,6 +2204,19 @@ sub _parse_pv_call {
 
 sub _extract_type_params_schema {
 	my ($self, $code) = @_;
+
+	my $doc = $self->{_document};
+
+	my $calls = $doc->find(sub {
+		$_[1]->isa('PPI::Token::Word') && ($_[1]->content eq 'signature_for')
+	});
+
+	return if(!ref($calls));
+
+	if(scalar(@{$calls}) == 1) {
+		# Simple case, the module just contains one routine, no need to find what's what
+		# Though later, once I've added the code for more than one routine, remove this since we'll have a safety check then
+	}
 #
 	# my $doc = $self->_ppi($code) or return;
 #
@@ -2233,7 +2246,7 @@ sub _extract_moosex_params_schema
 	}) or return;
 
 	for my $call (@$calls) {
-		my $list = $call->parent;
+		my $list = $call->parent();
 		while ($list && !$list->isa('PPI::Structure::List')) {
 			$list = $list->parent;
 		}

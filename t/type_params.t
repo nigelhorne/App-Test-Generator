@@ -97,6 +97,33 @@ END_MODULE
 
 		done_testing();
 	};
+
+	subtest 'Extact schema from Type::Params - using signature_for' => sub {
+		my $module = <<'END_MODULE';
+use Types::Standard qw(Num);
+use Type::Params qw(-sigs);
+
+signature_for add_numbers => (
+  method      => 1,
+  positional  => [ Num, Num ],
+  returns     => Num
+);
+
+sub add_numbers ( $self, $first, $second ) {
+    return $first + $second;
+}
+
+END_MODULE
+
+		my $extractor = create_extractor($module);
+
+		# Extract all schemas
+		my $schemas = $extractor->extract_all();
+
+		ok(defined($schemas));
+
+		done_testing();
+	};
 }
 
 done_testing();
