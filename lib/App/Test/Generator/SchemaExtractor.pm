@@ -2260,27 +2260,31 @@ sub _extract_type_params_schema {
 				"use Types::Common -types;\n" .
 				"signature_for $function => $content;\n" .
 				"sub $function { }\n";
+			# my $compartment = Safe->new();
+			# $compartment->permit_only(qw(:base_core :base_mem :base_orig :load));
+			# my $sig = $compartment->reval($sig_code);
 			my $sig = eval $sig_code;
 			if($@) {
 				croak("$sig_code: $@");
 			}
-			my $parameters = $sig->parameters();
-			my $input;
-			my $position = 0;
-			foreach my $parameter(@{$parameters}) {
-				my $arg_name = "arg$position";
-				$input->{$arg_name}->{type} = ($parameter->{type}->name()) eq 'Num' ? 'number' : 'string';
-				$input->{$arg_name}->{position} = $position;
-				$input->{$arg_name}->{optional} = 0;
-				$position++;
+			if(defined($sig) && (my $parameters = $sig->parameters())) {
+				my $input;
+				my $position = 0;
+				foreach my $parameter(@{$parameters}) {
+					my $arg_name = "arg$position";
+					$input->{$arg_name}->{type} = ($parameter->{type}->name()) eq 'Num' ? 'number' : 'string';
+					$input->{$arg_name}->{position} = $position;
+					$input->{$arg_name}->{optional} = 0;
+					$position++;
+				}
+				return {
+					input => $input,
+					style => 'hash',
+					source => 'validator',
+					_notes => ['Type::Params detected (schema opaque)'],
+					_confidence => { input => 'medium' },
+				};
 			}
-			return {
-				input => $input,
-				style => 'hash',
-				source => 'validator',
-				_notes => ['Type::Params detected (schema opaque)'],
-				_confidence => { input => 'medium' },
-			};
 		}
 	}
 	croak('TODO: Type::Params with more than one function in the module');
