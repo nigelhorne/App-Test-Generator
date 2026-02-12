@@ -1932,7 +1932,7 @@ sub _detect_accessor_methods {
 sub _extract_validator_schema {
 	my ($self, $code) = @_;
 
-	for my $extractor ('_extract_pvs_schema', '_extract_pv_schema', '_extract_moosex_params_schema') {
+	for my $extractor ('_extract_pvs_schema', '_extract_pv_schema', '_extract_moosex_params_schema', '_extract_type_params_schema') {
 		my $res = $self->$extractor($code);
 		return $res if ($res && ref($res) eq 'HASH' && keys %{ $res->{input} || {} });
 	}
@@ -2198,9 +2198,12 @@ sub _parse_pv_call {
 }
 
 # TODO: Type::Params this may not be doable
-# But see https://github.com/nigelhorne/App-Test-Generator/issues/4
-# sub _extract_type_params_schema {
-	# my ($self, $code) = @_;
+#	The declaration isn't in $code, it's in a 'signature_for' declaration elsewhere in the file
+#	So need to parse $self->{_document} to find the 'signature_for $method =>'
+#	See https://github.com/nigelhorne/App-Test-Generator/issues/4
+
+sub _extract_type_params_schema {
+	my ($self, $code) = @_;
 #
 	# my $doc = $self->_ppi($code) or return;
 #
@@ -2215,7 +2218,7 @@ sub _parse_pv_call {
 		# _notes => ['Type::Params detected (schema opaque)'],
 		# _confidence => { input => 'medium' },
 	# };
-# }
+}
 
 sub _extract_moosex_params_schema
 {

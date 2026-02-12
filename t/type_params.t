@@ -14,8 +14,7 @@ BEGIN {
 }
 
 TODO: {
-    local $TODO = 'Type::Params extraction not yet implemented';
-
+	local $TODO = 'Type::Params extraction not yet implemented';
 
 	# Helper to create a temporary Perl module file
 	sub create_test_module {
