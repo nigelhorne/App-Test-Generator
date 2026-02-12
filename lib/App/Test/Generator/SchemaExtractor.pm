@@ -1541,7 +1541,7 @@ sub _analyze_method {
 			$schema->{_pod_validation_errors} = \@validation_errors;
 
 			# Either croak immediately or log based on configuration
-			if ($self->{strict_pod} == 2) {	# 2 = fatal errors
+			if($self->{strict_pod} == 2) {	# 2 = fatal errors
 				croak("[POD STRICT] $error_msg");
 			} else {	# 1 = warnings
 				carp("[POD STRICT] $error_msg");
@@ -4554,7 +4554,7 @@ sub _extract_defaults_from_code {
 
 		$params->{$param}{_default} = $self->_clean_default_value($value, 1);
 		$params->{$param}{optional} = 1;
-	$self->_log("  CODE: $param has default: " . $self->_format_default($params->{$param}{_default}));
+		$self->_log("  CODE: $param has default: " . $self->_format_default($params->{$param}{_default}));
 	}
 
 	# Pattern 2: $param = value unless defined $param;
@@ -4641,6 +4641,40 @@ sub _extract_defaults_from_code {
 		$params->{$param}{_default} = {};
 		$params->{$param}{optional} = 1;
 		$self->_log("  CODE: $param has hashref default (||=)");
+	}
+	# Fallback: extract parameters from classic Perl body styles
+	# Only run if signature extraction found nothing
+	if (!keys %{$params}) {
+		my $position = 0;
+
+		# Style 1: my ($a, $b) = @_;
+		while ($code =~ /my\s*\(\s*([^)]+)\s*\)\s*=\s*\@_/g) {
+			my @vars = $1 =~ /\$(\w+)/g;
+			foreach my $var (@vars) {
+				$params->{$var} ||= {
+					position => $position++,
+				};
+				$self->_log("  CODE: $var extracted from \@_ list assignment");
+			}
+		}
+
+		# Style 2: my $x = shift;
+		while ($code =~ /my\s+\$(\w+)\s*=\s*shift\b/g) {
+			my $var = $1;
+			$params->{$var} ||= {
+				position => $position++,
+			};
+			$self->_log("  CODE: $var extracted from shift");
+		}
+
+		# Style 3: my $x = $_[0];
+		while ($code =~ /my\s+\$(\w+)\s*=\s*\$_\[(\d+)\]/g) {
+			my ($var, $index) = ($1, $2);
+			$params->{$var} ||= {
+				position => $index,
+			};
+			$self->_log("  CODE: $var extracted from \$_\[$index\]");
+		}
 	}
 }
 
@@ -6971,7 +7005,15 @@ sub _validate_pod_code_agreement {
 			next;
 		}
 
-		if (!exists $pod_params->{$param} && exists $code_params->{$param}) {
+		if(!exists $pod_params->{$param} && exists $code_params->{$param}) {
+			if(($method_name eq 'new') && ($param eq 'class')) {
+				# $class is usually not documented in new()
+				next;
+			}
+			if(($method_name ne 'new') && ($param eq 'self')) {
+				# $self is usually not documented in a method
+				next;
+			}
 			push @errors, "Parameter '\$$param' found in code but not documented in POD";
 			next;
 		}
