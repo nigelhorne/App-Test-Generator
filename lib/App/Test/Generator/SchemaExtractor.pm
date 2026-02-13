@@ -2302,8 +2302,23 @@ sub _extract_type_params_schema {
 						push @notes, "output: unknown type $type, assuming 'string'";
 					}
 					$output->{type} = $type;
-				} elsif($sig->returns_scalar()) {
-					# TODO: fill in the output
+					$output->{_list_context} = { type => $type };
+				}
+				if($sig->returns_scalar()) {
+					$parameters = $sig->returns_list()->parameters();
+					my $parameter = $parameters->[0];
+					my $type = $parameter->name();
+					if($type eq 'Num') {
+						$type = 'number';
+					} else {
+						$type = 'string';
+						push @notes, "output: unknown type $type, assuming 'string'";
+					}
+					$output->{type} = $type;
+					$output->{_scalar_context} = { type => $type };
+					if($output->{_list_context}) {
+						$output->{_context_aware} = 1;
+					}
 				}
 				return {
 					input => $input,
@@ -3210,8 +3225,8 @@ sub _detect_list_context {
 			# Pattern 3: return unless wantarray; return (list);
 			$output->{_list_context} = { type => 'array' };
 			$self->_log('  OUTPUT: Detected list context return after wantarray check');
-			}
 		}
+	}
 
 	# Detect explicit list returns (multiple values in parentheses)
 	# Avoid false positives from function calls
