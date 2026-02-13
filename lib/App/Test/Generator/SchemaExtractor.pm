@@ -2221,7 +2221,7 @@ sub _extract_type_params_schema {
 	}
 
 	if(scalar(@{$calls}) == 1) {
-		# Simple case, the module just contains one routine, no need to find what's what
+		# Simple case, the module contains one routine, no need to find what's what
 		# Though later, once I've added the code for more than one routine, remove this since we'll have a safety check then
 		my $call = $calls->[0];
 		my $list = $call->parent();
@@ -2305,7 +2305,7 @@ sub _extract_type_params_schema {
 					$output->{_list_context} = { type => $type };
 				}
 				if($sig->returns_scalar()) {
-					$parameters = $sig->returns_list()->parameters();
+					$parameters = $sig->returns_scalar()->parameters();
 					my $parameter = $parameters->[0];
 					my $type = $parameter->name();
 					if($type eq 'Num') {
