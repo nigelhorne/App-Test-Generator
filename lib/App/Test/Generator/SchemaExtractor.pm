@@ -2372,6 +2372,18 @@ sub _extract_signature_expression {
 sub _compile_signature_isolated {
 	my ($self, $function, $signature_expr) = @_;
 
+	# Remove comments
+	$signature_expr =~ s/#.*$//mg;
+
+	# Reject obviously dangerous constructs
+	if ($signature_expr =~ /\b(?:system|exec|open|fork|require|do|eval|qx)\b/) {
+		die 'Unsafe signature expression';
+	}
+
+	if ($signature_expr =~ /[`{};]/) {
+		die "Unsafe signature expression";
+	}
+
 	my $payload = <<'PERL';
 use strict;
 use warnings;
@@ -2441,12 +2453,18 @@ PERL
 
 	# Run in an isolated Perl process
 	my ($wtr, $rdr, $err) = (undef, undef, gensym);
-	my $pid = open3($wtr, $rdr, $err, $^X);
+	local %ENV;
+	eval {
+		use BSD::Resource;
+		setrlimit(RLIMIT_AS, 50_000_000, 50_000_000);
+	};
+
+	my $pid = open3($wtr, $rdr, $err, $^X, '-T');
 
 	print $wtr $payload;
 	close $wtr;
 
-	local $SIG{ALRM} = sub { die 'Signature compile timeout' };
+	local $SIG{ALRM} = sub { croak 'Signature compile timeout' };
 	alarm 3;	# 3 second limit
 
 	my $stdout = do { local $/; <$rdr> };
@@ -2457,7 +2475,7 @@ PERL
 	waitpid($pid, 0);
 
 	if ($stderr && length $stderr) {
-		die "Error compiling signature:\n$stderr";
+		croak "Error compiling signature:\n$stderr";
 	}
 
 	return decode_json($stdout);
