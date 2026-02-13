@@ -2270,19 +2270,48 @@ sub _extract_type_params_schema {
 			if(defined($sig) && (my $parameters = $sig->parameters())) {
 				my $input;
 				my $position = 0;
+				my @notes = ('Type::Params detected (schema opaque)');
+				my $confidence = 'medium';
+				my $output;
+
 				foreach my $parameter(@{$parameters}) {
 					my $arg_name = "arg$position";
-					$input->{$arg_name}->{type} = ($parameter->{type}->name()) eq 'Num' ? 'number' : 'string';
+					my $type = $parameter->{type}->name();
+					if($type eq 'Num') {
+						$type = 'number';
+					} elsif($type eq 'Object') {
+						$type = 'object';
+					} else {
+						push @notes, "$position: unknown type $type, assuming 'string'";
+						$confidence = 'low';
+						$type = 'string';
+					}
+					$input->{$arg_name}->{type} = $type;
 					$input->{$arg_name}->{position} = $position;
 					$input->{$arg_name}->{optional} = 0;
 					$position++;
 				}
+				if($sig->returns_list()) {
+					$parameters = $sig->returns_list()->parameters();
+					my $parameter = $parameters->[0];
+					my $type = $parameter->name();
+					if($type eq 'Num') {
+						$type = 'number';
+					} else {
+						$type = 'string';
+						push @notes, "output: unknown type $type, assuming 'string'";
+					}
+					$output->{type} = $type;
+				} elsif($sig->returns_scalar()) {
+					# TODO: fill in the output
+				}
 				return {
 					input => $input,
+					output => $output,
 					style => 'hash',
 					source => 'validator',
-					_notes => ['Type::Params detected (schema opaque)'],
-					_confidence => { input => 'medium' },
+					_notes => \@notes,
+					_confidence => { input => $confidence },
 				};
 			}
 		}
@@ -7240,3 +7269,4 @@ assistance of AI.
 =cut
 
 1;
+
