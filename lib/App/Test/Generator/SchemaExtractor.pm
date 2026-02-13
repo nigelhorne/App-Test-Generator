@@ -14,6 +14,9 @@ use Params::Get;
 use Safe;
 use Scalar::Util qw(looks_like_number);
 use YAML::XS;
+use IPC::Open3;
+use JSON::MaybeXS qw(encode_json decode_json);
+use Symbol qw(gensym);
 
 our $VERSION = '0.28';
 
@@ -2199,144 +2202,6 @@ sub _parse_pv_call {
 	return ($first_arg, $hash_str);
 }
 
-# TODO: Type::Params with more than one function
-#	See https://github.com/nigelhorne/App-Test-Generator/issues/4
-
-# The declaration isn't in $code, it's in a 'signature_for' declaration elsewhere in the file
-# So need to parse $self->{_document} to find the 'signature_for $method =>'
-sub _extract_type_params_schema {
-	my ($self, $code) = @_;
-
-	my $doc = $self->{_document};
-
-	my $calls = $doc->find(sub {
-		$_[1]->isa('PPI::Token::Word') && ($_[1]->content eq 'signature_for')
-	});
-
-	return if(!ref($calls));
-
-	my $function;
-	if($code =~ /^sub\s+([a-z0-9_]+)\s/i) {
-		$function = $1;
-	}
-
-	if(scalar(@{$calls}) == 1) {
-		# Simple case, the module contains one routine, no need to find what's what
-		# Though later, once I've added the code for more than one routine, remove this since we'll have a safety check then
-		my $call = $calls->[0];
-		my $list = $call->parent();
-		while ($list && !$list->isa('PPI::Structure::List')) {
-			$list = $list->parent();
-		}
-		if(!defined($list)) {
-			if($call->content() ne 'signature_for') {
-				croak("expected 'signature_for' got '$call->content()'");
-			}
-			my $next = $call->next_sibling();
-			if($next->content() !~ /\s+/) {
-				croak("expected space got '$call->content()'");
-			}
-			$next = $next->next_sibling();
-			if($next->content() ne $function) {
-				croak("expected '$function' got '$call->content()'");
-			}
-			$next = $next->next_sibling();
-			if($next->content() !~ /\s+/) {
-				croak("expected space got '$call->content()'");
-			}
-			$next = $next->next_sibling();
-			if($next->content() ne '=>') {
-				croak("expected '=>' got '$call->content()'");
-			}
-			$next = $next->next_sibling();
-			if($next->content() !~ /\s+/) {
-				croak("expected space got '$call->content()'");
-			}
-			$next = $next->next_sibling();
-			my $package_name = $self->{_package_name};
-			my $content = $next->content();
-			my $sig_code = "package Original::Package;\n" .
-				"use Type::Params -sigs;\n" .
-				"use Types::Common -types;\n" .
-				"signature_for $function => $content;\n" .
-				"sub $function { }\n";
-			my $compartment = Safe->new();
-			$compartment->permit_only(qw(:base_core :base_mem :base_orig :load));
-			my $sig = $compartment->reval($sig_code);
-			if(!defined($sig)) {
-				$sig = eval $sig_code;
-				if($@) {
-					croak("$sig_code: $@");
-				}
-			}
-			if(defined($sig) && (my $parameters = $sig->parameters())) {
-				my $input;
-				my $position = 0;
-				my @notes = ('Type::Params detected (schema opaque)');
-				my $confidence = 'medium';
-				my $output;
-
-				foreach my $parameter(@{$parameters}) {
-					my $arg_name = "arg$position";
-					my $type = $parameter->{type}->name();
-					if($type eq 'Num') {
-						$type = 'number';
-					} elsif($type eq 'Object') {
-						$type = 'object';
-					} else {
-						push @notes, "$position: unknown type $type, assuming 'string'";
-						$confidence = 'low';
-						$type = 'string';
-					}
-					$input->{$arg_name}->{type} = $type;
-					$input->{$arg_name}->{position} = $position;
-					$input->{$arg_name}->{optional} = 0;
-					$position++;
-				}
-				if($sig->returns_list()) {
-					$parameters = $sig->returns_list()->parameters();
-					my $parameter = $parameters->[0];
-					my $type = $parameter->name();
-					if($type eq 'Num') {
-						$type = 'number';
-					} else {
-						$type = 'string';
-						push @notes, "output: unknown type $type, assuming 'string'";
-					}
-					$output->{type} = $type;
-					$output->{_list_context} = { type => $type };
-				}
-				if($sig->returns_scalar()) {
-					if($parameters = $sig->returns_scalar()->parameters()) {
-						my $parameter = $parameters->[0];
-						my $type = $parameter->name();
-						if($type eq 'Num') {
-							$type = 'number';
-						} else {
-							$type = 'string';
-							push @notes, "output: unknown type $type, assuming 'string'";
-						}
-						$output->{type} = $type;
-						$output->{_scalar_context} = { type => $type };
-						if($output->{_list_context}) {
-							$output->{_context_aware} = 1;
-						}
-					}
-				}
-				return {
-					input => $input,
-					output => $output,
-					style => 'hash',
-					source => 'validator',
-					_notes => \@notes,
-					_confidence => { input => $confidence },
-				};
-			}
-		}
-	}
-	croak('TODO: Type::Params with more than one function in the module');
-}
-
 sub _extract_moosex_params_schema
 {
 	my ($self, $code) = @_;
@@ -2447,6 +2312,421 @@ sub _normalize_validator_schema {
 		input => \%input,
 	};
 }
+
+# Type::Param support
+# The declaration isn't in $code, it's in a 'signature_for' declaration elsewhere in the file
+# So need to parse $self->{_document} to find the 'signature_for $method =>'
+sub _extract_type_params_schema {
+	my ($self, $code) = @_;
+
+	my $function = $self->_extract_function_name($code) or return;
+
+	my $doc = $self->{_document} or return;
+	my $stmt = $self->_find_signature_statement($doc, $function) or return;
+
+	my $signature_expr = $self->_extract_signature_expression($stmt, $function) or return;
+
+	my $meta = $self->_compile_signature_isolated($function, $signature_expr) or return;
+
+	return $self->_build_schema_from_meta($meta);
+}
+
+sub _extract_function_name {
+	my ($self, $code) = @_;
+	return $1 if $code =~ /^\s*sub\s+([a-zA-Z0-9_]+)/;
+	return;
+}
+
+sub _find_signature_statement {
+	my ($self, $doc, $function) = @_;
+
+	my $statements = $doc->find(
+		sub {
+			$_[1]->isa('PPI::Statement') && $_[1]->content =~ /^\s*signature_for\b/
+		}
+	) or return;
+
+	foreach my $stmt (@$statements) {
+		my $content = $stmt->content;
+		if ($content =~ /^\s*signature_for\s+\Q$function\E\b/) {
+			return $stmt;
+		}
+	}
+
+	return;
+}
+
+sub _extract_signature_expression {
+	my ($self, $stmt, $function) = @_;
+
+	my $content = $stmt->content;
+
+	if ($content =~ /^\s*signature_for\s+\Q$function\E\s*=>\s*(.+?);?\s*$/s) {
+		return $1;
+	}
+
+	return;
+}
+
+# Build a payload to run in a clean Perl process
+sub _compile_signature_isolated {
+	my ($self, $function, $signature_expr) = @_;
+
+	my $payload = <<'PERL';
+use strict;
+use warnings;
+use Type::Params -sigs;
+use Types::Common -types;
+use JSON::MaybeXS;
+
+# Stub sub so Perl can parse it
+sub FUNCTION_NAME {}
+
+# Create the Type::Params signature object
+my $sig = signature_for FUNCTION_NAME => SIGNATURE_EXPR;
+
+# Extract parameters
+my @sig_params = @{ $sig->parameters || [] };
+my $pos = 0;
+my @params;
+
+# if ($sig->method) {
+    # The $self value
+    # push @params, {
+        # name     => 'arg0',
+        # optional => 0,
+        # position => $pos++,
+    # };
+# }
+
+for my $p (@sig_params) {
+	push @params, {
+		name     => "arg$pos",
+		optional => $p->optional ? 1 : 0,
+		position => $pos,
+		type => $p->type->name
+	};
+	$pos++;
+}
+
+# Extract return type
+my $returns;
+if (my $r = $sig->returns_scalar) {
+	$returns = {
+		context => 'scalar',
+		type    => $r ? $r->name : 'unknown',
+	};
+} elsif ($r = $sig->returns_list) {
+	$returns = {
+		context => 'list',
+		type    => $r ? $r->name : 'unknown',
+	};
+}
+
+print encode_json({
+	parameters => \@params,
+	returns    => $returns,
+});
+PERL
+
+	# Substitute function name and signature expression
+	$payload =~ s/FUNCTION_NAME/$function/g;
+	$payload =~ s/SIGNATURE_EXPR/$signature_expr/;
+
+	my $compartment = Safe->new();
+	$compartment->permit_only(qw(:base_core :base_mem :base_orig :load));
+	if(my $sig = $compartment->reval($payload)) {
+		return $sig;
+	}
+
+	# Run in an isolated Perl process
+	my ($wtr, $rdr, $err) = (undef, undef, gensym);
+	my $pid = open3($wtr, $rdr, $err, $^X);
+
+	print $wtr $payload;
+	close $wtr;
+
+	my $stdout = do { local $/; <$rdr> };
+	my $stderr = do { local $/; <$err> };
+
+	waitpid($pid, 0);
+
+	if ($stderr && length $stderr) {
+		die "Error compiling signature:\n$stderr";
+	}
+
+	return decode_json($stdout);
+}
+
+sub _build_schema_from_meta {
+	my ($self, $meta) = @_;
+
+	my %type_map = (
+		Num => 'number',
+		Int => 'integer',
+		Str => 'string',
+		Bool => 'boolean',
+		Object  => 'object',
+		ArrayRef => 'array',
+		HashRef  => 'object',
+	);
+
+	my $input;
+	my $position = 0;
+	my $confidence = 'high';
+	my @notes = ('Type::Params detected');
+
+	foreach my $p (@{ $meta->{parameters} || [] }) {
+		my $type = $type_map{ $p->{type} } // 'string';
+
+		if (!exists $type_map{$p->{type}}) {
+			push @notes, "Unknown type $p->{type}, defaulting to string";
+			$confidence = 'medium';
+		}
+
+		$input->{"arg$position"} = {
+			type => $type,
+			position => $position,
+			optional => $p->{optional} ? 1 : 0,
+		};
+
+		$position++;
+	}
+
+	my $output;
+
+	if (my $ret = $meta->{returns}) {
+		my $type = $type_map{ $ret->{type} } // 'string';
+
+		if (!exists $type_map{$ret->{type}}) {
+			push @notes, "Unknown return type $ret->{type}, defaulting to string";
+			$confidence = 'medium';
+		}
+
+		$output = {
+			type => $type,
+			"_$ret->{context}_context" => { type => $type },
+		};
+	}
+
+	return {
+		input  => $input,
+		output => $output,
+		style  => 'hash',
+		source => 'validator',
+		_notes => \@notes,
+		_confidence => {
+			input => $confidence,
+		},
+	};
+}
+
+
+sub _extract_type_params_schema {
+	my ($self, $code) = @_;
+
+	my $function = $self->_extract_function_name($code) or return;
+
+	my $doc = $self->{_document} or return;
+	my $stmt = $self->_find_signature_statement($doc, $function) or return;
+
+	my $signature_expr = $self->_extract_signature_expression($stmt, $function) or return;
+
+	my $meta = $self->_compile_signature_isolated($function, $signature_expr) or return;
+
+	return $self->_build_schema_from_meta($meta);
+}
+
+sub _extract_function_name {
+	my ($self, $code) = @_;
+	return $1 if $code =~ /^\s*sub\s+([a-zA-Z0-9_]+)/;
+	return;
+}
+
+sub _find_signature_statement {
+	my ($self, $doc, $function) = @_;
+
+	my $statements = $doc->find(
+		sub {
+			$_[1]->isa('PPI::Statement') && $_[1]->content =~ /^\s*signature_for\b/
+		}
+	) or return;
+
+	foreach my $stmt (@$statements) {
+		my $content = $stmt->content;
+		if ($content =~ /^\s*signature_for\s+\Q$function\E\b/) {
+			return $stmt;
+		}
+	}
+
+	return;
+}
+
+sub _extract_signature_expression {
+	my ($self, $stmt, $function) = @_;
+
+	my $content = $stmt->content;
+
+	if ($content =~ /^\s*signature_for\s+\Q$function\E\s*=>\s*(.+?);?\s*$/s) {
+		return $1;
+	}
+
+	return;
+}
+
+# Build a payload to run in a clean Perl process
+sub _compile_signature_isolated {
+	my ($self, $function, $signature_expr) = @_;
+
+	my $payload = <<'PERL';
+use strict;
+use warnings;
+use Type::Params -sigs;
+use Types::Common -types;
+use JSON::MaybeXS;
+
+# Stub sub so Perl can parse it
+sub FUNCTION_NAME {}
+
+# Create the Type::Params signature object
+my $sig = signature_for FUNCTION_NAME => SIGNATURE_EXPR;
+
+# Extract parameters
+my @sig_params = @{ $sig->parameters || [] };
+my $pos = 0;
+my @params;
+
+# if ($sig->method) {
+    # The $self value
+    # push @params, {
+        # name     => 'arg0',
+        # optional => 0,
+        # position => $pos++,
+    # };
+# }
+
+for my $p (@sig_params) {
+	push @params, {
+		name     => "arg$pos",
+		optional => $p->optional ? 1 : 0,
+		position => $pos,
+		type => $p->type->name
+	};
+	$pos++;
+}
+
+# Extract return type
+my $returns;
+if (my $r = $sig->returns_scalar) {
+	$returns = {
+		context => 'scalar',
+		type    => $r ? $r->name : 'unknown',
+	};
+} elsif ($r = $sig->returns_list) {
+	$returns = {
+		context => 'list',
+		type    => $r ? $r->name : 'unknown',
+	};
+}
+
+print encode_json({
+	parameters => \@params,
+	returns    => $returns,
+});
+PERL
+
+	# Substitute function name and signature expression
+	$payload =~ s/FUNCTION_NAME/$function/g;
+	$payload =~ s/SIGNATURE_EXPR/$signature_expr/;
+
+	my $compartment = Safe->new();
+	$compartment->permit_only(qw(:base_core :base_mem :base_orig :load));
+	if(my $sig = $compartment->reval($payload)) {
+		return $sig;
+	}
+
+	# Run in an isolated Perl process
+	my ($wtr, $rdr, $err) = (undef, undef, gensym);
+	my $pid = open3($wtr, $rdr, $err, $^X);
+
+	print $wtr $payload;
+	close $wtr;
+
+	my $stdout = do { local $/; <$rdr> };
+	my $stderr = do { local $/; <$err> };
+
+	waitpid($pid, 0);
+
+	if ($stderr && length $stderr) {
+		die "Error compiling signature:\n$stderr";
+	}
+
+	return decode_json($stdout);
+}
+
+sub _build_schema_from_meta {
+	my ($self, $meta) = @_;
+
+	my %type_map = (
+		Num => 'number',
+		Int => 'integer',
+		Str => 'string',
+		Bool => 'boolean',
+		Object  => 'object',
+		ArrayRef => 'array',
+		HashRef  => 'object',
+	);
+
+	my $input;
+	my $position = 0;
+	my $confidence = 'high';
+	my @notes = ('Type::Params detected');
+
+	foreach my $p (@{ $meta->{parameters} || [] }) {
+		my $type = $type_map{ $p->{type} } // 'string';
+
+		if (!exists $type_map{$p->{type}}) {
+			push @notes, "Unknown type $p->{type}, defaulting to string";
+			$confidence = 'medium';
+		}
+
+		$input->{"arg$position"} = {
+			type => $type,
+			position => $position,
+			optional => $p->{optional} ? 1 : 0,
+		};
+
+		$position++;
+	}
+
+	my $output;
+
+	if (my $ret = $meta->{returns}) {
+		my $type = $type_map{ $ret->{type} } // 'string';
+
+		if (!exists $type_map{$ret->{type}}) {
+			push @notes, "Unknown return type $ret->{type}, defaulting to string";
+			$confidence = 'medium';
+		}
+
+		$output = {
+			type => $type,
+			"_$ret->{context}_context" => { type => $type },
+		};
+	}
+
+	return {
+		input  => $input,
+		output => $output,
+		style  => 'hash',
+		source => 'validator',
+		_notes => \@notes,
+		_confidence => {
+			input => $confidence,
+		},
+	};
+}
+
 
 =head2 _analyze_pod
 
@@ -5804,7 +6084,7 @@ sub _write_schema {
 		$self->{_package_name} //= $package_name;
 	}
 
-	# Clean up schema for output - use the format expected by test generator
+	# Clean up schema for output - use the format expected by App::Test::Generator::Template
 	my $output = {
 		function => $method_name,
 		module => $package_name,
@@ -5823,6 +6103,13 @@ sub _write_schema {
 
 		foreach my $param_name (keys %{$schema->{'input'}}) {
 			my $param = $schema->{'input'}{$param_name};
+			if($param->{name}) {
+				my $name = delete $param->{name};
+				if($name ne $param_name) {
+					# Sanity check
+					croak("BUG: Parameter name - expected $param_name, got $name");
+				}
+			}
 			my $cleaned_param = $self->_serialize_parameter_for_yaml($param);
 			$output->{'input'}{$param_name} = $cleaned_param;
 		}
@@ -6012,20 +6299,16 @@ sub _serialize_parameter_for_yaml {
 	}
 
 	# Handle advanced type mappings
-	my $semantic = $param->{semantic};
-
-	if ($semantic) {
+	if(my $semantic = $param->{semantic}) {
 		if ($semantic eq 'datetime_object') {
 			# DateTime objects: test generator needs to know how to create them
 			$cleaned{type} = 'object';
 			$cleaned{isa} = $param->{isa} || 'DateTime';
 			$cleaned{_note} = 'Requires DateTime object';
-
 		} elsif ($semantic eq 'timepiece_object') {
 			$cleaned{type} = 'object';
 			$cleaned{isa} = $param->{isa} || 'Time::Piece';
 			$cleaned{_note} = 'Requires Time::Piece object';
-
 		} elsif ($semantic eq 'date_string') {
 			# Date strings: provide regex pattern
 			$cleaned{type} = 'string';
@@ -7192,7 +7475,7 @@ sub _validate_strictness_level {
 	return 1 if $val =~ /^(1|warn|warning)$/i;
 	return 2 if $val =~ /^(2|fatal|die|error)$/i;
 
-	croak "Invalid value for --strict-pod: '$val' (use off|warn|fatal)";
+	croak("Invalid value for --strict-pod: '$val' (use off|warn|fatal)");
 }
 
 sub _types_are_compatible {

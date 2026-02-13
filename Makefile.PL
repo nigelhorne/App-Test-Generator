@@ -31,6 +31,8 @@ WriteMakefile(
 		'File::Spec' => 0,
 		'Getopt::Long' => 0,
 		'Module::Load::Conditional' => 0,
+		'IPC::Open3' => 0,
+		'JSON::MaybeXS' => 0,
 		'Params::Get' => 0.13,
 		'Params::Validate::Strict' => 0.23,
 		'PPI' => 0,
@@ -39,6 +41,7 @@ WriteMakefile(
 		'Return::Set' => 0.03,
 		're' => 0,
 		'Safe' => 0,
+		'Symbol' => 0,
 		'Template' => 0,
 		'YAML::XS' => 0
 	}, TEST_REQUIRES => {
