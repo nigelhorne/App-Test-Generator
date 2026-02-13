@@ -2260,12 +2260,14 @@ sub _extract_type_params_schema {
 				"use Types::Common -types;\n" .
 				"signature_for $function => $content;\n" .
 				"sub $function { }\n";
-			# my $compartment = Safe->new();
-			# $compartment->permit_only(qw(:base_core :base_mem :base_orig :load));
-			# my $sig = $compartment->reval($sig_code);
-			my $sig = eval $sig_code;
-			if($@) {
-				croak("$sig_code: $@");
+			my $compartment = Safe->new();
+			$compartment->permit_only(qw(:base_core :base_mem :base_orig :load));
+			my $sig = $compartment->reval($sig_code);
+			if(!defined($sig)) {
+				$sig = eval $sig_code;
+				if($@) {
+					croak("$sig_code: $@");
+				}
 			}
 			if(defined($sig) && (my $parameters = $sig->parameters())) {
 				my $input;
@@ -2305,19 +2307,20 @@ sub _extract_type_params_schema {
 					$output->{_list_context} = { type => $type };
 				}
 				if($sig->returns_scalar()) {
-					$parameters = $sig->returns_scalar()->parameters();
-					my $parameter = $parameters->[0];
-					my $type = $parameter->name();
-					if($type eq 'Num') {
-						$type = 'number';
-					} else {
-						$type = 'string';
-						push @notes, "output: unknown type $type, assuming 'string'";
-					}
-					$output->{type} = $type;
-					$output->{_scalar_context} = { type => $type };
-					if($output->{_list_context}) {
-						$output->{_context_aware} = 1;
+					if($parameters = $sig->returns_scalar()->parameters()) {
+						my $parameter = $parameters->[0];
+						my $type = $parameter->name();
+						if($type eq 'Num') {
+							$type = 'number';
+						} else {
+							$type = 'string';
+							push @notes, "output: unknown type $type, assuming 'string'";
+						}
+						$output->{type} = $type;
+						$output->{_scalar_context} = { type => $type };
+						if($output->{_list_context}) {
+							$output->{_context_aware} = 1;
+						}
 					}
 				}
 				return {
