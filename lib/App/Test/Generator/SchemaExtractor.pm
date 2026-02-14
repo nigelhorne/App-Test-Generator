@@ -1901,6 +1901,18 @@ sub _detect_accessor_methods {
 			level => 'high',
 			factors => ['Detected setter/accessor method'],
 		};
+		if($schema->{output}{_returns_self}) {
+			if($schema->{output}{type} ne 'object') {
+				croak 'Setter can not return data other than $self';
+			}
+			if($schema->{output}{isa} ne $self->{_package_name}) {
+				croak 'Setter can not return data other than $self';
+			}
+		} else {
+			if(scalar(keys %{$schema->{output}}) != 0) {
+				croak 'Setter can not return data';
+			}
+		}
 	}
 
 	if($schema->{accessor}{type} && $schema->{accessor}{type} =~ /setter|getset/ && $schema->{input}) {
