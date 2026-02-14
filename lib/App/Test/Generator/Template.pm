@@ -217,14 +217,17 @@ sub rand_str
 	$rc = _rand_unicode_fuzzer($len) if $mode == 3;
 	$rc = rand_ascii_str($len) if($mode == 4);
 
-	my $l = Unicode::GCString->new($rc)->length();
-	if($len > $l) {
-		$rc .= 'a' x ($len - $l);	# Why is this needed?
-		$l = Unicode::GCString->new($rc)->length();
+	my $rc_len = Unicode::GCString->new($rc)->length();
+	if($rc_len > $len) {
+		$rc = substr($rc, 0, $rc_len - $len);
 	}
-	# die "BUG $l != $len (mode == $mode)" if($l != $len);
-	ok($l == $len, "Unicode length preserved (mode=$mode)") or
-		diag("BUG $l != $len (mode == $mode)");
+	if($len > $rc_len) {
+		$rc .= 'a' x ($len - $rc_len);	# Why is this needed?
+		$rc_len = Unicode::GCString->new($rc)->length();
+	}
+	# die "BUG $rc_len != $len (mode == $mode)" if($rc_len != $len);
+	ok($rc_len == $len, "Unicode length preserved (mode=$mode)") or
+		diag("BUG $rc_len != $len (mode == $mode)");
 
 	return $rc;
 }
@@ -656,8 +659,8 @@ sub fuzz_inputs
 
 						use_ok($spec->{isa});
 						push @cases, { $arg_name => new_ok($spec->{isa}) };
-					} else {
-						carp("'isa' is not defined - what type of object should be sent?");
+					} elsif(!$spec->{can}) {
+						carp("neither 'isa' nor 'can' is defined - what type of object should be sent?");
 					}
 				}
 
