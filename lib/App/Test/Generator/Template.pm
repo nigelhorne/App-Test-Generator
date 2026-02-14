@@ -62,6 +62,7 @@ use warnings;
 use utf8;
 use open qw(:std :encoding(UTF-8));	# https://github.com/nigelhorne/App-Test-Generator/issues/1
 
+use Carp;
 use Data::Dumper;
 use Data::Random qw(:all);
 use Data::Random::String;

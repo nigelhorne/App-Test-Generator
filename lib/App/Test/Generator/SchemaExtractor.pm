@@ -1853,7 +1853,7 @@ sub _detect_accessor_methods {
 
 		# Ensure there are no other return statements
 		my @returns = $code =~ /return\b/g;
-		if (@returns == 1) {
+		if(scalar(@returns) == 1) {
 			$schema->{accessor} = {
 				type => 'getter',
 				property => $property,
