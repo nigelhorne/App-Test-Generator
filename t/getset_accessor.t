@@ -163,10 +163,8 @@ is(
     'Detected getter-only accessor'
 );
 
-ok(
-    defined($schemas->{getter_only}{output}{type}),
-    'Getter-only returns something'
-);
+ok((!defined($schemas->{getter_only}{input})), 'Getter takes no input');
+ok(defined($schemas->{getter_only}{output}{type}), 'Getter-only returns something');
 
 is(
     $schemas->{setter_only}{accessor}{type},

@@ -1861,16 +1861,11 @@ sub _detect_accessor_methods {
 
 		$self->_log("  Detected getter accessor for property: $property");
 
-		$schema->{_confidence}{input} = {
+		$schema->{_confidence}{output} = {
 			level => 'high',
 			factors => ['Detected getter method'],
 		};
-		if(ref($schema->{input}) eq 'HASH') {
-			if(scalar keys(%{$schema->{input}}) > 1) {
-				croak(__PACKAGE__, ': A getter accessor function can have at most one argument');
-			}
-		}
-		$schema->{input}->{$property}->{position} = 0;
+		delete $schema->{input};
 	} elsif (
 		$code =~ /return\s+\$self\b/ &&
 		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*\$(\w+)\s*;/
