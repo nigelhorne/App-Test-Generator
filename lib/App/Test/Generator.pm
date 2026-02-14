@@ -1531,6 +1531,9 @@ sub generate
 		if($has_positions) {
 			$position_code = "\$result = (scalar(\@alist) == 1) ? \$obj->$function(\$alist[0]) : (scalar(\@alist) == 0) ? \$obj->$function() : \$obj->$function(\@alist);";
 			if(defined($accessor{type})) {
+				if($accessor{type} eq 'getter') {
+					$position_code .= "my \$prev_value = \$obj->{$accessor{property}};";
+				}
 				if($accessor{type} eq 'getset') {
 					$position_code .= 'if(scalar(@alist) == 1) { ';
 					$position_code .= "cmp_ok(\$result, 'eq', \$alist[0], 'getset function returns what was put in'); ok(\$obj->$function() eq \$result, 'test getset accessor');";
@@ -1539,17 +1542,27 @@ sub generate
 				if(($accessor{type} eq 'getset') || ($accessor{type} eq 'getter')) {
 					# Since Perl doesn't support data encapsulation, we can test the getter returns the correct item
 					$position_code .= 'if(scalar(@alist) == 1) { ';
-					$position_code .= "cmp_ok(\$result, 'eq', \$obj->{$function}, 'getset function returns correct item');";
+					$position_code .= "cmp_ok(\$result, 'eq', \$obj->{$accessor{property}}, 'getset function returns correct item');";
+					if($accessor{type} eq 'getter') {
+						$position_code .= "if(defined(\$prev_value)) { cmp_ok(\$result, 'eq', \$prev_value, 'getter does not change value'); } ";
+					}
 					$position_code .= '}';
+				}
+				if($output{'_returns_self'}) {
+					croak("$accessor{type} for $accessor{property} cannot return \$self");
 				}
 			}
 		} else {
 			$call_code = "\$result = \$obj->$function(\$input);";
 			if($output{'_returns_self'}) {
 				$call_code .= "ok(defined(\$result)); ok(\$result eq \$obj, '$function returns self')";
-			}
-			if(defined($accessor{type}) && ($accessor{type} eq 'getset')) {
+			} elsif(defined($accessor{type}) && ($accessor{type} eq 'getset')) {
 				$call_code .= "ok(\$obj->$function() eq \$result, 'test getset accessor');"
+			}
+			if(scalar(keys %input) == 0) {
+				if(defined($accessor{type}) && ($accessor{type} eq 'getter')) {
+					$call_code .= "cmp_ok(\$result, 'eq', \$obj->{$accessor{property}}, 'getter function returns correct item');";
+				}
 			}
 		}
 	} elsif(defined($module) && length($module)) {

@@ -1851,21 +1851,29 @@ sub _detect_accessor_methods {
 		# -------------------------------
 		my $property = $1;
 
-		# Ensure there are no other return statements
-		my @returns = $code =~ /return\b/g;
-		if(scalar(@returns) == 1) {
-			$schema->{accessor} = {
-				type => 'getter',
-				property => $property,
-			};
+		# Don't flag mutators like
+		# sub foo {
+		    # my $self = shift;
+		    # $self->{bar} = shift;
+		    # return $self->{bar};
+		# }
+		if($code !~ /\$self\s*->\s*\{\s*['"]?\Q$property\E['"]?\s*\}\s*=/) {
+			# Ensure there are no other return statements
+			my @returns = $code =~ /return\b/g;
+			if(scalar(@returns) == 1) {
+				$schema->{accessor} = {
+					type => 'getter',
+					property => $property,
+				};
 
-			$self->_log("  Detected getter accessor for property: $property");
+				$self->_log("  Detected getter accessor for property: $property");
 
-			$schema->{_confidence}{output} = {
-				level => 'high',
-				factors => ['Detected getter method'],
-			};
-			delete $schema->{input};
+				$schema->{_confidence}{output} = {
+					level => 'high',
+					factors => ['Detected getter method'],
+				};
+				delete $schema->{input};
+			}
 		}
 	} elsif (
 		$code =~ /return\s+\$self\b/ &&
