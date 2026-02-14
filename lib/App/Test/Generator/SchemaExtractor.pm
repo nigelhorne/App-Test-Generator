@@ -1845,27 +1845,28 @@ sub _detect_accessor_methods {
 			}
 		}
 		$schema->{input}->{$property}->{position} = 0;
-	} elsif (
-		$code =~ /return\s+\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*;/ &&
-		$code !~ /return\s+(?!\$self\s*->\s*\{\s*['"]?\Q$1\E['"]?\s*\})/
-	) {
+	} elsif ($code =~ /return\s+\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*;/) {
 		# -------------------------------
 		# Getter
 		# -------------------------------
 		my $property = $1;
 
-		$schema->{accessor} = {
-			type => 'getter',
-			property => $property,
-		};
+		# Ensure there are no other return statements
+		my @returns = $code =~ /return\b/g;
+		if (@returns == 1) {
+			$schema->{accessor} = {
+				type => 'getter',
+				property => $property,
+			};
 
-		$self->_log("  Detected getter accessor for property: $property");
+			$self->_log("  Detected getter accessor for property: $property");
 
-		$schema->{_confidence}{output} = {
-			level => 'high',
-			factors => ['Detected getter method'],
-		};
-		delete $schema->{input};
+			$schema->{_confidence}{output} = {
+				level => 'high',
+				factors => ['Detected getter method'],
+			};
+			delete $schema->{input};
+		}
 	} elsif (
 		$code =~ /return\s+\$self\b/ &&
 		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*\$(\w+)\s*;/
