@@ -1524,7 +1524,7 @@ sub _analyze_method {
 
 	# Analyze different sources
 	my $pod_params = $self->_analyze_pod($pod);
-	my $code_params = $self->_analyze_code($code);
+	my $code_params = $self->_analyze_code($code, $method);
 
 	# Validate POD/code agreement if strict mode is enabled
 	if ($self->{strict_pod}) {
@@ -3747,7 +3747,7 @@ Looks for common validation patterns:
 
 # Enhanced _analyze_code with more pattern detection
 sub _analyze_code {
-	my ($self, $code) = @_;
+	my ($self, $code, $method) = @_;
 
 	my %params;
 
@@ -3757,7 +3757,7 @@ sub _analyze_code {
 	# Extract parameter names from various signature styles
 	$self->_extract_parameters_from_signature(\%params, $code);
 
-	$self->_extract_defaults_from_code(\%params, $code);
+	$self->_extract_defaults_from_code(\%params, $code, $method);
 
 	# Infer types from defaults
 	foreach my $param (keys %params) {
@@ -4782,7 +4782,7 @@ sub _merge_field_declarations {
 }
 
 sub _extract_defaults_from_code {
-	my ($self, $params, $code) = @_;
+	my ($self, $params, $code, $method) = @_;
 
 	# Pattern 1: my $param = value;
 	while ($code =~ /my\s+\$(\w+)\s*=\s*([^;]+);/g) {
@@ -4879,8 +4879,10 @@ sub _extract_defaults_from_code {
 		$params->{$param}{optional} = 1;
 		$self->_log("  CODE: $param has hashref default (||=)");
 	}
+
 	# Fallback: extract parameters from classic Perl body styles
 	# Only run if signature extraction found nothing
+	# TODO:  On constructors, use $class to help to determine the output type
 	if (!keys %{$params}) {
 		my $position = 0;
 
@@ -4888,29 +4890,35 @@ sub _extract_defaults_from_code {
 		while ($code =~ /my\s*\(\s*([^)]+)\s*\)\s*=\s*\@_/g) {
 			my @vars = $1 =~ /\$(\w+)/g;
 			foreach my $var (@vars) {
-				$params->{$var} ||= {
-					position => $position++,
-				};
-				$self->_log("  CODE: $var extracted from \@_ list assignment");
+				if(($var eq 'class') && ($position == 0) && ($method->{name} eq 'new')) {
+					# Don't include "class" in the variable names of the constructor
+					delete $params->{'class'};
+				} else {
+					$params->{$var} ||= { position => $position++ };
+					$self->_log("  CODE: $var extracted from \@_ list assignment");
+				}
 			}
 		}
 
 		# Style 2: my $x = shift;
 		while ($code =~ /my\s+\$(\w+)\s*=\s*shift\b/g) {
 			my $var = $1;
-			$params->{$var} ||= {
-				position => $position++,
-			};
-			$self->_log("  CODE: $var extracted from shift");
+			if(($var eq 'class') && ($position == 0) && ($method->{name} eq 'new')) {
+				# Don't include "class" in the variable names of the constructor
+				delete $params->{'class'};
+			} else {
+				$params->{$var} ||= { position => $position++ };
+				$self->_log("  CODE: $var is extracted from shift");
+			}
 		}
 
 		# Style 3: my $x = $_[0];
 		while ($code =~ /my\s+\$(\w+)\s*=\s*\$_\[(\d+)\]/g) {
 			my ($var, $index) = ($1, $2);
-			$params->{$var} ||= {
-				position => $index,
-			};
-			$self->_log("  CODE: $var extracted from \$_\[$index\]");
+			if(($var ne 'class') || ($position > 0) || ($method->{name} ne 'new')) {
+				$params->{$var} ||= { position => $index };
+				$self->_log("  CODE: $var is extracted from \$_\[$index\]");
+			}
 		}
 	}
 }
