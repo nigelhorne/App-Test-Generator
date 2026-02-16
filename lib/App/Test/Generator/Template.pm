@@ -1088,8 +1088,10 @@ sub _generate_string_cases
 			if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
 				if(defined($spec->{'notmemberof'}) && (grep { $_ eq 'hello' } @{$spec->{'notmemberof'}})) {
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
-				} elsif((!defined($spec->{max})) || ($spec->{max} <= 5)) {
+				} elsif((!defined($spec->{max})) || ($spec->{max} >= 5)) {
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'OK' ) };
+				} else {
+					push @cases, { %{$mandatory_args}, ( $arg_name => 'plugh', _LINE => __LINE__, _STATUS => 'DIES' ) };
 				}
 			} else {
 				push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
@@ -1165,9 +1167,11 @@ sub _generate_string_cases
 			} elsif($len > 0) {
 				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len - 1), _STATUS => 'DIES' ) };
 			}
-			push @cases,
-				{ %{$mandatory_args}, ( $arg_name => rand_str($len) ) },
-				{ %{$mandatory_args}, ( $arg_name => rand_str($len + 1) ) };
+			if((!defined($spec->{max})) || ($spec->{max} >= $len + 1)) {
+				push @cases,
+					{ %{$mandatory_args}, ( $arg_name => rand_str($len) ) },
+					{ %{$mandatory_args}, ( $arg_name => rand_str($len + 1) ) };
+			}
 			if($len <= 1) {
 				push @cases,
 					{ %{$mandatory_args}, ( $arg_name => "\n" ) },	# new lines are fun
@@ -1182,7 +1186,11 @@ sub _generate_string_cases
 		}
 		if (defined $spec->{max}) {
 			my $len = $spec->{max};
-			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len - 1) ) };
+			if((!defined($spec->{min})) || ($spec->{min} < ($len - 1))) {
+				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len - 1) ) };
+			} else {
+				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len - 1), _STATUS => 'DIES' ) };
+			}
 			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len) ) };
 			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len + 1), _STATUS => 'DIES' ) };
 		}
