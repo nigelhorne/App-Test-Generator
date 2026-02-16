@@ -541,7 +541,7 @@ sub fuzz_inputs
 					my @set = @{$spec->{memberof}};
 					$mandatory_strings{$field} = $set[-1];
 				} else {
-					$mandatory_strings{$field} = rand_ascii_str();
+					$mandatory_strings{$field} = rand_ascii_str($spec->{max} // $spec->{min});
 				}
 			} elsif($spec->{'type'} eq 'object') {
 				my $method = $spec->{'can'};
@@ -1088,7 +1088,7 @@ sub _generate_string_cases
 			if(!defined($spec->{'memberof'}) || (grep { $_ eq 'hello' } @{$spec->{'memberof'}})) {
 				if(defined($spec->{'notmemberof'}) && (grep { $_ eq 'hello' } @{$spec->{'notmemberof'}})) {
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
-				} else {
+				} elsif((!defined($spec->{max})) || ($spec->{max} <= 5)) {
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'OK' ) };
 				}
 			} else {
