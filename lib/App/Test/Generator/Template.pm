@@ -527,6 +527,8 @@ sub fuzz_inputs
 	my %mandatory_objects;
 	my %mandatory_numbers;
 	my $class_simple_loaded;
+
+	# Create a hash ref of the mandatory args
 	foreach my $field (keys %input) {
 		my $spec = $input{$field} || {};
 		if((ref($spec) eq 'HASH') && (!$spec->{optional})) {
@@ -574,8 +576,15 @@ sub fuzz_inputs
 					$number = int($number);
 				}
 				$mandatory_numbers{$field} = $number;
+			} elsif($spec->{type} eq 'hashref') {
+				if(defined($spec->{schema})) {
+					die __PACKAGE__, ': TODO: add schema support to hashref';
+				} elsif($spec->{max} || $spec->{min}) {
+					die __PACKAGE__, ': TODO: add size support to hashref';
+				}
+				$mandatory_objects{$field} = { 'line' => __LINE__ };
 			} else {
-				die 'TODO: type = ', $spec->{'type'};
+				die __PACKAGE__, ': TODO: type = ', $spec->{'type'};
 			}
 		}
 	}
@@ -646,6 +655,8 @@ sub fuzz_inputs
 				} elsif ($type eq 'hashref') {
 					push @cases, { $arg_name => { a => 1 } };
 					push @cases, { $arg_name => [], _STATUS => 'DIES' };
+					push @cases, { $arg_name => 'scalar when hashref is needed', _STATUS => 'DIES' };
+					push @cases, { $arg_name => \'scalarref when hashref is needed', _STATUS => 'DIES' };
 				} elsif ($type eq 'arrayref') {
 					push @cases, { $arg_name => [1,2] };
 					push @cases, { $arg_name => { a => 1 }, _STATUS => 'DIES' };
