@@ -5944,20 +5944,24 @@ sub _write_schema {
 	};
 
 	# Process input parameters with advanced type handling
-	if($schema->{'input'} && (scalar(keys %{$schema->{'input'}}))) {
-		$output->{'input'} = {};
+	if($schema->{'input'}) {
+		if(scalar(keys %{$schema->{'input'}})) {
+			$output->{'input'} = {};
 
-		foreach my $param_name (keys %{$schema->{'input'}}) {
-			my $param = $schema->{'input'}{$param_name};
-			if($param->{name}) {
-				my $name = delete $param->{name};
-				if($name ne $param_name) {
-					# Sanity check
-					croak("BUG: Parameter name - expected $param_name, got $name");
+			foreach my $param_name (keys %{$schema->{'input'}}) {
+				my $param = $schema->{'input'}{$param_name};
+				if($param->{name}) {
+					my $name = delete $param->{name};
+					if($name ne $param_name) {
+						# Sanity check
+						croak("BUG: Parameter name - expected $param_name, got $name");
+					}
 				}
+				my $cleaned_param = $self->_serialize_parameter_for_yaml($param);
+				$output->{'input'}{$param_name} = $cleaned_param;
 			}
-			my $cleaned_param = $self->_serialize_parameter_for_yaml($param);
-			$output->{'input'}{$param_name} = $cleaned_param;
+		} else {
+			delete $output->{input};
 		}
 	}
 
