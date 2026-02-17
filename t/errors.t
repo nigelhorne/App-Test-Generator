@@ -73,7 +73,7 @@ CONF
 
 close $fh;
 
-throws_ok(sub { App::Test::Generator::generate($conf_file) }, qr/least one of input and output/, 'Check we are told something to set or get');
+lives_ok(sub { App::Test::Generator::generate($conf_file) }, 'Tests no input or output passes');
 
 unlink $conf_file;
 

@@ -149,16 +149,6 @@ SAFE
 close $ofh;
 lives_ok { App::Test::Generator::generate($valid_conf) } 'Output only loads';
 
-my $invalid_conf = File::Spec->catfile($dir, 'noio.yml');
-open my $ifh, '>', $invalid_conf or die $!;
-print $ifh <<'SAFE';
-# No input or field
-module: 'Scalar::Util'
-function: 'blessed'
-SAFE
-close $ifh;
-throws_ok { App::Test::Generator::generate($invalid_conf) } qr/You must specify at least one of/, 'Validates required input';
-
 #------------------------------------------------------------------------------
 # Check no unexpected runtime warnings/errors
 #------------------------------------------------------------------------------

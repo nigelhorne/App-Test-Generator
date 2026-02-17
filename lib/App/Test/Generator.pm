@@ -1799,7 +1799,7 @@ sub _validate_config {
 
 	if((!defined($config->{'input'})) && (!defined($config->{'output'}))) {
 		# Routine takes no input and no output, so there's nothing that would be gained using this software
-		croak('You must specify at least one of input and output');
+		carp('Neither input nor output is defined, only a few tests will be generated');
 	}
 	if(($config->{'input'}) && (ref($config->{input}) ne 'HASH')) {
 		if($config->{'input'} eq 'undef') {
