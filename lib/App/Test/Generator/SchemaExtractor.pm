@@ -4893,6 +4893,9 @@ sub _extract_defaults_from_code {
 				if(($var eq 'class') && ($position == 0) && ($method->{name} eq 'new')) {
 					# Don't include "class" in the variable names of the constructor
 					delete $params->{'class'};
+				} elsif(($var eq 'self') && ($position == 0) && ($method->{name} ne 'new')) {
+					# Don't include "self" in the variable names
+					delete $params->{'self'};
 				} else {
 					$params->{$var} ||= { position => $position++ };
 					$self->_log("  CODE: $var extracted from \@_ list assignment");
@@ -4906,6 +4909,9 @@ sub _extract_defaults_from_code {
 			if(($var eq 'class') && ($position == 0) && ($method->{name} eq 'new')) {
 				# Don't include "class" in the variable names of the constructor
 				delete $params->{'class'};
+			} elsif(($var eq 'self') && ($position == 0) && ($method->{name} ne 'new')) {
+				# Don't include "self" in the variable names
+				delete $params->{'self'};
 			} else {
 				$params->{$var} ||= { position => $position++ };
 				$self->_log("  CODE: $var is extracted from shift");
