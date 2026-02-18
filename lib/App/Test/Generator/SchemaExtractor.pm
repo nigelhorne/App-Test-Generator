@@ -4,6 +4,9 @@ use strict;
 use warnings;
 use autodie qw(:all);
 
+use App::Test::Generator::Model::Method;
+use App::Test::Generator::Analyzer::Return;
+
 use Carp qw(carp croak);
 use Data::Dumper;	# For debugging
 use PPI;
@@ -1550,7 +1553,7 @@ sub _analyze_method {
 				croak("[POD STRICT] $error_msg");
 			} else {	# 1 = warnings
 				carp("[POD STRICT] $error_msg");
-				# Continue with analysis but mark as problematic
+				# Continue with analysis, but mark as problematic
 				$schema->{_pod_disagreement} = 1;
 			}
 		}
@@ -1579,8 +1582,33 @@ sub _analyze_method {
 		);
 	}
 
-	# Analyze output/return values
-	$schema->{output} = $self->_analyze_output($method->{pod}, $method->{body}, $method->{name});
+	# Run legacy output analyzer first (keep all existing intelligence)
+	$schema->{output} = $self->_analyze_output(
+		$method->{pod},
+		$method->{body},
+		$method->{name}
+	);
+
+	# Now run model-based classification (supplement only)
+
+	my $method_model = App::Test::Generator::Model::Method->new(
+		name   => $method->{name},
+		source => $method->{body},
+	);
+
+	my $return_analyzer = App::Test::Generator::Analyzer::Return->new();
+	$return_analyzer->analyze($method_model);
+
+	$method_model->resolve_return_type();
+	$method_model->resolve_classification();
+	$method_model->resolve_confidence();
+
+	# Attach model analysis WITHOUT overriding legacy output
+	$schema->{_model} = {
+		return_type    => $method_model->return_type,
+		classification => $method_model->classification,
+		confidence     => $method_model->confidence,
+	};
 
 	# Detect accessor methods
 	$self->_detect_accessor_methods($method, $schema);
