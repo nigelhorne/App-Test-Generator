@@ -117,4 +117,44 @@ sub resolve_classification {
 	return $self->{classification};
 }
 
+sub absorb_legacy_output {
+    my ($self, $output) = @_;
+
+    return unless $output && ref $output eq 'HASH';
+
+    if ($output->{type}) {
+        $self->add_evidence(
+            category => 'return',
+            signal   => 'legacy_type',
+            value    => $output->{type},
+            weight   => 20,
+        );
+    }
+
+    if ($output->{_returns_self}) {
+        $self->add_evidence(
+            category => 'return',
+            signal   => 'returns_self',
+            weight   => 25,
+        );
+    }
+
+    if ($output->{_context_aware}) {
+        $self->add_evidence(
+            category => 'return',
+            signal   => 'context_aware',
+            weight   => 15,
+        );
+    }
+
+    if ($output->{_error_return}) {
+        $self->add_evidence(
+            category => 'return',
+            signal   => 'error_pattern',
+            value    => $output->{_error_return},
+            weight   => 15,
+        );
+    }
+}
+
 1;

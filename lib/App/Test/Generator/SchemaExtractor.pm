@@ -1582,33 +1582,16 @@ sub _analyze_method {
 		);
 	}
 
-	# Run legacy output analyzer first (keep all existing intelligence)
-	$schema->{output} = $self->_analyze_output(
-		$method->{pod},
-		$method->{body},
-		$method->{name}
-	);
+# ----------------------------------------
+# Legacy Output Analysis (unchanged)
+# ----------------------------------------
 
-	# Now run model-based classification (supplement only)
+$schema->{output} = $self->_analyze_output(
+    $method->{pod},
+    $method->{body},
+    $method->{name}
+);
 
-	my $method_model = App::Test::Generator::Model::Method->new(
-		name   => $method->{name},
-		source => $method->{body},
-	);
-
-	my $return_analyzer = App::Test::Generator::Analyzer::Return->new();
-	$return_analyzer->analyze($method_model);
-
-	$method_model->resolve_return_type();
-	$method_model->resolve_classification();
-	$method_model->resolve_confidence();
-
-	# Attach model analysis WITHOUT overriding legacy output
-	$schema->{_model} = {
-		return_type    => $method_model->return_type,
-		classification => $method_model->classification,
-		confidence     => $method_model->confidence,
-	};
 
 	# Detect accessor methods
 	$self->_detect_accessor_methods($method, $schema);
@@ -1730,6 +1713,33 @@ sub _analyze_method {
 	   ($level_rank{$overall} < ($self->{confidence_threshold} * 4))) {
 		$schema->{_low_confidence} = 1
 	}
+
+	# ----------------------------------------
+	# Non-invasive reasoning layer
+	# ----------------------------------------
+
+	my $method_model = App::Test::Generator::Model::Method->new(
+		name => $method->{name},
+		source => $method->{body},
+	);
+
+	my $return_analyzer = App::Test::Generator::Analyzer::Return->new();
+	$return_analyzer->analyze($method_model);
+
+	# Let model learn from finalized schema
+	if ($schema->{output}) {
+		$method_model->absorb_legacy_output($schema->{output});
+	}
+
+	$method_model->resolve_return_type();
+	$method_model->resolve_classification();
+	$method_model->resolve_confidence();
+
+	# Attach only metadata
+	$schema->{_model} = {
+		classification => $method_model->classification,
+		confidence => $method_model->confidence,
+	};
 
 	return $schema;
 }
