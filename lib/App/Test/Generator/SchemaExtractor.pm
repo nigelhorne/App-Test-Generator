@@ -3607,7 +3607,7 @@ sub _detect_error_conventions {
 	}
 
 	# Store error conventions in output
-	if (keys %error_patterns) {
+	if(scalar(keys %error_patterns)) {
 		$output->{_error_handling} = \%error_patterns;
 
 		# Determine primary error convention
@@ -3628,6 +3628,8 @@ sub _detect_error_conventions {
 		if ($error_patterns{exception_handling}) {
 			$self->_log("  OUTPUT: Has exception handling");
 		}
+	} else {
+		delete $output->{_error_handling};
 	}
 }
 
@@ -6038,6 +6040,9 @@ sub _write_schema {
 
 	# Process output
 	if($schema->{'output'} && (scalar(keys %{$schema->{'output'}}))) {
+		if((ref($schema->{output}{_error_handling}) eq 'HASH') && (scalar(keys %{$schema->{output}{_error_handling}}) == 0)) {
+			delete $schema->{output}{_error_handling};
+		}
 		$output->{'output'} = $schema->{'output'};
 	}
 
