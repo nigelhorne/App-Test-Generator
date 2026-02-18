@@ -5,6 +5,7 @@ use warnings;
 use autodie qw(:all);
 
 use App::Test::Generator::Model::Method;
+use App::Test::Generator::Analyzer::Complexity;
 use App::Test::Generator::Analyzer::Return;
 use App::Test::Generator::Analyzer::ReturnMeta;
 use App::Test::Generator::Analyzer::SideEffect;
@@ -1763,6 +1764,15 @@ $schema->{output} = $self->_analyze_output(
 	my $effects = $se->analyze($method);
 
 	$schema->{_analysis}{side_effects} = $effects;
+
+	# ----------------------------------------
+	# Complexity Analysis (Non-invasive)
+	# ----------------------------------------
+
+	my $cx = App::Test::Generator::Analyzer::Complexity->new();
+	my $complexity = $cx->analyze($method);
+
+	$schema->{_analysis}{complexity} = $complexity;
 
 	return $schema;
 }
