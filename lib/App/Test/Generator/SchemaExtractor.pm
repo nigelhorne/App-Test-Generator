@@ -7,6 +7,7 @@ use autodie qw(:all);
 use App::Test::Generator::Model::Method;
 use App::Test::Generator::Analyzer::Return;
 use App::Test::Generator::Analyzer::ReturnMeta;
+use App::Test::Generator::Analyzer::SideEffect;
 
 use Carp qw(carp croak);
 use Data::Dumper;	# For debugging
@@ -547,7 +548,7 @@ including context sensitivity, error handling conventions, and method chaining p
 Automatically detects methods that return different values based on calling context:
 
     sub get_items {
-        my ($self) = @_;
+        my $self = $_[0];
         return wantarray ? @items : scalar(@items);
     }
 
@@ -1752,6 +1753,16 @@ $schema->{output} = $self->_analyze_output(
 	$schema->{_analysis}{stability_score} = $analysis->{stability_score};
 	$schema->{_analysis}{consistency_score} = $analysis->{consistency_score};
 	$schema->{_analysis}{risk_flags} = $analysis->{risk_flags};
+
+	# ----------------------------------------
+	# Side Effect Analysis (Non-invasive)
+	# ----------------------------------------
+
+	my $se = App::Test::Generator::Analyzer::SideEffect->new();
+
+	my $effects = $se->analyze($method);
+
+	$schema->{_analysis}{side_effects} = $effects;
 
 	return $schema;
 }

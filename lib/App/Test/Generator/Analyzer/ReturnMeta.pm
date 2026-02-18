@@ -78,7 +78,7 @@ sub analyze {
 	return {
 		stability_score => $stability,
 		consistency_score => $consistency,
-		risk_flags		=> \@risk,
+		risk_flags => \@risk,
 	};
 }
 
