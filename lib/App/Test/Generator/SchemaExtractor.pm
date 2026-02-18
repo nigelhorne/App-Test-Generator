@@ -6,6 +6,7 @@ use autodie qw(:all);
 
 use App::Test::Generator::Model::Method;
 use App::Test::Generator::Analyzer::Return;
+use App::Test::Generator::Analyzer::ReturnMeta;
 
 use Carp qw(carp croak);
 use Data::Dumper;	# For debugging
@@ -1740,6 +1741,17 @@ $schema->{output} = $self->_analyze_output(
 		classification => $method_model->classification,
 		confidence => $method_model->confidence,
 	};
+
+	# ----------------------------------------
+	# Return Meta Analysis (Non-invasive)
+	# ----------------------------------------
+
+	my $meta = App::Test::Generator::Analyzer::ReturnMeta->new();
+	my $analysis = $meta->analyze($schema);
+
+	$schema->{_analysis}{stability_score} = $analysis->{stability_score};
+	$schema->{_analysis}{consistency_score} = $analysis->{consistency_score};
+	$schema->{_analysis}{risk_flags} = $analysis->{risk_flags};
 
 	return $schema;
 }
