@@ -11,10 +11,10 @@ sub analyze {
 	my $body = $method->{body} || '';
 
 	my %result = (
-		cyclomatic_score => 1,  # base
+		cyclomatic_score => 1,	# base
 		branching_points => 0,
 		early_returns	=> 0,
-		exception_paths  => 0,
+		exception_paths => 0,
 		nesting_depth	=> 0,
 	);
 

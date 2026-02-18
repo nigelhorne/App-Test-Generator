@@ -267,7 +267,7 @@ END_MODULE
 	# Explicit undef on error
 	is($schemas->{fetch_user}{output}{_error_return}, 'undef', 'Returns undef on error');
 	ok($schemas->{fetch_user}{output}{_error_handling}{undef_on_error}, 'Detected explicit undef returns');
-	ok($schemas->{fetch_user}{output}{success_failure_pattern}, 'Has success/failure pattern');
+	ok($schemas->{fetch_user}{output}{_success_failure_pattern}, 'Has success/failure pattern');
 
 	# Implicit undef (bare return)
 	is($schemas->{process_data}{output}{_error_return}, 'undef', 'Returns implicit undef');
@@ -418,7 +418,7 @@ END_MODULE
 
 	# Connection method
 	is($schemas->{connect}{output}{_error_return}, 'undef', 'connect returns undef on error');
-	ok($schemas->{connect}{output}{success_failure_pattern}, 'Has success/failure pattern');
+	ok($schemas->{connect}{output}{_success_failure_pattern}, 'Has success/failure pattern');
 
 	# Chainable setter
 	ok($schemas->{set_timeout}{output}{_returns_self}, 'POD indicates _returns_self');

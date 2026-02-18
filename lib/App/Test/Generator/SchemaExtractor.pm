@@ -650,7 +650,7 @@ B<Example Analysis:>
 Results in:
 
     _error_return: 'undef'
-    success_failure_pattern: 1
+    _success_failure_pattern: 1
     _error_handling: {
         undef_on_error: ['$id', '$id < 0']
     }
@@ -658,7 +658,7 @@ Results in:
 B<Success/Failure Pattern:>
 
 Methods that return different types for success vs. failure are flagged with
-C<success_failure_pattern>. Common patterns:
+C<_success_failure_pattern>. Common patterns:
 
 =over 4
 
@@ -697,7 +697,7 @@ Enhanced return analysis adds these fields to method schemas:
       _void_context: 1            # No meaningful return
       _success_indicator: 1       # Always returns true
       _error_return: undef        # How errors are signaled
-      success_failure_pattern: 1 # Mixed return types
+      _success_failure_pattern: 1 # Mixed return types
       _error_handling:            # Detailed error patterns
         undef_on_error: [...]
         exception_handling: 1
@@ -3602,7 +3602,7 @@ sub _detect_error_conventions {
 	my $has_value = grep { !/^\s*undef\s*$/ && !/^\s*$/ } @all_returns;
 
 	if ($has_undef && $has_value && scalar(@all_returns) >= 2) {
-		$output->{success_failure_pattern} = 1;
+		$output->{_success_failure_pattern} = 1;
 		$self->_log("  OUTPUT: Uses success/failure return pattern");
 	}
 
@@ -5420,7 +5420,7 @@ sub _calculate_output_confidence {
 	}
 
 	# Success/failure pattern
-	if ($output->{success_failure_pattern}) {
+	if ($output->{_success_failure_pattern}) {
 		$score += 10;
 		push @factors, 'Success/failure pattern detected (+10)';
 	}
