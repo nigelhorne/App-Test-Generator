@@ -4,16 +4,16 @@ use strict;
 use warnings;
 
 sub new {
-    my ($class, %args) = @_;
-    return bless {
-        schema => $args{schema},
-        plans  => $args{plans},
-        package => $args{package},
-    }, $class;
+	my ($class, %args) = @_;
+	return bless {
+		schema => $args{schema},
+		plans  => $args{plans},
+		package => $args{package},
+	}, $class;
 }
 
 sub emit {
-    my ($self) = @_;
+	my $self = $_[0];
 
     my $code = '';
 
@@ -115,9 +115,33 @@ END_TEST
 }
 
 sub _emit_getset_test {
-    my ($self, $method) = @_;
+	my ($self, $method) = @_;
 
-    return <<"END_TEST";
+	my $schema = $self->{schema}{$method};
+
+	my ($param) =
+		grep { $_ !~ /^_/ }
+		keys %{ $schema->{input} || {} };
+
+	my $type = $schema->{input}{$param}{type} // 'string';
+
+	# -------------------------------
+	# OBJECT INPUT
+	# -------------------------------
+	if ($type eq 'object') {
+		return <<"END_TEST";
+{
+    my \$mock = bless {}, 'Test::MockObject';
+    \$obj->$method(\$mock);
+    isa_ok(\$obj->$method(), ref(\$mock), '$method get/set works');
+}
+END_TEST
+	}
+
+	# -------------------------------
+	# DEFAULT STRING INPUT
+	# -------------------------------
+	return <<"END_TEST";
 {
     \$obj->$method('value');
     is(\$obj->$method(), 'value', '$method get/set works');
@@ -126,9 +150,9 @@ END_TEST
 }
 
 sub _emit_chaining_test {
-    my ($self, $method) = @_;
+	my ($self, $method) = @_;
 
-    return <<"END_TEST";
+	return <<"END_TEST";
 {
     my \$ret = \$obj->$method();
     isa_ok(\$ret, ref(\$obj), '$method returns self for chaining');
@@ -137,9 +161,9 @@ END_TEST
 }
 
 sub _emit_error_test {
-    my ($self, $method) = @_;
+	my ($self, $method) = @_;
 
-    return <<"END_TEST";
+	return <<"END_TEST";
 {
     my \$result = eval { \$obj->$method(undef) };
     ok(!\$result || \$@, '$method handles invalid input');

@@ -1839,9 +1839,8 @@ sub _detect_accessor_methods {
 
 		$self->_log("  Detected getter/setter accessor for property: $property");
 
-		$schema->{input} = {
-			value => { type => 'string', optional => 1 },
-		};
+		$schema->{input} ||= { value => { type => 'string', optional => 1 } };
+
 		$schema->{input_style} = 'hash';
 
 		$schema->{_confidence}{input} = {
@@ -1867,11 +1866,11 @@ sub _detect_accessor_methods {
 				};
 			}
 		}
-} elsif (
-    $code =~ /if\s*\(\s*(?:\@_|[\$]\w+)/ &&
-    $code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=/ &&
-    $code =~ /return\b/
-) {
+	} elsif (
+	    $code =~ /if\s*\(\s*(?:\@_|[\$]\w+)/ &&
+	    $code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=/ &&
+	    $code =~ /return\b/
+	) {
 		# -------------------------------
 		# Getter/Setter (validated input)
 		# -------------------------------
@@ -1884,7 +1883,33 @@ sub _detect_accessor_methods {
 		}
 		if ($code =~ /validate_strict/) {
 			push @{ $schema->{_confidence}{input}{factors} }, 'Setter uses Params::Validate::Strict';
-		}
+		} else {
+			# ---------------------------------------
+			# Detect object input via blessed($arg)
+			# ---------------------------------------
+			if ($code =~ /blessed\s*\(\s*\$(\w+)\s*\)/) {
+				my $param = $1;
+
+				$self->_log("  Detected object input via blessed(\$$param)");
+
+				$schema->{input} = {
+					$param => {
+						type => 'object',
+						optional => 1,
+					}
+				};
+
+				$schema->{_confidence}{input} = {
+					level   => 'high',
+					factors => ['Input validated by Scalar::Util::blessed'],
+				};
+			} else {
+				# fallback ONLY if nothing known
+				$schema->{input} ||= {
+					value => { type => 'string', optional => 1 },
+				};
+			}
+		};
 		$schema->{accessor} = {
 			type => 'getset',
 			property => $property,
