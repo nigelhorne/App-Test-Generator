@@ -1867,11 +1867,11 @@ sub _detect_accessor_methods {
 				};
 			}
 		}
-	} elsif (
-		$code =~ /if\s*\(\s*\@_\s*\)/ &&
-		$code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=/ &&
-		$code =~ /return\s+\$self\s*->\s*\{/
-	) {
+} elsif (
+    $code =~ /if\s*\(\s*(?:\@_|[\$]\w+)/ &&
+    $code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=/ &&
+    $code =~ /return\b/
+) {
 		# -------------------------------
 		# Getter/Setter (validated input)
 		# -------------------------------
@@ -1979,10 +1979,11 @@ sub _detect_accessor_methods {
 			if($schema->{output}{isa} ne $self->{_package_name}) {
 				croak 'Setter can not return data other than $self';
 			}
-		} else {
-			if(scalar(keys %{$schema->{output}}) != 0) {
-				croak 'Setter can not return data';
-			}
+		} elsif(scalar(keys %{$schema->{output}}) != 0) {
+			$self->_analysis_error(
+				method  => $method->{name},
+				message => "Setter cannot return data",
+			);
 		}
 	}
 
@@ -2018,6 +2019,23 @@ sub _detect_accessor_methods {
 			}
 		}
 	}
+}
+
+sub _analysis_error {
+	my ($self, %args) = @_;
+
+	my $method = $args{method} // 'UNKNOWN';
+	my $msg    = $args{message} // 'Analysis error';
+
+	my $module = $self->{_package_name} // 'UNKNOWN';
+	my $file   = $self->{input_file} // 'UNKNOWN';
+
+	croak join "\n",
+		$msg,
+		"  Module: $module",
+		"  Method: $method",
+		"  File:   $file",
+	'';
 }
 
 # Look at the parameter validation that may exist in the code, and infer the input schema from that
