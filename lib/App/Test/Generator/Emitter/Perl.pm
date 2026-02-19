@@ -38,7 +38,7 @@ use Test::Most;
 
 use_ok('$self->{package}');
 
-my \$obj = $self->{package}->new();
+my \$obj = new_ok('$self->{package}');
 
 END_HEADER
 }
