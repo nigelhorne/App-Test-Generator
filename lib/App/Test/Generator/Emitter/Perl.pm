@@ -7,7 +7,7 @@ sub new {
 	my ($class, %args) = @_;
 	return bless {
 		schema => $args{schema},
-		plans  => $args{plans},
+		plans => $args{plans},
 		package => $args{package},
 	}, $class;
 }
@@ -15,17 +15,15 @@ sub new {
 sub emit {
 	my $self = $_[0];
 
-    my $code = '';
+	my $code = $self->_emit_header();
 
-    $code .= $self->_emit_header;
+	foreach my $method (sort keys %{ $self->{plans} }) {
+		$code .= $self->_emit_method_tests($method);
+	}
 
-    foreach my $method (sort keys %{ $self->{plans} }) {
-        $code .= $self->_emit_method_tests($method);
-    }
+	$code .= "\ndone_testing;\n";
 
-    $code .= "\ndone_testing;\n";
-
-    return $code;
+	return $code;
 }
 
 sub _emit_header {
