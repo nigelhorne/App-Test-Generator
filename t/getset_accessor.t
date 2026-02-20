@@ -78,6 +78,29 @@ sub ua2 {
     return $self->{ua2};
 }
 
+=head2 is_tablet
+
+Returns a boolean if the website is being viewed on a tablet such as an iPad.
+
+=cut
+
+sub is_tablet {
+	my $self = shift;
+
+	if(defined($self->{is_tablet})) {
+		return $self->{is_tablet};
+	}
+
+	if($ENV{'HTTP_USER_AGENT'} && ($ENV{'HTTP_USER_AGENT'} =~ /.+(iPad|TabletPC).+/)) {
+		# TODO: add others when I see some nice user_agents
+		$self->{is_tablet} = 1;
+	} else {
+		$self->{is_tablet} = 0;
+	}
+
+	return $self->{is_tablet};
+}
+
 1;
 PERL
 
@@ -263,5 +286,8 @@ is(
 	'object',
 	'ua2 setter input preserved as object'
 );
+
+use Data::Dumper;
+diag(Dumper($schemas->{is_tablet}));
 
 done_testing();

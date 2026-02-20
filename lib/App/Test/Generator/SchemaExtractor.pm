@@ -2011,35 +2011,37 @@ sub _detect_accessor_methods {
 		}
 	}
 
-	if($schema->{accessor}{type} && $schema->{accessor}{type} =~ /setter|getset/ && $schema->{input}) {
-		for my $param (keys %{ $schema->{input} }) {
-			my $in = $schema->{input}{$param};
+	if(exists($schema->{accessor})) {
+		if($schema->{accessor}{type} && $schema->{accessor}{type} =~ /setter|getset/ && $schema->{input}) {
+			for my $param (keys %{ $schema->{input} }) {
+				my $in = $schema->{input}{$param};
 
-			if ($in->{type} && ($in->{type} eq 'object')) {
-				$schema->{output} = {
-					type => 'object',
-					($in->{isa} ? (isa => $in->{isa}) : ()),
-				};
+				if ($in->{type} && ($in->{type} eq 'object')) {
+					$schema->{output} = {
+						type => 'object',
+						($in->{isa} ? (isa => $in->{isa}) : ()),
+					};
 
-				$schema->{_confidence}{output} = {
-					level => 'high',
-					factors => ['Output type propagated from setter input'],
-				};
+					$schema->{_confidence}{output} = {
+						level => 'high',
+						factors => ['Output type propagated from setter input'],
+					};
+				}
 			}
 		}
-	}
 
-	if($schema->{accessor}{type} && $schema->{accessor}{property} && ($schema->{accessor}{type} =~ /getter|getset/) &&
-	   ((!defined($schema->{output}{type})) || ($schema->{output}{type} eq 'string'))) {
-		if (my $pod = $method->{pod}) {
-			# POD says "UserAgent object"
-			if ($pod =~ /\bUser[- ]?Agent\b.*\bobject\b/i) {
-				$schema->{output}{type} = 'object';
-				$schema->{output}{isa} = 'LWP::UserAgent';
+		if($schema->{accessor}{type} && $schema->{accessor}{property} && ($schema->{accessor}{type} =~ /getter|getset/) &&
+		   ((!defined($schema->{output}{type})) || ($schema->{output}{type} eq 'string'))) {
+			if (my $pod = $method->{pod}) {
+				# POD says "UserAgent object"
+				if ($pod =~ /\bUser[- ]?Agent\b.*\bobject\b/i) {
+					$schema->{output}{type} = 'object';
+					$schema->{output}{isa} = 'LWP::UserAgent';
 
-				push @{ $schema->{_confidence}{output}{factors} }, 'POD indicates UserAgent object';
+					push @{ $schema->{_confidence}{output}{factors} }, 'POD indicates UserAgent object';
 
-				$schema->{_confidence}{output}{level} = 'high';
+					$schema->{_confidence}{output}{level} = 'high';
+				}
 			}
 		}
 	}

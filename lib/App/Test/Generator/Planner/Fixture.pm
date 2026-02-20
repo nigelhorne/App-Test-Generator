@@ -1,3 +1,13 @@
+package App::Test::Generator::Planner::Fixture;
+
+use strict;
+use warnings;
+
+sub new {
+	my $class = $_[0];
+	return bless {}, $class;
+}
+
 sub plan {
     my ($self, $schema, $isolation) = @_;
 
@@ -20,3 +30,4 @@ sub plan {
     return \%fixture;
 }
 
+1;

@@ -1,3 +1,13 @@
+package App::Test::Generator::Planner::Grouping;
+
+use strict;
+use warnings;
+
+sub new {
+	my $class = $_[0];
+	return bless {}, $class;
+}
+
 sub plan {
     my ($self, $schema) = @_;
 
@@ -18,3 +28,4 @@ sub plan {
     return \%groups;
 }
 
+1;

@@ -10,20 +10,46 @@ sub plan {
 
     my %isolation;
 
-    foreach my $method (keys %$strategy) {
-        my $analysis = $schema->{$method}{_analysis} || {};
-        my $effects  = $analysis->{side_effects} || {};
+foreach my $method (keys %$strategy) {
 
-        if ($effects->{purity_level} eq 'pure') {
-            $isolation{$method} = 'shared_fixture';
-        }
-        elsif ($effects->{purity_level} eq 'self_mutating') {
-            $isolation{$method} = 'fresh_object';
-        }
-        else {
-            $isolation{$method} = 'isolated_block';
-        }
+    my $analysis = $schema->{$method}{_analysis} || {};
+    my $effects  = $analysis->{side_effects}     || {};
+    my $deps     = $analysis->{dependencies}     || {};
+
+    my %plan;
+
+    # --- fixture choice (existing behaviour) ---
+
+    if (($effects->{purity_level}||'') eq 'pure') {
+        $plan{fixture} = 'shared_fixture';
     }
+    elsif (($effects->{purity_level}||'') eq 'self_mutating') {
+        $plan{fixture} = 'fresh_object';
+    }
+    else {
+        $plan{fixture} = 'isolated_block';
+    }
+
+    # --- NEW: dependency isolation ---
+
+    if (my $env = $deps->{env}) {
+        $plan{env} = $env;
+    }
+
+    if (my $fs = $deps->{filesystem}) {
+        $plan{filesystem} = $fs;
+    }
+
+    if (my $time = $deps->{time}) {
+        $plan{time} = 1;
+    }
+
+    if (my $net = $deps->{network}) {
+        $plan{network} = 1;
+    }
+
+    $isolation{$method} = \%plan;
+}
 
     return \%isolation;
 }

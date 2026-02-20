@@ -11,6 +11,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 
 use App::Test::Generator::SchemaExtractor;
+use App::Test::Generator::Planner;
 use App::Test::Generator::Emitter::Perl;
 
 =head1 NAME
@@ -137,10 +138,6 @@ foreach my $phase (qw(input output)) {
 # Test Emission Phase
 # ----------------------------------------------------------------------
 
-# ----------------------------------------------------------------------
-# Test Emission Phase
-# ----------------------------------------------------------------------
-
 if ($opts{emit_tests}) {
 
     print "\nGenerating Perl tests...\n";
@@ -189,17 +186,27 @@ if ($opts{emit_tests}) {
         };
     }
 
-    # ------------------------------------------------------------
-    # Construct emitter correctly
-    # ------------------------------------------------------------
+# ----------------------------------------------------------
+# Planning Phase
+# ----------------------------------------------------------
 
-    my $emitter = App::Test::Generator::Emitter::Perl->new(
-        package => $package_name,
-        schema  => $schemas,      # already a hashref
-        plans   => \%plans,
-    );
+print "Planning tests...\n" if $opts{verbose};
 
-    my $code = $emitter->emit();
+my $planner = App::Test::Generator::Planner->new(schemas => $schemas);
+
+my $plans = $planner->plan_all();
+
+# ----------------------------------------------------------
+# Emission Phase
+# ----------------------------------------------------------
+
+	my $emitter = App::Test::Generator::Emitter::Perl->new(
+		package => $package_name,
+		schema  => $schemas,
+		plans   => $plans,
+	);
+
+	my $code = $emitter->emit();
 
     # ------------------------------------------------------------
     # Write output file

@@ -5,6 +5,8 @@ use warnings;
 
 sub new {
 	my ($class, %args) = @_;
+	use Data::Dumper;
+	warn Dumper($args{plans});
 	return bless {
 		schema => $args{schema},
 		plans => $args{plans},
@@ -21,15 +23,15 @@ sub emit {
 		$code .= $self->_emit_method_tests($method);
 	}
 
-	$code .= "\ndone_testing;\n";
+	$code .= "\ndone_testing();\n";
 
 	return $code;
 }
 
 sub _emit_header {
-    my ($self) = @_;
+	my $self = $_[0];
 
-    return <<"END_HEADER";
+	return <<"END_HEADER";
 use strict;
 use warnings;
 use Test::Most;
@@ -42,7 +44,7 @@ END_HEADER
 }
 
 sub _emit_method_tests {
-    my ($self, $method) = @_;
+	my ($self, $method) = @_;
 
     my $plan = $self->{plans}{$method};
     my $schema = $self->{schema}{$method};
@@ -76,6 +78,14 @@ sub _emit_method_tests {
     if ($plan->{context_tests}) {
         $code .= $self->_emit_context_test($method);
     }
+
+	if ($plan->{object_injection_test}) {
+		$code .= $self->_emit_object_injection_test($method);
+	}
+
+	if(($plan->{predicate_test}) || ($plan->{boolean_test})) {
+		$code .= $self->_emit_boolean_test($method);
+	}
 
     return $code;
 }
@@ -117,9 +127,7 @@ sub _emit_getset_test {
 
 	my $schema = $self->{schema}{$method};
 
-	my ($param) =
-		grep { $_ !~ /^_/ }
-		keys %{ $schema->{input} || {} };
+	my ($param) = grep { $_ !~ /^_/ } keys %{ $schema->{input} || {} };
 
 	my $type = $schema->{input}{$param}{type} // 'string';
 
@@ -170,15 +178,41 @@ END_TEST
 }
 
 sub _emit_context_test {
-    my ($self, $method) = @_;
+	my ($self, $method) = @_;
 
-    return <<"END_TEST";
+	return <<"END_TEST";
 {
     my \$scalar = \$obj->$method();
     my \@list   = \$obj->$method();
 
     ok(defined \$scalar, '$method works in scalar context');
     ok(defined \@list,   '$method works in list context');
+}
+END_TEST
+}
+
+sub _emit_object_injection_test {
+	my ($self, $method) = @_;
+
+	return <<"END_TEST";
+{
+    my \$mock = bless {}, 'Mock::Object';
+    \$obj->$method(\$mock);
+    isa_ok(\$obj->$method(), 'Mock::Object',
+        '$method stores injected object instance');
+}
+END_TEST
+}
+
+sub _emit_boolean_test {
+	my ($self, $method) = @_;
+
+	return <<"END_TEST";
+{
+	my \$result = \$obj->$method();
+	ok(defined \$result, '$method returns a value');
+	ok(!ref \$result, '$method returns a scalar');
+	ok(((\$result == 1) || (\$result == 0)), '$method returns a boolean');
 }
 END_TEST
 }

@@ -1,3 +1,10 @@
+package App::Test::Generator::Planner::Mock;
+
+use strict;
+use warnings;
+
+sub new { bless {}, shift }
+
 sub plan {
     my ($self, $schema) = @_;
 
@@ -18,3 +25,4 @@ sub plan {
     return \%mock_plan;
 }
 
+1;
