@@ -1952,10 +1952,13 @@ sub _detect_accessor_methods {
 		    # $self->{bar} = shift;
 		    # return $self->{bar};
 		# }
-		if($code !~ /\$self\s*->\s*\{\s*['"]?\Q$property\E['"]?\s*\}\s*=/) {
-			# Ensure there are no other return statements
+		# Only exclude if the property is being set FROM EXTERNAL INPUT
+		if($code !~ /\$self\s*->\s*\{\s*['"]?\Q$property\E['"]?\s*\}\s*=\s*(?:shift|\$\w+\s*=\s*shift|\@_|\$_\[\d+\])/) {
 			my @returns = $code =~ /return\b/g;
-			if(scalar(@returns) == 1) {
+			my @self_returns = $code =~ /return\s+\$self\s*->\s*\{\s*['"]?\Q$property\E['"]?\s*\}/g;
+			# it's a getter
+			if (scalar(@returns) == scalar(@self_returns)) {
+				# all returns are returning $self->{$property}, so it's a getter
 				$schema->{accessor} = {
 					type => 'getter',
 					property => $property,

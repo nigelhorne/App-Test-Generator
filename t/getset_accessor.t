@@ -53,6 +53,12 @@ sub setter_only {
     return $self;
 }
 
+sub mutator {
+	my $self = shift;
+	$self->{bar} = shift;
+	return $self->{bar};
+}
+
 =head2 agent
 
 Returns UserAgent object
@@ -287,7 +293,11 @@ is(
 	'ua2 setter input preserved as object'
 );
 
-use Data::Dumper;
-diag(Dumper($schemas->{is_tablet}));
+# Ensure mutator isn't flagged as a getter
+ok(exists $schemas->{mutator});
+ok(!exists $schemas->{mutator}{accessor});
+
+# is_tablet should be detected as getter
+is($schemas->{is_tablet}{accessor}{type}, 'getter', 'is_tablet method detected as getter');
 
 done_testing();
