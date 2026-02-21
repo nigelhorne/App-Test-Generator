@@ -671,7 +671,7 @@ sub fuzz_inputs
 						use_ok($spec->{isa});
 						push @cases, { $arg_name => new_ok($spec->{isa}) };
 					} elsif(!$spec->{can}) {
-						carp("neither 'isa' nor 'can' is defined - what type of object should be sent?");
+						Carp::carp("neither 'isa' nor 'can' is defined - what type of object should be sent?");
 					}
 				}
 
