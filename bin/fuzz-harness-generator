@@ -15,14 +15,20 @@ fuzz-harness-generator - Generate fuzzing + corpus-based test harnesses from tes
 
 =head1 SYNOPSIS
 
-  fuzz-harness-generator [-r] [-o output_file] input_file
-
+  fuzz-harness-generator [-r] [-o output_file] input.yaml
   fuzz-harness-generator --dry-run input.yaml
+  fuzz-harness-generator --replay-corpus schemas/corpus/ -o t/fuzz_replay.t
+  fuzz-harness-generator --replay-corpus schemas/corpus/translate.json -o t/fuzz_replay.t
 
 =head1 DESCRIPTION
 
-This tool generates a C<t/fuzz.t> test file that fuzzes and validates a target module's function or method,
-using both randomized fuzz cases and static corpus cases (Perl or YAML).
+This tool generates a test file that fuzzes and validates a target module's function or method,
+using both randomized fuzz cases and a static corpus cases (Perl or YAML).
+
+It can also generate regression test files from corpus JSON files previously
+written by C<extract-schemas --fuzz>, using C<--replay-corpus>.
+
+A starter C<input.yaml> can be created using C<extract-schemas> which is also in this package.
 
 =head1 OPTIONS
 
@@ -50,6 +56,31 @@ Call C<prove> on the output file.
 
 C<fuzz-harness-generator -r t/conf/data_text_append.conf> will, therefore, dynamically create and run tests on the C<append> method of L<Data::Text>
 
+=item B<--replay-corpus> PATH
+
+Instead of generating a fuzz harness, generate a regression test file from
+one or more corpus JSON files previously written by C<extract-schemas --fuzz>.
+
+PATH may be either:
+
+=over 4
+
+=item * A single corpus file, e.g. C<schemas/corpus/translate.json>
+
+=item * A directory, e.g. C<schemas/corpus/> — all C<*.json> files in that
+directory will be included
+
+=back
+
+The generated test file contains one failing test per bug recorded in the
+corpus. Each test calls the target method with the exact input that previously
+caused a crash and expects it B<not> to die. Tests will be red until the
+underlying bug is fixed, at which point they go green and stay green —
+acting as permanent regression tests.
+
+Only corpus entries with recorded bugs are included. Clean corpus entries
+(inputs that did not cause a bug) are ignored.
+
 =item B<--version>
 
 Prints the version of L<App::Test::Generator>
@@ -65,6 +96,7 @@ my $run;
 my $verbose;
 my $version;
 my $dry_run;
+my $replay_corpus;
 
 Getopt::Long::Configure('bundling');
 
@@ -76,12 +108,41 @@ GetOptions(
 	'run|r' => \$run,
 	'verbose|v' => \$verbose,
 	'version|V' => \$version,
+	'replay-corpus|R=s' => \$replay_corpus,
 ) or pod2usage(2);
 
 pod2usage(-exitval => 0, -verbose => 1) if($help);
 
 if($version) {
 	print $App::Test::Generator::VERSION, "\n";
+	exit 0;
+}
+
+# ---------------------------------------------------------------------------
+# --replay-corpus mode: generate a regression .t from corpus bug entries
+# ---------------------------------------------------------------------------
+
+if ($replay_corpus) {
+	pod2usage('--replay-corpus cannot be combined with --dry-run') if $dry_run;
+	pod2usage('--replay-corpus cannot be combined with --input')   if $infile;
+
+	my @corpus_files = _collect_corpus_files($replay_corpus);
+	die "No corpus JSON files found at: $replay_corpus\n" unless @corpus_files;
+
+	my $tap = _generate_replay_tap(@corpus_files);
+
+	if ($outfile) {
+		open my $fh, '>', $outfile or die "Cannot write to $outfile: $!\n";
+		print $fh $tap;
+		close $fh;
+		chmod 0755, $outfile;
+		print "Replay test written to: $outfile\n";
+		if ($run) {
+			exit system('prove', '-l', $outfile) >> 8;
+		}
+	} else {
+		print $tap;
+	}
 	exit 0;
 }
 
@@ -141,3 +202,207 @@ if($outfile) {
 }
 
 exit 0;
+
+# ---------------------------------------------------------------------------
+# Helpers for --replay-corpus
+# ---------------------------------------------------------------------------
+
+# Collect corpus JSON files from a path that is either a single file or a dir
+sub _collect_corpus_files {
+	my ($path) = @_;
+
+	if (-f $path) {
+		return ($path);
+	} elsif (-d $path) {
+		my @files = glob(File::Spec->catfile($path, '*.json'));
+		return sort @files;
+	}
+	return ();
+}
+
+# Read corpus files and generate a complete .t file as a string
+sub _generate_replay_tap {
+	my (@corpus_files) = @_;
+
+	my $json_module;
+	for my $mod (qw(JSON::MaybeXS JSON)) {
+		eval "require $mod" and $json_module = $mod and last;
+	}
+	die "No JSON module available; install JSON or JSON::MaybeXS\n"
+		unless $json_module;
+
+	# Collect all bugs across all corpus files
+	my @tests;   # [{module => ..., method => ..., input => ..., error => ...}]
+
+	for my $file (@corpus_files) {
+		open my $fh, '<', $file or die "Cannot read $file: $!\n";
+		my $data = eval {
+			$json_module->new->decode(do { local $/; <$fh> })
+		};
+		close $fh;
+
+		if ($@) {
+			warn "Skipping $file: could not parse JSON: $@\n";
+			next;
+		}
+
+		my $bugs = $data->{bugs} // [];
+		next unless @$bugs;
+
+		# Derive method name from filename: translate.json -> translate
+		my (undef, undef, $fname) = File::Spec->splitpath($file);
+		(my $method = $fname) =~ s/\.json$//;
+
+		# The corpus file doesn't store the module name, but the schema
+		# directory will have a YAML file with the same stem that does.
+		# Try to find it; fall back to a placeholder if not found.
+		my $module = _infer_module_from_schema($file, $method) // 'UNKNOWN::Module';
+
+		for my $bug (@$bugs) {
+			push @tests, {
+				module => $module,
+				method => $method,
+				input  => $bug->{input},
+				error  => $bug->{error},
+				file   => $file,
+			};
+		}
+	}
+
+	# Build the .t content
+	my $test_count = scalar @tests;
+
+	my $t = <<'HEADER';
+#!/usr/bin/env perl
+# Auto-generated by fuzz-harness-generator --replay-corpus
+# DO NOT EDIT - regenerate from corpus files instead
+use strict;
+use warnings;
+use Test::More;
+HEADER
+
+	if ($test_count == 0) {
+		$t .= "\nplan skip_all => 'No bugs recorded in corpus files';\n";
+		return $t;
+	}
+
+	# Collect unique modules to load
+	my %modules = map { $_->{module} => 1 } @tests;
+	for my $mod (sort keys %modules) {
+		next if $mod eq 'UNKNOWN::Module';
+		$t .= "use $mod;\n";
+	}
+
+	$t .= "\nplan tests => $test_count;\n\n";
+
+	for my $i (0 .. $#tests) {
+		my $test  = $tests[$i];
+		my $n     = $i + 1;
+		my $input = _format_input($test->{input});
+		my $label = "$test->{method} does not die on input from $test->{file}";
+
+		# Escape the error for use in a comment
+		(my $orig_error = $test->{error} // '') =~ s/\n/ /g;
+		$orig_error =~ s/'/\\'/g;
+
+		$t .= "# Corpus bug: $orig_error\n";
+		$t .= "lives_ok { $test->{module}\->$test->{method}($input) }\n";
+		$t .= "    '$label';\n\n";
+	}
+
+	# lives_ok is in Test::Exception; add a use at the top
+	$t =~ s/(use Test::More;)/$1\nuse Test::Exception;/;
+
+	return $t;
+}
+
+# Format a scalar input value as a Perl literal for embedding in source
+sub _format_input {
+	my ($input) = @_;
+	return 'undef' unless defined $input;
+
+	# Numeric
+	return $input if $input =~ /^-?(?:\d+\.?\d*|\.\d+)$/;
+
+	# String: escape single quotes and backslashes
+	(my $escaped = $input) =~ s/\\/\\\\/g;
+	$escaped =~ s/'/\\'/g;
+	return "'$escaped'";
+}
+
+# Try to find the module name from the YAML schema file that sits alongside
+# the corpus file.  The corpus lives in schemas/corpus/method.json;
+# the schema is at schemas/method.yaml (or .yml).
+sub _infer_module_from_schema {
+	my ($corpus_file, $method) = @_;
+
+	my (undef, $corpus_dir) = File::Spec->splitpath($corpus_file);
+
+	# Walk up one directory from corpus/ to find the schemas/ dir
+	my $schema_dir = File::Spec->catdir($corpus_dir, File::Spec->updir());
+
+	for my $ext (qw(yaml yml)) {
+		my $schema_file = File::Spec->catfile($schema_dir, "$method.$ext");
+		next unless -f $schema_file;
+
+		open my $fh, '<', $schema_file or next;
+		while (<$fh>) {
+			if (/^module:\s*(\S+)/) {
+				close $fh;
+				return $1;
+			}
+		}
+		close $fh;
+	}
+
+	return undef;
+}
+
+__END__
+
+=head1 REPLAY CORPUS WORKFLOW
+
+=head2 Step 1: discover bugs with extract-schemas
+
+    extract-schemas --fuzz lib/MyModule.pm
+
+This runs coverage-guided fuzzing and writes any discovered bugs to
+C<schemas/corpus/method.json>.
+
+=head2 Step 2: generate a regression test file
+
+    fuzz-harness-generator --replay-corpus schemas/corpus/ -o t/fuzz_replay.t
+
+This reads every C<*.json> file in C<schemas/corpus/>, extracts the recorded
+bugs, and generates a C<t/fuzz_replay.t> that calls each buggy input and
+expects it B<not> to die.
+
+=head2 Step 3: run the regression tests
+
+    prove -l t/fuzz_replay.t
+
+Tests will be red for each unfixed bug. Fix the underlying code, re-run
+C<prove>, and the tests go green.
+
+=head2 Step 4: commit both files
+
+Commit C<schemas/corpus/> and C<t/fuzz_replay.t> to version control. The
+corpus ensures future fuzz runs build on past discoveries; the replay test
+ensures fixed bugs stay fixed.
+
+=head2 Keeping the replay file up to date
+
+Re-run C<fuzz-harness-generator --replay-corpus> whenever new bugs are
+discovered or old ones are fixed and removed from the corpus. The generated
+file should not be edited by hand.
+
+=head1 SEE ALSO
+
+L<App::Test::Generator>, L<App::Test::Generator::CoverageGuidedFuzzer>,
+L<extract-schemas>
+
+=head1 AUTHOR
+
+Nigel Horne
+
+=cut
