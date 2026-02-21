@@ -3,7 +3,11 @@ package App::Test::Generator::CoverageGuidedFuzzer;
 use strict;
 use warnings;
 
-our $VERSION = '0.01';
+our $VERSION = '0.28';
+
+=head1 VERSION
+
+Version 0.28
 
 =head1 NAME
 
@@ -36,6 +40,158 @@ schema-driven input generation.  Instead of purely random generation, it:
 
 This is the Perl equivalent of what AFL/libFuzzer do at the byte level, but
 operating on typed, schema-validated Perl data structures.
+
+=head1 HOW CORPUS FILES ARE USED
+
+=head2 Overview
+
+Each time C<extract-schemas --fuzz> runs, it creates or updates one JSON file
+per fuzzed method under C<schemas/corpus/> (or C<--corpus-dir> if specified).
+For example:
+
+    schemas/corpus/translate.json
+    schemas/corpus/lookup.json
+
+These files are the fuzzer's memory. Without them, every run starts from
+scratch. With them, each run builds on the discoveries of every previous run.
+
+=head2 What is stored in a corpus file
+
+Each file is a JSON object with three keys:
+
+    {
+      "seed": 1234567890,
+      "corpus": [
+        { "input": "en" },
+        { "input": "12345678901" },
+        ...
+      ],
+      "bugs": [
+        { "input": "...", "error": "..." }
+      ]
+    }
+
+The C<corpus> array contains every input that was judged "interesting" during
+past runs. An input is interesting if it triggered at least one branch in the
+target code that no previous input had reached. These are the inputs that
+proved useful for exploring the method's behaviour - not just random values,
+but ones that actually exercised distinct paths through the code.
+
+The C<bugs> array records every input that caused the target method to die or
+throw an exception, along with the error message. This is preserved across
+runs so you have a permanent record of discovered failure cases even after
+fixing them.
+
+The C<seed> records the random seed of the run that created the file. This is
+informational only and is not reused on subsequent runs.
+
+=head2 How the corpus is used at the start of a run
+
+When C<extract-schemas --fuzz> runs and finds an existing corpus file for a
+method, it calls C<load_corpus()> before starting the fuzzing loop. This
+pre-populates the fuzzer's internal corpus with all the previously interesting
+inputs. They are loaded with an empty coverage hash (C<coverage =E<gt> {}>)
+because coverage state from a previous process cannot be restored - only the
+inputs themselves are persisted.
+
+=head2 How the corpus influences the fuzzing loop
+
+During the main fuzzing loop, on each of the C<--fuzz-iters> iterations, the
+fuzzer makes a weighted random choice:
+
+=over 4
+
+=item 70% of iterations: mutate a corpus entry
+
+A random entry is picked from the corpus (which now includes both the loaded
+entries from previous runs and any new entries discovered in this run so far).
+That entry's input is mutated - characters are flipped, numbers are nudged,
+strings are truncated or extended, array elements are duplicated or deleted -
+and the mutated value is run against the target method.
+
+The key property here is that mutations are applied to inputs that are already
+known to reach interesting parts of the code. Rather than generating a fresh
+random string that will probably hit the same early conditional as everything
+else, the fuzzer is specifically probing the neighbourhood of inputs that
+previously pushed into new territory.
+
+=item 30% of iterations: fresh random generation
+
+A completely new input is generated from the schema. This is the exploration
+budget - it ensures the fuzzer does not get permanently stuck mutating a
+narrow slice of the input space and occasionally tries something entirely new.
+
+=back
+
+=head2 How new entries are added to the corpus during a run
+
+After each input is run against the target method, the fuzzer checks whether
+it was interesting. With C<Devel::Cover> available, an input is interesting if
+it hit at least one branch that no previous input in this session had hit.
+Without C<Devel::Cover>, 20% of inputs are kept at random so the corpus
+continues to grow even without branch feedback.
+
+Interesting inputs are appended to the in-memory corpus immediately, so they
+can be selected and mutated within the same run. They are also written to the
+JSON file at the end of the run via C<save_corpus()>.
+
+=head2 How the corpus grows across multiple runs
+
+On the first run, the corpus file does not exist. The fuzzer seeds itself with
+five randomly generated inputs, runs all iterations, and saves the interesting
+ones. A typical first run might produce a corpus of 15-30 entries.
+
+On the second run, those 15-30 entries are loaded before any iteration begins.
+The fuzzer immediately starts mutating inputs that are already known to reach
+interesting branches, rather than spending iterations rediscovering them from
+scratch. It finds new interesting inputs on top of the existing ones, and the
+corpus grows further.
+
+By the third, fourth and subsequent runs the corpus has stabilised for the
+easy-to-reach branches and is increasingly focused on harder-to-reach ones.
+The coverage plateau is reached more slowly each time, which is exactly the
+right behaviour - the fuzzer is spending its budget on genuinely new territory.
+
+=head2 Practical implications
+
+=over 4
+
+=item Running once gives limited value; running repeatedly gives compounding value.
+
+The first run with 100 iterations is roughly equivalent to C<App::Test::Generator>
+with 100 random iterations. By the fifth run, the corpus is directed at branches
+that purely random generation would almost never reach.
+
+=item The corpus is human-readable and editable.
+
+Because inputs are stored as plain JSON values, you can open a corpus file and
+add your own known-tricky inputs by hand. They will be picked up on the next
+run and mutated like any other corpus entry.
+
+=item Deleting a corpus file resets the fuzzer for that method.
+
+If you significantly change a method's implementation, the old corpus may be
+less useful. Delete the relevant C<schemas/corpus/method.json> and the fuzzer
+will start fresh with the new code.
+
+=item The bugs array is a regression record.
+
+Even after you fix a bug that was found by fuzzing, the input that triggered it
+remains in the C<bugs> array of the corpus file. You can use these as the basis
+for specific regression tests to ensure the fix holds.
+
+=back
+
+=head2 Corpus file location
+
+By default corpus files are written to C<schemas/corpus/>, one file per method,
+named C<method_name.json>. This can be changed with the C<--corpus-dir> option:
+
+    extract-schemas --fuzz --corpus-dir t/corpus lib/MyModule.pm
+
+It is recommended to commit the corpus directory to version control. This means
+every developer and every CI run benefits from the accumulated discoveries of
+all previous runs rather than starting from scratch each time.
 
 =cut
 
@@ -539,67 +695,33 @@ sub _build_report {
     };
 }
 
-1;
-
-__END__
-
-=head1 YAML SCHEMA ADDITIONS
-
-Add a C<coverage_guided> block to your existing schema to enable this feature:
-
-    --- # my_function.yml
-    module:   My::Module
-    function: validate
-    input:
-      type: string
-      min:  1
-      max:  200
-    output:
-      type: boolean
-    config:
-      seed:       42
-      iterations: 300
-      coverage_guided:
-        enabled:      true
-        corpus_file:  t/corpus/validate.json   # optional: persist corpus
-        mutation_ratio: 0.7                    # 70% mutate, 30% fresh (default)
-
-=head1 INTEGRATION WITH App::Test::Generator
-
-In the generator's main run loop, after loading the schema, add:
-
-    if ($config->{coverage_guided}{enabled}) {
-        require App::Test::Generator::CoverageGuidedFuzzer;
-        my $fuzzer = App::Test::Generator::CoverageGuidedFuzzer->new(
-            schema     => $schema,
-            target_sub => $target_sub,
-            iterations => $config->{iterations} // 100,
-            seed       => $config->{seed}       // 42,
-        );
-
-        if (my $f = $config->{coverage_guided}{corpus_file}) {
-            $fuzzer->load_corpus($f) if -f $f;
-        }
-
-        my $report = $fuzzer->run();
-
-        if (my $f = $config->{coverage_guided}{corpus_file}) {
-            $fuzzer->save_corpus($f);
-        }
-
-        # Emit TAP from bugs found
-        for my $bug (@{ $report->{bugs} }) {
-            # input that caused the bug is $bug->{input}
-            # error message is $bug->{error}
-        }
-    }
-
 =head1 AUTHOR
 
-Sketch implementation for App::Test::Generator.
+Nigel Horne, C<< <njh at nigelhorne.com> >>
 
-=head1 LICENSE
-
-Same as App::Test::Generator (Perl / Artistic).
+Portions of this module's initial design and documentation were created with the
+assistance of AI.
 
 =cut
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright 2026 Nigel Horne.
+
+Usage is subject to licence terms.
+
+The licence terms of this software are as follows:
+
+=over 4
+
+=item * Personal single user, single computer use: GPL2
+
+=item * All other users (including Commercial, Charity, Educational, Government)
+  must apply in writing for a licence for use from Nigel Horne at the
+  above e-mail.
+
+=back
+
+=cut
+
+1;
