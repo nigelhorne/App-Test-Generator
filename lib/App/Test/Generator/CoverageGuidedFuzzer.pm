@@ -70,8 +70,10 @@ sub new {
 
     # Probe for Devel::Cover availability once at construction time
     $self->{_cover_available} = eval { require Devel::Cover; 1 } ? 1 : 0;
-    warn "Devel::Cover not available; fuzzing without coverage guidance.\n"
-        unless $self->{_cover_available};
+    our $__cover_warned;
+    if (!$self->{_cover_available} && !$__cover_warned++) {
+        warn "Devel::Cover not available; fuzzing without coverage guidance.\n";
+    }
 
     return $self;
 }

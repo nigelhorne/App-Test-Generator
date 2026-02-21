@@ -4,11 +4,12 @@ use strict;
 use warnings;
 
 use Data::Dumper;
-use Getopt::Long;
 use File::Path qw(make_path);
-use Pod::Usage;
+use File::Spec;
+use Getopt::Long;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
+use Pod::Usage;
 
 use App::Test::Generator::SchemaExtractor;
 
@@ -24,13 +25,20 @@ extract-schemas - Extract test schemas from Perl modules
       --output-dir DIR    Output directory for schema files (default: schemas/)
       --strict-pod=off|warn|fatal
       --verbose           Show detailed analysis
+      --fuzz              Run coverage-guided fuzzing on extracted schemas
+      --fuzz-iters N      Iterations per method when fuzzing (default: 100)
+                          (no short form, to avoid conflict with --fuzz/-f)
+      --fuzz-all          Fuzz all methods, not just low/medium confidence ones
+      --corpus-dir DIR    Directory to persist fuzz corpora (default: schemas/corpus/)
       --help              Show this help message
       --man               Show full documentation
 
     Examples:
       extract-schemas lib/MyModule.pm
       extract-schemas --output-dir my_schemas --verbose lib/MyModule.pm
-      extract-schemas --help
+      extract-schemas --fuzz lib/MyModule.pm
+      extract-schemas --fuzz --fuzz-iters 300 --corpus-dir t/corpus lib/MyModule.pm
+      extract-schemas --fuzz --fuzz-all lib/MyModule.pm
 
 =head1 DESCRIPTION
 
@@ -58,78 +66,189 @@ Extracts parameter names from method signatures.
 The tool assigns a confidence level (high/medium/low) to each schema based
 on how much information it could infer.
 
+=head1 FUZZING
+
+When C<--fuzz> is specified, the tool will additionally run
+C<App::Test::Generator::CoverageGuidedFuzzer> against each method after
+schema extraction.
+
+By default only methods with low or medium confidence schemas are fuzzed,
+since those are the most likely to have inaccurate type assumptions. Use
+C<--fuzz-all> to fuzz every method regardless of confidence.
+
+The fuzzer will:
+
+=over 4
+
+=item * Load and C<require> the target module at runtime
+
+=item * Run coverage-guided fuzzing using the extracted schema as input spec
+
+=item * Report any crashes or unexpected errors found
+
+=item * Persist a corpus to C<--corpus-dir> for incremental improvement across runs
+
+=back
+
+Corpus files are named C<< <corpus-dir>/<method>.json >> and are automatically
+loaded on subsequent runs, so each run builds on the last.
+
 =cut
 
-# Parse command line options
+# ---------------------------------------------------------------------------
+# Option parsing
+# ---------------------------------------------------------------------------
+
 my %cli_opts = (
-	help => 0,
-	man => 0,
+    help => 0,
+    man  => 0,
 );
 
 my %extractor_opts = (
-	output_dir => 'schemas',
-	strict_pod => 'warn',
-	verbose => 0,
+    output_dir => 'schemas',
+    strict_pod => 'warn',
+    verbose    => 0,
 );
 
+my $fuzz       = 0;
+my $fuzz_all   = 0;
+my $fuzz_iters = 100;
+my $corpus_dir;   # default set after output_dir is known
+
 GetOptions(
-	'output-dir|o=s' => \$extractor_opts{output_dir},
-	'strict-pod|s=s' => \$extractor_opts{strict_pod},
-	'verbose|v' => \$extractor_opts{verbose},
-	'help|h' => \$cli_opts{help},
-	'man|m' => \$cli_opts{man},
+    'output-dir|o=s'  => \$extractor_opts{output_dir},
+    'strict-pod|s=s'  => \$extractor_opts{strict_pod},
+    'verbose|v'       => \$extractor_opts{verbose},
+    'fuzz|f'          => \$fuzz,
+    'fuzz-all'        => \$fuzz_all,
+    'fuzz-iters=i'    => \$fuzz_iters,
+    'corpus-dir|c=s'  => \$corpus_dir,
+    'help|h'          => \$cli_opts{help},
+    'man|m'           => \$cli_opts{man},
 ) or pod2usage(2);
 
-pod2usage(-exitval => 0, -verbose => 1) if($cli_opts{help});
+pod2usage(-exitval => 0, -verbose => 1) if $cli_opts{help};
 pod2usage(-exitval => 0, -verbose => 2) if $cli_opts{man};
 
-if($extractor_opts{strict_pod} !~ /^(off|warn|fatal)$/) {
-	die "Invalid --strict-pod value '$extractor_opts{strict_pod}'. Expected off, warn, or fatal";
+if ($extractor_opts{strict_pod} !~ /^(off|warn|fatal)$/) {
+    die "Invalid --strict-pod value '$extractor_opts{strict_pod}'. Expected off, warn, or fatal\n";
 }
 
-# Get input file
 my $input_file = shift @ARGV or pod2usage('Error: No input file specified');
+die "Error: File not found: $input_file\n" unless -f $input_file;
 
-die "Error: File not found: $input_file" unless -f $input_file;
+# Default corpus dir sits under the output dir
+$corpus_dir //= File::Spec->catdir($extractor_opts{output_dir}, 'corpus');
 
-# Run the extractor
+# ---------------------------------------------------------------------------
+# Schema extraction
+# ---------------------------------------------------------------------------
+
 print "Extracting schemas from: $input_file\n";
 print "Output directory: $extractor_opts{output_dir}\n\n";
 
 make_path($extractor_opts{output_dir}) unless -d $extractor_opts{output_dir};
 
 my $extractor = App::Test::Generator::SchemaExtractor->new(
-	input_file => $input_file,
-	# output_dir => $opts{output_dir},
-	# verbose => $opts{verbose},
-	# strict_pod	=> $opts{strict_pod},
-	%extractor_opts,
+    input_file => $input_file,
+    %extractor_opts,
 );
 
 my $schemas = $extractor->extract_all();
 
-# Summary report
-print "\n", '=' x 70, "\n",
-	"EXTRACTION SUMMARY\n",
-	'=' x 70, "\n\n";
+# ---------------------------------------------------------------------------
+# Optional: coverage-guided fuzzing
+# ---------------------------------------------------------------------------
 
-my %input_confidence_counts = (high => 0, medium => 0, low => 0);
+my %fuzz_results;   # method_name => report hashref
+
+if ($fuzz) {
+    require App::Test::Generator::CoverageGuidedFuzzer;
+    make_path($corpus_dir) unless -d $corpus_dir;
+
+    # Load the target module once so all methods are callable
+    my $package = _load_target_module($input_file, $schemas);
+
+    print "Fuzzing with $fuzz_iters iterations per method",
+          ($fuzz_all ? ' (all methods)' : ' (low/medium confidence only)'),
+          "...\n\n";
+
+    foreach my $method (sort keys %$schemas) {
+        my $schema = $schemas->{$method};
+        my $iconf  = $schema->{_confidence}{input}{level} // 'low';
+
+        unless ($fuzz_all) {
+            next unless $iconf eq 'low' || $iconf eq 'medium';
+        }
+
+        my $sub_ref = $package->can($method);
+        unless ($sub_ref) {
+            warn "  Skipping $method: not callable in $package\n";
+            next;
+        }
+
+        # Skip constructors and AUTOLOAD — not suitable for direct fuzzing
+        if ($method =~ /^(new|AUTOLOAD|DESTROY|import)$/) {
+            print "  Skipping $method (constructor/special method)\n"
+                if $extractor_opts{verbose};
+            next;
+        }
+
+        my $corpus_file = File::Spec->catfile($corpus_dir, "$method.json");
+
+        print "  Fuzzing $method ($iconf confidence)... ";
+
+        my $fuzzer = App::Test::Generator::CoverageGuidedFuzzer->new(
+            schema      => $schema,
+            target_sub  => $sub_ref,
+            iterations  => $fuzz_iters,
+        );
+
+        $fuzzer->load_corpus($corpus_file) if -f $corpus_file;
+
+        my $report = $fuzzer->run();
+        $fuzzer->save_corpus($corpus_file);
+
+        $fuzz_results{$method} = $report;
+
+        printf "%d bugs, %d branches covered\n",
+            $report->{bugs_found},
+            $report->{branches_covered};
+    }
+
+    print "\n";
+}
+
+# ---------------------------------------------------------------------------
+# Summary report
+# ---------------------------------------------------------------------------
+
+print '=' x 70, "\n",
+      "EXTRACTION SUMMARY\n",
+      '=' x 70, "\n\n";
+
+my %input_confidence_counts  = (high => 0, medium => 0, low => 0);
 my %output_confidence_counts = (high => 0, medium => 0, low => 0);
 
 foreach my $method (sort keys %$schemas) {
-	my $schema = $schemas->{$method};
-	my $iconf = $schema->{_confidence}{input}{level} // 'low';
-	$input_confidence_counts{$iconf}++;
-	my $oconf = $schema->{_confidence}{output}{level} // 'low';
-	$output_confidence_counts{$oconf}++;
+    my $schema = $schemas->{$method};
+    my $iconf  = $schema->{_confidence}{input}{level}  // 'low';
+    my $oconf  = $schema->{_confidence}{output}{level} // 'low';
+    $input_confidence_counts{$iconf}++;
+    $output_confidence_counts{$oconf}++;
 
-	# my $param_count = scalar keys %{$schema->{input}};
+    my $param_count = scalar grep { $_ !~ /^_/ } keys %{ $schema->{input} };
 
-	# Filter out underscore keys which could be used in the future for metadata
-	my $param_count = scalar grep { $_ !~ /^_/ } keys %{ $schema->{input} };
+    my $fuzz_col = '';
+    if (exists $fuzz_results{$method}) {
+        my $r = $fuzz_results{$method};
+        $fuzz_col = $r->{bugs_found}
+            ? sprintf('  BUGS: %d', $r->{bugs_found})
+            : '  fuzz: ok';
+    }
 
-	printf "%-30s %d params  [%s input confidence] [%s output confidence]\n",
-		$method, $param_count, uc($iconf), uc($oconf);
+    printf "%-30s %d params  [%s input confidence] [%s output confidence]%s\n",
+        $method, $param_count, uc($iconf), uc($oconf), $fuzz_col;
 }
 
 print "\n";
@@ -145,16 +264,80 @@ print "    Low confidence:    $output_confidence_counts{low}\n";
 print "\n";
 
 if ($input_confidence_counts{low} > 0 || $input_confidence_counts{medium} > 0) {
-	print "RECOMMENDATION:\n",
-		"Review the generated schemas in $extractor_opts{output_dir}/\n",
-		"Focus on methods with medium/low confidence ratings.\n\n";
+    print "RECOMMENDATION:\n",
+          "Review the generated schemas in $extractor_opts{output_dir}/\n",
+          "Focus on methods with medium/low confidence ratings.\n\n";
 }
 
-if($extractor_opts{'verbose'}) {
-	print "Schemas:\n\t", Dumper($schemas);
+# Fuzz bug detail
+if (%fuzz_results) {
+    my $total_bugs = 0;
+    $total_bugs += $_->{bugs_found} for values %fuzz_results;
+
+    if ($total_bugs) {
+        print '=' x 70, "\n",
+              "FUZZING BUGS FOUND ($total_bugs total)\n",
+              '=' x 70, "\n\n";
+
+        foreach my $method (sort keys %fuzz_results) {
+            my $r = $fuzz_results{$method};
+            next unless $r->{bugs_found};
+            print "  $method:\n";
+            for my $i (0 .. $#{ $r->{bugs} }) {
+                my $bug = $r->{bugs}[$i];
+                my $inp = defined($bug->{input}) ? qq("$bug->{input}") : 'undef';
+                printf "    Bug %d: input=%-30s error=%s\n",
+                    $i + 1, $inp, $bug->{error};
+            }
+            print "\n";
+        }
+        print "Corpora saved to: $corpus_dir/\n\n";
+    } else {
+        print "Fuzzing complete: no bugs found across ",
+              scalar(keys %fuzz_results), " methods.\n\n";
+    }
+}
+
+if ($extractor_opts{verbose}) {
+    print "Schemas:\n\t", Dumper($schemas);
 }
 
 print "Schema files written to: $extractor_opts{output_dir}/\n";
+
+# ---------------------------------------------------------------------------
+# Helper: load the target module so methods become callable
+# ---------------------------------------------------------------------------
+
+sub _load_target_module {
+    my ($input_file, $schemas) = @_;
+
+    # Derive the package name from the first schema entry that has 'module' set
+    my ($package) = map  { $schemas->{$_}{module} }
+                    grep { $schemas->{$_}{module} }
+                    keys %$schemas;
+
+    die "Could not determine package name from extracted schemas\n"
+        unless $package;
+
+    # Add the module's containing lib dir to @INC
+    # Walks up from the file looking for a 'lib' directory
+    my $abs = File::Spec->rel2abs($input_file);
+    my @dirs = File::Spec->splitdir( (File::Spec->splitpath($abs))[1] );
+
+    while (@dirs) {
+        my $candidate = File::Spec->catdir(@dirs, 'lib');
+        if (-d $candidate) {
+            lib->import($candidate);
+            last;
+        }
+        pop @dirs;
+    }
+
+    eval "require $package"
+        or die "Could not load $package for fuzzing: $@\n";
+
+    return $package;
+}
 
 __END__
 
@@ -198,26 +381,32 @@ Limited information. Manual review required.
 
     extract-schemas lib/MyModule.pm
 
-Extracts schemas to ./schemas/ directory.
+=head2 Fuzz low/medium confidence methods
 
-=head2 Custom Output Directory
+    extract-schemas --fuzz lib/MyModule.pm
 
-    extract-schemas --output-dir test_schemas lib/MyModule.pm
+=head2 Fuzz everything, 300 iterations, custom corpus dir
+
+    extract-schemas --fuzz --fuzz-all --fuzz-iters 300 --corpus-dir t/corpus lib/MyModule.pm
+
+=head2 Incremental fuzzing (corpus grows across runs)
+
+    # First run: builds initial corpus
+    extract-schemas --fuzz lib/MyModule.pm
+
+    # Subsequent runs: loads corpus and extends it
+    extract-schemas --fuzz lib/MyModule.pm
 
 =head2 Verbose Mode
 
     extract-schemas --verbose lib/MyModule.pm
 
-Shows detailed analysis of each method.
-
 =head2 Pod Checking
 
   --strict-pod=LEVEL
-    Enforce POD/code consistency.
-    LEVEL may be:
-      off    - do not validate POD
-      warn   - warn on mismatches (default)
-      fatal  - abort on mismatches
+    off    - do not validate POD
+    warn   - warn on mismatches (default)
+    fatal  - abort on mismatches
 
 =head1 NEXT STEPS
 
@@ -231,7 +420,8 @@ After extracting schemas:
 
 =head1 SEE ALSO
 
-L<App::Test::Generator>, L<PPI>, L<Pod::Simple>
+L<App::Test::Generator>, L<App::Test::Generator::CoverageGuidedFuzzer>,
+L<PPI>, L<Pod::Simple>
 
 =head1 AUTHOR
 
