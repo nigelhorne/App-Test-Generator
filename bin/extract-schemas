@@ -28,7 +28,7 @@ extract-schemas - Extract test schemas from Perl modules
       --fuzz              Run coverage-guided fuzzing on extracted schemas
       --fuzz-iters N      Iterations per method when fuzzing (default: 100)
                           (no short form, to avoid conflict with --fuzz/-f)
-      --fuzz-all          Fuzz all methods, not just low/medium confidence ones
+      --fuzz-all          Fuzz all methods, including those with no input schema
       --corpus-dir DIR    Directory to persist fuzz corpora (default: schemas/corpus/)
       --help              Show this help message
       --man               Show full documentation
@@ -73,9 +73,9 @@ When C<--fuzz> is specified, the tool will additionally run
 C<App::Test::Generator::CoverageGuidedFuzzer> against each method after
 schema extraction.
 
-By default only methods with low or medium confidence schemas are fuzzed,
-since those are the most likely to have inaccurate type assumptions. Use
-C<--fuzz-all> to fuzz every method regardless of confidence.
+By default all methods with at least one known input parameter are fuzzed,
+regardless of confidence level. Use C<--fuzz-all> to also attempt fuzzing
+methods with no input schema (these will use purely random generation).
 
 The fuzzer will:
 
@@ -170,6 +170,16 @@ if ($fuzz) {
     # Load the target module once so all methods are callable
     my $package = _load_target_module($input_file, $schemas);
 
+    # Try to build a default instance for object method calls.
+    # Most OO modules need a $self as the first argument.
+    # We try new() with no args, then new({}), then give up and fuzz as functions.
+    my $instance = _try_construct($package);
+    if ($instance) {
+        print "Constructed $package instance for method calls.\n";
+    } else {
+        print "Could not construct $package instance; fuzzing as functions.\n";
+    }
+
     print "Fuzzing with $fuzz_iters iterations per method",
           ($fuzz_all ? ' (all methods)' : ' (low/medium confidence only)'),
           "...\n\n";
@@ -179,7 +189,8 @@ if ($fuzz) {
         my $iconf  = $schema->{_confidence}{input}{level} // 'low';
 
         unless ($fuzz_all) {
-            next unless $iconf eq 'low' || $iconf eq 'medium';
+            # Skip methods with no input schema at all — there is nothing to fuzz
+            next if $iconf eq 'none' && !%{ $schema->{input} // {} };
         }
 
         my $sub_ref = $package->can($method);
@@ -202,6 +213,7 @@ if ($fuzz) {
         my $fuzzer = App::Test::Generator::CoverageGuidedFuzzer->new(
             schema      => $schema,
             target_sub  => $sub_ref,
+            instance    => $instance,
             iterations  => $fuzz_iters,
         );
 
@@ -338,6 +350,22 @@ sub _load_target_module {
         or die "Could not load $package for fuzzing: $@\n";
 
     return $package;
+}
+
+# Try to construct a default instance of the target package for method calls.
+# Attempts new() with progressively more forgiving argument lists.
+# Returns the instance on success, undef if nothing works.
+sub _try_construct {
+    my ($package) = @_;
+
+    for my $args ([], [{}], [undef]) {
+        my $obj = eval { $package->new(@$args) };
+        next if $@;
+        next unless defined $obj && ref $obj;
+        return $obj;
+    }
+
+    return undef;
 }
 
 __END__

@@ -208,6 +208,7 @@ sub new {
     my $self = bless {
         schema      => $args{schema},
         target_sub  => $args{target_sub},
+        instance    => $args{instance},    # optional pre-built object for method calls
         iterations  => $args{iterations}  // 100,
         seed        => $args{seed}        // time(),
         corpus      => [],          # [{input => ..., coverage => {...}}]
@@ -351,11 +352,19 @@ sub _run_one {
         $coverage = $self->_run_with_cover($input, \$result, \$error);
     } else {
         $coverage = {};
+        my @call_args = defined($self->{instance}) ? ($self->{instance}, $input) : ($input);
+        my @warnings;
         eval {
+            local $SIG{__WARN__} = sub { push @warnings, @_ };
             local $SIG{__DIE__};
-            $result = $self->{target_sub}->($input);
+            $result = $self->{target_sub}->(@call_args);
         };
         $error = $@ if $@;
+        # Treat unexpected warnings as soft bugs worth recording
+        if (!defined $error && @warnings) {
+            my $w = join "", @warnings;
+            $error = "warning: $w" if $w =~ /uninitialized|undefined|blessed|invalid/i;
+        }
     }
 
     # Record bugs
