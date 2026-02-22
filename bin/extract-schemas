@@ -40,6 +40,23 @@ extract-schemas - Extract test schemas from Perl modules
       extract-schemas --fuzz --fuzz-iters 300 --corpus-dir t/corpus lib/MyModule.pm
       extract-schemas --fuzz --fuzz-all lib/MyModule.pm
 
+=head1 QUICK START
+
+Run C<extract-schemas --strict-pod=warn -v --fuzz lib/MyModule.pm> to analyse your module and
+automatically probe each method with hundreds of fuzzed inputs,
+looking for
+crashes caused by inputs that should be valid.
+Anything suspicious is saved to C<schemas/corpus/>.
+
+If genuine bugs are found,
+run C<fuzz-harness-generator --replay-corpus schemas/corpus/ -o t/fuzz_replay.t>
+to turn them into regression tests that will fail until you fix the underlying code and pass forever after.
+Run C<extract-schemas --fuzz> regularly - each
+run builds on the last, probing deeper into your code each time.
+
+Otherwise, for each of the functions in MyModule.pm,
+C<fuzz-harness-generator -r schemas/function.yml>
+
 =head1 DESCRIPTION
 
 This tool analyzes a Perl module and generates YAML schema files for each
@@ -181,7 +198,7 @@ if ($fuzz) {
     }
 
     print "Fuzzing with $fuzz_iters iterations per method",
-          ($fuzz_all ? ' (all methods)' : ' (low/medium confidence only)'),
+          ($fuzz_all ? ' (all methods)' : ' (methods with known inputs)'),
           "...\n\n";
 
     foreach my $method (sort keys %$schemas) {
@@ -240,8 +257,8 @@ print '=' x 70, "\n",
       "EXTRACTION SUMMARY\n",
       '=' x 70, "\n\n";
 
-my %input_confidence_counts  = (high => 0, medium => 0, low => 0);
-my %output_confidence_counts = (high => 0, medium => 0, low => 0);
+my %input_confidence_counts  = (high => 0, medium => 0, low => 0, none => 0);
+my %output_confidence_counts = (high => 0, medium => 0, low => 0, none => 0);
 
 foreach my $method (sort keys %$schemas) {
     my $schema = $schemas->{$method};
@@ -410,7 +427,7 @@ Limited information. Manual review required.
 
     extract-schemas lib/MyModule.pm
 
-=head2 Fuzz low/medium confidence methods
+=head2 Fuzz methods with known inputs
 
     extract-schemas --fuzz lib/MyModule.pm
 

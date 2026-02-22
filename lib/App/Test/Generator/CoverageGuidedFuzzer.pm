@@ -367,10 +367,13 @@ sub _run_one {
         }
     }
 
-    # Record bugs
+    # Record bugs — but only if the input was valid according to the schema.
+    # A die on invalid input is correct behaviour, not a bug.
     if ($error) {
-        push @{$self->{bugs}}, { input => $input, error => "$error" };
-        $self->{stats}{bugs}++;
+        if ($self->_input_is_valid($input)) {
+            push @{$self->{bugs}}, { input => $input, error => "$error" };
+            $self->{stats}{bugs}++;
+        }
         # Still keep this input if it's interesting coverage-wise
     }
 
@@ -532,6 +535,92 @@ sub _rand_hash {
     return \%h;
 }
 
+# ---------------------------------------------------------------------------
+# Internal: schema validation
+# ---------------------------------------------------------------------------
+
+# Returns true if the input satisfies all constraints in the schema.
+# A die on a valid input is a real bug; a die on an invalid input is expected.
+sub _input_is_valid {
+    my ($self, $input) = @_;
+
+    my $spec = $self->{schema}{input};
+    return 1 unless defined $spec && ref($spec);  # no schema = can't judge
+
+    my $input_style = $self->{schema}{input_style} // '';
+
+    if ($input_style eq 'hash' || ref($input) eq 'HASH') {
+        # Hash-style: validate each named parameter
+        return $self->_validate_hash_input($input, $spec);
+    } else {
+        # Scalar: validate against the single input spec
+        return $self->_validate_value($input, $spec);
+    }
+}
+
+sub _validate_hash_input {
+    my ($self, $input, $spec) = @_;
+
+    return 0 unless defined $input;
+
+    for my $key (keys %$spec) {
+        next if $key =~ /^_/;   # skip metadata keys
+        my $field_spec = $spec->{$key};
+        next unless ref($field_spec) eq 'HASH';
+
+        my $value = ref($input) eq 'HASH' ? $input->{$key} : undef;
+
+        # Required field missing
+        if (!defined($value) && !$field_spec->{optional}) {
+            return 0;
+        }
+
+        next unless defined $value;
+
+        return 0 unless $self->_validate_value($value, $field_spec);
+    }
+
+    return 1;
+}
+
+sub _validate_value {
+    my ($self, $value, $spec) = @_;
+
+    return 0 unless defined $value;  # undef always invalid unless optional
+
+    my $type = $spec->{type} // 'string';
+
+    if ($type eq 'integer') {
+        return 0 unless $value =~ /^-?\d+$/;
+        return 0 if defined($spec->{min}) && $value < $spec->{min};
+        return 0 if defined($spec->{max}) && $value > $spec->{max};
+    }
+    elsif ($type eq 'number') {
+        return 0 unless $value =~ /^-?(?:\d+\.?\d*|\.\d+)$/;
+        return 0 if defined($spec->{min}) && $value < $spec->{min};
+        return 0 if defined($spec->{max}) && $value > $spec->{max};
+    }
+    elsif ($type eq 'string') {
+        my $len = length($value);
+        return 0 if defined($spec->{min}) && $len < $spec->{min};
+        return 0 if defined($spec->{max}) && $len > $spec->{max};
+        if (defined($spec->{matches})) {
+            (my $pat = $spec->{matches}) =~ s{^/(.+)/$}{$1};
+            return 0 unless $value =~ /$pat/;
+        }
+    }
+    elsif ($type eq 'boolean') {
+        return 0 unless $value =~ /^[01]$/;
+    }
+    elsif ($type =~ /^(arrayref|array)$/) {
+        return 0 unless ref($value) eq 'ARRAY';
+    }
+    elsif ($type =~ /^(hashref|hash)$/) {
+        return 0 unless ref($value) eq 'HASH';
+    }
+
+    return 1;
+}
 # ---------------------------------------------------------------------------
 # Internal: mutation operators
 # ---------------------------------------------------------------------------
