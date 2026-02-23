@@ -149,11 +149,11 @@ pod2usage(-exitval => 0, -verbose => 1) if $cli_opts{help};
 pod2usage(-exitval => 0, -verbose => 2) if $cli_opts{man};
 
 if ($extractor_opts{strict_pod} !~ /^(off|warn|fatal)$/) {
-    die "Invalid --strict-pod value '$extractor_opts{strict_pod}'. Expected off, warn, or fatal\n";
+	die "Invalid --strict-pod value '$extractor_opts{strict_pod}'. Expected off, warn, or fatal";
 }
 
 my $input_file = shift @ARGV or pod2usage('Error: No input file specified');
-die "Error: File not found: $input_file\n" unless -f $input_file;
+die "Error: File not found: $input_file" unless -f $input_file;
 
 # Default corpus dir sits under the output dir
 $corpus_dir //= File::Spec->catdir($extractor_opts{output_dir}, 'corpus');
@@ -346,8 +346,7 @@ sub _load_target_module {
                     grep { $schemas->{$_}{module} }
                     keys %$schemas;
 
-    die "Could not determine package name from extracted schemas\n"
-        unless $package;
+    die 'Could not determine package name from extracted schemas' unless $package;
 
     # Add the module's containing lib dir to @INC
     # Walks up from the file looking for a 'lib' directory
@@ -364,7 +363,7 @@ sub _load_target_module {
     }
 
     eval "require $package"
-        or die "Could not load $package for fuzzing: $@\n";
+        or die "Could not load $package for fuzzing: $@";
 
     return $package;
 }

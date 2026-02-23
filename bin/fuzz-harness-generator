@@ -124,15 +124,15 @@ if($version) {
 
 if ($replay_corpus) {
 	pod2usage('--replay-corpus cannot be combined with --dry-run') if $dry_run;
-	pod2usage('--replay-corpus cannot be combined with --input')   if $infile;
+	pod2usage('--replay-corpus cannot be combined with --input') if $infile;
 
 	my @corpus_files = _collect_corpus_files($replay_corpus);
-	die "No corpus JSON files found at: $replay_corpus\n" unless @corpus_files;
+	die "No corpus JSON files found at: $replay_corpus" unless @corpus_files;
 
 	my $tap = _generate_replay_tap(@corpus_files);
 
 	if ($outfile) {
-		open my $fh, '>', $outfile or die "Cannot write to $outfile: $!\n";
+		open my $fh, '>', $outfile or die "Cannot write to $outfile: $!";
 		print $fh $tap;
 		close $fh;
 		chmod 0755, $outfile;
@@ -228,14 +228,14 @@ sub _generate_replay_tap {
 	for my $mod (qw(JSON::MaybeXS JSON)) {
 		eval "require $mod" and $json_module = $mod and last;
 	}
-	die "No JSON module available; install JSON or JSON::MaybeXS\n"
+	die 'No JSON module available; install JSON or JSON::MaybeXS'
 		unless $json_module;
 
 	# Collect all bugs across all corpus files
-	my @tests;   # [{module => ..., method => ..., input => ..., error => ...}]
+	my @tests;	# [{module => ..., method => ..., input => ..., error => ...}]
 
 	for my $file (@corpus_files) {
-		open my $fh, '<', $file or die "Cannot read $file: $!\n";
+		open my $fh, '<', $file or die "Cannot read $file: $!";
 		my $data = eval {
 			$json_module->new->decode(do { local $/; <$fh> })
 		};
@@ -262,9 +262,9 @@ sub _generate_replay_tap {
 			push @tests, {
 				module => $module,
 				method => $method,
-				input  => $bug->{input},
-				error  => $bug->{error},
-				file   => $file,
+				input => $bug->{input},
+				error => $bug->{error},
+				file => $file,
 			};
 		}
 	}
@@ -296,8 +296,8 @@ HEADER
 	$t .= "\nplan tests => $test_count;\n\n";
 
 	for my $i (0 .. $#tests) {
-		my $test  = $tests[$i];
-		my $n     = $i + 1;
+		my $test = $tests[$i];
+		my $n = $i + 1;
 		my $input = _format_input($test->{input});
 		my $label = "$test->{method} does not die on input from $test->{file}";
 
