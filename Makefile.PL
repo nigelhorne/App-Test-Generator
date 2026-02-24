@@ -19,7 +19,7 @@ WriteMakefile(
 	((defined($ExtUtils::MakeMaker::VERSION) && ($ExtUtils::MakeMaker::VERSION >= 6.3002))
 		? ('LICENSE'=> 'GPL')
 		: ()),
-	EXE_FILES => ['bin/fuzz-harness-generator', 'bin/extract-schemas', 'bin/extract-schemas2'],
+	EXE_FILES => ['bin/app-test-generator-mutate', 'bin/fuzz-harness-generator', 'bin/extract-schemas', 'bin/extract-schemas2'],
 	MIN_PERL_VERSION => '5.036',
 	PREREQ_PM => {
 		'autodie' => 0,

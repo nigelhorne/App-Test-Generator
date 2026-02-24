@@ -1,0 +1,141 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+use JSON::PP;
+use File::Find;
+use Time::HiRes qw(time);
+
+use App::Test::Generator::Mutator;
+
+my %opt = (
+    lib        => 'lib',
+    tests      => 't',
+    min_score  => 0,
+    fail_fast  => 0,
+    verbose    => 0,
+    quiet      => 0,
+);
+
+GetOptions(
+    'lib=s'        => \$opt{lib},
+    'file=s'       => \$opt{file},
+    'tests=s'      => \$opt{tests},
+    'min-score=i'  => \$opt{min_score},
+    'json=s'       => \$opt{json},
+    'fail-fast'    => \$opt{fail_fast},
+    'timeout=i'    => \$opt{timeout},
+    'verbose'      => \$opt{verbose},
+    'quiet'        => \$opt{quiet},
+) or exit 3;
+
+# -------------------------
+# Collect Files
+# -------------------------
+
+my @files;
+
+if ($opt{file}) {
+    push @files, $opt{file};
+}
+else {
+    find(
+        sub {
+            push @files, $File::Find::name if /\.pm$/;
+        },
+        $opt{lib}
+    );
+}
+
+# -------------------------
+# Verify baseline tests
+# -------------------------
+
+print "Running baseline tests...\n" if $opt{verbose};
+
+if (system("prove -l $opt{tests}") != 0) {
+    print STDERR "Baseline tests failed.\n";
+    exit 2;
+}
+
+# -------------------------
+# Run Mutation Testing
+# -------------------------
+
+my $total     = 0;
+my $killed    = 0;
+my @survivors;
+
+for my $file (@files) {
+
+    my $mutator = App::Test::Generator::Mutator->new(
+        file => $file,
+    );
+
+    my @mutants = $mutator->generate_mutants;
+
+    for my $mutant (@mutants) {
+
+        $total++;
+
+        print "Testing $file [$total] ", $mutant->id, "\n"
+            if $opt{verbose};
+
+        $mutator->apply_mutant($mutant);
+
+        my $survived = system("prove -l $opt{tests}") == 0;
+
+        $mutator->revert;
+
+        if ($survived) {
+            push @survivors, {
+                file => $file,
+                id   => $mutant->id,
+                desc => $mutant->description,
+                line => $mutant->line,
+            };
+
+            print "  SURVIVED\n" if $opt{verbose};
+
+            if ($opt{fail_fast}) {
+                print "Fail-fast enabled.\n";
+                last;
+            }
+        }
+        else {
+            $killed++;
+            print "  KILLED\n" if $opt{verbose};
+        }
+    }
+}
+
+# -------------------------
+# Report
+# -------------------------
+
+my $score = $total
+    ? sprintf("%.2f", ($killed / $total) * 100)
+    : 100;
+
+unless ($opt{quiet}) {
+    print "\nMutation Score: $score%\n";
+    print "Total: $total\n";
+    print "Killed: $killed\n";
+    print "Survived: ", scalar(@survivors), "\n";
+}
+
+if ($opt{json}) {
+    open my $fh, '>', $opt{json} or die $!;
+    print $fh encode_json({
+        score      => $score,
+        total      => $total,
+        killed     => $killed,
+        survived   => \@survivors,
+    });
+    close $fh;
+}
+
+exit 1 if $score < $opt{min_score};
+exit 0;
