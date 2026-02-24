@@ -28,30 +28,39 @@ sub mutate {
             description => "Invert condition",
             line        => $stmt->location->[0],
             original    => $cond->content,
-            transform   => sub {
-                my ($clone_doc) = @_;
+	    transform => sub {
+    my ($clone_doc) = @_;
 
-                my $target_stmt = _find_stmt_by_line(
-                    $clone_doc,
-                    $stmt->location->[0]
-                ) or return;
+    # Find all condition statements again in clone
+    my $stmts = $clone_doc->find('PPI::Statement::Compound') || [];
 
-                my ($clone_cond) = grep {
-                    $_->isa('PPI::Structure::Condition')
-                } $target_stmt->children;
+    for my $clone_stmt (@$stmts) {
 
-                return unless $clone_cond;
+        next unless ($clone_stmt->type || '') eq 'if'
+                 || ($clone_stmt->type || '') eq 'unless';
 
-                my $inner = $clone_cond->content;
-                $inner =~ s/^\(\s*//;
-                $inner =~ s/\s*\)$//;
+        my ($clone_cond) = grep {
+            $_->isa('PPI::Structure::Condition')
+        } $clone_stmt->children;
 
-                my $new = PPI::Structure::Condition->new(
-                    '(' . '!(' . $inner . ')' . ')'
-                );
+        next unless $clone_cond;
 
-                $clone_cond->replace($new);
-            },
+        my $inner = $clone_cond->content;
+        $inner =~ s/^\(\s*//;
+        $inner =~ s/\s*\)$//;
+
+        my $new = PPI::Document->new("if (!($inner)) {}");
+
+        # Extract just the condition from the new structure
+        my ($new_cond) = $new->find('PPI::Structure::Condition');
+
+        next unless $new_cond;
+
+        $clone_cond->replace($new_cond);
+
+        last; # only mutate one
+    }
+},
         );
     }
 
