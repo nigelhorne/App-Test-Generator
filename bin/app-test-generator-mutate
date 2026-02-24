@@ -20,15 +20,15 @@ my %opt = (
 );
 
 GetOptions(
-    'lib=s'        => \$opt{lib},
-    'file=s'       => \$opt{file},
-    'tests=s'      => \$opt{tests},
-    'min-score=i'  => \$opt{min_score},
-    'json=s'       => \$opt{json},
-    'fail-fast'    => \$opt{fail_fast},
-    'timeout=i'    => \$opt{timeout},
-    'verbose'      => \$opt{verbose},
-    'quiet'        => \$opt{quiet},
+	'lib=s'        => \$opt{lib},
+	'file=s'       => \$opt{file},
+	'tests=s'      => \$opt{tests},
+	'min-score=i'  => \$opt{min_score},
+	'json=s'       => \$opt{json},
+	'fail-fast'    => \$opt{fail_fast},
+	'timeout=i'    => \$opt{timeout},
+	'verbose'      => \$opt{verbose},
+	'quiet'        => \$opt{quiet},
 ) or exit 3;
 
 # -------------------------
@@ -38,9 +38,8 @@ GetOptions(
 my @files;
 
 if ($opt{file}) {
-    push @files, $opt{file};
-}
-else {
+	push @files, $opt{file};
+} else {
     find(
         sub {
             push @files, $File::Find::name if /\.pm$/;
@@ -56,44 +55,42 @@ else {
 print "Running baseline tests...\n" if $opt{verbose};
 
 if (system("prove -l $opt{tests}") != 0) {
-    print STDERR "Baseline tests failed.\n";
-    exit 2;
+	print STDERR "Baseline tests failed.\n";
+	exit 2;
 }
 
 # -------------------------
 # Run Mutation Testing
 # -------------------------
 
-my $total     = 0;
-my $killed    = 0;
+my $total = 0;
+my $killed = 0;
 my @survivors;
 
 for my $file (@files) {
 	my $mutator = App::Test::Generator::Mutator->new(
-		file    => $file,
+		file => $file,
 		lib_dir => $opt{lib},
 	);
 
 	my @mutants = $mutator->generate_mutants();
 
 	for my $mutant (@mutants) {
-
 		my $workspace = $mutator->prepare_workspace();
 
 		$mutator->apply_mutant($mutant);
 
 		local $ENV{PERL5LIB} = "$workspace:$workspace/lib" . ($ENV{PERL5LIB} ? ":$ENV{PERL5LIB}" : '');
 
-		my $compile = system($^X, '-c', "$workspace/$file");
+		my $compile = system($^X, '-c', File::Spec->catfile($workspace, $file));
+		next if $compile != 0;	# skip invalid mutants
 
-		next if $compile != 0;   # skip invalid mutants
-
-		my $survived = system("prove -l $opt{tests}") == 0;
+		my $survived = (system('prove', $opt{tests}) == 0);
 
 		$total++;
 
 		if ($survived) {
-			push @survivors, $mutant;
+			push @survivors, $mutant->id();
 		} else {
 			$killed++;
 		}
@@ -109,10 +106,10 @@ for my $file (@files) {
 my $score = $total ? sprintf('%.2f', ($killed / $total) * 100) : 100;
 
 unless ($opt{quiet}) {
-    print "\nMutation Score: $score%\n";
-    print "Total: $total\n";
-    print "Killed: $killed\n";
-    print "Survived: ", scalar(@survivors), "\n";
+	print "\nMutation Score: $score%\n";
+	print "Total: $total\n";
+	print "Killed: $killed\n";
+	print "Survived: ", scalar(@survivors), "\n";
 }
 
 if ($opt{json}) {
