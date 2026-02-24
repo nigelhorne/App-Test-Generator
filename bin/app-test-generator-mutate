@@ -11,12 +11,12 @@ use Time::HiRes qw(time);
 use App::Test::Generator::Mutator;
 
 my %opt = (
-    lib        => 'lib',
-    tests      => 't',
-    min_score  => 0,
-    fail_fast  => 0,
-    verbose    => 0,
-    quiet      => 0,
+	lib        => 'lib',
+	tests      => 't',
+	min_score  => 0,
+	fail_fast  => 0,
+	verbose    => 0,
+	quiet      => 0,
 );
 
 GetOptions(
@@ -69,49 +69,44 @@ my $killed    = 0;
 my @survivors;
 
 for my $file (@files) {
+	my $mutator = App::Test::Generator::Mutator->new(
+		file    => $file,
+		lib_dir => $opt{lib},
+	);
 
-    my $mutator = App::Test::Generator::Mutator->new(
-        file    => $file,
-        lib_dir => $opt{lib},
-    );
+	my @mutants = $mutator->generate_mutants();
 
-    my @mutants = $mutator->generate_mutants;
+	for my $mutant (@mutants) {
 
-    for my $mutant (@mutants) {
+		my $workspace = $mutator->prepare_workspace();
 
-        my $workspace = $mutator->prepare_workspace();
+		$mutator->apply_mutant($mutant);
 
-        $mutator->apply_mutant($mutant);
+		local $ENV{PERL5LIB} = "$workspace:$workspace/lib" . ($ENV{PERL5LIB} ? ":$ENV{PERL5LIB}" : '');
 
-        local $ENV{PERL5LIB} =
-            "$workspace:$workspace/lib" .
-            ($ENV{PERL5LIB} ? ":$ENV{PERL5LIB}" : '');
+		my $compile = system($^X, '-c', "$workspace/$file");
 
-	my $compile = system($^X, '-c', "$workspace/$file");
+		next if $compile != 0;   # skip invalid mutants
 
-	next if $compile != 0;   # skip invalid mutants
+		my $survived = system("prove -l $opt{tests}") == 0;
 
-        my $survived =
-            system("prove -l $opt{tests}") == 0;
+		$total++;
 
-        if ($survived) {
-            push @survivors, $mutant;
-        }
-        else {
-            $killed++;
-        }
+		if ($survived) {
+			push @survivors, $mutant;
+		} else {
+			$killed++;
+		}
 
-        # workspace auto-destroyed when scope ends
-    }
+		# workspace auto-destroyed when scope ends
+	}
 }
 
 # -------------------------
 # Report
 # -------------------------
 
-my $score = $total
-    ? sprintf("%.2f", ($killed / $total) * 100)
-    : 100;
+my $score = $total ? sprintf('%.2f', ($killed / $total) * 100) : 100;
 
 unless ($opt{quiet}) {
     print "\nMutation Score: $score%\n";

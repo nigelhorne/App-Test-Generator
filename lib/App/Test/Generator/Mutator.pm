@@ -17,7 +17,7 @@ use App::Test::Generator::Mutation::ConditionalInversion;
 sub new {
 	my ($class, %args) = @_;
 
-    die "file required" unless $args{file};
+	die 'file required' unless $args{file};
 
     my $self = bless {
         file      => $args{file},
@@ -34,41 +34,37 @@ sub new {
 }
 
 sub generate_mutants {
-    my ($self) = @_;
+	my $self = $_[0];
 
-    my $doc = PPI::Document->new($self->{file})
-        or die "Unable to parse $self->{file}";
+	my $doc = PPI::Document->new($self->{file}) or die "Unable to parse $self->{file}";
 
-    my @mutants;
+	my @mutants;
 
-    for my $mutation (@{$self->{mutations}}) {
-        push @mutants, $mutation->mutate($doc);
-    }
+	for my $mutation (@{$self->{mutations}}) {
+		push @mutants, $mutation->mutate($doc);
+	}
 
-    return @mutants;
+	return @mutants;
 }
 
 sub apply_mutant {
-    my ($self, $mutant) = @_;
+	my ($self, $mutant) = @_;
 
-    my $workspace = $self->{workspace}
-        or die "Workspace not prepared";
+	my $workspace = $self->{workspace} or die 'Workspace not prepared';
 
-    my $relative = $self->{relative}
-        or die "Relative path not set";
+	my $relative = $self->{relative} or die 'Relative path not set';
 
-    my $target = File::Spec->catfile(
-        $workspace,
-        $self->{lib_dir},
-        $relative,
-    );
+	my $target = File::Spec->catfile(
+		$workspace,
+		$self->{lib_dir},
+		$relative,
+	);
 
-    my $doc = PPI::Document->new($target)
-        or die "Failed to parse $target";
+	my $doc = PPI::Document->new($target) or die "Failed to parse $target";
 
-    $mutant->{transform}->($doc);
+	$mutant->{transform}->($doc);
 
-    $doc->save($target);
+	$doc->save($target);
 }
 
 sub revert {
@@ -78,12 +74,12 @@ sub revert {
 }
 
 sub run_tests {
-    my ($self) = @_;
-    return system($^X, '-Mblib', '$(which prove)', '-l', 't/') == 0;
+	my $self = $_[0];
+	return system($^X, '-Mblib', '$(which prove)', '-l', 't/') == 0;
 }
 
 sub prepare_workspace {
-    my ($self) = @_;
+	my $self = $_[0];
 
     my $tmp = tempdir(CLEANUP => 1);
 

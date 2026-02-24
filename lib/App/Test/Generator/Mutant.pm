@@ -4,14 +4,13 @@ use strict;
 use warnings;
 
 sub new {
-    my ($class, %args) = @_;
+	my ($class, %args) = @_;
 
-    for my $required (qw/id description original line transform/) {
-        die "Missing required attribute: $required"
-            unless exists $args{$required};
-    }
+	for my $required (qw/id description original line transform/) {
+		die "Missing required attribute: $required" unless exists $args{$required};
+	}
 
-    return bless \%args, $class;
+	return bless \%args, $class;
 }
 
 sub id          { $_[0]->{id} }
