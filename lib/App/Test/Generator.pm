@@ -26,6 +26,7 @@ use File::Spec;
 use Module::Load::Conditional qw(check_install can_load);
 use Params::Get;
 use Params::Validate::Strict;
+use Readonly::Values::Boolean;
 use Scalar::Util qw(looks_like_number);
 use re 'regexp_pattern';
 use Template;
@@ -1940,10 +1941,8 @@ sub _normalize_config
 	foreach my $field (CONFIG_TYPES) {
 		next if($field eq 'properties');	# Not a boolean
 		if(exists($config->{$field})) {
-			if(($config->{$field} eq 'false') || ($config->{$field} eq 'off') || ($config->{$field} eq 'no')) {
-				$config->{$field} = 0;
-			} elsif(($config->{$field} eq 'true') || ($config->{$field} eq 'on') || ($config->{$field} eq 'yes')) {
-				$config->{$field} = 1;
+			if(defined(my $b = $Readonly::Values::Boolean::booleans{$config->{$field}})) {
+				$config->{$field} = $b;
 			}
 		} else {
 			$config->{$field} = 1;
@@ -2485,13 +2484,8 @@ sub _get_semantic_generators {
 		uuid => {
 			code => q{
 				Gen {
-					sprintf('%08x-%04x-%04x-%04x-%012x',
-						int(rand(0xffffffff)),
-						int(rand(0xffff)),
-						(int(rand(0xffff)) & 0x0fff) | 0x4000,
-						(int(rand(0xffff)) & 0x3fff) | 0x8000,
-						int(rand(0x1000000000000))
-					);
+					require UUID::Tiny;
+					UUID::Tiny::create_uuid_as_string(UUID::Tiny::UUID_V4());
 				}
 			},
 			description => 'Valid UUIDv4 identifiers',

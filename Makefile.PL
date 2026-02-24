@@ -38,11 +38,14 @@ WriteMakefile(
 		'PPI' => 0,
 		'Pod::Simple' => 0,
 		'Pod::Usage' => 0,
+		'Readonly::Values::Boolean' => 0,
 		'Return::Set' => 0.03,
+		'UUID::Tiny' => 0,
 		're' => 0,
 		'Safe' => 0,
 		'Symbol' => 0,
 		'Template' => 0,
+		'UUID::Tiny' => 0,
 		'YAML::XS' => 0
 	}, TEST_REQUIRES => {
 		'Cwd' => 0,
