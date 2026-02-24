@@ -14,6 +14,8 @@ jobs:
       - run: cpanm --installdeps .
       - run: prove -l t/
 
+      - run: echo "$(pwd)/local/bin" >> $GITHUB_PATH
+
       - run: app-test-generator-mutate \
               --lib lib \
               --min-score 85 \

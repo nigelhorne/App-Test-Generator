@@ -8,9 +8,11 @@ use PPI;
 
 use App::Test::Generator::Mutation::BooleanNegation;
 use App::Test::Generator::Mutation::ReturnUndef;
+use App::Test::Generator::Mutation::NumericBoundary;
+use App::Test::Generator::Mutation::ConditionalInversion;
 
 sub new {
-    my ($class, %args) = @_;
+	my ($class, %args) = @_;
 
     die "file required" unless $args{file};
 
@@ -19,6 +21,8 @@ sub new {
         mutations => [
             App::Test::Generator::Mutation::BooleanNegation->new,
             App::Test::Generator::Mutation::ReturnUndef->new,
+		App::Test::Generator::Mutation::NumericBoundary->new,
+		App::Test::Generator::Mutation::ConditionalInversion->new,
         ],
     }, $class;
 
@@ -46,19 +50,14 @@ sub apply_mutant {
     copy($self->{file}, "$self->{file}.bak")
         or die "Backup failed";
 
-    open my $in,  '<', "$self->{file}.bak" or die $!;
-    open my $out, '>', $self->{file}        or die $!;
+    my $doc = PPI::Document->new("$self->{file}.bak")
+        or die "Parse failed";
 
-    while (<$in>) {
-        if ($. == $mutant->line) {
-            print $out $mutant->mutated, "\n";
-        } else {
-            print $out $_;
-        }
+    if ($mutant->{transform}) {
+        $mutant->{transform}->($doc);
     }
 
-    close $in;
-    close $out;
+    $doc->save($self->{file});
 }
 
 sub revert {
