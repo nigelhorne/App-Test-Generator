@@ -1179,7 +1179,7 @@ sub new {
 		confidence_threshold => $params->{confidence_threshold} // 0.5,
 		include_private => $params->{include_private} // 0,	# include _private methods
 		max_parameters => $params->{max_parameters} // 20,	# safety limit
-		strict_pod => _validate_strictness_level($params->{strict_pod}),  # Enable strict POD checking
+		strict_pod => _validate_strictness_level($params->{strict_pod}),	# Enable strict POD checking
 	};
 
 	# Validate input file exists
