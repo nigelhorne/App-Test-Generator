@@ -1,0 +1,20 @@
+---
+name: Mutation Testing
+
+on: [push, pull_request]
+
+jobs:
+  mutate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shogo82148/actions-setup-perl@v1
+
+      - run: cpanm --installdeps .
+      - run: prove -l t/
+
+      - run: app-test-generator-mutate \
+              --lib lib \
+              --min-score 85 \
+              --json mutation.json
