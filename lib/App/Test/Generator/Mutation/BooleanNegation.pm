@@ -25,13 +25,21 @@ sub mutate {
         my $original = $ret->content;
         my $line     = $ret->location->[0];
 
-        my $mutated = "return !(" . $expr->content . ");";
-
         push @mutants, App::Test::Generator::Mutant->new(
             id          => "BOOL_NEGATE_$line",
             description => "Negate return expression",
             original    => $original,
-            mutated     => $mutated,
+            transform => sub {
+    my ($doc) = @_;
+
+    my $stmt = _find_stmt_by_line($doc, $line)
+        or return;
+
+    # Example simple rewrite:
+    $stmt->replace(
+        PPI::Statement->new("return !($expr->content);")
+    );
+},
             line        => $line,
         );
     }

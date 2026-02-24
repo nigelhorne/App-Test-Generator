@@ -34,7 +34,19 @@ sub mutate {
             id          => "NUM_BOUNDARY_$line",
             description => "Numeric boundary flip $original → $flip{$original}",
             original    => $original,
-            mutated     => $flip{$original},
+	    transform => sub {
+    my ($doc) = @_;
+
+    my $ops = $doc->find('PPI::Token::Operator') || [];
+
+    for my $op (@$ops) {
+        my $content = $op->content;
+
+        next unless exists $flip{$content};
+
+        $op->set_content($flip{$content});
+    }
+},
             line        => $line,
         );
     }

@@ -24,12 +24,21 @@ sub mutate {
         my $line     = $ret->location->[0];
 
         push @mutants, App::Test::Generator::Mutant->new(
-            id          => "RETURN_UNDEF_$line",
-            description => "Force return undef",
-            original    => $original,
-            mutated     => "return undef;",
-            line        => $line,
+    id          => "RETURN_UNDEF_$line",
+    description => "Force return undef",
+    line        => $line,
+    original    => $original,
+    transform   => sub {
+        my ($doc) = @_;
+
+        my $stmt = _find_stmt_by_line($doc, $line)
+            or return;
+
+        $stmt->replace(
+            PPI::Statement->new('return undef;')
         );
+    },
+);
     }
 
     return @mutants;
