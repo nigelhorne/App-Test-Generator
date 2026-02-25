@@ -134,18 +134,26 @@ sub _write_file_report {
 
 	print $out "<h1>$file</h1>\n";
 
+	print $out qq{
+		<div class="legend">
+			<span class="legend-box survived"></span> Survived
+			<span class="legend-box killed"></span> Killed
+			<span class="legend-box none"></span> No mutation
+		</div>
+	};
+
 	my %survived_by_line;
-my %killed_by_line;
+	my %killed_by_line;
 
-for my $m (@{ $mutants->{survived} || [] }) {
-    next unless defined $m->{line};
-    push @{ $survived_by_line{ $m->{line} } }, $m;
-}
+	for my $m (@{ $mutants->{survived} || [] }) {
+		next unless defined $m->{line};
+		push @{ $survived_by_line{ $m->{line} } }, $m;
+	}
 
-for my $m (@{ $mutants->{killed} || [] }) {
-    next unless defined $m->{line};
-    push @{ $killed_by_line{ $m->{line} } }, $m;
-}
+	for my $m (@{ $mutants->{killed} || [] }) {
+		next unless defined $m->{line};
+		push @{ $killed_by_line{ $m->{line} } }, $m;
+	}
 
 	print $out "<pre>\n";
 
@@ -155,27 +163,29 @@ for my $m (@{ $mutants->{killed} || [] }) {
 
 		my $class = '';
 
-if ($survived_by_line{$line_no}) {
-    $class = 'survived';
-} elsif ($killed_by_line{$line_no}) {
-    $class = 'killed';
-}
+		if ($survived_by_line{$line_no}) {
+			$class = 'survived';
+		} elsif ($killed_by_line{$line_no}) {
+			$class = 'killed';
+		}
 		my $details = '';
 
-my @line_mutants = (
-    @{ $survived_by_line{$line_no} || [] },
-    @{ $killed_by_line{$line_no}   || [] },
-);
+		my @line_mutants = (
+			@{ $survived_by_line{$line_no} || [] },
+			@{ $killed_by_line{$line_no} || [] },
+		);
 
-if (@line_mutants) {
-    $details = '<details><summary>Mutants</summary><ul>';
-    for my $m (@line_mutants) {
-        my $id     = $m->{id} // 'unknown';
-        my $status = $m->{status} // '';
-        $details .= "<li>$id ($status)</li>";
-    }
-    $details .= '</ul></details>';
-}
+		if (@line_mutants) {
+			$details = '<details><summary>Mutants</summary><ul>';
+			for my $m (@line_mutants) {
+				my $id     = $m->{id} // 'unknown';
+				my $description = $m->{description} // '';
+				my $status = $m->{status} // '';
+				$details .= "<li>$id: $description ($status)</li>";
+			}
+			$details .= '</ul></details>';
+		}
+
 		print $out qq{<span class="$class">};
 		print $out sprintf("%5d: %s", $line_no, $content);
 		print $out "</span>$details";
@@ -189,13 +199,13 @@ if (@line_mutants) {
 }
 
 sub _file_score {
-    my ($file_data) = @_;
+	my $file_data = $_[0];
 
-    my $killed   = scalar @{ $file_data->{killed}   || [] };
-    my $survived = scalar @{ $file_data->{survived} || [] };
-    my $total    = $killed + $survived;
+	my $killed   = scalar @{ $file_data->{killed}   || [] };
+	my $survived = scalar @{ $file_data->{survived} || [] };
+	my $total    = $killed + $survived;
 
-    return $total ? ($killed / $total) * 100 : 0;
+	return $total ? ($killed / $total) * 100 : 0;
 }
 
 # --------------------------------------------------
@@ -203,7 +213,7 @@ sub _file_score {
 # --------------------------------------------------
 
 sub _header {
-    return qq{
+	return qq{
 <!DOCTYPE html>
 <html>
 <head>
@@ -228,6 +238,26 @@ th {
 pre { line-height: 1.4; }
 
 details { margin-left: 2em; }
+.legend {
+    margin-bottom: 1em;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid #aaa;
+}
+
+.legend-box.survived { background-color: #f8d7da; }
+.legend-box.killed   { background-color: #d4edda; }
+.legend-box.none     { background-color: #ffffff; }
+
+.nav {
+    margin-bottom: 1em;
+}
 </style>
 </head>
 <body>
