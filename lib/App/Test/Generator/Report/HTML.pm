@@ -24,30 +24,19 @@ sub generate {
 	_write_index($output_dir, $data, $files);
 
 	# Pre-sort files worst-first so navigation order matches index order
-my @sorted_files = sort {
-    _file_score($files->{$a}) <=> _file_score($files->{$b})
-    ||
-    $a cmp $b
-} keys %$files;
+	my @sorted_files = sort { _file_score($files->{$a}) <=> _file_score($files->{$b}) || $a cmp $b } keys %$files;
 
-for my $i (0 .. $#sorted_files) {
+	for my $i (0 .. $#sorted_files) {
+		my $file = $sorted_files[$i];
 
-    my $file = $sorted_files[$i];
+		# Only assign previous if this is NOT the first file
+		my $prev = $i > 0 ? $sorted_files[$i - 1] : undef;
 
-    # Only assign previous if this is NOT the first file
-    my $prev = $i > 0 ? $sorted_files[$i - 1] : undef;
+		# Only assign next if this is NOT the last file
+		my $next = $i < $#sorted_files ? $sorted_files[$i + 1] : undef;
 
-    # Only assign next if this is NOT the last file
-    my $next = $i < $#sorted_files ? $sorted_files[$i + 1] : undef;
-
-    _write_file_report(
-        $output_dir,
-        $file,
-        $files->{$file},
-        $prev,
-        $next,
-    );
-}
+		_write_file_report($output_dir, $file, $files->{$file}, $prev, $next);
+	}
 }
 
 # --------------------------------------------------
@@ -203,65 +192,105 @@ sub _write_file_report {
 		my $line_no = $i + 1;
 		my $content = encode_entities($lines[$i]);
 
-		my $class = '';
+# --------------------------------------------------
+# Determine mutation status for this line
+# --------------------------------------------------
 
-		my $survivor_count = scalar @{ $survived_by_line{$line_no} || [] };
-		my $killed_count = scalar @{ $killed_by_line{$line_no} || [] };
+my $survivor_count = scalar @{ $survived_by_line{$line_no} || [] };
+my $killed_count   = scalar @{ $killed_by_line{$line_no}   || [] };
 
-		if ($survivor_count) {
-			$class = _survivor_class($survivor_count);
-		} elsif ($killed_count) {
-			$class = 'killed';
-		}
-
-		my $details = '';
-
-		my @line_mutants = (
-			@{ $survived_by_line{$line_no} || [] },
-			@{ $killed_by_line{$line_no} || [] },
-		);
-
-		if (@line_mutants) {
-			$details = '<details><summary>Mutants</summary><ul>';
-			for my $m (@line_mutants) {
-				my $id = $m->{id} // 'unknown';
-				my $description = $m->{description} // '';
-				my $status = $m->{status} // '';
-				$details .= "<li>$id: $description ($status)</li>";
-			}
-			$details .= '</ul></details>';
-		}
-
-		# --------------------------------------------------
-		# Generate advisory tooltip for this line
-		# --------------------------------------------------
-
+my $class   = '';
 my $tooltip = '';
 
+# -----------------------------
+# Survived mutations (red shades)
+# -----------------------------
 if ($survivor_count) {
 
-    # If mutants survived, tests failed to detect behaviour change
-    if ($survivor_count == 1) {
-        $tooltip = "A mutation on this line survived. Add or strengthen tests for this condition.";
-    }
-    else {
-        $tooltip = "$survivor_count mutations survived here. Tests likely do not assert boundary or branch behaviour thoroughly.";
+    # Assign intensity class based on number of survivors
+    if    ($survivor_count == 1) { $class = 'survived-1'; }
+    elsif ($survivor_count == 2) { $class = 'survived-2'; }
+    else                         { $class = 'survived-3'; }
+
+    # Collect smart advice per mutation type
+    my %unique_advice;
+
+    for my $m (@{ $survived_by_line{$line_no} }) {
+        my $advice = _mutation_advice($m);
+        $unique_advice{$advice} = 1 if $advice;
     }
 
+    $tooltip = join(" ", keys %unique_advice);
+
 }
+# -----------------------------
+# Killed mutations (green)
+# -----------------------------
 elsif ($killed_count) {
 
-    # All mutations killed — good coverage
-    $tooltip = "Mutations on this line were killed. Tests are effectively covering this logic.";
+    $class   = 'killed';
+    $tooltip = "Mutations here were killed. Tests are effectively covering this logic.";
 
 }
 
-my $tooltip_attr = $tooltip
-    ? qq{ class="$class tooltip" data-tooltip="$tooltip"}
-    : qq{ class="$class"};
+# --------------------------------------------------
+# Render the line with colour + optional tooltip
+# --------------------------------------------------
 
-print $out qq{<span$tooltip_attr>};
+# Add tooltip class only if tooltip text exists
+my $extra_class = $tooltip ? " tooltip" : "";
+
+# Escape tooltip text for HTML safety
+$tooltip =~ s/"/&quot;/g if $tooltip;
+
+my $tooltip_attr = $tooltip
+    ? qq{ data-tooltip="$tooltip"}
+    : '';
+
+print $out qq{<span class="$class$extra_class"$tooltip_attr>};
 print $out sprintf("%5d: %s", $line_no, $content);
+# --------------------------------------------------
+# Build expandable mutant details for this line
+# --------------------------------------------------
+
+my @line_mutants;
+
+push @line_mutants, @{ $survived_by_line{$line_no} || [] };
+push @line_mutants, @{ $killed_by_line{$line_no}   || [] };
+
+my $details = '';
+
+if (@line_mutants) {
+
+    # Count totals for summary label
+    my $total = scalar @line_mutants;
+    my $survived = scalar @{ $survived_by_line{$line_no} || [] };
+    my $killed   = scalar @{ $killed_by_line{$line_no}   || [] };
+
+    # Create expandable section
+    $details .= qq{
+<details class="mutant-details">
+<summary>Mutants (Total: $total, Killed: $killed, Survived: $survived)</summary>
+<ul>
+};
+
+    for my $m (@line_mutants) {
+
+        my $id = $m->{id} // 'unknown';
+        my $type = $m->{type} // '';
+
+        $details .= "<li><b>$id</b>";
+
+        # Show mutation type if available
+        if ($type) {
+            $details .= " ($type)";
+        }
+
+        $details .= "</li>\n";
+    }
+
+    $details .= "</ul></details>\n";
+}
 print $out "</span>$details";
 	}
 
@@ -280,6 +309,36 @@ sub _file_score {
 	my $total = $killed + $survived;
 
 	return $total ? ($killed / $total) * 100 : 0;
+}
+
+# --------------------------------------------------
+# Generate smart advisory text based on mutation type
+# --------------------------------------------------
+sub _mutation_advice {
+	my $mutant = $_[0];
+
+	# Determine mutation type
+	# Prefer explicit type field if present
+	my $type = $mutant->{type};
+
+	# Fallback: infer from ID prefix
+	if (!$type && $mutant->{id}) {
+		($type) = $mutant->{id} =~ /^([A-Z_]+)/;
+	}
+
+	# Default advice
+	return 'Tests did not detect this behavioural change. Consider adding assertions.' unless $type;
+
+	# Advice per mutation type
+	return "Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)." if $type =~ /NUM|BOUNDARY/;
+
+	return "Return value mutation survived. Add tests asserting exact return values." if $type =~ /RETURN/;
+
+	return "Boolean logic mutation survived. Add tests covering both true and false paths." if $type =~ /BOOL|NEGATION/;
+
+	return "Comparison mutation survived. Verify equality and inequality cases explicitly." if $type =~ /COMPARE|EQUAL/;
+
+	return 'Mutation survived. Add targeted tests to validate this branch.'
 }
 
 sub _survivor_class {
@@ -364,6 +423,7 @@ body {
     color: var(--text);
 }
 
+
 table {
     border-collapse: collapse;
     width: 100%;
@@ -426,6 +486,16 @@ pre { line-height: 1.4; }
     font-size: 12px;
     border-radius: 6px;
     z-index: 1000;
+}
+
+.mutant-details {
+    margin-left: 2em;
+    font-size: 0.9em;
+}
+
+.mutant-details summary {
+    cursor: pointer;
+    font-weight: bold;
 }
 
 </style>
