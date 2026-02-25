@@ -14,36 +14,38 @@ sub mutate {
 	my @mutants;
 
 	for my $op (@$ops) {
-		my $content = $op->content;
+		my $content = $op->content();
 		next unless $content =~ /^(>|<|>=|<=|==)$/;
 
 		my $line = $op->location->[0];
-		my $original = $op->content;
+		my $original = $op->content();
 
 		my %flip = (
-			'>' => ('<', '>=', '<=', '=='),
-			'<' => ('>', '<=', '>='),
-			'>=' => ('>', '<', '<='),
-			'<=' => ('<', '>', '>='),
-			'==' => ('!='),
+			'>' => ['<', '>=', '<=', '=='],
+			'<' => ['>', '<=', '>='],
+			'>=' => ['>', '<', '<='],
+			'<=' => ['<', '>', '>='],
+			'==' => ['!='],
 		);
 
-		next unless scalar $flip{$original};
+		next unless $flip{$original};
 
-		foreach my $change ($flip{$original}) {
+		foreach my $change (@{$flip{$original}}) {
 			push @mutants, App::Test::Generator::Mutant->new(
 				id => "NUM_BOUNDARY_$line",
-				description => "Numeric boundary flip $original => $change",
+				description => "Numeric boundary flip $original to $change",
 				original => $original,
 				transform => sub {
-					my $doc = $_[0];
+					my $doc = @_[0];
 
 					my $ops = $doc->find('PPI::Token::Operator') || [];
 
 					for my $op (@$ops) {
-						my $content = $op->content();
+						next unless $op->line_number == $line;
+						next unless $op->content eq $original;
 
 						$op->set_content($change);
+						last;
 					}
 				},
 				line => $line,

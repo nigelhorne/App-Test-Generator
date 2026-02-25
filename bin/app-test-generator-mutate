@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Getopt::Long;
-use JSON::PP;
+use JSON::MaybeXS;
 use File::Find;
 use Time::HiRes qw(time);
 use Pod::Usage;
@@ -414,8 +414,6 @@ for my $file (@files) {
 			push @survivors, {
 				id => $mutant->id(),
 				file => $file,
-				original => $mutant->original(),
-				transform => $mutant->transform(),
 				description => $mutant->description(),
 			};
 		} else {
