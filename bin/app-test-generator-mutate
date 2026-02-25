@@ -411,7 +411,13 @@ for my $file (@files) {
 		$total++;
 
 		if ($survived) {
-			push @survivors, { id => $mutant->id(), file => $file };
+			push @survivors, {
+				id => $mutant->id(),
+				file => $file,
+				original => $mutant->original(),
+				transform => $mutant->transform(),
+				description => $mutant->description(),
+			};
 		} else {
 			$killed++;
 		}

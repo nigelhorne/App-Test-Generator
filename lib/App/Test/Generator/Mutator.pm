@@ -87,22 +87,23 @@ sub apply_mutant {
 }
 
 sub revert {
-    my ($self) = @_;
-    copy("$self->{file}.bak", $self->{file})
-        or die "Restore failed";
+	my $self = $_[0];
+
+	copy("$self->{file}.bak", $self->{file}) or die 'Restore failed';
 }
 
 sub run_tests {
 	my $self = $_[0];
+
 	return system($^X, '-Mblib', '$(which prove)', '-l', 't/') == 0;
 }
 
 sub prepare_workspace {
 	my $self = $_[0];
 
-    my $tmp = tempdir(CLEANUP => 1);
+	my $tmp = tempdir(CLEANUP => 1);
 
-    my $src = $self->{file};
+	my $src = $self->{file};
 
     # Derive relative path automatically
     my $relative = $src;

@@ -8,15 +8,15 @@ use App::Test::Generator::Mutant;
 use PPI;
 
 sub applies_to {
-    my ($self, $node) = @_;
-    return $node->isa('PPI::Statement::Return');
+	my ($self, $node) = @_;
+	return $node->isa('PPI::Statement::Return');
 }
 
 sub mutate {
-    my ($self, $doc) = @_;
+	my ($self, $doc) = @_;
 
-    my $returns = $doc->find('PPI::Statement::Return') || [];
-    my @mutants;
+	my $returns = $doc->find('PPI::Statement::Return') || [];
+	my @mutants;
 
     for my $ret (@$returns) {
 
@@ -30,16 +30,15 @@ sub mutate {
             description => "Negate return expression",
             original    => $original,
             transform => sub {
-    my ($doc) = @_;
+		my $doc = $_[0];
 
-    my $stmt = _find_stmt_by_line($doc, $line)
-        or return;
+		my $stmt = _find_stmt_by_line($doc, $line) or return;
 
-    # Example simple rewrite:
-    $stmt->replace(
-        PPI::Statement->new("return !($expr->content);")
-    );
-},
+		# Example simple rewrite:
+		$stmt->replace(
+			PPI::Statement->new("return !($expr->content);")
+		);
+	},
             line        => $line,
         );
     }
