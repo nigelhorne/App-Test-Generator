@@ -60,7 +60,7 @@ sub _write_index {
 
 	open my $out, '>', File::Spec->catfile($dir, 'index.html') or die $!;
 
-    print $out _header("Mutation Report");
+	print $out _header("Mutation Report");
 
     print $out "<h1>Mutation Report</h1>\n";
 
@@ -163,11 +163,14 @@ sub _write_file_report {
 
 		my $class = '';
 
-		if ($survived_by_line{$line_no}) {
-			$class = 'survived';
-		} elsif ($killed_by_line{$line_no}) {
-			$class = 'killed';
-		}
+		my $survivor_count = scalar @{ $survived_by_line{$line_no} || [] };
+my $killed_count   = scalar @{ $killed_by_line{$line_no}   || [] };
+
+if ($survivor_count) {
+    $class = _survivor_class($survivor_count);
+} elsif ($killed_count) {
+    $class = 'killed';
+}
 		my $details = '';
 
 		my @line_mutants = (
@@ -206,6 +209,16 @@ sub _file_score {
 	my $total    = $killed + $survived;
 
 	return $total ? ($killed / $total) * 100 : 0;
+}
+
+sub _survivor_class {
+    my ($count) = @_;
+
+    return 'survived-1' if $count == 1;
+    return 'survived-2' if $count == 2;
+    return 'survived-3' if $count >= 3;
+
+    return 'survived';
 }
 
 # --------------------------------------------------
@@ -258,6 +271,11 @@ details { margin-left: 2em; }
 .nav {
     margin-bottom: 1em;
 }
+.survived-1 { background-color: #f8d7da; }
+.survived-2 { background-color: #f5b7b1; }
+.survived-3 { background-color: #ec7063; }
+
+.killed { background-color: #d4edda; }
 </style>
 </head>
 <body>
