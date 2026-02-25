@@ -26,6 +26,61 @@ app-test-generator-mutate - Run mutation testing against a Perl test suite
     app-test-generator-mutate --json mutation.json
     app-test-generator-mutate --min-score 75
 
+=head1 QUICK START
+
+    app-test-generator-mutate --lib lib --min-score 85 --json mutation.json
+
+=head2 Numeric Boundary Mutants
+
+Kill Numeric Boundary Mutants first,
+these are the easiest wins.
+For example,
+C<NUM_BOUNDARY_1295>
+means something like C<if ($x > 10)> became C<if ($x >= 10)> or C<if ($x > 9)>.
+If that survived, it means, there is a missing edge value.
+Numeric mutations are important because they reveal missing edge coverage.
+This example means line 1295.
+
+So if that line contains something like this:
+
+  if(((scalar keys %input) == 1) && exists($input{'type'}) && !ref($input{'type'})) {
+
+You need to add a test where
+
+=over 4
+
+=item * %input contains more than one key
+
+=item * One of them is type
+
+=item * And behavior must be different
+
+=back
+
+For example, if you have a test with
+
+  %input = ( type => 'string' )
+
+add a test which sets
+
+  %input = (
+    type => 'string',
+    something_else => 'value'
+  )
+
+=head2 Conditional Inversions
+
+Then kill Conditional Inversions, for example, C<COND_INV_1186>,
+where C<unless (-f $file)> became C<if (-f $file)>.
+If that survives,
+test did not assert the negative case.
+
+Focus by file,
+if one file contributes 200 survivors, that's the weakest module.
+
+Frequently re-run.
+The loop should be: add 5-10 targeted tests, re-run mutation tool, watch score climb, repeat.
+
 =head1 DESCRIPTION
 
 This command-line tool performs mutation testing on a Perl codebase.
@@ -356,7 +411,7 @@ for my $file (@files) {
 		$total++;
 
 		if ($survived) {
-			push @survivors, $mutant->id();
+			push @survivors, { id => $mutant->id(), file => $file };
 		} else {
 			$killed++;
 		}

@@ -1504,14 +1504,14 @@ sub generate
 		my $type = $accessor{type};
 
 		if(!defined($new)) {
-			croak("$property: accessor $type can only work on an object");
+			croak("BUG: $property: accessor $type can only work on an object, incorrectly tagged as $type");
 		}
 		if($type eq 'getset') {
 			if(scalar(keys %input) != 1) {
-				croak("$property: getset must take one input argument");
+				croak("BUG: $property: getset must take one input argument, incorrectly tagged as getset");
 			}
 			if(scalar(keys %output) == 0) {
-				croak("$property: getset must give one output");
+				croak("BUG: $property: getset must give one output, incorrectly tagged as getset");
 			}
 		}
 	}
