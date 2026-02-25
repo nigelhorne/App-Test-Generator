@@ -105,9 +105,9 @@ sub _write_index {
 		my $survived = scalar @{ $files->{$file}{survived} || [] };
 		my $total    = $killed + $survived;
 
-	my $score = $total ? sprintf('%.2f', ($killed / $total) * 100) : 0;
+		my $score = $total ? sprintf('%.2f', ($killed / $total) * 100) : 0;
 
-	print $out qq{
+		print $out qq{
 <tr>
 <td><a href="$file.html">$file</a></td>
 <td>$total</td>
@@ -287,12 +287,52 @@ sub _header {
 <head>
 <meta charset="utf-8">
 <style>
-body { font-family: sans-serif; }
 
-.survived { background-color: #f8d7da; }  /* red */
-.killed   { background-color: #d4edda; }  /* green */
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
 
-tr:nth-child(even) { background: #f9f9f9; }
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+    font-family: sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
 
 table {
     border-collapse: collapse;
@@ -300,15 +340,15 @@ table {
 }
 
 th {
-    background: #333;
-    color: white;
+    background: var(--table-header);
+    color: var(--table-header-text);
 }
-pre { line-height: 1.4; }
 
-details { margin-left: 2em; }
-.legend {
-    margin-bottom: 1em;
-}
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
 
 .legend-box {
     display: inline-block;
@@ -316,31 +356,67 @@ details { margin-left: 2em; }
     height: 16px;
     margin: 0 6px 0 20px;
     vertical-align: middle;
-    border: 1px solid #aaa;
+    border: 1px solid var(--border);
 }
 
-.legend-box.survived { background-color: #f8d7da; }
-.legend-box.killed   { background-color: #d4edda; }
-.legend-box.none     { background-color: #ffffff; }
+pre { line-height: 1.4; }
 
-.nav {
-    margin-bottom: 1em;
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
 }
-.survived-1 { background-color: #f8d7da; }
-.survived-2 { background-color: #f5b7b1; }
-.survived-3 { background-color: #ec7063; }
 
-.killed { background-color: #d4edda; }
+.tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: #333;
+    color: #fff;
+    padding: 4px 8px;
+    white-space: nowrap;
+    font-size: 12px;
+    border-radius: 4px;
+    z-index: 1000;
+}
+
 </style>
 </head>
 <body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 };
 }
 
 sub _footer {
 	return qq{
-		</body>
-		</html>
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+</script>
+</body>
+</html>
 	};
 }
 
