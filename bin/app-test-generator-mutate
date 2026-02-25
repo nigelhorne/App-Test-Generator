@@ -332,7 +332,8 @@ my %opt = (
 	verbose    => 0,
 	quiet      => 0,
 	man	=> 0,
-	help	=> 0.
+	help	=> 0,
+	html => 0,
 );
 
 GetOptions(
@@ -346,6 +347,7 @@ GetOptions(
 	'verbose'      => \$opt{verbose},
 	'quiet'        => \$opt{quiet},
 	'help|h'          => \$opt{help},
+	'html=s'	=> \$opt{html},
 	'man|m'           => \$opt{man},
 ) or pod2usage(3);
 
@@ -446,6 +448,11 @@ if ($opt{json}) {
         survived   => \@survivors,
     });
     close $fh;
+}
+
+if ($opt{html}) {
+	require App::Test::Generator::Report::HTML;
+	App::Test::Generator::Report::HTML->generate($opt{json}, $opt{html});
 }
 
 exit 1 if $score < $opt{min_score};
