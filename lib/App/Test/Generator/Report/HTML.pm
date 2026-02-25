@@ -19,7 +19,7 @@ sub generate {
 
 	close $fh;
 
-	my $files = _group_by_file($data->{survived});
+	my $files = _group_by_file($data);
 
 	_write_index($output_dir, $data, $files);
 
@@ -33,19 +33,22 @@ sub generate {
 # --------------------------------------------------
 
 sub _group_by_file {
-    my ($survivors) = @_;
+	my $data = $_[0];
 
-    my %by_file;
+	my %files;
 
-    return \%by_file
-        unless $survivors && ref $survivors eq 'ARRAY';
+    for my $status (qw(survived killed)) {
+        next unless $data->{$status};
 
-    for my $m (@$survivors) {
-        my $file = ref($m) ? ($m->{file} // 'unknown') : 'unknown';
-        push @{ $by_file{$file} }, $m;
+        for my $m (@{ $data->{$status} }) {
+            next unless ref $m;
+            next unless defined $m->{file};
+
+            push @{ $files{ $m->{file} }{$status} }, $m;
+        }
     }
 
-    return \%by_file;
+    return \%files;
 }
 
 # --------------------------------------------------
@@ -72,17 +75,28 @@ sub _write_index {
     print $out "<table border='1' cellpadding='5'>\n";
     print $out "<tr><th>File</th><th>Survivors</th></tr>\n";
 
-    for my $file (sort keys %$files) {
-        my $count = scalar @{$files->{$file}};
-        my $safe  = encode_entities($file);
+    for my $file (sort {
+    _file_score($files->{$a}) <=> _file_score($files->{$b})
+} keys %$files) {
 
-        print $out qq{
+    my $killed   = scalar @{ $files->{$file}{killed}   || [] };
+    my $survived = scalar @{ $files->{$file}{survived} || [] };
+    my $total    = $killed + $survived;
+
+    my $score = $total
+        ? sprintf("%.2f", ($killed / $total) * 100)
+        : 0;
+
+    print $out qq{
 <tr>
-<td><a href="$safe.html">$safe</a></td>
-<td>$count</td>
+<td><a href="$file.html">$file</a></td>
+<td>$total</td>
+<td>$killed</td>
+<td>$survived</td>
+<td>$score%</td>
 </tr>
 };
-    }
+}
 
 	print $out "</table>\n";
 
@@ -120,17 +134,18 @@ sub _write_file_report {
 
 	print $out "<h1>$file</h1>\n";
 
-	my %by_line;
-	for my $m (@$mutants) {
-		next unless ref $m;
-		next unless defined $m->{line};
+	my %survived_by_line;
+my %killed_by_line;
 
-		push @{ $by_line{ $m->{line} } }, $m;
-	}
+for my $m (@{ $mutants->{survived} || [] }) {
+    next unless defined $m->{line};
+    push @{ $survived_by_line{ $m->{line} } }, $m;
+}
 
-	if((scalar keys %by_line) == 0) {
-		print $out "<p><b>Unable to determine line numbers</b></p>\n";
-	}
+for my $m (@{ $mutants->{killed} || [] }) {
+    next unless defined $m->{line};
+    push @{ $killed_by_line{ $m->{line} } }, $m;
+}
 
 	print $out "<pre>\n";
 
@@ -139,20 +154,28 @@ sub _write_file_report {
 		my $content = encode_entities($lines[$i]);
 
 		my $class = '';
+
+if ($survived_by_line{$line_no}) {
+    $class = 'survived';
+} elsif ($killed_by_line{$line_no}) {
+    $class = 'killed';
+}
 		my $details = '';
 
-		if (exists $by_line{$line_no}) {
-			# If mutants exist, mark as survived
-			$class = 'survived';
+my @line_mutants = (
+    @{ $survived_by_line{$line_no} || [] },
+    @{ $killed_by_line{$line_no}   || [] },
+);
 
-			$details = '<details><summary>Mutants</summary><ul>';
-			for my $m (@{$by_line{$line_no}}) {
-				my $id = $m->{id} // 'unknown';
-				$details .= "<li>$id</li>";
-			}
-			$details .= '</ul></details>';
-		}
-
+if (@line_mutants) {
+    $details = '<details><summary>Mutants</summary><ul>';
+    for my $m (@line_mutants) {
+        my $id     = $m->{id} // 'unknown';
+        my $status = $m->{status} // '';
+        $details .= "<li>$id ($status)</li>";
+    }
+    $details .= '</ul></details>';
+}
 		print $out qq{<span class="$class">};
 		print $out sprintf("%5d: %s", $line_no, $content);
 		print $out "</span>$details";
@@ -163,6 +186,16 @@ sub _write_file_report {
 	print $out _footer();
 
 	close $out;
+}
+
+sub _file_score {
+    my ($file_data) = @_;
+
+    my $killed   = scalar @{ $file_data->{killed}   || [] };
+    my $survived = scalar @{ $file_data->{survived} || [] };
+    my $total    = $killed + $survived;
+
+    return $total ? ($killed / $total) * 100 : 0;
 }
 
 # --------------------------------------------------
@@ -177,11 +210,21 @@ sub _header {
 <meta charset="utf-8">
 <style>
 body { font-family: sans-serif; }
-.summary { margin-bottom: 1em; }
 
 .survived { background-color: #f8d7da; }  /* red */
 .killed   { background-color: #d4edda; }  /* green */
 
+tr:nth-child(even) { background: #f9f9f9; }
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: #333;
+    color: white;
+}
 pre { line-height: 1.4; }
 
 details { margin-left: 2em; }
