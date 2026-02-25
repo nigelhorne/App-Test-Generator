@@ -232,16 +232,28 @@ sub _write_file_report {
 			$details .= '</ul></details>';
 		}
 
-		my $tooltip = '';
+		# --------------------------------------------------
+		# Generate advisory tooltip for this line
+		# --------------------------------------------------
 
-if (@line_mutants) {
-    my @info;
-    for my $m (@line_mutants) {
-        my $id     = $m->{id} // 'unknown';
-        my $status = $m->{status} // '';
-        push @info, "$id ($status)";
+my $tooltip = '';
+
+if ($survivor_count) {
+
+    # If mutants survived, tests failed to detect behaviour change
+    if ($survivor_count == 1) {
+        $tooltip = "A mutation on this line survived. Add or strengthen tests for this condition.";
     }
-    $tooltip = join(", ", @info);
+    else {
+        $tooltip = "$survivor_count mutations survived here. Tests likely do not assert boundary or branch behaviour thoroughly.";
+    }
+
+}
+elsif ($killed_count) {
+
+    # All mutations killed — good coverage
+    $tooltip = "Mutations on this line were killed. Tests are effectively covering this logic.";
+
 }
 
 my $tooltip_attr = $tooltip
@@ -394,22 +406,25 @@ pre { line-height: 1.4; }
     border-radius: 4px;
 }
 
+/* Tooltip container */
 .tooltip {
     position: relative;
     cursor: help;
 }
 
+/* Tooltip bubble */
 .tooltip:hover::after {
     content: attr(data-tooltip);
     position: absolute;
     left: 0;
     top: 100%;
-    background: #333;
-    color: #fff;
-    padding: 4px 8px;
-    white-space: nowrap;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
     font-size: 12px;
-    border-radius: 4px;
+    border-radius: 6px;
     z-index: 1000;
 }
 
