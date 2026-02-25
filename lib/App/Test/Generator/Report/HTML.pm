@@ -121,21 +121,24 @@ sub _write_file_report {
 
 	print $out "<h1>$file</h1>\n";
 
-    my %by_line;
-    for my $m (@$mutants) {
-    next unless ref $m;
-    next unless defined $m->{line};
 
-    push @{ $by_line{ $m->{line} } }, $m;
-}
+	my %by_line;
+	for my $m (@$mutants) {
+		next unless ref $m;
+		next unless defined $m->{line};
+
+		push @{ $by_line{ $m->{line} } }, $m;
+	}
+
 	if((scalar keys %by_line) == 0) {
 		print $out "<p><b>Unable to determine line numbers</b></p>\n";
 	}
 
 	print $out "<pre>\n";
-    for my $i (0 .. $#lines) {
-        my $line_no = $i + 1;
-        my $content = encode_entities($lines[$i]);
+
+	for my $i (0 .. $#lines) {
+		my $line_no = $i + 1;
+		my $content = encode_entities($lines[$i]);
 
         my $class = '';
         my $details = '';
@@ -144,7 +147,7 @@ sub _write_file_report {
             # If mutants exist, mark as survived
             $class = 'survived';
 
-            $details .= "<details><summary>Mutants</summary><ul>";
+            $details = '<details><summary>Mutants</summary><ul>';
             for my $m (@{$by_line{$line_no}}) {
                 my $id = $m->{id} // 'unknown';
                 $details .= "<li>$id</li>";
