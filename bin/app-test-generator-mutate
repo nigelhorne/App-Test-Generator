@@ -389,6 +389,7 @@ if (system("prove -l $opt{tests}") != 0) {
 my $total = 0;
 my $killed = 0;
 my @survivors;
+my @killed_mutants;
 
 for my $file (@files) {
 	my $mutator = App::Test::Generator::Mutator->new(
@@ -421,6 +422,12 @@ for my $file (@files) {
 			};
 		} else {
 			$killed++;
+			push @killed_mutants, {
+				id => $mutant->id(),
+				line => $mutant->line(),
+				file => $file,
+				description => $mutant->description(),
+			}
 		}
 
 		# workspace auto-destroyed when scope ends
@@ -447,6 +454,7 @@ if ($opt{json}) {
         total      => $total,
         killed     => $killed,
         survived   => \@survivors,
+	killed => \@killed_mutants,
     });
     close $fh;
 }

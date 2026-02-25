@@ -53,10 +53,9 @@ sub _group_by_file {
 # --------------------------------------------------
 
 sub _write_index {
-    my ($dir, $data, $files) = @_;
+	my ($dir, $data, $files) = @_;
 
-    open my $out, '>', File::Spec->catfile($dir, 'index.html')
-        or die $!;
+	open my $out, '>', File::Spec->catfile($dir, 'index.html') or die $!;
 
     print $out _header("Mutation Report");
 
@@ -85,11 +84,11 @@ sub _write_index {
 };
     }
 
-    print $out "</table>\n";
+	print $out "</table>\n";
 
-    print $out _footer();
+	print $out _footer();
 
-    close $out;
+	close $out;
 }
 
 # --------------------------------------------------
@@ -121,7 +120,6 @@ sub _write_file_report {
 
 	print $out "<h1>$file</h1>\n";
 
-
 	my %by_line;
 	for my $m (@$mutants) {
 		next unless ref $m;
@@ -140,31 +138,31 @@ sub _write_file_report {
 		my $line_no = $i + 1;
 		my $content = encode_entities($lines[$i]);
 
-        my $class = '';
-        my $details = '';
+		my $class = '';
+		my $details = '';
 
-        if (exists $by_line{$line_no}) {
-            # If mutants exist, mark as survived
-            $class = 'survived';
+		if (exists $by_line{$line_no}) {
+			# If mutants exist, mark as survived
+			$class = 'survived';
 
-            $details = '<details><summary>Mutants</summary><ul>';
-            for my $m (@{$by_line{$line_no}}) {
-                my $id = $m->{id} // 'unknown';
-                $details .= "<li>$id</li>";
-            }
-            $details .= '</ul></details>';
-        }
+			$details = '<details><summary>Mutants</summary><ul>';
+			for my $m (@{$by_line{$line_no}}) {
+				my $id = $m->{id} // 'unknown';
+				$details .= "<li>$id</li>";
+			}
+			$details .= '</ul></details>';
+		}
 
-        print $out qq{<span class="$class">};
-        print $out sprintf("%5d: %s", $line_no, $content);
-        print $out "</span>$details";
-    }
+		print $out qq{<span class="$class">};
+		print $out sprintf("%5d: %s", $line_no, $content);
+		print $out "</span>$details";
+	}
 
-    print $out "</pre>\n";
+	print $out "</pre>\n";
 
-    print $out _footer();
+	print $out _footer();
 
-    close $out;
+	close $out;
 }
 
 # --------------------------------------------------
@@ -194,10 +192,10 @@ details { margin-left: 2em; }
 }
 
 sub _footer {
-    return qq{
-</body>
-</html>
-};
+	return qq{
+		</body>
+		</html>
+	};
 }
 
 1;
