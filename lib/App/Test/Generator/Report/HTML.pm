@@ -173,11 +173,13 @@ sub _write_file_report {
 
 	print $out qq{</div>};
 
-	# Legend
+	# --------------------------------------------------
+	# Legend explaining line colours
+	# --------------------------------------------------
 	print $out qq{
 		<div class="legend">
-			<span class="legend-box survived"></span> Survived
-			<span class="legend-box killed"></span> Killed
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
 			<span class="legend-box none"></span> No mutation
 		</div>
 	};
@@ -230,9 +232,25 @@ sub _write_file_report {
 			$details .= '</ul></details>';
 		}
 
-		print $out qq{<span class="$class">};
-		print $out sprintf("%5d: %s", $line_no, $content);
-		print $out "</span>$details";
+		my $tooltip = '';
+
+if (@line_mutants) {
+    my @info;
+    for my $m (@line_mutants) {
+        my $id     = $m->{id} // 'unknown';
+        my $status = $m->{status} // '';
+        push @info, "$id ($status)";
+    }
+    $tooltip = join(", ", @info);
+}
+
+my $tooltip_attr = $tooltip
+    ? qq{ class="$class tooltip" data-tooltip="$tooltip"}
+    : qq{ class="$class"};
+
+print $out qq{<span$tooltip_attr>};
+print $out sprintf("%5d: %s", $line_no, $content);
+print $out "</span>$details";
 	}
 
 	print $out "</pre>\n";
@@ -357,6 +375,11 @@ th {
     margin: 0 6px 0 20px;
     vertical-align: middle;
     border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
 }
 
 pre { line-height: 1.4; }
