@@ -67,21 +67,21 @@ sub _write_index {
     print $out "<div class='summary'>\n";
     print $out "Score: $data->{score}%<br>\n";
     print $out "Total: $data->{total}<br>\n";
-    print $out "Killed: $data->{killed}<br>\n";
-    print $out "Survived: " . scalar(@{$data->{survived} || []}) . "<br>\n";
+    print $out 'Killed: ', scalar(@{$data->{killed} || []}), "<br>\n";
+    print $out 'Survived: ', scalar(@{$data->{survived} || []}), "<br>\n";
     print $out "</div>\n";
 
-    print $out "<h2>Files</h2>\n";
-    print $out "<table border='1' cellpadding='5'>\n";
-    print $out "<tr><th>File</th><th>Survivors</th></tr>\n";
+	print $out "<h2>Files</h2>\n";
+	print $out "<table border='1' cellpadding='5'>\n";
+	print $out "<tr><th>File</th><th>Survivors</th></tr>\n";
 
-    for my $file (sort {
-    _file_score($files->{$a}) <=> _file_score($files->{$b})
-} keys %$files) {
+	for my $file (
+		sort { _file_score($files->{$a}) <=> _file_score($files->{$b}) || $a cmp $b } keys %$files
+	) {
 
-    my $killed   = scalar @{ $files->{$file}{killed}   || [] };
-    my $survived = scalar @{ $files->{$file}{survived} || [] };
-    my $total    = $killed + $survived;
+		my $killed   = scalar @{ $files->{$file}{killed}   || [] };
+		my $survived = scalar @{ $files->{$file}{survived} || [] };
+		my $total    = $killed + $survived;
 
     my $score = $total
         ? sprintf("%.2f", ($killed / $total) * 100)
