@@ -23,9 +23,31 @@ sub generate {
 
 	_write_index($output_dir, $data, $files);
 
-	for my $file (keys %$files) {
-		_write_file_report($output_dir, $file, $files->{$file});
-	}
+	# Pre-sort files worst-first so navigation order matches index order
+my @sorted_files = sort {
+    _file_score($files->{$a}) <=> _file_score($files->{$b})
+    ||
+    $a cmp $b
+} keys %$files;
+
+for my $i (0 .. $#sorted_files) {
+
+    my $file = $sorted_files[$i];
+
+    # Only assign previous if this is NOT the first file
+    my $prev = $i > 0 ? $sorted_files[$i - 1] : undef;
+
+    # Only assign next if this is NOT the last file
+    my $next = $i < $#sorted_files ? $sorted_files[$i + 1] : undef;
+
+    _write_file_report(
+        $output_dir,
+        $file,
+        $files->{$file},
+        $prev,
+        $next,
+    );
+}
 }
 
 # --------------------------------------------------
@@ -37,18 +59,18 @@ sub _group_by_file {
 
 	my %files;
 
-    for my $status (qw(survived killed)) {
-        next unless $data->{$status};
+	for my $status (qw(survived killed)) {
+		next unless $data->{$status};
 
-        for my $m (@{ $data->{$status} }) {
-            next unless ref $m;
-            next unless defined $m->{file};
+		for my $m (@{ $data->{$status} }) {
+			next unless ref $m;
+			next unless defined $m->{file};
 
-            push @{ $files{ $m->{file} }{$status} }, $m;
-        }
-    }
+			push @{ $files{ $m->{file} }{$status} }, $m;
+		}
+	}
 
-    return \%files;
+	return \%files;
 }
 
 # --------------------------------------------------
@@ -83,11 +105,9 @@ sub _write_index {
 		my $survived = scalar @{ $files->{$file}{survived} || [] };
 		my $total    = $killed + $survived;
 
-    my $score = $total
-        ? sprintf("%.2f", ($killed / $total) * 100)
-        : 0;
+	my $score = $total ? sprintf('%.2f', ($killed / $total) * 100) : 0;
 
-    print $out qq{
+	print $out qq{
 <tr>
 <td><a href="$file.html">$file</a></td>
 <td>$total</td>
@@ -110,7 +130,7 @@ sub _write_index {
 # --------------------------------------------------
 
 sub _write_file_report {
-	my ($dir, $file, $mutants) = @_;
+	my ($dir, $file, $mutants, $prev, $next) = @_;
 
 	return unless -f $file;
 
@@ -134,6 +154,26 @@ sub _write_file_report {
 
 	print $out "<h1>$file</h1>\n";
 
+	# Nagivation bar
+	print $out qq{<div class="nav">};
+
+	if ($prev) {
+		my $link = _relative_link($file, $prev);
+		print $out qq{<a href="$link">⬅ Previous</a> };
+	}
+
+	print $out qq{<a href="},
+		File::Spec->abs2rel("index.html", File::Basename::dirname("$file.html")),
+		qq{">Index</a>};
+
+	if ($next) {
+		my $link = _relative_link($file, $next);
+		print $out qq{ <a href="$link">Next ➡</a>};
+	}
+
+	print $out qq{</div>};
+
+	# Legend
 	print $out qq{
 		<div class="legend">
 			<span class="legend-box survived"></span> Survived
@@ -164,13 +204,14 @@ sub _write_file_report {
 		my $class = '';
 
 		my $survivor_count = scalar @{ $survived_by_line{$line_no} || [] };
-my $killed_count   = scalar @{ $killed_by_line{$line_no}   || [] };
+		my $killed_count = scalar @{ $killed_by_line{$line_no} || [] };
 
-if ($survivor_count) {
-    $class = _survivor_class($survivor_count);
-} elsif ($killed_count) {
-    $class = 'killed';
-}
+		if ($survivor_count) {
+			$class = _survivor_class($survivor_count);
+		} elsif ($killed_count) {
+			$class = 'killed';
+		}
+
 		my $details = '';
 
 		my @line_mutants = (
@@ -181,7 +222,7 @@ if ($survivor_count) {
 		if (@line_mutants) {
 			$details = '<details><summary>Mutants</summary><ul>';
 			for my $m (@line_mutants) {
-				my $id     = $m->{id} // 'unknown';
+				my $id = $m->{id} // 'unknown';
 				my $description = $m->{description} // '';
 				my $status = $m->{status} // '';
 				$details .= "<li>$id: $description ($status)</li>";
@@ -204,21 +245,35 @@ if ($survivor_count) {
 sub _file_score {
 	my $file_data = $_[0];
 
-	my $killed   = scalar @{ $file_data->{killed}   || [] };
+	my $killed = scalar @{ $file_data->{killed} || [] };
 	my $survived = scalar @{ $file_data->{survived} || [] };
-	my $total    = $killed + $survived;
+	my $total = $killed + $survived;
 
 	return $total ? ($killed / $total) * 100 : 0;
 }
 
 sub _survivor_class {
-    my ($count) = @_;
+	my $count = $_[0];
 
-    return 'survived-1' if $count == 1;
-    return 'survived-2' if $count == 2;
-    return 'survived-3' if $count >= 3;
+	return 'survived-1' if $count == 1;
+	return 'survived-2' if $count == 2;
+	return 'survived-3' if $count >= 3;
 
-    return 'survived';
+	return 'survived';
+}
+
+# --------------------------------------------------
+# Compute relative link between two files
+# --------------------------------------------------
+sub _relative_link {
+	my ($from, $to) = @_;
+
+    # Convert both to .html filenames
+    $from .= '.html';
+    $to   .= '.html';
+
+    # Use File::Spec to compute correct relative path
+    return File::Spec->abs2rel($to, File::Basename::dirname($from));
 }
 
 # --------------------------------------------------
