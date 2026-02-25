@@ -8,8 +8,8 @@ use App::Test::Generator::Mutant;
 use PPI;
 
 sub applies_to {
-    my ($self, $node) = @_;
-    return $node->isa('PPI::Statement::Return');
+	my ($self, $node) = @_;
+	return $node->isa('PPI::Statement::Return');
 }
 
 sub mutate {
@@ -41,7 +41,7 @@ sub mutate {
 );
     }
 
-    return @mutants;
+	return @mutants;
 }
 
 1;
