@@ -17,7 +17,7 @@ use App::Test::Generator::Mutation::ConditionalInversion;
 
 =head1 NAME
 
-App::Test::Generator::Mutator - Generate Mutation Tests
+App::Test::Generator::Mutator - Generate mutation tests
 
 =head1 VERSION
 

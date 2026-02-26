@@ -459,10 +459,13 @@ if ($opt{json}) {
         survived   => \@survivors,
 	killed => \@killed_mutants,
     });
-    close $fh;
+	close $fh;
 }
 
 if ($opt{html}) {
+	if(!$opt{json}) {
+		die '--html needs --json';
+	}
 	require App::Test::Generator::Report::HTML;
 	App::Test::Generator::Report::HTML->generate($opt{json}, $opt{html});
 }
