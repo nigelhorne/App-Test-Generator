@@ -7,6 +7,14 @@ use App::Test::Generator::SchemaExtractor;
 use App::Test::Generator::TestWriter;
 use App::Test::Generator::Mutator;
 
+our $VERSION = '0.29';
+
+=head1 VERSION
+
+Version 0.29
+
+=cut
+
 sub new {
     my ($class, %args) = @_;
 

@@ -3,20 +3,27 @@ package App::Test::Generator::Planner::Isolation;
 use strict;
 use warnings;
 
+our $VERSION = '0.29';
+
+=head1 VERSION
+
+Version 0.29
+
+=cut
+
 sub new { bless {}, shift }
 
 sub plan {
-    my ($self, $schema, $strategy) = @_;
+	my ($self, $schema, $strategy) = @_;
 
-    my %isolation;
+	my %isolation;
 
-foreach my $method (keys %$strategy) {
+	foreach my $method (keys %$strategy) {
+		my $analysis = $schema->{$method}{_analysis} || {};
+		my $effects  = $analysis->{side_effects}     || {};
+		my $deps     = $analysis->{dependencies}     || {};
 
-    my $analysis = $schema->{$method}{_analysis} || {};
-    my $effects  = $analysis->{side_effects}     || {};
-    my $deps     = $analysis->{dependencies}     || {};
-
-    my %plan;
+		my %plan;
 
     # --- fixture choice (existing behaviour) ---
 
@@ -48,10 +55,10 @@ foreach my $method (keys %$strategy) {
         $plan{network} = 1;
     }
 
-    $isolation{$method} = \%plan;
-}
+		$isolation{$method} = \%plan;
+	}
 
-    return \%isolation;
+	return \%isolation;
 }
 
 1;

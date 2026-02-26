@@ -3,16 +3,16 @@ package App::Test::Generator::CoverageGuidedFuzzer;
 use strict;
 use warnings;
 
-our $VERSION = '0.28';
-
-=head1 VERSION
-
-Version 0.28
+our $VERSION = '0.29';
 
 =head1 NAME
 
 App::Test::Generator::CoverageGuidedFuzzer - AFL-style coverage-guided fuzzing
 for App::Test::Generator
+
+=head1 VERSION
+
+Version 0.29
 
 =head1 SYNOPSIS
 

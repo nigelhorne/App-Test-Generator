@@ -18,7 +18,8 @@ jobs:
 
       - run: echo "$(pwd)/local/bin" >> $GITHUB_PATH
 
-      - run: app-test-generator-mutate \
+      - run: bin/app-test-generator-mutate \
               --lib lib \
               --min-score 85 \
-              --json mutation.json
+              --json mutation.json \
+	      --html mutation_html

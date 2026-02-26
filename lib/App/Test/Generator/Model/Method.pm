@@ -3,6 +3,14 @@ package App::Test::Generator::Model::Method;
 use strict;
 use warnings;
 
+our $VERSION = '0.29';
+
+=head1 VERSION
+
+Version 0.29
+
+=cut
+
 sub new {
 	my ($class, %args) = @_;
 

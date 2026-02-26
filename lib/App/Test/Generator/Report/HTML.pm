@@ -8,6 +8,14 @@ use File::Path qw(make_path);
 use File::Spec;
 use HTML::Entities;
 
+our $VERSION = '0.29';
+
+=head1 VERSION
+
+Version 0.29
+
+=cut
+
 sub generate {
 	my ($class, $json_file, $output_dir) = @_;
 

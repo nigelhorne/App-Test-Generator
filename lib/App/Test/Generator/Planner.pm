@@ -9,12 +9,20 @@ use App::Test::Generator::Planner::Fixture;
 use App::Test::Generator::Planner::Mock;
 use App::Test::Generator::Planner::Grouping;
 
+our $VERSION = '0.29';
+
+=head1 VERSION
+
+Version 0.29
+
+=cut
+
 sub new {
-    my ($class, %args) = @_;
-    bless {
-        schemas  => $args{schemas},
-        package => $args{package},
-    }, $class;
+	my ($class, %args) = @_;
+	bless {
+		schemas  => $args{schemas},
+		package => $args{package},
+	}, $class;
 }
 
 sub plan_all {

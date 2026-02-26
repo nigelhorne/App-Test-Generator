@@ -21,7 +21,7 @@ App::Test::Generator::Mutator - Generate Mutation Tests
 
 =head1 VERSION
 
-Version 0.28
+Version 0.29
 
 =head1 DESCRIPTION
 

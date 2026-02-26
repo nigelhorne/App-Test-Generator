@@ -7,6 +7,14 @@ use App::Test::Generator::Mutant;
 
 use PPI;
 
+our $VERSION = '0.29';
+
+=head1 VERSION
+
+Version 0.29
+
+=cut
+
 sub applies_to {
 	my ($self, $node) = @_;
 	return $node->isa('PPI::Statement::Return');
