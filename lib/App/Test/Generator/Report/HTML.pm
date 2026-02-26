@@ -274,22 +274,22 @@ if (@line_mutants) {
 <ul>
 };
 
-    for my $m (@line_mutants) {
+	for my $m (@line_mutants) {
 
-        my $id = $m->{id} // 'unknown';
-        my $type = $m->{type} // '';
+		my $id = $m->{id} // 'unknown';
+		my $type = $m->{type} // '';
 
-        $details .= "<li><b>$id</b>";
+		$details .= "<li><b>$id</b>";
 
-        # Show mutation type if available
-        if ($type) {
-            $details .= " ($type)";
-        }
+		# Show mutation type if available
+		if ($type) {
+			$details .= " ($type)";
+		}
 
-        $details .= "</li>\n";
-    }
+		$details .= "</li>\n";
+	}
 
-    $details .= "</ul></details>\n";
+	$details .= "</ul></details>\n";
 }
 print $out "</span>$details";
 	}
@@ -483,19 +483,20 @@ pre { line-height: 1.4; }
     padding: 6px 10px;
     white-space: normal;
     max-width: 300px;
+    min-width: 30ch;
     font-size: 12px;
     border-radius: 6px;
     z-index: 1000;
 }
 
 .mutant-details {
-    margin-left: 2em;
-    font-size: 0.9em;
+	margin-left: 2em;
+	font-size: 0.9em;
 }
 
 .mutant-details summary {
-    cursor: pointer;
-    font-weight: bold;
+	cursor: pointer;
+	font-weight: bold;
 }
 
 </style>
