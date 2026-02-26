@@ -73,14 +73,14 @@ sub _write_index {
 
 	print $out _header("Mutation Report");
 
-    print $out "<h1>Mutation Report</h1>\n";
+	print $out "<h1>Mutation Report</h1>\n";
 
-    print $out "<div class='summary'>\n";
-    print $out "Score: $data->{score}%<br>\n";
-    print $out "Total: $data->{total}<br>\n";
-    print $out 'Killed: ', scalar(@{$data->{killed} || []}), "<br>\n";
-    print $out 'Survived: ', scalar(@{$data->{survived} || []}), "<br>\n";
-    print $out "</div>\n";
+	print $out "<div class='summary'>\n";
+	print $out "Score: $data->{score}%<br>\n";
+	print $out "Total: $data->{total}<br>\n";
+	print $out 'Killed: ', scalar(@{$data->{killed} || []}), "<br>\n";
+	print $out 'Survived: ', scalar(@{$data->{survived} || []}), "<br>\n";
+	print $out "</div>\n";
 
 	print $out "<h2>Files</h2>\n";
 	print $out "<table border='1' cellpadding='5'>\n";
@@ -90,9 +90,9 @@ sub _write_index {
 		sort { _file_score($files->{$a}) <=> _file_score($files->{$b}) || $a cmp $b } keys %$files
 	) {
 
-		my $killed   = scalar @{ $files->{$file}{killed}   || [] };
+		my $killed  = scalar @{ $files->{$file}{killed} || [] };
 		my $survived = scalar @{ $files->{$file}{survived} || [] };
-		my $total    = $killed + $survived;
+		my $total = $killed + $survived;
 
 		my $score = $total ? sprintf('%.2f', ($killed / $total) * 100) : 0;
 
@@ -105,7 +105,7 @@ sub _write_index {
 <td>$score%</td>
 </tr>
 };
-}
+	}
 
 	print $out "</table>\n";
 
@@ -192,105 +192,100 @@ sub _write_file_report {
 		my $line_no = $i + 1;
 		my $content = encode_entities($lines[$i]);
 
-# --------------------------------------------------
-# Determine mutation status for this line
-# --------------------------------------------------
+		# --------------------------------------------------
+		# Determine mutation status for this line
+		# --------------------------------------------------
 
-my $survivor_count = scalar @{ $survived_by_line{$line_no} || [] };
-my $killed_count   = scalar @{ $killed_by_line{$line_no}   || [] };
+		my $survivor_count = scalar @{ $survived_by_line{$line_no} || [] };
+		my $killed_count = scalar @{ $killed_by_line{$line_no} || [] };
 
-my $class   = '';
-my $tooltip = '';
+		my $class = '';
+		my $tooltip = '';
 
-# -----------------------------
-# Survived mutations (red shades)
-# -----------------------------
-if ($survivor_count) {
+		# -----------------------------
+		# Survived mutations (red shades)
+		# -----------------------------
+		if ($survivor_count) {
+			# Assign intensity class based on number of survivors
+			if ($survivor_count == 1) { $class = 'survived-1'; }
+			elsif ($survivor_count == 2) { $class = 'survived-2'; }
+			else { $class = 'survived-3'; }
 
-    # Assign intensity class based on number of survivors
-    if    ($survivor_count == 1) { $class = 'survived-1'; }
-    elsif ($survivor_count == 2) { $class = 'survived-2'; }
-    else                         { $class = 'survived-3'; }
+			# Collect smart advice per mutation type
+			my %unique_advice;
 
-    # Collect smart advice per mutation type
-    my %unique_advice;
+			for my $m (@{ $survived_by_line{$line_no} }) {
+				my $advice = _mutation_advice($m);
+				$unique_advice{$advice} = 1 if $advice;
+			}
 
-    for my $m (@{ $survived_by_line{$line_no} }) {
-        my $advice = _mutation_advice($m);
-        $unique_advice{$advice} = 1 if $advice;
-    }
+			$tooltip = join(' ', keys %unique_advice);
+		} elsif ($killed_count) {
+			# -----------------------------
+			# Killed mutations (green)
+			# -----------------------------
 
-    $tooltip = join(" ", keys %unique_advice);
-
-}
-# -----------------------------
-# Killed mutations (green)
-# -----------------------------
-elsif ($killed_count) {
-
-    $class   = 'killed';
-    $tooltip = "Mutations here were killed. Tests are effectively covering this logic.";
-
-}
-
-# --------------------------------------------------
-# Render the line with colour + optional tooltip
-# --------------------------------------------------
-
-# Add tooltip class only if tooltip text exists
-my $extra_class = $tooltip ? " tooltip" : "";
-
-# Escape tooltip text for HTML safety
-$tooltip =~ s/"/&quot;/g if $tooltip;
-
-my $tooltip_attr = $tooltip
-    ? qq{ data-tooltip="$tooltip"}
-    : '';
-
-print $out qq{<span class="$class$extra_class"$tooltip_attr>};
-print $out sprintf("%5d: %s", $line_no, $content);
-# --------------------------------------------------
-# Build expandable mutant details for this line
-# --------------------------------------------------
-
-my @line_mutants;
-
-push @line_mutants, @{ $survived_by_line{$line_no} || [] };
-push @line_mutants, @{ $killed_by_line{$line_no}   || [] };
-
-my $details = '';
-
-if (@line_mutants) {
-
-    # Count totals for summary label
-    my $total = scalar @line_mutants;
-    my $survived = scalar @{ $survived_by_line{$line_no} || [] };
-    my $killed   = scalar @{ $killed_by_line{$line_no}   || [] };
-
-    # Create expandable section
-    $details .= qq{
-<details class="mutant-details">
-<summary>Mutants (Total: $total, Killed: $killed, Survived: $survived)</summary>
-<ul>
-};
-
-	for my $m (@line_mutants) {
-
-		my $id = $m->{id} // 'unknown';
-		my $type = $m->{type} // '';
-
-		$details .= "<li><b>$id</b>";
-
-		# Show mutation type if available
-		if ($type) {
-			$details .= " ($type)";
+			$class = 'killed';
+			$tooltip = "Mutations here were killed. Tests are effectively covering this logic.";
 		}
+
+		# --------------------------------------------------
+		# Render the line with colour + optional tooltip
+		# --------------------------------------------------
+
+		# Add tooltip class only if tooltip text exists
+		my $extra_class = $tooltip ? " tooltip" : "";
+
+		# Escape tooltip text for HTML safety
+		$tooltip =~ s/"/&quot;/g if $tooltip;
+
+		my $tooltip_attr = $tooltip ? qq{ data-tooltip="$tooltip"} : '';
+
+		print $out qq{<span class="$class$extra_class"$tooltip_attr>};
+		print $out sprintf("%5d: %s", $line_no, $content);
+
+		# --------------------------------------------------
+		# Build expandable mutant details for this line
+		# --------------------------------------------------
+
+		my @line_mutants;
+
+		push @line_mutants, @{ $survived_by_line{$line_no} || [] };
+		push @line_mutants, @{ $killed_by_line{$line_no} || [] };
+
+		my $details = '';
+
+		if (@line_mutants) {
+			# Count totals for summary label
+			my $total = scalar @line_mutants;
+			my $survived = scalar @{ $survived_by_line{$line_no} || [] };
+			my $killed = scalar @{ $killed_by_line{$line_no} || [] };
+
+			# Create expandable section
+			$details = qq{
+				<details class="mutant-details">
+				<summary>Mutants (Total: $total, Killed: $killed, Survived: $survived)</summary>
+				<ul>
+			};
+
+			for my $m (@line_mutants) {
+				my $id = $m->{id} // 'unknown';
+				my $type = $m->{type} // '';
+				my $description = $m->{description} // '';
+
+				$details .= "<li><b>$id: $description</b>";
+
+				# Show mutation type if available
+				if ($type) {
+					$details .= " ($type)";
+				}
 
 				$details .= "</li>\n";
 			}
 
 			$details .= "</ul></details>\n";
 		}
+
 		print $out "</span>$details";
 	}
 
@@ -357,12 +352,12 @@ sub _survivor_class {
 sub _relative_link {
 	my ($from, $to) = @_;
 
-    # Convert both to .html filenames
-    $from .= '.html';
-    $to   .= '.html';
+	# Convert both to .html filenames
+	$from .= '.html';
+	$to .= '.html';
 
-    # Use File::Spec to compute correct relative path
-    return File::Spec->abs2rel($to, File::Basename::dirname($from));
+	# Use File::Spec to compute correct relative path
+	return File::Spec->abs2rel($to, File::Basename::dirname($from));
 }
 
 # --------------------------------------------------
@@ -490,8 +485,8 @@ pre li {
 
 /* Tooltip container */
 .tooltip {
-    position: relative;
-    cursor: help;
+	position: relative;
+	cursor: help;
 }
 
 /* Tooltip bubble */
@@ -509,6 +504,7 @@ pre li {
     font-size: 12px;
     border-radius: 6px;
     z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
 }
 
 .mutant-details {
