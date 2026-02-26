@@ -36,7 +36,7 @@ sub mutate {
 				description => "Numeric boundary flip $original to $change",
 				original => $original,
 				transform => sub {
-					my $doc = @_[0];
+					my $doc = $_[0];
 
 					my $ops = $doc->find('PPI::Token::Operator') || [];
 

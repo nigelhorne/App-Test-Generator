@@ -286,12 +286,12 @@ if (@line_mutants) {
 			$details .= " ($type)";
 		}
 
-		$details .= "</li>\n";
-	}
+				$details .= "</li>\n";
+			}
 
-	$details .= "</ul></details>\n";
-}
-print $out "</span>$details";
+			$details .= "</ul></details>\n";
+		}
+		print $out "</span>$details";
 	}
 
 	print $out "</pre>\n";
@@ -456,6 +456,28 @@ th {
 
 pre { line-height: 1.4; }
 
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
 .nav { margin-bottom: 1em; }
 
 .toggle {
@@ -492,6 +514,12 @@ pre { line-height: 1.4; }
 .mutant-details {
 	margin-left: 2em;
 	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+    padding-left: 8ch;
+    margin: 0.2em 0;
 }
 
 .mutant-details summary {
