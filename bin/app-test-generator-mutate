@@ -166,6 +166,11 @@ The output structure:
 
 (Reserved for future use.)
 
+=head2 --mutation_level <full|fast>
+
+Setting to C<fast> removes redundant mutations and dedups mutations before running.
+The default is C<full>.
+
 =head2 --timeout <seconds>
 
 (Reserved for future use.)
@@ -335,6 +340,7 @@ my %opt = (
 	man	=> 0,
 	help	=> 0,
 	html => 0,
+	mutation_level => 'full',
 );
 
 GetOptions(
@@ -349,6 +355,7 @@ GetOptions(
 	'quiet'        => \$opt{quiet},
 	'help|h'          => \$opt{help},
 	'html=s'	=> \$opt{html},
+	'mutation_level=s'	=> \$opt{mutation_level},
 	'man|m'           => \$opt{man},
 ) or pod2usage(3);
 
@@ -396,6 +403,7 @@ for my $file (@files) {
 	my $mutator = App::Test::Generator::Mutator->new(
 		file => $file,
 		lib_dir => $opt{lib},
+		mutation_level => $opt{mutation_level},
 	);
 
 	my @mutants = $mutator->generate_mutants();

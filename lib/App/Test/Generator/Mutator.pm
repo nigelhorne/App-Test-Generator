@@ -27,9 +27,12 @@ Version 0.29
 
 B<App::Test::Generator::Mutator> is a mutation engine that programmatically alters Perl source files to evaluate the effectiveness of a project's test suite.
 It analyzes modules, generates systematic code mutations (such as conditional inversions,
-logical operator changes, and other behavioral tweaks), and applies them within an isolated workspace so tests can be executed safely against each modified variant.
+logical operator changes,
+and other behavioral tweaks),
+and applies them within an isolated workspace so tests can be executed safely against each modified variant.
 By tracking which mutants are "killed" (cause tests to fail) versus those that "survive" (tests still pass),
-the module enables calculation of a mutation score, providing a quantitative measure of how well the test suite detects unintended behavioral changes.
+the module enables calculation of a mutation score,
+providing a quantitative measure of how well the test suite detects unintended behavioral changes.
 
 =cut
 
@@ -39,8 +42,9 @@ sub new {
 	die 'file required' unless $args{file};
 
 	my $self = bless {
-		file      => $args{file},
-		lib_dir  => $args{lib_dir} || 'lib',
+		file => $args{file},
+		lib_dir => $args{lib_dir} || 'lib',
+		mutation_level => $args{mutation_level} || 'full',	# full or fast
 		mutations => [
 			App::Test::Generator::Mutation::BooleanNegation->new(),
 			App::Test::Generator::Mutation::ReturnUndef->new(),
@@ -63,6 +67,9 @@ sub generate_mutants {
 		push @mutants, $mutation->mutate($doc);
 	}
 
+	if($self->{mutation_level} eq 'fast') {
+		return @{_dedup_mutants(\@mutants)};
+	}
 	return @mutants;
 }
 
@@ -105,9 +112,9 @@ sub prepare_workspace {
 
 	my $src = $self->{file};
 
-    # Derive relative path automatically
-    my $relative = $src;
-    $relative =~ s/^\Q$self->{lib_dir}\E\/?//;
+	# Derive relative path automatically
+	my $relative = $src;
+	$relative =~ s/^\Q$self->{lib_dir}\E\/?//;
 
 	my $dst = File::Spec->catfile($tmp, $self->{lib_dir}, $relative);
 
@@ -116,9 +123,61 @@ sub prepare_workspace {
 	copy($src, $dst) or die "Copy failed from $src to $dst: $!";
 
 	$self->{workspace} = $tmp;
-	$self->{relative}  = $relative;
+	$self->{relative} = $relative;
 
 	return $tmp;
+}
+
+sub _dedup_mutants
+{
+	my $mutants = $_[0];
+	my @rc;
+	my %seen;
+
+	for my $m (@{$mutants}) {
+		my $key = join '|',
+			$m->{line},
+			$m->{original},
+			$m->{transform};
+
+		next if $seen{$key}++;
+
+		next if _is_redundant_mutation($m);
+
+		push @rc, $m;
+	}
+
+	return \@rc;
+}
+
+sub _is_redundant_mutation {
+	my $m = $_[0];
+
+	my $orig = $m->{original} // '';
+	my $new = $m->{transform} // '';
+
+	# Exact same code (safety guard)
+	return 1 if $orig eq $new;
+
+	# Arithmetic no-op
+	return 1 if $orig =~ /\+\s*0$/;
+	return 1 if $orig =~ /-\s*0$/;
+
+	# Double negation
+	return 1 if $orig =~ /^\!\!/;
+
+	# Boolean literal flip when already strict boolean
+	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
+
+	# Mutation inside comment
+	return 1 if $m->{line_content} && $m->{line_content} =~ /^\s*#/;
+
+	# Equivalent numeric comparison
+	if ($orig =~ /^\d+$/ && $new =~ /^\d+$/) {
+		return 1 if $orig == $new;
+	}
+
+	return 0;
 }
 
 =head1 SEE ALSO
