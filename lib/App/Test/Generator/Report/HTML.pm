@@ -2,6 +2,7 @@ package App::Test::Generator::Report::HTML;
 
 use strict;
 use warnings;
+use autodie qw(:all);
 
 use JSON::PP;
 use File::Path qw(make_path);
@@ -79,7 +80,7 @@ sub _write_index {
 
 	open my $out, '>', File::Spec->catfile($dir, 'index.html') or die $!;
 
-	print $out _header("Mutation Report");
+	print $out _header('Mutation Report');
 
 	print $out "<h1>Mutation Report</h1>\n";
 
@@ -92,13 +93,12 @@ sub _write_index {
 
 	print $out "<h2>Files</h2>\n";
 	print $out "<table border='1' cellpadding='5'>\n";
-	print $out "<tr><th>File</th><th>Survivors</th></tr>\n";
+	print $out "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th></tr>\n";
 
 	for my $file (
 		sort { _file_score($files->{$a}) <=> _file_score($files->{$b}) || $a cmp $b } keys %$files
 	) {
-
-		my $killed  = scalar @{ $files->{$file}{killed} || [] };
+		my $killed = scalar @{ $files->{$file}{killed} || [] };
 		my $survived = scalar @{ $files->{$file}{survived} || [] };
 		my $total = $killed + $survived;
 
@@ -242,7 +242,7 @@ sub _write_file_report {
 		# --------------------------------------------------
 
 		# Add tooltip class only if tooltip text exists
-		my $extra_class = $tooltip ? " tooltip" : "";
+		my $extra_class = $tooltip ? ' tooltip' : '';
 
 		# Escape tooltip text for HTML safety
 		$tooltip =~ s/"/&quot;/g if $tooltip;
@@ -421,11 +421,10 @@ html[data-theme='dark'] {
 -------------------------------------------------- */
 
 body {
-    font-family: sans-serif;
-    background: var(--bg);
-    color: var(--text);
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
 }
-
 
 table {
     border-collapse: collapse;
