@@ -84,6 +84,7 @@ sub _write_index {
 
 	print $out "<h1>Mutation Report</h1>\n";
 
+	print $out "<h2>Mutation Summary</h2>\n";
 	print $out "<div class='summary'>\n";
 	print $out "Score: $data->{score}%<br>\n";
 	print $out "Total: $data->{total}<br>\n";
@@ -266,32 +267,37 @@ sub _write_file_report {
 		if (@line_mutants) {
 			# Count totals for summary label
 			my $total = scalar @line_mutants;
-			my $survived = scalar @{ $survived_by_line{$line_no} || [] };
 			my $killed = scalar @{ $killed_by_line{$line_no} || [] };
 
 			# Create expandable section
-			$details = qq{
-				<details class="mutant-details">
-				<summary>Mutants (Total: $total, Killed: $killed, Survived: $survived)</summary>
-				<ul>
-			};
+			if(my $survived = scalar @{ $survived_by_line{$line_no} || [] }) {
+				$details = qq{
+					<details class="mutant-details">
+					<summary>Mutants (Total: $total, Killed: $killed, Survived: $survived)</summary>
+					<ul>
+				};
 
-			for my $m (@line_mutants) {
-				my $id = $m->{id} // 'unknown';
-				my $type = $m->{type} // '';
-				my $description = $m->{description} // '';
+				for my $m (@line_mutants) {
+					if($m->{status} eq 'Survived') {
+						my $id = $m->{id} // 'unknown';
+						my $type = $m->{type} // '';
+						my $description = $m->{description} // '';
 
-				$details .= "<li><b>$id: $description</b>";
+						$details .= "<li><b>$id: $description</b>";
 
-				# Show mutation type if available
-				if ($type) {
-					$details .= " ($type)";
+						# Show mutation type if available
+						if ($type) {
+							$details .= " ($type)";
+						}
+
+						$details .= "</li>\n";
+					}
 				}
 
-				$details .= "</li>\n";
+				$details .= "</ul></details>\n";
+			} else {
+				$details = "<p> <b> Mutants (Total: $total, Killed: $killed, Survived: 0)</b><p>";
 			}
-
-			$details .= "</ul></details>\n";
 		}
 
 		print $out "</span>$details";
