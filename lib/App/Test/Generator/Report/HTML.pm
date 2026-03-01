@@ -209,7 +209,7 @@ sub _write_file_report {
 		my $killed_count = scalar @{ $killed_by_line{$line_no} || [] };
 
 		my $class = '';
-		my $tooltip = '';
+		my $tooltip;
 
 		# -----------------------------
 		# Survived mutations (red shades)
@@ -277,21 +277,29 @@ sub _write_file_report {
 					<ul>
 				};
 
-				for my $m (@line_mutants) {
-					if($m->{status} eq 'Survived') {
-						my $id = $m->{id} // 'unknown';
-						my $type = $m->{type} // '';
-						my $description = $m->{description} // '';
+				for my $m (@{ $survived_by_line{$line_no} || [] }) {
+					my $id = $m->{id} // 'unknown';
+					my $description = $m->{description} // '';
 
-						$details .= "<li><b>$id: $description</b>";
+					$details .= "<li><b>$id: $description</b>";
 
-						# Show mutation type if available
-						if ($type) {
-							$details .= " ($type)";
-						}
+					if(my $suggest = _suggest_test($m)) {
+						$suggest = encode_entities($suggest);
 
-						$details .= "</li>\n";
+						$details .= qq{
+							<div class="suggested-test">
+							<div class="suggest-label">🧪 Suggested Test</div>
+							<pre>$suggest</pre>
+							</div>
+						};
 					}
+
+					# Show mutation type if available
+					if(my $type = $m->{type}) {
+						$details .= " ($type)";
+					}
+
+					$details .= "</li>\n";
 				}
 
 				$details .= "</ul></details>\n";
@@ -348,6 +356,40 @@ sub _mutation_advice {
 	return "Comparison mutation survived. Verify equality and inequality cases explicitly." if $type =~ /COMPARE|EQUAL/;
 
 	return 'Mutation survived. Add targeted tests to validate this branch.'
+}
+
+sub _suggest_test {
+	my $m = $_[0];
+
+	my $type = $m->{type} // '';
+	my $orig = $m->{original} // '';
+	my $new = $m->{transform} // '';
+
+	# Boundary condition
+	if ($type eq 'comparison' && $orig =~ /([<>]=?)\s*(\d+)/) {
+		my $boundary = $2;
+
+		return <<"TEST";
+# Boundary test suggestion
+is( func($boundary), EXPECTED, 'Test boundary value $boundary' );
+TEST
+	}
+
+	# Boolean flip
+	if ($type eq 'boolean') {
+		return <<"TEST";
+# Boolean branch test suggestion
+ok( !func(INPUT), 'Verify boolean branch behaviour' );
+TEST
+	}
+
+	# Return value mutation
+	if ($type eq 'return') {
+		return <<"TEST";
+# Return value assertion
+is( func(INPUT), EXPECTED, 'Verify correct return value' );
+TEST
+	}
 }
 
 sub _survivor_class {
@@ -484,6 +526,22 @@ pre li {
     margin: 0;
     padding: 0;
     line-height: 1.2;
+}
+
+.suggested-test {
+    margin-top: 6px;
+    background: #1e1e1e;
+    padding: 6px;
+    border-radius: 4px;
+}
+
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+pre {
+    overflow-x: auto;
 }
 
 .nav { margin-bottom: 1em; }

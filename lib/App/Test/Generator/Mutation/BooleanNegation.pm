@@ -26,14 +26,13 @@ sub mutate {
 	my $returns = $doc->find('PPI::Statement::Return') || [];
 	my @mutants;
 
-    for my $ret (@$returns) {
+	for my $ret (@$returns) {
+		my $expr = $ret->schild(1) or next;
 
-        my $expr = $ret->schild(1) or next;
+		my $original = $ret->content;
+		my $line     = $ret->location->[0];
 
-        my $original = $ret->content;
-        my $line     = $ret->location->[0];
-
-        push @mutants, App::Test::Generator::Mutant->new(
+		push @mutants, App::Test::Generator::Mutant->new(
             id          => "BOOL_NEGATE_$line",
             description => "Negate return expression",
             original    => $original,
@@ -48,6 +47,7 @@ sub mutate {
 		);
 	},
             line        => $line,
+	    type => 'boolean'
         );
     }
 

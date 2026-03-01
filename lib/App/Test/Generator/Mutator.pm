@@ -163,8 +163,11 @@ sub _is_redundant_mutation {
 	return 1 if $orig =~ /\+\s*0$/;
 	return 1 if $orig =~ /-\s*0$/;
 
-	# Double negation
-	return 1 if $orig =~ /^\!\!/;
+	# Double negation, because in Perl they force a boolean context
+	if ($m->{context} && $m->{context} eq 'conditional') {
+		# Only skip double negation removal inside conditionals
+		return 1 if $orig =~ /^\!\!/;
+	}
 
 	# Boolean literal flip when already strict boolean
 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;

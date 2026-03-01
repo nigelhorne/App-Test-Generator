@@ -21,33 +21,30 @@ sub applies_to {
 }
 
 sub mutate {
-    my ($self, $doc) = @_;
+	my ($self, $doc) = @_;
 
-    my $returns = $doc->find('PPI::Statement::Return') || [];
-    my @mutants;
+	my $returns = $doc->find('PPI::Statement::Return') || [];
+	my @mutants;
 
-    for my $ret (@$returns) {
+	for my $ret (@$returns) {
+		my $original = $ret->content();
+		my $line = $ret->location->[0];
 
-        my $original = $ret->content;
-        my $line     = $ret->location->[0];
+		push @mutants, App::Test::Generator::Mutant->new(
+			id          => "RETURN_UNDEF_$line",
+			description => "Force return undef",
+			line        => $line,
+			original    => $original,
+			type => 'return',
+			transform   => sub {
+				my $doc = $_[0];
 
-        push @mutants, App::Test::Generator::Mutant->new(
-    id          => "RETURN_UNDEF_$line",
-    description => "Force return undef",
-    line        => $line,
-    original    => $original,
-    transform   => sub {
-        my ($doc) = @_;
+				my $stmt = _find_stmt_by_line($doc, $line) or return;
 
-        my $stmt = _find_stmt_by_line($doc, $line)
-            or return;
-
-        $stmt->replace(
-            PPI::Statement->new('return undef;')
-        );
-    },
-);
-    }
+				$stmt->replace(PPI::Statement->new('return undef;'));
+			},
+		);
+	}
 
 	return @mutants;
 }

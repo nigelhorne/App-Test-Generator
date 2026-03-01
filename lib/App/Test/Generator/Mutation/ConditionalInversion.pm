@@ -34,7 +34,8 @@ sub mutate {
 			id => 'COND_INV_' . $stmt->location->[0],
 			description => 'Invert condition',
 			line => $stmt->location->[0],
-			original => $cond->content,
+			type => 'comparison',
+			original => $cond->content(),
 			transform => sub {
 				my ($doc) = @_;
 
