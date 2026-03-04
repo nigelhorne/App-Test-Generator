@@ -33,7 +33,7 @@ sub mutate {
 		my $line     = $ret->location->[0];
 
 		push @mutants, App::Test::Generator::Mutant->new(
-            id          => "BOOL_NEGATE_$line",
+			id          => "BOOL_NEGATE_$line",
             description => "Negate return expression",
             original    => $original,
             transform => sub {

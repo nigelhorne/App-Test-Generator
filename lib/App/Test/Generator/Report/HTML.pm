@@ -277,29 +277,21 @@ sub _write_file_report {
 					<ul>
 				};
 
-				for my $m (@{ $survived_by_line{$line_no} || [] }) {
-					my $id = $m->{id} // 'unknown';
-					my $description = $m->{description} // '';
+				for my $m (@line_mutants) {
+					if($m->{status} eq 'Survived') {
+						my $id = $m->{id} // 'unknown';
+						my $type = $m->{type} // '';
+						my $description = $m->{description} // '';
 
-					$details .= "<li><b>$id: $description</b>";
+						$details .= "<li><b>$id: $description</b>";
 
-					if(my $suggest = _suggest_test($m)) {
-						$suggest = encode_entities($suggest);
+						# Show mutation type if available
+						if ($type) {
+							$details .= " ($type)";
+						}
 
-						$details .= qq{
-							<div class="suggested-test">
-							<div class="suggest-label">🧪 Suggested Test</div>
-							<pre>$suggest</pre>
-							</div>
-						};
+						$details .= "</li>\n";
 					}
-
-					# Show mutation type if available
-					if(my $type = $m->{type}) {
-						$details .= " ($type)";
-					}
-
-					$details .= "</li>\n";
 				}
 
 				$details .= "</ul></details>\n";
@@ -347,13 +339,13 @@ sub _mutation_advice {
 	return 'Tests did not detect this behavioural change. Consider adding assertions.' unless $type;
 
 	# Advice per mutation type
-	return "Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)." if $type =~ /NUM|BOUNDARY/;
+	return 'Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).' if $type =~ /NUM|BOUNDARY/;
 
 	return "Return value mutation survived. Add tests asserting exact return values." if $type =~ /RETURN/;
 
-	return "Boolean logic mutation survived. Add tests covering both true and false paths." if $type =~ /BOOL|NEGATION/;
+	return 'Boolean logic mutation survived. Add tests covering both true and false paths.' if $type =~ /BOOL|NEGATION/;
 
-	return "Comparison mutation survived. Verify equality and inequality cases explicitly." if $type =~ /COMPARE|EQUAL/;
+	return 'Comparison mutation survived. Verify equality and inequality cases explicitly.' if $type =~ /COMPARE|EQUAL/;
 
 	return 'Mutation survived. Add targeted tests to validate this branch.'
 }
@@ -361,35 +353,55 @@ sub _mutation_advice {
 sub _suggest_test {
 	my $m = $_[0];
 
-	my $type = $m->{type} // '';
-	my $orig = $m->{original} // '';
-	my $new = $m->{transform} // '';
+	# ---------------------------------------------------------
+	# Determine mutation type
+	# ---------------------------------------------------------
 
-	# Boundary condition
-	if ($type eq 'comparison' && $orig =~ /([<>]=?)\s*(\d+)/) {
-		my $boundary = $2;
+	# Prefer explicit type if present
+	my $type = $m->{type};
 
+	# Fallback: infer from ID prefix
+	if((!$type || (length($type) == 0)) && $m->{id}) {
+		($type) = $m->{id} =~ /^([A-Z_]+)/;
+	}
+
+	# my $orig = $m->{original} // '';
+	# my $new = $m->{transform} // '';
+
+	# ---------------------------------------------------------
+	# Boundary condition mutation
+	# ---------------------------------------------------------
+
+	if ($type && $type =~ /NUM|BOUNDARY/) {
 		return <<"TEST";
 # Boundary test suggestion
-is( func($boundary), EXPECTED, 'Test boundary value $boundary' );
+is( func(VALUE_AT_BOUNDARY), EXPECTED, 'Test boundary behaviour' );
 TEST
 	}
 
-	# Boolean flip
-	if ($type eq 'boolean') {
+	# ---------------------------------------------------------
+	# Boolean mutation
+	# ---------------------------------------------------------
+
+	if ($type && $type =~ /BOOL|NEGATION/) {
 		return <<"TEST";
 # Boolean branch test suggestion
 ok( !func(INPUT), 'Verify boolean branch behaviour' );
 TEST
 	}
 
+	# ---------------------------------------------------------
 	# Return value mutation
-	if ($type eq 'return') {
+	# ---------------------------------------------------------
+
+	if ($type && $type =~ /RETURN/) {
 		return <<"TEST";
 # Return value assertion
 is( func(INPUT), EXPECTED, 'Verify correct return value' );
 TEST
 	}
+
+	return;
 }
 
 sub _survivor_class {
@@ -528,16 +540,37 @@ pre li {
     line-height: 1.2;
 }
 
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
 .suggested-test {
     margin-top: 6px;
-    background: #1e1e1e;
-    padding: 6px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
     border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
 }
 
+/* Label styling */
 .suggest-label {
     font-weight: bold;
     margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
 }
 
 pre {

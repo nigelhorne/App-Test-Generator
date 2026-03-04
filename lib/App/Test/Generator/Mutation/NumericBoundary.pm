@@ -57,6 +57,7 @@ sub mutate {
 					}
 				},
 				line => $line,
+				type => 'comparison',
 			);
 		}
 	}

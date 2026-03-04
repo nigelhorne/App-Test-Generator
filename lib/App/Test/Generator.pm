@@ -1759,9 +1759,9 @@ sub _load_schema {
 	# $abs = "./$abs" unless $abs =~ m{^/};
 	# require $abs;
 
-	if(my $schema = Config::Abstraction->new(config_dirs => ['.', ''], config_file => $schema_file)) {
+	if(my $schema = Config::Abstraction->new(config_dirs => ['.', ''], config_file => $schema_file, no_fixate => 1)) {
 		if($schema = $schema->all()) {
-			if(defined($schema->{'$module'}) || defined($schema->{'our $module'}) || !defined($schema->{'module'})) {
+			if(exists($schema->{'$module'}) || exists($schema->{'our $module'}) || !exists($schema->{'module'})) {
 				croak("$schema_file: Loading perl files as configs is no longer supported");
 			}
 			$schema->{'_source'} = $schema_file;

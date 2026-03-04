@@ -3,8 +3,8 @@ package App::Test::Generator::Mutation::ReturnUndef;
 use strict;
 use warnings;
 use parent 'App::Test::Generator::Mutation::Base';
-use App::Test::Generator::Mutant;
 
+use App::Test::Generator::Mutant;
 use PPI;
 
 our $VERSION = '0.29';
@@ -31,12 +31,12 @@ sub mutate {
 		my $line = $ret->location->[0];
 
 		push @mutants, App::Test::Generator::Mutant->new(
-			id          => "RETURN_UNDEF_$line",
+			id => "RETURN_UNDEF_$line",
 			description => "Force return undef",
-			line        => $line,
-			original    => $original,
+			line => $line,
+			original => $original,
 			type => 'return',
-			transform   => sub {
+			transform => sub {
 				my $doc = $_[0];
 
 				my $stmt = _find_stmt_by_line($doc, $line) or return;

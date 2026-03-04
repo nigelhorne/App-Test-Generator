@@ -23,7 +23,6 @@ sub mutate {
 	my @mutants;
 
 	for my $stmt (@$compounds) {
-
 		next unless(($stmt->type||'') eq 'if' || ($stmt->type||'') eq 'unless');
 
 		my ($cond) = grep { $_->isa('PPI::Structure::Condition') } $stmt->children;
@@ -34,7 +33,7 @@ sub mutate {
 			id => 'COND_INV_' . $stmt->location->[0],
 			description => 'Invert condition',
 			line => $stmt->location->[0],
-			type => 'comparison',
+			type => 'boolean',
 			original => $cond->content(),
 			transform => sub {
 				my ($doc) = @_;
