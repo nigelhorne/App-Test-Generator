@@ -15,10 +15,27 @@ our $VERSION = '0.29';
 
 Version 0.29
 
+=head1 METHODS
+
+=head2 generate
+
+$json_file => mutation JSON
+$output_dir => report directory
+$cover_json => optional Devel::Cover JSON
+
+=head3 Coverage Integration
+
+If a L<Devel::Cover> JSON file is supplied to C<generate()>,
+structural coverage metrics are displayed in the dashboard.
+
+The LCSAJ metric shown is an approximation derived from
+statement and branch coverage.
+It is not a full control flow graph computation.
+
 =cut
 
 sub generate {
-	my ($class, $json_file, $output_dir) = @_;
+	my ($class, $json_file, $output_dir, $cover_json) = @_;
 
 	make_path($output_dir);
 
@@ -28,9 +45,21 @@ sub generate {
 
 	close $fh;
 
+	# --------------------------------------------------
+	# Optional structural coverage loading
+	# --------------------------------------------------
+
+	my $coverage_data;
+
+	if ($cover_json && -f $cover_json) {
+		open my $cfh, '<', $cover_json;
+		$coverage_data = decode_json(do { local $/; <$cfh> });
+		close $cfh;
+	}
+
 	my $files = _group_by_file($data);
 
-	_write_index($output_dir, $data, $files);
+	_write_index($output_dir, $data, $files, $coverage_data);
 
 	# Pre-sort files worst-first so navigation order matches index order
 	my @sorted_files = sort { _file_score($files->{$a}) <=> _file_score($files->{$b}) || $a cmp $b } keys %$files;
@@ -44,7 +73,7 @@ sub generate {
 		# Only assign next if this is NOT the last file
 		my $next = $i < $#sorted_files ? $sorted_files[$i + 1] : undef;
 
-		_write_file_report($output_dir, $file, $files->{$file}, $prev, $next);
+		_write_file_report($output_dir, $file, $files->{$file}, $prev, $next, $coverage_data);
 	}
 }
 
@@ -76,7 +105,7 @@ sub _group_by_file {
 # --------------------------------------------------
 
 sub _write_index {
-	my ($dir, $data, $files) = @_;
+	my ($dir, $data, $files, $coverage_data) = @_;
 
 	open my $out, '>', File::Spec->catfile($dir, 'index.html') or die $!;
 
@@ -118,6 +147,27 @@ sub _write_index {
 
 	print $out "</table>\n";
 
+	# --------------------------------------------------
+	# Structural Coverage Summary (if provided)
+	# --------------------------------------------------
+	if ($coverage_data) {
+		my ($stmt_total, $stmt_hit, $branch_total, $branch_hit) = _coverage_totals($coverage_data);
+
+		my $stmt_pct = $stmt_total ? sprintf('%.2f', ($stmt_hit / $stmt_total) * 100) : 0;
+
+		my $branch_pct = $branch_total ? sprintf('%.2f', ($branch_hit / $branch_total) * 100) : 0;
+
+		print $out "<h2>Structural Coverage (Approximate)</h2>\n";
+		print $out "<div class='summary'>\n";
+		print $out "Statement Coverage: $stmt_pct% ($stmt_hit / $stmt_total)<br>\n";
+		print $out "Branch Coverage: $branch_pct% ($branch_hit / $branch_total)<br>\n";
+		print $out "<em>Approximate LCSAJ derived from branch and statement coverage.</em>\n";
+		print $out "</div>\n";
+
+		print $out "<h2>Executive Summary</h2>\n";
+		print $out "<div class='summary'>Tests execute $stmt_pct% of the code, but only detects $data->{score}% of the code</div>\n";
+	}
+
 	print $out _footer();
 
 	close $out;
@@ -128,7 +178,7 @@ sub _write_index {
 # --------------------------------------------------
 
 sub _write_file_report {
-	my ($dir, $file, $mutants, $prev, $next) = @_;
+	my ($dir, $file, $mutants, $prev, $next, $coverage_data) = @_;
 
 	return unless -f $file;
 
@@ -152,7 +202,7 @@ sub _write_file_report {
 
 	print $out "<h1>$file</h1>\n";
 
-	# Nagivation bar
+	# Navigation bar
 	print $out qq{<div class="nav">};
 
 	if ($prev) {
@@ -170,6 +220,31 @@ sub _write_file_report {
 	}
 
 	print $out qq{</div>};
+
+	# --------------------------------------------------
+	# File-level structural coverage (if available)
+	# --------------------------------------------------
+	if ($coverage_data) {
+		if(my $file_cov = _coverage_for_file($coverage_data, $file)) {
+			my $stmt_total  = $file_cov->{statement}{total}   || 0;
+			my $stmt_hit    = $file_cov->{statement}{covered} || 0;
+
+			my $branch_total = $file_cov->{branch}{total}   || 0;
+			my $branch_hit   = $file_cov->{branch}{covered} || 0;
+
+			my $stmt_pct = $stmt_total ? sprintf('%.2f', ($stmt_hit / $stmt_total) * 100) : 0;
+
+			my $branch_pct = $branch_total ? sprintf('%.2f', ($branch_hit / $branch_total) * 100) : 0;
+
+			my $approx_lcsaj = $branch_total + 1;
+			print $out "<div class='summary'>\n";
+			print $out "<strong>Structural Coverage (Approximate)</strong><br>\n";
+			print $out "Statement: $stmt_pct%<br>\n";
+			print $out "Branch: $branch_pct%<br>\n";
+			print $out "Approximate LCSAJ segments: $approx_lcsaj<br>\n";
+			print $out "</div>\n";
+		}
+	}
 
 	# --------------------------------------------------
 	# Legend explaining line colours
@@ -284,6 +359,16 @@ sub _write_file_report {
 						my $description = $m->{description} // '';
 
 						$details .= "<li><b>$id: $description</b>";
+						if(my $suggest = _suggest_test($m)) {
+							$suggest = encode_entities($suggest);
+
+						$details .= qq{
+							<div class="suggested-test">
+							<div class="suggest-label">🧪 Suggested Test</div>
+							<pre>$suggest</pre>
+							</div>
+						};
+					}
 
 						# Show mutation type if available
 						if ($type) {
@@ -655,6 +740,85 @@ function toggleTheme() {
 </body>
 </html>
 	};
+}
+
+# ------------------------------------------------------------
+# _coverage_totals
+#
+# Extract structural coverage totals from a Devel::Cover JSON
+# report. Returns four scalar values in list context:
+#
+#   ($statement_total, $statement_hit,
+#    $branch_total,    $branch_hit)
+#
+# This matches how the routine is used elsewhere in this file.
+#
+# NOTE:
+# Devel::Cover stores totals under:
+#
+#   $cov->{summary}->{Total}
+#
+# while per-file data appears under:
+#
+#   $cov->{summary}->{filename}
+#
+# This routine extracts only the aggregated totals.
+# ------------------------------------------------------------
+
+sub _coverage_totals
+{
+	my $cov = $_[0];
+
+	# Defensive checks to avoid warnings
+	return (0,0,0,0) unless $cov;
+	return (0,0,0,0) unless ref $cov eq 'HASH';
+	return (0,0,0,0) unless $cov->{summary};
+
+	my $total = $cov->{summary}->{Total} || {};
+
+	# Extract statement coverage
+	my $stmt_total = $total->{statement}{total}   || 0;
+	my $stmt_hit   = $total->{statement}{covered} || 0;
+
+	# Extract branch coverage
+	my $branch_total = $total->{branch}{total}   || 0;
+	my $branch_hit   = $total->{branch}{covered} || 0;
+
+	return ($stmt_total, $stmt_hit, $branch_total, $branch_hit);
+}
+
+# ------------------------------------------------------------
+# _coverage_for_file
+#
+# Attempts to find coverage data for a given source file.
+# Devel::Cover JSON keys may store paths relative to project
+# root, so we try multiple match strategies.
+# ------------------------------------------------------------
+
+sub _coverage_for_file {
+
+    my ($cov, $file) = @_;
+
+    return unless $cov;
+    return unless $cov->{summary};
+
+    # Exact match first
+    return $cov->{summary}{$file}
+        if exists $cov->{summary}{$file};
+
+    # Try matching by basename
+    require File::Basename;
+    my $base = File::Basename::basename($file);
+
+    foreach my $k (keys %{ $cov->{summary} }) {
+        next if $k eq 'Total';
+
+        if (File::Basename::basename($k) eq $base) {
+            return $cov->{summary}{$k};
+        }
+    }
+
+    return;
 }
 
 1;

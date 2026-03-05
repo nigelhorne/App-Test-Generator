@@ -162,6 +162,11 @@ The output structure:
         survived => [ ... mutant IDs ... ]
     }
 
+=head2 --cover_json <file>
+
+The location of the file generatated by C<cover -report json>.
+That file is used to generate an approximation for an LCSAJ table.
+
 =head2 --fail-fast
 
 (Reserved for future use.)
@@ -348,6 +353,7 @@ GetOptions(
 	'file=s'       => \$opt{file},
 	'tests=s'      => \$opt{tests},
 	'min-score=i'  => \$opt{min_score},
+	'cover_json=s'       => \$opt{cover_json},
 	'json=s'       => \$opt{json},
 	'fail-fast'    => \$opt{fail_fast},
 	'timeout=i'    => \$opt{timeout},
@@ -475,7 +481,8 @@ if ($opt{html}) {
 		die '--html needs --json';
 	}
 	require App::Test::Generator::Report::HTML;
-	App::Test::Generator::Report::HTML->generate($opt{json}, $opt{html});
+	App::Test::Generator::Report::HTML->import();
+	App::Test::Generator::Report::HTML->generate($opt{json}, $opt{html}, $opt{cover_json});
 }
 
 exit 1 if $score < $opt{min_score};
