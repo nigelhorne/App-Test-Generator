@@ -164,8 +164,15 @@ sub _write_index {
 		print $out "<em>Approximate LCSAJ derived from branch and statement coverage.</em>\n";
 		print $out "</div>\n";
 
+		# --------------------------------------------------
+		# Executive summary
+		# Statement coverage shows how much code runs.
+		# Mutation score shows how well tests detect faults.
+		# --------------------------------------------------
 		print $out "<h2>Executive Summary</h2>\n";
-		print $out "<div class='summary'>Tests execute $stmt_pct% of the code, but only detects $data->{score}% of the code</div>\n";
+		print $out "<div class='summary'>";
+		print $out "Tests execute $stmt_pct% of the code, but detect only $data->{score}% of injected faults.";
+		print $out "</div>\n";
 	}
 
 	print $out _footer();
