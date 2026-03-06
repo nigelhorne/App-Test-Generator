@@ -32,7 +32,7 @@ sub mutate {
 
 		push @mutants, App::Test::Generator::Mutant->new(
 			id => "RETURN_UNDEF_$line",
-			description => "Force return undef",
+			description => 'Force return undef',
 			line => $line,
 			original => $original,
 			type => 'return',

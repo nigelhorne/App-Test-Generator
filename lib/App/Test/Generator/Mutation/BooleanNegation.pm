@@ -34,7 +34,7 @@ sub mutate {
 
 		push @mutants, App::Test::Generator::Mutant->new(
 			id          => "BOOL_NEGATE_$line",
-            description => "Negate return expression",
+			description => 'Negate return expression',
             original    => $original,
             transform => sub {
 		my $doc = $_[0];

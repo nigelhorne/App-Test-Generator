@@ -123,7 +123,7 @@ sub _write_index {
 
 	print $out "<h2>Files</h2>\n";
 	print $out "<table border='1' cellpadding='5'>\n";
-	print $out "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th></tr>\n";
+	print $out "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th><th>Complexity</th></tr>\n";
 
 	for my $file (
 		sort { _file_score($files->{$a}) <=> _file_score($files->{$b}) || $a cmp $b } keys %$files
@@ -134,6 +134,12 @@ sub _write_index {
 
 		my $score = $total ? sprintf('%.2f', ($killed / $total) * 100) : 0;
 
+		# --------------------------------------------------
+		# Calculate cyclomatic complexity for the file
+		# --------------------------------------------------
+
+		my $complexity = _cyclomatic_complexity($file);
+
 		print $out qq{
 <tr>
 <td><a href="$file.html">$file</a></td>
@@ -141,6 +147,7 @@ sub _write_index {
 <td>$killed</td>
 <td>$survived</td>
 <td>$score%</td>
+<td>$complexity</td>
 </tr>
 };
 	}
@@ -276,7 +283,6 @@ sub _write_file_report {
 		next unless defined $m->{line};
 		push @{ $killed_by_line{ $m->{line} } }, $m;
 	}
-
 	print $out "<pre>\n";
 
 	for my $i (0 .. $#lines) {
@@ -826,6 +832,63 @@ sub _coverage_for_file {
     }
 
     return;
+}
+
+# ------------------------------------------------------------
+# _cyclomatic_complexity
+#
+# Compute a simple cyclomatic complexity metric using PPI.
+#
+# Formula:
+#   complexity = 1 + number_of_decision_points
+#
+# This is an approximation but works well for dashboards.
+# ------------------------------------------------------------
+
+sub _cyclomatic_complexity {
+
+    my ($file) = @_;
+
+    return 0 unless -f $file;
+
+    require PPI;
+
+    my $doc = PPI::Document->new($file);
+    return 0 unless $doc;
+
+    my $complexity = 1;
+
+    # --------------------------------------------------
+    # Control-flow keywords
+    # --------------------------------------------------
+
+    my $words = $doc->find('PPI::Token::Word') || [];
+
+    foreach my $w (@$words) {
+
+        my $c = $w->content;
+
+        if ($c =~ /^(if|elsif|unless|while|for|foreach|until|when)$/) {
+            $complexity++;
+        }
+    }
+
+    # --------------------------------------------------
+    # Logical operators (extra branches)
+    # --------------------------------------------------
+
+    my $ops = $doc->find('PPI::Token::Operator') || [];
+
+    foreach my $op (@$ops) {
+
+        my $c = $op->content;
+
+        if ($c eq '&&' || $c eq '||' || $c eq '?') {
+            $complexity++;
+        }
+    }
+
+    return $complexity;
 }
 
 1;
