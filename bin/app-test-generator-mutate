@@ -6,6 +6,7 @@ use warnings;
 use Getopt::Long;
 use JSON::MaybeXS;
 use File::Find;
+use File::Spec;
 use Time::HiRes qw(time);
 use Pod::Usage;
 
@@ -412,9 +413,35 @@ for my $file (@files) {
 		mutation_level => $opt{mutation_level},
 	);
 
-	my @mutants = $mutator->generate_mutants();
+# ------------------------------------------------------------
+# Group mutants by mutation site
+# ------------------------------------------------------------
 
-	for my $mutant (@mutants) {
+my @mutants = $mutator->generate_mutants();
+
+my $groups;
+
+if ($opt{mutation_level} eq 'fast') {
+    $groups = group_mutants($file, \@mutants);
+}
+else {
+    $groups = { map { $_->id => [$_] } @mutants };
+}
+
+    for my $group (values %$groups) {
+
+    my $mutant = representative_mutant($group);
+
+      print "Testing representative mutant ",
+      $mutant->id,
+      " ($file line ",
+      $mutant->line,
+      ") representing ",
+      scalar(@$group),
+      " mutants\n"
+      if $opt{verbose};
+
+    # Now run mutation test using only this representative
 		my $workspace = $mutator->prepare_workspace();
 
 		$mutator->apply_mutant($mutant);
@@ -426,26 +453,49 @@ for my $file (@files) {
 
 		my $survived = (system('prove', $opt{tests}) == 0);
 
-		$total++;
+# --------------------------------------------------
+# If tests pass → mutant survived
+# --------------------------------------------------
 
-		if ($survived) {
-			push @survivors, {
-				id => $mutant->id(),
-				line => $mutant->line(),
-				file => $file,
-				description => $mutant->description(),
-				status => 'Survived'
-			};
-		} else {
-			$killed++;
-			push @killed_mutants, {
-				id => $mutant->id(),
-				line => $mutant->line(),
-				file => $file,
-				description => $mutant->description(),
-				status => 'Killed'
-			}
-		}
+if ($survived) {
+
+    # representative survived
+    # mark entire group as survived
+
+    for my $m (@$group) {
+
+        push @survivors, {
+            id => $m->id(),
+            line => $m->line(),
+            file => $file,
+            description => $m->description(),
+            status => 'Survived'
+        };
+
+        $total++;
+    }
+
+}
+else {
+
+    # representative killed
+    # assume whole group killed
+
+    for my $m (@$group) {
+
+        push @killed_mutants, {
+            id => $m->id(),
+            line => $m->line(),
+            file => $file,
+            description => $m->description(),
+            status => 'Killed'
+        };
+
+        $total++;
+        $killed++;
+    }
+
+}
 
 		# workspace auto-destroyed when scope ends
 	}
@@ -467,12 +517,13 @@ unless ($opt{quiet}) {
 if ($opt{json}) {
     open my $fh, '>', $opt{json} or die $!;
     print $fh encode_json({
-        score      => $score,
-        total      => $total,
-        killed     => $killed,
-        survived   => \@survivors,
-	killed => \@killed_mutants,
-    });
+    score      => $score,
+    total      => $total,
+    killed_count   => $killed,
+    survived_count => scalar(@survivors),
+    killed     => \@killed_mutants,
+    survived   => \@survivors,
+});
 	close $fh;
 }
 
@@ -487,6 +538,79 @@ if ($opt{html}) {
 
 exit 1 if $score < $opt{min_score};
 exit 0;
+
+# ------------------------------------------------------------
+# group_mutants
+#
+# Groups mutants that affect the same location and operator.
+#
+# Example:
+#
+#   line 42:  >  → >=
+#   line 42:  >  → <
+#
+# These belong to the same mutation "site".
+#
+# The function returns a structure like:
+#
+#   {
+#      "file:line:operator" => [ mutant1, mutant2, mutant3 ]
+#   }
+#
+# This allows us to treat them as a logical unit.
+# ------------------------------------------------------------
+
+sub group_mutants {
+
+    my ($file, $mutants) = @_;
+
+    my %groups;
+
+    for my $m (@$mutants) {
+        my $line = $m->line;
+
+        # original token mutated (>, ==, !, etc)
+	my $orig = defined $m->original ? $m->original : '';
+
+        # group key identifies a mutation site
+	$orig =~ s/\s+//g;
+        my $key = join(':', $file, $line, $orig);
+
+        push @{ $groups{$key} }, $m;
+    }
+
+    return \%groups;
+}
+
+# ------------------------------------------------------------
+# representative_mutant
+#
+# Selects a single mutant from a group to represent
+# the mutation site.
+#
+# Strategy:
+#   - prefer boundary mutations
+#   - otherwise use the first mutant
+#
+# This improves mutation efficiency by avoiding
+# redundant test runs.
+# ------------------------------------------------------------
+
+sub representative_mutant {
+
+    my ($group) = @_;
+
+    for my $m (@$group) {
+
+        # Prefer boundary-type mutations if available
+        if ($m->id && $m->id =~ /BOUNDARY|NUM/) {
+            return $m;
+        }
+    }
+
+    # fallback: first mutant
+    return $group->[0];
+}
 
 =head1 AUTHOR
 

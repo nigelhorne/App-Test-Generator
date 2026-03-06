@@ -34,6 +34,7 @@ sub mutate {
 
 		push @mutants, App::Test::Generator::Mutant->new(
 			id          => "BOOL_NEGATE_$line",
+			group          => "BOOL_NEGATE:$line",
 			description => 'Negate return expression',
             original    => $original,
             transform => sub {

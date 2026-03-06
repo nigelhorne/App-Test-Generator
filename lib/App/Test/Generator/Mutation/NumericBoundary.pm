@@ -41,6 +41,7 @@ sub mutate {
 		foreach my $change (@{$flip{$original}}) {
 			push @mutants, App::Test::Generator::Mutant->new(
 				id => "NUM_BOUNDARY_$line",
+				group => "NUM_BOUNDARY:$line",
 				description => "Numeric boundary flip $original to $change",
 				original => $original,
 				transform => sub {

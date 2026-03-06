@@ -31,6 +31,7 @@ sub mutate {
 
 		push @mutants, App::Test::Generator::Mutant->new(
 			id => 'COND_INV_' . $stmt->location->[0],
+			group => 'COND_INV:' . $stmt->location->[0],
 			description => 'Invert condition',
 			line => $stmt->location->[0],
 			type => 'boolean',
