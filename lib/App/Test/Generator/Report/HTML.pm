@@ -245,11 +245,11 @@ sub _write_file_report {
 
 			my $approx_lcsaj = $branch_total + 1;
 			print $out "<div class='summary'>\n";
-			print $out "<strong>Structural Coverage (Approximate)</strong><br>\n";
+			print $out "<strong>Structural Coverage (Approximate)</strong><p>\n";
 			print $out "Statement: $stmt_pct%<br>\n";
 			print $out "Branch: $branch_pct%<br>\n";
-			print $out "Approximate LCSAJ segments: $approx_lcsaj<br>\n";
-			print $out "</div>\n";
+			print $out "Approximate LCSAJ segments: $approx_lcsaj\n";
+			print $out "</p></div>\n";
 		}
 	}
 
