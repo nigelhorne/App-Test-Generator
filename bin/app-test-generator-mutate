@@ -413,13 +413,13 @@ for my $file (@files) {
 		mutation_level => $opt{mutation_level},
 	);
 
-# ------------------------------------------------------------
-# Group mutants by mutation site
-# ------------------------------------------------------------
+	# ------------------------------------------------------------
+	# Group mutants by mutation site
+	# ------------------------------------------------------------
 
-my @mutants = $mutator->generate_mutants();
+	my @mutants = $mutator->generate_mutants();
 
-my $groups;
+	my $groups = {};
 
 if ($opt{mutation_level} eq 'fast') {
     $groups = group_mutants($file, \@mutants);
@@ -500,6 +500,7 @@ else {
 		# workspace auto-destroyed when scope ends
 	}
 }
+
 
 # -------------------------
 # Report
