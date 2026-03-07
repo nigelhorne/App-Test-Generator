@@ -137,7 +137,6 @@ sub _write_index {
 		# --------------------------------------------------
 		# Calculate cyclomatic complexity for the file
 		# --------------------------------------------------
-
 		my $complexity = _cyclomatic_complexity($file);
 
 		print $out qq{

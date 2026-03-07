@@ -337,12 +337,12 @@ The mutation testing process follows this execution flow:
 =cut
 
 my %opt = (
-	lib        => 'lib',
-	tests      => 't',
-	min_score  => 0,
-	fail_fast  => 0,
-	verbose    => 0,
-	quiet      => 0,
+	lib => 'lib',
+	tests => 't',
+	min_score => 0,
+	fail_fast => 0,
+	verbose => 0,
+	quiet => 0,
 	man	=> 0,
 	help	=> 0,
 	html => 0,
@@ -350,20 +350,20 @@ my %opt = (
 );
 
 GetOptions(
-	'lib=s'        => \$opt{lib},
-	'file=s'       => \$opt{file},
-	'tests=s'      => \$opt{tests},
-	'min-score=i'  => \$opt{min_score},
-	'cover_json=s'       => \$opt{cover_json},
-	'json=s'       => \$opt{json},
-	'fail-fast'    => \$opt{fail_fast},
-	'timeout=i'    => \$opt{timeout},
-	'verbose'      => \$opt{verbose},
-	'quiet'        => \$opt{quiet},
-	'help|h'          => \$opt{help},
+	'lib=s' => \$opt{lib},
+	'file=s' => \$opt{file},
+	'tests=s' => \$opt{tests},
+	'min-score=i' => \$opt{min_score},
+	'cover_json=s' => \$opt{cover_json},
+	'json=s' => \$opt{json},
+	'fail-fast' => \$opt{fail_fast},
+	'timeout=i' => \$opt{timeout},
+	'verbose' => \$opt{verbose},
+	'quiet' => \$opt{quiet},
+	'help|h' => \$opt{help},
 	'html=s'	=> \$opt{html},
 	'mutation_level=s'	=> \$opt{mutation_level},
-	'man|m'           => \$opt{man},
+	'man|m' => \$opt{man},
 ) or pod2usage(3);
 
 pod2usage(-exitval => 0, -verbose => 1) if $opt{help};
@@ -378,12 +378,12 @@ my @files;
 if ($opt{file}) {
 	push @files, $opt{file};
 } else {
-    find(
-        sub {
-            push @files, $File::Find::name if /\.pm$/;
-        },
-        $opt{lib}
-    );
+	find(
+		sub {
+			push @files, $File::Find::name if /\.pm$/;
+		},
+		$opt{lib}
+	);
 }
 
 # -------------------------
@@ -501,17 +501,17 @@ unless ($opt{quiet}) {
 	print "\nMutation Score: $score%\n";
 	print "Total: $total\n";
 	print "Killed: $killed\n";
-	print "Survived: ", scalar(@survivors), "\n";
+	print 'Survived: ', scalar(@survivors), "\n";
 }
 
 if ($opt{json}) {
 	open my $fh, '>', $opt{json} or die $!;
 	print $fh encode_json({
-		score      => $score,
-		total      => $total,
-		killed_count   => $killed,
+		score => $score,
+		total => $total,
+		killed_count => $killed,
 		survived_count => scalar(@survivors),
-		killed     => \@killed_mutants,
+		killed => \@killed_mutants,
 		survived => \@survivors,
 	});
 
