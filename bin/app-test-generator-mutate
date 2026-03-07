@@ -633,14 +633,14 @@ sub mutation_difficulty {
     return {
         score => 2,
         label => 'MEDIUM',
-        hint  => 'Condition outcome not asserted in tests'
+	hint => 'Add tests asserting both true and false outcomes'
     } if $id =~ /COND|INV|NEG/;
 
     # Logical operator changes
     return {
         score => 2,
         label => 'MEDIUM',
-        hint  => 'Logical condition not fully exercised'
+	hint => 'Test combinations where only one logical operand is true'
     } if $id =~ /LOGIC|AND|OR/;
 
     # Default: minor mutation

@@ -239,7 +239,7 @@ sub _write_file_report {
 	# --------------------------------------------------
 	if ($coverage_data) {
 		if(my $file_cov = _coverage_for_file($coverage_data, $file)) {
-			my $stmt_total  = $file_cov->{statement}{total}   || 0;
+			my $stmt_total = $file_cov->{statement}{total} || 0;
 			my $stmt_hit    = $file_cov->{statement}{covered} || 0;
 
 			my $branch_total = $file_cov->{branch}{total}   || 0;
@@ -370,24 +370,26 @@ sub _write_file_report {
 						my $type = $m->{type} // '';
 						my $description = $m->{description} // '';
 
-						$details .= "<li><b>$id: $description</b>";
-						if(my $suggest = _suggest_test($m)) {
-							$suggest = encode_entities($suggest);
-
-						$details .= qq{
-							<div class="suggested-test">
-							<div class="suggest-label">🧪 Suggested Test</div>
-							<pre>$suggest</pre>
-							</div>
-						};
-					}
+						$details .= "<li><b>$id: $description</b><br>";
+						$details .= "$m->{difficulty}: $m->{hint}\n";
 
 						# Show mutation type if available
 						if ($type) {
 							$details .= " ($type)";
 						}
 
-						$details .= "</li>\n";
+						if(my $suggest = _suggest_test($m)) {
+							$suggest = encode_entities($suggest);
+
+							$details .= qq{
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre>$suggest</pre>
+								</div>
+							};
+						}
+
+						$details .= '</li>';
 					}
 				}
 
@@ -644,6 +646,7 @@ pre li {
 
 .suggested-test {
     margin-top: 6px;
+    margin-bottom: 12px;
 
     /* Use theme variables instead of hardcoded colors */
     background: var(--bg);
@@ -836,7 +839,7 @@ sub _coverage_for_file {
 # ------------------------------------------------------------
 # _cyclomatic_complexity
 #
-# Compute a simple cyclomatic complexity metric using PPI.
+# Compute a simple *file based* cyclomatic complexity metric using PPI.
 #
 # Formula:
 #   complexity = 1 + number_of_decision_points
@@ -845,8 +848,7 @@ sub _coverage_for_file {
 # ------------------------------------------------------------
 
 sub _cyclomatic_complexity {
-
-    my ($file) = @_;
+	my $file = $_[0];
 
     return 0 unless -f $file;
 
