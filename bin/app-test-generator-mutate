@@ -421,27 +421,25 @@ for my $file (@files) {
 
 	my $groups = {};
 
-if ($opt{mutation_level} eq 'fast') {
-    $groups = group_mutants($file, \@mutants);
-}
-else {
-    $groups = { map { $_->id => [$_] } @mutants };
-}
+	if ($opt{mutation_level} eq 'fast') {
+		$groups = group_mutants($file, \@mutants);
+	} else {
+		$groups = { map { $_->id => [$_] } @mutants };
+	}
 
-    for my $group (values %$groups) {
+	for my $group (values %$groups) {
 
-    my $mutant = representative_mutant($group);
+		my $mutant = representative_mutant($group);
 
-      print "Testing representative mutant ",
-      $mutant->id,
-      " ($file line ",
-      $mutant->line,
-      ") representing ",
-      scalar(@$group),
-      " mutants\n"
-      if $opt{verbose};
+		print "Testing representative mutant ",
+			$mutant->id,
+			" ($file line ",
+			$mutant->line,
+			") representing ",
+			scalar(@$group),
+			" mutants\n" if $opt{verbose};
 
-    # Now run mutation test using only this representative
+		# Now run mutation test using only this representative
 		my $workspace = $mutator->prepare_workspace();
 
 		$mutator->apply_mutant($mutant);
@@ -453,54 +451,45 @@ else {
 
 		my $survived = (system('prove', $opt{tests}) == 0);
 
-# --------------------------------------------------
-# If tests pass → mutant survived
-# --------------------------------------------------
+		# --------------------------------------------------
+		# If tests pass → mutant survived
+		# --------------------------------------------------
+		if ($survived) {
+			# representative survived
+			# mark entire group as survived
 
-if ($survived) {
+			for my $m (@$group) {
+				push @survivors, {
+					id => $m->id(),
+					line => $m->line(),
+					file => $file,
+					description => $m->description(),
+					status => 'Survived'
+				};
 
-    # representative survived
-    # mark entire group as survived
+				$total++;
+			}
+		} else {
+			# representative killed
+			# assume whole group killed
 
-    for my $m (@$group) {
+			for my $m (@$group) {
+				push @killed_mutants, {
+					id => $m->id(),
+					line => $m->line(),
+					file => $file,
+					description => $m->description(),
+					status => 'Killed'
+				};
 
-        push @survivors, {
-            id => $m->id(),
-            line => $m->line(),
-            file => $file,
-            description => $m->description(),
-            status => 'Survived'
-        };
-
-        $total++;
-    }
-
-}
-else {
-
-    # representative killed
-    # assume whole group killed
-
-    for my $m (@$group) {
-
-        push @killed_mutants, {
-            id => $m->id(),
-            line => $m->line(),
-            file => $file,
-            description => $m->description(),
-            status => 'Killed'
-        };
-
-        $total++;
-        $killed++;
-    }
-
-}
+				$total++;
+				$killed++;
+			}
+		}
 
 		# workspace auto-destroyed when scope ends
 	}
 }
-
 
 # -------------------------
 # Report
@@ -516,15 +505,16 @@ unless ($opt{quiet}) {
 }
 
 if ($opt{json}) {
-    open my $fh, '>', $opt{json} or die $!;
-    print $fh encode_json({
-    score      => $score,
-    total      => $total,
-    killed_count   => $killed,
-    survived_count => scalar(@survivors),
-    killed     => \@killed_mutants,
-    survived   => \@survivors,
-});
+	open my $fh, '>', $opt{json} or die $!;
+	print $fh encode_json({
+		score      => $score,
+		total      => $total,
+		killed_count   => $killed,
+		survived_count => scalar(@survivors),
+		killed     => \@killed_mutants,
+		survived => \@survivors,
+	});
+
 	close $fh;
 }
 
@@ -562,25 +552,24 @@ exit 0;
 # ------------------------------------------------------------
 
 sub group_mutants {
+	my ($file, $mutants) = @_;
 
-    my ($file, $mutants) = @_;
+	my %groups;
 
-    my %groups;
+	for my $m (@$mutants) {
+		my $line = $m->line;
 
-    for my $m (@$mutants) {
-        my $line = $m->line;
+		# original token mutated (>, ==, !, etc)
+		my $orig = defined $m->original ? $m->original : '';
 
-        # original token mutated (>, ==, !, etc)
-	my $orig = defined $m->original ? $m->original : '';
+		# group key identifies a mutation site
+		$orig =~ s/\s+//g;
+		my $key = join(':', $file, $line, $orig);
 
-        # group key identifies a mutation site
-	$orig =~ s/\s+//g;
-        my $key = join(':', $file, $line, $orig);
+		push @{ $groups{$key} }, $m;
+	}
 
-        push @{ $groups{$key} }, $m;
-    }
-
-    return \%groups;
+	return \%groups;
 }
 
 # ------------------------------------------------------------
@@ -598,19 +587,18 @@ sub group_mutants {
 # ------------------------------------------------------------
 
 sub representative_mutant {
+	my $group = $_[0];
 
-    my ($group) = @_;
+	for my $m (@$group) {
 
-    for my $m (@$group) {
+		# Prefer boundary-type mutations if available
+		if ($m->id && $m->id =~ /BOUNDARY|NUM/) {
+			return $m;
+		}
+	}
 
-        # Prefer boundary-type mutations if available
-        if ($m->id && $m->id =~ /BOUNDARY|NUM/) {
-            return $m;
-        }
-    }
-
-    # fallback: first mutant
-    return $group->[0];
+	# fallback: first mutant
+	return $group->[0];
 }
 
 =head1 AUTHOR
