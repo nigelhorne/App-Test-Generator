@@ -4,9 +4,10 @@ use strict;
 use warnings;
 use autodie qw(:all);
 
-use JSON::PP;
+use App::Test::Generator::LCSAJ;
 use File::Path qw(make_path);
 use File::Spec;
+use JSON::MaybeXS;
 use HTML::Entities;
 
 our $VERSION = '0.29';
@@ -224,8 +225,10 @@ sub _write_file_report {
 	}
 
 	print $out qq{<a href="},
-		File::Spec->abs2rel("index.html", File::Basename::dirname("$file.html")),
+		File::Spec->abs2rel('index.html', File::Basename::dirname("$file.html")),
 		qq{">Index</a>};
+
+	App::Test::Generator::LCSAJ->generate($file);
 
 	if ($next) {
 		my $link = _relative_link($file, $next);
