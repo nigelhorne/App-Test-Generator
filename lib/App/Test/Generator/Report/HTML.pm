@@ -228,7 +228,8 @@ sub _write_file_report {
 		File::Spec->abs2rel('index.html', File::Basename::dirname("$file.html")),
 		qq{">Index</a>};
 
-	App::Test::Generator::LCSAJ->generate($file);
+	$relative_path = File::Spec->catfile($dir, $file . '.lcsaj');
+	App::Test::Generator::LCSAJ->generate($file, $relative_path);
 
 	if ($next) {
 		my $link = _relative_link($file, $next);
@@ -243,7 +244,7 @@ sub _write_file_report {
 	if ($coverage_data) {
 		if(my $file_cov = _coverage_for_file($coverage_data, $file)) {
 			my $stmt_total = $file_cov->{statement}{total} || 0;
-			my $stmt_hit    = $file_cov->{statement}{covered} || 0;
+			my $stmt_hit = $file_cov->{statement}{covered} || 0;
 
 			my $branch_total = $file_cov->{branch}{total}   || 0;
 			my $branch_hit   = $file_cov->{branch}{covered} || 0;

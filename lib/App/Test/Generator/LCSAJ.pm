@@ -4,8 +4,9 @@ use strict;
 use warnings;
 use autodie;
 
-use PPI;
+use File::Spec;
 use JSON::MaybeXS;
+use PPI;
 
 our $VERSION = '0.01';
 
@@ -53,7 +54,7 @@ This is intended to support **mutation testing dashboards and coverage visualiza
 =cut
 
 sub generate {
-    my ($class, $file) = @_;
+    my ($class, $file, $output_file) = @_;
 
     my $doc = _parse_file($file);
 
@@ -71,10 +72,10 @@ sub generate {
 
         my $dot = _cfg_to_dot($blocks);
 
-        _save_dot($file, $dot);
+        _save_dot($file, $output_file, $dot);
     }
 
-    _save_lcsaj($file, \@all_paths);
+    _save_lcsaj($file, $output_file, \@all_paths);
 
     return \@all_paths;
 }
@@ -180,11 +181,11 @@ Convert CFG blocks into LCSAJ triples.
 =cut
 
 sub _cfg_to_lcsaj {
-    my ($blocks) = @_;
+	my $blocks = $_[0];
 
-    my @paths;
+	my @paths;
 
-    my %id_to_line;
+	my %id_to_line;
 
     for my $b (@$blocks) {
 
@@ -220,9 +221,9 @@ Generate Graphviz DOT representation of CFG.
 =cut
 
 sub _cfg_to_dot {
-    my ($blocks) = @_;
+	my $blocks = $_[0];
 
-    my $dot = "digraph cfg {\n";
+	my $dot = "digraph cfg {\n";
 
     for my $b (@$blocks) {
 
@@ -244,9 +245,9 @@ Write JSON output containing LCSAJ triples.
 =cut
 
 sub _save_lcsaj {
-    my ($file, $paths) = @_;
+    my ($file, $output_file, $paths) = @_;
 
-    open my $fh, '>', "$file.lcsaj.json";
+    open my $fh, '>', "$output_file.json";
 
     print $fh encode_json($paths);
 
@@ -260,9 +261,9 @@ Write CFG graph in DOT format.
 =cut
 
 sub _save_dot {
-    my ($file, $dot) = @_;
+    my ($file, $output_file, $dot) = @_;
 
-    open my $fh, '>', "$file.lcsaj.dot";
+	open my $fh, '>', "$output_file.dot";
 
     print $fh $dot;
 
@@ -382,10 +383,31 @@ Interactive dashboard heatmaps
 
 =head1 AUTHOR
 
-Internal tooling module for mutation testing and coverage analysis.
+Nigel Horne, C<< <njh at nigelhorne.com> >>
 
-=head1 LICENSE
-
-Same terms as Perl itself.
+Portions of this module's initial design and documentation were created with the
+assistance of AI.
 
 =cut
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright 2026 Nigel Horne.
+
+Usage is subject to licence terms.
+
+The licence terms of this software are as follows:
+
+=over 4
+
+=item * Personal single user, single computer use: GPL2
+
+=item * All other users (including Commercial, Charity, Educational, Government)
+  must apply in writing for a licence for use from Nigel Horne at the
+  above e-mail.
+
+=back
+
+=cut
+
+1;
