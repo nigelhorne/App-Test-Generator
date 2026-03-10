@@ -3,6 +3,13 @@ package Devel::App::Test::Generator::LCSAJ::Runtime;
 use strict;
 use warnings;
 
+# Enable debugger line callbacks
+BEGIN {
+    $^P |= 0x2;          # enable line-by-line debugging
+    our $single = 0;     # required by Perl debugger interface
+    our $trace  = 0;
+}
+
 use Cwd qw(abs_path);
 use JSON::MaybeXS;
 use File::Path qw(make_path);
@@ -30,47 +37,43 @@ our %HITS;
 our %TARGET;
 
 BEGIN {
-
-    if (my $env = $ENV{LCSAJ_TARGETS}) {
-        for my $f (split /:/, $env) {
-            my $abs = abs_path($f);
-            $TARGET{$abs} = 1 if $abs;
-        }
-    }
+	if (my $env = $ENV{LCSAJ_TARGETS}) {
+		for my $f (split /:/, $env) {
+			my $abs = abs_path($f);
+			$TARGET{$abs} = 1 if $abs;
+		}
+	}
 }
 
 sub DB::DB {
+	my (undef, $file, $line) = caller;
 
-    my (undef, $file, $line) = caller;
+	return unless defined $file;
 
-    return unless defined $file;
+	my $abs = abs_path($file) || return;
 
-    my $abs = abs_path($file) || return;
+	# If targets were provided, filter by them
+	if (%TARGET) {
+		return unless $TARGET{$abs};
+	}
 
-    # If targets were provided, filter by them
-    if (%TARGET) {
-        return unless $TARGET{$abs};
-    }
-
-    $HITS{$abs}{$line}++;
+	$HITS{$abs}{$line}++;
 }
 
 sub _write_results {
+	return unless %HITS;
 
-    return unless %HITS;
+	make_path('coverage') unless -d 'coverage';
 
-    make_path('coverage') unless -d 'coverage';
+	open my $fh, '>', 'coverage/lcsaj_hits.json' or die "Cannot create coverage/lcsaj_hits.json: $!";
 
-    open my $fh, '>', 'coverage/lcsaj_hits.json'
-        or die "Cannot create coverage/lcsaj_hits.json: $!";
+	print $fh JSON::MaybeXS::encode_json(\%HITS);
 
-    print $fh JSON::MaybeXS::encode_json(\%HITS);
-
-    close $fh;
+	close $fh;
 }
 
 END {
-    _write_results();
+	_write_results();
 }
 
 1;
