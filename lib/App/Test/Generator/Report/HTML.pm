@@ -5,6 +5,7 @@ use warnings;
 use autodie qw(:all);
 
 use App::Test::Generator::LCSAJ;
+use Cwd qw(abs_path);
 use File::Path qw(make_path);
 use File::Spec;
 use JSON::MaybeXS;
@@ -345,29 +346,34 @@ if ($lcsaj_hits) {
 
 	my %lcsaj_by_line;
 
-	if ($lcsaj_hits) {
-		my ($base) = $file =~ /([^\/]+)$/;
+if ($lcsaj_hits) {
 
-		my $lcsaj_file = File::Spec->catfile($lcsaj_dir, "$base.lcsaj.json");
+    # Normalize the filename so it matches debugger paths
+    $file = abs_path($file) if defined $file;
 
-		if (-f $lcsaj_file) {
-			open my $fh, '<', $lcsaj_file;
-			my $paths = decode_json(do { local $/; <$fh> });
-			close $fh;
+    my ($base) = $file =~ /([^\/]+)$/;
 
-			for my $p (@{ $paths || [] }) {
-				next unless ref $p eq 'HASH';
+    my $lcsaj_file = File::Spec->catfile($lcsaj_dir, "$base.lcsaj.json");
 
-				my $start = $p->{start};
-				my $end   = $p->{end};
-				my $jump  = $p->{jump};
+    if (-f $lcsaj_file) {
 
-				next unless defined $start && defined $end;
+        open my $fh, '<', $lcsaj_file;
+        my $paths = decode_json(do { local $/; <$fh> });
+        close $fh;
 
-				push @{ $lcsaj_by_line{$start} }, $p;
-			}
-		}
-	}
+        for my $p (@{ $paths || [] }) {
+            next unless ref $p eq 'HASH';
+
+            my $start = $p->{start};
+            my $end   = $p->{end};
+            my $jump  = $p->{jump};
+
+            next unless defined $start && defined $end;
+
+            push @{ $lcsaj_by_line{$start} }, $p;
+        }
+    }
+}
 
 	for my $i (0 .. $#lines) {
 		my $line_no = $i + 1;
@@ -412,20 +418,23 @@ if ($lcsaj_hits) {
 
 		# --------------------------------------------------
 		# Render the line with colour + optional tooltip
-		# --------------------------------------------------
+# Render LCSAJ markers for this line
+# --------------------------------------------------
 
-		my $lcsaj_marker = '';
+my $lcsaj_marker = '';
 
 if (my $paths = $lcsaj_by_line{$line_no}) {
 
     for my $p (@$paths) {
 
-        my $target = $p->{target};
+        my $start = $p->{start};
+        my $end   = $p->{end};
+        my $jump  = $p->{jump} // 0;
 
         $lcsaj_marker .= qq{
-<span class="lcsaj-dot"
-title="LCSAJ: $line_no → $p->{end} → $target">●</span>
-};
+            <span class="lcsaj-dot"
+            title="LCSAJ: $start → $end → $jump">●</span>
+        };
     }
 }
 

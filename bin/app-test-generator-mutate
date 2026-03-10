@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 
+use Cwd qw(abs_path);
 use Getopt::Long;
 use JSON::MaybeXS;
 use File::Find;
@@ -390,6 +391,9 @@ if ($opt{file}) {
 	);
 }
 
+# Pass target files to LCSAJ runtime debugger
+$ENV{LCSAJ_TARGETS} = join(':', map { abs_path($_) } @files);
+
 # -------------------------
 # Verify baseline tests
 # -------------------------
@@ -637,10 +641,10 @@ sub mutation_difficulty {
 	return {
 		score => 3,
 		label => 'HIGH',
-		hint  => 'Likely missing edge-case test (boundary value)'
+		hint => 'Likely missing edge-case test (boundary value)'
 	} if $id =~ /BOUNDARY|NUM/;
 
-    # Conditional inversions reveal missing negative assertions
+	# Conditional inversions reveal missing negative assertions
     return {
         score => 2,
         label => 'MEDIUM',

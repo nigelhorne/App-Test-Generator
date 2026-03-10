@@ -2,6 +2,8 @@ package Devel::App::Test::Generator::LCSAJ::Runtime;
 
 use strict;
 use warnings;
+
+use Cwd qw(abs_path);
 use JSON::MaybeXS;
 use File::Path qw(make_path);
 
@@ -25,12 +27,32 @@ runtime coverage data for later LCSAJ analysis.
 =cut
 
 our %HITS;
+our %TARGET;
+
+BEGIN {
+
+    if (my $env = $ENV{LCSAJ_TARGETS}) {
+        for my $f (split /:/, $env) {
+            my $abs = abs_path($f);
+            $TARGET{$abs} = 1 if $abs;
+        }
+    }
+}
 
 sub DB::DB {
 
     my (undef, $file, $line) = caller;
 
-    $HITS{$file}{$line}++;
+    return unless defined $file;
+
+    my $abs = abs_path($file) || return;
+
+    # If targets were provided, filter by them
+    if (%TARGET) {
+        return unless $TARGET{$abs};
+    }
+
+    $HITS{$abs}{$line}++;
 }
 
 sub _write_results {
