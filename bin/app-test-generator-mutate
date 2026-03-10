@@ -633,12 +633,12 @@ sub mutation_difficulty {
 
 	my $id = $mutant->id // '';
 
-    # Numeric boundary mutants expose missing edge cases
-    return {
-        score => 3,
-        label => 'HIGH',
-        hint  => 'Likely missing edge-case test (boundary value)'
-    } if $id =~ /BOUNDARY|NUM/;
+	# Numeric boundary mutants expose missing edge cases
+	return {
+		score => 3,
+		label => 'HIGH',
+		hint  => 'Likely missing edge-case test (boundary value)'
+	} if $id =~ /BOUNDARY|NUM/;
 
     # Conditional inversions reveal missing negative assertions
     return {

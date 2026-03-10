@@ -345,23 +345,29 @@ if ($lcsaj_hits) {
 
 	my %lcsaj_by_line;
 
-if ($lcsaj_hits) {
+	if ($lcsaj_hits) {
+		my ($base) = $file =~ /([^\/]+)$/;
 
-    my ($base) = $file =~ /([^\/]+)$/;
+		my $lcsaj_file = File::Spec->catfile($lcsaj_dir, "$base.lcsaj.json");
 
-    my $lcsaj_file = File::Spec->catfile($lcsaj_dir, "$base.lcsaj.json");
+		if (-f $lcsaj_file) {
+			open my $fh, '<', $lcsaj_file;
+			my $paths = decode_json(do { local $/; <$fh> });
+			close $fh;
 
-    if (-f $lcsaj_file) {
+			for my $p (@{ $paths || [] }) {
+				next unless ref $p eq 'HASH';
 
-        open my $fh, '<', $lcsaj_file;
-        my $paths = decode_json(do { local $/; <$fh> });
-        close $fh;
+				my $start = $p->{start};
+				my $end   = $p->{end};
+				my $jump  = $p->{jump};
 
-        for my $p (@$paths) {
-            push @{ $lcsaj_by_line{$p->{start}} }, $p;
-        }
-    }
-}
+				next unless defined $start && defined $end;
+
+				push @{ $lcsaj_by_line{$start} }, $p;
+			}
+		}
+	}
 
 	for my $i (0 .. $#lines) {
 		my $line_no = $i + 1;
@@ -1021,6 +1027,8 @@ sub _lcsaj_coverage_for_file {
         my $start = $p->{start};
         my $end   = $p->{end};
 
+	next unless defined $start && defined $end;
+
         my $hit = 0;
 
         for my $l ($start .. $end) {
@@ -1033,7 +1041,7 @@ sub _lcsaj_coverage_for_file {
         $covered++ if $hit;
     }
 
-    return ($covered, $total);
+	return ($covered, $total);
 }
 
 1;
