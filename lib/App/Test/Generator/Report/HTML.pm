@@ -36,7 +36,7 @@ It is not a full control flow graph computation.
 =cut
 
 sub generate {
-	my ($class, $json_file, $output_dir, $cover_json) = @_;
+	my ($class, $json_file, $output_dir, $cover_json, $lcsaj_dir, $lcsaj_hits_file) = @_;
 
 	make_path($output_dir);
 
@@ -58,9 +58,24 @@ sub generate {
 		close $cfh;
 	}
 
+	my $lcsaj_hits;
+
+	if ($lcsaj_hits_file && -f $lcsaj_hits_file) {
+		open my $lfh, '<', $lcsaj_hits_file;
+		$lcsaj_hits = decode_json(do { local $/; <$lfh> });
+		close $lfh;
+	}
+
 	my $files = _group_by_file($data);
 
-	_write_index($output_dir, $data, $files, $coverage_data);
+	_write_index(
+    $output_dir,
+    $data,
+    $files,
+    $coverage_data,
+    $lcsaj_dir,
+    $lcsaj_hits
+);
 
 	# Pre-sort files worst-first so navigation order matches index order
 	my @sorted_files = sort { _file_score($files->{$a}) <=> _file_score($files->{$b}) || $a cmp $b } keys %$files;
@@ -74,7 +89,16 @@ sub generate {
 		# Only assign next if this is NOT the last file
 		my $next = $i < $#sorted_files ? $sorted_files[$i + 1] : undef;
 
-		_write_file_report($output_dir, $file, $files->{$file}, $prev, $next, $coverage_data);
+		_write_file_report(
+    $output_dir,
+    $file,
+    $files->{$file},
+    $prev,
+    $next,
+    $coverage_data,
+    $lcsaj_dir,
+    $lcsaj_hits
+);
 	}
 }
 
@@ -106,7 +130,7 @@ sub _group_by_file {
 # --------------------------------------------------
 
 sub _write_index {
-	my ($dir, $data, $files, $coverage_data) = @_;
+	my ($dir, $data, $files, $coverage_data, $lcsaj_dir, $lcsaj_hits) = @_;
 
 	open my $out, '>', File::Spec->catfile($dir, 'index.html') or die $!;
 
@@ -124,7 +148,7 @@ sub _write_index {
 
 	print $out "<h2>Files</h2>\n";
 	print $out "<table border='1' cellpadding='5'>\n";
-	print $out "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th><th>Complexity</th></tr>\n";
+	print $out "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th><th>Complexity</th><th>LCSAJ</th></tr>\n";
 
 	for my $file (
 		sort { _file_score($files->{$a}) <=> _file_score($files->{$b}) || $a cmp $b } keys %$files
@@ -140,6 +164,12 @@ sub _write_index {
 		# --------------------------------------------------
 		my $complexity = _cyclomatic_complexity($file);
 
+		my ($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $lcsaj_dir, $lcsaj_hits);
+
+my $lcsaj_pct = $lcsaj_total
+    ? sprintf('%.1f', ($lcsaj_cov / $lcsaj_total) * 100)
+    : '-';
+
 		print $out qq{
 <tr>
 <td><a href="$file.html">$file</a></td>
@@ -148,6 +178,7 @@ sub _write_index {
 <td>$survived</td>
 <td>$score%</td>
 <td>$complexity</td>
+<td>$lcsaj_pct</td>
 </tr>
 };
 	}
@@ -192,7 +223,16 @@ sub _write_index {
 # --------------------------------------------------
 
 sub _write_file_report {
-	my ($dir, $file, $mutants, $prev, $next, $coverage_data) = @_;
+    my (
+        $dir,
+        $file,
+        $mutants,
+        $prev,
+        $next,
+        $coverage_data,
+        $lcsaj_dir,
+        $lcsaj_hits
+    ) = @_;
 
 	return unless -f $file;
 
@@ -274,6 +314,21 @@ sub _write_file_report {
 		</div>
 	};
 
+if ($lcsaj_hits) {
+
+    my ($cov, $total) =
+	_lcsaj_coverage_for_file($file, $lcsaj_dir, $lcsaj_hits);
+
+    if ($total) {
+
+        my $pct = sprintf('%.1f', ($cov / $total) * 100);
+
+        print $out "<div class='summary'>";
+        print $out "<strong>LCSAJ Coverage</strong><br>";
+        print $out "$pct% ($cov / $total paths)";
+        print $out "</div>";
+    }
+}
 	my %survived_by_line;
 	my %killed_by_line;
 
@@ -287,6 +342,26 @@ sub _write_file_report {
 		push @{ $killed_by_line{ $m->{line} } }, $m;
 	}
 	print $out "<pre>\n";
+
+	my %lcsaj_by_line;
+
+if ($lcsaj_hits) {
+
+    my ($base) = $file =~ /([^\/]+)$/;
+
+    my $lcsaj_file = File::Spec->catfile($lcsaj_dir, "$base.lcsaj.json");
+
+    if (-f $lcsaj_file) {
+
+        open my $fh, '<', $lcsaj_file;
+        my $paths = decode_json(do { local $/; <$fh> });
+        close $fh;
+
+        for my $p (@$paths) {
+            push @{ $lcsaj_by_line{$p->{start}} }, $p;
+        }
+    }
+}
 
 	for my $i (0 .. $#lines) {
 		my $line_no = $i + 1;
@@ -333,6 +408,21 @@ sub _write_file_report {
 		# Render the line with colour + optional tooltip
 		# --------------------------------------------------
 
+		my $lcsaj_marker = '';
+
+if (my $paths = $lcsaj_by_line{$line_no}) {
+
+    for my $p (@$paths) {
+
+        my $target = $p->{target};
+
+        $lcsaj_marker .= qq{
+<span class="lcsaj-dot"
+title="LCSAJ: $line_no → $p->{end} → $target">●</span>
+};
+    }
+}
+
 		# Add tooltip class only if tooltip text exists
 		my $extra_class = $tooltip ? ' tooltip' : '';
 
@@ -342,7 +432,7 @@ sub _write_file_report {
 		my $tooltip_attr = $tooltip ? qq{ data-tooltip="$tooltip"} : '';
 
 		print $out qq{<span class="$class$extra_class"$tooltip_attr>};
-		print $out sprintf("%5d: %s", $line_no, $content);
+		print $out $lcsaj_marker, sprintf("%5d: %s", $line_no, $content);
 
 		# --------------------------------------------------
 		# Build expandable mutant details for this line
@@ -731,6 +821,12 @@ pre details.mutant-details ul {
 	font-weight: bold;
 }
 
+.lcsaj-dot {
+	color: #5555ff;
+	font-size: 10px;
+	margin-right: 3px;
+}
+
 </style>
 </head>
 <body>
@@ -894,6 +990,50 @@ sub _cyclomatic_complexity {
     }
 
     return $complexity;
+}
+
+sub _lcsaj_coverage_for_file {
+
+    my ($file, $lcsaj_dir, $hits) = @_;
+
+    return unless $lcsaj_dir && $hits;
+
+    my ($base) = $file =~ /([^\/]+)$/;
+
+    my $json = File::Spec->catfile(
+        $lcsaj_dir,
+        "$base.lcsaj.json"
+    );
+
+    return unless -f $json;
+
+    open my $fh, '<', $json;
+    my $paths = decode_json(do { local $/; <$fh> });
+    close $fh;
+
+    my $file_hits = $hits->{$file} || {};
+
+    my $covered = 0;
+    my $total = scalar @$paths;
+
+    for my $p (@$paths) {
+
+        my $start = $p->{start};
+        my $end   = $p->{end};
+
+        my $hit = 0;
+
+        for my $l ($start .. $end) {
+            if ($file_hits->{$l}) {
+                $hit = 1;
+                last;
+            }
+        }
+
+        $covered++ if $hit;
+    }
+
+    return ($covered, $total);
 }
 
 1;
