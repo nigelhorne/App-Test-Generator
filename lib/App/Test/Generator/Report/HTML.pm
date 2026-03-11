@@ -69,14 +69,7 @@ sub generate {
 
 	my $files = _group_by_file($data);
 
-	_write_index(
-    $output_dir,
-    $data,
-    $files,
-    $coverage_data,
-    $lcsaj_dir,
-    $lcsaj_hits
-);
+	_write_index($output_dir, $data, $files, $coverage_data, $lcsaj_dir, $lcsaj_hits);
 
 	# Pre-sort files worst-first so navigation order matches index order
 	my @sorted_files = sort { _file_score($files->{$a}) <=> _file_score($files->{$b}) || $a cmp $b } keys %$files;
@@ -90,16 +83,7 @@ sub generate {
 		# Only assign next if this is NOT the last file
 		my $next = $i < $#sorted_files ? $sorted_files[$i + 1] : undef;
 
-		_write_file_report(
-    $output_dir,
-    $file,
-    $files->{$file},
-    $prev,
-    $next,
-    $coverage_data,
-    $lcsaj_dir,
-    $lcsaj_hits
-);
+		_write_file_report(:$output_dir, $file, $files->{$file}, $prev, $next, $coverage_data, $lcsaj_dir, $lcsaj_hits);
 	}
 }
 
@@ -167,9 +151,7 @@ sub _write_index {
 
 		my ($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $lcsaj_dir, $lcsaj_hits);
 
-my $lcsaj_pct = $lcsaj_total
-    ? sprintf('%.1f', ($lcsaj_cov / $lcsaj_total) * 100)
-    : '-';
+		my $lcsaj_pct = $lcsaj_total ? sprintf('%.1f', ($lcsaj_cov / $lcsaj_total) * 100) : '-';
 
 		print $out qq{
 <tr>
@@ -224,16 +206,16 @@ my $lcsaj_pct = $lcsaj_total
 # --------------------------------------------------
 
 sub _write_file_report {
-    my (
-        $dir,
-        $file,
-        $mutants,
-        $prev,
-        $next,
-        $coverage_data,
-        $lcsaj_dir,
-        $lcsaj_hits
-    ) = @_;
+	my (
+		$dir,
+		$file,
+		$mutants,
+		$prev,
+		$next,
+		$coverage_data,
+		$lcsaj_dir,
+		$lcsaj_hits
+	) = @_;
 
 	return unless -f $file;
 
@@ -287,8 +269,8 @@ sub _write_file_report {
 			my $stmt_total = $file_cov->{statement}{total} || 0;
 			my $stmt_hit = $file_cov->{statement}{covered} || 0;
 
-			my $branch_total = $file_cov->{branch}{total}   || 0;
-			my $branch_hit   = $file_cov->{branch}{covered} || 0;
+			my $branch_total = $file_cov->{branch}{total} || 0;
+			my $branch_hit = $file_cov->{branch}{covered} || 0;
 
 			my $stmt_pct = $stmt_total ? sprintf('%.2f', ($stmt_hit / $stmt_total) * 100) : 0;
 
@@ -315,21 +297,19 @@ sub _write_file_report {
 		</div>
 	};
 
-if ($lcsaj_hits) {
+	if ($lcsaj_hits) {
+		my ($cov, $total) = _lcsaj_coverage_for_file($file, $lcsaj_dir, $lcsaj_hits);
 
-    my ($cov, $total) =
-	_lcsaj_coverage_for_file($file, $lcsaj_dir, $lcsaj_hits);
+		if ($total) {
+			my $pct = sprintf('%.1f', ($cov / $total) * 100);
 
-    if ($total) {
+			print $out "<div class='summary'>";
+			print $out "<strong>LCSAJ Coverage</strong><br>";
+			print $out "$pct% ($cov / $total paths)";
+			print $out '</div>';
+		}
+	}
 
-        my $pct = sprintf('%.1f', ($cov / $total) * 100);
-
-        print $out "<div class='summary'>";
-        print $out "<strong>LCSAJ Coverage</strong><br>";
-        print $out "$pct% ($cov / $total paths)";
-        print $out "</div>";
-    }
-}
 	my %survived_by_line;
 	my %killed_by_line;
 
@@ -346,34 +326,32 @@ if ($lcsaj_hits) {
 
 	my %lcsaj_by_line;
 
-if ($lcsaj_hits) {
+	if ($lcsaj_hits) {
+		# Normalize the filename so it matches debugger paths
+		$file = abs_path($file) if defined $file;
 
-    # Normalize the filename so it matches debugger paths
-    $file = abs_path($file) if defined $file;
+		my ($base) = $file =~ /([^\/]+)$/;
 
-    my ($base) = $file =~ /([^\/]+)$/;
+		my $lcsaj_file = File::Spec->catfile($lcsaj_dir, "$base.lcsaj.json");
 
-    my $lcsaj_file = File::Spec->catfile($lcsaj_dir, "$base.lcsaj.json");
+		if (-f $lcsaj_file) {
+			open my $fh, '<', $lcsaj_file;
+			my $paths = decode_json(do { local $/; <$fh> });
+			close $fh;
 
-    if (-f $lcsaj_file) {
+			for my $p (@{ $paths || [] }) {
+				next unless ref $p eq 'HASH';
 
-        open my $fh, '<', $lcsaj_file;
-        my $paths = decode_json(do { local $/; <$fh> });
-        close $fh;
+				my $start = $p->{start};
+				my $end = $p->{end};
+				my $jump = $p->{jump};
 
-        for my $p (@{ $paths || [] }) {
-            next unless ref $p eq 'HASH';
+				next unless defined $start && defined $end;
 
-            my $start = $p->{start};
-            my $end   = $p->{end};
-            my $jump  = $p->{jump};
-
-            next unless defined $start && defined $end;
-
-            push @{ $lcsaj_by_line{$start} }, $p;
-        }
-    }
-}
+				push @{ $lcsaj_by_line{$start} }, $p;
+			}
+		}
+	}
 
 	for my $i (0 .. $#lines) {
 		my $line_no = $i + 1;
@@ -382,7 +360,6 @@ if ($lcsaj_hits) {
 		# --------------------------------------------------
 		# Determine mutation status for this line
 		# --------------------------------------------------
-
 		my $survivor_count = scalar @{ $survived_by_line{$line_no} || [] };
 		my $killed_count = scalar @{ $killed_by_line{$line_no} || [] };
 
@@ -418,25 +395,20 @@ if ($lcsaj_hits) {
 
 		# --------------------------------------------------
 		# Render the line with colour + optional tooltip
-# Render LCSAJ markers for this line
-# --------------------------------------------------
+		# Render LCSAJ markers for this line
+		# --------------------------------------------------
 
-my $lcsaj_marker = '';
+		my $lcsaj_marker = '';
 
-if (my $paths = $lcsaj_by_line{$line_no}) {
+		if (my $paths = $lcsaj_by_line{$line_no}) {
+			for my $p (@$paths) {
+				my $start = $p->{start};
+				my $end = $p->{end};
+				my $jump = $p->{jump} // 0;
 
-    for my $p (@$paths) {
-
-        my $start = $p->{start};
-        my $end   = $p->{end};
-        my $jump  = $p->{jump} // 0;
-
-        $lcsaj_marker .= qq{
-            <span class="lcsaj-dot"
-            title="LCSAJ: $start → $end → $jump">●</span>
-        };
-    }
-}
+				$lcsaj_marker .= qq{ <span class="lcsaj-dot" title="LCSAJ: $start → $end → $jump">●</span> };
+			}
+		}
 
 		# Add tooltip class only if tooltip text exists
 		my $extra_class = $tooltip ? ' tooltip' : '';
@@ -907,12 +879,12 @@ sub _coverage_totals
 	my $total = $cov->{summary}->{Total} || {};
 
 	# Extract statement coverage
-	my $stmt_total = $total->{statement}{total}   || 0;
-	my $stmt_hit   = $total->{statement}{covered} || 0;
+	my $stmt_total = $total->{statement}{total} || 0;
+	my $stmt_hit = $total->{statement}{covered} || 0;
 
 	# Extract branch coverage
-	my $branch_total = $total->{branch}{total}   || 0;
-	my $branch_hit   = $total->{branch}{covered} || 0;
+	my $branch_total = $total->{branch}{total} || 0;
+	my $branch_hit = $total->{branch}{covered} || 0;
 
 	return ($stmt_total, $stmt_hit, $branch_total, $branch_hit);
 }
@@ -926,29 +898,27 @@ sub _coverage_totals
 # ------------------------------------------------------------
 
 sub _coverage_for_file {
+	my ($cov, $file) = @_;
 
-    my ($cov, $file) = @_;
+	return unless $cov;
+	return unless $cov->{summary};
 
-    return unless $cov;
-    return unless $cov->{summary};
+	# Exact match first
+	return $cov->{summary}{$file} if exists $cov->{summary}{$file};
 
-    # Exact match first
-    return $cov->{summary}{$file}
-        if exists $cov->{summary}{$file};
+	# Try matching by basename
+	require File::Basename;
+	my $base = File::Basename::basename($file);
 
-    # Try matching by basename
-    require File::Basename;
-    my $base = File::Basename::basename($file);
+	foreach my $k (keys %{ $cov->{summary} }) {
+		next if $k eq 'Total';
 
-    foreach my $k (keys %{ $cov->{summary} }) {
-        next if $k eq 'Total';
+		if (File::Basename::basename($k) eq $base) {
+			return $cov->{summary}{$k};
+		}
+	}
 
-        if (File::Basename::basename($k) eq $base) {
-            return $cov->{summary}{$k};
-        }
-    }
-
-    return;
+	return;
 }
 
 # ------------------------------------------------------------
@@ -965,90 +935,83 @@ sub _coverage_for_file {
 sub _cyclomatic_complexity {
 	my $file = $_[0];
 
-    return 0 unless -f $file;
+	return 0 unless -f $file;
 
-    require PPI;
+	require PPI;
 
-    my $doc = PPI::Document->new($file);
-    return 0 unless $doc;
+	my $doc = PPI::Document->new($file);
+	return 0 unless $doc;
 
-    my $complexity = 1;
+	my $complexity = 1;
 
-    # --------------------------------------------------
-    # Control-flow keywords
-    # --------------------------------------------------
+	# --------------------------------------------------
+	# Control-flow keywords
+	# --------------------------------------------------
+	my $words = $doc->find('PPI::Token::Word') || [];
 
-    my $words = $doc->find('PPI::Token::Word') || [];
+	foreach my $w (@$words) {
+		my $c = $w->content;
 
-    foreach my $w (@$words) {
+		if ($c =~ /^(if|elsif|unless|while|for|foreach|until|when)$/) {
+			$complexity++;
+		}
+	}
 
-        my $c = $w->content;
+	# --------------------------------------------------
+	# Logical operators (extra branches)
+	# --------------------------------------------------
+	my $ops = $doc->find('PPI::Token::Operator') || [];
 
-        if ($c =~ /^(if|elsif|unless|while|for|foreach|until|when)$/) {
-            $complexity++;
-        }
-    }
+	foreach my $op (@$ops) {
+		my $c = $op->content;
 
-    # --------------------------------------------------
-    # Logical operators (extra branches)
-    # --------------------------------------------------
+		if ($c eq '&&' || $c eq '||' || $c eq '?') {
+			$complexity++;
+		}
+	}
 
-    my $ops = $doc->find('PPI::Token::Operator') || [];
-
-    foreach my $op (@$ops) {
-
-        my $c = $op->content;
-
-        if ($c eq '&&' || $c eq '||' || $c eq '?') {
-            $complexity++;
-        }
-    }
-
-    return $complexity;
+	return $complexity;
 }
 
 sub _lcsaj_coverage_for_file {
+	my ($file, $lcsaj_dir, $hits) = @_;
 
-    my ($file, $lcsaj_dir, $hits) = @_;
+	return unless $lcsaj_dir && $hits;
 
-    return unless $lcsaj_dir && $hits;
+	$file = abs_path($file) if defined $file;
 
-    my ($base) = $file =~ /([^\/]+)$/;
+	my ($base) = $file =~ /([^\/]+)$/;
 
-    my $json = File::Spec->catfile(
-        $lcsaj_dir,
-        "$base.lcsaj.json"
-    );
+	my $json = File::Spec->catfile($lcsaj_dir, "$base.lcsaj.json");
 
-    return unless -f $json;
+	return unless -f $json;
 
-    open my $fh, '<', $json;
-    my $paths = decode_json(do { local $/; <$fh> });
-    close $fh;
+	open my $fh, '<', $json;
+	my $paths = decode_json(do { local $/; <$fh> });
+	close $fh;
 
-    my $file_hits = $hits->{$file} || {};
+	my $file_hits = $hits->{$file} || {};
 
-    my $covered = 0;
-    my $total = scalar @$paths;
+	my $covered = 0;
+	my $total = scalar @$paths;
 
-    for my $p (@$paths) {
+	for my $p (@$paths) {
+		my $start = $p->{start};
+		my $end = $p->{end};
 
-        my $start = $p->{start};
-        my $end   = $p->{end};
+		next unless defined $start && defined $end;
 
-	next unless defined $start && defined $end;
+		my $hit = 0;
 
-        my $hit = 0;
+		for my $l ($start .. $end) {
+			if ($file_hits->{$l}) {
+				$hit = 1;
+			last;
+			}
+		}
 
-        for my $l ($start .. $end) {
-            if ($file_hits->{$l}) {
-                $hit = 1;
-                last;
-            }
-        }
-
-        $covered++ if $hit;
-    }
+		$covered++ if $hit;
+	}
 
 	return ($covered, $total);
 }

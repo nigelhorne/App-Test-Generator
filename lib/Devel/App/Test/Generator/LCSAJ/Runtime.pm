@@ -52,6 +52,8 @@ sub DB::DB {
 
 	my $abs = abs_path($file) || return;
 
+	return if $abs =~ m{Devel/App/Test/Generator/LCSAJ/Runtime\.pm$};
+
 	# If targets were provided, filter by them
 	if (%TARGET) {
 		return unless $TARGET{$abs};
