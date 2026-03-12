@@ -132,7 +132,12 @@ sub _write_index {
 
 	print $out "<h2>Files</h2>\n";
 	print $out "<table border='1' cellpadding='5'>\n";
-	print $out "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th><th>Complexity</th><th>LCSAJ</th></tr>\n";
+
+	if($lcsaj_dir) {
+		print $out "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th><th>Complexity</th><th>LCSAJ</th></tr>\n";
+	} else {
+		print $out "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th><th>Complexity</th></tr>\n";
+	}
 
 	for my $file (
 		sort { _file_score($files->{$a}) <=> _file_score($files->{$b}) || $a cmp $b } keys %$files
@@ -150,7 +155,12 @@ sub _write_index {
 
 		my ($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $lcsaj_dir, $lcsaj_hits);
 
-		my $lcsaj_pct = $lcsaj_total ? sprintf('%.1f', ($lcsaj_cov / $lcsaj_total) * 100) : '-';
+		my $lcsaj_pct;
+		if($lcsaj_dir) {
+			$lcsaj_pct = $lcsaj_total ? sprintf('%.1f', ($lcsaj_cov / $lcsaj_total) * 100) : '-';
+		} else {
+			$lcsaj_pct = '';
+		}
 
 		print $out qq{
 <tr>
