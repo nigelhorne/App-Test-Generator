@@ -6,7 +6,7 @@ use autodie qw(:all);
 
 use App::Test::Generator::LCSAJ;
 use Cwd qw(abs_path);
-use File::Basename qw(basename);
+use File::Basename qw(dirname basename);
 use File::Path qw(make_path);
 use File::Spec;
 use JSON::MaybeXS;
@@ -339,9 +339,24 @@ sub _write_file_report {
 		# Normalize the filename so it matches debugger paths
 		$file = abs_path($file) if defined $file;
 
-		my ($base) = $file =~ /([^\/]+)$/;
+		my $base = basename($file);
 
-		my $lcsaj_file = File::Spec->catfile($lcsaj_dir, "$base.lcsaj.json");
+		# convert absolute path to lib-relative path
+		my $rel = $file;
+		$rel =~ s{.*?/lib/}{};
+
+		my $lcsaj_file = File::Spec->catfile(
+			$lcsaj_dir,
+			"$rel.lcsaj",
+			"$base.lcsaj.json"
+		);
+
+		# warn "LCSAJ DEBUG\n";
+		# warn "  file      = $file\n";
+		# warn "  base      = $base\n";
+		# warn "  lcsaj_dir = $lcsaj_dir\n";
+		# warn "  lookup    = $lcsaj_file\n";
+		# warn "  exists    = " . (-f $lcsaj_file ? "YES" : "NO") . "\n";
 
 		if (-f $lcsaj_file) {
 			open my $fh, '<', $lcsaj_file;
@@ -349,20 +364,20 @@ sub _write_file_report {
 			close $fh;
 
 			for my $p (@{ $paths || [] }) {
-    next unless ref $p eq 'HASH';
+				next unless ref $p eq 'HASH';
 
-    my $start = $p->{start};
-    my $end   = $p->{end};
-    my $jump  = $p->{jump} // $p->{target};
+				my $start = $p->{start};
+				my $end = $p->{end};
+				my $jump  = $p->{jump} // $p->{target};
 
-    next unless defined $start && defined $end;
+				next unless defined $start && defined $end;
 
-    push @{ $lcsaj_by_line{$start} }, {
-        start => $start,
-        end   => $end,
-        jump  => $jump,
-    };
-}
+				push @{ $lcsaj_by_line{$start} }, {
+					start => $start,
+					end => $end,
+					jump  => $jump,
+				};
+			}
 		}
 	}
 
@@ -995,7 +1010,14 @@ sub _lcsaj_coverage_for_file {
 
 	my $base = basename($file);
 
-	my $lcsaj_file = File::Spec->catfile($lcsaj_dir, "$base.lcsaj", "$base.lcsaj.json");
+	my $rel = $file;
+	$rel =~ s{.*?/lib/}{};
+
+	my $lcsaj_file = File::Spec->catfile(
+		$lcsaj_dir,
+		"$rel.lcsaj",
+		"$base.lcsaj.json"
+	);
 
 	return unless -f $lcsaj_file;
 
