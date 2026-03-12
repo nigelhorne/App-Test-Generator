@@ -348,7 +348,7 @@ my %opt = (
 	help	=> 0,
 	html => 0,
 	mutation_level => 'full',
-	lcsaj_dir  => 'lcsaj',
+	lcsaj_root  => 'lcsaj',
 lcsaj_hits => 'coverage/lcsaj_hits.json',
 );
 
@@ -367,7 +367,7 @@ GetOptions(
 	'html=s'	=> \$opt{html},
 	'mutation_level=s'	=> \$opt{mutation_level},
 	'man|m' => \$opt{man},
-	'lcsaj_dir=s'  => \$opt{lcsaj_dir},
+	'lcsaj_root=s'  => \$opt{lcsaj_root},
 'lcsaj_hits=s' => \$opt{lcsaj_hits},
 ) or pod2usage(3);
 
@@ -544,7 +544,7 @@ App::Test::Generator::Report::HTML->generate(
     $opt{json},             # mutation results
     $opt{html},             # output directory
     $opt{cover_json},       # optional Devel::Cover JSON
-    $opt{lcsaj_dir},                # directory containing *.lcsaj.json files
+    $opt{lcsaj_root},                # directory containing *.lcsaj.json files
     $opt{lcsaj_hits},  # runtime LCSAJ hit data
 );
 }

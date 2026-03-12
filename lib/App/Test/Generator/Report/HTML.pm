@@ -1019,7 +1019,7 @@ sub _lcsaj_coverage_for_file {
 		for my $l ($start .. $end) {
 			if ($file_hits->{$l}) {
 				$hit = 1;
-			last;
+				last;
 			}
 		}
 
