@@ -39,7 +39,7 @@ our @EXPORT_OK = qw(generate);
 our $VERSION = '0.29';
 
 use constant {
-	DEFAULT_ITERATIONS => 50,
+	DEFAULT_ITERATIONS => 30,
 	DEFAULT_PROPERTY_TRIALS => 1000
 };
 
@@ -440,7 +440,7 @@ When provided, the generated C<t/fuzz.t> will call C<srand($seed)> so fuzz runs 
 
 =head3 C<$iterations>
 
-An optional integer controlling how many fuzz iterations to perform (default 50).
+An optional integer controlling how many fuzz iterations to perform (default 30).
 
 =head3 C<%edge_cases>
 
@@ -491,7 +491,7 @@ During fuzzing iterations, there's a 40% probability that a test case will use a
     - " "
 
   seed: 42
-  iterations: 50
+  iterations: 30
 
 =head3 Semantic Data Generators
 
@@ -879,7 +879,7 @@ The generated test will include:
 
 =item * Traditional edge-case tests for boundary conditions
 
-=item * Random fuzzing with 50 iterations (or as configured)
+=item * Random fuzzing with 30 iterations (or as configured)
 
 =item * Property-based tests that verify the transforms with 1000 trials each
 

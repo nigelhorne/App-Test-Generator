@@ -6,6 +6,7 @@ use autodie qw(:all);
 
 use App::Test::Generator::LCSAJ;
 use Cwd qw(abs_path);
+use File::Basename qw(basename);
 use File::Path qw(make_path);
 use File::Spec;
 use JSON::MaybeXS;
@@ -30,8 +31,7 @@ $cover_json => optional Devel::Cover JSON
 If a L<Devel::Cover> JSON file is supplied to C<generate()>,
 structural coverage metrics are displayed in the dashboard.
 
-The LCSAJ metric shown is an approximation derived from
-statement and branch coverage.
+The LCSAJ metric shown is an approximation derived from statement and branch coverage.
 It is not a full control flow graph computation.
 
 =cut
@@ -50,7 +50,6 @@ sub generate {
 	# --------------------------------------------------
 	# Optional structural coverage loading
 	# --------------------------------------------------
-
 	my $coverage_data;
 
 	if ($cover_json && -f $cover_json) {
@@ -83,7 +82,7 @@ sub generate {
 		# Only assign next if this is NOT the last file
 		my $next = $i < $#sorted_files ? $sorted_files[$i + 1] : undef;
 
-		_write_file_report(:$output_dir, $file, $files->{$file}, $prev, $next, $coverage_data, $lcsaj_dir, $lcsaj_hits);
+		_write_file_report($output_dir, $file, $files->{$file}, $prev, $next, $coverage_data, $lcsaj_dir, $lcsaj_hits);
 	}
 }
 
@@ -340,16 +339,20 @@ sub _write_file_report {
 			close $fh;
 
 			for my $p (@{ $paths || [] }) {
-				next unless ref $p eq 'HASH';
+    next unless ref $p eq 'HASH';
 
-				my $start = $p->{start};
-				my $end = $p->{end};
-				my $jump = $p->{jump};
+    my $start = $p->{start};
+    my $end   = $p->{end};
+    my $jump  = $p->{jump} // $p->{target};
 
-				next unless defined $start && defined $end;
+    next unless defined $start && defined $end;
 
-				push @{ $lcsaj_by_line{$start} }, $p;
-			}
+    push @{ $lcsaj_by_line{$start} }, {
+        start => $start,
+        end   => $end,
+        jump  => $jump,
+    };
+}
 		}
 	}
 
@@ -980,13 +983,13 @@ sub _lcsaj_coverage_for_file {
 
 	$file = abs_path($file) if defined $file;
 
-	my ($base) = $file =~ /([^\/]+)$/;
+	my $base = basename($file);
 
-	my $json = File::Spec->catfile($lcsaj_dir, "$base.lcsaj.json");
+	my $lcsaj_file = File::Spec->catfile($lcsaj_dir, "$base.lcsaj", "$base.lcsaj.json");
 
-	return unless -f $json;
+	return unless -f $lcsaj_file;
 
-	open my $fh, '<', $json;
+	open my $fh, '<', $lcsaj_file;
 	my $paths = decode_json(do { local $/; <$fh> });
 	close $fh;
 
