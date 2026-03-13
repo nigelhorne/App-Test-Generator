@@ -153,6 +153,7 @@ sub _write_index {
 		# --------------------------------------------------
 		my $complexity = _cyclomatic_complexity($file);
 
+		# Approximate LSCAJ score
 		my ($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $lcsaj_dir, $lcsaj_hits);
 
 		my $lcsaj_pct;
@@ -213,7 +214,6 @@ sub _write_index {
 # --------------------------------------------------
 # Write per-file report with heatmap
 # --------------------------------------------------
-
 sub _write_file_report {
 	my (
 		$dir,
