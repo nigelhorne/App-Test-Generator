@@ -416,7 +416,6 @@ sub _write_file_report {
 			# -----------------------------
 			# Killed mutations (green)
 			# -----------------------------
-
 			$class = 'killed';
 			$tooltip = "Mutations here were killed. Tests are effectively covering this logic.";
 		}
@@ -447,7 +446,7 @@ sub _write_file_report {
 		my $tooltip_attr = $tooltip ? qq{ data-tooltip="$tooltip"} : '';
 
 		print $out qq{<span class="$class$extra_class"$tooltip_attr>};
-		print $out $lcsaj_marker, sprintf("%5d: %s", $line_no, $content);
+		print $out $lcsaj_marker, sprintf('%5d: %s', $line_no, $content);
 
 		# --------------------------------------------------
 		# Build expandable mutant details for this line
@@ -924,29 +923,38 @@ sub _coverage_totals
 # Devel::Cover JSON keys may store paths relative to project
 # root, so we try multiple match strategies.
 # ------------------------------------------------------------
-
 sub _coverage_for_file {
-	my ($cov, $file) = @_;
+    my ($cov, $file) = @_;
 
-	return unless $cov;
-	return unless $cov->{summary};
+    return unless $cov && $cov->{summary};
+    my $summary = $cov->{summary};
 
-	# Exact match first
-	return $cov->{summary}{$file} if exists $cov->{summary}{$file};
+    # 1. exact match (what worked before)
+    return $summary->{$file} if exists $summary->{$file};
 
-	# Try matching by basename
-	require File::Basename;
-	my $base = File::Basename::basename($file);
+    require File::Basename;
 
-	foreach my $k (keys %{ $cov->{summary} }) {
-		next if $k eq 'Total';
+    my $base = File::Basename::basename($file);
 
-		if (File::Basename::basename($k) eq $base) {
-			return $cov->{summary}{$k};
-		}
-	}
+    # 2. basename match (what worked before)
+    for my $k (keys %$summary) {
+        next if $k eq 'Total';
+        if (File::Basename::basename($k) eq $base) {
+            return $summary->{$k};
+        }
+    }
 
-	return;
+    # 3. try lib/ relative path
+    my $rel = $file;
+    $rel =~ s{.*?/lib/}{lib/};
+
+    return $summary->{$rel} if exists $summary->{$rel};
+
+    # 4. NEW: try blib/lib version
+    my $blib = "blib/$rel";
+    return $summary->{$blib} if exists $summary->{$blib};
+
+    return;
 }
 
 # ------------------------------------------------------------

@@ -3,10 +3,19 @@
 set -ex
 
 rm -rf cover_db coverage lcsaj mutation_html mutation.json
+
+perl Makefile.PL && make
+
+PERL5OPT='-Mblib' cover -test
 cover -report json -outputdir cover_db
-export LCSAJ_TARGETS=$(find lib -name '*.pm' -exec realpath {} \; | tr '\n' ':' | sed 's/:$//')
+export LCSAJ_TARGETS=$(
+  find lib -name '*.pm' -exec realpath {} \; ;
+  find blib/lib -name '*.pm' -exec realpath {} \;
+ | tr '\n' ':' | sed 's/:$//')
 export LCSAJ_TARGETS=${LCSAJ_TARGETS%:}
 # Create the coverage/lcsaj_hits.json file
+mkdir -p coverage
 PERL5OPT='-d:App::Test::Generator::LCSAJ::Runtime' prove -l t
 # Basic mutation run, output to JSON and HTML
+mkdir -p mutation_html/lib cover_html
 bin/app-test-generator-mutate -v --lib lib --min-score 85 --tests t --json mutation.json --html mutation_html --mutation_level=fast --cover_json cover_db/cover.json --lcsaj_root mutation_html/lib

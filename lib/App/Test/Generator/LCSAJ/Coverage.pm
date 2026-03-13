@@ -5,8 +5,7 @@ use warnings;
 use JSON::MaybeXS;
 
 sub merge {
-
-    my ($lcsaj_file,$hits_file,$out_file) = @_;
+	my ($lcsaj_file,$hits_file,$out_file) = @_;
 
     my $paths = decode_json(do { local(@ARGV,$/)=$lcsaj_file;<> });
     my $hits  = decode_json(do { local(@ARGV,$/)=$hits_file;<> });
