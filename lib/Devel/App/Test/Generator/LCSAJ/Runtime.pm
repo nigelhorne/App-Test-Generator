@@ -36,31 +36,41 @@ runtime coverage data for later LCSAJ analysis.
 our %HITS;
 our %TARGET;
 
+sub _normalize {
+    my ($f) = @_;
+
+    $f =~ s{.*?/blib/lib/}{lib/};
+    $f =~ s{.*?/lib/}{lib/};
+
+    return $f;
+}
+
 BEGIN {
-	if (my $env = $ENV{LCSAJ_TARGETS}) {
-		for my $f (split /:/, $env) {
-			my $abs = abs_path($f);
-			$TARGET{$abs} = 1 if $abs;
-		}
-	}
+    for my $t (split /:/, ($ENV{LCSAJ_TARGETS} // '')) {
+        $t = _normalize($t);
+        $TARGET{$t} = 1;
+    }
 }
 
 sub DB::DB {
-	my (undef, $file, $line) = caller;
+    my (undef, $file, $line) = caller;
 
-	return unless defined $file;
+    return unless defined $file;
 
-	my $abs = abs_path($file) || return;
+    my $abs = abs_path($file) || $file;
 
-	return if $abs =~ m{Devel/App/Test/Generator/LCSAJ/Runtime\.pm$};
+    my $norm = _normalize($abs);
 
-	# If targets were provided, filter by them
-	if (%TARGET) {
-		return unless $TARGET{$abs};
-	}
+	return if $norm eq 'lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm';
 
-	$HITS{$abs}{$line}++;
+    # If targets were provided, filter by them
+    if (%TARGET) {
+        return unless $TARGET{$norm};
+    }
+
+    $HITS{$norm}{$line}++;
 }
+
 
 sub _write_results {
 	return unless %HITS;
