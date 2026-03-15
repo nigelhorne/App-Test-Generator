@@ -45,12 +45,12 @@ Readonly my %config => (
 	low_threshold => 70,
 	med_threshold => 90,
 	max_points => 10,	# Only display the last 10 commits in the coverage trend graph
-	cover_db => 'cover_db/cover.json',
-	output => 'cover_html/index.html',
+	cover_db => 'cover_html/cover.json',
 	mutation_db => 'mutation.json',
-	mutation_output_dir => 'coverage/mutation_html',
-	lcsaj_root => 'mutation_html/lib',
+	mutation_output_dir => 'cover_html/mutation_html',
+	lcsaj_root => 'cover_html/mutation_html/lib',
 	lcsaj_hits_file => 'cover_html/lcsaj_hits.json',
+	output => 'cover_html/index.html',
 	max_retry => 3,
 	min_locale_samples => 3,
 );

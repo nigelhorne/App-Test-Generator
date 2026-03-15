@@ -6,7 +6,7 @@ set -uo pipefail
 
 # --- Step 0: Cleanup old data ---
 echo "Cleaning up old coverage, LCSAJ, and mutation data..."
-rm -rf cover_db coverage lcsaj mutation_html mutation.json
+rm -rf cover_db coverage lcsaj mutation_html mutation.json cover_html
 
 # --- Step 1: Build blib if needed ---
 echo "Building blib..."
@@ -15,11 +15,11 @@ make
 
 # --- Step 2: Run tests under Devel::Cover ---
 echo "Running tests with Devel::Cover..."
-PERL5OPT='-Mblib' cover -test
+PERL5OPT='-Mblib' cover -test -outputdir cover_html
 
 # --- Step 3: Generate JSON coverage report ---
 echo "Generating JSON coverage report..."
-cover -report json -outputdir cover_db
+cover -report json -outputdir cover_html
 
 # --- Step 4: Export LCSAJ targets (absolute paths) ---
 echo "Finding LCSAJ targets..."
@@ -43,7 +43,7 @@ app-test-generator-mutate \
     --json mutation.json \
     --html mutation_html \
     --mutation_level=fast \
-    --cover_json cover_db/cover.json \
+    --cover_json cover_html/cover.json \
     --lcsaj_root mutation_html/lib < /dev/null
 
 # --- Step 7: Create the test dashboard
