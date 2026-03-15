@@ -2136,6 +2136,39 @@ sub _mutant_file_report {
 			print $out "Branch: $branch_pct%<br>\n";
 			print $out "Approximate LCSAJ segments: $approx_lcsaj<br>\n";
 			print $out "</div>\n";
+			print $out qq{
+				<div class="legend">
+					<h3>LCSAJ Legend</h3>
+
+					<p>
+					<span class="lcsaj-dot">●</span>
+					Marks the start of an executed <b>LCSAJ (Linear Code Sequence And Jump)</b>.
+					</p>
+
+					<p>
+					Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+					</p>
+
+					<p>
+					Hovering over a dot shows:
+					</p>
+
+					<pre>
+					start → end → jump
+					</pre>
+
+					<ul>
+					<li><b>start</b> – first line of the executed linear sequence</li>
+					<li><b>end</b> – last line before control flow changes</li>
+					<li><b>jump</b> – line execution jumps to next</li>
+					</ul>
+
+					<p>
+					These markers help visualize which execution paths were exercised during testing.
+					</p>
+
+				</div>
+			};
 		}
 	}
 
@@ -2144,6 +2177,7 @@ sub _mutant_file_report {
 	# --------------------------------------------------
 	print $out qq{
 		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
 			<span class="legend-box survived-1"></span> Survived (tests missed this)
 			<span class="legend-box killed"></span> Killed (tests detected this)
 			<span class="legend-box none"></span> No mutation
@@ -2528,6 +2562,19 @@ th {
 
 .killed { background-color: var(--killed); }
 
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
 .legend-box {
     display: inline-block;
     width: 16px;
@@ -2651,9 +2698,9 @@ pre details.mutant-details ul {
 }
 
 .lcsaj-dot {
-	color: #5555ff;
-	font-size: 10px;
-	margin-right: 3px;
+       color: #5555ff;
+       font-size: 10px;
+       margin-right: 3px;
 }
 
 </style>
