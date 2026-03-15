@@ -1014,6 +1014,7 @@ sub _lcsaj_coverage_for_file {
 
 	return unless $lcsaj_dir && $hits;
 
+	my $path = $file;
 	$file = abs_path($file) if defined $file;
 
 	my $base = basename($file);
@@ -1033,7 +1034,7 @@ sub _lcsaj_coverage_for_file {
 	my $paths = decode_json(do { local $/; <$fh> });
 	close $fh;
 
-	my $file_hits = $hits->{$file} || {};
+	my $file_hits = $hits->{$path} || $hits->{$file} || {};
 
 	my $covered = 0;
 	my $total = scalar @$paths;

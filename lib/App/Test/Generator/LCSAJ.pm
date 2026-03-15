@@ -8,11 +8,15 @@ use File::Path qw(make_path);
 use Carp;
 
 =head1 NAME
+
 App::Test::Generator::LCSAJ - Static LCSAJ extraction for Perl
+
 =head1 SYNOPSIS
   use App::Test::Generator::LCSAJ;
   App::Test::Generator::LCSAJ->generate('lib/MyModule.pm');
+
 =head1 DESCRIPTION
+
 Extracts linear code sequences and jump targets from Perl files.
 =cut
 
@@ -36,8 +40,8 @@ sub generate {
         _save_dot($file, $out_dir, $dot);
     }
 
-    _save_lcsaj($file, $out_dir, \@all_paths);
-    return \@all_paths;
+	_save_lcsaj($file, $out_dir, \@all_paths);
+	return \@all_paths;
 }
 
 # --- CFG Building ---
