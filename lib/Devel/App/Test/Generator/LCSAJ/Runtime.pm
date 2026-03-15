@@ -53,31 +53,31 @@ BEGIN {
 }
 
 sub DB::DB {
-    my (undef, $file, $line) = caller;
+	my (undef, $file, $line) = caller;
 
-    return unless defined $file;
+	return unless defined $file;
 
-    my $abs = abs_path($file) || $file;
+	my $abs = abs_path($file) || $file;
 
-    my $norm = _normalize($abs);
+	my $norm = _normalize($abs);
 
 	return if $norm eq 'lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm';
 
-    # If targets were provided, filter by them
-    if (%TARGET) {
-        return unless $TARGET{$norm};
-    }
+	# If targets were provided, filter by them
+	if (%TARGET) {
+		return unless $TARGET{$norm};
+	}
 
-    $HITS{$norm}{$line}++;
+	$HITS{$norm}{$line}++;
 }
 
 
 sub _write_results {
 	return unless %HITS;
 
-	make_path('coverage') unless -d 'coverage';
+	make_path('cover_html') unless -d 'cover_html';
 
-	open my $fh, '>', 'coverage/lcsaj_hits.json' or die "Cannot create coverage/lcsaj_hits.json: $!";
+	open my $fh, '>', 'cover_html/lcsaj_hits.json' or die "Cannot create cover_html/lcsaj_hits.json: $!";
 
 	print $fh JSON::MaybeXS::encode_json(\%HITS);
 
