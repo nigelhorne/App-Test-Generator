@@ -4,14 +4,15 @@
 
 set -uo pipefail
 
+set -e
+
 # --- Step 0: Cleanup old data ---
 echo "Cleaning up old coverage, LCSAJ, and mutation data..."
 rm -rf cover_db coverage lcsaj mutation_html mutation.json cover_html
 
 # --- Step 1: Build blib if needed ---
 echo "Building blib..."
-perl Makefile.PL
-make
+perl Makefile.PL && make && make install
 
 # --- Step 2: Run tests under Devel::Cover ---
 echo "Running tests with Devel::Cover..."
@@ -27,6 +28,8 @@ export LCSAJ_TARGETS=$(find lib -name '*.pm' -exec realpath {} \; ; find blib/li
 export LCSAJ_TARGETS=${LCSAJ_TARGETS%:}
 echo "LCSAJ_TARGETS=$LCSAJ_TARGETS"
 
+set +e
+
 # --- Step 5: Run tests again under LCSAJ runtime ---
 echo "Recording LCSAJ hits..."
 mkdir -p coverage
@@ -41,10 +44,12 @@ app-test-generator-mutate \
     --min-score 85 \
     --tests t \
     --json mutation.json \
-    --html mutation_html \
+    --html cover_html/mutation_html \
     --mutation_level=fast \
     --cover_json cover_html/cover.json \
-    --lcsaj_root mutation_html/lib < /dev/null
+    --lcsaj_root cover_html/mutation_html/lib < /dev/null
+
+set -e
 
 # --- Step 7: Create the test dashboard
 GITHUB_REPOSITORY=nigelhorne/App-Test-Generator scripts/generate_index.pl
