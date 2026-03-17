@@ -43,7 +43,7 @@ use constant {
 	DEFAULT_PROPERTY_TRIALS => 1000
 };
 
-use constant CONFIG_TYPES => ('test_nuls', 'test_undef', 'test_empty', 'test_non_ascii', 'dedup', 'properties', 'close_stdin');
+use constant CONFIG_TYPES => ('test_nuls', 'test_undef', 'test_empty', 'test_non_ascii', 'dedup', 'properties', 'close_stdin', 'test_security');
 
 =head1 NAME
 
@@ -240,6 +240,8 @@ Setting this to 0 disables timeout testing.
 =item * C<dedup>, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 
 =item * C<properties>, enable L<Test::LectroTest> Property tests (default: 0)
+
+*item * C<test_security>, send some security string based tests (default: 0)
 
 =back
 
@@ -1258,7 +1260,7 @@ sub generate
 
 	my ($schema_file, $test_file, $schema);
 	# Globals loaded from the user's conf (all optional except function maybe)
-	my (%config, $module, $function, $new, $yaml_cases);
+	my ($module, $function, $new, $yaml_cases);
 	my ($seed, $iterations);
 
 	if(ref($args) || defined($_[2])) {
@@ -1315,7 +1317,7 @@ sub generate
 	my @edge_case_array = @{$schema->{edge_case_array}} if(exists($schema->{edge_case_array}));
 	_validate_config($schema);
 
-	%config = %{$schema->{config}} if(exists($schema->{config}));
+	my %config = %{$schema->{config}} if(exists($schema->{config}));
 
 	_normalize_config(\%config);
 

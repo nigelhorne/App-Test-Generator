@@ -1111,12 +1111,16 @@ sub _generate_string_cases
 			if($len <= 0) {
 				push @cases, { %{$mandatory_args}, ( $arg_name => '', _LINE => __LINE__ ) } if($config{'test_empty'});	# min == 0, empty string should be allowable
 				push @cases,
-					{ %{$mandatory_args}, ( $arg_name => '<script>alert(1)</script>', _LINE => __LINE__ ) },
-					{ %{$mandatory_args}, ( $arg_name => "'; DROP TABLE foo --", _LINE => __LINE__ ) },
 					{ %{$mandatory_args}, ( $arg_name => ' ', _LINE => __LINE__ ) },
 					{ %{$mandatory_args}, ( $arg_name => "\n", _LINE => __LINE__ ) },
 					# Don't confuse if() with if(defined())
 					{ %{$mandatory_args}, ( $arg_name => '0', _STATUS => 'DIES' ) };
+
+				if($config{'test_security'}) {
+					push @cases,
+						{ %{$mandatory_args}, ( $arg_name => '<script>alert(1)</script>', _LINE => __LINE__ ) },
+						{ %{$mandatory_args}, ( $arg_name => "'; DROP TABLE foo --", _LINE => __LINE__ ) };
+				}
 			}
 		}
 	} elsif($config{'test_empty'}) {
