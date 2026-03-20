@@ -645,11 +645,11 @@ sub mutation_difficulty {
 	} if $id =~ /BOUNDARY|NUM/;
 
 	# Conditional inversions reveal missing negative assertions
-    return {
-        score => 2,
-        label => 'MEDIUM',
-	hint => 'Add tests asserting both true and false outcomes'
-    } if $id =~ /COND|INV|NEG/;
+	return {
+		score => 2,
+		label => 'MEDIUM',
+		hint => 'Add tests asserting both true and false outcomes'
+	} if $id =~ /COND|INV|NEG/;
 
     # Logical operator changes
     return {

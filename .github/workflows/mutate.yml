@@ -19,7 +19,7 @@ jobs:
 
       - run: echo "$(pwd)/local/bin" >> $GITHUB_PATH
 
-      - run: perl -Ilib bin/app-test-generator-mutate \
+      - run: perl -Ilib -Iblib/lib bin/app-test-generator-mutate \
               --lib lib \
               --min-score 85 \
               --json mutation.json \
