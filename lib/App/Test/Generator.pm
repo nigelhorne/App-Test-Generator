@@ -69,10 +69,10 @@ From Perl:
   use App::Test::Generator qw(generate);
 
   # Generate to STDOUT
-  App::Test::Generator::generate("t/conf/add.yml");
+  App::Test::Generator->generate("t/conf/add.yml");
 
   # Generate directly to a file
-  App::Test::Generator::generate('t/conf/add.yml', 't/add_fuzz.t');
+  App::Test::Generator->generate('t/conf/add.yml', 't/add_fuzz.t');
 
   # Holy grail mode - read a Perl file, generate tests, and run them
   # This is a long way away yet, but see t/schema_input.t for a proof of concept
@@ -1573,6 +1573,7 @@ sub generate
 		}
 	} elsif(defined($module) && length($module)) {
 		if($function eq 'new') {
+			die 'SHOULD BE UNREACHABLE';
 			if($has_positions) {
 				$position_code = "\$result = (scalar(\@alist) == 1) ? ${module}\->$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}\->$function() : ${module}\->$function(\@alist);";
 			} else {
