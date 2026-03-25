@@ -5,9 +5,9 @@ use warnings;
 
 # Enable debugger line callbacks
 BEGIN {
-    $^P |= 0x2;          # enable line-by-line debugging
-    our $single = 0;     # required by Perl debugger interface
-    our $trace  = 0;
+	$^P |= 0x2;          # enable line-by-line debugging
+	our $single = 0;     # required by Perl debugger interface
+	our $trace  = 0;
 }
 
 use Cwd qw(abs_path);
