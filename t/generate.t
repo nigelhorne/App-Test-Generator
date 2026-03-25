@@ -17,7 +17,7 @@ ok(-e $conf_file, 'config file exists: $conf_file');
 {
 	local *STDOUT;
 	open STDOUT, '>', \my $output;
-	App::Test::Generator::generate($conf_file);
+	App::Test::Generator->generate($conf_file);
 	like($output, qr/use Test::Most;/, 'output looks like a test file');
 }
 

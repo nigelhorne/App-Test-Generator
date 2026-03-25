@@ -14,7 +14,7 @@ unlink $outfile;
 
 mkdir 't' if(!-d 't');
 
-ok(App::Test::Generator::generate($conf_file, $outfile), 'generate fuzz test');
+ok(App::Test::Generator->generate($conf_file, $outfile), 'generate fuzz test');
 ok(-e $outfile, "fuzz test file created");
 
 open my $fh, '<', $outfile or die $!;
