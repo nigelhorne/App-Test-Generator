@@ -1269,17 +1269,23 @@ sub generate
 			args => Params::Get::get_params(undef, \@_),
 			schema => {
 				input_file => { type => 'string', optional => 1 },
+				schema_file => { type => 'string', optional => 1 },
 				output_file => { type => 'string', optional => 1 },
 				schema => { type => 'hashref', optional => 1 },
 				quiet => { type => 'boolean', optional => 1 },	# Not yet used
 			}
 		});
-		if($params->{'input_file'}) {
+		if($params->{'schema_file'}) {
+			$schema_file = $params->{'schema_file'};
+		} elsif($params->{'input_file'}) {
 			$schema_file = $params->{'input_file'};
 		} elsif($params->{'schema'}) {
 			$schema = $params->{'schema'};
 		} else {
 			croak(__PACKAGE__, ': Usage: generate(input_file|schema [, output_file]');
+		}
+		if(defined($schema_file)) {
+			$schema = _load_schema($schema_file);
 		}
 		$test_file = $params->{'output_file'};
 	} else {
@@ -1287,9 +1293,6 @@ sub generate
 		($schema_file, $test_file) = ($_[0], $_[1]);
 		if(defined($schema_file)) {
 			$schema = _load_schema($schema_file);
-			if(!defined($schema)) {
-				croak "Failed to load schema from $schema_file";
-			}
 		} else {
 			croak 'Usage: generate(schema_file [, outfile])';
 		}
@@ -1770,6 +1773,7 @@ sub _load_schema {
 			return $schema;
 		}
 	}
+	croak "Failed to load schema from $schema_file";
 }
 
 sub _load_schema_section
