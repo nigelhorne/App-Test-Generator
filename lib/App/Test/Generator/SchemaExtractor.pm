@@ -6055,11 +6055,13 @@ sub _write_schema {
 		function => $method_name,
 		module => $package_name,
 		config => {
+			close_stdin => 0,
 			dedup => 1,
 			test_nuls => 0,
 			test_undef => 0,
 			test_empty => 1,
-			test_non_ascii => 0
+			test_non_ascii => 0,
+			test_security => 0
 		}
 	};
 
