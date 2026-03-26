@@ -5,7 +5,6 @@
 set -uo pipefail
 
 export GITHUB_REPOSITORY=${GITHUB_REPOSITORY:-"nigelhorne/App-Test-Generator"}
-export PERL5OPT='-Mblib'
 
 set -e
 
@@ -16,6 +15,8 @@ rm -rf cover_db coverage lcsaj mutation_html mutation.json cover_html
 # --- Step 1: Build blib if needed ---
 echo "Building blib..."
 perl Makefile.PL && make && make install
+
+export PERL5OPT='-Mblib'
 
 # --- Step 2: Run tests under Devel::Cover ---
 echo "Running tests with Devel::Cover..."
