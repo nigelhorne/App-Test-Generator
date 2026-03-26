@@ -38,7 +38,7 @@ subtest 'invalid input handling' => sub {
 		output => { type => 'string' }
 	});
 
-	throws_ok { App::Test::Generator::generate($bad_conf) } qr/input should be a hash/, 'should croak on non-hash input';
+	throws_ok { App::Test::Generator->generate($bad_conf) } qr/input should be a hash/, 'should croak on non-hash input';
 
 	unlink $bad_conf;
 };
@@ -54,7 +54,7 @@ subtest 'invalid output handling' => sub {
 		output => 'invalid'  # Should be hash
 	});
 
-	throws_ok { App::Test::Generator::generate($bad_conf) } qr/output should be a hash/, 'should croak on non-hash output';
+	throws_ok { App::Test::Generator->generate($bad_conf) } qr/output should be a hash/, 'should croak on non-hash output';
 
 	unlink $bad_conf;
 };
@@ -71,7 +71,7 @@ subtest 'invalid transforms handling' => sub {
 		transforms => 'invalid'  # Should be hash
 	});
 
-	throws_ok { App::Test::Generator::generate($bad_conf) } qr/transforms should be a hash/, 'should croak on non-hash transforms';
+	throws_ok { App::Test::Generator->generate($bad_conf) } qr/transforms should be a hash/, 'should croak on non-hash transforms';
 
 	unlink $bad_conf;
 };
@@ -88,7 +88,7 @@ subtest 'builtin functions' => sub {
 		output => { type => 'integer' }
 	});
 
-	App::Test::Generator::generate($builtin_conf, $builtin_t);
+	App::Test::Generator->generate($builtin_conf, $builtin_t);
 
 	my $content = slurp($builtin_t);
 	like($content, qr/length\(/, 'should generate test for builtin function');
@@ -115,7 +115,7 @@ subtest 'config boolean processing' => sub {
 		}
 	});
 
-	App::Test::Generator::generate($bool_conf, $bool_t);
+	App::Test::Generator->generate($bool_conf, $bool_t);
 
 	# Verify the generated test has correct boolean values
 	my $content = slurp($bool_t);
@@ -139,7 +139,7 @@ subtest 'module name guessing' => sub {
 	});
 
 	pass('TODO When Legacy Files Removed');
-	# App::Test::Generator::generate($guess_conf, 't/guess_test.t');
+	# App::Test::Generator->generate($guess_conf, 't/guess_test.t');
 
 	# my $content = slurp('t/guess_test.t');
 	# like($content, qr/My::Test::Module/, 'should guess module name from filename');
@@ -172,7 +172,7 @@ subtest 'YAML corpus validation' => sub {
 	my @warnings;
 	local $SIG{__WARN__} = sub { push @warnings, @_ };
 
-	App::Test::Generator::generate($corpus_conf, $corpus_t);
+	App::Test::Generator->generate($corpus_conf, $corpus_t);
 
 	like($warnings[0], qr/does not point to an array ref/,
 		'should warn about invalid YAML corpus entries');
@@ -204,7 +204,7 @@ subtest 'case merging' => sub {
 		}
 	});
 
-	App::Test::Generator::generate($merge_conf, $merge_t);
+	App::Test::Generator->generate($merge_conf, $merge_t);
 
 	my $content = slurp($merge_t);
 	# Should contain both YAML and Perl cases
@@ -228,7 +228,7 @@ subtest 'empty new configuration' => sub {
 		output => { type => 'string' }
 	});
 
-	App::Test::Generator::generate($empty_new_conf, $empty_new_t);
+	App::Test::Generator->generate($empty_new_conf, $empty_new_t);
 
 	my $content = slurp($empty_new_t);
 	like($content, qr/new_ok.*Test::Most/,
@@ -254,7 +254,7 @@ subtest 'edge_case_array' => sub {
 		]
 	});
 
-	App::Test::Generator::generate($edge_array_conf, $edge_array_t);
+	App::Test::Generator->generate($edge_array_conf, $edge_array_t);
 
 	my $content = slurp($edge_array_t);
 	like($content, qr/edge_case_array/, 'should include edge_case_array');
@@ -279,7 +279,7 @@ subtest 'OO with new parameters' => sub {
 		output => { type => 'string' }
 	});
 
-	App::Test::Generator::generate($oo_conf, $oo_t);
+	App::Test::Generator->generate($oo_conf, $oo_t);
 
 	my $content = slurp($oo_t);
 	like($content, qr/new_ok.*Test::Most.*param1.*value1/,
@@ -301,7 +301,7 @@ subtest 'builtin functions' => sub {
 		output => { type => 'integer' }
 	});
 
-	App::Test::Generator::generate($builtin_conf, $builtin_t);
+	App::Test::Generator->generate($builtin_conf, $builtin_t);
 
 	my $content = slurp($builtin_t);
 	like($content, qr/length\(/, 'should generate test for builtin function');

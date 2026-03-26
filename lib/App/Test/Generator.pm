@@ -1252,10 +1252,7 @@ Takes a schema file and produces a test file (or STDOUT).
 
 sub generate
 {
-	if($_[0] && ($_[0] eq __PACKAGE__)) {
-		shift;
-	}
-
+	my $class = shift;
 	my $args = $_[0];
 
 	my ($schema_file, $test_file, $schema);
