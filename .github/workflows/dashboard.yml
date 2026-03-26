@@ -45,7 +45,7 @@ jobs:
         # Keep retrying until it works (deals with cpan issues)
         run: |
           for i in {1..3}; do
-            cpanm --mirror https://fastapi.metacpan.org -iqn ExtUtils::MakeMaker Module::Build && break
+            cpanm --mirror https://fastapi.metacpan.org -iqn Module::Build && break
             echo "Attempt $((i)) failed, retrying in $((2 ** i)) seconds..."
             sleep $((2 ** i))
           done
@@ -56,7 +56,7 @@ jobs:
       - name: Install dependencies
         run: |
           cpanm --notest --installdeps .
-          cpanm -iqn ExtUtils::MakeMaker Test::Most Devel::Cover Devel::Cover::Report::Html POSIX File::Glob File::Slurp File::stat Readonly
+          cpanm -iqn Test::Most Devel::Cover Devel::Cover::Report::Html POSIX File::Glob File::Slurp File::stat Readonly
           cpanm -iqn IPC::System::Simple WWW::RT::CPAN IPC::Run3
         timeout-minutes: 10
 
