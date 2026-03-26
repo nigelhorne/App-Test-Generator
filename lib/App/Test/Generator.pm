@@ -1252,6 +1252,8 @@ Takes a schema file and produces a test file (or STDOUT).
 
 sub generate
 {
+	croak 'Usage: generate(schema_file [, outfile])' if(scalar(@_) <= 1);
+
 	my $class = shift;
 	my $args = $_[0];
 
