@@ -779,7 +779,7 @@ sub fuzz_inputs
 	# edge-cases
 	if($config{'test_undef'}) {
 		if($all_optional) {
-			push @cases, { '_NAME' => 'No args since all are optional' };
+			push @cases, { '_DESCRIPTION' => 'No args since all are optional' };
 		} else {
 			# Note that this is set on the input rather than output
 			push @cases, { '_STATUS' => 'DIES' };	# At least one argument is needed
@@ -789,7 +789,7 @@ sub fuzz_inputs
 	if(scalar keys %input) {
 		push @cases, { '_STATUS' => 'DIES', map { $_ => undef } keys %input } if($config{'test_undef'});
 	} else {
-		push @cases, { '_NAME' => 'Takes no input' };	# Takes no input
+		push @cases, { '_DESCRIPTION' => 'Takes no input' };	# Takes no input
 	}
 
 	# If it's not in mandatory_strings it sets to 'undef' which is the idea, to test { value => undef } in the args
@@ -1109,7 +1109,7 @@ sub _generate_string_cases
 			}
 
 			if($len <= 0) {
-				push @cases, { %{$mandatory_args}, ( $arg_name => '', _LINE => __LINE__ ) } if($config{'test_empty'});	# min == 0, empty string should be allowable
+				push @cases, { %{$mandatory_args}, ( $arg_name => '', _LINE => __LINE__, _DESCRIPTION => 'min == 0 so empty should be allowed' ) } if($config{'test_empty'});	# min == 0, empty string should be allowable
 				push @cases,
 					{ %{$mandatory_args}, ( $arg_name => ' ', _LINE => __LINE__ ) },
 					{ %{$mandatory_args}, ( $arg_name => "\n", _LINE => __LINE__ ) },
@@ -1160,7 +1160,11 @@ sub _generate_string_cases
 		} else {
 			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str(10_000), _LINE => __LINE__ ) };
 		}
-		push @cases, { %{$mandatory_args}, ( $arg_name => "\x{FEFF}", _STATUS => 'OK', _LINE => __LINE__, _NAME => 'Byte order marker' ) };
+		if((!exists($spec->{min})) || ($spec->{min} <= 1)) {
+			push @cases, { %{$mandatory_args}, ( $arg_name => "\x{FEFF}", _STATUS => 'OK', _LINE => __LINE__, _DESCRIPTION => 'Byte order marker' ) };
+		} else {
+			push @cases, { %{$mandatory_args}, ( $arg_name => "\x{FEFF}", _STATUS => 'DIES', _LINE => __LINE__, _DESCRIPTION => 'Byte order marker' ) };
+		}
 	}
 
 	if((!exists($spec->{min})) || ($spec->{min} == 0)) {
@@ -1564,6 +1568,7 @@ sub run_test
 
 	my $name = delete local $case->{'_NAME'};
 	my $properties = delete local $case->{_PROPERTIES};
+	my $description = delete local $case->{_DESCRIPTION};
 	my $result;
 	my $mess;
 	my @alist = ();
@@ -1616,6 +1621,7 @@ sub run_test
 	}
 
 	my $status = delete $case->{'_STATUS'} || $output->{'_STATUS'};
+	my $line = delete $case->{'_LINE'};
 	my %ENV_before = %ENV;
 	my $cwd_before = Cwd::getcwd();
 
@@ -1668,6 +1674,10 @@ sub run_test
 					[% ELSE %]
 						ok(0, 'position_code not defined');
 					[% END %]
+				} elsif(defined($description)) {
+					lives_ok { [% call_code %] } sprintf($mess, "survives ($description; status = LIVES)");
+				} elsif(defined($line)) {
+					lives_ok { [% call_code %] } sprintf($mess, "survives (line = $line, status = LIVES)");
 				} else {
 					lives_ok { [% call_code %] } sprintf($mess, 'survives (status = LIVES)');
 				}
@@ -1824,8 +1834,8 @@ foreach my $transform (keys %transforms) {
 			push @tests, {
 				%{$foundation},
 				$field => $spec->{value},
-				_LINE => __LINE__
-				# _DESCRIPTION => "$transform_name: $field=$spec->{value}"
+				_LINE => __LINE__,
+				_DESCRIPTION => "$transform: $field=$spec->{value}"
 			};
 			next;
 		}
