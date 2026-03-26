@@ -549,7 +549,10 @@ if ($opt{html}) {
 	);
 }
 
-exit 1 if $score < $opt{min_score};
+if($score < $opt{min_score}) {
+	print STDERR "score $score is less than min_score $opt{min_score}\n";
+	exit 1;
+}
 exit 0;
 
 # ------------------------------------------------------------
