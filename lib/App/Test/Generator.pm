@@ -1572,7 +1572,6 @@ sub generate
 		}
 	} elsif(defined($module) && length($module)) {
 		if($function eq 'new') {
-			die 'SHOULD BE UNREACHABLE';
 			if($has_positions) {
 				$position_code = "\$result = (scalar(\@alist) == 1) ? ${module}\->$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}\->$function() : ${module}\->$function(\@alist);";
 			} else {
