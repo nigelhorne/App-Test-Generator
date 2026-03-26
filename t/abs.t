@@ -5,7 +5,7 @@ use IPC::Run3;
 use IPC::System::Simple qw(system);
 use Test::Most;
 
-use App::Test::Generator qw(generate);
+use_ok('App::Test::Generator');
 
 my $conf_file = 't/conf/abs.yml';
 my $outfile = 't/tmp_abs.t';

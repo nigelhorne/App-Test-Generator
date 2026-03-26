@@ -1260,7 +1260,7 @@ sub generate
 	my ($module, $function, $new, $yaml_cases);
 	my ($seed, $iterations);
 
-	if(ref($args) || defined($_[2])) {
+	if((ref($args) eq 'HASH') || defined($_[2])) {
 		# Modern API
 		my $params = Params::Validate::Strict::validate_strict({
 			args => Params::Get::get_params(undef, \@_),
@@ -1287,7 +1287,7 @@ sub generate
 		$test_file = $params->{'output_file'};
 	} else {
 		# Legacy API
-		($schema_file, $test_file) = ($_[0], $_[1]);
+		($schema_file, $test_file) = @_;
 		if(defined($schema_file)) {
 			$schema = _load_schema($schema_file);
 		} else {
