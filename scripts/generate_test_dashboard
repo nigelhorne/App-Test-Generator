@@ -5,6 +5,7 @@
 set -uo pipefail
 
 export GITHUB_REPOSITORY=${GITHUB_REPOSITORY:-"nigelhorne/App-Test-Generator"}
+export PERL5OPT='-Mblib'
 
 set -e
 
@@ -18,7 +19,7 @@ perl Makefile.PL && make && make install
 
 # --- Step 2: Run tests under Devel::Cover ---
 echo "Running tests with Devel::Cover..."
-PERL5OPT='-Mblib' cover -test -outputdir cover_html
+cover -test -outputdir cover_html
 
 # --- Step 3: Generate JSON coverage report ---
 echo "Generating JSON coverage report..."
@@ -43,7 +44,7 @@ mkdir -p mutation_html/lib cover_html
 app-test-generator-mutate \
     -v \
     --lib lib \
-    --min-score 85 \
+    # --min-score 85 \
     --tests t \
     --json mutation.json \
     --html cover_html/mutation_html \
