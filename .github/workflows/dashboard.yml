@@ -42,7 +42,15 @@ jobs:
         if: runner.os == 'Linux'
 
       - name: Upgrade Toolchain
-        run: cpanm -iqn ExtUtils::MakeMaker Module::Build
+        # Keep retrying until it works (deals with cpan issues)
+        run: |
+          for i in {1..3}; do
+            cpanm --mirror https://fastapi.metacpan.org -iqn ExtUtils::MakeMaker Module::Build && break
+            echo "Attempt $((i)) failed, retrying in $((2 ** i)) seconds..."
+            sleep $((2 ** i))
+          done
+          if [ $? -ne 0 ]; then exit 1; fi
+        # run: cpanm -iqn ExtUtils::MakeMaker Module::Build
 
       # Install module dependencies (from cpanfile or manually)
       - name: Install dependencies
