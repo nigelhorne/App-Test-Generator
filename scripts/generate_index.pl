@@ -47,6 +47,7 @@ Readonly my %config => (
 	max_points => 10,	# Only display the last 10 commits in the coverage trend graph
 	cover_db => 'cover_html/cover.json',
 	mutation_db => 'mutation.json',
+	mutation_dir => 'coverage/mutation_html',	# Where the hrefs will point
 	mutation_output_dir => 'cover_html/mutation_html',
 	lcsaj_root => 'cover_html/mutation_html/lib',
 	lcsaj_hits_file => 'cover_html/lcsaj_hits.json',
@@ -1939,7 +1940,7 @@ sub _mutation_index {
 			'<span class="coverage-badge %s" title="%s">%.1f%%</span>',
 			$badge_class, $tooltip, $score
 		);
-		my $html_file = "../$config{mutation_output_dir}/$file.html";
+		my $html_file = "../$config{mutation_dir}/$file.html";
 
 		my $source_url = $github_base . $file;
 		my $source_link = $total

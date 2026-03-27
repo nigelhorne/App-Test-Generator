@@ -42,15 +42,15 @@ PERL5OPT="-d:App::Test::Generator::LCSAJ::Runtime -Mblib" prove -l t
 # --- Step 6: Run mutation analysis ---
 echo "Running mutation analysis..."
 mkdir -p mutation_html/lib cover_html
-app-test-generator-mutate \
+bin/app-test-generator-mutate \
     -v \
     --lib lib \
     --tests t \
     --json mutation.json \
-    --html cover_html/mutation_html \
+    --html coverage/mutation_html \
     --mutation_level=fast \
-    --cover_json cover_html/cover.json \
-    --lcsaj_root cover_html/mutation_html/lib < /dev/null
+    --cover_json coverage/cover.json \
+    --lcsaj_root coverage/mutation_html/lib < /dev/null
     # --min-score 85
 
 set -e
@@ -58,4 +58,4 @@ set -e
 # --- Step 7: Create the test dashboard
 scripts/generate_index.pl
 
-echo "Done! Check cover_html/index.html for the main report."
+echo "Done! Check coverage/index.html for the main report."

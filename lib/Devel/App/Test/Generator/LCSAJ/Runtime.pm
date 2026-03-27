@@ -46,10 +46,10 @@ sub _normalize {
 }
 
 BEGIN {
-    for my $t (split /:/, ($ENV{LCSAJ_TARGETS} // '')) {
-        $t = _normalize($t);
-        $TARGET{$t} = 1;
-    }
+	for my $t (split /:/, ($ENV{LCSAJ_TARGETS} // '')) {
+		$t = _normalize($t);
+		$TARGET{$t} = 1;
+	}
 }
 
 sub DB::DB {
@@ -70,7 +70,6 @@ sub DB::DB {
 
 	$HITS{$norm}{$line}++;
 }
-
 
 sub _write_results {
 	return unless %HITS;
