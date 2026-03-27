@@ -53,6 +53,7 @@ Readonly my %config => (
 	output => 'cover_html/index.html',
 	max_retry => 3,
 	min_locale_samples => 3,
+	verbose => 1,
 );
 
 # -------------------------------
@@ -1410,6 +1411,7 @@ push @html, <<"HTML";
 HTML
 
 # Write to index.html
+print "Writing output to $config{output}\n" if($config{verbose});
 write_file($config{output}, join("\n", @html));
 
 # Safe git command execution
