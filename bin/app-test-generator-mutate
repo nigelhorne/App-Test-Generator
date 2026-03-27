@@ -468,16 +468,16 @@ for my $file (@files) {
 			for my $m (@$group) {
 				my $difficulty = mutation_difficulty($m);
 
-push @survivors, {
-    id          => $m->id(),
-    line        => $m->line(),
-    file        => $file,
-    description => $m->description(),
-    status      => 'Survived',
-    difficulty  => $difficulty->{label},
-    priority    => $difficulty->{score},
-    hint        => $difficulty->{hint},
-};
+				push @survivors, {
+					id          => $m->id(),
+					line        => $m->line(),
+					file        => $file,
+					description => $m->description(),
+					status      => 'Survived',
+					difficulty  => $difficulty->{label},
+					priority    => $difficulty->{score},
+					hint        => $difficulty->{hint},
+				};
 
 				$total++;
 			}
