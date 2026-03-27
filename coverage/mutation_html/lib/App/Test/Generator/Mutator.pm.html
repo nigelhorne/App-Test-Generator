@@ -1,0 +1,550 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+       color: #5555ff;
+       font-size: 10px;
+       margin-right: 3px;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/App/Test/Generator/Mutator.pm</h1>
+<div class="nav"><a href="Mutation/NumericBoundary.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
+ <a href="Planner.pm.html">Next ➡</a></div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+Statement: 51.06%<br>
+Branch: 7.89%<br>
+Approximate LCSAJ segments: 39<br>
+</div>
+
+				<div class="legend">
+					<h3>LCSAJ Legend</h3>
+
+					<p>
+					<span class="lcsaj-dot">●</span>
+					Marks the start of an executed <b>LCSAJ (Linear Code Sequence And Jump)</b>.
+					</p>
+
+					<p>
+					Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+					</p>
+
+					<p>
+					Hovering over a dot shows:
+					</p>
+
+					<pre>
+					start → end → jump
+					</pre>
+
+					<ul>
+					<li><b>start</b> – first line of the executed linear sequence</li>
+					<li><b>end</b> – last line before control flow changes</li>
+					<li><b>jump</b> – line execution jumps to next</li>
+					</ul>
+
+					<p>
+					These markers help visualize which execution paths were exercised during testing.
+					</p>
+
+				</div>
+			
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package App::Test::Generator::Mutator;
+</span><span class="">    2: 
+</span><span class="">    3: use strict;
+</span><span class="">    4: use warnings;
+</span><span class="">    5: 
+</span><span class="">    6: use File::Temp qw(tempdir);
+</span><span class="">    7: use File::Copy::Recursive qw(dircopy);
+</span><span class="">    8: use File::Copy qw(copy);
+</span><span class="">    9: use File::Path;
+</span><span class="">   10: use File::Spec;
+</span><span class="">   11: use PPI;
+</span><span class="">   12: 
+</span><span class="">   13: use App::Test::Generator::Mutation::BooleanNegation;
+</span><span class="">   14: use App::Test::Generator::Mutation::ReturnUndef;
+</span><span class="">   15: use App::Test::Generator::Mutation::NumericBoundary;
+</span><span class="">   16: use App::Test::Generator::Mutation::ConditionalInversion;
+</span><span class="">   17: 
+</span><span class="">   18: =head1 NAME
+</span><span class="">   19: 
+</span><span class="">   20: App::Test::Generator::Mutator - Generate mutation tests
+</span><span class="">   21: 
+</span><span class="">   22: =head1 VERSION
+</span><span class="">   23: 
+</span><span class="">   24: Version 0.30
+</span><span class="">   25: 
+</span><span class="">   26: =head1 DESCRIPTION
+</span><span class="">   27: 
+</span><span class="">   28: B&lt;App::Test::Generator::Mutator&gt; is a mutation engine that programmatically alters Perl source files to evaluate the effectiveness of a project&#39;s test suite.
+</span><span class="">   29: It analyzes modules, generates systematic code mutations (such as conditional inversions,
+</span><span class="">   30: logical operator changes,
+</span><span class="">   31: and other behavioral tweaks),
+</span><span class="">   32: and applies them within an isolated workspace so tests can be executed safely against each modified variant.
+</span><span class="">   33: By tracking which mutants are &quot;killed&quot; (cause tests to fail) versus those that &quot;survive&quot; (tests still pass),
+</span><span class="">   34: the module enables calculation of a mutation score,
+</span><span class="">   35: providing a quantitative measure of how well the test suite detects unintended behavioral changes.
+</span><span class="">   36: 
+</span><span class="">   37: =cut
+</span><span class="">   38: 
+</span><span class="">   39: sub new {
+</span><span class="">   40: 	my ($class, %args) = @_;
+</span><span class="">   41: 
+</span><span class="">   42: 	die &#39;file required&#39; unless $args{file};
+</span><span class="">   43: 
+</span><span class="">   44: 	my $self = bless {
+</span><span class="">   45: 		file =&gt; $args{file},
+</span><span class="">   46: 		lib_dir =&gt; $args{lib_dir} || &#39;lib&#39;,
+</span><span class="">   47: 		mutation_level =&gt; $args{mutation_level} || &#39;full&#39;,	# full or fast
+</span><span class="">   48: 		mutations =&gt; [
+</span><span class="">   49: 			App::Test::Generator::Mutation::BooleanNegation-&gt;new(),
+</span><span class="">   50: 			App::Test::Generator::Mutation::ReturnUndef-&gt;new(),
+</span><span class="">   51: 			App::Test::Generator::Mutation::NumericBoundary-&gt;new(),
+</span><span class="">   52: 			App::Test::Generator::Mutation::ConditionalInversion-&gt;new()
+</span><span class="">   53: 		],
+</span><span class="">   54: 	}, $class;
+</span><span class="">   55: 
+</span><span class="">   56: 	return $self;
+</span><span class="">   57: }
+</span><span class="">   58: 
+</span><span class="">   59: sub generate_mutants {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 60 → 66 → 70">●</span>  <span class="lcsaj-dot" title="LCSAJ: 60 → 66 → 0">●</span>    60: 	my $self = $_[0];
+</span><span class="">   61: 
+</span><span class="">   62: 	my $doc = PPI::Document-&gt;new($self-&gt;{file}) or die &quot;Unable to parse $self-&gt;{file}&quot;;
+</span><span class="">   63: 
+</span><span class="">   64: 	my @mutants;
+</span><span class="">   65: 
+</span><span class="">   66: 	for my $mutation (@{$self-&gt;{mutations}}) {
+</span><span class="">   67: 		push @mutants, $mutation-&gt;mutate($doc);
+</span><span class="">   68: 	}
+</span><span class="">   69: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 70 → 70 → 73">●</span>  <span class="lcsaj-dot" title="LCSAJ: 70 → 70 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 70 → 70 → 73">●</span>  <span class="lcsaj-dot" title="LCSAJ: 70 → 70 → 0">●</span>    70: 	if($self-&gt;{mutation_level} eq &#39;fast&#39;) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_70: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">   71: 		return @{_dedup_mutants(\@mutants)};
+</span><span class="">   72: 	}
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 73 → 73 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 73 → 73 → 0">●</span>    73: 	return @mutants;
+</span><span class="">   74: }
+</span><span class="">   75: 
+</span><span class="">   76: sub apply_mutant {
+</span><span class="">   77: 	my ($self, $mutant) = @_;
+</span><span class="">   78: 
+</span><span class="">   79: 	my $workspace = $self-&gt;{workspace} or die &#39;Workspace not prepared&#39;;
+</span><span class="">   80: 
+</span><span class="">   81: 	my $relative = $self-&gt;{relative} or die &#39;Relative path not set&#39;;
+</span><span class="">   82: 
+</span><span class="">   83: 	my $target = File::Spec-&gt;catfile(
+</span><span class="">   84: 		$workspace,
+</span><span class="">   85: 		$self-&gt;{lib_dir},
+</span><span class="">   86: 		$relative,
+</span><span class="">   87: 	);
+</span><span class="">   88: 
+</span><span class="">   89: 	my $doc = PPI::Document-&gt;new($target) or die &quot;Failed to parse $target&quot;;
+</span><span class="">   90: 
+</span><span class="">   91: 	$mutant-&gt;{transform}-&gt;($doc);
+</span><span class="">   92: 
+</span><span class="">   93: 	$doc-&gt;save($target);
+</span><span class="">   94: }
+</span><span class="">   95: 
+</span><span class="">   96: sub revert {
+</span><span class="">   97: 	my $self = $_[0];
+</span><span class="">   98: 
+</span><span class="">   99: 	copy(&quot;$self-&gt;{file}.bak&quot;, $self-&gt;{file}) or die &#39;Restore failed&#39;;
+</span><span class="">  100: }
+</span><span class="">  101: 
+</span><span class="">  102: sub run_tests {
+</span><span class="">  103: 	my $self = $_[0];
+</span><span class="">  104: 
+</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  105: 	return system($^X, &#39;-Mblib&#39;, &#39;$(which prove)&#39;, &#39;-l&#39;, &#39;t/&#39;) == 0;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_105: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  106: }
+</span><span class="">  107: 
+</span><span class="">  108: sub prepare_workspace {
+</span><span class="">  109: 	my $self = $_[0];
+</span><span class="">  110: 
+</span><span class="">  111: 	my $tmp = tempdir(CLEANUP =&gt; 1);
+</span><span class="">  112: 
+</span><span class="">  113: 	my $src = $self-&gt;{file};
+</span><span class="">  114: 
+</span><span class="">  115: 	# Derive relative path automatically
+</span><span class="">  116: 	my $relative = $src;
+</span><span class="">  117: 	$relative =~ s/^\Q$self-&gt;{lib_dir}\E\/?//;
+</span><span class="">  118: 
+</span><span class="">  119: 	my $dst = File::Spec-&gt;catfile($tmp, $self-&gt;{lib_dir}, $relative);
+</span><span class="">  120: 
+</span><span class="">  121: 	File::Path::make_path(File::Basename::dirname($dst));
+</span><span class="">  122: 
+</span><span class="">  123: 	copy($src, $dst) or die &quot;Copy failed from $src to $dst: $!&quot;;
+</span><span class="">  124: 
+</span><span class="">  125: 	$self-&gt;{workspace} = $tmp;
+</span><span class="">  126: 	$self-&gt;{relative} = $relative;
+</span><span class="">  127: 
+</span><span class="">  128: 	return $tmp;
+</span><span class="">  129: }
+</span><span class="">  130: 
+</span><span class="">  131: sub _dedup_mutants
+</span><span class="">  132: {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 133 → 137 → 150">●</span>  <span class="lcsaj-dot" title="LCSAJ: 133 → 137 → 0">●</span>   133: 	my $mutants = $_[0];
+</span><span class="">  134: 	my @rc;
+</span><span class="">  135: 	my %seen;
+</span><span class="">  136: 
+</span><span class="">  137: 	for my $m (@{$mutants}) {
+</span><span class="">  138: 		my $key = join &#39;|&#39;,
+</span><span class="">  139: 			$m-&gt;{line},
+</span><span class="">  140: 			$m-&gt;{original},
+</span><span class="">  141: 			$m-&gt;{transform};
+</span><span class="">  142: 
+</span><span class="">  143: 		next if $seen{$key}++;
+</span><span class="">  144: 
+</span><span class="">  145: 		next if _is_redundant_mutation($m);
+</span><span class="">  146: 
+</span><span class="">  147: 		push @rc, $m;
+</span><span class="">  148: 	}
+</span><span class="">  149: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 150 → 150 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 150 → 150 → 0">●</span>   150: 	return \@rc;
+</span><span class="">  151: }
+</span><span class="">  152: 
+</span><span class="">  153: sub _is_redundant_mutation {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 154 → 167 → 173">●</span>  <span class="lcsaj-dot" title="LCSAJ: 154 → 167 → 0">●</span>   154: 	my $m = $_[0];
+</span><span class="">  155: 
+</span><span class="">  156: 	my $orig = $m-&gt;{original} // &#39;&#39;;
+</span><span class="">  157: 	my $new = $m-&gt;{transform} // &#39;&#39;;
+</span><span class="">  158: 
+</span><span class="">  159: 	# Exact same code (safety guard)
+</span><span class="">  160: 	return 1 if $orig eq $new;
+</span><span class="">  161: 
+</span><span class="">  162: 	# Arithmetic no-op
+</span><span class="">  163: 	return 1 if $orig =~ /\+\s*0$/;
+</span><span class="">  164: 	return 1 if $orig =~ /-\s*0$/;
+</span><span class="">  165: 
+</span><span class="">  166: 	# Double negation, because in Perl they force a boolean context
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  167: 	if ($m-&gt;{context} &amp;&amp; $m-&gt;{context} eq &#39;conditional&#39;) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_167: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  168: 		# Only skip double negation removal inside conditionals
+</span><span class="">  169: 		return 1 if $orig =~ /^\!\!/;
+</span><span class="">  170: 	}
+</span><span class="">  171: 
+</span><span class="">  172: 	# Boolean literal flip when already strict boolean
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 173 → 179 → 183">●</span>  <span class="lcsaj-dot" title="LCSAJ: 173 → 179 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 173 → 179 → 183">●</span>  <span class="lcsaj-dot" title="LCSAJ: 173 → 179 → 0">●</span>   173: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
+</span><span class="">  174: 
+</span><span class="">  175: 	# Mutation inside comment
+</span><span class="">  176: 	return 1 if $m-&gt;{line_content} &amp;&amp; $m-&gt;{line_content} =~ /^\s*#/;
+</span><span class="">  177: 
+</span><span class="">  178: 	# Equivalent numeric comparison
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  179: 	if ($orig =~ /^\d+$/ &amp;&amp; $new =~ /^\d+$/) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_179: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  180: 		return 1 if $orig == $new;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_180: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  181: 	}
+</span><span class="">  182: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 183 → 183 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 183 → 183 → 0">●</span>   183: 	return 0;
+</span><span class="">  184: }
+</span><span class="">  185: 
+</span><span class="">  186: =head1 SEE ALSO
+</span><span class="">  187: 
+</span><span class="">  188: =over 4
+</span><span class="">  189: 
+</span><span class="">  190: =item C&lt;bin/app-test-generator-mutate&gt;
+</span><span class="">  191: 
+</span><span class="">  192: =item L&lt;Devel::Mutator&gt;
+</span><span class="">  193: 
+</span><span class="">  194: =back
+</span><span class="">  195: 
+</span><span class="">  196: =head1 AUTHOR
+</span><span class="">  197: 
+</span><span class="">  198: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  199: 
+</span><span class="">  200: Portions of this module&#39;s initial design and documentation were created with the
+</span><span class="">  201: assistance of AI.
+</span><span class="">  202: 
+</span><span class="">  203: =head1 LICENCE AND COPYRIGHT
+</span><span class="">  204: 
+</span><span class="">  205: Copyright 2026 Nigel Horne.
+</span><span class="">  206: 
+</span><span class="">  207: Usage is subject to licence terms.
+</span><span class="">  208: 
+</span><span class="">  209: The licence terms of this software are as follows:
+</span><span class="">  210: 
+</span><span class="">  211: =over 4
+</span><span class="">  212: 
+</span><span class="">  213: =item * Personal single user, single computer use: GPL2
+</span><span class="">  214: 
+</span><span class="">  215: =item * All other users (including Commercial, Charity, Educational, Government)
+</span><span class="">  216:   must apply in writing for a licence for use from Nigel Horne at the
+</span><span class="">  217:   above e-mail.
+</span><span class="">  218: 
+</span><span class="">  219: =back
+</span><span class="">  220: 
+</span><span class="">  221: =cut
+</span><span class="">  222: 
+</span><span class="">  223: 1;
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+</script>
+</body>
+</html>
+	

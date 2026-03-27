@@ -1,0 +1,764 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+       color: #5555ff;
+       font-size: 10px;
+       margin-right: 3px;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/App/Test/Generator/Sample/Module.pm</h1>
+<div class="nav"><a href="../Report/HTML.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="../Template.pm.html">Next ➡</a></div>
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package Test::App::Generator::Sample::Module;
+</span><span class="">    2: 
+</span><span class="">    3: use strict;
+</span><span class="">    4: use warnings;
+</span><span class="">    5: use Carp qw(croak);
+</span><span class="">    6: 
+</span><span class="">    7: our $VERSION = &#39;0.30&#39;;
+</span><span class="">    8: 
+</span><span class="">    9: =head1 NAME
+</span><span class="">   10: 
+</span><span class="">   11: Test::App::Generator::Sample::Module - Example module for schema extraction testing
+</span><span class="">   12: 
+</span><span class="">   13: =head1 VERSION
+</span><span class="">   14: 
+</span><span class="">   15: Version 0.30
+</span><span class="">   16: 
+</span><span class="">   17: =head1 SYNOPSIS
+</span><span class="">   18: 
+</span><span class="">   19:     use Sample::Module;
+</span><span class="">   20: 
+</span><span class="">   21:     my $obj = Sample::Module-&gt;new();
+</span><span class="">   22:     my $result = $obj-&gt;validate_email(&#39;user@example.com&#39;);
+</span><span class="">   23: 
+</span><span class="">   24: =head1 DESCRIPTION
+</span><span class="">   25: 
+</span><span class="">   26: This is a sample module with well-documented methods to test
+</span><span class="">   27: the schema extractor.
+</span><span class="">   28: 
+</span><span class="">   29: =cut
+</span><span class="">   30: 
+</span><span class="">   31: =head2 new
+</span><span class="">   32: 
+</span><span class="">   33: Constructor.
+</span><span class="">   34: 
+</span><span class="">   35: Returns a new Sample::Module object.
+</span><span class="">   36: 
+</span><span class="">   37: =cut
+</span><span class="">   38: 
+</span><span class="">   39: sub new {
+</span><span class="">   40: 	my $class = $_[0];
+</span><span class="">   41: 	return bless {}, $class;
+</span><span class="">   42: }
+</span><span class="">   43: 
+</span><span class="">   44: =head2 validate_email($email)
+</span><span class="">   45: 
+</span><span class="">   46: Validates an email address.
+</span><span class="">   47: 
+</span><span class="">   48: Parameters:
+</span><span class="">   49:   $email - string (5-254 chars), email address to validate
+</span><span class="">   50: 
+</span><span class="">   51: Returns:
+</span><span class="">   52:   1 if valid, dies otherwise
+</span><span class="">   53: 
+</span><span class="">   54: =cut
+</span><span class="">   55: 
+</span><span class="">   56: sub validate_email {
+</span><span class="">   57: 	my ($self, $email) = @_;
+</span><span class="">   58: 
+</span><span class="">   59: 	croak &#39;Email is required&#39; unless defined $email;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   60: 	croak &quot;Email too short&quot; unless length($email) &gt;= 5;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_60: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_60: Numeric boundary flip >= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_60: Numeric boundary flip >= to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   61: 	croak &quot;Email too long&quot; unless length($email) &lt;= 254;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_61: Numeric boundary flip <= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_61: Numeric boundary flip <= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_61: Numeric boundary flip <= to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">   62: 	croak &quot;Invalid email format&quot; unless $email =~ /^[^@]+@[^@]+\.[^@]+$/;
+</span><span class="">   63: 
+</span><span class="">   64: 	return 1;
+</span><span class="">   65: }
+</span><span class="">   66: 
+</span><span class="">   67: =head2 calculate_age($birth_year)
+</span><span class="">   68: 
+</span><span class="">   69: Calculate age from birth year.
+</span><span class="">   70: 
+</span><span class="">   71: Parameters:
+</span><span class="">   72:   $birth_year - integer (1900-2025), year of birth
+</span><span class="">   73: 
+</span><span class="">   74: Returns:
+</span><span class="">   75:   Age in years (integer)
+</span><span class="">   76: 
+</span><span class="">   77: =cut
+</span><span class="">   78: 
+</span><span class="">   79: sub calculate_age {
+</span><span class="">   80:     my ($self, $birth_year) = @_;
+</span><span class="">   81: 
+</span><span class="">   82:     croak &quot;Birth year required&quot; unless defined $birth_year;
+</span><span class="">   83:     croak &quot;Birth year must be a number&quot; unless $birth_year =~ /^\d+$/;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   84:     croak &quot;Birth year out of range&quot; unless $birth_year &gt;= 1900 &amp;&amp; $birth_year &lt;= 2025;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 6, Killed: 0, Survived: 6)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_84: Numeric boundary flip <= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_84: Numeric boundary flip <= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_84: Numeric boundary flip <= to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_84: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_84: Numeric boundary flip >= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_84: Numeric boundary flip >= to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">   85: 
+</span><span class="">   86:     my $current_year = 2025;
+</span><span class="">   87:     return $current_year - $birth_year;
+</span><span class="">   88: }
+</span><span class="">   89: 
+</span><span class="">   90: =head2 process_names($names)
+</span><span class="">   91: 
+</span><span class="">   92: Process a list of names.
+</span><span class="">   93: 
+</span><span class="">   94: Parameters:
+</span><span class="">   95:   $names - arrayref, list of name strings
+</span><span class="">   96: 
+</span><span class="">   97: Returns:
+</span><span class="">   98:   Count of names processed
+</span><span class="">   99: 
+</span><span class="">  100: =cut
+</span><span class="">  101: 
+</span><span class="">  102: sub process_names {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 103 → 109 → 114">●</span>  <span class="lcsaj-dot" title="LCSAJ: 103 → 109 → 0">●</span>   103:     my ($self, $names) = @_;
+</span><span class="">  104: 
+</span><span class="">  105:     croak &quot;Names required&quot; unless defined $names;
+</span><span class="">  106:     croak &quot;Names must be an array reference&quot; unless ref($names) eq &#39;ARRAY&#39;;
+</span><span class="">  107: 
+</span><span class="">  108:     my $count = 0;
+</span><span class="">  109:     foreach my $name (@$names) {
+</span><span class="">  110:         # Process each name
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  111:         $count++ if defined $name &amp;&amp; length($name) &gt; 0;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_111: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_111: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_111: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_111: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  112:     }
+</span><span class="">  113: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 114 → 114 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 114 → 114 → 0">●</span>   114:     return $count;
+</span><span class="">  115: }
+</span><span class="">  116: 
+</span><span class="">  117: =head2 set_config($config)
+</span><span class="">  118: 
+</span><span class="">  119: Set configuration options.
+</span><span class="">  120: 
+</span><span class="">  121: Parameters:
+</span><span class="">  122:   $config - hashref, configuration options
+</span><span class="">  123: 
+</span><span class="">  124: Returns:
+</span><span class="">  125:   1 on success
+</span><span class="">  126: 
+</span><span class="">  127: =cut
+</span><span class="">  128: 
+</span><span class="">  129: sub set_config {
+</span><span class="">  130:     my ($self, $config) = @_;
+</span><span class="">  131: 
+</span><span class="">  132:     croak &quot;Config required&quot; unless defined $config;
+</span><span class="">  133:     croak &quot;Config must be a hash reference&quot; unless ref($config) eq &#39;HASH&#39;;
+</span><span class="">  134: 
+</span><span class="">  135:     $self-&gt;{config} = $config;
+</span><span class="">  136:     return 1;
+</span><span class="">  137: }
+</span><span class="">  138: 
+</span><span class="">  139: =head2 greet($name, $greeting)
+</span><span class="">  140: 
+</span><span class="">  141: Generate a greeting message.
+</span><span class="">  142: 
+</span><span class="">  143: Parameters:
+</span><span class="">  144:   $name - string (1-50 chars), person&#39;s name
+</span><span class="">  145:   $greeting - string (optional), custom greeting (default: &quot;Hello&quot;)
+</span><span class="">  146: 
+</span><span class="">  147: Returns:
+</span><span class="">  148:   Greeting string
+</span><span class="">  149: 
+</span><span class="">  150: =cut
+</span><span class="">  151: 
+</span><span class="">  152: sub greet {
+</span><span class="">  153:     my ($self, $name, $greeting) = @_;
+</span><span class="">  154: 
+</span><span class="">  155:     croak &quot;Name is required&quot; unless defined $name;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  156:     croak &quot;Name too short&quot; unless length($name) &gt;= 1;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_156: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_156: Numeric boundary flip >= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_156: Numeric boundary flip >= to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  157:     croak &quot;Name too long&quot; unless length($name) &lt;= 50;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_157: Numeric boundary flip <= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_157: Numeric boundary flip <= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_157: Numeric boundary flip <= to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  158: 
+</span><span class="">  159:     $greeting ||= &quot;Hello&quot;;
+</span><span class="">  160: 
+</span><span class="">  161:     return &quot;$greeting, $name!&quot;;
+</span><span class="">  162: }
+</span><span class="">  163: 
+</span><span class="">  164: =head2 check_flag($enabled)
+</span><span class="">  165: 
+</span><span class="">  166: Check a boolean flag.
+</span><span class="">  167: 
+</span><span class="">  168: Parameters:
+</span><span class="">  169:   $enabled - boolean, whether feature is enabled
+</span><span class="">  170: 
+</span><span class="">  171: Returns:
+</span><span class="">  172:   1 if enabled, 0 otherwise
+</span><span class="">  173: 
+</span><span class="">  174: =cut
+</span><span class="">  175: 
+</span><span class="">  176: sub check_flag {
+</span><span class="">  177:     my ($self, $enabled) = @_;
+</span><span class="">  178: 
+</span><span class="">  179:     return $enabled ? 1 : 0;
+</span><span class="">  180: }
+</span><span class="">  181: 
+</span><span class="">  182: =head2 validate_score($score)
+</span><span class="">  183: 
+</span><span class="">  184: Validate a test score.
+</span><span class="">  185: 
+</span><span class="">  186: Parameters:
+</span><span class="">  187:   $score - number (0.0-100.0), test score percentage
+</span><span class="">  188: 
+</span><span class="">  189: Returns:
+</span><span class="">  190:   Pass/Fail status string
+</span><span class="">  191: 
+</span><span class="">  192: =cut
+</span><span class="">  193: 
+</span><span class="">  194: sub validate_score {
+</span><span class="">  195:     my ($self, $score) = @_;
+</span><span class="">  196: 
+</span><span class="">  197:     croak &quot;Score is required&quot; unless defined $score;
+</span><span class="">  198:     croak &quot;Score must be numeric&quot; unless $score =~ /^[\d.]+$/;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  199:     croak &quot;Score out of range&quot; unless $score &gt;= 0.0 &amp;&amp; $score &lt;= 100.0;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 6, Killed: 0, Survived: 6)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_199: Numeric boundary flip <= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_199: Numeric boundary flip <= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_199: Numeric boundary flip <= to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_199: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_199: Numeric boundary flip >= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_199: Numeric boundary flip >= to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  200: 
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  201:     return $score &gt;= 60.0 ? &quot;Pass&quot; : &quot;Fail&quot;;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_201: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_201: Numeric boundary flip >= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_201: Numeric boundary flip >= to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  202: }
+</span><span class="">  203: 
+</span><span class="">  204: =head2 mysterious_method($thing)
+</span><span class="">  205: 
+</span><span class="">  206: A method with poor documentation.
+</span><span class="">  207: 
+</span><span class="">  208: Does something with a thing.
+</span><span class="">  209: 
+</span><span class="">  210: =cut
+</span><span class="">  211: 
+</span><span class="">  212: sub mysterious_method {
+</span><span class="">  213: 	my ($self, $thing) = @_;
+</span><span class="">  214: 
+</span><span class="">  215: 	# No validation - extractor should flag this as low confidence
+</span><span class="">  216: 	return $thing * 2;
+</span><span class="">  217: }
+</span><span class="">  218: 
+</span><span class="">  219: 1;
+</span><span class="">  220: 
+</span><span class="">  221: __END__
+</span><span class="">  222: 
+</span><span class="">  223: =head1 AUTHOR
+</span><span class="">  224: 
+</span><span class="">  225: Example Author
+</span><span class="">  226: 
+</span><span class="">  227: =head1 LICENSE
+</span><span class="">  228: 
+</span><span class="">  229: This is free software.
+</span><span class="">  230: 
+</span><span class="">  231: =cut
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+</script>
+</body>
+</html>
+	

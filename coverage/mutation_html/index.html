@@ -1,0 +1,488 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre {
+    overflow-x: auto;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+    padding-left: 8ch;
+    margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+       color: #5555ff;
+       font-size: 10px;
+       margin-right: 3px;
+}
+
+.lcsaj-dot:hover::after {
+    content: attr(data-lcsaj);
+    position: absolute;
+    background: #333;
+    color: white;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>Mutation Report</h1>
+<h2>Mutation Summary</h2>
+<div class='summary'>
+Score: 0.00%<br>
+Total: 413<br>
+Killed: 0<br>
+Survived: 413<br>
+</div>
+<h2>Files</h2>
+<table border='1' cellpadding='5'>
+<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th><th>Complexity</th><th>LCSAJ</th></tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator.pm.html">lib/App/Test/Generator.pm</a></td>
+<td>164</td>
+<td>0</td>
+<td>164</td>
+<td>0.00%</td>
+<td>326</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Analyzer/Complexity.pm.html">lib/App/Test/Generator/Analyzer/Complexity.pm</a></td>
+<td>20</td>
+<td>0</td>
+<td>20</td>
+<td>0.00%</td>
+<td>12</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Analyzer/Return.pm.html">lib/App/Test/Generator/Analyzer/Return.pm</a></td>
+<td>3</td>
+<td>0</td>
+<td>3</td>
+<td>0.00%</td>
+<td>4</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Analyzer/ReturnMeta.pm.html">lib/App/Test/Generator/Analyzer/ReturnMeta.pm</a></td>
+<td>21</td>
+<td>0</td>
+<td>21</td>
+<td>0.00%</td>
+<td>16</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Analyzer/SideEffect.pm.html">lib/App/Test/Generator/Analyzer/SideEffect.pm</a></td>
+<td>4</td>
+<td>0</td>
+<td>4</td>
+<td>0.00%</td>
+<td>14</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/CoverageGuidedFuzzer.pm.html">lib/App/Test/Generator/CoverageGuidedFuzzer.pm</a></td>
+<td>56</td>
+<td>0</td>
+<td>56</td>
+<td>0.00%</td>
+<td>106</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Emitter/Perl.pm.html">lib/App/Test/Generator/Emitter/Perl.pm</a></td>
+<td>10</td>
+<td>0</td>
+<td>10</td>
+<td>0.00%</td>
+<td>14</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/LCSAJ.pm.html">lib/App/Test/Generator/LCSAJ.pm</a></td>
+<td>4</td>
+<td>0</td>
+<td>4</td>
+<td>0.00%</td>
+<td>17</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/LCSAJ/Coverage.pm.html">lib/App/Test/Generator/LCSAJ/Coverage.pm</a></td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>0.00%</td>
+<td>4</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Model/Method.pm.html">lib/App/Test/Generator/Model/Method.pm</a></td>
+<td>24</td>
+<td>0</td>
+<td>24</td>
+<td>0.00%</td>
+<td>27</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Mutation/ConditionalInversion.pm.html">lib/App/Test/Generator/Mutation/ConditionalInversion.pm</a></td>
+<td>2</td>
+<td>0</td>
+<td>2</td>
+<td>0.00%</td>
+<td>17</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Mutation/NumericBoundary.pm.html">lib/App/Test/Generator/Mutation/NumericBoundary.pm</a></td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>0.00%</td>
+<td>10</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Mutator.pm.html">lib/App/Test/Generator/Mutator.pm</a></td>
+<td>5</td>
+<td>0</td>
+<td>5</td>
+<td>0.00%</td>
+<td>21</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Planner.pm.html">lib/App/Test/Generator/Planner.pm</a></td>
+<td>3</td>
+<td>0</td>
+<td>3</td>
+<td>0.00%</td>
+<td>9</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Planner/Fixture.pm.html">lib/App/Test/Generator/Planner/Fixture.pm</a></td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>0.00%</td>
+<td>3</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Planner/Isolation.pm.html">lib/App/Test/Generator/Planner/Isolation.pm</a></td>
+<td>5</td>
+<td>0</td>
+<td>5</td>
+<td>0.00%</td>
+<td>13</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Planner/Mock.pm.html">lib/App/Test/Generator/Planner/Mock.pm</a></td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>0.00%</td>
+<td>5</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Report/HTML.pm.html">lib/App/Test/Generator/Report/HTML.pm</a></td>
+<td>45</td>
+<td>0</td>
+<td>45</td>
+<td>0.00%</td>
+<td>139</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Sample/Module.pm.html">lib/App/Test/Generator/Sample/Module.pm</a></td>
+<td>31</td>
+<td>0</td>
+<td>31</td>
+<td>0.00%</td>
+<td>25</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/Template.pm.html">lib/App/Test/Generator/Template.pm</a></td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>0.00%</td>
+<td>3</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/App/Test/Generator/TestStrategy.pm.html">lib/App/Test/Generator/TestStrategy.pm</a></td>
+<td>10</td>
+<td>0</td>
+<td>10</td>
+<td>0.00%</td>
+<td>30</td>
+<td>-</td>
+</tr>
+
+<tr>
+<td><a href="lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm.html">lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm</a></td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>0.00%</td>
+<td>9</td>
+<td>-</td>
+</tr>
+</table>
+<h2>Structural Coverage (Approximate)</h2>
+<div class='summary'>
+Statement Coverage: 62.58% (756 / 1208)<br>
+Branch Coverage: 42.51% (261 / 614)<br>
+<em>Approximate LCSAJ derived from branch and statement coverage.</em>
+</div>
+<h2>Executive Summary</h2>
+<div class='summary'>Tests execute 62.58% of the code, but detect only 0.00% of injected faults.</div>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+</script>
+</body>
+</html>
+	

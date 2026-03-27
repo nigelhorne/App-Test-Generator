@@ -1,0 +1,1695 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+       color: #5555ff;
+       font-size: 10px;
+       margin-right: 3px;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/App/Test/Generator/Report/HTML.pm</h1>
+<div class="nav"><a href="../Planner/Mock.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="../Sample/Module.pm.html">Next ➡</a></div>
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package App::Test::Generator::Report::HTML;
+</span><span class="">    2: 
+</span><span class="">    3: use strict;
+</span><span class="">    4: use warnings;
+</span><span class="">    5: use autodie qw(:all);
+</span><span class="">    6: 
+</span><span class="">    7: use App::Test::Generator::LCSAJ;
+</span><span class="">    8: use Cwd qw(abs_path);
+</span><span class="">    9: use File::Basename qw(dirname basename);
+</span><span class="">   10: use File::Path qw(make_path);
+</span><span class="">   11: use File::Spec;
+</span><span class="">   12: use JSON::MaybeXS;
+</span><span class="">   13: use HTML::Entities;
+</span><span class="">   14: 
+</span><span class="">   15: our $VERSION = &#39;0.30&#39;;
+</span><span class="">   16: 
+</span><span class="">   17: =head1 VERSION
+</span><span class="">   18: 
+</span><span class="">   19: Version 0.30
+</span><span class="">   20: 
+</span><span class="">   21: =head1 METHODS
+</span><span class="">   22: 
+</span><span class="">   23: =head2 generate
+</span><span class="">   24: 
+</span><span class="">   25: $json_file =&gt; mutation JSON
+</span><span class="">   26: $output_dir =&gt; report directory
+</span><span class="">   27: $cover_json =&gt; optional Devel::Cover JSON
+</span><span class="">   28: 
+</span><span class="">   29: =head3 Coverage Integration
+</span><span class="">   30: 
+</span><span class="">   31: If a L&lt;Devel::Cover&gt; JSON file is supplied to C&lt;generate()&gt;,
+</span><span class="">   32: structural coverage metrics are displayed in the dashboard.
+</span><span class="">   33: 
+</span><span class="">   34: The LCSAJ metric shown is an approximation derived from statement and branch coverage.
+</span><span class="">   35: It is not a full control flow graph computation.
+</span><span class="">   36: 
+</span><span class="">   37: =cut
+</span><span class="">   38: 
+</span><span class="">   39: sub generate {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 40 → 55 → 61">●</span>  <span class="lcsaj-dot" title="LCSAJ: 40 → 55 → 0">●</span>    40: 	my ($class, $json_file, $output_dir, $cover_json, $lcsaj_dir, $lcsaj_hits_file) = @_;
+</span><span class="">   41: 
+</span><span class="">   42: 	make_path($output_dir);
+</span><span class="">   43: 
+</span><span class="">   44: 	open my $fh, &#39;&lt;&#39;, $json_file or die &quot;Cannot open $json_file: $!&quot;;
+</span><span class="">   45: 
+</span><span class="">   46: 	my $data = decode_json(do { local $/; &lt;$fh&gt; });
+</span><span class="">   47: 
+</span><span class="">   48: 	close $fh;
+</span><span class="">   49: 
+</span><span class="">   50: 	# --------------------------------------------------
+</span><span class="">   51: 	# Optional structural coverage loading
+</span><span class="">   52: 	# --------------------------------------------------
+</span><span class="">   53: 	my $coverage_data;
+</span><span class="">   54: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   55: 	if ($cover_json &amp;&amp; -f $cover_json) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_55: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">   56: 		open my $cfh, &#39;&lt;&#39;, $cover_json;
+</span><span class="">   57: 		$coverage_data = decode_json(do { local $/; &lt;$cfh&gt; });
+</span><span class="">   58: 		close $cfh;
+</span><span class="">   59: 	}
+</span><span class="">   60: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 61 → 63 → 69">●</span>  <span class="lcsaj-dot" title="LCSAJ: 61 → 63 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 61 → 63 → 69">●</span>  <span class="lcsaj-dot" title="LCSAJ: 61 → 63 → 0">●</span>    61: 	my $lcsaj_hits;
+</span><span class="">   62: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   63: 	if ($lcsaj_hits_file &amp;&amp; -f $lcsaj_hits_file) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_63: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">   64: 		open my $lfh, &#39;&lt;&#39;, $lcsaj_hits_file;
+</span><span class="">   65: 		$lcsaj_hits = decode_json(do { local $/; &lt;$lfh&gt; });
+</span><span class="">   66: 		close $lfh;
+</span><span class="">   67: 	}
+</span><span class="">   68: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 69 → 76 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 69 → 76 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 69 → 76 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 69 → 76 → 0">●</span>    69: 	my $files = _group_by_file($data);
+</span><span class="">   70: 
+</span><span class="">   71: 	_write_index($output_dir, $data, $files, $coverage_data, $lcsaj_dir, $lcsaj_hits);
+</span><span class="">   72: 
+</span><span class="">   73: 	# Pre-sort files worst-first so navigation order matches index order
+</span><span class="">   74: 	my @sorted_files = sort { _file_score($files-&gt;{$a}) &lt;=&gt; _file_score($files-&gt;{$b}) || $a cmp $b } keys %$files;
+</span><span class="">   75: 
+</span><span class="">   76: 	for my $i (0 .. $#sorted_files) {
+</span><span class="">   77: 		my $file = $sorted_files[$i];
+</span><span class="">   78: 
+</span><span class="">   79: 		# Only assign previous if this is NOT the first file
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   80: 		my $prev = $i &gt; 0 ? $sorted_files[$i - 1] : undef;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_80: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_80: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_80: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_80: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">   81: 
+</span><span class="">   82: 		# Only assign next if this is NOT the last file
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   83: 		my $next = $i &lt; $#sorted_files ? $sorted_files[$i + 1] : undef;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_83: Numeric boundary flip < to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_83: Numeric boundary flip < to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_83: Numeric boundary flip < to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">   84: 
+</span><span class="">   85: 		_write_file_report($output_dir, $file, $files-&gt;{$file}, $prev, $next, $coverage_data, $lcsaj_dir, $lcsaj_hits);
+</span><span class="">   86: 	}
+</span><span class="">   87: }
+</span><span class="">   88: 
+</span><span class="">   89: # --------------------------------------------------
+</span><span class="">   90: # Group mutants by file
+</span><span class="">   91: # --------------------------------------------------
+</span><span class="">   92: 
+</span><span class="">   93: sub _group_by_file {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 94 → 98 → 109">●</span>  <span class="lcsaj-dot" title="LCSAJ: 94 → 98 → 0">●</span>    94: 	my $data = $_[0];
+</span><span class="">   95: 
+</span><span class="">   96: 	my %files;
+</span><span class="">   97: 
+</span><span class="">   98: 	for my $status (qw(survived killed)) {
+</span><span class="">   99: 		next unless $data-&gt;{$status};
+</span><span class="">  100: 
+</span><span class="">  101: 		for my $m (@{ $data-&gt;{$status} }) {
+</span><span class="">  102: 			next unless ref $m;
+</span><span class="">  103: 			next unless defined $m-&gt;{file};
+</span><span class="">  104: 
+</span><span class="">  105: 			push @{ $files{ $m-&gt;{file} }{$status} }, $m;
+</span><span class="">  106: 		}
+</span><span class="">  107: 	}
+</span><span class="">  108: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 109 → 109 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 109 → 109 → 0">●</span>   109: 	return \%files;
+</span><span class="">  110: }
+</span><span class="">  111: 
+</span><span class="">  112: # --------------------------------------------------
+</span><span class="">  113: # Write index page
+</span><span class="">  114: # --------------------------------------------------
+</span><span class="">  115: 
+</span><span class="">  116: sub _write_index {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 117 → 136 → 142">●</span>  <span class="lcsaj-dot" title="LCSAJ: 117 → 136 → 0">●</span>   117: 	my ($dir, $data, $files, $coverage_data, $lcsaj_dir, $lcsaj_hits) = @_;
+</span><span class="">  118: 
+</span><span class="">  119: 	open my $out, &#39;&gt;&#39;, File::Spec-&gt;catfile($dir, &#39;index.html&#39;) or die $!;
+</span><span class="">  120: 
+</span><span class="">  121: 	print $out _header(&#39;Mutation Report&#39;);
+</span><span class="">  122: 
+</span><span class="">  123: 	print $out &quot;&lt;h1&gt;Mutation Report&lt;/h1&gt;\n&quot;;
+</span><span class="">  124: 
+</span><span class="">  125: 	print $out &quot;&lt;h2&gt;Mutation Summary&lt;/h2&gt;\n&quot;;
+</span><span class="">  126: 	print $out &quot;&lt;div class=&#39;summary&#39;&gt;\n&quot;;
+</span><span class="">  127: 	print $out &quot;Score: $data-&gt;{score}%&lt;br&gt;\n&quot;;
+</span><span class="">  128: 	print $out &quot;Total: $data-&gt;{total}&lt;br&gt;\n&quot;;
+</span><span class="">  129: 	print $out &#39;Killed: &#39;, scalar(@{$data-&gt;{killed} || []}), &quot;&lt;br&gt;\n&quot;;
+</span><span class="">  130: 	print $out &#39;Survived: &#39;, scalar(@{$data-&gt;{survived} || []}), &quot;&lt;br&gt;\n&quot;;
+</span><span class="">  131: 	print $out &quot;&lt;/div&gt;\n&quot;;
+</span><span class="">  132: 
+</span><span class="">  133: 	print $out &quot;&lt;h2&gt;Files&lt;/h2&gt;\n&quot;;
+</span><span class="">  134: 	print $out &quot;&lt;table border=&#39;1&#39; cellpadding=&#39;5&#39;&gt;\n&quot;;
+</span><span class="">  135: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  136: 	if($lcsaj_dir) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_136: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  137: 		print $out &quot;&lt;tr&gt;&lt;th&gt;File&lt;/th&gt;&lt;th&gt;Total&lt;/th&gt;&lt;th&gt;Killed&lt;/th&gt;&lt;th&gt;Survivors&lt;/th&gt;&lt;th&gt;Score%&lt;/th&gt;&lt;th&gt;Complexity&lt;/th&gt;&lt;th&gt;LCSAJ&lt;/th&gt;&lt;/tr&gt;\n&quot;;
+</span><span class="">  138: 	} else {
+</span><span class="">  139: 		print $out &quot;&lt;tr&gt;&lt;th&gt;File&lt;/th&gt;&lt;th&gt;Total&lt;/th&gt;&lt;th&gt;Killed&lt;/th&gt;&lt;th&gt;Survivors&lt;/th&gt;&lt;th&gt;Score%&lt;/th&gt;&lt;th&gt;Complexity&lt;/th&gt;&lt;/tr&gt;\n&quot;;
+</span><span class="">  140: 	}
+</span><span class="">  141: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 142 → 142 → 179">●</span>  <span class="lcsaj-dot" title="LCSAJ: 142 → 142 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 142 → 142 → 179">●</span>  <span class="lcsaj-dot" title="LCSAJ: 142 → 142 → 0">●</span>   142: 	for my $file (
+</span><span class="">  143: 		sort { _file_score($files-&gt;{$a}) &lt;=&gt; _file_score($files-&gt;{$b}) || $a cmp $b } keys %$files
+</span><span class="">  144: 	) {
+</span><span class="">  145: 		my $killed = scalar @{ $files-&gt;{$file}{killed} || [] };
+</span><span class="">  146: 		my $survived = scalar @{ $files-&gt;{$file}{survived} || [] };
+</span><span class="">  147: 		my $total = $killed + $survived;
+</span><span class="">  148: 
+</span><span class="">  149: 		my $score = $total ? sprintf(&#39;%.2f&#39;, ($killed / $total) * 100) : 0;
+</span><span class="">  150: 
+</span><span class="">  151: 		# --------------------------------------------------
+</span><span class="">  152: 		# Calculate cyclomatic complexity for the file
+</span><span class="">  153: 		# --------------------------------------------------
+</span><span class="">  154: 		my $complexity = _cyclomatic_complexity($file);
+</span><span class="">  155: 
+</span><span class="">  156: 		# Approximate LSCAJ score
+</span><span class="">  157: 		my ($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $lcsaj_dir, $lcsaj_hits);
+</span><span class="">  158: 
+</span><span class="">  159: 		my $lcsaj_pct;
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  160: 		if($lcsaj_dir) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_160: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  161: 			$lcsaj_pct = $lcsaj_total ? sprintf(&#39;%.1f&#39;, ($lcsaj_cov / $lcsaj_total) * 100) : &#39;-&#39;;
+</span><span class="">  162: 		} else {
+</span><span class="">  163: 			$lcsaj_pct = &#39;&#39;;
+</span><span class="">  164: 		}
+</span><span class="">  165: 
+</span><span class="">  166: 		print $out qq{
+</span><span class="">  167: &lt;tr&gt;
+</span><span class="">  168: &lt;td&gt;&lt;a href=&quot;$file.html&quot;&gt;$file&lt;/a&gt;&lt;/td&gt;
+</span><span class="">  169: &lt;td&gt;$total&lt;/td&gt;
+</span><span class="">  170: &lt;td&gt;$killed&lt;/td&gt;
+</span><span class="">  171: &lt;td&gt;$survived&lt;/td&gt;
+</span><span class="">  172: &lt;td&gt;$score%&lt;/td&gt;
+</span><span class="">  173: &lt;td&gt;$complexity&lt;/td&gt;
+</span><span class="">  174: &lt;td&gt;$lcsaj_pct&lt;/td&gt;
+</span><span class="">  175: &lt;/tr&gt;
+</span><span class="">  176: };
+</span><span class="">  177: 	}
+</span><span class="">  178: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 179 → 184 → 209">●</span>  <span class="lcsaj-dot" title="LCSAJ: 179 → 184 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 179 → 184 → 209">●</span>  <span class="lcsaj-dot" title="LCSAJ: 179 → 184 → 0">●</span>   179: 	print $out &quot;&lt;/table&gt;\n&quot;;
+</span><span class="">  180: 
+</span><span class="">  181: 	# --------------------------------------------------
+</span><span class="">  182: 	# Structural Coverage Summary (if provided)
+</span><span class="">  183: 	# --------------------------------------------------
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  184: 	if ($coverage_data) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_184: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  185: 		my ($stmt_total, $stmt_hit, $branch_total, $branch_hit) = _coverage_totals($coverage_data);
+</span><span class="">  186: 
+</span><span class="">  187: 		my $stmt_pct = $stmt_total ? sprintf(&#39;%.2f&#39;, ($stmt_hit / $stmt_total) * 100) : 0;
+</span><span class="">  188: 
+</span><span class="">  189: 		my $branch_pct = $branch_total ? sprintf(&#39;%.2f&#39;, ($branch_hit / $branch_total) * 100) : 0;
+</span><span class="">  190: 
+</span><span class="">  191: 		print $out &quot;&lt;h2&gt;Structural Coverage (Approximate)&lt;/h2&gt;\n&quot;;
+</span><span class="">  192: 		print $out &quot;&lt;div class=&#39;summary&#39;&gt;\n&quot;;
+</span><span class="">  193: 		print $out &quot;Statement Coverage: $stmt_pct% ($stmt_hit / $stmt_total)&lt;br&gt;\n&quot;;
+</span><span class="">  194: 		print $out &quot;Branch Coverage: $branch_pct% ($branch_hit / $branch_total)&lt;br&gt;\n&quot;;
+</span><span class="">  195: 		print $out &quot;&lt;em&gt;Approximate LCSAJ derived from branch and statement coverage.&lt;/em&gt;\n&quot;;
+</span><span class="">  196: 		print $out &quot;&lt;/div&gt;\n&quot;;
+</span><span class="">  197: 
+</span><span class="">  198: 		# --------------------------------------------------
+</span><span class="">  199: 		# Executive summary
+</span><span class="">  200: 		# Statement coverage shows how much code runs.
+</span><span class="">  201: 		# Mutation score shows how well tests detect faults.
+</span><span class="">  202: 		# --------------------------------------------------
+</span><span class="">  203: 		print $out &quot;&lt;h2&gt;Executive Summary&lt;/h2&gt;\n&quot;;
+</span><span class="">  204: 		print $out &quot;&lt;div class=&#39;summary&#39;&gt;&quot;;
+</span><span class="">  205: 		print $out &quot;Tests execute $stmt_pct% of the code, but detect only $data-&gt;{score}% of injected faults.&quot;;
+</span><span class="">  206: 		print $out &quot;&lt;/div&gt;\n&quot;;
+</span><span class="">  207: 	}
+</span><span class="">  208: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 209 → 211 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 209 → 211 → 0">●</span>   209: 	print $out _footer();
+</span><span class="">  210: 
+</span><span class="">  211: 	close $out;
+</span><span class="">  212: }
+</span><span class="">  213: 
+</span><span class="">  214: # --------------------------------------------------
+</span><span class="">  215: # Write per-file report with heatmap
+</span><span class="">  216: # --------------------------------------------------
+</span><span class="">  217: sub _write_file_report {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 218 → 254 → 259">●</span>  <span class="lcsaj-dot" title="LCSAJ: 218 → 254 → 0">●</span>   218: 	my (
+</span><span class="">  219: 		$dir,
+</span><span class="">  220: 		$file,
+</span><span class="">  221: 		$mutants,
+</span><span class="">  222: 		$prev,
+</span><span class="">  223: 		$next,
+</span><span class="">  224: 		$coverage_data,
+</span><span class="">  225: 		$lcsaj_dir,
+</span><span class="">  226: 		$lcsaj_hits
+</span><span class="">  227: 	) = @_;
+</span><span class="">  228: 
+</span><span class="">  229: 	return unless -f $file;
+</span><span class="">  230: 
+</span><span class="">  231: 	open my $in, &#39;&lt;&#39;, $file or return;
+</span><span class="">  232: 	my @lines = &lt;$in&gt;;
+</span><span class="">  233: 	close $in;
+</span><span class="">  234: 
+</span><span class="">  235: 	my $filename = $file;
+</span><span class="">  236: 	$filename =~ s{[\\/]}{_}g;
+</span><span class="">  237: 
+</span><span class="">  238: 	# Preserve directory structure inside report
+</span><span class="">  239: 	my $relative_path = File::Spec-&gt;catfile($dir, $file . &#39;.html&#39;);
+</span><span class="">  240: 
+</span><span class="">  241: 	my $out_dir = File::Basename::dirname($relative_path);
+</span><span class="">  242: 
+</span><span class="">  243: 	make_path($out_dir) unless -d $out_dir;
+</span><span class="">  244: 
+</span><span class="">  245: 	open my $out, &#39;&gt;&#39;, $relative_path or die &quot;$relative_path: $!&quot;;
+</span><span class="">  246: 
+</span><span class="">  247: 	print $out _header(&quot;File: $file&quot;);
+</span><span class="">  248: 
+</span><span class="">  249: 	print $out &quot;&lt;h1&gt;$file&lt;/h1&gt;\n&quot;;
+</span><span class="">  250: 
+</span><span class="">  251: 	# Navigation bar
+</span><span class="">  252: 	print $out qq{&lt;div class=&quot;nav&quot;&gt;};
+</span><span class="">  253: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  254: 	if ($prev) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_254: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  255: 		my $link = _relative_link($file, $prev);
+</span><span class="">  256: 		print $out qq{&lt;a href=&quot;$link&quot;&gt;&acirc;&not;&#133; Previous&lt;/a&gt; };
+</span><span class="">  257: 	}
+</span><span class="">  258: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 259 → 266 → 271">●</span>  <span class="lcsaj-dot" title="LCSAJ: 259 → 266 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 259 → 266 → 271">●</span>  <span class="lcsaj-dot" title="LCSAJ: 259 → 266 → 0">●</span>   259: 	print $out qq{&lt;a href=&quot;},
+</span><span class="">  260: 		File::Spec-&gt;abs2rel(&#39;index.html&#39;, File::Basename::dirname(&quot;$file.html&quot;)),
+</span><span class="">  261: 		qq{&quot;&gt;Index&lt;/a&gt;};
+</span><span class="">  262: 
+</span><span class="">  263: 	$relative_path = File::Spec-&gt;catfile($dir, $file . &#39;.lcsaj&#39;);
+</span><span class="">  264: 	App::Test::Generator::LCSAJ-&gt;generate($file, $relative_path);
+</span><span class="">  265: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  266: 	if ($next) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_266: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  267: 		my $link = _relative_link($file, $next);
+</span><span class="">  268: 		print $out qq{ &lt;a href=&quot;$link&quot;&gt;Next &acirc;&#158;&iexcl;&lt;/a&gt;};
+</span><span class="">  269: 	}
+</span><span class="">  270: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 271 → 276 → 334">●</span>  <span class="lcsaj-dot" title="LCSAJ: 271 → 276 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 271 → 276 → 334">●</span>  <span class="lcsaj-dot" title="LCSAJ: 271 → 276 → 0">●</span>   271: 	print $out qq{&lt;/div&gt;};
+</span><span class="">  272: 
+</span><span class="">  273: 	# --------------------------------------------------
+</span><span class="">  274: 	# File-level structural coverage (if available)
+</span><span class="">  275: 	# --------------------------------------------------
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  276: 	if ($coverage_data) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_276: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  277: 		if(my $file_cov = _coverage_for_file($coverage_data, $file)) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_277: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  278: 			my $stmt_total = $file_cov-&gt;{statement}{total} || 0;
+</span><span class="">  279: 			my $stmt_hit = $file_cov-&gt;{statement}{covered} || 0;
+</span><span class="">  280: 
+</span><span class="">  281: 			my $branch_total = $file_cov-&gt;{branch}{total} || 0;
+</span><span class="">  282: 			my $branch_hit = $file_cov-&gt;{branch}{covered} || 0;
+</span><span class="">  283: 
+</span><span class="">  284: 			my $stmt_pct = $stmt_total ? sprintf(&#39;%.2f&#39;, ($stmt_hit / $stmt_total) * 100) : 0;
+</span><span class="">  285: 
+</span><span class="">  286: 			my $branch_pct = $branch_total ? sprintf(&#39;%.2f&#39;, ($branch_hit / $branch_total) * 100) : 0;
+</span><span class="">  287: 
+</span><span class="">  288: 			my $approx_lcsaj = $branch_total + 1;
+</span><span class="">  289: 			print $out &quot;&lt;div class=&#39;summary&#39;&gt;\n&quot;;
+</span><span class="">  290: 			print $out &quot;&lt;strong&gt;Structural Coverage (Approximate)&lt;/strong&gt;&lt;p&gt;\n&quot;;
+</span><span class="">  291: 			print $out &quot;Statement: $stmt_pct%&lt;br&gt;\n&quot;;
+</span><span class="">  292: 			print $out &quot;Branch: $branch_pct%&lt;br&gt;\n&quot;;
+</span><span class="">  293: 			print $out &quot;Approximate LCSAJ segments: $approx_lcsaj\n&quot;;
+</span><span class="">  294: 			print $out &quot;&lt;/p&gt;&lt;/div&gt;\n&quot;;
+</span><span class="">  295: 			print $out qq{
+</span><span class="">  296: 				&lt;div class=&quot;legend&quot;&gt;
+</span><span class="">  297: 					&lt;h3&gt;LCSAJ Legend&lt;/h3&gt;
+</span><span class="">  298: 
+</span><span class="">  299: 					&lt;p&gt;
+</span><span class="">  300: 					&lt;span class=&quot;lcsaj-dot&quot;&gt;&acirc;&#151;&#143;&lt;/span&gt;
+</span><span class="">  301: 					Marks the start of an executed &lt;b&gt;LCSAJ (Linear Code Sequence And Jump)&lt;/b&gt;.
+</span><span class="">  302: 					&lt;/p&gt;
+</span><span class="">  303: 
+</span><span class="">  304: 					&lt;p&gt;
+</span><span class="">  305: 					Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+</span><span class="">  306: 					&lt;/p&gt;
+</span><span class="">  307: 
+</span><span class="">  308: 					&lt;p&gt;
+</span><span class="">  309: 					Hovering over a dot shows:
+</span><span class="">  310: 					&lt;/p&gt;
+</span><span class="">  311: 
+</span><span class="">  312: 					&lt;pre&gt;
+</span><span class="">  313: 					start &acirc;&#134;&#146; end &acirc;&#134;&#146; jump
+</span><span class="">  314: 					&lt;/pre&gt;
+</span><span class="">  315: 
+</span><span class="">  316: 					&lt;ul&gt;
+</span><span class="">  317: 					&lt;li&gt;&lt;b&gt;start&lt;/b&gt; &acirc;&#128;&#147; first line of the executed linear sequence&lt;/li&gt;
+</span><span class="">  318: 					&lt;li&gt;&lt;b&gt;end&lt;/b&gt; &acirc;&#128;&#147; last line before control flow changes&lt;/li&gt;
+</span><span class="">  319: 					&lt;li&gt;&lt;b&gt;jump&lt;/b&gt; &acirc;&#128;&#147; line execution jumps to next&lt;/li&gt;
+</span><span class="">  320: 					&lt;/ul&gt;
+</span><span class="">  321: 
+</span><span class="">  322: 					&lt;p&gt;
+</span><span class="">  323: 					These markers help visualize which execution paths were exercised during testing.
+</span><span class="">  324: 					&lt;/p&gt;
+</span><span class="">  325: 
+</span><span class="">  326: 				&lt;/div&gt;
+</span><span class="">  327: 			};
+</span><span class="">  328: 		}
+</span><span class="">  329: 	}
+</span><span class="">  330: 
+</span><span class="">  331: 	# --------------------------------------------------
+</span><span class="">  332: 	# Legend explaining line colours
+</span><span class="">  333: 	# --------------------------------------------------
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 334 → 343 → 356">●</span>  <span class="lcsaj-dot" title="LCSAJ: 334 → 343 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 334 → 343 → 356">●</span>  <span class="lcsaj-dot" title="LCSAJ: 334 → 343 → 0">●</span>   334: 	print $out qq{
+</span><span class="">  335: 		&lt;div class=&quot;legend&quot;&gt;
+</span><span class="">  336: 			&lt;h3&gt;Mutant Testing Legend&lt;/h3&gt;
+</span><span class="">  337: 			&lt;span class=&quot;legend-box survived-1&quot;&gt;&lt;/span&gt; Survived (tests missed this)
+</span><span class="">  338: 			&lt;span class=&quot;legend-box killed&quot;&gt;&lt;/span&gt; Killed (tests detected this)
+</span><span class="">  339: 			&lt;span class=&quot;legend-box none&quot;&gt;&lt;/span&gt; No mutation
+</span><span class="">  340: 		&lt;/div&gt;
+</span><span class="">  341: 	};
+</span><span class="">  342: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  343: 	if ($lcsaj_hits) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_343: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  344: 		my ($cov, $total) = _lcsaj_coverage_for_file($file, $lcsaj_dir, $lcsaj_hits);
+</span><span class="">  345: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  346: 		if ($total) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_346: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  347: 			my $pct = sprintf(&#39;%.1f&#39;, ($cov / $total) * 100);
+</span><span class="">  348: 
+</span><span class="">  349: 			print $out &quot;&lt;div class=&#39;summary&#39;&gt;&quot;;
+</span><span class="">  350: 			print $out &quot;&lt;strong&gt;LCSAJ Coverage&lt;/strong&gt;&lt;br&gt;&quot;;
+</span><span class="">  351: 			print $out &quot;$pct% ($cov / $total paths)&quot;;
+</span><span class="">  352: 			print $out &#39;&lt;/div&gt;&#39;;
+</span><span class="">  353: 		}
+</span><span class="">  354: 	}
+</span><span class="">  355: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 356 → 359 → 364">●</span>  <span class="lcsaj-dot" title="LCSAJ: 356 → 359 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 356 → 359 → 364">●</span>  <span class="lcsaj-dot" title="LCSAJ: 356 → 359 → 0">●</span>   356: 	my %survived_by_line;
+</span><span class="">  357: 	my %killed_by_line;
+</span><span class="">  358: 
+</span><span class="">  359: 	for my $m (@{ $mutants-&gt;{survived} || [] }) {
+</span><span class="">  360: 		next unless defined $m-&gt;{line};
+</span><span class="">  361: 		push @{ $survived_by_line{ $m-&gt;{line} } }, $m;
+</span><span class="">  362: 	}
+</span><span class="">  363: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 364 → 364 → 368">●</span>  <span class="lcsaj-dot" title="LCSAJ: 364 → 364 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 364 → 364 → 368">●</span>  <span class="lcsaj-dot" title="LCSAJ: 364 → 364 → 0">●</span>   364: 	for my $m (@{ $mutants-&gt;{killed} || [] }) {
+</span><span class="">  365: 		next unless defined $m-&gt;{line};
+</span><span class="">  366: 		push @{ $killed_by_line{ $m-&gt;{line} } }, $m;
+</span><span class="">  367: 	}
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 368 → 372 → 418">●</span>  <span class="lcsaj-dot" title="LCSAJ: 368 → 372 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 368 → 372 → 418">●</span>  <span class="lcsaj-dot" title="LCSAJ: 368 → 372 → 0">●</span>   368: 	print $out &quot;&lt;pre&gt;\n&quot;;
+</span><span class="">  369: 
+</span><span class="">  370: 	my %lcsaj_by_line;
+</span><span class="">  371: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  372: 	if ($lcsaj_hits) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_372: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  373: 		# Normalize the filename so it matches debugger paths
+</span><span class="">  374: 		$file = abs_path($file) if defined $file;
+</span><span class="">  375: 
+</span><span class="">  376: 		my $base = basename($file);
+</span><span class="">  377: 
+</span><span class="">  378: 		# convert absolute path to lib-relative path
+</span><span class="">  379: 		my $rel = $file;
+</span><span class="">  380: 		$rel =~ s{.*?/lib/}{};
+</span><span class="">  381: 
+</span><span class="">  382: 		my $lcsaj_file = File::Spec-&gt;catfile(
+</span><span class="">  383: 			$lcsaj_dir,
+</span><span class="">  384: 			&quot;$rel.lcsaj&quot;,
+</span><span class="">  385: 			&quot;$base.lcsaj.json&quot;
+</span><span class="">  386: 		);
+</span><span class="">  387: 
+</span><span class="">  388: 		# warn &quot;LCSAJ DEBUG\n&quot;;
+</span><span class="">  389: 		# warn &quot;  file      = $file\n&quot;;
+</span><span class="">  390: 		# warn &quot;  base      = $base\n&quot;;
+</span><span class="">  391: 		# warn &quot;  lcsaj_dir = $lcsaj_dir\n&quot;;
+</span><span class="">  392: 		# warn &quot;  lookup    = $lcsaj_file\n&quot;;
+</span><span class="">  393: 		# warn &quot;  exists    = &quot; . (-f $lcsaj_file ? &quot;YES&quot; : &quot;NO&quot;) . &quot;\n&quot;;
+</span><span class="">  394: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  395: 		if (-f $lcsaj_file) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_395: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  396: 			open my $fh, &#39;&lt;&#39;, $lcsaj_file;
+</span><span class="">  397: 			my $paths = decode_json(do { local $/; &lt;$fh&gt; });
+</span><span class="">  398: 			close $fh;
+</span><span class="">  399: 
+</span><span class="">  400: 			for my $p (@{ $paths || [] }) {
+</span><span class="">  401: 				next unless ref $p eq &#39;HASH&#39;;
+</span><span class="">  402: 
+</span><span class="">  403: 				my $start = $p-&gt;{start};
+</span><span class="">  404: 				my $end = $p-&gt;{end};
+</span><span class="">  405: 				my $jump  = $p-&gt;{jump} // $p-&gt;{target};
+</span><span class="">  406: 
+</span><span class="">  407: 				next unless defined $start &amp;&amp; defined $end;
+</span><span class="">  408: 
+</span><span class="">  409: 				push @{ $lcsaj_by_line{$start} }, {
+</span><span class="">  410: 					start =&gt; $start,
+</span><span class="">  411: 					end =&gt; $end,
+</span><span class="">  412: 					jump  =&gt; $jump,
+</span><span class="">  413: 				};
+</span><span class="">  414: 			}
+</span><span class="">  415: 		}
+</span><span class="">  416: 	}
+</span><span class="">  417: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 418 → 418 → 547">●</span>  <span class="lcsaj-dot" title="LCSAJ: 418 → 418 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 418 → 418 → 547">●</span>  <span class="lcsaj-dot" title="LCSAJ: 418 → 418 → 0">●</span>   418: 	for my $i (0 .. $#lines) {
+</span><span class="">  419: 		my $line_no = $i + 1;
+</span><span class="">  420: 		my $content = encode_entities($lines[$i]);
+</span><span class="">  421: 
+</span><span class="">  422: 		# --------------------------------------------------
+</span><span class="">  423: 		# Determine mutation status for this line
+</span><span class="">  424: 		# --------------------------------------------------
+</span><span class="">  425: 		my $survivor_count = scalar @{ $survived_by_line{$line_no} || [] };
+</span><span class="">  426: 		my $killed_count = scalar @{ $killed_by_line{$line_no} || [] };
+</span><span class="">  427: 
+</span><span class="">  428: 		my $class = &#39;&#39;;
+</span><span class="">  429: 		my $tooltip;
+</span><span class="">  430: 
+</span><span class="">  431: 		# -----------------------------
+</span><span class="">  432: 		# Survived mutations (red shades)
+</span><span class="">  433: 		# -----------------------------
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  434: 		if ($survivor_count) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_434: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  435: 			# Assign intensity class based on number of survivors
+</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch.">  436: 			if ($survivor_count == 1) { $class = &#39;survived-1&#39;; }
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_436: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>COND_INV_436: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  437: 			elsif ($survivor_count == 2) { $class = &#39;survived-2&#39;; }
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_437: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  438: 			else { $class = &#39;survived-3&#39;; }
+</span><span class="">  439: 
+</span><span class="">  440: 			# Collect smart advice per mutation type
+</span><span class="">  441: 			my %unique_advice;
+</span><span class="">  442: 
+</span><span class="">  443: 			for my $m (@{ $survived_by_line{$line_no} }) {
+</span><span class="">  444: 				my $advice = _mutation_advice($m);
+</span><span class="">  445: 				$unique_advice{$advice} = 1 if $advice;
+</span><span class="">  446: 			}
+</span><span class="">  447: 
+</span><span class="">  448: 			$tooltip = join(&#39; &#39;, keys %unique_advice);
+</span><span class="">  449: 		} elsif ($killed_count) {
+</span><span class="">  450: 			# -----------------------------
+</span><span class="">  451: 			# Killed mutations (green)
+</span><span class="">  452: 			# -----------------------------
+</span><span class="">  453: 			$class = &#39;killed&#39;;
+</span><span class="">  454: 			$tooltip = &quot;Mutations here were killed. Tests are effectively covering this logic.&quot;;
+</span><span class="">  455: 		}
+</span><span class="">  456: 
+</span><span class="">  457: 		# --------------------------------------------------
+</span><span class="">  458: 		# Render the line with colour + optional tooltip
+</span><span class="">  459: 		# Render LCSAJ markers for this line
+</span><span class="">  460: 		# --------------------------------------------------
+</span><span class="">  461: 
+</span><span class="">  462: 		my $lcsaj_marker = &#39;&#39;;
+</span><span class="">  463: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  464: 		if (my $paths = $lcsaj_by_line{$line_no}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_464: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  465: 			for my $p (@$paths) {
+</span><span class="">  466: 				my $start = $p-&gt;{start};
+</span><span class="">  467: 				my $end = $p-&gt;{end};
+</span><span class="">  468: 				my $jump = $p-&gt;{jump} // 0;
+</span><span class="">  469: 
+</span><span class="">  470: 				$lcsaj_marker .= qq{ &lt;span class=&quot;lcsaj-dot&quot; title=&quot;LCSAJ: $start &acirc;&#134;&#146; $end &acirc;&#134;&#146; $jump&quot;&gt;&acirc;&#151;&#143;&lt;/span&gt; };
+</span><span class="">  471: 			}
+</span><span class="">  472: 		}
+</span><span class="">  473: 
+</span><span class="">  474: 		# Add tooltip class only if tooltip text exists
+</span><span class="">  475: 		my $extra_class = $tooltip ? &#39; tooltip&#39; : &#39;&#39;;
+</span><span class="">  476: 
+</span><span class="">  477: 		# Escape tooltip text for HTML safety
+</span><span class="">  478: 		$tooltip =~ s/&quot;/&amp;quot;/g if $tooltip;
+</span><span class="">  479: 
+</span><span class="">  480: 		my $tooltip_attr = $tooltip ? qq{ data-tooltip=&quot;$tooltip&quot;} : &#39;&#39;;
+</span><span class="">  481: 
+</span><span class="">  482: 		print $out qq{&lt;span class=&quot;$class$extra_class&quot;$tooltip_attr&gt;};
+</span><span class="">  483: 		print $out $lcsaj_marker, sprintf(&#39;%5d: %s&#39;, $line_no, $content);
+</span><span class="">  484: 
+</span><span class="">  485: 		# --------------------------------------------------
+</span><span class="">  486: 		# Build expandable mutant details for this line
+</span><span class="">  487: 		# --------------------------------------------------
+</span><span class="">  488: 
+</span><span class="">  489: 		my @line_mutants;
+</span><span class="">  490: 
+</span><span class="">  491: 		push @line_mutants, @{ $survived_by_line{$line_no} || [] };
+</span><span class="">  492: 		push @line_mutants, @{ $killed_by_line{$line_no} || [] };
+</span><span class="">  493: 
+</span><span class="">  494: 		my $details = &#39;&#39;;
+</span><span class="">  495: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  496: 		if (@line_mutants) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_496: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  497: 			# Count totals for summary label
+</span><span class="">  498: 			my $total = scalar @line_mutants;
+</span><span class="">  499: 			my $killed = scalar @{ $killed_by_line{$line_no} || [] };
+</span><span class="">  500: 
+</span><span class="">  501: 			# Create expandable section
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  502: 			if(my $survived = scalar @{ $survived_by_line{$line_no} || [] }) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_502: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  503: 				$details = qq{
+</span><span class="">  504: 					&lt;details class=&quot;mutant-details&quot;&gt;
+</span><span class="">  505: 					&lt;summary&gt;Mutants (Total: $total, Killed: $killed, Survived: $survived)&lt;/summary&gt;
+</span><span class="">  506: 					&lt;ul&gt;
+</span><span class="">  507: 				};
+</span><span class="">  508: 
+</span><span class="">  509: 				for my $m (@line_mutants) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  510: 					if($m-&gt;{status} eq &#39;Survived&#39;) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_510: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  511: 						my $id = $m-&gt;{id} // &#39;unknown&#39;;
+</span><span class="">  512: 						my $type = $m-&gt;{type} // &#39;&#39;;
+</span><span class="">  513: 						my $description = $m-&gt;{description} // &#39;&#39;;
+</span><span class="">  514: 
+</span><span class="">  515: 						$details .= &quot;&lt;li&gt;&lt;b&gt;$id: $description&lt;/b&gt;&lt;br&gt;&quot;;
+</span><span class="">  516: 						$details .= &quot;$m-&gt;{difficulty}: $m-&gt;{hint}\n&quot;;
+</span><span class="">  517: 
+</span><span class="">  518: 						# Show mutation type if available
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  519: 						if ($type) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_519: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  520: 							$details .= &quot; ($type)&quot;;
+</span><span class="">  521: 						}
+</span><span class="">  522: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  523: 						if(my $suggest = _suggest_test($m)) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_523: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  524: 							$suggest = encode_entities($suggest);
+</span><span class="">  525: 
+</span><span class="">  526: 							$details .= qq{
+</span><span class="">  527: 								&lt;div class=&quot;suggested-test&quot;&gt;
+</span><span class="">  528: 								&lt;div class=&quot;suggest-label&quot;&gt;&eth;&#159;&sect;&ordf; Suggested Test&lt;/div&gt;
+</span><span class="">  529: 								&lt;pre&gt;$suggest&lt;/pre&gt;
+</span><span class="">  530: 								&lt;/div&gt;
+</span><span class="">  531: 							};
+</span><span class="">  532: 						}
+</span><span class="">  533: 
+</span><span class="">  534: 						$details .= &#39;&lt;/li&gt;&#39;;
+</span><span class="">  535: 					}
+</span><span class="">  536: 				}
+</span><span class="">  537: 
+</span><span class="">  538: 				$details .= &quot;&lt;/ul&gt;&lt;/details&gt;\n&quot;;
+</span><span class="">  539: 			} else {
+</span><span class="">  540: 				$details = &quot;&lt;p&gt; &lt;b&gt; Mutants (Total: $total, Killed: $killed, Survived: 0)&lt;/b&gt;&lt;p&gt;&quot;;
+</span><span class="">  541: 			}
+</span><span class="">  542: 		}
+</span><span class="">  543: 
+</span><span class="">  544: 		print $out &quot;&lt;/span&gt;$details&quot;;
+</span><span class="">  545: 	}
+</span><span class="">  546: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 547 → 551 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 547 → 551 → 0">●</span>   547: 	print $out &quot;&lt;/pre&gt;\n&quot;;
+</span><span class="">  548: 
+</span><span class="">  549: 	print $out _footer();
+</span><span class="">  550: 
+</span><span class="">  551: 	close $out;
+</span><span class="">  552: }
+</span><span class="">  553: 
+</span><span class="">  554: sub _file_score {
+</span><span class="">  555: 	my $file_data = $_[0];
+</span><span class="">  556: 
+</span><span class="">  557: 	my $killed = scalar @{ $file_data-&gt;{killed} || [] };
+</span><span class="">  558: 	my $survived = scalar @{ $file_data-&gt;{survived} || [] };
+</span><span class="">  559: 	my $total = $killed + $survived;
+</span><span class="">  560: 
+</span><span class="">  561: 	return $total ? ($killed / $total) * 100 : 0;
+</span><span class="">  562: }
+</span><span class="">  563: 
+</span><span class="">  564: # --------------------------------------------------
+</span><span class="">  565: # Generate smart advisory text based on mutation type
+</span><span class="">  566: # --------------------------------------------------
+</span><span class="">  567: sub _mutation_advice {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 568 → 575 → 580">●</span>  <span class="lcsaj-dot" title="LCSAJ: 568 → 575 → 0">●</span>   568: 	my $mutant = $_[0];
+</span><span class="">  569: 
+</span><span class="">  570: 	# Determine mutation type
+</span><span class="">  571: 	# Prefer explicit type field if present
+</span><span class="">  572: 	my $type = $mutant-&gt;{type};
+</span><span class="">  573: 
+</span><span class="">  574: 	# Fallback: infer from ID prefix
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  575: 	if (!$type &amp;&amp; $mutant-&gt;{id}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_575: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  576: 		($type) = $mutant-&gt;{id} =~ /^([A-Z_]+)/;
+</span><span class="">  577: 	}
+</span><span class="">  578: 
+</span><span class="">  579: 	# Default advice
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 580 → 591 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 580 → 591 → 0">●</span>   580: 	return &#39;Tests did not detect this behavioural change. Consider adding assertions.&#39; unless $type;
+</span><span class="">  581: 
+</span><span class="">  582: 	# Advice per mutation type
+</span><span class="">  583: 	return &#39;Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).&#39; if $type =~ /NUM|BOUNDARY/;
+</span><span class="">  584: 
+</span><span class="">  585: 	return &quot;Return value mutation survived. Add tests asserting exact return values.&quot; if $type =~ /RETURN/;
+</span><span class="">  586: 
+</span><span class="">  587: 	return &#39;Boolean logic mutation survived. Add tests covering both true and false paths.&#39; if $type =~ /BOOL|NEGATION/;
+</span><span class="">  588: 
+</span><span class="">  589: 	return &#39;Comparison mutation survived. Verify equality and inequality cases explicitly.&#39; if $type =~ /COMPARE|EQUAL/;
+</span><span class="">  590: 
+</span><span class="">  591: 	return &#39;Mutation survived. Add targeted tests to validate this branch.&#39;
+</span><span class="">  592: }
+</span><span class="">  593: 
+</span><span class="">  594: sub _suggest_test {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 595 → 605 → 616">●</span>  <span class="lcsaj-dot" title="LCSAJ: 595 → 605 → 0">●</span>   595: 	my $m = $_[0];
+</span><span class="">  596: 
+</span><span class="">  597: 	# ---------------------------------------------------------
+</span><span class="">  598: 	# Determine mutation type
+</span><span class="">  599: 	# ---------------------------------------------------------
+</span><span class="">  600: 
+</span><span class="">  601: 	# Prefer explicit type if present
+</span><span class="">  602: 	my $type = $m-&gt;{type};
+</span><span class="">  603: 
+</span><span class="">  604: 	# Fallback: infer from ID prefix
+</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch.">  605: 	if((!$type || (length($type) == 0)) &amp;&amp; $m-&gt;{id}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_605: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>COND_INV_605: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  606: 		($type) = $m-&gt;{id} =~ /^([A-Z_]+)/;
+</span><span class="">  607: 	}
+</span><span class="">  608: 
+</span><span class="">  609: 	# my $orig = $m-&gt;{original} // &#39;&#39;;
+</span><span class="">  610: 	# my $new = $m-&gt;{transform} // &#39;&#39;;
+</span><span class="">  611: 
+</span><span class="">  612: 	# ---------------------------------------------------------
+</span><span class="">  613: 	# Boundary condition mutation
+</span><span class="">  614: 	# ---------------------------------------------------------
+</span><span class="">  615: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 616 → 616 → 627">●</span>  <span class="lcsaj-dot" title="LCSAJ: 616 → 616 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 616 → 616 → 627">●</span>  <span class="lcsaj-dot" title="LCSAJ: 616 → 616 → 0">●</span>   616: 	if ($type &amp;&amp; $type =~ /NUM|BOUNDARY/) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_616: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  617: 		return &lt;&lt;&quot;TEST&quot;;
+</span><span class="">  618: # Boundary test suggestion
+</span><span class="">  619: is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</span><span class="">  620: TEST
+</span><span class="">  621: 	}
+</span><span class="">  622: 
+</span><span class="">  623: 	# ---------------------------------------------------------
+</span><span class="">  624: 	# Boolean mutation
+</span><span class="">  625: 	# ---------------------------------------------------------
+</span><span class="">  626: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 627 → 627 → 638">●</span>  <span class="lcsaj-dot" title="LCSAJ: 627 → 627 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 627 → 627 → 638">●</span>  <span class="lcsaj-dot" title="LCSAJ: 627 → 627 → 0">●</span>   627: 	if ($type &amp;&amp; $type =~ /BOOL|NEGATION/) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_627: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  628: 		return &lt;&lt;&quot;TEST&quot;;
+</span><span class="">  629: # Boolean branch test suggestion
+</span><span class="">  630: ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
+</span><span class="">  631: TEST
+</span><span class="">  632: 	}
+</span><span class="">  633: 
+</span><span class="">  634: 	# ---------------------------------------------------------
+</span><span class="">  635: 	# Return value mutation
+</span><span class="">  636: 	# ---------------------------------------------------------
+</span><span class="">  637: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 638 → 638 → 645">●</span>  <span class="lcsaj-dot" title="LCSAJ: 638 → 638 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 638 → 638 → 645">●</span>  <span class="lcsaj-dot" title="LCSAJ: 638 → 638 → 0">●</span>   638: 	if ($type &amp;&amp; $type =~ /RETURN/) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_638: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  639: 		return &lt;&lt;&quot;TEST&quot;;
+</span><span class="">  640: # Return value assertion
+</span><span class="">  641: is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
+</span><span class="">  642: TEST
+</span><span class="">  643: 	}
+</span><span class="">  644: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 645 → 645 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 645 → 645 → 0">●</span>   645: 	return;
+</span><span class="">  646: }
+</span><span class="">  647: 
+</span><span class="">  648: sub _survivor_class {
+</span><span class="">  649: 	my $count = $_[0];
+</span><span class="">  650: 
+</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  651: 	return &#39;survived-1&#39; if $count == 1;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_651: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  652: 	return &#39;survived-2&#39; if $count == 2;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_652: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  653: 	return &#39;survived-3&#39; if $count &gt;= 3;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_653: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_653: Numeric boundary flip >= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_653: Numeric boundary flip >= to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  654: 
+</span><span class="">  655: 	return &#39;survived&#39;;
+</span><span class="">  656: }
+</span><span class="">  657: 
+</span><span class="">  658: # --------------------------------------------------
+</span><span class="">  659: # Compute relative link between two files
+</span><span class="">  660: # --------------------------------------------------
+</span><span class="">  661: sub _relative_link {
+</span><span class="">  662: 	my ($from, $to) = @_;
+</span><span class="">  663: 
+</span><span class="">  664: 	# Convert both to .html filenames
+</span><span class="">  665: 	$from .= &#39;.html&#39;;
+</span><span class="">  666: 	$to .= &#39;.html&#39;;
+</span><span class="">  667: 
+</span><span class="">  668: 	# Use File::Spec to compute correct relative path
+</span><span class="">  669: 	return File::Spec-&gt;abs2rel($to, File::Basename::dirname($from));
+</span><span class="">  670: }
+</span><span class="">  671: 
+</span><span class="">  672: # --------------------------------------------------
+</span><span class="">  673: # HTML Helpers
+</span><span class="">  674: # --------------------------------------------------
+</span><span class="">  675: 
+</span><span class="">  676: sub _header {
+</span><span class="">  677: 	return qq{
+</span><span class="">  678: &lt;!DOCTYPE html&gt;
+</span><span class="">  679: &lt;html&gt;
+</span><span class="">  680: &lt;head&gt;
+</span><span class="">  681: &lt;meta charset=&quot;utf-8&quot;&gt;
+</span><span class="">  682: &lt;style&gt;
+</span><span class="">  683: 
+</span><span class="">  684: /* --------------------------------------------------
+</span><span class="">  685:    CSS Variables (Light Mode Default)
+</span><span class="">  686: -------------------------------------------------- */
+</span><span class="">  687: 
+</span><span class="">  688: :root {
+</span><span class="">  689:     --bg: #ffffff;
+</span><span class="">  690:     --text: #000000;
+</span><span class="">  691:     --table-header: #333;
+</span><span class="">  692:     --table-header-text: #ffffff;
+</span><span class="">  693: 
+</span><span class="">  694:     --survived-1: #f8d7da;
+</span><span class="">  695:     --survived-2: #f5b7b1;
+</span><span class="">  696:     --survived-3: #ec7063;
+</span><span class="">  697: 
+</span><span class="">  698:     --killed: #d4edda;
+</span><span class="">  699:     --border: #cccccc;
+</span><span class="">  700: }
+</span><span class="">  701: 
+</span><span class="">  702: /* --------------------------------------------------
+</span><span class="">  703:    Dark Mode Overrides
+</span><span class="">  704: -------------------------------------------------- */
+</span><span class="">  705: 
+</span><span class="">  706: html[data-theme=&#39;dark&#39;] {
+</span><span class="">  707:     --bg: #1e1e1e;
+</span><span class="">  708:     --text: #dddddd;
+</span><span class="">  709:     --table-header: #222;
+</span><span class="">  710:     --table-header-text: #ffffff;
+</span><span class="">  711: 
+</span><span class="">  712:     --survived-1: #5c2b2e;
+</span><span class="">  713:     --survived-2: #7b2c2f;
+</span><span class="">  714:     --survived-3: #a93226;
+</span><span class="">  715: 
+</span><span class="">  716:     --killed: #1e4620;
+</span><span class="">  717:     --border: #555;
+</span><span class="">  718: }
+</span><span class="">  719: 
+</span><span class="">  720: /* --------------------------------------------------
+</span><span class="">  721:    Global Styles
+</span><span class="">  722: -------------------------------------------------- */
+</span><span class="">  723: 
+</span><span class="">  724: body {
+</span><span class="">  725: 	font-family: sans-serif;
+</span><span class="">  726: 	background: var(--bg);
+</span><span class="">  727: 	color: var(--text);
+</span><span class="">  728: }
+</span><span class="">  729: 
+</span><span class="">  730: table {
+</span><span class="">  731:     border-collapse: collapse;
+</span><span class="">  732:     width: 100%;
+</span><span class="">  733: }
+</span><span class="">  734: 
+</span><span class="">  735: th {
+</span><span class="">  736:     background: var(--table-header);
+</span><span class="">  737:     color: var(--table-header-text);
+</span><span class="">  738: }
+</span><span class="">  739: 
+</span><span class="">  740: .survived-1 { background-color: var(--survived-1); }
+</span><span class="">  741: .survived-2 { background-color: var(--survived-2); }
+</span><span class="">  742: .survived-3 { background-color: var(--survived-3); }
+</span><span class="">  743: 
+</span><span class="">  744: .killed { background-color: var(--killed); }
+</span><span class="">  745: 
+</span><span class="">  746: .legend {
+</span><span class="">  747:     border: 1px solid #ccc;
+</span><span class="">  748:     background: #fafafa;
+</span><span class="">  749:     padding: 10px;
+</span><span class="">  750:     margin: 15px 0;
+</span><span class="">  751:     font-size: 0.9em;
+</span><span class="">  752: }
+</span><span class="">  753: 
+</span><span class="">  754: .legend pre {
+</span><span class="">  755:     background: #f4f4f4;
+</span><span class="">  756:     padding: 5px;
+</span><span class="">  757: }
+</span><span class="">  758: 
+</span><span class="">  759: .legend-box {
+</span><span class="">  760:     display: inline-block;
+</span><span class="">  761:     width: 16px;
+</span><span class="">  762:     height: 16px;
+</span><span class="">  763:     margin: 0 6px 0 20px;
+</span><span class="">  764:     vertical-align: middle;
+</span><span class="">  765:     border: 1px solid var(--border);
+</span><span class="">  766: }
+</span><span class="">  767: 
+</span><span class="">  768: /* White box for non-mutated lines */
+</span><span class="">  769: .legend-box.none {
+</span><span class="">  770: 	background-color: var(--bg);
+</span><span class="">  771: }
+</span><span class="">  772: 
+</span><span class="">  773: pre { line-height: 1.4; }
+</span><span class="">  774: 
+</span><span class="">  775: pre &gt; details {
+</span><span class="">  776:     margin: 0.2em 0;
+</span><span class="">  777: }
+</span><span class="">  778: 
+</span><span class="">  779: pre &gt; details:first-child {
+</span><span class="">  780:     margin-top: 0;
+</span><span class="">  781: }
+</span><span class="">  782: 
+</span><span class="">  783: pre &gt; details:last-child {
+</span><span class="">  784:     margin-bottom: 0;
+</span><span class="">  785: }
+</span><span class="">  786: 
+</span><span class="">  787: pre details,
+</span><span class="">  788: pre summary,
+</span><span class="">  789: pre ul,
+</span><span class="">  790: pre li {
+</span><span class="">  791:     white-space: normal;
+</span><span class="">  792:     margin: 0;
+</span><span class="">  793:     padding: 0;
+</span><span class="">  794:     line-height: 1.2;
+</span><span class="">  795: }
+</span><span class="">  796: 
+</span><span class="">  797: /* --------------------------------------------------
+</span><span class="">  798:    Suggested Test Box Styling
+</span><span class="">  799:    Theme-aware and readable in light &amp; dark modes
+</span><span class="">  800: -------------------------------------------------- */
+</span><span class="">  801: 
+</span><span class="">  802: .suggested-test {
+</span><span class="">  803:     margin-top: 6px;
+</span><span class="">  804:     margin-bottom: 12px;
+</span><span class="">  805: 
+</span><span class="">  806:     /* Use theme variables instead of hardcoded colors */
+</span><span class="">  807:     background: var(--bg);
+</span><span class="">  808:     color: var(--text);
+</span><span class="">  809: 
+</span><span class="">  810:     padding: 8px;
+</span><span class="">  811:     border-radius: 4px;
+</span><span class="">  812: 
+</span><span class="">  813:     /* Subtle border for visual separation */
+</span><span class="">  814:     border: 1px solid var(--border);
+</span><span class="">  815: }
+</span><span class="">  816: 
+</span><span class="">  817: /* Label styling */
+</span><span class="">  818: .suggest-label {
+</span><span class="">  819:     font-weight: bold;
+</span><span class="">  820:     margin-bottom: 4px;
+</span><span class="">  821: }
+</span><span class="">  822: 
+</span><span class="">  823: /* Ensure the test code block inherits readable colors */
+</span><span class="">  824: .suggested-test pre {
+</span><span class="">  825:     background: transparent;   /* Prevent nested dark blocks */
+</span><span class="">  826:     color: inherit;            /* Match theme text color */
+</span><span class="">  827:     margin: 0;
+</span><span class="">  828:     font-family: monospace;
+</span><span class="">  829: }
+</span><span class="">  830: 
+</span><span class="">  831: pre {
+</span><span class="">  832:     overflow-x: auto;
+</span><span class="">  833: }
+</span><span class="">  834: 
+</span><span class="">  835: .nav { margin-bottom: 1em; }
+</span><span class="">  836: 
+</span><span class="">  837: .toggle {
+</span><span class="">  838:     float: right;
+</span><span class="">  839:     cursor: pointer;
+</span><span class="">  840:     padding: 6px 10px;
+</span><span class="">  841:     border: 1px solid var(--border);
+</span><span class="">  842:     border-radius: 4px;
+</span><span class="">  843: }
+</span><span class="">  844: 
+</span><span class="">  845: /* Tooltip container */
+</span><span class="">  846: .tooltip {
+</span><span class="">  847: 	position: relative;
+</span><span class="">  848: 	cursor: help;
+</span><span class="">  849: }
+</span><span class="">  850: 
+</span><span class="">  851: /* Tooltip bubble */
+</span><span class="">  852: .tooltip:hover::after {
+</span><span class="">  853:     content: attr(data-tooltip);
+</span><span class="">  854:     position: absolute;
+</span><span class="">  855:     left: 0;
+</span><span class="">  856:     top: 100%;
+</span><span class="">  857:     background: var(--table-header);
+</span><span class="">  858:     color: var(--table-header-text);
+</span><span class="">  859:     padding: 6px 10px;
+</span><span class="">  860:     white-space: normal;
+</span><span class="">  861:     max-width: 300px;
+</span><span class="">  862:     min-width: 30ch;
+</span><span class="">  863:     font-size: 12px;
+</span><span class="">  864:     border-radius: 6px;
+</span><span class="">  865:     z-index: 1000;
+</span><span class="">  866:     margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+</span><span class="">  867: }
+</span><span class="">  868: 
+</span><span class="">  869: .mutant-details {
+</span><span class="">  870: 	margin-left: 2em;
+</span><span class="">  871: 	font-size: 0.9em;
+</span><span class="">  872: }
+</span><span class="">  873: 
+</span><span class="">  874: /* Indent the list of mutations that displays when expanding by 8 characters */
+</span><span class="">  875: pre details.mutant-details ul {
+</span><span class="">  876:     padding-left: 8ch;
+</span><span class="">  877:     margin: 0.2em 0;
+</span><span class="">  878: }
+</span><span class="">  879: 
+</span><span class="">  880: .mutant-details summary {
+</span><span class="">  881: 	cursor: pointer;
+</span><span class="">  882: 	font-weight: bold;
+</span><span class="">  883: }
+</span><span class="">  884: 
+</span><span class="">  885: .lcsaj-dot {
+</span><span class="">  886:        color: #5555ff;
+</span><span class="">  887:        font-size: 10px;
+</span><span class="">  888:        margin-right: 3px;
+</span><span class="">  889: }
+</span><span class="">  890: 
+</span><span class="">  891: .lcsaj-dot:hover::after {
+</span><span class="">  892:     content: attr(data-lcsaj);
+</span><span class="">  893:     position: absolute;
+</span><span class="">  894:     background: #333;
+</span><span class="">  895:     color: white;
+</span><span class="">  896:     padding: 4px 6px;
+</span><span class="">  897:     border-radius: 4px;
+</span><span class="">  898:     font-size: 11px;
+</span><span class="">  899: }
+</span><span class="">  900: 
+</span><span class="">  901: &lt;/style&gt;
+</span><span class="">  902: &lt;/head&gt;
+</span><span class="">  903: &lt;body&gt;
+</span><span class="">  904: &lt;button class=&quot;toggle&quot; onclick=&quot;toggleTheme()&quot;&gt;&eth;&#159;&#140;&#153; Toggle Theme&lt;/button&gt;
+</span><span class="">  905: };
+</span><span class="">  906: }
+</span><span class="">  907: 
+</span><span class="">  908: sub _footer {
+</span><span class="">  909: 	return qq{
+</span><span class="">  910: &lt;script&gt;
+</span><span class="">  911: function toggleTheme() {
+</span><span class="">  912:     const html = document.documentElement;
+</span><span class="">  913:     const current = html.getAttribute(&#39;data-theme&#39;);
+</span><span class="">  914:     const next = current === &#39;dark&#39; ? &#39;light&#39; : &#39;dark&#39;;
+</span><span class="">  915:     html.setAttribute(&#39;data-theme&#39;, next);
+</span><span class="">  916:     localStorage.setItem(&#39;theme&#39;, next);
+</span><span class="">  917: }
+</span><span class="">  918: 
+</span><span class="">  919: (function() {
+</span><span class="">  920:     const saved = localStorage.getItem(&#39;theme&#39;);
+</span><span class="">  921:     if (saved) {
+</span><span class="">  922:         document.documentElement.setAttribute(&#39;data-theme&#39;, saved);
+</span><span class="">  923:     }
+</span><span class="">  924: })();
+</span><span class="">  925: &lt;/script&gt;
+</span><span class="">  926: &lt;/body&gt;
+</span><span class="">  927: &lt;/html&gt;
+</span><span class="">  928: 	};
+</span><span class="">  929: }
+</span><span class="">  930: 
+</span><span class="">  931: # ------------------------------------------------------------
+</span><span class="">  932: # _coverage_totals
+</span><span class="">  933: #
+</span><span class="">  934: # Extract structural coverage totals from a Devel::Cover JSON
+</span><span class="">  935: # report. Returns four scalar values in list context:
+</span><span class="">  936: #
+</span><span class="">  937: #   ($statement_total, $statement_hit,
+</span><span class="">  938: #    $branch_total,    $branch_hit)
+</span><span class="">  939: #
+</span><span class="">  940: # This matches how the routine is used elsewhere in this file.
+</span><span class="">  941: #
+</span><span class="">  942: # NOTE:
+</span><span class="">  943: # Devel::Cover stores totals under:
+</span><span class="">  944: #
+</span><span class="">  945: #   $cov-&gt;{summary}-&gt;{Total}
+</span><span class="">  946: #
+</span><span class="">  947: # while per-file data appears under:
+</span><span class="">  948: #
+</span><span class="">  949: #   $cov-&gt;{summary}-&gt;{filename}
+</span><span class="">  950: #
+</span><span class="">  951: # This routine extracts only the aggregated totals.
+</span><span class="">  952: # ------------------------------------------------------------
+</span><span class="">  953: 
+</span><span class="">  954: sub _coverage_totals
+</span><span class="">  955: {
+</span><span class="">  956: 	my $cov = $_[0];
+</span><span class="">  957: 
+</span><span class="">  958: 	# Defensive checks to avoid warnings
+</span><span class="">  959: 	return (0,0,0,0) unless $cov;
+</span><span class="">  960: 	return (0,0,0,0) unless ref $cov eq &#39;HASH&#39;;
+</span><span class="">  961: 	return (0,0,0,0) unless $cov-&gt;{summary};
+</span><span class="">  962: 
+</span><span class="">  963: 	my $total = $cov-&gt;{summary}-&gt;{Total} || {};
+</span><span class="">  964: 
+</span><span class="">  965: 	# Extract statement coverage
+</span><span class="">  966: 	my $stmt_total = $total-&gt;{statement}{total} || 0;
+</span><span class="">  967: 	my $stmt_hit = $total-&gt;{statement}{covered} || 0;
+</span><span class="">  968: 
+</span><span class="">  969: 	# Extract branch coverage
+</span><span class="">  970: 	my $branch_total = $total-&gt;{branch}{total} || 0;
+</span><span class="">  971: 	my $branch_hit = $total-&gt;{branch}{covered} || 0;
+</span><span class="">  972: 
+</span><span class="">  973: 	return ($stmt_total, $stmt_hit, $branch_total, $branch_hit);
+</span><span class="">  974: }
+</span><span class="">  975: 
+</span><span class="">  976: # ------------------------------------------------------------
+</span><span class="">  977: # _coverage_for_file
+</span><span class="">  978: #
+</span><span class="">  979: # Attempts to find coverage data for a given source file.
+</span><span class="">  980: # Devel::Cover JSON keys may store paths relative to project
+</span><span class="">  981: # root, so we try multiple match strategies.
+</span><span class="">  982: # ------------------------------------------------------------
+</span><span class="">  983: sub _coverage_for_file {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 984 → 997 → 1005">●</span>  <span class="lcsaj-dot" title="LCSAJ: 984 → 997 → 0">●</span>   984:     my ($cov, $file) = @_;
+</span><span class="">  985: 
+</span><span class="">  986:     return unless $cov &amp;&amp; $cov-&gt;{summary};
+</span><span class="">  987:     my $summary = $cov-&gt;{summary};
+</span><span class="">  988: 
+</span><span class="">  989:     # 1. exact match (what worked before)
+</span><span class="">  990:     return $summary-&gt;{$file} if exists $summary-&gt;{$file};
+</span><span class="">  991: 
+</span><span class="">  992:     require File::Basename;
+</span><span class="">  993: 
+</span><span class="">  994:     my $base = File::Basename::basename($file);
+</span><span class="">  995: 
+</span><span class="">  996:     # 2. basename match (what worked before)
+</span><span class="">  997:     for my $k (keys %$summary) {
+</span><span class="">  998:         next if $k eq &#39;Total&#39;;
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  999:         if (File::Basename::basename($k) eq $base) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_999: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 1000:             return $summary-&gt;{$k};
+</span><span class=""> 1001:         }
+</span><span class=""> 1002:     }
+</span><span class=""> 1003: 
+</span><span class=""> 1004:     # 3. try lib/ relative path
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1005 → 1014 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1005 → 1014 → 0">●</span>  1005:     my $rel = $file;
+</span><span class=""> 1006:     $rel =~ s{.*?/lib/}{lib/};
+</span><span class=""> 1007: 
+</span><span class=""> 1008:     return $summary-&gt;{$rel} if exists $summary-&gt;{$rel};
+</span><span class=""> 1009: 
+</span><span class=""> 1010:     # 4. NEW: try blib/lib version
+</span><span class=""> 1011:     my $blib = &quot;blib/$rel&quot;;
+</span><span class=""> 1012:     return $summary-&gt;{$blib} if exists $summary-&gt;{$blib};
+</span><span class=""> 1013: 
+</span><span class=""> 1014:     return;
+</span><span class=""> 1015: }
+</span><span class=""> 1016: 
+</span><span class=""> 1017: # ------------------------------------------------------------
+</span><span class=""> 1018: # _cyclomatic_complexity
+</span><span class=""> 1019: #
+</span><span class=""> 1020: # Compute a simple *file based* cyclomatic complexity metric using PPI.
+</span><span class=""> 1021: #
+</span><span class=""> 1022: # Formula:
+</span><span class=""> 1023: #   complexity = 1 + number_of_decision_points
+</span><span class=""> 1024: #
+</span><span class=""> 1025: # This is an approximation but works well for dashboards.
+</span><span class=""> 1026: # ------------------------------------------------------------
+</span><span class=""> 1027: 
+</span><span class=""> 1028: sub _cyclomatic_complexity {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1029 → 1045 → 1056">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1029 → 1045 → 0">●</span>  1029: 	my $file = $_[0];
+</span><span class=""> 1030: 
+</span><span class=""> 1031: 	return 0 unless -f $file;
+</span><span class=""> 1032: 
+</span><span class=""> 1033: 	require PPI;
+</span><span class=""> 1034: 
+</span><span class=""> 1035: 	my $doc = PPI::Document-&gt;new($file);
+</span><span class=""> 1036: 	return 0 unless $doc;
+</span><span class=""> 1037: 
+</span><span class=""> 1038: 	my $complexity = 1;
+</span><span class=""> 1039: 
+</span><span class=""> 1040: 	# --------------------------------------------------
+</span><span class=""> 1041: 	# Control-flow keywords
+</span><span class=""> 1042: 	# --------------------------------------------------
+</span><span class=""> 1043: 	my $words = $doc-&gt;find(&#39;PPI::Token::Word&#39;) || [];
+</span><span class=""> 1044: 
+</span><span class=""> 1045: 	foreach my $w (@$words) {
+</span><span class=""> 1046: 		my $c = $w-&gt;content;
+</span><span class=""> 1047: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1048: 		if ($c =~ /^(if|elsif|unless|while|for|foreach|until|when)$/) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_1048: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 1049: 			$complexity++;
+</span><span class=""> 1050: 		}
+</span><span class=""> 1051: 	}
+</span><span class=""> 1052: 
+</span><span class=""> 1053: 	# --------------------------------------------------
+</span><span class=""> 1054: 	# Logical operators (extra branches)
+</span><span class=""> 1055: 	# --------------------------------------------------
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1056 → 1058 → 1066">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1056 → 1058 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1056 → 1058 → 1066">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1056 → 1058 → 0">●</span>  1056: 	my $ops = $doc-&gt;find(&#39;PPI::Token::Operator&#39;) || [];
+</span><span class=""> 1057: 
+</span><span class=""> 1058: 	foreach my $op (@$ops) {
+</span><span class=""> 1059: 		my $c = $op-&gt;content;
+</span><span class=""> 1060: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1061: 		if ($c eq &#39;&amp;&amp;&#39; || $c eq &#39;||&#39; || $c eq &#39;?&#39;) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_1061: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 1062: 			$complexity++;
+</span><span class=""> 1063: 		}
+</span><span class=""> 1064: 	}
+</span><span class=""> 1065: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1066 → 1066 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1066 → 1066 → 0">●</span>  1066: 	return $complexity;
+</span><span class=""> 1067: }
+</span><span class=""> 1068: 
+</span><span class=""> 1069: sub _lcsaj_coverage_for_file {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1070 → 1099 → 1117">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1070 → 1099 → 0">●</span>  1070: 	my ($file, $lcsaj_dir, $hits) = @_;
+</span><span class=""> 1071: 
+</span><span class=""> 1072: 	return unless $lcsaj_dir &amp;&amp; $hits;
+</span><span class=""> 1073: 
+</span><span class=""> 1074: 	my $path = $file;
+</span><span class=""> 1075: 	$file = abs_path($file) if defined $file;
+</span><span class=""> 1076: 
+</span><span class=""> 1077: 	my $base = basename($file);
+</span><span class=""> 1078: 
+</span><span class=""> 1079: 	my $rel = $file;
+</span><span class=""> 1080: 	$rel =~ s{.*?/lib/}{};
+</span><span class=""> 1081: 
+</span><span class=""> 1082: 	my $lcsaj_file = File::Spec-&gt;catfile(
+</span><span class=""> 1083: 		$lcsaj_dir,
+</span><span class=""> 1084: 		&quot;$rel.lcsaj&quot;,
+</span><span class=""> 1085: 		&quot;$base.lcsaj.json&quot;
+</span><span class=""> 1086: 	);
+</span><span class=""> 1087: 
+</span><span class=""> 1088: 	return unless -f $lcsaj_file;
+</span><span class=""> 1089: 
+</span><span class=""> 1090: 	open my $fh, &#39;&lt;&#39;, $lcsaj_file;
+</span><span class=""> 1091: 	my $paths = decode_json(do { local $/; &lt;$fh&gt; });
+</span><span class=""> 1092: 	close $fh;
+</span><span class=""> 1093: 
+</span><span class=""> 1094: 	my $file_hits = $hits-&gt;{$path} || $hits-&gt;{$file} || {};
+</span><span class=""> 1095: 
+</span><span class=""> 1096: 	my $covered = 0;
+</span><span class=""> 1097: 	my $total = scalar @$paths;
+</span><span class=""> 1098: 
+</span><span class=""> 1099: 	for my $p (@$paths) {
+</span><span class=""> 1100: 		my $start = $p-&gt;{start};
+</span><span class=""> 1101: 		my $end = $p-&gt;{end};
+</span><span class=""> 1102: 
+</span><span class=""> 1103: 		next unless defined $start &amp;&amp; defined $end;
+</span><span class=""> 1104: 
+</span><span class=""> 1105: 		my $hit = 0;
+</span><span class=""> 1106: 
+</span><span class=""> 1107: 		for my $l ($start .. $end) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1108: 			if ($file_hits-&gt;{$l}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_1108: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 1109: 				$hit = 1;
+</span><span class=""> 1110: 				last;
+</span><span class=""> 1111: 			}
+</span><span class=""> 1112: 		}
+</span><span class=""> 1113: 
+</span><span class=""> 1114: 		$covered++ if $hit;
+</span><span class=""> 1115: 	}
+</span><span class=""> 1116: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1117 → 1117 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1117 → 1117 → 0">●</span>  1117: 	return ($covered, $total);
+</span><span class=""> 1118: }
+</span><span class=""> 1119: 
+</span><span class=""> 1120: 1;
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+</script>
+</body>
+</html>
+	

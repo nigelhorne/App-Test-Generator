@@ -1,0 +1,533 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+       color: #5555ff;
+       font-size: 10px;
+       margin-right: 3px;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/App/Test/Generator/Emitter/Perl.pm</h1>
+<div class="nav"><a href="../CoverageGuidedFuzzer.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="../LCSAJ.pm.html">Next ➡</a></div>
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package App::Test::Generator::Emitter::Perl;
+</span><span class="">    2: 
+</span><span class="">    3: use strict;
+</span><span class="">    4: use warnings;
+</span><span class="">    5: 
+</span><span class="">    6: our $VERSION = &#39;0.30&#39;;
+</span><span class="">    7: 
+</span><span class="">    8: =head1 VERSION
+</span><span class="">    9: 
+</span><span class="">   10: Version 0.30
+</span><span class="">   11: 
+</span><span class="">   12: =cut
+</span><span class="">   13: 
+</span><span class="">   14: sub new {
+</span><span class="">   15: 	my ($class, %args) = @_;
+</span><span class="">   16: 	use Data::Dumper;
+</span><span class="">   17: 	warn Dumper($args{plans});
+</span><span class="">   18: 	return bless {
+</span><span class="">   19: 		schema =&gt; $args{schema},
+</span><span class="">   20: 		plans =&gt; $args{plans},
+</span><span class="">   21: 		package =&gt; $args{package},
+</span><span class="">   22: 	}, $class;
+</span><span class="">   23: }
+</span><span class="">   24: 
+</span><span class="">   25: sub emit {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 26 → 30 → 34">●</span>  <span class="lcsaj-dot" title="LCSAJ: 26 → 30 → 0">●</span>    26: 	my $self = $_[0];
+</span><span class="">   27: 
+</span><span class="">   28: 	my $code = $self-&gt;_emit_header();
+</span><span class="">   29: 
+</span><span class="">   30: 	foreach my $method (sort keys %{ $self-&gt;{plans} }) {
+</span><span class="">   31: 		$code .= $self-&gt;_emit_method_tests($method);
+</span><span class="">   32: 	}
+</span><span class="">   33: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 34 → 36 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 34 → 36 → 0">●</span>    34: 	$code .= &quot;\ndone_testing();\n&quot;;
+</span><span class="">   35: 
+</span><span class="">   36: 	return $code;
+</span><span class="">   37: }
+</span><span class="">   38: 
+</span><span class="">   39: sub _emit_header {
+</span><span class="">   40: 	my $self = $_[0];
+</span><span class="">   41: 
+</span><span class="">   42: 	return &lt;&lt;&quot;END_HEADER&quot;;
+</span><span class="">   43: use strict;
+</span><span class="">   44: use warnings;
+</span><span class="">   45: use Test::Most;
+</span><span class="">   46: 
+</span><span class="">   47: use_ok(&#39;$self-&gt;{package}&#39;);
+</span><span class="">   48: 
+</span><span class="">   49: my \$obj = new_ok(&#39;$self-&gt;{package}&#39;);
+</span><span class="">   50: 
+</span><span class="">   51: END_HEADER
+</span><span class="">   52: }
+</span><span class="">   53: 
+</span><span class="">   54: sub _emit_method_tests {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 55 → 62 → 66">●</span>  <span class="lcsaj-dot" title="LCSAJ: 55 → 62 → 0">●</span>    55: 	my ($self, $method) = @_;
+</span><span class="">   56: 
+</span><span class="">   57:     my $plan = $self-&gt;{plans}{$method};
+</span><span class="">   58:     my $schema = $self-&gt;{schema}{$method};
+</span><span class="">   59: 
+</span><span class="">   60:     my $code = &quot;\n# --- Tests for $method ---\n&quot;;
+</span><span class="">   61: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   62:     if ($plan-&gt;{basic_test}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_62: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">   63:         $code .= $self-&gt;_emit_basic_test($method);
+</span><span class="">   64:     }
+</span><span class="">   65: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 66 → 66 → 70">●</span>  <span class="lcsaj-dot" title="LCSAJ: 66 → 66 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 66 → 66 → 70">●</span>  <span class="lcsaj-dot" title="LCSAJ: 66 → 66 → 0">●</span>    66:     if ($plan-&gt;{getter_test}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_66: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">   67:         $code .= $self-&gt;_emit_getter_test($method);
+</span><span class="">   68:     }
+</span><span class="">   69: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 70 → 70 → 74">●</span>  <span class="lcsaj-dot" title="LCSAJ: 70 → 70 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 70 → 70 → 74">●</span>  <span class="lcsaj-dot" title="LCSAJ: 70 → 70 → 0">●</span>    70:     if ($plan-&gt;{setter_test}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_70: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">   71:         $code .= $self-&gt;_emit_setter_test($method);
+</span><span class="">   72:     }
+</span><span class="">   73: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 74 → 74 → 78">●</span>  <span class="lcsaj-dot" title="LCSAJ: 74 → 74 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 74 → 74 → 78">●</span>  <span class="lcsaj-dot" title="LCSAJ: 74 → 74 → 0">●</span>    74:     if ($plan-&gt;{getset_test}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_74: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">   75:         $code .= $self-&gt;_emit_getset_test($method);
+</span><span class="">   76:     }
+</span><span class="">   77: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 78 → 78 → 82">●</span>  <span class="lcsaj-dot" title="LCSAJ: 78 → 78 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 78 → 78 → 82">●</span>  <span class="lcsaj-dot" title="LCSAJ: 78 → 78 → 0">●</span>    78:     if ($plan-&gt;{chaining_test}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_78: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">   79:         $code .= $self-&gt;_emit_chaining_test($method);
+</span><span class="">   80:     }
+</span><span class="">   81: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 82 → 82 → 86">●</span>  <span class="lcsaj-dot" title="LCSAJ: 82 → 82 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 82 → 82 → 86">●</span>  <span class="lcsaj-dot" title="LCSAJ: 82 → 82 → 0">●</span>    82:     if ($plan-&gt;{error_handling_test}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_82: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">   83:         $code .= $self-&gt;_emit_error_test($method);
+</span><span class="">   84:     }
+</span><span class="">   85: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 86 → 86 → 90">●</span>  <span class="lcsaj-dot" title="LCSAJ: 86 → 86 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 86 → 86 → 90">●</span>  <span class="lcsaj-dot" title="LCSAJ: 86 → 86 → 0">●</span>    86:     if ($plan-&gt;{context_tests}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_86: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">   87:         $code .= $self-&gt;_emit_context_test($method);
+</span><span class="">   88:     }
+</span><span class="">   89: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 90 → 90 → 94">●</span>  <span class="lcsaj-dot" title="LCSAJ: 90 → 90 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 90 → 90 → 94">●</span>  <span class="lcsaj-dot" title="LCSAJ: 90 → 90 → 0">●</span>    90: 	if ($plan-&gt;{object_injection_test}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_90: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">   91: 		$code .= $self-&gt;_emit_object_injection_test($method);
+</span><span class="">   92: 	}
+</span><span class="">   93: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 94 → 94 → 98">●</span>  <span class="lcsaj-dot" title="LCSAJ: 94 → 94 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 94 → 94 → 98">●</span>  <span class="lcsaj-dot" title="LCSAJ: 94 → 94 → 0">●</span>    94: 	if(($plan-&gt;{predicate_test}) || ($plan-&gt;{boolean_test})) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_94: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">   95: 		$code .= $self-&gt;_emit_boolean_test($method);
+</span><span class="">   96: 	}
+</span><span class="">   97: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 98 → 98 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 98 → 98 → 0">●</span>    98:     return $code;
+</span><span class="">   99: }
+</span><span class="">  100: 
+</span><span class="">  101: sub _emit_basic_test {
+</span><span class="">  102:     my ($self, $method) = @_;
+</span><span class="">  103: 
+</span><span class="">  104:     return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  105: {
+</span><span class="">  106:     my \$result = eval { \$obj-&gt;$method() };
+</span><span class="">  107:     ok(!\$@, &#39;$method does not die&#39;);
+</span><span class="">  108: }
+</span><span class="">  109: END_TEST
+</span><span class="">  110: }
+</span><span class="">  111: 
+</span><span class="">  112: sub _emit_getter_test {
+</span><span class="">  113:     my ($self, $method) = @_;
+</span><span class="">  114: 
+</span><span class="">  115:     return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  116: {
+</span><span class="">  117:     my \$value = \$obj-&gt;$method();
+</span><span class="">  118:     ok(defined \$value, &#39;$method returns a value&#39;);
+</span><span class="">  119: }
+</span><span class="">  120: END_TEST
+</span><span class="">  121: }
+</span><span class="">  122: 
+</span><span class="">  123: sub _emit_setter_test {
+</span><span class="">  124:     my ($self, $method) = @_;
+</span><span class="">  125: 
+</span><span class="">  126:     return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  127: {
+</span><span class="">  128:     ok(\$obj-&gt;$method(&#39;test&#39;), &#39;$method accepts input&#39;);
+</span><span class="">  129: }
+</span><span class="">  130: END_TEST
+</span><span class="">  131: }
+</span><span class="">  132: 
+</span><span class="">  133: sub _emit_getset_test {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 134 → 145 → 158">●</span>  <span class="lcsaj-dot" title="LCSAJ: 134 → 145 → 0">●</span>   134: 	my ($self, $method) = @_;
+</span><span class="">  135: 
+</span><span class="">  136: 	my $schema = $self-&gt;{schema}{$method};
+</span><span class="">  137: 
+</span><span class="">  138: 	my ($param) = grep { $_ !~ /^_/ } keys %{ $schema-&gt;{input} || {} };
+</span><span class="">  139: 
+</span><span class="">  140: 	my $type = $schema-&gt;{input}{$param}{type} // &#39;string&#39;;
+</span><span class="">  141: 
+</span><span class="">  142: 	# -------------------------------
+</span><span class="">  143: 	# OBJECT INPUT
+</span><span class="">  144: 	# -------------------------------
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  145: 	if ($type eq &#39;object&#39;) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_145: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  146: 		return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  147: {
+</span><span class="">  148:     my \$mock = bless {}, &#39;Test::MockObject&#39;;
+</span><span class="">  149:     \$obj-&gt;$method(\$mock);
+</span><span class="">  150:     isa_ok(\$obj-&gt;$method(), ref(\$mock), &#39;$method get/set works&#39;);
+</span><span class="">  151: }
+</span><span class="">  152: END_TEST
+</span><span class="">  153: 	}
+</span><span class="">  154: 
+</span><span class="">  155: 	# -------------------------------
+</span><span class="">  156: 	# DEFAULT STRING INPUT
+</span><span class="">  157: 	# -------------------------------
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 158 → 158 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 158 → 158 → 0">●</span>   158: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  159: {
+</span><span class="">  160:     \$obj-&gt;$method(&#39;value&#39;);
+</span><span class="">  161:     is(\$obj-&gt;$method(), &#39;value&#39;, &#39;$method get/set works&#39;);
+</span><span class="">  162: }
+</span><span class="">  163: END_TEST
+</span><span class="">  164: }
+</span><span class="">  165: 
+</span><span class="">  166: sub _emit_chaining_test {
+</span><span class="">  167: 	my ($self, $method) = @_;
+</span><span class="">  168: 
+</span><span class="">  169: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  170: {
+</span><span class="">  171:     my \$ret = \$obj-&gt;$method();
+</span><span class="">  172:     isa_ok(\$ret, ref(\$obj), &#39;$method returns self for chaining&#39;);
+</span><span class="">  173: }
+</span><span class="">  174: END_TEST
+</span><span class="">  175: }
+</span><span class="">  176: 
+</span><span class="">  177: sub _emit_error_test {
+</span><span class="">  178: 	my ($self, $method) = @_;
+</span><span class="">  179: 
+</span><span class="">  180: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  181: {
+</span><span class="">  182:     my \$result = eval { \$obj-&gt;$method(undef) };
+</span><span class="">  183:     ok(!\$result || \$@, &#39;$method handles invalid input&#39;);
+</span><span class="">  184: }
+</span><span class="">  185: END_TEST
+</span><span class="">  186: }
+</span><span class="">  187: 
+</span><span class="">  188: sub _emit_context_test {
+</span><span class="">  189: 	my ($self, $method) = @_;
+</span><span class="">  190: 
+</span><span class="">  191: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  192: {
+</span><span class="">  193:     my \$scalar = \$obj-&gt;$method();
+</span><span class="">  194:     my \@list   = \$obj-&gt;$method();
+</span><span class="">  195: 
+</span><span class="">  196:     ok(defined \$scalar, &#39;$method works in scalar context&#39;);
+</span><span class="">  197:     ok(defined \@list,   &#39;$method works in list context&#39;);
+</span><span class="">  198: }
+</span><span class="">  199: END_TEST
+</span><span class="">  200: }
+</span><span class="">  201: 
+</span><span class="">  202: sub _emit_object_injection_test {
+</span><span class="">  203: 	my ($self, $method) = @_;
+</span><span class="">  204: 
+</span><span class="">  205: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  206: {
+</span><span class="">  207:     my \$mock = bless {}, &#39;Mock::Object&#39;;
+</span><span class="">  208:     \$obj-&gt;$method(\$mock);
+</span><span class="">  209:     isa_ok(\$obj-&gt;$method(), &#39;Mock::Object&#39;,
+</span><span class="">  210:         &#39;$method stores injected object instance&#39;);
+</span><span class="">  211: }
+</span><span class="">  212: END_TEST
+</span><span class="">  213: }
+</span><span class="">  214: 
+</span><span class="">  215: sub _emit_boolean_test {
+</span><span class="">  216: 	my ($self, $method) = @_;
+</span><span class="">  217: 
+</span><span class="">  218: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  219: {
+</span><span class="">  220: 	my \$result = \$obj-&gt;$method();
+</span><span class="">  221: 	ok(defined \$result, &#39;$method returns a value&#39;);
+</span><span class="">  222: 	ok(!ref \$result, &#39;$method returns a scalar&#39;);
+</span><span class="">  223: 	ok(((\$result == 1) || (\$result == 0)), &#39;$method returns a boolean&#39;);
+</span><span class="">  224: }
+</span><span class="">  225: END_TEST
+</span><span class="">  226: }
+</span><span class="">  227: 
+</span><span class="">  228: 1;
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+</script>
+</body>
+</html>
+	

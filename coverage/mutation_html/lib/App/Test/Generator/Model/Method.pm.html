@@ -1,0 +1,613 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+       color: #5555ff;
+       font-size: 10px;
+       margin-right: 3px;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/App/Test/Generator/Model/Method.pm</h1>
+<div class="nav"><a href="../LCSAJ/Coverage.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="../Mutation/ConditionalInversion.pm.html">Next ➡</a></div>
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package App::Test::Generator::Model::Method;
+</span><span class="">    2: 
+</span><span class="">    3: use strict;
+</span><span class="">    4: use warnings;
+</span><span class="">    5: 
+</span><span class="">    6: our $VERSION = &#39;0.30&#39;;
+</span><span class="">    7: 
+</span><span class="">    8: =head1 VERSION
+</span><span class="">    9: 
+</span><span class="">   10: Version 0.30
+</span><span class="">   11: 
+</span><span class="">   12: =cut
+</span><span class="">   13: 
+</span><span class="">   14: sub new {
+</span><span class="">   15: 	my ($class, %args) = @_;
+</span><span class="">   16: 
+</span><span class="">   17: 	die &#39;name required&#39;   unless defined $args{name};
+</span><span class="">   18: 	die &#39;source required&#39; unless defined $args{source};
+</span><span class="">   19: 
+</span><span class="">   20: 	my $self = {
+</span><span class="">   21: 		name          =&gt; $args{name},
+</span><span class="">   22: 		source        =&gt; $args{source},
+</span><span class="">   23: 		parameters    =&gt; [],
+</span><span class="">   24: 		evidence      =&gt; [],
+</span><span class="">   25: 		return_type   =&gt; undef,
+</span><span class="">   26: 		classification=&gt; undef,
+</span><span class="">   27: 		confidence    =&gt; undef,
+</span><span class="">   28: 	};
+</span><span class="">   29: 
+</span><span class="">   30: 	return bless $self, $class;
+</span><span class="">   31: }
+</span><span class="">   32: 
+</span><span class="">   33: sub name       { $_[0]-&gt;{name} }
+</span><span class="">   34: sub source     { $_[0]-&gt;{source} }
+</span><span class="">   35: 
+</span><span class="">   36: sub return_type {
+</span><span class="">   37: 	my ($self, $val) = @_;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   38: 	$self-&gt;{return_type} = $val if @_ &gt; 1;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_38: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_38: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_38: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_38: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">   39: 	return $self-&gt;{return_type};
+</span><span class="">   40: }
+</span><span class="">   41: 
+</span><span class="">   42: sub classification {
+</span><span class="">   43: 	my ($self, $val) = @_;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   44: 	$self-&gt;{classification} = $val if @_ &gt; 1;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_44: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_44: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_44: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_44: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">   45: 	return $self-&gt;{classification};
+</span><span class="">   46: }
+</span><span class="">   47: 
+</span><span class="">   48: sub confidence {
+</span><span class="">   49: 	my ($self, $val) = @_;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   50: 	$self-&gt;{confidence} = $val if @_ &gt; 1;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_50: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_50: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_50: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_50: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">   51: 	return $self-&gt;{confidence};
+</span><span class="">   52: }
+</span><span class="">   53: 
+</span><span class="">   54: sub add_evidence {
+</span><span class="">   55: 	my ($self, %args) = @_;
+</span><span class="">   56: 
+</span><span class="">   57: 	push @{ $self-&gt;{evidence} }, {
+</span><span class="">   58: 		category =&gt; $args{category},   # return/input/effect
+</span><span class="">   59: 		signal   =&gt; $args{signal},
+</span><span class="">   60: 		value    =&gt; $args{value},
+</span><span class="">   61: 		weight   =&gt; defined $args{weight} ? $args{weight} : 1,
+</span><span class="">   62: 	};
+</span><span class="">   63: }
+</span><span class="">   64: 
+</span><span class="">   65: sub evidence {
+</span><span class="">   66: 	my $self = $_[0];
+</span><span class="">   67: 	return @{ $self-&gt;{evidence} };
+</span><span class="">   68: }
+</span><span class="">   69: 
+</span><span class="">   70: sub evidence_ref {
+</span><span class="">   71: 	my $self = $_[0];
+</span><span class="">   72: 	return $self-&gt;{evidence};
+</span><span class="">   73: }
+</span><span class="">   74: 
+</span><span class="">   75: sub resolve_return_type {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 76 → 80 → 92">●</span>  <span class="lcsaj-dot" title="LCSAJ: 76 → 80 → 0">●</span>    76: 	my $self = $_[0];
+</span><span class="">   77: 
+</span><span class="">   78: 	my %score;
+</span><span class="">   79: 
+</span><span class="">   80: 	for my $ev (@{ $self-&gt;{evidence} }) {
+</span><span class="">   81: 		next unless $ev-&gt;{category} eq &#39;return&#39;;
+</span><span class="">   82: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   83: 		if ($ev-&gt;{signal} eq &#39;returns_property&#39;) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_83: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">   84: 			$score{property} += $ev-&gt;{weight};
+</span><span class="">   85: 		} elsif ($ev-&gt;{signal} eq &#39;returns_constant&#39;) {
+</span><span class="">   86: 			$score{constant} += $ev-&gt;{weight};
+</span><span class="">   87: 		} elsif ($ev-&gt;{signal} eq &#39;returns_self&#39;) {
+</span><span class="">   88: 			$score{object} += $ev-&gt;{weight};
+</span><span class="">   89: 		}
+</span><span class="">   90: 	}
+</span><span class="">   91: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 92 → 96 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 92 → 96 → 0">●</span>    92: 	my ($winner) = sort { ($score{$b}||0) &lt;=&gt; ($score{$a}||0) } keys %score;
+</span><span class="">   93: 
+</span><span class="">   94: 	$self-&gt;{return_type} = $winner || &#39;unknown&#39;;
+</span><span class="">   95: 
+</span><span class="">   96: 	return $self-&gt;{return_type};
+</span><span class="">   97: }
+</span><span class="">   98: 
+</span><span class="">   99: sub resolve_confidence {
+</span><span class="">  100: 	my $self = $_[0];
+</span><span class="">  101: 
+</span><span class="">  102: 	my $total = 0;
+</span><span class="">  103: 	$total += $_-&gt;{weight} for @{ $self-&gt;{evidence} };
+</span><span class="">  104: 
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  105: 	my $level = $total &gt;= 40 ? &#39;high&#39; : $total &gt;= 20 ? &#39;medium&#39; : &#39;low&#39;;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 6, Killed: 0, Survived: 6)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_105: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_105: Numeric boundary flip >= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_105: Numeric boundary flip >= to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_105: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_105: Numeric boundary flip >= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_105: Numeric boundary flip >= to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  106: 
+</span><span class="">  107: 	$self-&gt;{confidence} = { score =&gt; $total, level =&gt; $level };
+</span><span class="">  108: 
+</span><span class="">  109: 	return $self-&gt;{confidence};
+</span><span class="">  110: }
+</span><span class="">  111: 
+</span><span class="">  112: sub resolve_classification {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 113 → 115 → 125">●</span>  <span class="lcsaj-dot" title="LCSAJ: 113 → 115 → 0">●</span>   113: 	my $self = $_[0];
+</span><span class="">  114: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  115: 	if ($self-&gt;{return_type} eq &#39;object&#39;) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_115: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  116: 		$self-&gt;{classification} = &#39;chainable&#39;;
+</span><span class="">  117: 	} elsif ($self-&gt;{return_type} eq &#39;property&#39;) {
+</span><span class="">  118: 		$self-&gt;{classification} = &#39;getter&#39;;
+</span><span class="">  119: 	} elsif ($self-&gt;{return_type} eq &#39;constant&#39;) {
+</span><span class="">  120: 		$self-&gt;{classification} = &#39;constant&#39;;
+</span><span class="">  121: 	} else {
+</span><span class="">  122: 		$self-&gt;{classification} = &#39;unknown&#39;;
+</span><span class="">  123: 	}
+</span><span class="">  124: 
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 125 → 125 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 125 → 125 → 0">●</span>   125: 	return $self-&gt;{classification};
+</span><span class="">  126: }
+</span><span class="">  127: 
+</span><span class="">  128: sub absorb_legacy_output {
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 129 → 133 → 142">●</span>  <span class="lcsaj-dot" title="LCSAJ: 129 → 133 → 0">●</span>   129:     my ($self, $output) = @_;
+</span><span class="">  130: 
+</span><span class="">  131:     return unless $output &amp;&amp; ref $output eq &#39;HASH&#39;;
+</span><span class="">  132: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  133:     if ($output-&gt;{type}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_133: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  134:         $self-&gt;add_evidence(
+</span><span class="">  135:             category =&gt; &#39;return&#39;,
+</span><span class="">  136:             signal   =&gt; &#39;legacy_type&#39;,
+</span><span class="">  137:             value    =&gt; $output-&gt;{type},
+</span><span class="">  138:             weight   =&gt; 20,
+</span><span class="">  139:         );
+</span><span class="">  140:     }
+</span><span class="">  141: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 142 → 142 → 150">●</span>  <span class="lcsaj-dot" title="LCSAJ: 142 → 142 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 142 → 142 → 150">●</span>  <span class="lcsaj-dot" title="LCSAJ: 142 → 142 → 0">●</span>   142:     if ($output-&gt;{_returns_self}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_142: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  143:         $self-&gt;add_evidence(
+</span><span class="">  144:             category =&gt; &#39;return&#39;,
+</span><span class="">  145:             signal   =&gt; &#39;returns_self&#39;,
+</span><span class="">  146:             weight   =&gt; 25,
+</span><span class="">  147:         );
+</span><span class="">  148:     }
+</span><span class="">  149: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 150 → 150 → 158">●</span>  <span class="lcsaj-dot" title="LCSAJ: 150 → 150 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 150 → 150 → 158">●</span>  <span class="lcsaj-dot" title="LCSAJ: 150 → 150 → 0">●</span>   150:     if ($output-&gt;{_context_aware}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_150: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  151:         $self-&gt;add_evidence(
+</span><span class="">  152:             category =&gt; &#39;return&#39;,
+</span><span class="">  153:             signal   =&gt; &#39;context_aware&#39;,
+</span><span class="">  154:             weight   =&gt; 15,
+</span><span class="">  155:         );
+</span><span class="">  156:     }
+</span><span class="">  157: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 158 → 158 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 158 → 158 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 158 → 158 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 158 → 158 → 0">●</span>   158:     if ($output-&gt;{_error_return}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_158: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  159:         $self-&gt;add_evidence(
+</span><span class="">  160:             category =&gt; &#39;return&#39;,
+</span><span class="">  161:             signal   =&gt; &#39;error_pattern&#39;,
+</span><span class="">  162:             value    =&gt; $output-&gt;{_error_return},
+</span><span class="">  163:             weight   =&gt; 15,
+</span><span class="">  164:         );
+</span><span class="">  165:     }
+</span><span class="">  166: }
+</span><span class="">  167: 
+</span><span class="">  168: 1;
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+</script>
+</body>
+</html>
+	
