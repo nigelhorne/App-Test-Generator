@@ -9,6 +9,7 @@ use warnings;
 use autodie qw(:all);
 
 use Cwd qw(abs_path);
+use Data::Dumper;
 use File::Basename qw(dirname basename);
 use File::Glob ':glob';
 use File::Path qw(make_path);
@@ -1965,7 +1966,9 @@ sub _mutation_index {
 		);
 
 		# Approximate LSCAJ score
-		push @html, "<!-- Looking for LCSAJ for $file in $config{lcsaj_root}, hits = $lcsaj_hits -->";
+		push @html, "<!-- Looking for LCSAJ for $file in $config{lcsaj_root}, hits =:";
+		push @html, Dumper($lcsaj_hits);
+		push @html, '-->';
 		my ($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{lcsaj_root}, $lcsaj_hits);
 
 		my $lcsaj_pct;
