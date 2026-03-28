@@ -1965,6 +1965,7 @@ sub _mutation_index {
 		);
 
 		# Approximate LSCAJ score
+		push @html, "<!-- Looking for LCSAJ for $file in $config{lcsaj_root}, hits = $lcsaj_hits -->";
 		my ($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{lcsaj_root}, $lcsaj_hits);
 
 		my $lcsaj_pct;
@@ -2221,7 +2222,7 @@ sub _mutant_file_report {
 		);
 
 		# warn "LCSAJ DEBUG\n";
-		# warn "  file      = $file\n";
+		# warn "  file = $file\n";
 		# warn "  base      = $base\n";
 		# warn "  lcsaj_dir = $lcsaj_dir\n";
 		# warn "  lookup    = $lcsaj_file\n";
@@ -2859,20 +2860,18 @@ sub _cyclomatic_complexity {
         }
     }
 
-    # --------------------------------------------------
-    # Logical operators (extra branches)
-    # --------------------------------------------------
+	# --------------------------------------------------
+	# Logical operators (extra branches)
+	# --------------------------------------------------
+	my $ops = $doc->find('PPI::Token::Operator') || [];
 
-    my $ops = $doc->find('PPI::Token::Operator') || [];
+	foreach my $op (@$ops) {
+		my $c = $op->content;
 
-    foreach my $op (@$ops) {
-
-        my $c = $op->content;
-
-        if ($c eq '&&' || $c eq '||' || $c eq '?') {
-            $complexity++;
-        }
-    }
+		if ($c eq '&&' || $c eq '||' || $c eq '?') {
+			$complexity++;
+		}
+	}
 
 	return $complexity;
 }
