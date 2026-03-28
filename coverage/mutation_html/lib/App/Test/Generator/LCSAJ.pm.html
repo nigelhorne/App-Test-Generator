@@ -245,7 +245,7 @@ pre details.mutant-details ul {
 </span><span class="">   21: =cut
 </span><span class="">   22: 
 </span><span class="">   23: sub generate {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 24 → 33 → 43">●</span>  <span class="lcsaj-dot" title="LCSAJ: 24 → 33 → 0">●</span>    24:     my ($class, $file, $out_dir) = @_;
+</span><span class="">   24:     my ($class, $file, $out_dir) = @_;
 </span><span class="">   25:     $out_dir //= &#39;lcsaj&#39;;
 </span><span class="">   26: 
 </span><span class="">   27:     my $doc = PPI::Document-&gt;new($file)
@@ -264,13 +264,13 @@ pre details.mutant-details ul {
 </span><span class="">   40:         _save_dot($file, $out_dir, $dot);
 </span><span class="">   41:     }
 </span><span class="">   42: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 43 → 44 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 43 → 44 → 0">●</span>    43: 	_save_lcsaj($file, $out_dir, \@all_paths);
+</span><span class="">   43: 	_save_lcsaj($file, $out_dir, \@all_paths);
 </span><span class="">   44: 	return \@all_paths;
 </span><span class="">   45: }
 </span><span class="">   46: 
 </span><span class="">   47: # --- CFG Building ---
 </span><span class="">   48: sub _build_cfg {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 49 → 56 → 71">●</span>  <span class="lcsaj-dot" title="LCSAJ: 49 → 56 → 0">●</span>    49:     my ($sub) = @_;
+</span><span class="">   49:     my ($sub) = @_;
 </span><span class="">   50:     my $block = $sub-&gt;block or return [];
 </span><span class="">   51:     my @statements = $block-&gt;schildren;
 </span><span class="">   52:     my @blocks;
@@ -298,7 +298,7 @@ pre details.mutant-details ul {
 </span><span class="">   68:         }
 </span><span class="">   69:     }
 </span><span class="">   70: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 71 → 74 → 79">●</span>  <span class="lcsaj-dot" title="LCSAJ: 71 → 74 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 71 → 74 → 79">●</span>  <span class="lcsaj-dot" title="LCSAJ: 71 → 74 → 0">●</span>    71:     push @blocks, $current;
+</span><span class="">   71:     push @blocks, $current;
 </span><span class="">   72: 
 </span><span class="">   73:     # Connect fallthrough edges
 </span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   74:     for (my $i=0;$i&lt;$#blocks;$i++) {
@@ -335,7 +335,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">   76:         _connect_blocks($blocks[$i], $blocks[$i+1]);
 </span><span class="">   77:     }
 </span><span class="">   78: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 79 → 79 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 79 → 79 → 0">●</span>    79:     return \@blocks;
+</span><span class="">   79:     return \@blocks;
 </span><span class="">   80: }
 </span><span class="">   81: 
 </span><span class="">   82: sub _new_block { my ($id)=@_; {id=&gt;$id, lines=&gt;[], edges=&gt;[]} }
@@ -344,7 +344,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">   85: 
 </span><span class="">   86: # --- CFG &acirc;&#134;&#146; LCSAJ ---
 </span><span class="">   87: sub _cfg_to_lcsaj {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 88 → 92 → 100">●</span>  <span class="lcsaj-dot" title="LCSAJ: 88 → 92 → 0">●</span>    88:     my $blocks = shift;
+</span><span class="">   88:     my $blocks = shift;
 </span><span class="">   89:     my @paths;
 </span><span class="">   90:     my %id2line = map { $_-&gt;{id} =&gt; $_-&gt;{lines}[0] } grep { @{ $_-&gt;{lines} } } @$blocks;
 </span><span class="">   91: 
@@ -356,17 +356,17 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">   97:             push @paths, {start=&gt;$start, end=&gt;$end, target=&gt;$id2line{$t}//0};
 </span><span class="">   98:         }
 </span><span class="">   99:     }
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 100 → 100 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 100 → 100 → 0">●</span>   100:     \@paths;
+</span><span class="">  100:     \@paths;
 </span><span class="">  101: }
 </span><span class="">  102: 
 </span><span class="">  103: # --- DOT ---
 </span><span class="">  104: sub _cfg_to_dot {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 105 → 107 → 110">●</span>  <span class="lcsaj-dot" title="LCSAJ: 105 → 107 → 0">●</span>   105:     my $blocks = shift;
+</span><span class="">  105:     my $blocks = shift;
 </span><span class="">  106:     my $dot=&quot;digraph cfg {\n&quot;;
 </span><span class="">  107:     for my $b (@$blocks) {
 </span><span class="">  108:         for my $e (@{ $b-&gt;{edges} }) { $dot.=&quot;  $b-&gt;{id} -&gt; $e;\n&quot; }
 </span><span class="">  109:     }
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 110 → 110 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 110 → 110 → 0">●</span>   110:     $dot.=&quot;}\n&quot;;
+</span><span class="">  110:     $dot.=&quot;}\n&quot;;
 </span><span class="">  111: }
 </span><span class="">  112: 
 </span><span class="">  113: sub _save_lcsaj {

@@ -249,7 +249,7 @@ pre details.mutant-details ul {
 </span><span class="">   25: 
 </span><span class="">   26: # Main entry: generate a test plan for all methods
 </span><span class="">   27: sub generate_plan {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 28 → 30 → 42">●</span>  <span class="lcsaj-dot" title="LCSAJ: 28 → 30 → 0">●</span>    28: 	my ($self) = @_;
+</span><span class="">   28: 	my ($self) = @_;
 </span><span class="">   29: 
 </span><span class="">   30: 	foreach my $method (keys %{ $self-&gt;{schema} }) {
 </span><span class="">   31: 		my $schema = $self-&gt;{schema}{$method};
@@ -263,11 +263,11 @@ pre details.mutant-details ul {
 </span><span class="">   39: 		$self-&gt;{plans}{$method} = $self-&gt;_plan_for_method($schema);
 </span><span class="">   40: 	}
 </span><span class="">   41: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 42 → 42 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 42 → 42 → 0">●</span>    42: 	return $self-&gt;{plans};
+</span><span class="">   42: 	return $self-&gt;{plans};
 </span><span class="">   43: }
 </span><span class="">   44: 
 </span><span class="">   45: sub _plan_for_method {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 46 → 51 → 56">●</span>  <span class="lcsaj-dot" title="LCSAJ: 46 → 51 → 0">●</span>    46: 	my ($self, $schema) = @_;
+</span><span class="">   46: 	my ($self, $schema) = @_;
 </span><span class="">   47: 
 </span><span class="">   48: 	my %plan;
 </span><span class="">   49: 
@@ -283,7 +283,7 @@ pre details.mutant-details ul {
 </span><span class="">   53: 	}
 </span><span class="">   54: 
 </span><span class="">   55: 	# Getter/setter detection
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 56 → 56 → 76">●</span>  <span class="lcsaj-dot" title="LCSAJ: 56 → 56 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 56 → 56 → 76">●</span>  <span class="lcsaj-dot" title="LCSAJ: 56 → 56 → 0">●</span>    56: 	if($schema-&gt;{accessor} &amp;&amp; (scalar keys(%{$schema-&gt;{accessor}}))) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   56: 	if($schema-&gt;{accessor} &amp;&amp; (scalar keys(%{$schema-&gt;{accessor}}))) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -327,7 +327,7 @@ pre details.mutant-details ul {
 </span><span class="">   73: 	}
 </span><span class="">   74: 
 </span><span class="">   75: 	# Void or mutator detection
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 76 → 76 → 81">●</span>  <span class="lcsaj-dot" title="LCSAJ: 76 → 76 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 76 → 76 → 81">●</span>  <span class="lcsaj-dot" title="LCSAJ: 76 → 76 → 0">●</span>    76: 	if ($schema-&gt;{output}{type} &amp;&amp; $schema-&gt;{output}{type} eq &#39;void&#39;) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   76: 	if ($schema-&gt;{output}{type} &amp;&amp; $schema-&gt;{output}{type} eq &#39;void&#39;) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -338,7 +338,7 @@ pre details.mutant-details ul {
 </span><span class="">   78: 	}
 </span><span class="">   79: 
 </span><span class="">   80: 	# Error handling / return conventions
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 81 → 81 → 86">●</span>  <span class="lcsaj-dot" title="LCSAJ: 81 → 81 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 81 → 81 → 86">●</span>  <span class="lcsaj-dot" title="LCSAJ: 81 → 81 → 0">●</span>    81: 	if ($schema-&gt;{output}{_error_return} || $schema-&gt;{output}{success_failure_pattern}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   81: 	if ($schema-&gt;{output}{_error_return} || $schema-&gt;{output}{success_failure_pattern}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -349,7 +349,7 @@ pre details.mutant-details ul {
 </span><span class="">   83: 	}
 </span><span class="">   84: 
 </span><span class="">   85: 	# Boundary / equivalence class hints
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 86 → 86 → 91">●</span>  <span class="lcsaj-dot" title="LCSAJ: 86 → 86 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 86 → 86 → 91">●</span>  <span class="lcsaj-dot" title="LCSAJ: 86 → 86 → 0">●</span>    86: 	if ($schema-&gt;{_yamltest_hints} &amp;&amp; keys %{ $schema-&gt;{_yamltest_hints} }) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   86: 	if ($schema-&gt;{_yamltest_hints} &amp;&amp; keys %{ $schema-&gt;{_yamltest_hints} }) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -360,7 +360,7 @@ pre details.mutant-details ul {
 </span><span class="">   88: 	}
 </span><span class="">   89: 
 </span><span class="">   90: 	# Method chaining / returns self
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 91 → 91 → 95">●</span>  <span class="lcsaj-dot" title="LCSAJ: 91 → 91 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 91 → 91 → 95">●</span>  <span class="lcsaj-dot" title="LCSAJ: 91 → 91 → 0">●</span>    91: 	if ($schema-&gt;{output}{_returns_self}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   91: 	if ($schema-&gt;{output}{_returns_self}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -370,7 +370,7 @@ pre details.mutant-details ul {
 <span class="">   92: 		$plan{chaining_test} = 1;
 </span><span class="">   93: 	}
 </span><span class="">   94: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 95 → 95 → 100">●</span>  <span class="lcsaj-dot" title="LCSAJ: 95 → 95 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 95 → 95 → 100">●</span>  <span class="lcsaj-dot" title="LCSAJ: 95 → 95 → 0">●</span>    95: 	if ($schema-&gt;{output}{type} eq &#39;boolean&#39;) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   95: 	if ($schema-&gt;{output}{type} eq &#39;boolean&#39;) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -381,7 +381,7 @@ pre details.mutant-details ul {
 </span><span class="">   97: 	}
 </span><span class="">   98: 
 </span><span class="">   99: 	# Default: basic call with typical inputs
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 100 → 102 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 100 → 102 → 0">●</span>   100: 	$plan{basic_test} = 1 unless %plan;	# Always at least one test
+</span><span class="">  100: 	$plan{basic_test} = 1 unless %plan;	# Always at least one test
 </span><span class="">  101: 
 </span><span class="">  102: 	return \%plan;
 </span><span class="">  103: }

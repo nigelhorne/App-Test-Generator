@@ -408,7 +408,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">   73: }
 </span><span class="">   74: 
 </span><span class="">   75: sub resolve_return_type {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 76 → 80 → 92">●</span>  <span class="lcsaj-dot" title="LCSAJ: 76 → 80 → 0">●</span>    76: 	my $self = $_[0];
+</span><span class="">   76: 	my $self = $_[0];
 </span><span class="">   77: 
 </span><span class="">   78: 	my %score;
 </span><span class="">   79: 
@@ -430,7 +430,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">   89: 		}
 </span><span class="">   90: 	}
 </span><span class="">   91: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 92 → 96 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 92 → 96 → 0">●</span>    92: 	my ($winner) = sort { ($score{$b}||0) &lt;=&gt; ($score{$a}||0) } keys %score;
+</span><span class="">   92: 	my ($winner) = sort { ($score{$b}||0) &lt;=&gt; ($score{$a}||0) } keys %score;
 </span><span class="">   93: 
 </span><span class="">   94: 	$self-&gt;{return_type} = $winner || &#39;unknown&#39;;
 </span><span class="">   95: 
@@ -504,7 +504,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  110: }
 </span><span class="">  111: 
 </span><span class="">  112: sub resolve_classification {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 113 → 115 → 125">●</span>  <span class="lcsaj-dot" title="LCSAJ: 113 → 115 → 0">●</span>   113: 	my $self = $_[0];
+</span><span class="">  113: 	my $self = $_[0];
 </span><span class="">  114: 
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  115: 	if ($self-&gt;{return_type} eq &#39;object&#39;) {
 </span>
@@ -522,11 +522,11 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  122: 		$self-&gt;{classification} = &#39;unknown&#39;;
 </span><span class="">  123: 	}
 </span><span class="">  124: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 125 → 125 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 125 → 125 → 0">●</span>   125: 	return $self-&gt;{classification};
+</span><span class="">  125: 	return $self-&gt;{classification};
 </span><span class="">  126: }
 </span><span class="">  127: 
 </span><span class="">  128: sub absorb_legacy_output {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 129 → 133 → 142">●</span>  <span class="lcsaj-dot" title="LCSAJ: 129 → 133 → 0">●</span>   129:     my ($self, $output) = @_;
+</span><span class="">  129:     my ($self, $output) = @_;
 </span><span class="">  130: 
 </span><span class="">  131:     return unless $output &amp;&amp; ref $output eq &#39;HASH&#39;;
 </span><span class="">  132: 
@@ -545,7 +545,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  139:         );
 </span><span class="">  140:     }
 </span><span class="">  141: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 142 → 142 → 150">●</span>  <span class="lcsaj-dot" title="LCSAJ: 142 → 142 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 142 → 142 → 150">●</span>  <span class="lcsaj-dot" title="LCSAJ: 142 → 142 → 0">●</span>   142:     if ($output-&gt;{_returns_self}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  142:     if ($output-&gt;{_returns_self}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -559,7 +559,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  147:         );
 </span><span class="">  148:     }
 </span><span class="">  149: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 150 → 150 → 158">●</span>  <span class="lcsaj-dot" title="LCSAJ: 150 → 150 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 150 → 150 → 158">●</span>  <span class="lcsaj-dot" title="LCSAJ: 150 → 150 → 0">●</span>   150:     if ($output-&gt;{_context_aware}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  150:     if ($output-&gt;{_context_aware}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -573,7 +573,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  155:         );
 </span><span class="">  156:     }
 </span><span class="">  157: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 158 → 158 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 158 → 158 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 158 → 158 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 158 → 158 → 0">●</span>   158:     if ($output-&gt;{_error_return}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  158:     if ($output-&gt;{_error_return}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>

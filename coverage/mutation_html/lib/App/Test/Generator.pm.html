@@ -1514,7 +1514,7 @@ Approximate LCSAJ segments: 473<br>
 </span><span class=""> 1252: 
 </span><span class=""> 1253: sub generate
 </span><span class=""> 1254: {
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> <span class="lcsaj-dot" title="LCSAJ: 1255 → 1265 → 1301">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1255 → 1265 → 0">●</span>  1255: 	croak &#39;Usage: generate(schema_file [, outfile])&#39; if(scalar(@_) &lt;= 1);
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 1255: 	croak &#39;Usage: generate(schema_file [, outfile])&#39; if(scalar(@_) &lt;= 1);
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
@@ -1613,7 +1613,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1298: 	}
 </span><span class=""> 1299: 
 </span><span class=""> 1300: 	# Parse the schema file and load into our structures
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1301 → 1312 → 1315">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1301 → 1312 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1301 → 1312 → 1315">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1301 → 1312 → 0">●</span>  1301: 	my %input = %{_load_schema_section($schema, &#39;input&#39;, $schema_file)};
+</span><span class=""> 1301: 	my %input = %{_load_schema_section($schema, &#39;input&#39;, $schema_file)};
 </span><span class=""> 1302: 	my %output = %{_load_schema_section($schema, &#39;output&#39;, $schema_file)};
 </span><span class=""> 1303: 	my %transforms = %{_load_schema_section($schema, &#39;transforms&#39;, $schema_file)};
 </span><span class=""> 1304: 	my %accessor = %{_load_schema_section($schema, &#39;accessor&#39;, $schema_file)};
@@ -1633,7 +1633,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </li></ul></details>
 <span class=""> 1313: 		$new = defined($schema-&gt;{&#39;new&#39;}) ? $schema-&gt;{new} : &#39;_UNDEF&#39;;
 </span><span class=""> 1314: 	}
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1315 → 1327 → 1336">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1315 → 1327 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1315 → 1327 → 1336">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1315 → 1327 → 0">●</span>  1315: 	$yaml_cases = $schema-&gt;{yaml_cases} if(exists($schema-&gt;{yaml_cases}));
+</span><span class=""> 1315: 	$yaml_cases = $schema-&gt;{yaml_cases} if(exists($schema-&gt;{yaml_cases}));
 </span><span class=""> 1316: 	$seed = $schema-&gt;{seed} if(exists($schema-&gt;{seed}));
 </span><span class=""> 1317: 	$iterations = $schema-&gt;{iterations} if(exists($schema-&gt;{iterations}));
 </span><span class=""> 1318: 
@@ -1666,7 +1666,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1333: 		undef $module;
 </span><span class=""> 1334: 	}
 </span><span class=""> 1335: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 1336 → 1336 → 1341">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1336 → 1336 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1336 → 1336 → 1341">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1336 → 1336 → 0">●</span>  1336: 	if($module &amp;&amp; length($module) &amp;&amp; ($module ne &#39;builtin&#39;)) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1336: 	if($module &amp;&amp; length($module) &amp;&amp; ($module ne &#39;builtin&#39;)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -1677,7 +1677,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1338: 	}
 </span><span class=""> 1339: 
 </span><span class=""> 1340: 	# sensible defaults
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1341 → 1347 → 1369">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1341 → 1347 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1341 → 1347 → 1369">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1341 → 1347 → 0">●</span>  1341: 	$function ||= &#39;run&#39;;
+</span><span class=""> 1341: 	$function ||= &#39;run&#39;;
 </span><span class=""> 1342: 	$iterations ||= DEFAULT_ITERATIONS;		 # default fuzz runs if not specified
 </span><span class=""> 1343: 	$seed = undef if defined $seed &amp;&amp; $seed eq &#39;&#39;;	# treat empty as undef
 </span><span class=""> 1344: 
@@ -1723,7 +1723,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1366: 
 </span><span class=""> 1367: 	# Merge Perl %cases and YAML corpus safely
 </span><span class=""> 1368: 	# my %all_cases = (%cases, %yaml_corpus_data);
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1369 → 1370 → 1376">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1369 → 1370 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1369 → 1370 → 1376">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1369 → 1370 → 0">●</span>  1369: 	my %all_cases = (%yaml_corpus_data, %cases);
+</span><span class=""> 1369: 	my %all_cases = (%yaml_corpus_data, %cases);
 </span><span class=""> 1370: 	for my $k (keys %yaml_corpus_data) {
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1371: 		if (exists $cases{$k} &amp;&amp; ref($cases{$k}) eq &#39;ARRAY&#39; &amp;&amp; ref($yaml_corpus_data{$k}) eq &#39;ARRAY&#39;) {
 </span>
@@ -1736,7 +1736,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1373: 		}
 </span><span class=""> 1374: 	}
 </span><span class=""> 1375: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 1376 → 1376 → 1386">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1376 → 1376 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1376 → 1376 → 1386">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1376 → 1376 → 0">●</span>  1376: 	if(my $hints = delete $schema-&gt;{_yamltest_hints}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1376: 	if(my $hints = delete $schema-&gt;{_yamltest_hints}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -1764,7 +1764,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1383: 	}
 </span><span class=""> 1384: 
 </span><span class=""> 1385: 	# If the schema says the type is numeric, normalize
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 1386 → 1386 → 1394">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1386 → 1386 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1386 → 1386 → 1394">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1386 → 1386 → 0">●</span>  1386: 	if ($schema-&gt;{type} &amp;&amp; $schema-&gt;{type} =~ /^(integer|number|float)$/) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1386: 	if ($schema-&gt;{type} &amp;&amp; $schema-&gt;{type} =~ /^(integer|number|float)$/) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -1778,7 +1778,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1391: 	}
 </span><span class=""> 1392: 
 </span><span class=""> 1393: 	# Dedup the edge cases
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1394 → 1425 → 1430">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1394 → 1425 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1394 → 1425 → 1430">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1394 → 1425 → 0">●</span>  1394: 	my %seen;
+</span><span class=""> 1394: 	my %seen;
 </span><span class=""> 1395: 	@edge_case_array = grep {
 </span><span class=""> 1396: 		my $key = defined($_) ? (Scalar::Util::looks_like_number($_) ? &quot;N:$_&quot; : &quot;S:$_&quot;) : &#39;U&#39;;
 </span><span class=""> 1397: 		!$seen{$key}++;
@@ -1820,7 +1820,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1427: 	}
 </span><span class=""> 1428: 
 </span><span class=""> 1429: 	# Render configuration - all the values are integers for now, if that changes, wrap the $config{$key} in single quotes
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1430 → 1431 → 1447">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1430 → 1431 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1430 → 1431 → 1447">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1430 → 1431 → 0">●</span>  1430: 	my $config_code = &#39;&#39;;
+</span><span class=""> 1430: 	my $config_code = &#39;&#39;;
 </span><span class=""> 1431: 	foreach my $key (sort keys %config) {
 </span><span class=""> 1432: 		# Skip nested structures like &#39;properties&#39; - they&#39;re used during
 </span><span class=""> 1433: 		# generation but don&#39;t need to be in the generated test
@@ -1849,8 +1849,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1444: 	}
 </span><span class=""> 1445: 
 </span><span class=""> 1446: 	# Render input/output
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1447 → 1448 → 1457">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1447 → 1448 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1447 → 1448 → 1457">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1447 → 1448 → 0">●</span>  1447: 	my $input_code = &#39;&#39;;
-</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 1448: 	if(((scalar keys %input) == 1) &amp;&amp; exists($input{&#39;type&#39;}) &amp;&amp; !ref($input{&#39;type&#39;})) {
+</span><span class=""> 1447: 	my $input_code = &#39;&#39;;
+</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 1448: 	if(((scalar keys %input) == 1) &amp;&amp; exists($input{&#39;type&#39;}) &amp;&amp; !ref($input{&#39;type&#39;})) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1873,7 +1873,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1454: 		# %input = ( str =&gt; { type =&gt; &#39;string&#39; } );
 </span><span class=""> 1455: 		$input_code = render_hash(\%input);
 </span><span class=""> 1456: 	}
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 1457 → 1457 → 1463">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1457 → 1457 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1457 → 1457 → 1463">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1457 → 1457 → 0">●</span>  1457: 	if(defined(my $re = $output{&#39;matches&#39;})) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1457: 	if(defined(my $re = $output{&#39;matches&#39;})) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -1891,7 +1891,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1460: 			$output{&#39;matches&#39;} = $re;
 </span><span class=""> 1461: 		}
 </span><span class=""> 1462: 	}
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1463 → 1467 → 1485">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1463 → 1467 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1463 → 1467 → 1485">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1463 → 1467 → 0">●</span>  1463: 	my $output_code = render_args_hash(\%output);
+</span><span class=""> 1463: 	my $output_code = render_args_hash(\%output);
 </span><span class=""> 1464: 	my $new_code = ($new &amp;&amp; (ref $new eq &#39;HASH&#39;)) ? render_args_hash($new) : &#39;&#39;;
 </span><span class=""> 1465: 
 </span><span class=""> 1466: 	my $transforms_code;
@@ -1925,7 +1925,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1482: 		$transforms_code .= &quot;}\n&quot;;
 </span><span class=""> 1483: 	}
 </span><span class=""> 1484: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1485 → 1488 → 1505">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1485 → 1488 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1485 → 1488 → 1505">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1485 → 1488 → 0">●</span>  1485: 	my $transform_properties_code = &#39;&#39;;
+</span><span class=""> 1485: 	my $transform_properties_code = &#39;&#39;;
 </span><span class=""> 1486: 	my $use_properties = 0;
 </span><span class=""> 1487: 
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1488: 	if (keys %transforms &amp;&amp; ($config{properties}{enable} // 0)) {
@@ -1951,7 +1951,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1502: 		$transform_properties_code = _render_properties($properties);
 </span><span class=""> 1503: 	}
 </span><span class=""> 1504: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 1505 → 1505 → 1524">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1505 → 1505 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1505 → 1505 → 1524">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1505 → 1505 → 0">●</span>  1505: 	if(keys %accessor) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1505: 	if(keys %accessor) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -1987,7 +1987,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </li></ul></details>
 <span class=""> 1515: 				croak(&quot;BUG: $property: getset must take one input argument, incorrectly tagged as getset&quot;);
 </span><span class=""> 1516: 			}
-</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 1517: 			if(scalar(keys %output) == 0) {
+</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 1517: 			if(scalar(keys %output) == 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2008,7 +2008,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1521: 	}
 </span><span class=""> 1522: 
 </span><span class=""> 1523: 	# Setup / call code (always load module)
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1524 → 1528 → 1596">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1524 → 1528 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1524 → 1528 → 1596">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1524 → 1528 → 0">●</span>  1524: 	my $setup_code = ($module) ? &quot;BEGIN { use_ok(&#39;$module&#39;) }&quot; : &#39;&#39;;
+</span><span class=""> 1524: 	my $setup_code = ($module) ? &quot;BEGIN { use_ok(&#39;$module&#39;) }&quot; : &#39;&#39;;
 </span><span class=""> 1525: 	my $call_code;	# Code to call the function being test when used with named arguments
 </span><span class=""> 1526: 	my $position_code;	# Code to call the function being test when used with position arguments
 </span><span class=""> 1527: 	my $has_positions = _has_positions(\%input);
@@ -2184,7 +2184,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1593: 	}
 </span><span class=""> 1594: 
 </span><span class=""> 1595: 	# Build static corpus code
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1596 → 1597 → 1693">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1596 → 1597 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1596 → 1597 → 1693">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1596 → 1597 → 0">●</span>  1596: 	my $corpus_code = &#39;&#39;;
+</span><span class=""> 1596: 	my $corpus_code = &#39;&#39;;
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1597: 	if (%all_cases) {
 </span>
 					<details class="mutant-details">
@@ -2365,7 +2365,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1690: 	}
 </span><span class=""> 1691: 
 </span><span class=""> 1692: 	# Prepare seed/iterations code fragment for the generated test
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1693 → 1694 → 1700">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1693 → 1694 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1693 → 1694 → 1700">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1693 → 1694 → 0">●</span>  1693: 	my $seed_code = &#39;&#39;;
+</span><span class=""> 1693: 	my $seed_code = &#39;&#39;;
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1694: 	if (defined $seed) {
 </span>
 					<details class="mutant-details">
@@ -2378,7 +2378,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1697: 		$seed_code = &quot;srand($seed);\n&quot;;
 </span><span class=""> 1698: 	}
 </span><span class=""> 1699: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1700 → 1737 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1700 → 1737 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1700 → 1737 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1700 → 1737 → 0">●</span>  1700: 	my $determinism_code = &#39;my $result2;&#39; .
+</span><span class=""> 1700: 	my $determinism_code = &#39;my $result2;&#39; .
 </span><span class=""> 1701: 		&#39;eval { $result2 = do { &#39; . (defined($position_code) ? $position_code : $call_code) . &quot; }; };\n&quot; .
 </span><span class=""> 1702: 		&#39;is_deeply($result2, $result, &quot;deterministic result for same input&quot;);&#39; .
 </span><span class=""> 1703: 		&quot;\n&quot;;
@@ -2444,7 +2444,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1751: # --- Helpers for rendering data structures into Perl code for the generated test ---
 </span><span class=""> 1752: 
 </span><span class=""> 1753: sub _load_schema {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1754 → 1756 → 1766">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1754 → 1756 → 0">●</span>  1754: 	my $schema_file = $_[0];
+</span><span class=""> 1754: 	my $schema_file = $_[0];
 </span><span class=""> 1755: 
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1756: 	if(!-r $schema_file) {
 </span>
@@ -2462,7 +2462,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1763: 	# $abs = &quot;./$abs&quot; unless $abs =~ m{^/};
 </span><span class=""> 1764: 	# require $abs;
 </span><span class=""> 1765: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 1766 → 1766 → 1775">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1766 → 1766 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1766 → 1766 → 1775">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1766 → 1766 → 0">●</span>  1766: 	if(my $schema = Config::Abstraction-&gt;new(config_dirs =&gt; [&#39;.&#39;, &#39;&#39;], config_file =&gt; $schema_file, no_fixate =&gt; 1)) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1766: 	if(my $schema = Config::Abstraction-&gt;new(config_dirs =&gt; [&#39;.&#39;, &#39;&#39;], config_file =&gt; $schema_file, no_fixate =&gt; 1)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -2489,12 +2489,12 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1772: 			return $schema;
 </span><span class=""> 1773: 		}
 </span><span class=""> 1774: 	}
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1775 → 1775 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1775 → 1775 → 0">●</span>  1775: 	croak &quot;Failed to load schema from $schema_file&quot;;
+</span><span class=""> 1775: 	croak &quot;Failed to load schema from $schema_file&quot;;
 </span><span class=""> 1776: }
 </span><span class=""> 1777: 
 </span><span class=""> 1778: sub _load_schema_section
 </span><span class=""> 1779: {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1780 → 1782 → 1794">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1780 → 1782 → 0">●</span>  1780: 	my($schema, $section, $schema_file) = @_;
+</span><span class=""> 1780: 	my($schema, $section, $schema_file) = @_;
 </span><span class=""> 1781: 
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1782: 	if(exists($schema-&gt;{$section})) {
 </span>
@@ -2526,12 +2526,12 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1791: 			}
 </span><span class=""> 1792: 		}
 </span><span class=""> 1793: 	}
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1794 → 1794 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1794 → 1794 → 0">●</span>  1794: 	return {};
+</span><span class=""> 1794: 	return {};
 </span><span class=""> 1795: }
 </span><span class=""> 1796: 
 </span><span class=""> 1797: # Input validation for configuration
 </span><span class=""> 1798: sub _validate_config {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1799 → 1801 → 1806">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1799 → 1801 → 0">●</span>  1799: 	my $config = $_[0];
+</span><span class=""> 1799: 	my $config = $_[0];
 </span><span class=""> 1800: 
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1801: 	if((!defined($config-&gt;{&#39;module&#39;})) &amp;&amp; (!defined($config-&gt;{&#39;function&#39;}))) {
 </span>
@@ -2544,7 +2544,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1803: 		croak(&#39;At least one of function and module must be defined&#39;);
 </span><span class=""> 1804: 	}
 </span><span class=""> 1805: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 1806 → 1806 → 1810">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1806 → 1806 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1806 → 1806 → 1810">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1806 → 1806 → 0">●</span>  1806: 	if((!defined($config-&gt;{&#39;input&#39;})) &amp;&amp; (!defined($config-&gt;{&#39;output&#39;}))) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1806: 	if((!defined($config-&gt;{&#39;input&#39;})) &amp;&amp; (!defined($config-&gt;{&#39;output&#39;}))) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -2554,7 +2554,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 <span class=""> 1807: 		# Routine takes no input and no output, so there&#39;s nothing that would be gained using this software
 </span><span class=""> 1808: 		carp(&#39;Neither input nor output is defined, only a few tests will be generated&#39;);
 </span><span class=""> 1809: 	}
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 1810 → 1810 → 1818">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1810 → 1810 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1810 → 1810 → 1818">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1810 → 1810 → 0">●</span>  1810: 	if(($config-&gt;{&#39;input&#39;}) &amp;&amp; (ref($config-&gt;{input}) ne &#39;HASH&#39;)) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1810: 	if(($config-&gt;{&#39;input&#39;}) &amp;&amp; (ref($config-&gt;{input}) ne &#39;HASH&#39;)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -2574,7 +2574,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1815: 		}
 </span><span class=""> 1816: 	}
 </span><span class=""> 1817: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 1818 → 1818 → 1897">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1818 → 1818 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1818 → 1818 → 1897">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1818 → 1818 → 0">●</span>  1818: 	if($config-&gt;{input}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1818: 	if($config-&gt;{input}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -2725,7 +2725,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1894: 	}
 </span><span class=""> 1895: 
 </span><span class=""> 1896: 	# Validate custom properties in transforms
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 1897 → 1897 → 1930">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1897 → 1897 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1897 → 1897 → 1930">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1897 → 1897 → 0">●</span>  1897: 	if (exists $config-&gt;{transforms} &amp;&amp; ref($config-&gt;{transforms}) eq &#39;HASH&#39;) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1897: 	if (exists $config-&gt;{transforms} &amp;&amp; ref($config-&gt;{transforms}) eq &#39;HASH&#39;) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -2794,7 +2794,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1927: 		}
 </span><span class=""> 1928: 	}
 </span><span class=""> 1929: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 1930 → 1930 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1930 → 1930 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1930 → 1930 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1930 → 1930 → 0">●</span>  1930: 	if(ref($config-&gt;{config}) eq &#39;HASH&#39;) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1930: 	if(ref($config-&gt;{config}) eq &#39;HASH&#39;) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -2820,7 +2820,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1941: # Note that the default for everything is true
 </span><span class=""> 1942: sub _normalize_config
 </span><span class=""> 1943: {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1944 → 1946 → 1957">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1944 → 1946 → 0">●</span>  1944: 	my $config = $_[0];
+</span><span class=""> 1944: 	my $config = $_[0];
 </span><span class=""> 1945: 
 </span><span class=""> 1946: 	foreach my $field (CONFIG_TYPES) {
 </span><span class=""> 1947: 		next if($field eq &#39;properties&#39;);	# Not a boolean
@@ -2845,7 +2845,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1954: 		}
 </span><span class=""> 1955: 	}
 </span><span class=""> 1956: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1957 → 1957 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1957 → 1957 → 0">●</span>  1957: 	$config-&gt;{properties} = { enable =&gt; 0 } unless ref $config-&gt;{properties} eq &#39;HASH&#39;;
+</span><span class=""> 1957: 	$config-&gt;{properties} = { enable =&gt; 0 } unless ref $config-&gt;{properties} eq &#39;HASH&#39;;
 </span><span class=""> 1958: }
 </span><span class=""> 1959: 
 </span><span class=""> 1960: sub _valid_type
@@ -2861,7 +2861,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1970: }
 </span><span class=""> 1971: 
 </span><span class=""> 1972: sub _validate_module {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 1973 → 1980 → 1992">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1973 → 1980 → 0">●</span>  1973: 	my ($module, $schema_file) = @_;
+</span><span class=""> 1973: 	my ($module, $schema_file) = @_;
 </span><span class=""> 1974: 
 </span><span class=""> 1975: 	return 1 unless $module;	# No module to validate (builtin functions)
 </span><span class=""> 1976: 
@@ -2886,7 +2886,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1989: 	}
 </span><span class=""> 1990: 
 </span><span class=""> 1991: 	# Module was found
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 1992 → 1992 → 1998">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1992 → 1992 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1992 → 1992 → 1998">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1992 → 1992 → 0">●</span>  1992: 	if($ENV{TEST_VERBOSE} || $ENV{GENERATOR_VERBOSE}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1992: 	if($ENV{TEST_VERBOSE} || $ENV{GENERATOR_VERBOSE}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -2898,7 +2898,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1995: 	}
 </span><span class=""> 1996: 
 </span><span class=""> 1997: 	# Optionally try to load it (disabled by default since it can have side effects)
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 1998 → 1998 → 2013">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1998 → 1998 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1998 → 1998 → 2013">●</span>  <span class="lcsaj-dot" title="LCSAJ: 1998 → 1998 → 0">●</span>  1998: 	if($ENV{GENERATOR_VALIDATE_LOAD}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1998: 	if($ENV{GENERATOR_VALIDATE_LOAD}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -2931,7 +2931,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2010: 		}
 </span><span class=""> 2011: 	}
 </span><span class=""> 2012: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2013 → 2013 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2013 → 2013 → 0">●</span>  2013: 	return 1;
+</span><span class=""> 2013: 	return 1;
 </span><span class=""> 2014: }
 </span><span class=""> 2015: 
 </span><span class=""> 2016: sub perl_sq {
@@ -2951,7 +2951,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2030: }
 </span><span class=""> 2031: 
 </span><span class=""> 2032: sub perl_quote {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2033 → 2036 → 2051">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2033 → 2036 → 0">●</span>  2033: 	my $v = $_[0];
+</span><span class=""> 2033: 	my $v = $_[0];
 </span><span class=""> 2034: 	return &#39;undef&#39; unless defined $v;
 </span><span class=""> 2035: 	return &#39;!!1&#39; if $v eq &#39;true&#39;;
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2036: 	if(ref($v)) {
@@ -2987,7 +2987,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2048: 		# Generic fallback
 </span><span class=""> 2049: 		return render_fallback($v);
 </span><span class=""> 2050: 	}
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2051 → 2053 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2051 → 2053 → 0">●</span>  2051: 	$v =~ s/\\/\\\\/g;
+</span><span class=""> 2051: 	$v =~ s/\\/\\\\/g;
 </span><span class=""> 2052: 	# return $v =~ /^-?\d+(\.\d+)?$/ ? $v : &quot;&#39;&quot; . perl_sq($v) . &quot;&#39;&quot;;
 </span><span class=""> 2053: 	return looks_like_number($v) ? $v : &quot;&#39;&quot; . perl_sq($v) . &quot;&#39;&quot;;
 </span><span class=""> 2054: }
@@ -3004,7 +3004,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2065: }
 </span><span class=""> 2066: 
 </span><span class=""> 2067: sub render_hash {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2068 → 2071 → 2091">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2068 → 2071 → 0">●</span>  2068: 	my $href = $_[0];
+</span><span class=""> 2068: 	my $href = $_[0];
 </span><span class=""> 2069: 	return &#39;&#39; unless $href &amp;&amp; ref($href) eq &#39;HASH&#39;;
 </span><span class=""> 2070: 	my @lines;
 </span><span class=""> 2071: 	for my $k (sort keys %$href) {
@@ -3045,7 +3045,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2088: 		}
 </span><span class=""> 2089: 		push @lines, &#39;	&#39; . perl_quote($k) . &quot; =&gt; { &quot; . join(&quot;, &quot;, @pairs) . &quot; }&quot;;
 </span><span class=""> 2090: 	}
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2091 → 2091 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2091 → 2091 → 0">●</span>  2091: 	return join(&quot;,\n&quot;, @lines);
+</span><span class=""> 2091: 	return join(&quot;,\n&quot;, @lines);
 </span><span class=""> 2092: }
 </span><span class=""> 2093: 
 </span><span class=""> 2094: sub render_args_hash {
@@ -3056,7 +3056,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2099: }
 </span><span class=""> 2100: 
 </span><span class=""> 2101: sub render_arrayref_map {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2102 → 2105 → 2111">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2102 → 2105 → 0">●</span>  2102: 	my $href = $_[0];
+</span><span class=""> 2102: 	my $href = $_[0];
 </span><span class=""> 2103: 	return &#39;()&#39; unless $href &amp;&amp; ref($href) eq &#39;HASH&#39;;
 </span><span class=""> 2104: 	my @entries;
 </span><span class=""> 2105: 	for my $k (sort keys %$href) {
@@ -3065,13 +3065,13 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2108: 		my $vals = join(&#39;, &#39;, map { perl_quote($_) } @$aref);
 </span><span class=""> 2109: 		push @entries, &#39;	&#39; . perl_quote($k) . &quot; =&gt; [ $vals ]&quot;;
 </span><span class=""> 2110: 	}
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2111 → 2111 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2111 → 2111 → 0">●</span>  2111: 	return join(&quot;,\n&quot;, @entries);
+</span><span class=""> 2111: 	return join(&quot;,\n&quot;, @entries);
 </span><span class=""> 2112: }
 </span><span class=""> 2113: 
 </span><span class=""> 2114: # Robustly quote a string (GitHub#1)
 </span><span class=""> 2115: sub q_wrap
 </span><span class=""> 2116: {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2117 → 2121 → 2125">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2117 → 2121 → 0">●</span>  2117: 	my $s = $_[0];
+</span><span class=""> 2117: 	my $s = $_[0];
 </span><span class=""> 2118: 
 </span><span class=""> 2119: 	return &quot;&#39;&#39;&quot; if(!defined($s));
 </span><span class=""> 2120: 
@@ -3079,7 +3079,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2122: 		my ($l, $r) = @$p;
 </span><span class=""> 2123: 		return &quot;q$l$s$r&quot; unless $s =~ /\Q$l\E|\Q$r\E/;
 </span><span class=""> 2124: 	}
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2125 → 2125 → 2127">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2125 → 2125 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2125 → 2125 → 2127">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2125 → 2125 → 0">●</span>  2125: 	for my $d (&#39;~&#39;, &#39;!&#39;, &#39;%&#39;, &#39;^&#39;, &#39;=&#39;, &#39;+&#39;, &#39;:&#39;, &#39;,&#39;, &#39;;&#39;, &#39;|&#39;, &#39;/&#39;, &#39;#&#39;) {
+</span><span class=""> 2125: 	for my $d (&#39;~&#39;, &#39;!&#39;, &#39;%&#39;, &#39;^&#39;, &#39;=&#39;, &#39;+&#39;, &#39;:&#39;, &#39;,&#39;, &#39;;&#39;, &#39;|&#39;, &#39;/&#39;, &#39;#&#39;) {
 </span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 2126: 		return &quot;q$d$s$d&quot; unless index($s, $d) &gt;= 0;
 </span>
 					<details class="mutant-details">
@@ -3110,7 +3110,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> <span class="lcsaj-dot" title="LCSAJ: 2127 → 2129 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2127 → 2129 → 0">●</span>  2127: 	}
+<span class=""> 2127: 	}
 </span><span class=""> 2128: 	(my $esc = $s) =~ s/&#39;/\\&#39;/g;
 </span><span class=""> 2129: 	return &quot;&#39;$esc&#39;&quot;;
 </span><span class=""> 2130: }
@@ -3122,7 +3122,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2136: =cut
 </span><span class=""> 2137: 
 </span><span class=""> 2138: sub _generate_transform_properties {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2139 → 2143 → 2243">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2139 → 2143 → 0">●</span>  2139: 	my ($transforms, $function, $module, $input, $config, $new) = @_;
+</span><span class=""> 2139: 	my ($transforms, $function, $module, $input, $config, $new) = @_;
 </span><span class=""> 2140: 
 </span><span class=""> 2141: 	my @properties;
 </span><span class=""> 2142: 
@@ -3262,7 +3262,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2240: 		};
 </span><span class=""> 2241: 	}
 </span><span class=""> 2242: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2243 → 2243 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2243 → 2243 → 0">●</span>  2243: 	return \@properties;
+</span><span class=""> 2243: 	return \@properties;
 </span><span class=""> 2244: }
 </span><span class=""> 2245: 
 </span><span class=""> 2246: =head2 _process_custom_properties
@@ -3272,7 +3272,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2250: =cut
 </span><span class=""> 2251: 
 </span><span class=""> 2252: sub _process_custom_properties {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2253 → 2259 → 2334">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2253 → 2259 → 0">●</span>  2253: 	my ($properties_spec, $function, $module, $input_spec, $output_spec, $schema) = @_;
+</span><span class=""> 2253: 	my ($properties_spec, $function, $module, $input_spec, $output_spec, $schema) = @_;
 </span><span class=""> 2254: 
 </span><span class=""> 2255: 	my @properties;
 </span><span class=""> 2256: 	my $builtin_properties = _get_builtin_properties();
@@ -3389,7 +3389,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2331: 		};
 </span><span class=""> 2332: 	}
 </span><span class=""> 2333: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2334 → 2334 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2334 → 2334 → 0">●</span>  2334: 	return @properties;
+</span><span class=""> 2334: 	return @properties;
 </span><span class=""> 2335: }
 </span><span class=""> 2336: 
 </span><span class=""> 2337: =head2 _detect_transform_properties
@@ -3399,7 +3399,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2341: =cut
 </span><span class=""> 2342: 
 </span><span class=""> 2343: sub _detect_transform_properties {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2344 → 2352 → 2383">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2344 → 2352 → 0">●</span>  2344: 	my ($transform_name, $input_spec, $output_spec) = @_;
+</span><span class=""> 2344: 	my ($transform_name, $input_spec, $output_spec) = @_;
 </span><span class=""> 2345: 
 </span><span class=""> 2346: 	my @properties;
 </span><span class=""> 2347: 
@@ -3462,7 +3462,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2380: 	}
 </span><span class=""> 2381: 
 </span><span class=""> 2382: 	# Property 2: Specific value output
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 2383 → 2383 → 2395">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2383 → 2383 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2383 → 2383 → 2395">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2383 → 2383 → 0">●</span>  2383: 	if (defined $output_spec-&gt;{value}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2383: 	if (defined $output_spec-&gt;{value}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -3480,7 +3480,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2392: 	}
 </span><span class=""> 2393: 
 </span><span class=""> 2394: 	# Property 3: String length constraints
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 2395 → 2395 → 2420">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2395 → 2395 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2395 → 2395 → 2420">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2395 → 2395 → 0">●</span>  2395: 	if (_is_string_transform($input_spec, $output_spec)) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2395: 	if (_is_string_transform($input_spec, $output_spec)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -3529,7 +3529,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2417: 	}
 </span><span class=""> 2418: 
 </span><span class=""> 2419: 	# Property 4: Type preservation
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 2420 → 2420 → 2432">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2420 → 2420 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2420 → 2420 → 2432">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2420 → 2420 → 0">●</span>  2420: 	if (_same_type($input_spec, $output_spec)) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2420: 	if (_same_type($input_spec, $output_spec)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -3553,7 +3553,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2429: 	}
 </span><span class=""> 2430: 
 </span><span class=""> 2431: 	# Property 5: Definedness (unless output can be undef)
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 2432 → 2432 → 2439">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2432 → 2432 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2432 → 2432 → 2439">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2432 → 2432 → 0">●</span>  2432: 	unless (($output_spec-&gt;{type} // &#39;&#39;) eq &#39;undef&#39;) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2432: 	unless (($output_spec-&gt;{type} // &#39;&#39;) eq &#39;undef&#39;) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -3566,7 +3566,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2436: 		};
 </span><span class=""> 2437: 	}
 </span><span class=""> 2438: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2439 → 2439 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2439 → 2439 → 0">●</span>  2439: 	return @properties;
+</span><span class=""> 2439: 	return @properties;
 </span><span class=""> 2440: }
 </span><span class=""> 2441: 
 </span><span class=""> 2442: =head2 _get_semantic_generators
@@ -3944,7 +3944,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2814: =cut
 </span><span class=""> 2815: 
 </span><span class=""> 2816: sub _schema_to_lectrotest_generator {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2817 → 2822 → 2839">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2817 → 2822 → 0">●</span>  2817: 	my ($field_name, $spec) = @_;
+</span><span class=""> 2817: 	my ($field_name, $spec) = @_;
 </span><span class=""> 2818: 
 </span><span class=""> 2819: 	my $type = $spec-&gt;{type} || &#39;string&#39;;
 </span><span class=""> 2820: 
@@ -3978,7 +3978,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2836: 		}
 </span><span class=""> 2837: 	}
 </span><span class=""> 2838: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 2839 → 2839 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2839 → 2839 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2839 → 2839 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2839 → 2839 → 0">●</span>  2839: 	if ($type eq &#39;integer&#39;) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2839: 	if ($type eq &#39;integer&#39;) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -4083,7 +4083,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2872: 			}
 </span><span class=""> 2873: 		} elsif (!defined($max)) {
 </span><span class=""> 2874: 			# Only min defined
-</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 2875: 			if ($min == 0) {
+</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 2875: 			if ($min == 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -4147,7 +4147,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2885: 		} else {
 </span><span class=""> 2886: 			# Both min and max defined
 </span><span class=""> 2887: 			my $range = $max - $min;
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 2888: 			if ($range &lt;= 0) {
+</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 2888: 			if ($range &lt;= 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
@@ -4264,7 +4264,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2960: }
 </span><span class=""> 2961: 
 </span><span class=""> 2962: sub _get_dominant_type {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2963 → 2968 → 2973">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2963 → 2968 → 0">●</span>  2963: 	my $spec = $_[0];
+</span><span class=""> 2963: 	my $spec = $_[0];
 </span><span class=""> 2964: 
 </span><span class=""> 2965: 	return $spec-&gt;{type} if defined $spec-&gt;{type};
 </span><span class=""> 2966: 
@@ -4274,18 +4274,18 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2970: 		return $spec-&gt;{$field}{type} if defined $spec-&gt;{$field}{type};
 </span><span class=""> 2971: 	}
 </span><span class=""> 2972: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2973 → 2973 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2973 → 2973 → 0">●</span>  2973: 	return &#39;string&#39;;	# Default
+</span><span class=""> 2973: 	return &#39;string&#39;;	# Default
 </span><span class=""> 2974: }
 </span><span class=""> 2975: 
 </span><span class=""> 2976: sub _has_positions {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2977 → 2979 → 2984">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2977 → 2979 → 0">●</span>  2977: 	my $input_spec = $_[0];
+</span><span class=""> 2977: 	my $input_spec = $_[0];
 </span><span class=""> 2978: 
 </span><span class=""> 2979: 	for my $field (keys %$input_spec) {
 </span><span class=""> 2980: 		next unless ref($input_spec-&gt;{$field}) eq &#39;HASH&#39;;
 </span><span class=""> 2981: 		return 1 if defined $input_spec-&gt;{$field}{position};
 </span><span class=""> 2982: 	}
 </span><span class=""> 2983: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2984 → 2984 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2984 → 2984 → 0">●</span>  2984: 	return 0;
+</span><span class=""> 2984: 	return 0;
 </span><span class=""> 2985: }
 </span><span class=""> 2986: 
 </span><span class=""> 2987: =head2 _render_properties
@@ -4295,7 +4295,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2991: =cut
 </span><span class=""> 2992: 
 </span><span class=""> 2993: sub _render_properties {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 2994 → 2998 → 3022">●</span>  <span class="lcsaj-dot" title="LCSAJ: 2994 → 2998 → 0">●</span>  2994: 	my $properties = $_[0];
+</span><span class=""> 2994: 	my $properties = $_[0];
 </span><span class=""> 2995: 
 </span><span class=""> 2996: 	my $code = &quot;use_ok(&#39;Test::LectroTest::Compat&#39;);\n\n&quot;;
 </span><span class=""> 2997: 
@@ -4329,7 +4329,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3019: 		$code .= &quot;holds(\$$prop-&gt;{name});\n&quot;;
 </span><span class=""> 3020: 	}
 </span><span class=""> 3021: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 3022 → 3022 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 3022 → 3022 → 0">●</span>  3022: 	return $code;
+</span><span class=""> 3022: 	return $code;
 </span><span class=""> 3023: }
 </span><span class=""> 3024: 
 </span><span class=""> 3025: 1;

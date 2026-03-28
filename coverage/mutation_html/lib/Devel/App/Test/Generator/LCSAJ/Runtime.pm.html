@@ -270,14 +270,14 @@ pre details.mutant-details ul {
 </span><span class="">   46: }
 </span><span class="">   47: 
 </span><span class="">   48: BEGIN {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 49 → 49 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 49 → 49 → 0">●</span>    49:     for my $t (split /:/, ($ENV{LCSAJ_TARGETS} // &#39;&#39;)) {
-</span><span class="">   50:         $t = _normalize($t);
-</span><span class="">   51:         $TARGET{$t} = 1;
-</span><span class="">   52:     }
+</span><span class="">   49: 	for my $t (split /:/, ($ENV{LCSAJ_TARGETS} // &#39;&#39;)) {
+</span><span class="">   50: 		$t = _normalize($t);
+</span><span class="">   51: 		$TARGET{$t} = 1;
+</span><span class="">   52: 	}
 </span><span class="">   53: }
 </span><span class="">   54: 
 </span><span class="">   55: sub DB::DB {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 56 → 67 → 71">●</span>  <span class="lcsaj-dot" title="LCSAJ: 56 → 67 → 0">●</span>    56: 	my (undef, $file, $line) = caller;
+</span><span class="">   56: 	my (undef, $file, $line) = caller;
 </span><span class="">   57: 
 </span><span class="">   58: 	return unless defined $file;
 </span><span class="">   59: 
@@ -298,27 +298,26 @@ pre details.mutant-details ul {
 <span class="">   68: 		return unless $TARGET{$norm};
 </span><span class="">   69: 	}
 </span><span class="">   70: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 71 → 71 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 71 → 71 → 0">●</span>    71: 	$HITS{$norm}{$line}++;
+</span><span class="">   71: 	$HITS{$norm}{$line}++;
 </span><span class="">   72: }
 </span><span class="">   73: 
-</span><span class="">   74: 
-</span><span class="">   75: sub _write_results {
-</span><span class="">   76: 	return unless %HITS;
-</span><span class="">   77: 
-</span><span class="">   78: 	make_path(&#39;cover_html&#39;) unless -d &#39;cover_html&#39;;
-</span><span class="">   79: 
-</span><span class="">   80: 	open my $fh, &#39;&gt;&#39;, &#39;cover_html/lcsaj_hits.json&#39; or die &quot;Cannot create cover_html/lcsaj_hits.json: $!&quot;;
-</span><span class="">   81: 
-</span><span class="">   82: 	print $fh JSON::MaybeXS::encode_json(\%HITS);
-</span><span class="">   83: 
-</span><span class="">   84: 	close $fh;
-</span><span class="">   85: }
-</span><span class="">   86: 
-</span><span class="">   87: END {
-</span><span class="">   88: 	_write_results();
-</span><span class="">   89: }
-</span><span class="">   90: 
-</span><span class="">   91: 1;
+</span><span class="">   74: sub _write_results {
+</span><span class="">   75: 	return unless %HITS;
+</span><span class="">   76: 
+</span><span class="">   77: 	make_path(&#39;cover_html&#39;) unless -d &#39;cover_html&#39;;
+</span><span class="">   78: 
+</span><span class="">   79: 	open my $fh, &#39;&gt;&#39;, &#39;cover_html/lcsaj_hits.json&#39; or die &quot;Cannot create cover_html/lcsaj_hits.json: $!&quot;;
+</span><span class="">   80: 
+</span><span class="">   81: 	print $fh JSON::MaybeXS::encode_json(\%HITS);
+</span><span class="">   82: 
+</span><span class="">   83: 	close $fh;
+</span><span class="">   84: }
+</span><span class="">   85: 
+</span><span class="">   86: END {
+</span><span class="">   87: 	_write_results();
+</span><span class="">   88: }
+</span><span class="">   89: 
+</span><span class="">   90: 1;
 </span></pre>
 
 <script>
