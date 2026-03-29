@@ -1969,8 +1969,7 @@ sub _mutation_index {
 		push @html, "<!-- Looking for LCSAJ for $file in $config{lcsaj_root}, hits =:";
 		push @html, Dumper($lcsaj_hits);
 		push @html, '-->';
-		my ($lcsaj_file, $lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{lcsaj_root}, $lcsaj_hits);
-		push @html, "<!-- Found lcsaj_file = $lcsaj_file -->";
+		my ($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{lcsaj_root}, $lcsaj_hits, \@html);
 
 		my $lcsaj_pct;
 		if($lcsaj_dir) {
@@ -2880,7 +2879,7 @@ sub _cyclomatic_complexity {
 }
 
 sub _lcsaj_coverage_for_file {
-	my ($file, $lcsaj_dir, $hits) = @_;
+	my ($file, $lcsaj_dir, $hits, $html) = @_;
 
 	return unless $lcsaj_dir && $hits;
 
@@ -2897,6 +2896,8 @@ sub _lcsaj_coverage_for_file {
 		"$rel.lcsaj",
 		"$base.lcsaj.json"
 	);
+
+	push @{$html}, "<!-- Look for lcsaj_file $lcsaj_file -->";
 
 	return $lcsaj_file unless -f $lcsaj_file;
 
@@ -2927,5 +2928,5 @@ sub _lcsaj_coverage_for_file {
 		$covered++ if $hit;
 	}
 
-	return ($lcsaj_file, $covered, $total);
+	return ($covered, $total);
 }
