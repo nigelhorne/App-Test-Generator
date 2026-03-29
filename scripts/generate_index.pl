@@ -2227,7 +2227,7 @@ sub _mutant_file_report {
 
 		# warn "LCSAJ DEBUG\n";
 		# warn "  file = $file\n";
-		# warn "  base      = $base\n";
+		# warn "  base = $base\n";
 		# warn "  lcsaj_dir = $lcsaj_dir\n";
 		# warn "  lookup    = $lcsaj_file\n";
 		# warn "  exists    = " . (-f $lcsaj_file ? "YES" : "NO") . "\n";
@@ -2855,14 +2855,13 @@ sub _cyclomatic_complexity {
 	# --------------------------------------------------
 	my $words = $doc->find('PPI::Token::Word') || [];
 
-    foreach my $w (@$words) {
+	foreach my $w (@$words) {
+		my $c = $w->content;
 
-        my $c = $w->content;
-
-        if ($c =~ /^(if|elsif|unless|while|for|foreach|until|when)$/) {
-            $complexity++;
-        }
-    }
+		if ($c =~ /^(if|elsif|unless|while|for|foreach|until|when)$/) {
+			$complexity++;
+		}
+	}
 
 	# --------------------------------------------------
 	# Logical operators (extra branches)
