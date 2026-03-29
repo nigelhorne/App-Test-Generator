@@ -28,16 +28,18 @@ cover -report json -outputdir cover_html
 
 # --- Step 4: Export LCSAJ targets (absolute paths) ---
 echo "Finding LCSAJ targets..."
-export LCSAJ_TARGETS=$(find lib -name '*.pm' -exec realpath {} \; ; find blib/lib -name '*.pm' -exec realpath {} \; | tr '\n' ':' | sed 's/:$//')
-export LCSAJ_TARGETS=${LCSAJ_TARGETS%:}
-echo "LCSAJ_TARGETS=$LCSAJ_TARGETS"
+export LCSAJ_TARGETS=$(
+  { find lib -name '*.pm' -exec realpath {} \; ;
+    find blib/lib -name '*.pm' -exec realpath {} \; ; } \
+  | tr '\n' ':' | sed 's/:$//'
+)
 
 set +e
 
 # --- Step 5: Run tests again under LCSAJ runtime ---
 echo "Recording LCSAJ hits..."
 mkdir -p coverage
-PERL5OPT="-d:App::Test::Generator::LCSAJ::Runtime -Mblib" prove -l t
+PERL5OPT="-d:App::Devel::Generator::LCSAJ::Runtime -Mblib" prove -l t
 
 # --- Step 6: Run mutation analysis ---
 echo "Running mutation analysis..."
