@@ -1967,13 +1967,13 @@ sub _mutation_index {
 
 		# Approximate LSCAJ score
 		push @html, "<!-- Looking for LCSAJ for $file in $config{lcsaj_root}, hits =:";
-		push @html, Dumper([$lcsaj_hits]);
+		# push @html, Dumper([$lcsaj_hits]);
 		push @html, '-->';
 		my ($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{lcsaj_root}, $lcsaj_hits, \@html);
 
 		if(!defined($lcsaj_cov)) {
-			push @html, "<!-- Looking for LCSAJ for $file in $config{mutation_dir} -->";
-			($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{mutation_dir}, $lcsaj_hits, \@html);
+			push @html, "<!-- Looking for LCSAJ for $file in $config{mutation_dir}/lib -->";
+			($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{mutation_dir} . '/lib', $lcsaj_hits, \@html);
 		}
 
 		my $lcsaj_pct;
