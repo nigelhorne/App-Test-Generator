@@ -1966,16 +1966,16 @@ sub _mutation_index {
 		);
 
 		# Approximate LSCAJ score
-		push @html, "<!-- Looking for LCSAJ for $file in $config{lcsaj_root}, hits =:";
+		# push @html, "<!-- Looking for LCSAJ for $file in $config{lcsaj_root}, hits =:";
 		# push @html, Dumper([$lcsaj_hits]);
-		push @html, '-->';
+		# push @html, '-->';
 		my ($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{lcsaj_root}, $lcsaj_hits, \@html);
 
 		if(!defined($lcsaj_cov)) {
-			push @html, "<!-- Looking for LCSAJ for $file in $config{mutation_dir}/lib -->";
+			push @html, "<!-- About to look for LCSAJ for $file in $config{mutation_dir}/lib -->";
 			($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{mutation_dir} . '/lib', $lcsaj_hits, \@html);
 			if(!defined($lcsaj_cov)) {
-				push @html, "<!-- Looking for LCSAJ for $file in $config{mutation_dir} -->";
+				push @html, "<!-- About to look for LCSAJ for $file in $config{mutation_dir} -->";
 				($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{mutation_dir}, $lcsaj_hits, \@html);
 			}
 		}
@@ -2890,8 +2890,9 @@ sub _cyclomatic_complexity {
 sub _lcsaj_coverage_for_file {
 	my ($file, $lcsaj_dir, $hits, $html) = @_;
 
-	push @{$html}, "<!-- _lcsaj_coverage_for_file: $lcsaj_dir / $hits -->";
+	push @{$html}, "<!-- _lcsaj_coverage_for_file: $lcsaj_dir / $file -->";
 	return unless $lcsaj_dir && $hits;
+	push @{$html}, "<!-- Found directory lcsaj_dir $lcsaj_dir -->";
 
 	my $path = $file;
 	$file = abs_path($file) if defined $file;
