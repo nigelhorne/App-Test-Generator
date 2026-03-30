@@ -20,7 +20,7 @@ export PERL5OPT='-Ilib'
 
 # --- Step 2: Run tests under Devel::Cover ---
 echo "Running tests with Devel::Cover..."
-HARNESS_PERL_SWITCHES="-MDevel::Cover=+outputdir,cover_html" prove -Mblib -l t
+DEVEL_COVER_OPTIONS="-outputdir cover_html" HARNESS_PERL_SWITCHES="-MDevel::Cover" prove -Mblib -l t
 cover -report html -outputdir cover_html
 cover -report json -outputdir cover_html
 
