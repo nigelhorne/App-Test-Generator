@@ -1974,6 +1974,10 @@ sub _mutation_index {
 		if(!defined($lcsaj_cov)) {
 			push @html, "<!-- Looking for LCSAJ for $file in $config{mutation_dir}/lib -->";
 			($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{mutation_dir} . '/lib', $lcsaj_hits, \@html);
+			if(!defined($lcsaj_cov)) {
+				push @html, "<!-- Looking for LCSAJ for $file in $config{mutation_dir} -->";
+				($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{mutation_dir}, $lcsaj_hits, \@html);
+			}
 		}
 
 		my $lcsaj_pct;
@@ -2906,6 +2910,8 @@ sub _lcsaj_coverage_for_file {
 	push @{$html}, "<!-- Look for lcsaj_file $lcsaj_file -->";
 
 	return unless -f $lcsaj_file;
+
+	push @{$html}, "<!-- Found lcsaj_file $lcsaj_file -->";
 
 	open my $fh, '<', $lcsaj_file;
 	my $paths = decode_json(do { local $/; <$fh> });
