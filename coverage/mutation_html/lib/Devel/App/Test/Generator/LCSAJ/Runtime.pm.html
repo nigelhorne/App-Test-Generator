@@ -227,97 +227,185 @@ pre details.mutant-details ul {
 </span><span class="">    3: use strict;
 </span><span class="">    4: use warnings;
 </span><span class="">    5: 
-</span><span class="">    6: # Enable debugger line callbacks
-</span><span class="">    7: BEGIN {
-</span><span class="">    8: 	$^P |= 0x2;          # enable line-by-line debugging
-</span><span class="">    9: 	our $single = 0;     # required by Perl debugger interface
-</span><span class="">   10: 	our $trace  = 0;
-</span><span class="">   11: }
-</span><span class="">   12: 
-</span><span class="">   13: use Cwd qw(abs_path);
-</span><span class="">   14: use JSON::MaybeXS;
-</span><span class="">   15: use File::Path qw(make_path);
-</span><span class="">   16: 
-</span><span class="">   17: =head1 NAME
-</span><span class="">   18: 
-</span><span class="">   19: Devel::App::Test::Generator::LCSAJ::Runtime - Debugger backend for LCSAJ coverage
-</span><span class="">   20: 
-</span><span class="">   21: =head1 SYNOPSIS
+</span><span class="">    6: =head1 NAME
+</span><span class="">    7: 
+</span><span class="">    8: Devel::App::Test::Generator::LCSAJ::Runtime - Debugger backend for LCSAJ coverage
+</span><span class="">    9: 
+</span><span class="">   10: =head1 SYNOPSIS
+</span><span class="">   11: 
+</span><span class="">   12:   PERL5OPT=&#39;-d:App::Test::Generator::LCSAJ::Runtime -Mblib&#39; prove -l t
+</span><span class="">   13: 
+</span><span class="">   14: =head1 DESCRIPTION
+</span><span class="">   15: 
+</span><span class="">   16: This module is loaded as a Perl debugger backend using the C&lt;-d:Module&gt; flag.
+</span><span class="">   17: 
+</span><span class="">   18: When Perl sees C&lt;-d:App::Test::Generator::LCSAJ::Runtime&gt; it prepends C&lt;Devel::&gt;
+</span><span class="">   19: and loads C&lt;Devel/App/Test/Generator/LCSAJ/Runtime.pm&gt; from C&lt;@INC&gt;.  The file
+</span><span class="">   20: must therefore live at that path &acirc;&#128;&#148; typically
+</span><span class="">   21: C&lt;lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm&gt;.
 </span><span class="">   22: 
-</span><span class="">   23:   PERL5OPT=&#39;-d:App::Test::Generator::LCSAJ::Runtime -Ilib&#39; prove -l t
-</span><span class="">   24: 
-</span><span class="">   25: =head1 DESCRIPTION
+</span><span class="">   23: Perl automatically calls C&lt;DB::DB&gt; before executing each statement while the
+</span><span class="">   24: debugger is active.  We record (file, line) pairs to build runtime hit data for
+</span><span class="">   25: later LCSAJ analysis.
 </span><span class="">   26: 
-</span><span class="">   27: This module is loaded as a Perl debugger backend using the
-</span><span class="">   28: C&lt;-d:Module&gt; flag.
-</span><span class="">   29: 
-</span><span class="">   30: Perl will automatically call C&lt;DB::DB&gt; before executing each
-</span><span class="">   31: line of code. We record the file and line number to build
-</span><span class="">   32: runtime coverage data for later LCSAJ analysis.
-</span><span class="">   33: 
-</span><span class="">   34: =cut
-</span><span class="">   35: 
-</span><span class="">   36: our %HITS;
-</span><span class="">   37: our %TARGET;
+</span><span class="">   27: The results are written to C&lt;cover_html/lcsaj_hits.json&gt; at process exit.
+</span><span class="">   28: 
+</span><span class="">   29: =head1 ENVIRONMENT
+</span><span class="">   30: 
+</span><span class="">   31: =over 4
+</span><span class="">   32: 
+</span><span class="">   33: =item LCSAJ_TARGETS
+</span><span class="">   34: 
+</span><span class="">   35: Optional colon-separated list of B&lt;absolute&gt; paths (as produced by C&lt;realpath&gt;)
+</span><span class="">   36: to restrict recording to specific source files.  When empty or unset every
+</span><span class="">   37: non-internal file is recorded.
 </span><span class="">   38: 
-</span><span class="">   39: sub _normalize {
-</span><span class="">   40:     my ($f) = @_;
-</span><span class="">   41: 
-</span><span class="">   42:     $f =~ s{.*?/blib/lib/}{lib/};
-</span><span class="">   43:     $f =~ s{.*?/lib/}{lib/};
-</span><span class="">   44: 
-</span><span class="">   45:     return $f;
-</span><span class="">   46: }
-</span><span class="">   47: 
-</span><span class="">   48: BEGIN {
-</span><span class="">   49: 	for my $t (split /:/, ($ENV{LCSAJ_TARGETS} // &#39;&#39;)) {
-</span><span class="">   50: 		$t = _normalize($t);
-</span><span class="">   51: 		$TARGET{$t} = 1;
-</span><span class="">   52: 	}
-</span><span class="">   53: }
+</span><span class="">   39: =back
+</span><span class="">   40: 
+</span><span class="">   41: =cut
+</span><span class="">   42: 
+</span><span class="">   43: use Cwd        qw(abs_path);
+</span><span class="">   44: use JSON::MaybeXS;
+</span><span class="">   45: use File::Path qw(make_path);
+</span><span class="">   46: 
+</span><span class="">   47: # ---------------------------------------------------------------------------
+</span><span class="">   48: # %HITS  - { normalised_path =&gt; { line_number =&gt; hit_count } }
+</span><span class="">   49: # %TARGET - set of normalised paths we care about (empty == record everything)
+</span><span class="">   50: # ---------------------------------------------------------------------------
+</span><span class="">   51: 
+</span><span class="">   52: our %HITS;
+</span><span class="">   53: our %TARGET;
 </span><span class="">   54: 
-</span><span class="">   55: sub DB::DB {
-</span><span class="">   56: 	my (undef, $file, $line) = caller;
-</span><span class="">   57: 
-</span><span class="">   58: 	return unless defined $file;
-</span><span class="">   59: 
-</span><span class="">   60: 	my $abs = abs_path($file) || $file;
-</span><span class="">   61: 
-</span><span class="">   62: 	my $norm = _normalize($abs);
-</span><span class="">   63: 
-</span><span class="">   64: 	return if $norm eq &#39;lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm&#39;;
+</span><span class="">   55: # ---------------------------------------------------------------------------
+</span><span class="">   56: # _normalize($path)
+</span><span class="">   57: #
+</span><span class="">   58: # Convert an absolute or build-tree path to a canonical lib-relative form so
+</span><span class="">   59: # that paths recorded at runtime match the targets derived from LCSAJ_TARGETS.
+</span><span class="">   60: #
+</span><span class="">   61: # Examples:
+</span><span class="">   62: #   /home/user/proj/blib/lib/Foo/Bar.pm  -&gt;  lib/Foo/Bar.pm
+</span><span class="">   63: #   /home/user/proj/lib/Foo/Bar.pm       -&gt;  lib/Foo/Bar.pm
+</span><span class="">   64: # ---------------------------------------------------------------------------
 </span><span class="">   65: 
-</span><span class="">   66: 	# If targets were provided, filter by them
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   67: 	if (%TARGET) {
+</span><span class="">   66: sub _normalize {
+</span><span class="">   67:     my ($f) = @_;
+</span><span class="">   68:     # Strip everything up to and including the first blib/lib/ or lib/ segment.
+</span><span class="">   69:     $f =~ s{^.*/blib/lib/}{lib/};
+</span><span class="">   70:     $f =~ s{^.*/lib/}{lib/};
+</span><span class="">   71:     return $f;
+</span><span class="">   72: }
+</span><span class="">   73: 
+</span><span class="">   74: # ---------------------------------------------------------------------------
+</span><span class="">   75: # Populate %TARGET from LCSAJ_TARGETS at compile time.
+</span><span class="">   76: # The env var contains absolute realpath() output separated by colons; any
+</span><span class="">   77: # embedded newlines (from a broken shell pipeline) are stripped defensively.
+</span><span class="">   78: # ---------------------------------------------------------------------------
+</span><span class="">   79: 
+</span><span class="">   80: BEGIN {
+</span><span class="">   81:     my $targets_env = $ENV{LCSAJ_TARGETS} // &#39;&#39;;
+</span><span class="">   82:     $targets_env =~ s/\n//g;    # defensive: strip stray newlines
+</span><span class="">   83: 
+</span><span class="">   84:     for my $t (split /:/, $targets_env) {
+</span><span class="">   85:         next unless length $t;
+</span><span class="">   86:         $TARGET{ _normalize($t) } = 1;
+</span><span class="">   87:     }
+</span><span class="">   88: }
+</span><span class="">   89: 
+</span><span class="">   90: # ---------------------------------------------------------------------------
+</span><span class="">   91: # DB::DB - called by the Perl debugger before every statement.
+</span><span class="">   92: #
+</span><span class="">   93: # caller(0) returns (package, filename, line) for the statement about to run.
+</span><span class="">   94: # We use that rather than trying to pass arguments (the debugger passes none).
+</span><span class="">   95: # ---------------------------------------------------------------------------
+</span><span class="">   96: 
+</span><span class="">   97: sub DB::DB {
+</span><span class="">   98:     my (undef, $file, $line) = caller(0);
+</span><span class="">   99: 
+</span><span class="">  100:     return unless defined $file &amp;&amp; defined $line;
+</span><span class="">  101: 
+</span><span class="">  102:     # Resolve symlinks / relative components to a stable absolute path.
+</span><span class="">  103:     my $abs  = abs_path($file) // $file;
+</span><span class="">  104:     my $norm = _normalize($abs);
+</span><span class="">  105: 
+</span><span class="">  106:     # Never record hits inside this module itself (suffix match, not exact,
+</span><span class="">  107:     # so it works regardless of CWD or install prefix).
+</span><span class="">  108:     return if $norm =~ m{(?:^|/)Devel/App/Test/Generator/LCSAJ/Runtime\.pm$};
+</span><span class="">  109: 
+</span><span class="">  110:     # If a target list was provided, skip files not in it.
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  111:     if (%TARGET) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_67: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_111: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">   68: 		return unless $TARGET{$norm};
-</span><span class="">   69: 	}
-</span><span class="">   70: 
-</span><span class="">   71: 	$HITS{$norm}{$line}++;
-</span><span class="">   72: }
-</span><span class="">   73: 
-</span><span class="">   74: sub _write_results {
-</span><span class="">   75: 	return unless %HITS;
-</span><span class="">   76: 
-</span><span class="">   77: 	make_path(&#39;cover_html&#39;) unless -d &#39;cover_html&#39;;
-</span><span class="">   78: 
-</span><span class="">   79: 	open my $fh, &#39;&gt;&#39;, &#39;cover_html/lcsaj_hits.json&#39; or die &quot;Cannot create cover_html/lcsaj_hits.json: $!&quot;;
-</span><span class="">   80: 
-</span><span class="">   81: 	print $fh JSON::MaybeXS::encode_json(\%HITS);
-</span><span class="">   82: 
-</span><span class="">   83: 	close $fh;
-</span><span class="">   84: }
-</span><span class="">   85: 
-</span><span class="">   86: END {
-</span><span class="">   87: 	_write_results();
-</span><span class="">   88: }
-</span><span class="">   89: 
-</span><span class="">   90: 1;
+<span class="">  112:         return unless $TARGET{$norm};
+</span><span class="">  113:     }
+</span><span class="">  114: 
+</span><span class="">  115:     $HITS{$norm}{$line}++;
+</span><span class="">  116: }
+</span><span class="">  117: 
+</span><span class="">  118: # ---------------------------------------------------------------------------
+</span><span class="">  119: # _write_results - serialise %HITS to JSON.
+</span><span class="">  120: #
+</span><span class="">  121: # Called from END so it runs even when prove exits non-zero (mutation tests
+</span><span class="">  122: # are expected to fail, hence set -e is disabled around the prove invocation).
+</span><span class="">  123: # ---------------------------------------------------------------------------
+</span><span class="">  124: 
+</span><span class="">  125: sub _write_results {
+</span><span class="">  126:     return unless %HITS;
+</span><span class="">  127: 
+</span><span class="">  128:     my $out_dir  = &#39;cover_html&#39;;
+</span><span class="">  129:     my $out_file = &quot;$out_dir/lcsaj_hits.json&quot;;
+</span><span class="">  130: 
+</span><span class="">  131:     make_path($out_dir) unless -d $out_dir;
+</span><span class="">  132: 
+</span><span class="">  133:     open my $fh, &#39;&gt;&#39;, $out_file
+</span><span class="">  134:         or die &quot;Devel::App::Test::Generator::LCSAJ::Runtime: &quot;
+</span><span class="">  135:              . &quot;cannot write $out_file: $!\n&quot;;
+</span><span class="">  136: 
+</span><span class="">  137:     print $fh encode_json(\%HITS);
+</span><span class="">  138:     close $fh;
+</span><span class="">  139: }
+</span><span class="">  140: 
+</span><span class="">  141: END {
+</span><span class="">  142:     _write_results();
+</span><span class="">  143: }
+</span><span class="">  144: 
+</span><span class="">  145: 1;
+</span><span class="">  146: 
+</span><span class="">  147: __END__
+</span><span class="">  148: 
+</span><span class="">  149: =head1 OUTPUT FORMAT
+</span><span class="">  150: 
+</span><span class="">  151: C&lt;cover_html/lcsaj_hits.json&gt; is a JSON object of the form:
+</span><span class="">  152: 
+</span><span class="">  153:   {
+</span><span class="">  154:     &quot;lib/Foo/Bar.pm&quot;: { &quot;12&quot;: 3, &quot;15&quot;: 1, ... },
+</span><span class="">  155:     ...
+</span><span class="">  156:   }
+</span><span class="">  157: 
+</span><span class="">  158: Keys are lib-relative paths (C&lt;lib/...&gt;); values are objects mapping line
+</span><span class="">  159: numbers (as strings) to hit counts.
+</span><span class="">  160: 
+</span><span class="">  161: =head1 NOTES ON FILE PLACEMENT
+</span><span class="">  162: 
+</span><span class="">  163: The C&lt;-d:App::Test::Generator::LCSAJ::Runtime&gt; flag causes Perl to load
+</span><span class="">  164: C&lt;Devel::App::Test::Generator::LCSAJ::Runtime&gt;, which it finds at:
+</span><span class="">  165: 
+</span><span class="">  166:   lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm
+</span><span class="">  167: 
+</span><span class="">  168: Ensure this path is on C&lt;@INC&gt; (C&lt;-Mblib&gt; or C&lt;-Ilib&gt; in PERL5OPT).
+</span><span class="">  169: 
+</span><span class="">  170: =head1 SEE ALSO
+</span><span class="">  171: 
+</span><span class="">  172: L&lt;Devel::Cover&gt;, L&lt;App::Test::Generator&gt;
+</span><span class="">  173: 
+</span><span class="">  174: =head1 AUTHOR
+</span><span class="">  175: 
+</span><span class="">  176: Nigel Horne
+</span><span class="">  177: 
+</span><span class="">  178: =cut
 </span></pre>
 
 <script>
