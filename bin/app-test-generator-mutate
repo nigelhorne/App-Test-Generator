@@ -349,7 +349,7 @@ my %opt = (
 	html => 0,
 	mutation_level => 'full',
 	lcsaj_root  => 'lcsaj',
-	lcsaj_hits => 'coverage/lcsaj_hits.json',
+	lcsaj_hits => 'cover_html/lcsaj_hits.json',
 );
 
 GetOptions(
@@ -400,7 +400,7 @@ $ENV{LCSAJ_TARGETS} = join(':', map { abs_path($_) } @files);
 
 print "Running baseline tests...\n" if $opt{verbose};
 
-if (system("prove -l $opt{tests}") != 0) {
+if (system("prove -Mblib -l $opt{tests}") != 0) {
 	print STDERR "Baseline tests failed.\n";
 	exit 2;
 }
@@ -442,7 +442,7 @@ for my $file (@files) {
 			$mutant->id,
 			" ($file line ",
 			$mutant->line,
-			") representing ",
+			') representing ',
 			scalar(@$group),
 			" mutants\n" if $opt{verbose};
 
@@ -456,7 +456,7 @@ for my $file (@files) {
 		my $compile = system($^X, '-c', File::Spec->catfile($workspace, $file));
 		next if $compile != 0;	# skip invalid mutants
 
-		my $survived = (system('prove', $opt{tests}) == 0);
+		my $survived = (system('prove', '-Mblib', $opt{tests}) == 0);
 
 		# --------------------------------------------------
 		# If tests pass → mutant survived

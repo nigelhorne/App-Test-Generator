@@ -16,11 +16,13 @@ rm -rf cover_db coverage lcsaj mutation_html mutation.json cover_html
 echo "Building blib..."
 perl Makefile.PL && make && make install
 
-export PERL5OPT='-Mblib'
+export PERL5OPT='-Ilib'
 
 # --- Step 2: Run tests under Devel::Cover ---
 echo "Running tests with Devel::Cover..."
-cover -test -outputdir cover_html
+HARNESS_PERL_SWITCHES="-MDevel::Cover=-outputdir,cover_html" prove -Mblib -l t
+cover -report html -outputdir cover_html
+cover -report json -outputdir cover_html
 
 # --- Step 3: Generate JSON coverage report ---
 echo "Generating JSON coverage report..."
@@ -38,8 +40,13 @@ set +e
 
 # --- Step 5: Run tests again under LCSAJ runtime ---
 echo "Recording LCSAJ hits..."
+if [ -z "$LCSAJ_TARGETS" ]; then
+	echo "ERROR: LCSAJ_TARGETS is empty - no .pm files found" >&2
+	exit 1
+fi
+echo "LCSAJ_TARGETS=$LCSAJ_TARGETS"
 mkdir -p coverage
-PERL5OPT="-d:App::Devel::Generator::LCSAJ::Runtime -Mblib" prove -l t
+PERL5OPT="-d:App::Test::Generator::LCSAJ::Runtime -Mblib" prove -l t
 
 # --- Step 6: Run mutation analysis ---
 echo "Running mutation analysis..."
@@ -51,8 +58,9 @@ bin/app-test-generator-mutate \
     --json mutation.json \
     --html coverage/mutation_html \
     --mutation_level=fast \
-    --cover_json coverage/cover.json \
-    --lcsaj_root coverage/mutation_html/lib < /dev/null
+    --cover_json cover_html/cover.json \
+    --lcsaj_root coverage/mutation_html/lib \
+    --lcsaj_hits cover_html/lcsaj_hits.json < /dev/null
     # --min-score 85
 
 set -e
@@ -60,4 +68,4 @@ set -e
 # --- Step 7: Create the test dashboard
 scripts/generate_index.pl
 
-echo "Done! Check coverage/index.html for the main report."
+echo "Done! Check cover_html/index.html locally, or https://nigelhorne.github.io/${GITHUB_REPOSITORY#*/}/coverage/ when deployed."

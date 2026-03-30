@@ -46,13 +46,13 @@ Readonly my %config => (
 	low_threshold => 70,
 	med_threshold => 90,
 	max_points => 10,	# Only display the last 10 commits in the coverage trend graph
-	cover_db => 'cover_html/cover.json',
-	mutation_db => 'mutation.json',
-	mutation_dir => 'coverage/mutation_html',	# Where the hrefs will point
-	mutation_output_dir => 'cover_html/mutation_html',
-	lcsaj_root => 'cover_html/mutation_html/lib',
-	lcsaj_hits_file => 'cover_html/lcsaj_hits.json',
-	output => 'cover_html/index.html',
+	cover_db            => 'cover_html/cover.json',      # Devel::Cover JSON output
+	mutation_db         => 'mutation.json',
+	mutation_dir        => 'coverage/mutation_html',     # hrefs in published pages
+	mutation_output_dir => 'cover_html/mutation_html',   # where files are written
+	lcsaj_root          => 'cover_html/mutation_html/lib',
+	lcsaj_hits_file     => 'cover_html/lcsaj_hits.json', # Runtime.pm writes here
+	output              => 'cover_html/index.html',      # published to gh-pages
 	max_retry => 3,
 	min_locale_samples => 3,
 	verbose => 1,
@@ -1965,27 +1965,31 @@ sub _mutation_index {
 			$complexity_class, $complexity_tooltip, $complexity
 		);
 
-		# Approximate LSCAJ score
-		# push @html, "<!-- Looking for LCSAJ for $file in $config{lcsaj_root}, hits =:";
-		# push @html, Dumper([$lcsaj_hits]);
-		# push @html, '-->';
-		my ($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{lcsaj_root}, $lcsaj_hits, \@html);
+        # Try each candidate directory in turn, most-specific first.
+        # _lcsaj_coverage_for_file returns (undef, undef) when the
+        # .lcsaj.json file cannot be found, so we keep trying until
+        # we get a defined result or exhaust all candidates.
+        my ($lcsaj_cov, $lcsaj_total);
+        for my $dir (
+            $config{lcsaj_root},
+            $config{mutation_dir} . '/lib',
+            $config{mutation_dir},
+        ) {
+            next unless $dir;
+            ($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $dir, $lcsaj_hits, \@html);
+            last if defined $lcsaj_cov;
+        }
 
-		if(!defined($lcsaj_cov)) {
-			push @html, "<!-- About to look for LCSAJ for $file in $config{mutation_dir}/lib -->";
-			($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{mutation_dir} . '/lib', $lcsaj_hits, \@html);
-			if(!defined($lcsaj_cov)) {
-				push @html, "<!-- About to look for LCSAJ for $file in $config{mutation_dir} -->";
-				($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $config{mutation_dir}, $lcsaj_hits, \@html);
-			}
-		}
-
-		my $lcsaj_pct;
-		if($lcsaj_dir) {
-			$lcsaj_pct = $lcsaj_total ? sprintf('%.1f', ($lcsaj_cov / $lcsaj_total) * 100) : '-';
-		} else {
-			$lcsaj_pct = '';
-		}
+        my $lcsaj_pct;
+        if (!$lcsaj_dir) {
+            $lcsaj_pct = '';              # LCSAJ column not enabled
+        } elsif (!defined $lcsaj_cov) {
+            $lcsaj_pct = 'n/a';          # .lcsaj.json not found in any candidate dir
+        } elsif (!$lcsaj_total) {
+            $lcsaj_pct = '-';            # file found but contains zero paths
+        } else {
+            $lcsaj_pct = sprintf('%.1f%%', ($lcsaj_cov / $lcsaj_total) * 100);
+        }
 
 		push @html, sprintf(
 			qq{<tr class="%s"><td><a href="%s" title="View mutation line by line" target="_blank">%s</a> %s</td><td>%d</td><td>%d</td><td>%d</td><td>%s</td><td>%s</td><td>%s</td></tr>},
@@ -2887,59 +2891,148 @@ sub _cyclomatic_complexity {
 	return $complexity;
 }
 
+# ------------------------------------------------------------
+# _lcsaj_coverage_for_file($file, $lcsaj_dir, $hits, $html)
+#
+# Look up LCSAJ path coverage for a single source file.
+#
+# Arguments:
+#   $file      - path to the source file (relative or absolute)
+#   $lcsaj_dir - root directory where .lcsaj.json files were written
+#   $hits      - hashref of { normalised_path => { line => count } }
+#                as produced by Devel::App::Test::Generator::LCSAJ::Runtime
+#   $html      - arrayref to push HTML comments into (for diagnostics)
+#
+# Returns:
+#   ($covered, $total)  - both defined if the .lcsaj.json was found
+#   (undef, undef)      - if no .lcsaj.json could be located
+#
+# Path resolution strategy
+# ------------------------
+# The .lcsaj.json file path is derived by stripping the source tree
+# prefix from $file to get a repo-relative name, then appending
+# ".lcsaj.json" under $lcsaj_dir.  We try several prefix-strip
+# strategies to cope with:
+#
+#   1. Standard layout:   lib/Foo/Bar.pm
+#   2. Build tree:        blib/lib/Foo/Bar.pm  (same strip target)
+#   3. Non-standard:      src/Foo/Bar.pm, or Bar.pm at repo root
+#      -> falls back to basename only
+#
+# The $hits lookup also tries multiple key forms because Runtime.pm
+# writes normalised lib-relative keys (e.g. "lib/Foo/Bar.pm") while
+# callers may pass an absolute path or a blib-prefixed path.
+# ------------------------------------------------------------
+
 sub _lcsaj_coverage_for_file {
-	my ($file, $lcsaj_dir, $hits, $html) = @_;
+    my ($file, $lcsaj_dir, $hits, $html) = @_;
 
-	push @{$html}, "<!-- _lcsaj_coverage_for_file: $lcsaj_dir / $file -->";
-	return unless $lcsaj_dir && $hits;
-	push @{$html}, "<!-- Found directory lcsaj_dir $lcsaj_dir -->";
+    push @{$html}, "<!-- _lcsaj_coverage_for_file: dir=$lcsaj_dir file=$file -->";
 
-	my $path = $file;
-	$file = abs_path($file) if defined $file;
+    return (undef, undef) unless $lcsaj_dir && $hits && defined $file;
 
-	my $base = basename($file);
+    # ----------------------------------------------------------
+    # Resolve to an absolute path for reliable prefix stripping.
+    # Keep the original argument too — we need it for $hits lookup.
+    # ----------------------------------------------------------
+    my $original = $file;
+    my $abs      = abs_path($file) // $file;
+    my $base     = basename($abs);
 
-	my $rel = $file;
-	$rel =~ s{.*?/lib/}{};
+    # ----------------------------------------------------------
+    # Build candidate relative paths to try, most-specific first:
+    #   1. lib-relative  e.g.  Foo/Bar.pm          (strip .../lib/)
+    #   2. basename only e.g.  Bar.pm              (last resort)
+    # We deliberately do NOT include the leading "lib/" segment in
+    # the .lcsaj.json path because the LCSAJ analyser is expected to
+    # write files mirroring only the package-namespace portion of the
+    # path (i.e. what comes *after* lib/).
+    # ----------------------------------------------------------
+    my @rel_candidates;
 
-	my $lcsaj_file = File::Spec->catfile(
-		$lcsaj_dir,
-		"$rel.lcsaj",
-		"$base.lcsaj.json"
-	);
+    if ($abs =~ m{(?:^|/)(?:blib/)?lib/(.+)$}) {
+        push @rel_candidates, $1;               # e.g. Foo/Bar.pm
+    }
+    push @rel_candidates, $base                 # e.g. Bar.pm
+        unless @rel_candidates && $rel_candidates[0] eq $base;
 
-	push @{$html}, "<!-- Look for lcsaj_file $lcsaj_file -->";
+    # ----------------------------------------------------------
+    # Search for the .lcsaj.json file using each candidate.
+    # ----------------------------------------------------------
+    my $lcsaj_file;
 
-	return unless -f $lcsaj_file;
+    for my $rel (@rel_candidates) {
+        my $candidate = File::Spec->catfile($lcsaj_dir, "$rel.lcsaj.json");
+        push @{$html}, "<!-- _lcsaj_coverage_for_file: trying $candidate -->";
 
-	push @{$html}, "<!-- Found lcsaj_file $lcsaj_file -->";
+        if (-f $candidate) {
+            $lcsaj_file = $candidate;
+            push @{$html}, "<!-- _lcsaj_coverage_for_file: found $candidate -->";
+            last;
+        }
+    }
 
-	open my $fh, '<', $lcsaj_file;
-	my $paths = decode_json(do { local $/; <$fh> });
-	close $fh;
+    return (undef, undef) unless defined $lcsaj_file;
 
-	my $file_hits = $hits->{$path} || $hits->{$file} || {};
+    # ----------------------------------------------------------
+    # Load the LCSAJ path definitions.
+    # ----------------------------------------------------------
+    open my $fh, '<', $lcsaj_file
+        or do {
+            push @{$html}, "<!-- _lcsaj_coverage_for_file: cannot open $lcsaj_file: $! -->";
+            return (undef, undef);
+        };
+    my $paths = decode_json(do { local $/; <$fh> });
+    close $fh;
 
-	my $covered = 0;
-	my $total = scalar @$paths;
+    my $total = scalar @{ $paths // [] };
+    return (0, 0) unless $total;
 
-	for my $p (@$paths) {
-		my $start = $p->{start};
-		my $end = $p->{end};
+    # ----------------------------------------------------------
+    # Resolve which hit-map entry belongs to this file.
+    # Runtime.pm writes keys as _normalize(abs_path(file)), which
+    # produces "lib/Foo/Bar.pm".  Try several key forms so we match
+    # regardless of what the caller passed in.
+    # ----------------------------------------------------------
+    my $norm_abs = $abs;
+    $norm_abs =~ s{^.*/blib/lib/}{lib/};
+    $norm_abs =~ s{^.*/lib/}{lib/};
 
-		next unless defined $start && defined $end;
+    my $norm_orig = $original;
+    $norm_orig =~ s{^.*/blib/lib/}{lib/};
+    $norm_orig =~ s{^.*/lib/}{lib/};
 
-		my $hit = 0;
+    my $file_hits =
+           $hits->{$norm_abs}           # "lib/Foo/Bar.pm"  (most likely)
+        // $hits->{$norm_orig}          # same, from original arg
+        // $hits->{$abs}               # absolute path (unusual)
+        // $hits->{$original}          # raw arg as-is
+        // {};
 
-		for my $l ($start .. $end) {
-			if ($file_hits->{$l}) {
-				$hit = 1;
-				last;
-			}
-		}
+    push @{$html}, "<!-- _lcsaj_coverage_for_file: hit key=$norm_abs hits="
+        . scalar(keys %$file_hits) . " -->";
 
-		$covered++ if $hit;
-	}
+    # ----------------------------------------------------------
+    # Count how many LCSAJ paths had at least one line executed.
+    # A path is considered covered if any line in [start..end]
+    # appears in the hit map.
+    # ----------------------------------------------------------
+    my $covered = 0;
 
-	return ($covered, $total);
+    for my $p (@{ $paths }) {
+        next unless ref $p eq 'HASH';
+
+        my $start = $p->{start};
+        my $end   = $p->{end};
+        next unless defined $start && defined $end;
+
+        for my $line ($start .. $end) {
+            if ($file_hits->{$line}) {
+                $covered++;
+                last;
+            }
+        }
+    }
+
+    return ($covered, $total);
 }
