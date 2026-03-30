@@ -50,7 +50,7 @@ Readonly my %config => (
 	mutation_db         => 'mutation.json',
 	mutation_dir        => 'coverage/mutation_html',     # hrefs in published pages
 	mutation_output_dir => 'cover_html/mutation_html',   # where files are written
-	lcsaj_root          => 'cover_html/mutation_html/lib',
+	lcsaj_root => 'coverage/mutation_html/lib',
 	lcsaj_hits_file     => 'cover_html/lcsaj_hits.json', # Runtime.pm writes here
 	output              => 'cover_html/index.html',      # published to gh-pages
 	max_retry => 3,
@@ -1276,7 +1276,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		NA
 	</label>
 	<label style="margin-left: 1em;">
-	<label style="margin-left: 1em;">
 		<input type="checkbox" id="toggleNew">
 		NEW only
 	</label>
@@ -1965,31 +1964,27 @@ sub _mutation_index {
 			$complexity_class, $complexity_tooltip, $complexity
 		);
 
-        # Try each candidate directory in turn, most-specific first.
-        # _lcsaj_coverage_for_file returns (undef, undef) when the
-        # .lcsaj.json file cannot be found, so we keep trying until
-        # we get a defined result or exhaust all candidates.
-        my ($lcsaj_cov, $lcsaj_total);
-        for my $dir (
-            $config{lcsaj_root},
-            $config{mutation_dir} . '/lib',
-            $config{mutation_dir},
-        ) {
-            next unless $dir;
-            ($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $dir, $lcsaj_hits, \@html);
-            last if defined $lcsaj_cov;
-        }
+		# Try each candidate directory in turn, most-specific first.
+		# _lcsaj_coverage_for_file returns (undef, undef) when the
+		# .lcsaj.json file cannot be found, so we keep trying until
+		# we get a defined result or exhaust all candidates.
+		my ($lcsaj_cov, $lcsaj_total);
+		for my $dir ($config{lcsaj_root}, $config{mutation_dir} . '/lib', $config{mutation_dir}) {
+			next unless $dir;
+			($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $dir, $lcsaj_hits, \@html);
+			last if defined $lcsaj_cov;
+		}
 
-        my $lcsaj_pct;
-        if (!$lcsaj_dir) {
-            $lcsaj_pct = '';              # LCSAJ column not enabled
-        } elsif (!defined $lcsaj_cov) {
-            $lcsaj_pct = 'n/a';          # .lcsaj.json not found in any candidate dir
-        } elsif (!$lcsaj_total) {
-            $lcsaj_pct = '-';            # file found but contains zero paths
-        } else {
-            $lcsaj_pct = sprintf('%.1f%%', ($lcsaj_cov / $lcsaj_total) * 100);
-        }
+		my $lcsaj_pct;
+		if (!$lcsaj_dir) {
+			$lcsaj_pct = '';              # LCSAJ column not enabled
+		} elsif (!defined $lcsaj_cov) {
+			$lcsaj_pct = 'n/a';          # .lcsaj.json not found in any candidate dir
+		} elsif (!$lcsaj_total) {
+			$lcsaj_pct = '-';            # file found but contains zero paths
+		} else {
+			$lcsaj_pct = sprintf('%.1f%%', ($lcsaj_cov / $lcsaj_total) * 100);
+		}
 
 		push @html, sprintf(
 			qq{<tr class="%s"><td><a href="%s" title="View mutation line by line" target="_blank">%s</a> %s</td><td>%d</td><td>%d</td><td>%d</td><td>%s</td><td>%s</td><td>%s</td></tr>},
@@ -2962,14 +2957,19 @@ sub _lcsaj_coverage_for_file {
     my $lcsaj_file;
 
     for my $rel (@rel_candidates) {
-        my $candidate = File::Spec->catfile($lcsaj_dir, "$rel.lcsaj.json");
-        push @{$html}, "<!-- _lcsaj_coverage_for_file: trying $candidate -->";
+	my $base = basename($rel);
+	my $candidate = File::Spec->catfile(
+		$lcsaj_dir,
+		"$rel.lcsaj",
+		"$base.lcsaj.json"
+	);
+	push @{$html}, "<!-- _lcsaj_coverage_for_file: trying $candidate -->";
 
-        if (-f $candidate) {
-            $lcsaj_file = $candidate;
-            push @{$html}, "<!-- _lcsaj_coverage_for_file: found $candidate -->";
-            last;
-        }
+	if (-f $candidate) {
+		$lcsaj_file = $candidate;
+		push @{$html}, "<!-- _lcsaj_coverage_for_file: found $candidate -->";
+		last;
+	}
     }
 
     return (undef, undef) unless defined $lcsaj_file;
@@ -3034,5 +3034,5 @@ sub _lcsaj_coverage_for_file {
         }
     }
 
-    return ($covered, $total);
+	return ($covered, $total);
 }
