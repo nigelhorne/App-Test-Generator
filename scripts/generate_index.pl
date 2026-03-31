@@ -2370,7 +2370,6 @@ sub _mutant_file_report {
 
 						if(my $suggest = _suggest_test($m)) {
 							$suggest = encode_entities($suggest);
-							$suggest =~ s/\n/&#10;/g;
 							$details .= qq{
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
