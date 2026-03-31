@@ -238,7 +238,7 @@ pre details.mutant-details ul {
 </span><span class="">   14: sub new { bless {}, shift }
 </span><span class="">   15: 
 </span><span class="">   16: sub analyze {
-</span><span class="">   17: 	my ($self, $method) = @_;
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 17 → 36 → 43">●</span>  <span class="lcsaj-dot" title="LCSAJ: 17 → 36 → 0">●</span>    17: 	my ($self, $method) = @_;
 </span><span class="">   18: 
 </span><span class="">   19: 	my $body = $method-&gt;{body} || &#39;&#39;;
 </span><span class="">   20: 
@@ -264,7 +264,7 @@ pre details.mutant-details ul {
 </span><span class="">   40: 	}
 </span><span class="">   41: 
 </span><span class="">   42: 	# Logical operators
-</span><span class="">   43: 	my $logic_count = () = $body =~ /&amp;&amp;|\|\||\?/g;
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 43 → 57 → 66">●</span>  <span class="lcsaj-dot" title="LCSAJ: 43 → 57 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 43 → 57 → 66">●</span>  <span class="lcsaj-dot" title="LCSAJ: 43 → 57 → 0">●</span>    43: 	my $logic_count = () = $body =~ /&amp;&amp;|\|\||\?/g;
 </span><span class="">   44: 	$result{cyclomatic_score} += $logic_count;
 </span><span class="">   45: 
 </span><span class="">   46: 	# -----------------------------------
@@ -324,7 +324,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">   63: 	# -----------------------------------
 </span><span class="">   64: 	# Nesting depth calculation
 </span><span class="">   65: 	# -----------------------------------
-</span><span class="">   66: 	my $depth = 0;
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 66 → 69 → 78">●</span>  <span class="lcsaj-dot" title="LCSAJ: 66 → 69 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 66 → 69 → 78">●</span>  <span class="lcsaj-dot" title="LCSAJ: 66 → 69 → 0">●</span>    66: 	my $depth = 0;
 </span><span class="">   67: 	my $max_depth = 0;
 </span><span class="">   68: 
 </span><span class="">   69: 	foreach my $char (split //, $body) {
@@ -416,7 +416,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 <span class="">   75: 		}
 </span><span class="">   76: 	}
 </span><span class="">   77: 
-</span><span class="">   78: 	$result{nesting_depth} = $max_depth;
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 78 → 85 → 93">●</span>  <span class="lcsaj-dot" title="LCSAJ: 78 → 85 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 78 → 85 → 93">●</span>  <span class="lcsaj-dot" title="LCSAJ: 78 → 85 → 0">●</span>    78: 	$result{nesting_depth} = $max_depth;
 </span><span class="">   79: 
 </span><span class="">   80: 	# -----------------------------------
 </span><span class="">   81: 	# Complexity Level Classification
@@ -490,7 +490,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">   90: 		$result{complexity_level} = &#39;high&#39;;
 </span><span class="">   91: 	}
 </span><span class="">   92: 
-</span><span class="">   93: 	return \%result;
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 93 → 93 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 93 → 93 → 0">●</span>    93: 	return \%result;
 </span><span class="">   94: }
 </span><span class="">   95: 
 </span><span class="">   96: 1;

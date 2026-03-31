@@ -302,7 +302,7 @@ pre details.mutant-details ul {
 </span><span class="">   78: # ---------------------------------------------------------------------------
 </span><span class="">   79: 
 </span><span class="">   80: BEGIN {
-</span><span class="">   81:     my $targets_env = $ENV{LCSAJ_TARGETS} // &#39;&#39;;
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 81 → 84 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 81 → 84 → 0">●</span>    81:     my $targets_env = $ENV{LCSAJ_TARGETS} // &#39;&#39;;
 </span><span class="">   82:     $targets_env =~ s/\n//g;    # defensive: strip stray newlines
 </span><span class="">   83: 
 </span><span class="">   84:     for my $t (split /:/, $targets_env) {
@@ -319,7 +319,7 @@ pre details.mutant-details ul {
 </span><span class="">   95: # ---------------------------------------------------------------------------
 </span><span class="">   96: 
 </span><span class="">   97: sub DB::DB {
-</span><span class="">   98:     my (undef, $file, $line) = caller(0);
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 98 → 111 → 115">●</span>  <span class="lcsaj-dot" title="LCSAJ: 98 → 111 → 0">●</span>    98:     my (undef, $file, $line) = caller(0);
 </span><span class="">   99: 
 </span><span class="">  100:     return unless defined $file &amp;&amp; defined $line;
 </span><span class="">  101: 
@@ -342,7 +342,7 @@ pre details.mutant-details ul {
 <span class="">  112:         return unless $TARGET{$norm};
 </span><span class="">  113:     }
 </span><span class="">  114: 
-</span><span class="">  115:     $HITS{$norm}{$line}++;
+</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 115 → 115 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 115 → 115 → 0">●</span>   115:     $HITS{$norm}{$line}++;
 </span><span class="">  116: }
 </span><span class="">  117: 
 </span><span class="">  118: # ---------------------------------------------------------------------------
@@ -353,59 +353,56 @@ pre details.mutant-details ul {
 </span><span class="">  123: # ---------------------------------------------------------------------------
 </span><span class="">  124: 
 </span><span class="">  125: sub _write_results {
-</span><span class="">  126:     return unless %HITS;
+</span><span class="">  126: 	return unless %HITS;
 </span><span class="">  127: 
-</span><span class="">  128:     my $out_dir  = &#39;cover_html&#39;;
-</span><span class="">  129:     my $out_file = &quot;$out_dir/lcsaj_hits.json&quot;;
+</span><span class="">  128: 	my $out_dir  = &#39;cover_html/lcsaj_hits&#39;;
+</span><span class="">  129: 	my $out_file = &quot;$out_dir/hits_$$.json&quot;;    # $$ is the PID
 </span><span class="">  130: 
-</span><span class="">  131:     make_path($out_dir) unless -d $out_dir;
+</span><span class="">  131: 	make_path($out_dir) unless -d $out_dir;
 </span><span class="">  132: 
-</span><span class="">  133:     open my $fh, &#39;&gt;&#39;, $out_file
-</span><span class="">  134:         or die &quot;Devel::App::Test::Generator::LCSAJ::Runtime: &quot;
-</span><span class="">  135:              . &quot;cannot write $out_file: $!\n&quot;;
-</span><span class="">  136: 
-</span><span class="">  137:     print $fh encode_json(\%HITS);
-</span><span class="">  138:     close $fh;
-</span><span class="">  139: }
-</span><span class="">  140: 
-</span><span class="">  141: END {
-</span><span class="">  142:     _write_results();
-</span><span class="">  143: }
-</span><span class="">  144: 
-</span><span class="">  145: 1;
-</span><span class="">  146: 
-</span><span class="">  147: __END__
-</span><span class="">  148: 
-</span><span class="">  149: =head1 OUTPUT FORMAT
-</span><span class="">  150: 
-</span><span class="">  151: C&lt;cover_html/lcsaj_hits.json&gt; is a JSON object of the form:
-</span><span class="">  152: 
-</span><span class="">  153:   {
-</span><span class="">  154:     &quot;lib/Foo/Bar.pm&quot;: { &quot;12&quot;: 3, &quot;15&quot;: 1, ... },
-</span><span class="">  155:     ...
-</span><span class="">  156:   }
+</span><span class="">  133: 	open my $fh, &#39;&gt;&#39;, $out_file or die &quot;Cannot write $out_file: $!&quot;;
+</span><span class="">  134: 	print $fh encode_json(\%HITS);
+</span><span class="">  135: 	close $fh;
+</span><span class="">  136: }
+</span><span class="">  137: 
+</span><span class="">  138: END {
+</span><span class="">  139:     _write_results();
+</span><span class="">  140: }
+</span><span class="">  141: 
+</span><span class="">  142: 1;
+</span><span class="">  143: 
+</span><span class="">  144: __END__
+</span><span class="">  145: 
+</span><span class="">  146: =head1 OUTPUT FORMAT
+</span><span class="">  147: 
+</span><span class="">  148: C&lt;cover_html/lcsaj_hits.json&gt; is a JSON object of the form:
+</span><span class="">  149: 
+</span><span class="">  150:   {
+</span><span class="">  151:     &quot;lib/Foo/Bar.pm&quot;: { &quot;12&quot;: 3, &quot;15&quot;: 1, ... },
+</span><span class="">  152:     ...
+</span><span class="">  153:   }
+</span><span class="">  154: 
+</span><span class="">  155: Keys are lib-relative paths (C&lt;lib/...&gt;); values are objects mapping line
+</span><span class="">  156: numbers (as strings) to hit counts.
 </span><span class="">  157: 
-</span><span class="">  158: Keys are lib-relative paths (C&lt;lib/...&gt;); values are objects mapping line
-</span><span class="">  159: numbers (as strings) to hit counts.
-</span><span class="">  160: 
-</span><span class="">  161: =head1 NOTES ON FILE PLACEMENT
+</span><span class="">  158: =head1 NOTES ON FILE PLACEMENT
+</span><span class="">  159: 
+</span><span class="">  160: The C&lt;-d:App::Test::Generator::LCSAJ::Runtime&gt; flag causes Perl to load
+</span><span class="">  161: C&lt;Devel::App::Test::Generator::LCSAJ::Runtime&gt;, which it finds at:
 </span><span class="">  162: 
-</span><span class="">  163: The C&lt;-d:App::Test::Generator::LCSAJ::Runtime&gt; flag causes Perl to load
-</span><span class="">  164: C&lt;Devel::App::Test::Generator::LCSAJ::Runtime&gt;, which it finds at:
-</span><span class="">  165: 
-</span><span class="">  166:   lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm
-</span><span class="">  167: 
-</span><span class="">  168: Ensure this path is on C&lt;@INC&gt; (C&lt;-Mblib&gt; or C&lt;-Ilib&gt; in PERL5OPT).
-</span><span class="">  169: 
-</span><span class="">  170: =head1 SEE ALSO
-</span><span class="">  171: 
-</span><span class="">  172: L&lt;Devel::Cover&gt;, L&lt;App::Test::Generator&gt;
-</span><span class="">  173: 
-</span><span class="">  174: =head1 AUTHOR
-</span><span class="">  175: 
-</span><span class="">  176: Nigel Horne
-</span><span class="">  177: 
-</span><span class="">  178: =cut
+</span><span class="">  163:   lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm
+</span><span class="">  164: 
+</span><span class="">  165: Ensure this path is on C&lt;@INC&gt; (C&lt;-Mblib&gt; or C&lt;-Ilib&gt; in PERL5OPT).
+</span><span class="">  166: 
+</span><span class="">  167: =head1 SEE ALSO
+</span><span class="">  168: 
+</span><span class="">  169: L&lt;Devel::Cover&gt;, L&lt;App::Test::Generator&gt;
+</span><span class="">  170: 
+</span><span class="">  171: =head1 AUTHOR
+</span><span class="">  172: 
+</span><span class="">  173: Nigel Horne
+</span><span class="">  174: 
+</span><span class="">  175: =cut
 </span></pre>
 
 <script>
