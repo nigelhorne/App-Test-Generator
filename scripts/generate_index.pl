@@ -52,7 +52,7 @@ Readonly my %config => (
 	mutation_output_dir => 'cover_html/mutation_html',   # where files are written
 	lcsaj_root => 'coverage/mutation_html/lib',
 	lcsaj_hits_file     => 'cover_html/lcsaj_hits.json', # Runtime.pm writes here
-	output              => 'cover_html/index.html',	# published to gh-pages
+	output    => 'cover_html/index.html',	# published to gh-pages
 	max_retry => 3,
 	min_locale_samples => 3,
 	verbose => 1,
@@ -1817,7 +1817,7 @@ sub detect_perl_version_root_cause {
 			"All failures on Perl &leq; $max_fail",
 			"All passes on Perl &geq; $min_pass",
 		],
-		perldelta => "https://perldoc.perl.org/perldelta$min_pass",
+		perldelta => perldelta_url($min_pass),
 	};
 }
 
@@ -1977,9 +1977,9 @@ sub _mutation_index {
 
 		my $lcsaj_pct;
 		if (!$lcsaj_dir) {
-			$lcsaj_pct = '';              # LCSAJ column not enabled
+			$lcsaj_pct = '';	# LCSAJ column not enabled
 		} elsif (!defined $lcsaj_cov) {
-			$lcsaj_pct = 'n/a';          # .lcsaj.json not found in any candidate dir
+			$lcsaj_pct = 'n/a';	# .lcsaj.json not found in any candidate dir
 		} elsif (!$lcsaj_total) {
 			$lcsaj_pct = '-';	# file found but contains zero paths
 		} else {
@@ -2236,7 +2236,7 @@ sub _mutant_file_report {
 		# warn "  file = $file\n";
 		# warn "  base = $base\n";
 		# warn "  lcsaj_dir = $lcsaj_dir\n";
-		# warn "  lookup    = $lcsaj_file\n";
+		# warn "  lookup = $lcsaj_file\n";
 		# warn "  exists = " . (-f $lcsaj_file ? "YES" : "NO") . "\n";
 
 		if (-f $lcsaj_file) {
@@ -2949,11 +2949,11 @@ sub _cyclomatic_complexity {
 # ------------------------------------------------------------
 
 sub _lcsaj_coverage_for_file {
-    my ($file, $lcsaj_dir, $hits, $html) = @_;
+	my ($file, $lcsaj_dir, $hits, $html) = @_;
 
-    push @{$html}, "<!-- _lcsaj_coverage_for_file: dir=$lcsaj_dir file=$file -->";
+	# push @{$html}, "<!-- _lcsaj_coverage_for_file: dir=$lcsaj_dir file=$file -->";
 
-    return (undef, undef) unless $lcsaj_dir && $hits && defined $file;
+	return (undef, undef) unless $lcsaj_dir && $hits && defined $file;
 
     # ----------------------------------------------------------
     # Resolve to an absolute path for reliable prefix stripping.
@@ -2992,11 +2992,11 @@ sub _lcsaj_coverage_for_file {
 		"$rel.lcsaj",
 		"$base.lcsaj.json"
 	);
-	push @{$html}, "<!-- _lcsaj_coverage_for_file: trying $candidate -->";
+	# push @{$html}, "<!-- _lcsaj_coverage_for_file: trying $candidate -->";
 
 	if (-f $candidate) {
 		$lcsaj_file = $candidate;
-		push @{$html}, "<!-- _lcsaj_coverage_for_file: found $candidate -->";
+		# push @{$html}, "<!-- _lcsaj_coverage_for_file: found $candidate -->";
 		last;
 	}
     }
@@ -3008,7 +3008,7 @@ sub _lcsaj_coverage_for_file {
     # ----------------------------------------------------------
     open my $fh, '<', $lcsaj_file
         or do {
-            push @{$html}, "<!-- _lcsaj_coverage_for_file: cannot open $lcsaj_file: $! -->";
+            # push @{$html}, "<!-- _lcsaj_coverage_for_file: cannot open $lcsaj_file: $! -->";
             return (undef, undef);
         };
     my $paths = decode_json(do { local $/; <$fh> });
@@ -3038,8 +3038,7 @@ sub _lcsaj_coverage_for_file {
         // $hits->{$original}          # raw arg as-is
         // {};
 
-    push @{$html}, "<!-- _lcsaj_coverage_for_file: hit key=$norm_abs hits="
-        . scalar(keys %$file_hits) . " -->";
+    # push @{$html}, "<!-- _lcsaj_coverage_for_file: hit key=$norm_abs hits=" . scalar(keys %$file_hits) . " -->";
 
     # ----------------------------------------------------------
     # Count how many LCSAJ paths had at least one line executed.

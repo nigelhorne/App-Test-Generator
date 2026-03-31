@@ -451,12 +451,16 @@ for my $file (@files) {
 
 		$mutator->apply_mutant($mutant);
 
-		local $ENV{PERL5LIB} = "$workspace:$workspace/lib" . ($ENV{PERL5LIB} ? ":$ENV{PERL5LIB}" : '');
+		# The workspace contains a full copy of lib/ with just the mutant applied.
+		# We point PERL5LIB at it so prove picks up the mutated module instead of
+		# the original, without -Mblib overriding us by loading the project's own
+		# blib/ first.
+		local $ENV{PERL5LIB} = File::Spec->catfile($workspace, $opt{lib}) . ($ENV{PERL5LIB} ? ":$ENV{PERL5LIB}" : '');
 
 		my $compile = system($^X, '-c', File::Spec->catfile($workspace, $file));
-		next if $compile != 0;	# skip invalid mutants
+		next if $compile != 0;
 
-		my $survived = (system('prove', '-Mblib', $opt{tests}) == 0);
+		my $survived = (system('prove', $opt{tests}) == 0);
 
 		# --------------------------------------------------
 		# If tests pass → mutant survived
