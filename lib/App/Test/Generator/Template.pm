@@ -1582,7 +1582,7 @@ sub run_test
 		if($positions) {
 			# Positional args
 			foreach my $key (keys %{$input}) {
-				if(($key ne '_STATUS') && ($key ne '_NAME') && ($key ne '_LINE') && ($key ne '_PROPERTIES')) {
+				if(($key ne '_STATUS') && ($key ne '_NAME') && ($key ne '_LINE') && ($key ne '_PROPERTIES') && ($key ne '_DESCRIPTION')) {
 					if(exists($positions->{$key})) {
 						$alist[$positions->{$key}] = delete $input->{$key};
 					} else {

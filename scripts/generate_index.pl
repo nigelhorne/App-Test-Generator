@@ -52,7 +52,7 @@ Readonly my %config => (
 	mutation_output_dir => 'cover_html/mutation_html',   # where files are written
 	lcsaj_root => 'coverage/mutation_html/lib',
 	lcsaj_hits_file     => 'cover_html/lcsaj_hits.json', # Runtime.pm writes here
-	output              => 'cover_html/index.html',      # published to gh-pages
+	output              => 'cover_html/index.html',	# published to gh-pages
 	max_retry => 3,
 	min_locale_samples => 3,
 	verbose => 1,
@@ -1981,7 +1981,7 @@ sub _mutation_index {
 		} elsif (!defined $lcsaj_cov) {
 			$lcsaj_pct = 'n/a';          # .lcsaj.json not found in any candidate dir
 		} elsif (!$lcsaj_total) {
-			$lcsaj_pct = '-';            # file found but contains zero paths
+			$lcsaj_pct = '-';	# file found but contains zero paths
 		} else {
 			$lcsaj_pct = sprintf('%.1f%%', ($lcsaj_cov / $lcsaj_total) * 100);
 		}
@@ -2237,7 +2237,7 @@ sub _mutant_file_report {
 		# warn "  base = $base\n";
 		# warn "  lcsaj_dir = $lcsaj_dir\n";
 		# warn "  lookup    = $lcsaj_file\n";
-		# warn "  exists    = " . (-f $lcsaj_file ? "YES" : "NO") . "\n";
+		# warn "  exists = " . (-f $lcsaj_file ? "YES" : "NO") . "\n";
 
 		if (-f $lcsaj_file) {
 			open my $fh, '<', $lcsaj_file;
@@ -2315,7 +2315,7 @@ sub _mutant_file_report {
 				my $end = $p->{end};
 				my $jump = $p->{jump} // 0;
 
-				$lcsaj_marker .= qq{ <span class="lcsaj-dot" title="LCSAJ: $start → $end → $jump">●</span> };
+				$lcsaj_marker .= qq{<span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">$start → $end → $jump</span></span>};
 			}
 		}
 
@@ -2370,7 +2370,7 @@ sub _mutant_file_report {
 
 						if(my $suggest = _suggest_test($m)) {
 							$suggest = encode_entities($suggest);
-
+							$suggest =~ s/\n/&#10;/g;
 							$details .= qq{
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -2718,6 +2718,28 @@ pre details.mutant-details ul {
        margin-right: 3px;
 }
 
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
 </style>
 </head>
 <body>
@@ -2742,6 +2764,13 @@ function toggleTheme() {
         document.documentElement.setAttribute('data-theme', saved);
     }
 })();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
 </script>
 </body>
 </html>

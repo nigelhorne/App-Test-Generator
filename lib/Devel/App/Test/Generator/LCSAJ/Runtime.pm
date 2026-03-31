@@ -126,11 +126,14 @@ sub _write_results {
 	return unless %HITS;
 
 	my $out_dir  = 'cover_html/lcsaj_hits';
-	my $out_file = "$out_dir/hits_$$.json";    # $$ is the PID
+	my $out_file = "$out_dir/hits_$$.json";	# Include the PID in the output file
 
 	make_path($out_dir) unless -d $out_dir;
 
-	open my $fh, '>', $out_file or die "Cannot write $out_file: $!";
+	open my $fh, '>', $out_file
+		or die "Devel::App::Test::Generator::LCSAJ::Runtime: ",
+		     "cannot write $out_file: $!";
+
 	print $fh encode_json(\%HITS);
 	close $fh;
 }
