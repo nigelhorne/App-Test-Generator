@@ -460,6 +460,10 @@ for my $file (@files) {
 		my $compile = system($^X, '-c', File::Spec->catfile($workspace, $file));
 		next if $compile != 0;
 
+		warn "WORKSPACE: $workspace\n";
+		warn "WORKSPACE lib contents: " . join(', ', glob("$workspace/lib/*")) . "\n";
+		warn "PERL5LIB: $ENV{PERL5LIB}\n";
+
 		my $survived = (system('prove', $opt{tests}) == 0);
 
 		# --------------------------------------------------
