@@ -208,6 +208,28 @@ pre details.mutant-details ul {
        margin-right: 3px;
 }
 
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
 </style>
 </head>
 <body>
@@ -278,7 +300,7 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">   16: =cut
 </span><span class="">   17: 
 </span><span class="">   18: sub mutate {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 19 → 24 → 66">●</span>  <span class="lcsaj-dot" title="LCSAJ: 19 → 24 → 0">●</span>    19: 	my ($self, $doc) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">19 → 24 → 66</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">19 → 24 → 0</span></span>   19: 	my ($self, $doc) = @_;
 </span><span class="">   20: 
 </span><span class="">   21: 	my $ops = $doc-&gt;find(&#39;PPI::Token::Operator&#39;) || [];
 </span><span class="">   22: 	my @mutants;
@@ -321,9 +343,7 @@ Approximate LCSAJ segments: 9<br>
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li></ul></details>
 <span class="">   54: 						next unless $op-&gt;content eq $original;
@@ -338,7 +358,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">   63: 		}
 </span><span class="">   64: 	}
 </span><span class="">   65: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 66 → 66 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 66 → 66 → 0">●</span>    66: 	return @mutants;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">66 → 66 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">66 → 66 → 0</span></span>   66: 	return @mutants;
 </span><span class="">   67: }
 </span><span class="">   68: 
 </span><span class="">   69: 1;
@@ -359,6 +379,13 @@ function toggleTheme() {
         document.documentElement.setAttribute('data-theme', saved);
     }
 })();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
 </script>
 </body>
 </html>

@@ -208,6 +208,28 @@ pre details.mutant-details ul {
        margin-right: 3px;
 }
 
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
 </style>
 </head>
 <body>
@@ -230,7 +252,7 @@ pre details.mutant-details ul {
 </span><span class="">    6: sub new { bless {}, shift }
 </span><span class="">    7: 
 </span><span class="">    8: sub plan {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 9 → 13 → 25">●</span>  <span class="lcsaj-dot" title="LCSAJ: 9 → 13 → 0">●</span>     9:     my ($self, $schema) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">9 → 13 → 25</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">9 → 13 → 0</span></span>    9:     my ($self, $schema) = @_;
 </span><span class="">   10: 
 </span><span class="">   11:     my %mock_plan;
 </span><span class="">   12: 
@@ -252,7 +274,7 @@ pre details.mutant-details ul {
 </span><span class="">   22:         }
 </span><span class="">   23:     }
 </span><span class="">   24: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 25 → 25 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 25 → 25 → 0">●</span>    25:     return \%mock_plan;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">25 → 25 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">25 → 25 → 0</span></span>   25:     return \%mock_plan;
 </span><span class="">   26: }
 </span><span class="">   27: 
 </span><span class="">   28: 1;
@@ -273,6 +295,13 @@ function toggleTheme() {
         document.documentElement.setAttribute('data-theme', saved);
     }
 })();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
 </script>
 </body>
 </html>

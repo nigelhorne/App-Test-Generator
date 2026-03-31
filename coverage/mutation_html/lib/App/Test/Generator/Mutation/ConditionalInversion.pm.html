@@ -208,6 +208,28 @@ pre details.mutant-details ul {
        margin-right: 3px;
 }
 
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
 </style>
 </head>
 <body>
@@ -279,7 +301,7 @@ Approximate LCSAJ segments: 15<br>
 </span><span class="">   17: =cut
 </span><span class="">   18: 
 </span><span class="">   19: sub mutate {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 20 → 25 → 63">●</span>  <span class="lcsaj-dot" title="LCSAJ: 20 → 25 → 0">●</span>    20: 	my ($self, $doc) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">20 → 25 → 63</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">20 → 25 → 0</span></span>   20: 	my ($self, $doc) = @_;
 </span><span class="">   21: 
 </span><span class="">   22: 	my $compounds = $doc-&gt;find(&#39;PPI::Statement::Compound&#39;) || [];
 </span><span class="">   23: 	my @mutants;
@@ -328,11 +350,11 @@ Approximate LCSAJ segments: 15<br>
 </span><span class="">   60: 		);
 </span><span class="">   61: 	}
 </span><span class="">   62: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 63 → 63 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 63 → 63 → 0">●</span>    63: 	return @mutants;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">63 → 63 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">63 → 63 → 0</span></span>   63: 	return @mutants;
 </span><span class="">   64: }
 </span><span class="">   65: 
 </span><span class="">   66: sub _find_stmt_by_line {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 67 → 70 → 73">●</span>  <span class="lcsaj-dot" title="LCSAJ: 67 → 70 → 0">●</span>    67: 	my ($doc, $line) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">67 → 70 → 73</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">67 → 70 → 0</span></span>   67: 	my ($doc, $line) = @_;
 </span><span class="">   68: 	my $stmts = $doc-&gt;find(&#39;PPI::Statement::Compound&#39;) || [];
 </span><span class="">   69: 
 </span><span class="">   70: 	for my $s (@$stmts) {
@@ -345,13 +367,11 @@ Approximate LCSAJ segments: 15<br>
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li></ul></details>
 <span class="">   72: 	}
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 73 → 73 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 73 → 73 → 0">●</span>    73: 	return;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">73 → 73 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">73 → 73 → 0</span></span>   73: 	return;
 </span><span class="">   74: }
 </span><span class="">   75: 
 </span><span class="">   76: 1;
@@ -372,6 +392,13 @@ function toggleTheme() {
         document.documentElement.setAttribute('data-theme', saved);
     }
 })();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
 </script>
 </body>
 </html>

@@ -208,6 +208,28 @@ pre details.mutant-details ul {
        margin-right: 3px;
 }
 
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
 </style>
 </head>
 <body>
@@ -238,7 +260,7 @@ pre details.mutant-details ul {
 </span><span class="">   14: sub new { bless {}, shift }
 </span><span class="">   15: 
 </span><span class="">   16: sub plan {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 17 → 21 → 61">●</span>  <span class="lcsaj-dot" title="LCSAJ: 17 → 21 → 0">●</span>    17: 	my ($self, $schema, $strategy) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">17 → 21 → 61</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">17 → 21 → 0</span></span>   17: 	my ($self, $schema, $strategy) = @_;
 </span><span class="">   18: 
 </span><span class="">   19: 	my %isolation;
 </span><span class="">   20: 
@@ -312,7 +334,7 @@ pre details.mutant-details ul {
 </span><span class="">   58: 		$isolation{$method} = \%plan;
 </span><span class="">   59: 	}
 </span><span class="">   60: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 61 → 61 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 61 → 61 → 0">●</span>    61: 	return \%isolation;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">61 → 61 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">61 → 61 → 0</span></span>   61: 	return \%isolation;
 </span><span class="">   62: }
 </span><span class="">   63: 
 </span><span class="">   64: 1;
@@ -333,6 +355,13 @@ function toggleTheme() {
         document.documentElement.setAttribute('data-theme', saved);
     }
 })();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
 </script>
 </body>
 </html>

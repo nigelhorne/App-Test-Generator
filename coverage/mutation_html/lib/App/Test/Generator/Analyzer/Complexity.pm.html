@@ -208,6 +208,28 @@ pre details.mutant-details ul {
        margin-right: 3px;
 }
 
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
 </style>
 </head>
 <body>
@@ -238,7 +260,7 @@ pre details.mutant-details ul {
 </span><span class="">   14: sub new { bless {}, shift }
 </span><span class="">   15: 
 </span><span class="">   16: sub analyze {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 17 → 36 → 43">●</span>  <span class="lcsaj-dot" title="LCSAJ: 17 → 36 → 0">●</span>    17: 	my ($self, $method) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">17 → 36 → 43</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">17 → 36 → 0</span></span>   17: 	my ($self, $method) = @_;
 </span><span class="">   18: 
 </span><span class="">   19: 	my $body = $method-&gt;{body} || &#39;&#39;;
 </span><span class="">   20: 
@@ -264,7 +286,7 @@ pre details.mutant-details ul {
 </span><span class="">   40: 	}
 </span><span class="">   41: 
 </span><span class="">   42: 	# Logical operators
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 43 → 57 → 66">●</span>  <span class="lcsaj-dot" title="LCSAJ: 43 → 57 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 43 → 57 → 66">●</span>  <span class="lcsaj-dot" title="LCSAJ: 43 → 57 → 0">●</span>    43: 	my $logic_count = () = $body =~ /&amp;&amp;|\|\||\?/g;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">43 → 57 → 66</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">43 → 57 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">43 → 57 → 66</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">43 → 57 → 0</span></span>   43: 	my $logic_count = () = $body =~ /&amp;&amp;|\|\||\?/g;
 </span><span class="">   44: 	$result{cyclomatic_score} += $logic_count;
 </span><span class="">   45: 
 </span><span class="">   46: 	# -----------------------------------
@@ -280,33 +302,25 @@ pre details.mutant-details ul {
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_50: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_50: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_50: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li></ul></details>
 <span class="">   51: 	$result{cyclomatic_score} += $result{early_returns};
@@ -324,7 +338,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">   63: 	# -----------------------------------
 </span><span class="">   64: 	# Nesting depth calculation
 </span><span class="">   65: 	# -----------------------------------
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 66 → 69 → 78">●</span>  <span class="lcsaj-dot" title="LCSAJ: 66 → 69 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 66 → 69 → 78">●</span>  <span class="lcsaj-dot" title="LCSAJ: 66 → 69 → 0">●</span>    66: 	my $depth = 0;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">66 → 69 → 78</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">66 → 69 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">66 → 69 → 78</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">66 → 69 → 0</span></span>   66: 	my $depth = 0;
 </span><span class="">   67: 	my $max_depth = 0;
 </span><span class="">   68: 
 </span><span class="">   69: 	foreach my $char (split //, $body) {
@@ -345,33 +359,25 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_72: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_72: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_72: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li></ul></details>
 <span class="">   73: 		} elsif ($char eq &#39;}&#39;) {
@@ -384,39 +390,31 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_74: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_74: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_74: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li></ul></details>
 <span class="">   75: 		}
 </span><span class="">   76: 	}
 </span><span class="">   77: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 78 → 85 → 93">●</span>  <span class="lcsaj-dot" title="LCSAJ: 78 → 85 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 78 → 85 → 93">●</span>  <span class="lcsaj-dot" title="LCSAJ: 78 → 85 → 0">●</span>    78: 	$result{nesting_depth} = $max_depth;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">78 → 85 → 93</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">78 → 85 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">78 → 85 → 93</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">78 → 85 → 0</span></span>   78: 	$result{nesting_depth} = $max_depth;
 </span><span class="">   79: 
 </span><span class="">   80: 	# -----------------------------------
 </span><span class="">   81: 	# Complexity Level Classification
@@ -432,25 +430,19 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_85: Numeric boundary flip <= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_85: Numeric boundary flip <= to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li><li><b>COND_INV_85: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
@@ -464,25 +456,19 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_87: Numeric boundary flip <= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_87: Numeric boundary flip <= to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li></ul></details>
 <span class="">   88: 		$result{complexity_level} = &#39;moderate&#39;;
@@ -490,7 +476,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">   90: 		$result{complexity_level} = &#39;high&#39;;
 </span><span class="">   91: 	}
 </span><span class="">   92: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 93 → 93 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 93 → 93 → 0">●</span>    93: 	return \%result;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">93 → 93 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">93 → 93 → 0</span></span>   93: 	return \%result;
 </span><span class="">   94: }
 </span><span class="">   95: 
 </span><span class="">   96: 1;
@@ -511,6 +497,13 @@ function toggleTheme() {
         document.documentElement.setAttribute('data-theme', saved);
     }
 })();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
 </script>
 </body>
 </html>

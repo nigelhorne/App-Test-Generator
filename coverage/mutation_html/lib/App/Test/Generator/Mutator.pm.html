@@ -208,6 +208,28 @@ pre details.mutant-details ul {
        margin-right: 3px;
 }
 
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
 </style>
 </head>
 <body>
@@ -319,7 +341,7 @@ Approximate LCSAJ segments: 39<br>
 </span><span class="">   57: }
 </span><span class="">   58: 
 </span><span class="">   59: sub generate_mutants {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 60 → 66 → 70">●</span>  <span class="lcsaj-dot" title="LCSAJ: 60 → 66 → 0">●</span>    60: 	my $self = $_[0];
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">60 → 66 → 70</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">60 → 66 → 0</span></span>   60: 	my $self = $_[0];
 </span><span class="">   61: 
 </span><span class="">   62: 	my $doc = PPI::Document-&gt;new($self-&gt;{file}) or die &quot;Unable to parse $self-&gt;{file}&quot;;
 </span><span class="">   63: 
@@ -329,7 +351,7 @@ Approximate LCSAJ segments: 39<br>
 </span><span class="">   67: 		push @mutants, $mutation-&gt;mutate($doc);
 </span><span class="">   68: 	}
 </span><span class="">   69: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> <span class="lcsaj-dot" title="LCSAJ: 70 → 70 → 73">●</span>  <span class="lcsaj-dot" title="LCSAJ: 70 → 70 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 70 → 70 → 73">●</span>  <span class="lcsaj-dot" title="LCSAJ: 70 → 70 → 0">●</span>    70: 	if($self-&gt;{mutation_level} eq &#39;fast&#39;) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">70 → 70 → 73</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">70 → 70 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">70 → 70 → 73</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">70 → 70 → 0</span></span>   70: 	if($self-&gt;{mutation_level} eq &#39;fast&#39;) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -338,7 +360,7 @@ Approximate LCSAJ segments: 39<br>
 </li></ul></details>
 <span class="">   71: 		return @{_dedup_mutants(\@mutants)};
 </span><span class="">   72: 	}
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 73 → 73 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 73 → 73 → 0">●</span>    73: 	return @mutants;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">73 → 73 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">73 → 73 → 0</span></span>   73: 	return @mutants;
 </span><span class="">   74: }
 </span><span class="">   75: 
 </span><span class="">   76: sub apply_mutant {
@@ -379,9 +401,7 @@ Approximate LCSAJ segments: 39<br>
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li></ul></details>
 <span class="">  106: }
@@ -411,7 +431,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  130: 
 </span><span class="">  131: sub _dedup_mutants
 </span><span class="">  132: {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 133 → 137 → 150">●</span>  <span class="lcsaj-dot" title="LCSAJ: 133 → 137 → 0">●</span>   133: 	my $mutants = $_[0];
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">133 → 137 → 150</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">133 → 137 → 0</span></span>  133: 	my $mutants = $_[0];
 </span><span class="">  134: 	my @rc;
 </span><span class="">  135: 	my %seen;
 </span><span class="">  136: 
@@ -428,11 +448,11 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  147: 		push @rc, $m;
 </span><span class="">  148: 	}
 </span><span class="">  149: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 150 → 150 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 150 → 150 → 0">●</span>   150: 	return \@rc;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">150 → 150 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">150 → 150 → 0</span></span>  150: 	return \@rc;
 </span><span class="">  151: }
 </span><span class="">  152: 
 </span><span class="">  153: sub _is_redundant_mutation {
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 154 → 167 → 173">●</span>  <span class="lcsaj-dot" title="LCSAJ: 154 → 167 → 0">●</span>   154: 	my $m = $_[0];
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">154 → 167 → 173</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">154 → 167 → 0</span></span>  154: 	my $m = $_[0];
 </span><span class="">  155: 
 </span><span class="">  156: 	my $orig = $m-&gt;{original} // &#39;&#39;;
 </span><span class="">  157: 	my $new = $m-&gt;{transform} // &#39;&#39;;
@@ -457,7 +477,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  170: 	}
 </span><span class="">  171: 
 </span><span class="">  172: 	# Boolean literal flip when already strict boolean
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 173 → 179 → 183">●</span>  <span class="lcsaj-dot" title="LCSAJ: 173 → 179 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 173 → 179 → 183">●</span>  <span class="lcsaj-dot" title="LCSAJ: 173 → 179 → 0">●</span>   173: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">173 → 179 → 183</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">173 → 179 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">173 → 179 → 183</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">173 → 179 → 0</span></span>  173: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
 </span><span class="">  174: 
 </span><span class="">  175: 	# Mutation inside comment
 </span><span class="">  176: 	return 1 if $m-&gt;{line_content} &amp;&amp; $m-&gt;{line_content} =~ /^\s*#/;
@@ -479,14 +499,12 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
+								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li></ul></details>
 <span class="">  181: 	}
 </span><span class="">  182: 
-</span><span class=""> <span class="lcsaj-dot" title="LCSAJ: 183 → 183 → 0">●</span>  <span class="lcsaj-dot" title="LCSAJ: 183 → 183 → 0">●</span>   183: 	return 0;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">183 → 183 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">183 → 183 → 0</span></span>  183: 	return 0;
 </span><span class="">  184: }
 </span><span class="">  185: 
 </span><span class="">  186: =head1 SEE ALSO
@@ -544,6 +562,13 @@ function toggleTheme() {
         document.documentElement.setAttribute('data-theme', saved);
     }
 })();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
 </script>
 </body>
 </html>
