@@ -35,11 +35,12 @@ jobs:
           # install cpanminus
           # cpanm-options: --notest
 
-      - name: Update Ubuntu Packages
-        run: |
-          sudo apt-get update
-          sudo apt-get -y upgrade
-        if: runner.os == 'Linux'
+      # - name: Update Ubuntu Packages
+      # Failing on GitHub Actions at the moment
+      # run: |
+      #   sudo apt-get update
+      #   sudo apt-get -y upgrade
+      # if: runner.os == 'Linux'
 
       # - name: Upgrade Toolchain
       #   run: |
