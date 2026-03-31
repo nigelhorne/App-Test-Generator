@@ -238,7 +238,7 @@ pre details.mutant-details ul {
 <div class="nav"><a href="Mutation/NumericBoundary.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
  <a href="Planner.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
-Statement: 51.06%<br>
+Statement: 52.17%<br>
 Branch: 7.89%<br>
 Approximate LCSAJ segments: 39<br>
 </div>
@@ -406,145 +406,241 @@ Approximate LCSAJ segments: 39<br>
 							</li></ul></details>
 <span class="">  106: }
 </span><span class="">  107: 
-</span><span class="">  108: sub prepare_workspace {
-</span><span class="">  109: 	my $self = $_[0];
-</span><span class="">  110: 
-</span><span class="">  111: 	my $tmp = tempdir(CLEANUP =&gt; 1);
-</span><span class="">  112: 
-</span><span class="">  113: 	my $src = $self-&gt;{file};
-</span><span class="">  114: 
-</span><span class="">  115: 	# Derive relative path automatically
-</span><span class="">  116: 	my $relative = $src;
-</span><span class="">  117: 	$relative =~ s/^\Q$self-&gt;{lib_dir}\E\/?//;
+</span><span class="">  108: =head2 prepare_workspace
+</span><span class="">  109: 
+</span><span class="">  110: Prepares an isolated temporary workspace for a single mutation test run.
+</span><span class="">  111: 
+</span><span class="">  112: The entire C&lt;lib/&gt; tree is copied into the workspace so that all module
+</span><span class="">  113: dependencies resolve correctly when the test suite runs against the mutant.
+</span><span class="">  114: Only after this copy is complete is the single target file overwritten by
+</span><span class="">  115: C&lt;apply_mutant&gt;.
+</span><span class="">  116: 
+</span><span class="">  117: =head3 Arguments
 </span><span class="">  118: 
-</span><span class="">  119: 	my $dst = File::Spec-&gt;catfile($tmp, $self-&gt;{lib_dir}, $relative);
+</span><span class="">  119: Takes no arguments beyond the invocant.
 </span><span class="">  120: 
-</span><span class="">  121: 	File::Path::make_path(File::Basename::dirname($dst));
+</span><span class="">  121: =head3 Returns
 </span><span class="">  122: 
-</span><span class="">  123: 	copy($src, $dst) or die &quot;Copy failed from $src to $dst: $!&quot;;
-</span><span class="">  124: 
-</span><span class="">  125: 	$self-&gt;{workspace} = $tmp;
-</span><span class="">  126: 	$self-&gt;{relative} = $relative;
+</span><span class="">  123: A string containing the absolute path to the temporary directory that was created.
+</span><span class="">  124: The directory is automatically removed when the
+</span><span class="">  125: C&lt;App::Test::Generator::Mutator&gt; object goes out of scope (via
+</span><span class="">  126: L&lt;File::Temp&gt;&#39;s C&lt;CLEANUP =E&lt;gt&gt; 1&gt; behaviour).
 </span><span class="">  127: 
-</span><span class="">  128: 	return $tmp;
-</span><span class="">  129: }
-</span><span class="">  130: 
-</span><span class="">  131: sub _dedup_mutants
-</span><span class="">  132: {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">133 → 137 → 150</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">133 → 137 → 0</span></span>  133: 	my $mutants = $_[0];
-</span><span class="">  134: 	my @rc;
-</span><span class="">  135: 	my %seen;
-</span><span class="">  136: 
-</span><span class="">  137: 	for my $m (@{$mutants}) {
-</span><span class="">  138: 		my $key = join &#39;|&#39;,
-</span><span class="">  139: 			$m-&gt;{line},
-</span><span class="">  140: 			$m-&gt;{original},
-</span><span class="">  141: 			$m-&gt;{transform};
+</span><span class="">  128: =head3 Side Effects
+</span><span class="">  129: 
+</span><span class="">  130: =over 4
+</span><span class="">  131: 
+</span><span class="">  132: =item *
+</span><span class="">  133: 
+</span><span class="">  134: Creates a temporary directory under the system&#39;s default temp location.
+</span><span class="">  135: 
+</span><span class="">  136: =item *
+</span><span class="">  137: 
+</span><span class="">  138: Recursively copies the entire C&lt;lib_dir&gt; tree (default C&lt;lib/&gt;) into the
+</span><span class="">  139: workspace using C&lt;File::Copy::Recursive::dircopy&gt;.
+</span><span class="">  140: 
+</span><span class="">  141: =item *
 </span><span class="">  142: 
-</span><span class="">  143: 		next if $seen{$key}++;
+</span><span class="">  143: Sets C&lt;&lt; $self-&gt;{workspace} &gt;&gt; to the absolute path of the temporary directory.
 </span><span class="">  144: 
-</span><span class="">  145: 		next if _is_redundant_mutation($m);
+</span><span class="">  145: =item *
 </span><span class="">  146: 
-</span><span class="">  147: 		push @rc, $m;
-</span><span class="">  148: 	}
+</span><span class="">  147: Sets C&lt;&lt; $self-&gt;{relative} &gt;&gt; to the path of the target file relative to
+</span><span class="">  148: C&lt;lib_dir&gt;, for use by C&lt;apply_mutant&gt;.
 </span><span class="">  149: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">150 → 150 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">150 → 150 → 0</span></span>  150: 	return \@rc;
-</span><span class="">  151: }
-</span><span class="">  152: 
-</span><span class="">  153: sub _is_redundant_mutation {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">154 → 167 → 173</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">154 → 167 → 0</span></span>  154: 	my $m = $_[0];
-</span><span class="">  155: 
-</span><span class="">  156: 	my $orig = $m-&gt;{original} // &#39;&#39;;
-</span><span class="">  157: 	my $new = $m-&gt;{transform} // &#39;&#39;;
-</span><span class="">  158: 
-</span><span class="">  159: 	# Exact same code (safety guard)
-</span><span class="">  160: 	return 1 if $orig eq $new;
+</span><span class="">  150: =back
+</span><span class="">  151: 
+</span><span class="">  152: =head3 Notes
+</span><span class="">  153: 
+</span><span class="">  154: The workspace is only valid for a single file&#39;s mutation run.  Call
+</span><span class="">  155: C&lt;prepare_workspace&gt; once per file, then call C&lt;apply_mutant&gt; once per
+</span><span class="">  156: mutant within that file.  Because C&lt;CLEANUP =E&lt;gt&gt; 1&gt; is set, the workspace
+</span><span class="">  157: is silently removed when the tempdir handle is garbage collected - do not
+</span><span class="">  158: store the path beyond the lifetime of the enclosing scope.
+</span><span class="">  159: 
+</span><span class="">  160: =head3 Example
 </span><span class="">  161: 
-</span><span class="">  162: 	# Arithmetic no-op
-</span><span class="">  163: 	return 1 if $orig =~ /\+\s*0$/;
-</span><span class="">  164: 	return 1 if $orig =~ /-\s*0$/;
-</span><span class="">  165: 
-</span><span class="">  166: 	# Double negation, because in Perl they force a boolean context
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  167: 	if ($m-&gt;{context} &amp;&amp; $m-&gt;{context} eq &#39;conditional&#39;) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_167: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  168: 		# Only skip double negation removal inside conditionals
-</span><span class="">  169: 		return 1 if $orig =~ /^\!\!/;
-</span><span class="">  170: 	}
+</span><span class="">  162:     my $mutator = App::Test::Generator::Mutator-&gt;new(
+</span><span class="">  163:         file    =&gt; &#39;lib/My/Module.pm&#39;,
+</span><span class="">  164:         lib_dir =&gt; &#39;lib&#39;,
+</span><span class="">  165:     );
+</span><span class="">  166: 
+</span><span class="">  167:     my @mutants = $mutator-&gt;generate_mutants();
+</span><span class="">  168: 
+</span><span class="">  169:     for my $mutant (@mutants) {
+</span><span class="">  170:         my $workspace = $mutator-&gt;prepare_workspace();
 </span><span class="">  171: 
-</span><span class="">  172: 	# Boolean literal flip when already strict boolean
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">173 → 179 → 183</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">173 → 179 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">173 → 179 → 183</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">173 → 179 → 0</span></span>  173: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
-</span><span class="">  174: 
-</span><span class="">  175: 	# Mutation inside comment
-</span><span class="">  176: 	return 1 if $m-&gt;{line_content} &amp;&amp; $m-&gt;{line_content} =~ /^\s*#/;
-</span><span class="">  177: 
-</span><span class="">  178: 	# Equivalent numeric comparison
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  179: 	if ($orig =~ /^\d+$/ &amp;&amp; $new =~ /^\d+$/) {
+</span><span class="">  172:         $mutator-&gt;apply_mutant($mutant);
+</span><span class="">  173: 
+</span><span class="">  174:         local $ENV{PERL5LIB} = &quot;$workspace/lib&quot;;
+</span><span class="">  175:         my $survived = (system(&#39;prove&#39;, &#39;t&#39;) == 0);
+</span><span class="">  176: 
+</span><span class="">  177:         # workspace cleaned up automatically when $workspace goes out of scope
+</span><span class="">  178:     }
+</span><span class="">  179: 
+</span><span class="">  180: =head3 API Specification
+</span><span class="">  181: 
+</span><span class="">  182: =head4 Input
+</span><span class="">  183: 
+</span><span class="">  184:     # Params::Validate::Strict schema
+</span><span class="">  185:     {
+</span><span class="">  186:         # No named parameters - invocant only.
+</span><span class="">  187:         # Required state (validated by new()):
+</span><span class="">  188:         #   file    =&gt; { type =&gt; SCALAR, callbacks =&gt; { &#39;file exists&#39; =&gt; sub { -f $_[0] } } }
+</span><span class="">  189:         #   lib_dir =&gt; { type =&gt; SCALAR, default =&gt; &#39;lib&#39; }
+</span><span class="">  190:     }
+</span><span class="">  191: 
+</span><span class="">  192: =head4 Output
+</span><span class="">  193: 
+</span><span class="">  194:     # Return::Set schema
+</span><span class="">  195:     {
+</span><span class="">  196:         type        =&gt; SCALAR,
+</span><span class="">  197:         description =&gt; &#39;Absolute path to the temporary workspace directory&#39;,
+</span><span class="">  198:         callbacks   =&gt; {
+</span><span class="">  199:             &#39;is absolute path&#39; =&gt; sub { File::Spec-&gt;file_name_is_absolute($_[0]) },
+</span><span class="">  200:             &#39;directory exists&#39; =&gt; sub { -d $_[0] },
+</span><span class="">  201:         },
+</span><span class="">  202:     }
+</span><span class="">  203: 
+</span><span class="">  204: =cut
+</span><span class="">  205: 
+</span><span class="">  206: sub prepare_workspace {
+</span><span class="">  207: 	my $self = $_[0];
+</span><span class="">  208: 
+</span><span class="">  209: 	my $tmp = tempdir(CLEANUP =&gt; 1);
+</span><span class="">  210: 
+</span><span class="">  211: 	my $src = $self-&gt;{file};
+</span><span class="">  212: 
+</span><span class="">  213: 	# Derive relative path automatically
+</span><span class="">  214: 	my $relative = $src;
+</span><span class="">  215: 	$relative =~ s/^\Q$self-&gt;{lib_dir}\E\/?//;
+</span><span class="">  216: 
+</span><span class="">  217: 	# Copy the entire lib tree so dependencies resolve correctly
+</span><span class="">  218: 	dircopy($self-&gt;{lib_dir}, File::Spec-&gt;catfile($tmp, $self-&gt;{lib_dir}))
+</span><span class="">  219: 		or die &quot;dircopy failed: $!&quot;;
+</span><span class="">  220: 
+</span><span class="">  221: 	$self-&gt;{workspace} = $tmp;
+</span><span class="">  222: 	$self-&gt;{relative}  = $relative;
+</span><span class="">  223: 
+</span><span class="">  224: 	return $tmp;
+</span><span class="">  225: }
+</span><span class="">  226: 
+</span><span class="">  227: sub _dedup_mutants
+</span><span class="">  228: {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">229 → 233 → 246</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">229 → 233 → 0</span></span>  229: 	my $mutants = $_[0];
+</span><span class="">  230: 	my @rc;
+</span><span class="">  231: 	my %seen;
+</span><span class="">  232: 
+</span><span class="">  233: 	for my $m (@{$mutants}) {
+</span><span class="">  234: 		my $key = join &#39;|&#39;,
+</span><span class="">  235: 			$m-&gt;{line},
+</span><span class="">  236: 			$m-&gt;{original},
+</span><span class="">  237: 			$m-&gt;{transform};
+</span><span class="">  238: 
+</span><span class="">  239: 		next if $seen{$key}++;
+</span><span class="">  240: 
+</span><span class="">  241: 		next if _is_redundant_mutation($m);
+</span><span class="">  242: 
+</span><span class="">  243: 		push @rc, $m;
+</span><span class="">  244: 	}
+</span><span class="">  245: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">246 → 246 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">246 → 246 → 0</span></span>  246: 	return \@rc;
+</span><span class="">  247: }
+</span><span class="">  248: 
+</span><span class="">  249: sub _is_redundant_mutation {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">250 → 263 → 269</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">250 → 263 → 0</span></span>  250: 	my $m = $_[0];
+</span><span class="">  251: 
+</span><span class="">  252: 	my $orig = $m-&gt;{original} // &#39;&#39;;
+</span><span class="">  253: 	my $new = $m-&gt;{transform} // &#39;&#39;;
+</span><span class="">  254: 
+</span><span class="">  255: 	# Exact same code (safety guard)
+</span><span class="">  256: 	return 1 if $orig eq $new;
+</span><span class="">  257: 
+</span><span class="">  258: 	# Arithmetic no-op
+</span><span class="">  259: 	return 1 if $orig =~ /\+\s*0$/;
+</span><span class="">  260: 	return 1 if $orig =~ /-\s*0$/;
+</span><span class="">  261: 
+</span><span class="">  262: 	# Double negation, because in Perl they force a boolean context
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  263: 	if ($m-&gt;{context} &amp;&amp; $m-&gt;{context} eq &#39;conditional&#39;) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_179: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_263: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  180: 		return 1 if $orig == $new;
+<span class="">  264: 		# Only skip double negation removal inside conditionals
+</span><span class="">  265: 		return 1 if $orig =~ /^\!\!/;
+</span><span class="">  266: 	}
+</span><span class="">  267: 
+</span><span class="">  268: 	# Boolean literal flip when already strict boolean
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">269 → 275 → 279</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">269 → 275 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">269 → 275 → 279</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">269 → 275 → 0</span></span>  269: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
+</span><span class="">  270: 
+</span><span class="">  271: 	# Mutation inside comment
+</span><span class="">  272: 	return 1 if $m-&gt;{line_content} &amp;&amp; $m-&gt;{line_content} =~ /^\s*#/;
+</span><span class="">  273: 
+</span><span class="">  274: 	# Equivalent numeric comparison
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  275: 	if ($orig =~ /^\d+$/ &amp;&amp; $new =~ /^\d+$/) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_180: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>COND_INV_275: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  276: 		return 1 if $orig == $new;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_276: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
 								<pre># Boundary test suggestion&#10;is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );&#10;</pre>
 								</div>
 							</li></ul></details>
-<span class="">  181: 	}
-</span><span class="">  182: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">183 → 183 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">183 → 183 → 0</span></span>  183: 	return 0;
-</span><span class="">  184: }
-</span><span class="">  185: 
-</span><span class="">  186: =head1 SEE ALSO
-</span><span class="">  187: 
-</span><span class="">  188: =over 4
-</span><span class="">  189: 
-</span><span class="">  190: =item C&lt;bin/app-test-generator-mutate&gt;
-</span><span class="">  191: 
-</span><span class="">  192: =item L&lt;Devel::Mutator&gt;
-</span><span class="">  193: 
-</span><span class="">  194: =back
-</span><span class="">  195: 
-</span><span class="">  196: =head1 AUTHOR
-</span><span class="">  197: 
-</span><span class="">  198: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
-</span><span class="">  199: 
-</span><span class="">  200: Portions of this module&#39;s initial design and documentation were created with the
-</span><span class="">  201: assistance of AI.
-</span><span class="">  202: 
-</span><span class="">  203: =head1 LICENCE AND COPYRIGHT
-</span><span class="">  204: 
-</span><span class="">  205: Copyright 2026 Nigel Horne.
-</span><span class="">  206: 
-</span><span class="">  207: Usage is subject to licence terms.
-</span><span class="">  208: 
-</span><span class="">  209: The licence terms of this software are as follows:
-</span><span class="">  210: 
-</span><span class="">  211: =over 4
-</span><span class="">  212: 
-</span><span class="">  213: =item * Personal single user, single computer use: GPL2
-</span><span class="">  214: 
-</span><span class="">  215: =item * All other users (including Commercial, Charity, Educational, Government)
-</span><span class="">  216:   must apply in writing for a licence for use from Nigel Horne at the
-</span><span class="">  217:   above e-mail.
-</span><span class="">  218: 
-</span><span class="">  219: =back
-</span><span class="">  220: 
-</span><span class="">  221: =cut
-</span><span class="">  222: 
-</span><span class="">  223: 1;
+<span class="">  277: 	}
+</span><span class="">  278: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">279 → 279 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">279 → 279 → 0</span></span>  279: 	return 0;
+</span><span class="">  280: }
+</span><span class="">  281: 
+</span><span class="">  282: =head1 SEE ALSO
+</span><span class="">  283: 
+</span><span class="">  284: =over 4
+</span><span class="">  285: 
+</span><span class="">  286: =item C&lt;bin/app-test-generator-mutate&gt;
+</span><span class="">  287: 
+</span><span class="">  288: =item L&lt;Devel::Mutator&gt;
+</span><span class="">  289: 
+</span><span class="">  290: =back
+</span><span class="">  291: 
+</span><span class="">  292: =head1 AUTHOR
+</span><span class="">  293: 
+</span><span class="">  294: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  295: 
+</span><span class="">  296: Portions of this module&#39;s initial design and documentation were created with the
+</span><span class="">  297: assistance of AI.
+</span><span class="">  298: 
+</span><span class="">  299: =head1 LICENCE AND COPYRIGHT
+</span><span class="">  300: 
+</span><span class="">  301: Copyright 2026 Nigel Horne.
+</span><span class="">  302: 
+</span><span class="">  303: Usage is subject to licence terms.
+</span><span class="">  304: 
+</span><span class="">  305: The licence terms of this software are as follows:
+</span><span class="">  306: 
+</span><span class="">  307: =over 4
+</span><span class="">  308: 
+</span><span class="">  309: =item * Personal single user, single computer use: GPL2
+</span><span class="">  310: 
+</span><span class="">  311: =item * All other users (including Commercial, Charity, Educational, Government)
+</span><span class="">  312:   must apply in writing for a licence for use from Nigel Horne at the
+</span><span class="">  313:   above e-mail.
+</span><span class="">  314: 
+</span><span class="">  315: =back
+</span><span class="">  316: 
+</span><span class="">  317: =cut
+</span><span class="">  318: 
+</span><span class="">  319: 1;
 </span></pre>
 
 <script>
