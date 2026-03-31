@@ -47,7 +47,23 @@ echo "LCSAJ_TARGETS=$LCSAJ_TARGETS"
 mkdir -p coverage
 PERL5OPT="-d:App::Test::Generator::LCSAJ::Runtime -Mblib" prove -l t
 
-# --- Step 5b: Verify LCSAJ hits ---
+# --- Step 5b: Merge per-process LCSAJ hit files ---
+echo "Merging LCSAJ hits..."
+perl -MJSON::MaybeXS -MFile::Slurp -e '
+	my %merged;
+	for my $f (glob("cover_html/lcsaj_hits/hits_*.json")) {
+		my $data = eval { decode_json(read_file($f)) } or next;
+		for my $file (keys %$data) {
+			for my $line (keys %{$data->{$file}}) {
+				$merged{$file}{$line} += $data->{$file}{$line};
+			}
+		}
+	}
+	write_file("cover_html/lcsaj_hits.json", encode_json(\%merged));
+	printf "Merged %d files\n", scalar keys %merged;
+'
+
+# --- Step 5c: Verify LCSAJ hits ---
 echo "Checking LCSAJ hits..."
 if [ -f cover_html/lcsaj_hits.json ]; then
 	echo "lcsaj_hits.json exists, size $(wc -c < cover_html/lcsaj_hits.json) bytes"
