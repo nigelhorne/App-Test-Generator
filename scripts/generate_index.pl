@@ -1940,7 +1940,7 @@ sub _mutation_index {
 			'<span class="coverage-badge %s" title="%s">%.1f%%</span>',
 			$badge_class, $tooltip, $score
 		);
-		my $html_file = "../$config{mutation_dir}/$file.html";
+		my $html_file = "mutation_html/$file.html";
 
 		my $source_url = $github_base . $file;
 		my $source_link = $total
@@ -2118,8 +2118,8 @@ sub _mutant_file_report {
 	(my $rel = $file) =~ s{^lib/}{};
 	my @parts = File::Spec->splitdir($rel);
 	my $depth = scalar(@parts) - 1;  # subdirs only, exclude filename
-	my $ups = '../' x ($depth + 3);  # +3: lib subdirs + lib/ + mutation_html/ + cover_html sibling
-	my $index_link = "${ups}index.html";  # already inside cover_html/
+	my $ups = '../' x ($depth + 2);  # +2 for lib/ and mutation_html/
+	my $index_link = "${ups}index.html";
 
 	print $out qq{<a href="$index_link">Index</a>\n};
 
