@@ -20,7 +20,7 @@ export PERL5OPT='-Ilib'
 
 # --- Step 2: Run tests under Devel::Cover ---
 echo "Running tests with Devel::Cover..."
-cover -test -outputdir cover_html
+cover -test -outputdir cover_html -select '^lib/'
 cover -report json -outputdir cover_html
 
 # --- Step 3: Generate JSON coverage report ---

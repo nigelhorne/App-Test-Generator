@@ -219,15 +219,16 @@ sub rand_str
 
 	my $rc_len = Unicode::GCString->new($rc)->length();
 	if($rc_len > $len) {
-		$rc = substr($rc, 0, $rc_len - $len);
-	}
-	if($len > $rc_len) {
-		$rc .= 'a' x ($len - $rc_len);	# Why is this needed?
+		my $gcstr = Unicode::GCString->new($rc);
+		$rc = $gcstr->substr(0, $len)->as_string();
 		$rc_len = Unicode::GCString->new($rc)->length();
 	}
-	# die "BUG $rc_len != $len (mode == $mode)" if($rc_len != $len);
-	ok($rc_len == $len, "Unicode length preserved (mode=$mode)") or
-		diag("BUG $rc_len != $len (mode == $mode)");
+	if($len > $rc_len) {
+		$rc .= 'a' x ($len - $rc_len);
+		$rc_len = Unicode::GCString->new($rc)->length();
+	}
+
+	fail("BUG $rc_len != $len (mode == $mode)") if($rc_len != $len);
 
 	return $rc;
 }
