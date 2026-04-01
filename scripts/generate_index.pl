@@ -2106,27 +2106,30 @@ sub _mutant_file_report {
 
 	print $out "<h1>$file</h1>\n";
 
-	# Nagivation bar
+	# Navigation bar
 	print $out qq{<div class="nav">};
-
 	if ($prev) {
 		my $link = _relative_link($file, $prev);
 		print $out qq{<a href="$link">⬅ Previous</a> };
 	}
 
-	my $html_file = File::Spec->abs2rel('index.html', File::Basename::dirname("$file.html"));
-	if(-r "../../$html_file") {
-		$html_file = "../../$html_file";
-	} elsif(-r "../$html_file") {
-		$html_file = "../$html_file";
-	}
-	print $out "<a href=\"../$html_file\">Index</a>\n";
+	# Calculate depth of $file within lib/ to build correct relative path back to index.html
+	# $file is something like lib/CGI/Info.pm or lib/App/Test/Generator.pm
+	(my $rel = $file) =~ s{^lib/}{};
+	my $depth = scalar(File::Spec->splitdir($rel));  # includes the filename itself
+	# From coverage/mutation_html/lib/A/B/C.pm we need to go up:
+	#   $depth levels (through the lib subdirs + lib itself)
+	#   + 2 more (mutation_html/ and coverage/)
+	# then into cover_html/index.html
+	my $ups = '../' x ($depth + 2);
+	my $index_link = "${ups}cover_html/index.html";
+
+	print $out qq{<a href="$index_link">Index</a>\n};
 
 	if ($next) {
 		my $link = _relative_link($file, $next);
 		print $out qq{ <a href="$link">Next ➡</a>};
 	}
-
 	print $out qq{</div>};
 
 	# --------------------------------------------------
