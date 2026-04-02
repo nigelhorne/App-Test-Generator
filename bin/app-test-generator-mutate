@@ -464,6 +464,12 @@ for my $file (@files) {
 		# warn "WORKSPACE lib contents: " . join(', ', glob("$workspace/lib/*")) . "\n";
 		# warn "PERL5LIB: $ENV{PERL5LIB}\n";
 
+		# Clear PERL5OPT to prevent any -Ilib or other flags from overriding
+		# the workspace PERL5LIB. If PERL5OPT contains -Ilib, prove will load
+		# modules from the project's own lib/ directory instead of the mutated
+		# workspace, causing all mutants to survive regardless of the mutation.
+		local $ENV{PERL5OPT} = '';
+
 		my $survived = (system('prove', $opt{tests}) == 0);
 
 		# --------------------------------------------------
