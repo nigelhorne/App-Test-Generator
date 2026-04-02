@@ -9,22 +9,19 @@ use App::Test::Generator::LCSAJ;
 my @modules;
 
 find(
-    sub {
+	sub {
+		return unless /\.pm$/;
 
-        return unless /\.pm$/;
-
-        push @modules, $File::Find::name;
-    },
-    "lib"
+		push @modules, $File::Find::name;
+	}, 'lib'
 );
 
-die "No modules found under lib/\n" unless @modules;
+die 'No modules found under lib/' unless @modules;
 
 for my $file (@modules) {
+	print "Instrumenting $file\n";
 
-    print "Instrumenting $file\n";
-
-    App::Test::Generator::LCSAJ::instrument_file($file);
+	App::Test::Generator::LCSAJ::instrument_file($file);
 }
 
 print "\nDone.\n";

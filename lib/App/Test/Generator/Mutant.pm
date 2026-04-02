@@ -3,11 +3,11 @@ package App::Test::Generator::Mutant;
 use strict;
 use warnings;
 
-our $VERSION = '0.29';
+our $VERSION = '0.30';
 
 =head1 VERSION
 
-Version 0.29
+Version 0.30
 
 =cut
 
@@ -21,10 +21,10 @@ sub new {
 	return bless \%args, $class;
 }
 
-sub id          { $_[0]->{id} }
+sub id { $_[0]->{id} }
 sub description { $_[0]->{description} }
-sub original    { $_[0]->{original} }
-sub line        { $_[0]->{line} }
+sub original { $_[0]->{original} }
+sub line { $_[0]->{line} }
 sub transform   { $_[0]->{transform} }
 
 =head1 AUTHOR

@@ -7,11 +7,11 @@ use parent 'App::Test::Generator::Mutation::Base';
 use App::Test::Generator::Mutant;
 use PPI;
 
-our $VERSION = '0.29';
+our $VERSION = '0.30';
 
 =head1 VERSION
 
-Version 0.29
+Version 0.30
 
 =cut
 
