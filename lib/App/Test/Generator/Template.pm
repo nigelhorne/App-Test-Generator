@@ -645,8 +645,7 @@ sub fuzz_inputs
 				# --- Type-based seeds ---
 				if(($type eq 'number') || ($type eq 'float')) {
 					push @cases, @{_generate_float_cases($arg_name, $spec, \%mandatory_args)};
-				}
-				elsif ($type eq 'integer') {
+				} elsif ($type eq 'integer') {
 					# Probably duplicated below, but here as well just in case
 					push @cases, @{_generate_integer_cases($arg_name, $spec, \%mandatory_args)};
 				} elsif ($type eq 'string') {
@@ -1409,8 +1408,7 @@ sub generate_tests
 			}
 			elsif ($type eq 'boolean') {
 				$case_input{$field} = rand_bool();
-			}
-			elsif ($type eq 'number') {
+			} elsif ($type eq 'number') {
 				if(my $min = $spec->{min}) {
 					$case_input{$field} = rand_num() + $min;
 				} else {
@@ -1678,7 +1676,7 @@ sub run_test
 				} elsif(defined($description)) {
 					lives_ok { [% call_code %] } sprintf($mess, "survives ($description; status = LIVES)");
 				} elsif(defined($line)) {
-					lives_ok { [% call_code %] } sprintf($mess, "survives (line = $line, status = LIVES)");
+					lives_ok { [% call_code %] } sprintf($mess, "survives (line = $line; status = LIVES)");
 				} else {
 					lives_ok { [% call_code %] } sprintf($mess, 'survives (status = LIVES)');
 				}
@@ -1709,8 +1707,15 @@ sub run_test
 				[% determinism_code %]
 			}
 		} else {
+			# Status not given, assume set to LIVES
 			die 'TODO: properties' if(scalar keys %{$properties});
-			lives_ok { [% call_code %] } sprintf($mess, 'survives');
+			if(defined($description)) {
+				lives_ok { [% call_code %] } sprintf($mess, "survives ($description)");
+			} elsif(defined($line)) {
+				lives_ok { [% call_code %] } sprintf($mess, "survives (line = $line)");
+			} else {
+				lives_ok { [% call_code %] } sprintf($mess, 'survives');
+			}
 			if($properties->{idempotent}) {
 				[% determinism_code %]
 			}
