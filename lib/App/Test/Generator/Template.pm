@@ -82,6 +82,8 @@ use Unicode::GCString;
 	diag('[% function %] test case created by https://github.com/nigelhorne/App-Test-Generator');
 [% END %]
 
+die_on_fail if($ENV{'DIE_ON_FAIL'});
+
 # Edge-case maps injected from config (optional)
 my %edge_cases = (
 [% edge_cases_code %]
@@ -617,7 +619,7 @@ sub fuzz_inputs
 			}
 
 			if ($type eq 'string') {
-				push @cases, @{_generate_string_cases('_input', \%input, \%mandatory_args)};
+				push @cases, @{_generate_string_cases('_input', \%input, \%mandatory_args, _LINE => __LINE__)};
 				# push @cases, { '_input' => "emoji \x{1F600}" };
 			} else {
 				die "TODO: type $type";
@@ -644,14 +646,14 @@ sub fuzz_inputs
 
 				# --- Type-based seeds ---
 				if(($type eq 'number') || ($type eq 'float')) {
-					push @cases, @{_generate_float_cases($arg_name, $spec, \%mandatory_args)};
+					push @cases, @{_generate_float_cases($arg_name, $spec, \%mandatory_args, _LINE => __LINE__)};
 				} elsif ($type eq 'integer') {
 					# Probably duplicated below, but here as well just in case
-					push @cases, @{_generate_integer_cases($arg_name, $spec, \%mandatory_args)};
+					push @cases, @{_generate_integer_cases($arg_name, $spec, \%mandatory_args, _LINE => __LINE__)};
 				} elsif ($type eq 'string') {
-					push @cases, @{_generate_string_cases($arg_name, $spec, \%mandatory_args)};
+					push @cases, @{_generate_string_cases($arg_name, $spec, \%mandatory_args, _LINE => __LINE__)};
 				} elsif ($type eq 'boolean') {
-					push @cases, @{_generate_boolean_cases($arg_name, $spec, \%mandatory_args)};
+					push @cases, @{_generate_boolean_cases($arg_name, $spec, \%mandatory_args, _LINE => __LINE__)};
 				} elsif ($type eq 'hashref') {
 					push @cases, { $arg_name => { a => 1 } };
 					push @cases, { $arg_name => [], _STATUS => 'DIES' };
@@ -757,7 +759,7 @@ sub fuzz_inputs
 				} elsif($type eq 'integer') {
 					my $min = $input{'min'} // 0;
 
-					$case_input = rand_int() + $min;
+					$case_input = int(rand_int() + $min);
 					# If it's takes an integer, a float should die
 					push @cases, { _input => $case_input + 0.1, _STATUS => 'DIES', _LINE => __LINE__ };
 				} elsif(($type eq 'number') || ($type eq 'float')) {
@@ -771,7 +773,7 @@ sub fuzz_inputs
 			}
 		} else {
 			# our %input = ( str => { type => 'string' } );
-			push @cases, @{generate_tests(\%input, \%mandatory_args)};
+			push @cases, @{generate_tests(\%input, \%mandatory_args, _LINE => __LINE__)};
 
 		}
 	}
@@ -793,7 +795,7 @@ sub fuzz_inputs
 	}
 
 	# If it's not in mandatory_strings it sets to 'undef' which is the idea, to test { value => undef } in the args
-	push @cases, { map { $_ => $mandatory_strings{$_} } keys %input, %mandatory_objects } if($config{'test_undef'} && !$positions);
+	push @cases, { map { $_ => $mandatory_strings{$_} } keys %input, %mandatory_objects, _LINE => __LINE__ } if($config{'test_undef'} && !$positions);
 
 	push @candidate_bad, '' if($config{'test_empty'});
 	push @candidate_bad, undef if($config{'test_undef'});
@@ -807,7 +809,7 @@ sub fuzz_inputs
 		if (exists $input{memberof} && ref $input{memberof} eq 'ARRAY' && @{$input{memberof}}) {
 			# Generate edge cases for memberof inside values
 			foreach my $val (@{$input{memberof}}) {
-				push @cases, { _input => $val };
+				push @cases, { _input => $val, _LINE => __LINE__ };
 			}
 			# outside value
 			my $outside;
@@ -820,11 +822,11 @@ sub fuzz_inputs
 		} else {
 			# Generate edge cases for min/max
 			if($type eq 'integer') {
-				push @cases, @{_generate_integer_cases('_input', \%input, \%mandatory_args)};
+				push @cases, @{_generate_integer_cases('_input', \%input, \%mandatory_args, _LINE => __LINE__)};
 			} elsif(($type eq 'number') || ($type eq 'float')) {
-				push @cases, @{_generate_float_cases('_input', \%input, \%mandatory_args)};
+				push @cases, @{_generate_float_cases('_input', \%input, \%mandatory_args, _LINE => __LINE__)};
 			} elsif ($type eq 'string') {
-				push @cases, @{_generate_string_cases('_input', \%input, \%mandatory_args)};
+				push @cases, @{_generate_string_cases('_input', \%input, \%mandatory_args, _LINE => __LINE__)};
 			} elsif ($type eq 'arrayref') {
 				if (defined $input{min}) {
 					my $len = $input{min};
@@ -861,7 +863,7 @@ sub fuzz_inputs
 
 			# Test all edge cases
 			foreach my $edge(@edge_case_array) {
-				push @cases, { _input => $edge };
+				push @cases, { _input => $edge, _DESCRIPTION => 'edge case' };
 			}
 		}
 	} else {
@@ -914,10 +916,7 @@ sub _generate_integer_cases {
 			{ %{$mandatory_args}, ( $arg_name => $min + 1 ) };	# just inside
 
 		if(!defined $spec->{max}) {
-			push @cases, { %{$mandatory_args}, ( $arg_name => $min + rand_int() ) };
-			if($min == 0) {
-				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_int()) ) };	# Any positive integer
-			}
+			push @cases, { %{$mandatory_args}, ( $arg_name => int($min + abs(rand_int())) ), _LINE => __LINE__ };
 		}
 		if($min <= 0) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => -0.0, _STATUS => 'OK' ) };	# Negative 0
@@ -934,15 +933,15 @@ sub _generate_integer_cases {
 			# Test 0 if it's in range
 			push @cases, { %{$mandatory_args}, ( $arg_name => 0 ) } if($spec->{'min'} >= 0);
 		} else {
-			push @cases, { %{$mandatory_args}, ( $arg_name => $max - rand_int() ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => $max - rand_int() ), _DESCRIPTION => 'max is defined but min is not' };
 			if($max == 0) {
-				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_int()) * -1 ) };	# Any negative integer
+				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_int()) * -1 ), _LINE => __LINE__ };	# Any negative integer
 			}
 		}
 	} elsif(!defined $spec->{min}) {
 		# Can take any number, so give it one
 		push @cases,
-			{ %{$mandatory_args}, ( $arg_name => rand_int() ) },
+			{ %{$mandatory_args}, ( $arg_name => rand_int() ), _LINE => __LINE__ },
 			{ %{$mandatory_args}, ( $arg_name => 0) };	# 0 is in range
 	}
 
@@ -978,9 +977,9 @@ sub _generate_float_cases {
 			{ %{$mandatory_args}, ( $arg_name => $min + 0.001 ) };	# just inside
 
 		if(!defined $spec->{max}) {
-			push @cases, { %{$mandatory_args}, ( $arg_name => $min + rand_num() ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => $min + rand_num() ), _DESCRIPTION => 'min is defined but max is not' };
 			if($min == 0) {
-				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_num()) ) };	# Any positive number
+				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_num()) ), _LINE => __LINE__ };	# Any positive number
 			}
 		}
 	}
@@ -995,7 +994,7 @@ sub _generate_float_cases {
 			# Test 0 if it's in range
 			push @cases, { %{$mandatory_args}, ( $arg_name => 0 ) } if($spec->{'min'} >= 0);
 		} else {
-			push @cases, { %{$mandatory_args}, ( $arg_name => $max - rand_num() ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => $max - rand_num() ), _LINE => __LINE__ };
 			if($max == 0) {
 				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_num()) * -0.00000001 ) };	# Any negative number
 			}
@@ -1003,7 +1002,7 @@ sub _generate_float_cases {
 	} elsif(!defined $spec->{min}) {
 		# Can take any number, so give it some
 		push @cases,
-			{ %{$mandatory_args}, ( $arg_name => rand_num() ) },
+			{ %{$mandatory_args}, ( $arg_name => rand_num(), _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => 1.23 ) },
 			{ %{$mandatory_args}, ( $arg_name => -42.1 ) },
 			{ %{$mandatory_args}, ( $arg_name => 0 ) };	# 0 is in range
@@ -1398,15 +1397,14 @@ sub generate_tests
 					if(my $max = $spec->{'max'}) {
 						$case_input{$field} = int(rand($max + 1));
 					} else {
-						$case_input{$field} = abs(rand_int());
+						$case_input{$field} = int(abs(rand_int()));
 					}
 				} else {
 					# If it's takes an integer, a float should die
 					push @cases, { _input => rand_int() + 0.2, _STATUS => 'DIES', _LINE => __LINE__ };
 					$case_input{$field} = rand_int();
 				}
-			}
-			elsif ($type eq 'boolean') {
+			} elsif ($type eq 'boolean') {
 				$case_input{$field} = rand_bool();
 			} elsif ($type eq 'number') {
 				if(my $min = $spec->{min}) {
@@ -1450,9 +1448,9 @@ sub generate_tests
 			} else {
 				# Generate edge cases for min/max
 				if($type eq 'integer') {
-					push @cases, @{_generate_integer_cases($field, $spec, \%mandatory_args)};
+					push @cases, @{_generate_integer_cases($field, $spec, \%mandatory_args, _LINE => __LINE__)};
 				} elsif(($type eq 'number') || ($type eq 'float')) {
-					push @cases, @{_generate_float_cases($field, $spec, \%mandatory_args)};
+					push @cases, @{_generate_float_cases($field, $spec, \%mandatory_args, _LINE => __LINE__)};
 				} elsif($type eq 'string') {
 					push @cases, @{_generate_string_cases($field, $spec, \%mandatory_args)};
 				} elsif ($type eq 'arrayref') {
@@ -1784,8 +1782,11 @@ foreach my $case (@{fuzz_inputs()}) {
 		$input = $case;
 	}
 
-	if(my $line = (delete $case->{'_LINE'} || delete $input{'_LINE'})) {
+	if(my $line = ($case->{'_LINE'} || $input{'_LINE'})) {
 		diag("Test case from line number $line") if($ENV{'TEST_VERBOSE'});
+	}
+	if(my $description = ($case->{'_DESCRIPTION'} || $input{'_DESCRIPTION'})) {
+		diag("Test case $description") if($ENV{'TEST_VERBOSE'});
 	}
 
 	{
@@ -1850,7 +1851,7 @@ foreach my $transform (keys %transforms) {
 		if($type eq 'integer') {
 			push @tests, @{_generate_integer_cases($field, $spec, $foundation)};
 		} elsif(($type eq 'number') || ($type eq 'float')) {
-			push @tests, @{_generate_float_cases($field, $spec, $foundation)};
+			push @tests, @{_generate_float_cases($field, $spec, $foundation, _LINE => __LINE__)};
 		} elsif($type eq 'string') {
 			push @tests, @{_generate_string_cases($field, $spec, $foundation)};
 		} elsif($type eq 'boolean') {
