@@ -795,7 +795,8 @@ sub fuzz_inputs
 	}
 
 	# If it's not in mandatory_strings it sets to 'undef' which is the idea, to test { value => undef } in the args
-	push @cases, { map { $_ => $mandatory_strings{$_} } keys %input, %mandatory_objects, _LINE => __LINE__ } if($config{'test_undef'} && !$positions);
+	# _LINE has to go first or else the undef in there mucks up the hash format
+	push @cases, { _LINE => __LINE__, map { $_ => $mandatory_strings{$_} } keys %input, %mandatory_objects } if($config{'test_undef'} && !$positions);
 
 	push @candidate_bad, '' if($config{'test_empty'});
 	push @candidate_bad, undef if($config{'test_undef'});
