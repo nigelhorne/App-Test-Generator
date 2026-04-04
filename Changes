@@ -10,6 +10,18 @@ Revision history for App-Test-Generator
       formal Test Effectiveness Ratio names
     - Renamed the LCSAJ column header in the mutation files table to TER3
     - With min set to zero on an integer, sometimes negative or floats could be created - added abs() and int() calls as needed
+    - Added --generate_mutant_tests=DIR option to generate_index.pl to
+      produce a timestamped test stub file (t/mutant_YYYYMMDD_HHMMSS.t)
+      for surviving mutants. High/Medium difficulty survivors get TODO
+      test stubs; Low difficulty survivors get comment-only hints.
+      Multiple mutations on the same source line are deduplicated into
+      one stub listing all variants — one good test kills them all.
+      Boundary value suggestions are generated for numeric mutations,
+      clamped and deduplicated for non-negative contexts such as
+      scalar() and length(). Environment variable hints are added where
+      the source line references $ENV{...}. The enclosing subroutine
+      name is shown in each stub for navigation context. File is skipped
+      if there are no survivors or low-difficulty hints to report.
 
 0.30	Thu Apr  2 07:17:16 EDT 2026
 	Added mutation levels.
