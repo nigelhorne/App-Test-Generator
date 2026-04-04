@@ -16,6 +16,7 @@ use File::Path qw(make_path);
 use File::Slurp;
 use File::Spec;
 use File::stat;
+use Getopt::Long qw(GetOptions);
 use IPC::Run3;
 use JSON::MaybeXS;
 use List::Util;
@@ -57,6 +58,16 @@ Readonly my %config => (
 	min_locale_samples => 3,
 	verbose => 1,
 );
+
+# --------------------------------------------------
+# Parse command-line options.
+# --generate_mutant_tests=dir enables test stub
+# generation into the named directory.
+# --------------------------------------------------
+my $mutant_test_dir;
+GetOptions(
+	'generate_mutant_tests=s' => \$mutant_test_dir,
+) or die "Usage: $0 [--generate_mutant_tests=DIR]";
 
 # -------------------------------
 # Dependency correlation analysis
@@ -1415,10 +1426,10 @@ HTML
 print "Writing output to $config{output}\n" if($config{verbose});
 write_file($config{output}, join("\n", @html));
 
-# Generate test stub file for surviving mutants into t/
-# Skipped automatically if there are no survivors to report
-if($mutation_db) {
-	_generate_mutant_tests($mutation_db, $cover_db, 't');
+# Generate mutant test stubs only if --generate_mutant_tests=dir was given.
+# This is opt-in to avoid surprising existing pipelines with new files.
+if($mutation_db && $mutant_test_dir) {
+	_generate_mutant_tests($mutation_db, $cover_db, $mutant_test_dir);
 }
 
 # Safe git command execution
@@ -2095,15 +2106,20 @@ HEADER
 					}
 				}
 
+				# Find the enclosing method for context
+				my $sub_name = _enclosing_sub(\@source_lines, $line_no);
+				my $location = $sub_name ? "line $line_no in $sub_name()" : "line $line_no";
+
 				# --------------------------------------------------
 				# Emit the TODO stub block with full context comments
 				# --------------------------------------------------
+
 				print $fh "# --- SURVIVOR: $id ($diff) line $line_no ---\n";
 				print $fh "# Source:  $source\n" if $source;
 				print $fh "# Mutated: $desc\n";
 				print $fh "# Hint:    $hint\n";
 				print $fh "TODO: {\n";
-				print $fh "    local \$TODO = 'Complete: $id line $line_no';\n";
+				print $fh "    local \$TODO = 'Complete: $id $location';\n";
 				print $fh $boundary_hint if $boundary_hint;
 				print $fh "    # NOTE: new() called with no arguments as a starting point.\n";
 				print $fh "    # If $mod requires constructor arguments, add them here.\n";
@@ -2136,8 +2152,12 @@ HEADER
 					$source =~ s/^\s+//;
 				}
 
+				# Find the enclosing method for context
+				my $sub_name = _enclosing_sub(\@source_lines, $line_no);
+				my $location = $sub_name ? "line $line_no in $sub_name()" : "line $line_no";
+
 				# Emit as commented-out stub — uncomment and complete to use
-				print $fh "# --- LOW HINT: $id line $line_no ---\n";
+				print $fh "# --- LOW HINT: $id line $location ---\n";
 				print $fh "# Source:  $source\n" if $source;
 				print $fh "# Mutated: $desc\n";
 				print $fh "# Hint:    $hint\n";
@@ -2157,6 +2177,24 @@ HEADER
 	print "Generated mutant test stubs: $filename\n" if $config{verbose};
 
 	return $filename;
+}
+
+# --------------------------------------------------
+# Scan backwards from the mutated line to find the
+# enclosing subroutine name, for context in comments
+# --------------------------------------------------
+sub _enclosing_sub {
+	my ($source_lines, $line_no) = @_;
+
+	# Walk backwards from the mutated line looking for 'sub name'
+	for(my $i = $line_no - 1; $i >= 0; $i--) {
+		if($source_lines->[$i] =~ /^\s*sub\s+(\w+)/) {
+			return $1;
+		}
+	}
+
+	# No enclosing sub found (e.g. file-level code)
+	return undef;
 }
 
 # Mutant helpers from App::Test::Generator::Report::HTML
