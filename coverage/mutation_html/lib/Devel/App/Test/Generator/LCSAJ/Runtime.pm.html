@@ -203,9 +203,15 @@ pre details.mutant-details ul {
 }
 
 .lcsaj-dot {
-       color: #5555ff;
-       font-size: 10px;
-       margin-right: 3px;
+    color: #5555ff;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-dot-uncovered {
+    color: #cc4444;
+    font-size: 10px;
+    margin-right: 3px;
 }
 
 .lcsaj-tip {
@@ -324,7 +330,7 @@ pre details.mutant-details ul {
 </span><span class="">   78: # ---------------------------------------------------------------------------
 </span><span class="">   79: 
 </span><span class="">   80: BEGIN {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">81 → 84 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">81 → 84 → 0</span></span>   81:     my $targets_env = $ENV{LCSAJ_TARGETS} // &#39;&#39;;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 81 → 84 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 81 → 84 → 0</span></span>   81:     my $targets_env = $ENV{LCSAJ_TARGETS} // &#39;&#39;;
 </span><span class="">   82:     $targets_env =~ s/\n//g;    # defensive: strip stray newlines
 </span><span class="">   83: 
 </span><span class="">   84:     for my $t (split /:/, $targets_env) {
@@ -341,7 +347,7 @@ pre details.mutant-details ul {
 </span><span class="">   95: # ---------------------------------------------------------------------------
 </span><span class="">   96: 
 </span><span class="">   97: sub DB::DB {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">98 → 111 → 115</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">98 → 111 → 0</span></span>   98:     my (undef, $file, $line) = caller(0);
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 98 → 111 → 115</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 98 → 111 → 0</span></span>   98:     my (undef, $file, $line) = caller(0);
 </span><span class="">   99: 
 </span><span class="">  100:     return unless defined $file &amp;&amp; defined $line;
 </span><span class="">  101: 
@@ -364,7 +370,7 @@ pre details.mutant-details ul {
 <span class="">  112:         return unless $TARGET{$norm};
 </span><span class="">  113:     }
 </span><span class="">  114: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">115 → 115 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">115 → 115 → 0</span></span>  115:     $HITS{$norm}{$line}++;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 115 → 115 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 115 → 115 → 0</span></span>  115:     $HITS{$norm}{$line}++;
 </span><span class="">  116: }
 </span><span class="">  117: 
 </span><span class="">  118: # ---------------------------------------------------------------------------

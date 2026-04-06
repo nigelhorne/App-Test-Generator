@@ -203,9 +203,15 @@ pre details.mutant-details ul {
 }
 
 .lcsaj-dot {
-       color: #5555ff;
-       font-size: 10px;
-       margin-right: 3px;
+    color: #5555ff;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-dot-uncovered {
+    color: #cc4444;
+    font-size: 10px;
+    margin-right: 3px;
 }
 
 .lcsaj-tip {
@@ -244,38 +250,39 @@ TER3 (LCSAJ): 71.8% (176/245)<br>
 Approximate LCSAJ segments: 473<br>
 </div>
 
-				<div class="legend">
-					<h3>LCSAJ Legend</h3>
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
 
-					<p>
-					<span class="lcsaj-dot">●</span>
-					Marks the start of an executed <b>LCSAJ (Linear Code Sequence And Jump)</b>.
-					</p>
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
 
-					<p>
-					Multiple dots on a line indicate that multiple control-flow paths begin at that line.
-					</p>
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
 
-					<p>
-					Hovering over a dot shows:
-					</p>
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
 
-					<pre>
-					start → end → jump
-					</pre>
+        <pre>
+        start → end → jump
+        </pre>
 
-					<ul>
-					<li><b>start</b> – first line of the executed linear sequence</li>
-					<li><b>end</b> – last line before control flow changes</li>
-					<li><b>jump</b> – line execution jumps to next</li>
-					</ul>
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
 
-					<p>
-					These markers help visualize which execution paths were exercised during testing.
-					</p>
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+        </p>
+    </div>
 
-				</div>
-			
 		<div class="legend">
 			<h3>Mutant Testing Legend</h3>
 			<span class="legend-box survived-1"></span> Survived (tests missed this)
@@ -2125,7 +2132,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1772: 			return $schema;
 </span><span class=""> 1773: 		}
 </span><span class=""> 1774: 	}
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1775 → 1775 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1775 → 1775 → 0</span></span> 1775: 	croak &quot;Failed to load schema from $schema_file&quot;;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1775 → 1775 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1775 → 1775 → 0</span></span> 1775: 	croak &quot;Failed to load schema from $schema_file&quot;;
 </span><span class=""> 1776: }
 </span><span class=""> 1777: 
 </span><span class=""> 1778: sub _load_schema_section
@@ -2475,7 +2482,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2122: 		my ($l, $r) = @$p;
 </span><span class=""> 2123: 		return &quot;q$l$s$r&quot; unless $s =~ /\Q$l\E|\Q$r\E/;
 </span><span class=""> 2124: 	}
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2125 → 2125 → 2127</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2125 → 2125 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2125 → 2125 → 2127</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2125 → 2125 → 0</span></span> 2125: 	for my $d (&#39;~&#39;, &#39;!&#39;, &#39;%&#39;, &#39;^&#39;, &#39;=&#39;, &#39;+&#39;, &#39;:&#39;, &#39;,&#39;, &#39;;&#39;, &#39;|&#39;, &#39;/&#39;, &#39;#&#39;) {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2125 → 2125 → 2127</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2125 → 2125 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2125 → 2125 → 2127</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2125 → 2125 → 0</span></span> 2125: 	for my $d (&#39;~&#39;, &#39;!&#39;, &#39;%&#39;, &#39;^&#39;, &#39;=&#39;, &#39;+&#39;, &#39;:&#39;, &#39;,&#39;, &#39;;&#39;, &#39;|&#39;, &#39;/&#39;, &#39;#&#39;) {
 </span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 2126: 		return &quot;q$d$s$d&quot; unless index($s, $d) &gt;= 0;
 </span>
 					<details class="mutant-details">
@@ -2506,7 +2513,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2127 → 2129 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2127 → 2129 → 0</span></span> 2127: 	}
+<span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2127 → 2129 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2127 → 2129 → 0</span></span> 2127: 	}
 </span><span class=""> 2128: 	(my $esc = $s) =~ s/&#39;/\\&#39;/g;
 </span><span class=""> 2129: 	return &quot;&#39;$esc&#39;&quot;;
 </span><span class=""> 2130: }
@@ -2632,7 +2639,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2250: =cut
 </span><span class=""> 2251: 
 </span><span class=""> 2252: sub _process_custom_properties {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2253 → 2259 → 2334</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2253 → 2259 → 0</span></span> 2253: 	my ($properties_spec, $function, $module, $input_spec, $output_spec, $schema) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2253 → 2259 → 2334</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2253 → 2259 → 0</span></span> 2253: 	my ($properties_spec, $function, $module, $input_spec, $output_spec, $schema) = @_;
 </span><span class=""> 2254: 
 </span><span class=""> 2255: 	my @properties;
 </span><span class=""> 2256: 	my $builtin_properties = _get_builtin_properties();
@@ -2713,7 +2720,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2331: 		};
 </span><span class=""> 2332: 	}
 </span><span class=""> 2333: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2334 → 2334 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2334 → 2334 → 0</span></span> 2334: 	return @properties;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2334 → 2334 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2334 → 2334 → 0</span></span> 2334: 	return @properties;
 </span><span class=""> 2335: }
 </span><span class=""> 2336: 
 </span><span class=""> 2337: =head2 _detect_transform_properties
@@ -3481,7 +3488,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2970: 		return $spec-&gt;{$field}{type} if defined $spec-&gt;{$field}{type};
 </span><span class=""> 2971: 	}
 </span><span class=""> 2972: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2973 → 2973 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2973 → 2973 → 0</span></span> 2973: 	return &#39;string&#39;;	# Default
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2973 → 2973 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2973 → 2973 → 0</span></span> 2973: 	return &#39;string&#39;;	# Default
 </span><span class=""> 2974: }
 </span><span class=""> 2975: 
 </span><span class=""> 2976: sub _has_positions {

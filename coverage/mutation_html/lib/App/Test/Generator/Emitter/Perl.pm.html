@@ -203,9 +203,15 @@ pre details.mutant-details ul {
 }
 
 .lcsaj-dot {
-       color: #5555ff;
-       font-size: 10px;
-       margin-right: 3px;
+    color: #5555ff;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-dot-uncovered {
+    color: #cc4444;
+    font-size: 10px;
+    margin-right: 3px;
 }
 
 .lcsaj-tip {
@@ -269,7 +275,7 @@ pre details.mutant-details ul {
 </span><span class="">   23: }
 </span><span class="">   24: 
 </span><span class="">   25: sub emit {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">26 → 30 → 34</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">26 → 30 → 0</span></span>   26: 	my $self = $_[0];
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 26 → 30 → 34</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 26 → 30 → 0</span></span>   26: 	my $self = $_[0];
 </span><span class="">   27: 
 </span><span class="">   28: 	my $code = $self-&gt;_emit_header();
 </span><span class="">   29: 
@@ -277,7 +283,7 @@ pre details.mutant-details ul {
 </span><span class="">   31: 		$code .= $self-&gt;_emit_method_tests($method);
 </span><span class="">   32: 	}
 </span><span class="">   33: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">34 → 36 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">34 → 36 → 0</span></span>   34: 	$code .= &quot;\ndone_testing();\n&quot;;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 34 → 36 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 34 → 36 → 0</span></span>   34: 	$code .= &quot;\ndone_testing();\n&quot;;
 </span><span class="">   35: 
 </span><span class="">   36: 	return $code;
 </span><span class="">   37: }
@@ -298,7 +304,7 @@ pre details.mutant-details ul {
 </span><span class="">   52: }
 </span><span class="">   53: 
 </span><span class="">   54: sub _emit_method_tests {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">55 → 62 → 66</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">55 → 62 → 0</span></span>   55: 	my ($self, $method) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 55 → 62 → 66</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 55 → 62 → 0</span></span>   55: 	my ($self, $method) = @_;
 </span><span class="">   56: 
 </span><span class="">   57:     my $plan = $self-&gt;{plans}{$method};
 </span><span class="">   58:     my $schema = $self-&gt;{schema}{$method};
@@ -315,7 +321,7 @@ pre details.mutant-details ul {
 <span class="">   63:         $code .= $self-&gt;_emit_basic_test($method);
 </span><span class="">   64:     }
 </span><span class="">   65: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">66 → 66 → 70</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">66 → 66 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">66 → 66 → 70</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">66 → 66 → 0</span></span>   66:     if ($plan-&gt;{getter_test}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 66 → 66 → 70</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 66 → 66 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 66 → 66 → 70</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 66 → 66 → 0</span></span>   66:     if ($plan-&gt;{getter_test}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -325,7 +331,7 @@ pre details.mutant-details ul {
 <span class="">   67:         $code .= $self-&gt;_emit_getter_test($method);
 </span><span class="">   68:     }
 </span><span class="">   69: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">70 → 70 → 74</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">70 → 70 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">70 → 70 → 74</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">70 → 70 → 0</span></span>   70:     if ($plan-&gt;{setter_test}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 70 → 70 → 74</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 70 → 70 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 70 → 70 → 74</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 70 → 70 → 0</span></span>   70:     if ($plan-&gt;{setter_test}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -335,7 +341,7 @@ pre details.mutant-details ul {
 <span class="">   71:         $code .= $self-&gt;_emit_setter_test($method);
 </span><span class="">   72:     }
 </span><span class="">   73: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">74 → 74 → 78</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">74 → 74 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">74 → 74 → 78</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">74 → 74 → 0</span></span>   74:     if ($plan-&gt;{getset_test}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 74 → 74 → 78</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 74 → 74 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 74 → 74 → 78</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 74 → 74 → 0</span></span>   74:     if ($plan-&gt;{getset_test}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -345,7 +351,7 @@ pre details.mutant-details ul {
 <span class="">   75:         $code .= $self-&gt;_emit_getset_test($method);
 </span><span class="">   76:     }
 </span><span class="">   77: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">78 → 78 → 82</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">78 → 78 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">78 → 78 → 82</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">78 → 78 → 0</span></span>   78:     if ($plan-&gt;{chaining_test}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 78 → 78 → 82</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 78 → 78 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 78 → 78 → 82</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 78 → 78 → 0</span></span>   78:     if ($plan-&gt;{chaining_test}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -355,7 +361,7 @@ pre details.mutant-details ul {
 <span class="">   79:         $code .= $self-&gt;_emit_chaining_test($method);
 </span><span class="">   80:     }
 </span><span class="">   81: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">82 → 82 → 86</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">82 → 82 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">82 → 82 → 86</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">82 → 82 → 0</span></span>   82:     if ($plan-&gt;{error_handling_test}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 82 → 82 → 86</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 82 → 82 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 82 → 82 → 86</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 82 → 82 → 0</span></span>   82:     if ($plan-&gt;{error_handling_test}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -365,7 +371,7 @@ pre details.mutant-details ul {
 <span class="">   83:         $code .= $self-&gt;_emit_error_test($method);
 </span><span class="">   84:     }
 </span><span class="">   85: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">86 → 86 → 90</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">86 → 86 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">86 → 86 → 90</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">86 → 86 → 0</span></span>   86:     if ($plan-&gt;{context_tests}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 86 → 86 → 90</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 86 → 86 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 86 → 86 → 90</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 86 → 86 → 0</span></span>   86:     if ($plan-&gt;{context_tests}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -375,7 +381,7 @@ pre details.mutant-details ul {
 <span class="">   87:         $code .= $self-&gt;_emit_context_test($method);
 </span><span class="">   88:     }
 </span><span class="">   89: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">90 → 90 → 94</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">90 → 90 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">90 → 90 → 94</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">90 → 90 → 0</span></span>   90: 	if ($plan-&gt;{object_injection_test}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 90 → 90 → 94</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 90 → 90 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 90 → 90 → 94</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 90 → 90 → 0</span></span>   90: 	if ($plan-&gt;{object_injection_test}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -385,7 +391,7 @@ pre details.mutant-details ul {
 <span class="">   91: 		$code .= $self-&gt;_emit_object_injection_test($method);
 </span><span class="">   92: 	}
 </span><span class="">   93: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">94 → 94 → 98</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">94 → 94 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">94 → 94 → 98</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">94 → 94 → 0</span></span>   94: 	if(($plan-&gt;{predicate_test}) || ($plan-&gt;{boolean_test})) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 94 → 94 → 98</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 94 → 94 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 94 → 94 → 98</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 94 → 94 → 0</span></span>   94: 	if(($plan-&gt;{predicate_test}) || ($plan-&gt;{boolean_test})) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -395,7 +401,7 @@ pre details.mutant-details ul {
 <span class="">   95: 		$code .= $self-&gt;_emit_boolean_test($method);
 </span><span class="">   96: 	}
 </span><span class="">   97: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">98 → 98 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">98 → 98 → 0</span></span>   98:     return $code;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 98 → 98 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 98 → 98 → 0</span></span>   98:     return $code;
 </span><span class="">   99: }
 </span><span class="">  100: 
 </span><span class="">  101: sub _emit_basic_test {
@@ -431,7 +437,7 @@ pre details.mutant-details ul {
 </span><span class="">  131: }
 </span><span class="">  132: 
 </span><span class="">  133: sub _emit_getset_test {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">134 → 145 → 158</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">134 → 145 → 0</span></span>  134: 	my ($self, $method) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 134 → 145 → 158</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 134 → 145 → 0</span></span>  134: 	my ($self, $method) = @_;
 </span><span class="">  135: 
 </span><span class="">  136: 	my $schema = $self-&gt;{schema}{$method};
 </span><span class="">  137: 
@@ -461,7 +467,7 @@ pre details.mutant-details ul {
 </span><span class="">  155: 	# -------------------------------
 </span><span class="">  156: 	# DEFAULT STRING INPUT
 </span><span class="">  157: 	# -------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">158 → 158 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">158 → 158 → 0</span></span>  158: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 158 → 158 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 158 → 158 → 0</span></span>  158: 	return &lt;&lt;&quot;END_TEST&quot;;
 </span><span class="">  159: {
 </span><span class="">  160:     \$obj-&gt;$method(&#39;value&#39;);
 </span><span class="">  161:     is(\$obj-&gt;$method(), &#39;value&#39;, &#39;$method get/set works&#39;);
