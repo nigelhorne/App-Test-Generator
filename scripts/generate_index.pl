@@ -2421,9 +2421,9 @@ sub _mutation_index {
 	# TER3 = Third level Test Effectiveness Ratio (LCSAJ path coverage).
 	# Only shown when lcsaj_root is configured.
 	if($config{lcsaj_root}) {
-		push @html, "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th><th>Complexity</th><th>TER3 (LCSAJ)</th></tr>\n";
+		push @html, "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th><th>Complexity</th><th title=\"TER1=Statement, TER2=Branch, TER3=LCSAJ Path\">TER1 / TER2 / TER3</th></tr>\n";
 	} else {
-		push @html, '<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th><th>Complexity</th></tr>';
+		push @html, "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th><th>Complexity</th></tr>\n";
 	}
 
 	for my $file (
@@ -2487,32 +2487,53 @@ sub _mutation_index {
 		}
 
 		# --------------------------------------------------
-		# Determine TER3 (LCSAJ path coverage) for this file.
-		# TER3 = covered_paths / total_paths * 100
-		# Returns one of:
-		#   ''    - LCSAJ column not enabled (no lcsaj_root configured)
-		#   'n/a' - .lcsaj.json file not found in any candidate directory
-		#   '-'   - file found but contains zero defined paths
-		#   'X.X% (covered/total)' - actual TER3 percentage with raw fraction
+		# Compute TER1/TER2/TER3 triple for this file.
+		# TER1 = statement coverage  (Devel::Cover)
+		# TER2 = branch coverage     (Devel::Cover)
+		# TER3 = LCSAJ path coverage (LCSAJ runtime)
+		# Paths normalised to lib/ at display time —
+		# neither data source is modified.
 		# --------------------------------------------------
-		my $lcsaj_pct;
-		if (!$lcsaj_dir) {
-			# LCSAJ column is disabled — lcsaj_root not configured
-			$lcsaj_pct = '';
-		} elsif (!defined $lcsaj_cov) {
-			# No .lcsaj.json found for this file in any candidate directory
-			$lcsaj_pct = 'n/a';
-		} elsif (!$lcsaj_total) {
-			# .lcsaj.json exists but contains no path definitions
-			$lcsaj_pct = '-';
+		my ($ter1_pct, $ter2_pct);
+
+		if(my $file_cov = _coverage_for_file($coverage_data, $file)) {
+			my $stmt_total   = $file_cov->{statement}{total}   || 0;
+			my $stmt_hit     = $file_cov->{statement}{covered} || 0;
+			my $branch_total = $file_cov->{branch}{total}      || 0;
+			my $branch_hit   = $file_cov->{branch}{covered}    || 0;
+
+			$ter1_pct = $stmt_total ? ($stmt_hit / $stmt_total) * 100 : undef;
+
+			$ter2_pct = $branch_total ? ($branch_hit / $branch_total) * 100 : undef;
+		}
+
+		# TER3 — LCSAJ path coverage (existing logic, unchanged)
+		($lcsaj_cov, $lcsaj_total) = (undef, undef);
+		for my $dir ($config{lcsaj_root}, $config{mutation_dir} . '/lib', $config{mutation_dir}) {
+			next unless $dir;
+			($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $dir, $lcsaj_hits, \@html);
+			last if defined $lcsaj_cov;
+		}
+
+		my $ter3_pct = (!defined $lcsaj_cov)  ? undef :
+			(!$lcsaj_total)        ? undef :
+			($lcsaj_cov / $lcsaj_total) * 100;
+
+		# --------------------------------------------------
+		# Render each component as a colour-coded badge,
+		# falling back to a grey n/a badge if unavailable.
+		# --------------------------------------------------
+		my $ter_cell;
+		if($lcsaj_dir) {
+			my $ter1_badge = _ter_badge($ter1_pct, 'n/a');
+			my $ter2_badge = _ter_badge($ter2_pct, 'n/a');
+			my $ter3_badge = _ter_badge($ter3_pct, 'n/a');
+			$ter_cell = "$ter1_badge / $ter2_badge / $ter3_badge";
 		} else {
-			# Compute TER3: percentage of LCSAJ paths covered, plus raw fraction
-			# e.g. "71.8% (352/491)"
-			$lcsaj_pct = sprintf('%.1f%% (%d/%d)',
-				($lcsaj_cov / $lcsaj_total) * 100,
-				$lcsaj_cov,
-				$lcsaj_total
-			);
+			# LCSAJ not configured — show TER1/TER2 only
+			my $ter1_badge = _ter_badge($ter1_pct, 'n/a');
+			my $ter2_badge = _ter_badge($ter2_pct, 'n/a');
+			$ter_cell = "$ter1_badge / $ter2_badge";
 		}
 
 		push @html, sprintf(
@@ -2526,7 +2547,7 @@ sub _mutation_index {
 			$survived,
 			$badge_html,
 			$complexity_html,
-			$lcsaj_pct,
+			$ter_cell,
 		);
 	}
 
@@ -2573,6 +2594,38 @@ sub _file_score {
 	my $total = $killed + $survived;
 
 	return $total ? ($killed / $total) * 100 : 0;
+}
+
+# --------------------------------------------------
+# _ter_badge
+#
+# Format a single TER percentage value as a
+# colour-coded badge, consistent with the coverage
+# badge style used elsewhere in the dashboard.
+#
+# Arguments:
+#   $pct   - percentage value (0-100), or undef
+#   $label - text to show if undef (e.g. 'n/a')
+#
+# Returns:
+#   HTML span string
+# --------------------------------------------------
+sub _ter_badge {
+	my ($pct, $label) = @_;
+
+	unless(defined $pct) {
+		return qq{<span class="coverage-badge" style="background-color:#999" title="No data">$label</span>};
+	}
+
+	my ($class, $tooltip) =
+		$pct >= $config{med_threshold} ? ('badge-good', 'Excellent') :
+		$pct >= $config{low_threshold} ? ('badge-warn', 'Moderate')  :
+						 ('badge-bad',  'Needs improvement');
+
+	return sprintf(
+		'<span class="coverage-badge %s" title="%s">%.1f%%</span>',
+		$class, $tooltip, $pct
+	);
 }
 
 # --------------------------------------------------
@@ -2737,7 +2790,7 @@ sub _mutant_file_report {
 
         <p>
         Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
-        </p>
+	</p>
     </div>
 };
 		}
@@ -2807,37 +2860,37 @@ sub _mutant_file_report {
 		# warn "  exists = " . (-f $lcsaj_file ? "YES" : "NO") . "\n";
 
 		if (-f $lcsaj_file) {
-    open my $fh, '<', $lcsaj_file;
-    my $paths = decode_json(do { local $/; <$fh> });
-    close $fh;
+			open my $fh, '<', $lcsaj_file;
+			my $paths = decode_json(do { local $/; <$fh> });
+			close $fh;
 
-    for my $p (@{ $paths || [] }) {
-        next unless ref $p eq 'HASH';
+			for my $p (@{ $paths || [] }) {
+				next unless ref $p eq 'HASH';
 
-        my $start = $p->{start};
-        my $end   = $p->{end};
-        my $jump  = $p->{jump} // $p->{target};
+				my $start = $p->{start};
+				my $end   = $p->{end};
+				my $jump  = $p->{jump} // $p->{target};
 
-        next unless defined $start && defined $end;
+				next unless defined $start && defined $end;
 
-        # Check if any line in the path range was hit
-        my $covered = 0;
-        for my $line ($start .. $end) {
-            if ($file_hits->{$line}) {
-                $covered = 1;
-                last;
-            }
-        }
+				# Check if any line in the path range was hit
+				my $covered = 0;
+				for my $line ($start .. $end) {
+					if ($file_hits->{$line}) {
+						$covered = 1;
+						last;
+					}
+				}
 
-        push @{ $lcsaj_by_line{$start} }, {
-            start   => $start,
-            end     => $end,
-            jump    => $jump,
-            covered => $covered,
-        };
-    }
-}
-}
+				push @{ $lcsaj_by_line{$start} }, {
+					start   => $start,
+					end     => $end,
+					jump    => $jump,
+					covered => $covered,
+				};
+			}
+		}
+	}
 
 	for my $i (0 .. $#lines) {
 		my $line_no = $i + 1;
@@ -2887,16 +2940,16 @@ sub _mutant_file_report {
 		my $lcsaj_marker = '';
 
 		if (my $paths = $lcsaj_by_line{$line_no}) {
-    for my $p (@$paths) {
-        my $start     = $p->{start};
-        my $end       = $p->{end};
-        my $jump      = $p->{jump} // 0;
-        my $dot_class = $p->{covered} ? 'lcsaj-dot' : 'lcsaj-dot-uncovered';
-        my $prefix    = $p->{covered} ? '' : '[NOT COVERED] ';
+			for my $p (@$paths) {
+				my $start     = $p->{start};
+				my $end       = $p->{end};
+				my $jump      = $p->{jump} // 0;
+				my $dot_class = $p->{covered} ? 'lcsaj-dot' : 'lcsaj-dot-uncovered';
+				my $prefix    = $p->{covered} ? '' : '[NOT COVERED] ';
 
-        $lcsaj_marker .= qq{<span class="lcsaj-tip"><span class="$dot_class">●</span><span class="lcsaj-tip-text">${prefix}$start → $end → $jump</span></span>};
-    }
-}
+				$lcsaj_marker .= qq{<span class="lcsaj-tip"><span class="$dot_class">●</span><span class="lcsaj-tip-text">${prefix}$start → $end → $jump</span></span>};
+			}
+		}
 
 		# Add tooltip class only if tooltip text exists
 		my $extra_class = $tooltip ? ' tooltip' : '';

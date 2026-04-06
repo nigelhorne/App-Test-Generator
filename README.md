@@ -4,9 +4,18 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses from test 
 
 # VERSION
 
-Version 0.28
+Version 0.30
 
 # SYNOPSIS
+
+`App::Test::Generator` is a suite to help the testing of CPAN modules.
+
+It consists of 4 modules:
+
+- Fuzz Tester
+- Mutation Testing
+- LCSAJ Metrics
+- Test Dashboard
 
 From the command line:
 
@@ -22,10 +31,10 @@ From Perl:
     use App::Test::Generator qw(generate);
 
     # Generate to STDOUT
-    App::Test::Generator::generate("t/conf/add.yml");
+    App::Test::Generator->generate("t/conf/add.yml");
 
     # Generate directly to a file
-    App::Test::Generator::generate('t/conf/add.yml', 't/add_fuzz.t');
+    App::Test::Generator->generate('t/conf/add.yml', 't/add_fuzz.t');
 
     # Holy grail mode - read a Perl file, generate tests, and run them
     # This is a long way away yet, but see t/schema_input.t for a proof of concept
@@ -172,6 +181,8 @@ The current supported variables are
 
 - `dedup`, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 - `properties`, enable [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest) Property tests (default: 0)
+
+    \*item \* `test_security`, send some security string based tests (default: 0)
 
 All values default to `true`.
 
@@ -358,7 +369,7 @@ When provided, the generated `t/fuzz.t` will call `srand($seed)` so fuzz runs ar
 
 ### `$iterations`
 
-An optional integer controlling how many fuzz iterations to perform (default 50).
+An optional integer controlling how many fuzz iterations to perform (default 30).
 
 ### `%edge_cases`
 
@@ -409,7 +420,7 @@ During fuzzing iterations, there's a 40% probability that a test case will use a
       - " "
 
     seed: 42
-    iterations: 50
+    iterations: 30
 
 ### Semantic Data Generators
 
@@ -757,7 +768,7 @@ Generate the test:
 The generated test will include:
 
 - Traditional edge-case tests for boundary conditions
-- Random fuzzing with 50 iterations (or as configured)
+- Random fuzzing with 30 iterations (or as configured)
 - Property-based tests that verify the transforms with 1000 trials each
 
 ### What Properties Are Tested?

@@ -55,6 +55,22 @@ Version 0.30
 
 =head1 SYNOPSIS
 
+C<App::Test::Generator> is a suite to help the testing of CPAN modules.
+
+It consists of 4 modules:
+
+=over 4
+
+=item * Fuzz Tester
+
+=item * Mutation Testing
+
+=item * LCSAJ Metrics
+
+=item * Test Dashboard
+
+=back
+
 From the command line:
 
   # Takes the formal definition of a routine, creates tests against that routine, and runs the test
@@ -90,8 +106,6 @@ From Perl:
     system("$^X -I$dir $tempfile");
     unlink $tempfile;
   }
-
-=encoding utf8
 
 =head1 OVERVIEW
 
@@ -140,6 +154,8 @@ It then generates a L<Test::Most>-based fuzzing harness combining:
 =item * Reproducible runs via C<$seed> and configurable iterations via C<$iterations>
 
 =back
+
+=encoding utf8
 
 =head1 CONFIGURATION
 
