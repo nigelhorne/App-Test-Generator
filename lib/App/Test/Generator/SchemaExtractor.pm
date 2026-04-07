@@ -1174,7 +1174,9 @@ sub new {
 
 	my $self = {
 		input_file => $params->{input_file},
-		output_dir => $params->{output_dir},	# Optional - only needed if writing schemas
+		# output_dir is optional — only required if _write_schema will be called.
+		# Callers using extract_all(no_write => 1) do not need to supply it.
+		output_dir => $params->{output_dir},
 		verbose	=> $params->{verbose} // 0,
 		confidence_threshold => $params->{confidence_threshold} // 0.5,
 		include_private => $params->{include_private} // 0,	# include _private methods
@@ -6045,17 +6047,19 @@ sub _detect_value_constraints {
 	return \@relationships;
 }
 
-=head2 _write_schema
-
-Write a schema to a YAML file.
-
-=cut
+# Write a single method schema to a YAML file in output_dir.
+#
+# Entry:      $method_name is a non-empty string; $schema is a hashref.
+# Exit:       YAML file written to output_dir/$method_name.yml.
+# Side effects: Creates output_dir if it does not exist.
+# Notes:      Croaks if output_dir was not set in new().
 
 sub _write_schema {
 	my ($self, $method_name, $schema) = @_;
 
-	# output_dir is required for writing - croak early with a clear message
-	croak(__PACKAGE__, ': output_dir must be set to write schema files') unless defined $self->{output_dir};
+	# output_dir is required here — croak early with a clear message
+	# rather than letting make_path fail with a cryptic error
+	croak(__PACKAGE__, ': output_dir must be provided to new() when writing schema files') unless defined $self->{output_dir};
 
 	make_path($self->{output_dir}) unless -d $self->{output_dir};
 

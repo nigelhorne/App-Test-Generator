@@ -33,6 +33,23 @@ Revision history for App-Test-Generator
       TER2=Branch, TER3=LCSAJ path coverage. Any component
       without data shows a grey n/a badge. Column header carries
       a tooltip defining all three metrics.
+    - Added --generate_test=mutant option to generate_index.pl (used
+      alongside --generate_mutant_tests=DIR). For NUM_BOUNDARY survivors,
+      attempts to produce a runnable YAML schema file in t/conf/ using
+      App::Test::Generator::SchemaExtractor rather than a TODO stub.
+      The schema is augmented with boundary values from the surviving
+      mutant (the exact boundary value plus one either side) and picked
+      up automatically by t/fuzz.t on the next test run. Falls back to
+      a TODO stub if SchemaExtractor fails, the enclosing sub cannot be
+      found, or confidence in the extracted schema is too low. The
+      --generate_test option is designed to accept future classes beyond
+      'mutant'. Updated generate_test_dashboard Step 7 to pass
+      --generate_test=mutant by default.
+    - Made output_dir optional in App::Test::Generator::SchemaExtractor
+      new() -- it is now only required if schema files will be written.
+      extract_all() gains a no_write option to suppress file output and
+      return schemas only, for use by callers that want to inspect or
+      augment schemas before deciding where to write them.
 
 0.30	Thu Apr  2 07:17:16 EDT 2026
 	Added mutation levels.
