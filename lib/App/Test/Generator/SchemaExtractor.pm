@@ -1154,7 +1154,7 @@ The extractor supports several configuration parameters:
 
     my $extractor = App::Test::Generator::SchemaExtractor->new(
         input_file          => 'lib/MyModule.pm',  # Required
-        output_dir          => 'schemas/',         # Default: 'schemas'
+        output_dir          => 'schemas/',         # Required only if writing the output in extract_all()
         verbose             => 1,                  # Default: 0
         include_private     => 1,                  # Default: 0
         max_parameters      => 50,                 # Default: 20
@@ -1174,7 +1174,7 @@ sub new {
 
 	my $self = {
 		input_file => $params->{input_file},
-		output_dir => $params->{output_dir} || 'schemas',
+		output_dir => $params->{output_dir},	# Optional - only needed if writing schemas
 		verbose	=> $params->{verbose} // 0,
 		confidence_threshold => $params->{confidence_threshold} // 0.5,
 		include_private => $params->{include_private} // 0,	# include _private methods
@@ -1195,6 +1195,24 @@ sub new {
 Extract schemas for all methods in the module.
 
 Returns a hashref of method_name => schema.
+
+    my $schemas = $extractor->extract_all();
+
+    # Suppress writing .yml files to disk (returns schemas only)
+    my $schemas = $extractor->extract_all(no_write => 1);
+
+Accepts an optional hashref or named parameters:
+
+=over 4
+
+=item * C<no_write>
+
+When set to a true value, schema files are not written to C<output_dir>.
+The schemas hashref is still fully populated and returned.
+This is useful when the caller wants to inspect or augment schemas
+before deciding whether and where to write them.
+
+=back
 
 The extraction process performs comprehensive validation of the agreement between
 POD documentation and the actual code, controlled by the C<strict_pod> option
@@ -1241,16 +1259,17 @@ validation report can be generated using the C<generate_pod_validation_report> m
   FOREACH method
   DO
     analyze the method
-    write a schema file for that method
+    write a schema file for that method (unless no_write is set)
   END
 
 =cut
 
 sub extract_all {
-	my $self = $_[0];
+	my $self = shift;
+	my $params = Params::Get::get_params(undef, @_) || {};
 
 	$self->_log("Parsing $self->{input_file}...");
-	$self->_log("Strict POD mode: " . (qw(off warn fatal))[$self->{strict_pod}]);
+	$self->_log('Strict POD mode: ' . (qw(off warn fatal))[$self->{strict_pod}]);
 
 	my $document = PPI::Document->new($self->{input_file}) or die "Failed to parse $self->{input_file}: $!";
 
@@ -1273,7 +1292,8 @@ sub extract_all {
 		$schema->{'module'} = $package_name;
 
 		# Write individual schema file
-		$self->_write_schema($method->{name}, $schema);
+		# Only write schema files if no_write is not set
+		$self->_write_schema($method->{name}, $schema) unless $params->{no_write};
 	}
 
 	return \%schemas;
@@ -6034,7 +6054,9 @@ Write a schema to a YAML file.
 sub _write_schema {
 	my ($self, $method_name, $schema) = @_;
 
-	die if(!defined($self->{'output_dir'}));
+	# output_dir is required for writing - croak early with a clear message
+	croak(__PACKAGE__, ': output_dir must be set to write schema files') unless defined $self->{output_dir};
+
 	make_path($self->{output_dir}) unless -d $self->{output_dir};
 
 	my $filename = "$self->{output_dir}/${method_name}.yml";

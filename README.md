@@ -9,7 +9,6 @@ Version 0.30
 # SYNOPSIS
 
 `App::Test::Generator` is a suite to help the testing of CPAN modules.
-
 It consists of 4 modules:
 
 - Fuzz Tester
