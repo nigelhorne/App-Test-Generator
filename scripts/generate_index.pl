@@ -2486,6 +2486,43 @@ sub _dump_schema_yaml {
 	$yaml =~ s/:\s+yes$/: true/mg;
 	$yaml =~ s/:\s+no$/: false/mg;
 
+	# --------------------------------------------------
+	# Fix YAML::XS indentation quirks.
+	# YAML::XS does not reliably honour $Indent for:
+	#   1. List items nested inside hash values — they
+	#      should be indented 2 more than their parent
+	#      key but sometimes appear at the same level.
+	#   2. Top-level keys after a nested block — they
+	#      sometimes lose their leading spaces entirely.
+	# We correct both by scanning line by line and
+	# tracking the expected indentation depth.
+	# --------------------------------------------------
+	my @lines  = split /\n/, $yaml, -1;
+	my @fixed;
+	my $last_key_indent = 0;
+
+	for my $line (@lines) {
+		# Track indentation of the most recent hash key line
+		# so we know the expected depth for following list items
+		if($line =~ /^( *)[\w][^:]*:/) {
+			$last_key_indent = length($1);
+		}
+
+		# Fix list items that are not indented enough —
+		# they should be at least last_key_indent + 2
+		if($line =~ /^( *)- /) {
+			my $current  = length($1);
+			my $expected = $last_key_indent + 2;
+			if($current < $expected) {
+				$line = (' ' x $expected) . substr($line, $current);
+			}
+		}
+
+		push @fixed, $line;
+	}
+
+	$yaml = join("\n", @fixed);
+
 	return $yaml;
 }
 
