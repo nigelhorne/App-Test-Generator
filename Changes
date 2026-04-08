@@ -50,6 +50,17 @@ Revision history for App-Test-Generator
       extract_all() gains a no_write option to suppress file output and
       return schemas only, for use by callers that want to inspect or
       augment schemas before deciding where to write them.
+    - Added --generate_fuzz flag to generate_index.pl. Scans t/conf/
+      for existing YAML schema files and writes timestamped augmented
+      copies (mutant_fuzz_YYYYMMDD_HHMMSS_FUNCTION.yml) with boundary
+      values from surviving NUM_BOUNDARY mutants merged in. The original
+      schema is never modified. Augmented schemas are picked up
+      automatically by t/fuzz.t. Schemas with no matching survivors are
+      skipped (with a verbose note). Boundary values are merged into
+      whichever edge key already exists in the schema (edge_case_array
+      or edge_cases), with deduplication. Schemas already prefixed with
+      mutant_fuzz_ are skipped to prevent cascading augmentation.
+      Updated generate_test_dashboard Step 7 to pass --generate_fuzz.
 
 0.30	Thu Apr  2 07:17:16 EDT 2026
 	Added mutation levels.
