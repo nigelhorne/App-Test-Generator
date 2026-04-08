@@ -1153,14 +1153,20 @@ Private methods are not included, unless C<include_private> is used in C<new()>.
 The extractor supports several configuration parameters:
 
     my $extractor = App::Test::Generator::SchemaExtractor->new(
-        input_file          => 'lib/MyModule.pm',  # Required
-        output_dir          => 'schemas/',         # Required only if writing the output in extract_all()
-        verbose             => 1,                  # Default: 0
-        include_private     => 1,                  # Default: 0
-        max_parameters      => 50,                 # Default: 20
+        input_file           => 'lib/MyModule.pm',  # Required
+        output_dir           => 'schemas/',         # Optional - only needed if writing schemas
+        verbose              => 1,                  # Default: 0
+        include_private      => 1,                  # Default: 0
+        max_parameters       => 50,                 # Default: 20
         confidence_threshold => 0.7,               # Default: 0.5
-	strict_pod	=> 0|1|2,	# Default: 0 (off)
+        strict_pod           => 0|1|2,              # Default: 0 (off)
     );
+
+C<output_dir> is optional.
+It is only required if schema files will be
+written to disk. Callers that pass C<no_write =E<gt> 1> to C<extract_all>
+do not need to supply it. If C<output_dir> is omitted and C<_write_schema>
+is called, it will croak with a clear error message.
 
 =cut
 

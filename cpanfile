@@ -51,6 +51,7 @@ on 'test' => sub {
 	requires 'Unicode::GCString';
 	requires 'Unicode::Normalize';
 };
+
 on 'develop' => sub {
 	requires 'Devel::Cover';
 	requires 'Perl::Critic';

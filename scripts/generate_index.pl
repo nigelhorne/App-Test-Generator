@@ -41,8 +41,7 @@ This script is automatically run by each 'git push' via the GitHub Actions
 workflow at .github/workflows/dashboard.yml, and can also be run locally
 via scripts/generate_test_dashboard.
 
-The script is shared across projects — copy it into scripts/ of each
-project that uses it:
+The script is shared across projects - copy it into scripts/ of each project that uses it:
 
   cp ../App-Test-Generator/scripts/generate_index.pl scripts/
 
@@ -71,16 +70,29 @@ project that uses it:
           the enclosing subroutine name for navigation context
         - Comment-only hints for Low difficulty survivors
       Multiple mutations on the same source line are deduplicated into
-      one stub — one good test kills all variants on that line.
+      one stub - one good test kills all variants on that line.
       File is skipped entirely if there are no survivors to report.
       If not given, no test stubs are generated.
 
-   --generate_test=CLASS
-      When set to C<mutant>, attempts to generate runnable YAML schema
-      files in t/conf/ for NUM_BOUNDARY survivors using SchemaExtractor,
-      rather than TODO stubs. Requires --generate_mutant_tests to also
-      be set. Falls back to a TODO stub if schema extraction fails or
-      confidence is too low. Future values may include other classes.
+  --generate_test=CLASS
+      When combined with --generate_mutant_tests=DIR, attempts to produce
+      runnable test artefacts for surviving mutants rather than TODO stubs.
+
+      Currently supported classes:
+
+        mutant  For NUM_BOUNDARY survivors, calls
+                App::Test::Generator::SchemaExtractor to extract the schema
+                for the enclosing subroutine and augments it with the
+                boundary value from the mutant (plus one value either side).
+                The resulting YAML schema is written to DIR/conf/ and is
+                picked up automatically by t/fuzz.t on the next test run.
+                Falls back to a TODO stub if SchemaExtractor fails, the
+                enclosing sub cannot be determined, or the extracted schema
+                confidence is too low (very_low or none).
+
+      This option is designed to accept additional classes in future, for
+      example corpus-driven or property-based test generation.
+      If not given, only TODO stubs are produced.
 
 =head1 DASHBOARD SECTIONS
 
@@ -511,7 +523,8 @@ my $counted = 0;
 
 for my $file (keys %{$cover_db->{summary}}) {
 	next if $file eq 'Total';
-	next if $file =~ /^\//;    # skip absolute paths (installed modules)
+	next if $file =~ /^\//;	# skip absolute paths (installed modules)
+
 	my $info = $cover_db->{summary}{$file};
 	$sum_stmt   += $info->{statement}{percentage}  // 0;
 	$sum_branch += $info->{branch}{percentage}     // 0;
@@ -524,6 +537,7 @@ for my $file (keys %{$cover_db->{summary}}) {
 if($counted) {
 	my $avg_total = $sum_total / $counted;
 	my $class = $avg_total > 80 ? 'high' : $avg_total > 50 ? 'med' : 'low';
+
 	push @html, sprintf(
 		qq{<tr class="%s nosort"><td><strong>Total</strong></td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td colspan="2"><strong>%.1f</strong></td></tr>},
 		$class,
@@ -2736,9 +2750,45 @@ HEADER
 # Mutant helpers from App::Test::Generator::Report::HTML
 
 # --------------------------------------------------
-# Write index page
+# _mutation_index
+#
+# Purpose:    Build the HTML mutation report section
+#             for the main dashboard page. Produces
+#             the mutation summary (score, totals),
+#             the per-file mutation files table with
+#             TER1/TER2/TER3 badges, and the
+#             structural coverage and executive
+#             summary blocks.
+#
+# Entry:      $data          - decoded mutation JSON
+#                              hashref (score, total,
+#                              killed, survived)
+#             $files         - hashref of file =>
+#                              { killed => [], survived => [] }
+#                              as produced by _group_by_file
+#             $coverage_data - decoded Devel::Cover JSON
+#                              hashref, or undef
+#             $lcsaj_dir     - root directory for LCSAJ
+#                              .json files, or undef
+#             $lcsaj_hits    - hashref of LCSAJ hit data
+#                              as produced by the runtime
+#                              debugger, or undef
+#
+# Exit:       Returns an arrayref of HTML strings
+#             ready to be pushed onto @html.
+#             Never returns undef.
+#
+# Notes:      TER1 and TER2 are sourced from
+#             Devel::Cover via _coverage_for_file.
+#             TER3 is sourced from LCSAJ runtime data
+#             via _lcsaj_coverage_for_file.
+#             All three are normalised to lib/ paths
+#             at display time — neither data source
+#             is modified.
+#             The table is sorted worst-score-first
+#             so the files most needing attention
+#             appear at the top.
 # --------------------------------------------------
-
 sub _mutation_index {
 	my ($data, $files, $coverage_data, $lcsaj_dir, $lcsaj_hits) = @_;
 
@@ -2940,16 +2990,27 @@ sub _file_score {
 # --------------------------------------------------
 # _ter_badge
 #
-# Format a single TER percentage value as a
-# colour-coded badge, consistent with the coverage
-# badge style used elsewhere in the dashboard.
+# Purpose:    Format a single TER percentage value as
+#             a colour-coded HTML badge, consistent
+#             with the coverage badge style used
+#             elsewhere in the dashboard.
 #
-# Arguments:
-#   $pct   - percentage value (0-100), or undef
-#   $label - text to show if undef (e.g. 'n/a')
+# Entry:      $pct   - percentage value (0-100), or
+#                      undef if data is unavailable
+#             $label - fallback text to display when
+#                      $pct is undef (e.g. 'n/a')
 #
-# Returns:
-#   HTML span string
+# Exit:       Returns an HTML span string. Never
+#             returns undef.
+#
+# Side effects: None.
+#
+# Notes:      Thresholds are taken from %config:
+#               >= med_threshold -> green (badge-good)
+#               >= low_threshold -> yellow (badge-warn)
+#               <  low_threshold -> red (badge-bad)
+#             Undef input produces a grey badge with
+#             title="No data".
 # --------------------------------------------------
 sub _ter_badge {
 	my ($pct, $label) = @_;
@@ -3941,16 +4002,16 @@ sub _lcsaj_coverage_for_file {
 	my $abs      = abs_path($file) // $file;
 	my $base     = basename($abs);
 
-    # ----------------------------------------------------------
-    # Build candidate relative paths to try, most-specific first:
-    #   1. lib-relative  e.g.  Foo/Bar.pm          (strip .../lib/)
-    #   2. basename only e.g.  Bar.pm              (last resort)
-    # We deliberately do NOT include the leading "lib/" segment in
-    # the .lcsaj.json path because the LCSAJ analyser is expected to
-    # write files mirroring only the package-namespace portion of the
-    # path (i.e. what comes *after* lib/).
-    # ----------------------------------------------------------
-    my @rel_candidates;
+	# ----------------------------------------------------------
+	# Build candidate relative paths to try, most-specific first:
+	#   1. lib-relative  e.g.  Foo/Bar.pm          (strip .../lib/)
+	#   2. basename only e.g.  Bar.pm              (last resort)
+	# We deliberately do NOT include the leading "lib/" segment in
+	# the .lcsaj.json path because the LCSAJ analyser is expected to
+	# write files mirroring only the package-namespace portion of the
+	# path (i.e. what comes *after* lib/).
+	# ----------------------------------------------------------
+	my @rel_candidates;
 
     if ($abs =~ m{(?:^|/)(?:blib/)?lib/(.+)$}) {
         push @rel_candidates, $1;               # e.g. Foo/Bar.pm
@@ -4067,7 +4128,7 @@ sub _own_file_coverage_pct {
 	my ($sum, $count) = (0, 0);
 	for my $f (keys %$summary) {
 		next if $f eq 'Total';
-		next if $f =~ /^\//;              # skip absolute paths
+		next if $f =~ /^\//;	# skip absolute paths
 		next unless $f =~ /^(?:lib|blib|bin)\//;	# only own project files
 		$sum += $summary->{$f}{total}{percentage} // 0;
 		$count++;
