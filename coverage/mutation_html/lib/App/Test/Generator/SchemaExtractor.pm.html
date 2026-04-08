@@ -242,7 +242,47 @@ pre details.mutant-details ul {
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/SchemaExtractor.pm</h1>
 <div class="nav"><a href="Sample/Module.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
- <a href="TestStrategy.pm.html">Next ➡</a></div>
+ <a href="TestStrategy.pm.html">Next ➡</a></div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 2.37%<br>
+TER2 (Branch): 0.00%<br>
+TER3 (LCSAJ): 0.4% (6/1435)<br>
+Approximate LCSAJ segments: 1831<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
 		<div class="legend">
 			<h3>Mutant Testing Legend</h3>
 			<span class="legend-box survived-1"></span> Survived (tests missed this)
@@ -1423,7 +1463,7 @@ pre details.mutant-details ul {
 </span><span class=""> 1171: =cut
 </span><span class=""> 1172: 
 </span><span class=""> 1173: sub new {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1174 → 1194 → 1198</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1174 → 1194 → 0</span></span> 1174: 	my $class = shift;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1174 → 1194 → 1198</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1174 → 1194 → 0</span></span> 1174: 	my $class = shift;
 </span><span class=""> 1175: 
 </span><span class=""> 1176: 	# Handle hash or hashref arguments
 </span><span class=""> 1177: 	my $params = Params::Get::get_params(&#39;input_file&#39;, @_) || {};
@@ -1783,7 +1823,31 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 7, Killed: 0, Survived: 7)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_1436: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_1436: Numeric boundary flip < to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_1436: Numeric boundary flip < to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_1436: Numeric boundary flip < to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_1436: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -1808,30 +1872,6 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_1436: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_1436: Numeric boundary flip < to ></b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_1436: Numeric boundary flip < to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_1436: Numeric boundary flip < to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -2471,7 +2511,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1838: 	while ($code =~ /\$self\s*-&gt;\s*\{\s*[&#39;&quot;]?([^}&#39;&quot;]+)[&#39;&quot;]?\s*\}/g) {
 </span><span class=""> 1839: 		$fields_seen{$1}++;
 </span><span class=""> 1840: 	}
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1841 → 1841 → 1849</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1841 → 1841 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1841 → 1841 → 1849</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1841 → 1841 → 0</span></span> 1841: 	if (keys(%fields_seen) &gt; 1) {
+</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1841 → 1841 → 1849</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1841 → 1841 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1841 → 1841 → 1849</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1841 → 1841 → 0</span></span> 1841: 	if (keys(%fields_seen) &gt; 1) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -3708,7 +3748,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2614: 	}
 </span><span class=""> 2615: 
 </span><span class=""> 2616: 	# Run in an isolated Perl process
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2617 → 2639 → 2643</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2617 → 2639 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2617 → 2639 → 2643</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 2617 → 2639 → 0</span></span> 2617: 	my ($wtr, $rdr, $err) = (undef, undef, gensym);
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2617 → 2639 → 2643</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2617 → 2639 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2617 → 2639 → 2643</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2617 → 2639 → 0</span></span> 2617: 	my ($wtr, $rdr, $err) = (undef, undef, gensym);
 </span><span class=""> 2618: 	local %ENV;
 </span><span class=""> 2619: 	eval {
 </span><span class=""> 2620: 		use BSD::Resource;
@@ -4518,7 +4558,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3178: 			}
 </span><span class=""> 3179: 
 </span><span class=""> 3180: 			# If most returns are 0 or 1, strongly suggest boolean
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3181: 			if ($boolean_count &gt;= 2 &amp;&amp; $boolean_count &gt;= $total_count * 0.8) {
+</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3181: 			if ($boolean_count &gt;= 2 &amp;&amp; $boolean_count &gt;= $total_count * 0.8) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 7, Killed: 0, Survived: 7)</summary>
@@ -4873,7 +4913,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3359: 			}
 </span><span class=""> 3360: 
 </span><span class=""> 3361: 			# Check for consistent single value returns
-</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3362: 			if (@return_statements == 1 &amp;&amp; $return_statements[0] eq &#39;1&#39;) {
+</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3362: 			if (@return_statements == 1 &amp;&amp; $return_statements[0] eq &#39;1&#39;) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -5206,7 +5246,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 							</li></ul></details>
 <span class=""> 3503: 		}
 </span><span class=""> 3504: 
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3505: 		if ($comma_count &gt; 0 &amp;&amp; $content !~ /\b(?:bless|new)\b/) {
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3505: 		if ($comma_count &gt; 0 &amp;&amp; $content !~ /\b(?:bless|new)\b/) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -5326,12 +5366,20 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3566: 	$self-&gt;_log(&quot;  DEBUG no_value=$no_value_returns, true=$true_returns, self=$self_returns, total=$total_returns&quot;);
 </span><span class=""> 3567: 
 </span><span class=""> 3568: 	# Void context indicators
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3569: 	if ($no_value_returns &gt; 0 &amp;&amp; $no_value_returns == $total_returns) {
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3569: 	if ($no_value_returns &gt; 0 &amp;&amp; $no_value_returns == $total_returns) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 6, Killed: 0, Survived: 6)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_3569: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_3569: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_3569: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -5363,14 +5411,6 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_3569: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
 							</li><li><b>COND_INV_3569: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class=""> 3570: 		$output-&gt;{_void_context} = 1;
@@ -5381,15 +5421,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 8, Killed: 0, Survived: 8)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_3573: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_3573: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_3573: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -5414,6 +5446,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li><li><b>NUM_BOUNDARY_3573: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_3573: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -5479,7 +5519,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3598: 	}
 </span><span class=""> 3599: 
 </span><span class=""> 3600: 	# If most/all returns are $self, it&#39;s a chaining method
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3601 → 3601 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3601 → 3601 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3601 → 3601 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3601 → 3601 → 0</span></span> 3601: 	if ($self_returns &gt; 0 &amp;&amp; $total_returns &gt; 0) {
+</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3601 → 3601 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3601 → 3601 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3601 → 3601 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3601 → 3601 → 0</span></span> 3601: 	if ($self_returns &gt; 0 &amp;&amp; $total_returns &gt; 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 9, Killed: 0, Survived: 9)</summary>
@@ -5874,7 +5914,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 							</li></ul></details>
 <span class=""> 3727: 		}
 </span><span class=""> 3728: 
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3729: 		if ($comma_count &gt; 0) {
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3729: 		if ($comma_count &gt; 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -6267,7 +6307,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3937: 
 </span><span class=""> 3938: 	# Analyze each parameter (with safety limit)
 </span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3939 → 3939 → 4008</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3939 → 3939 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3939 → 3939 → 4008</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3939 → 3939 → 0</span></span> 3939: 	foreach my $param (keys %params) {
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3940: 		if ($param_count++ &gt; $self-&gt;{max_parameters}) {
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3940: 		if ($param_count++ &gt; $self-&gt;{max_parameters}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -6933,7 +6973,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 4349: 		while ($code =~ /when\s*\(\s*[&#39;&quot;]([^&#39;&quot;]+)[&#39;&quot;]\s*\)/g) {
 </span><span class=""> 4350: 			push @enum_values, $1;
 </span><span class=""> 4351: 		}
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 4352: 		if (@enum_values &gt;= 2) {
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 4352: 		if (@enum_values &gt;= 2) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
@@ -8008,7 +8048,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 5069: 		# Style 3: my $x = $_[0];
 </span><span class=""> 5070: 		while ($code =~ /my\s+\$(\w+)\s*=\s*\$_\[(\d+)\]/g) {
 </span><span class=""> 5071: 			my ($var, $index) = ($1, $2);
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 5072: 			if(($var ne &#39;class&#39;) || ($position &gt; 0) || ($method-&gt;{name} ne &#39;new&#39;)) {
+</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 5072: 			if(($var ne &#39;class&#39;) || ($position &gt; 0) || ($method-&gt;{name} ne &#39;new&#39;)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -8708,7 +8748,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 5417: 		my $highest_score = $param_details{$highest}{score};
 </span><span class=""> 5418: 		push @factors, sprintf(&quot;Highest scoring parameter: \$$highest (score: %d)&quot;, $highest_score);
 </span><span class=""> 5419: 
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 5420: 		if (@sorted_params &gt; 1) {
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 5420: 		if (@sorted_params &gt; 1) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -8755,7 +8795,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 5426: 
 </span><span class=""> 5427: 	# Determine confidence level
 </span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 5428 → 5429 → 5443</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 5428 → 5429 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 5428 → 5429 → 5443</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 5428 → 5429 → 0</span></span> 5428: 	my $level;
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 5429: 	if ($avg &gt;= 60) {
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 5429: 	if ($avg &gt;= 60) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
@@ -9007,7 +9047,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 5524: 
 </span><span class=""> 5525: 	# Determine confidence level
 </span><span class=""> 5526: 	my $level;
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 5527: 	if ($score &gt;= 60) {
+</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 5527: 	if ($score &gt;= 60) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
