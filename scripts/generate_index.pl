@@ -30,6 +30,63 @@ use YAML::XS;
 
 generate_index.pl - Test coverage dashboard generator
 
+=head1 DESCRIPTION
+
+C<generate_index.pl> generates an HTML test coverage dashboard for
+publication on GitHub Pages, combining four sources of test quality
+data into a single report:
+
+=over 4
+
+=item * B<Statement and branch coverage> from L<Devel::Cover>, showing
+which lines and branches were exercised by the test suite.
+
+=item * B<LCSAJ path coverage> (TER3) from the LCSAJ runtime debugger,
+showing which control-flow paths were executed. Displayed as blue
+(covered) or red (uncovered) dots on per-file mutation pages.
+
+=item * B<Mutation testing results> from C<bin/app-test-generator-mutate>,
+showing which injected faults the test suite detected (killed) and
+which it missed (survived).
+
+=item * B<CPAN Testers failure analysis>, showing which Perl versions
+and operating systems are failing, with automatic root cause detection
+including Perl version cliffs, locale sensitivity, and dependency
+version cliffs.
+
+=back
+
+In addition to the dashboard, the script drives the mutation-guided
+test generation pipeline described in
+L<App::Test::Generator/MUTATION-GUIDED TEST GENERATION>. Surviving
+mutants are used to automatically generate new test stubs and fuzz
+schemas that target the exact boundary conditions the test suite
+missed:
+
+=over 4
+
+=item * C<--generate_mutant_tests=DIR> produces TODO stub files in
+C<DIR/> for all surviving mutants, grouped by source file and
+deduplicated by line.
+
+=item * C<--generate_test=mutant> additionally attempts to produce
+runnable YAML schemas in C<DIR/conf/> for NUM_BOUNDARY survivors
+using L<App::Test::Generator::SchemaExtractor>.
+
+=item * C<--generate_fuzz> augments existing schemas in C<DIR/conf/>
+with boundary values from surviving mutants, writing timestamped
+copies that are picked up automatically by C<t/fuzz.t>.
+
+=back
+
+The script is designed to be shared across projects. Copy it into the
+C<scripts/> directory of each project that uses it:
+
+    cp ../App-Test-Generator/scripts/generate_index.pl scripts/
+
+It is invoked automatically by C<scripts/generate_test_dashboard> on
+each CI push via C<.github/workflows/dashboard.yml>.
+
 =head1 SYNOPSIS
 
 Generates an HTML dashboard for use as a testing dashboard on GitHub Pages.
