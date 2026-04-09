@@ -1931,8 +1931,16 @@ sub generate
 sub _load_schema {
 	my $schema_file = $_[0];
 
+	if(!defined($schema_file)) {
+		croak(__PACKAGE__, ': Usage: _load_schema($schema_file)');
+	}
+
+	if(length($schema_file) == 0) {
+		croak(__PACKAGE__, ': _load_schema given empty filename');
+	}
+
 	if(!-r $schema_file) {
-		croak(__PACKAGE__, ": generate($schema_file): $!");
+		croak(__PACKAGE__, ": _load_schema($schema_file): $!");
 	}
 
 	# --- Load configuration safely (require so config can use 'our' variables) ---
