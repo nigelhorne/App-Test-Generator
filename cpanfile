@@ -2,6 +2,7 @@
 
 requires 'perl', '5.036';
 
+requires 'BSD::Resource';
 requires 'Carp';
 requires 'Config::Abstraction', '0.36';
 requires 'Data::Dumper';

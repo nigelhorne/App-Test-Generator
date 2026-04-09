@@ -23,6 +23,7 @@ WriteMakefile(
 	MIN_PERL_VERSION => '5.036',
 	PREREQ_PM => {
 		'autodie' => 0,
+		'BSD::Resource' => 0,
 		'Carp' => 0,
 		'Config::Abstraction' => 0.36,
 		'Data::Dumper' => 0,

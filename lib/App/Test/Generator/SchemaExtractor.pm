@@ -2575,7 +2575,7 @@ my @params;
 
 for my $p (@sig_params) {
 	push @params, {
-		name     => "arg$pos",
+		name => "arg$pos",
 		optional => $p->optional ? 1 : 0,
 		position => $pos,
 		type => $p->type->name
@@ -2588,18 +2588,18 @@ my $returns;
 if (my $r = $sig->returns_scalar) {
 	$returns = {
 		context => 'scalar',
-		type    => $r ? $r->name : 'unknown',
+		type => $r ? $r->name : 'unknown',
 	};
 } elsif ($r = $sig->returns_list) {
 	$returns = {
 		context => 'list',
-		type    => $r ? $r->name : 'unknown',
+		type => $r ? $r->name : 'unknown',
 	};
 }
 
 print encode_json({
 	parameters => \@params,
-	returns    => $returns,
+	returns => $returns,
 });
 PERL
 
@@ -2616,10 +2616,12 @@ PERL
 	# Run in an isolated Perl process
 	my ($wtr, $rdr, $err) = (undef, undef, gensym);
 	local %ENV;
-	eval {
-		use BSD::Resource;
-		setrlimit(RLIMIT_AS, 50_000_000, 50_000_000);
-	};
+	if ($^O ne 'MSWin32') {
+		eval {
+			use BSD::Resource;
+			setrlimit(RLIMIT_AS, 50_000_000, 50_000_000);
+		}
+	}
 
 	my $pid = open3($wtr, $rdr, $err, $^X, '-T');
 
