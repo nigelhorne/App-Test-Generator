@@ -2616,12 +2616,19 @@ PERL
 	# Run in an isolated Perl process
 	my ($wtr, $rdr, $err) = (undef, undef, gensym);
 	local %ENV;
-	if ($^O ne 'MSWin32') {
-		eval {
-			use BSD::Resource;
-			setrlimit(RLIMIT_AS, 50_000_000, 50_000_000);
-		}
-	}
+
+	# Apply memory limit if BSD::Resource is available.
+	# This module is Unix-only and not available on Windows,
+	# so we guard the call and skip silently if not present.
+	eval {
+		require BSD::Resource;
+		BSD::Resource::setrlimit(
+			BSD::Resource::RLIMIT_AS(),
+			50_000_000,
+			50_000_000
+		);
+	};
+	# Ignore failure — resource limiting is best-effort only
 
 	my $pid = open3($wtr, $rdr, $err, $^X, '-T');
 

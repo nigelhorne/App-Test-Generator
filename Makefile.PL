@@ -11,42 +11,6 @@ if($^O eq 'darwin') {
 	$dist->{'TAR'} = 'gtar';
 }
 
-my $prereq_pm = {
-	'autodie' => 0,
-	'Carp' => 0,
-	'Config::Abstraction' => 0.36,
-	'Data::Dumper' => 0,
-	'Data::Section::Simple' => 0,
-	'File::Copy' => 0,
-	'File::Copy::Recursive' => 0,
-	'File::Path' => 0,
-	'File::Spec' => 0,
-	'File::Temp' => 0,
-	'Getopt::Long' => 0,
-	'HTML::Entities' => 0,
-	'Module::Load::Conditional' => 0,
-	'IPC::Open3' => 0,
-	'JSON::MaybeXS' => 0,
-	'Params::Get' => 0.13,
-	'Params::Validate::Strict' => 0.23,
-	'PPI' => 0,
-	'Pod::Simple' => 0,
-	'Pod::Usage' => 0,
-	'Readonly::Values::Boolean' => 0,
-	'Return::Set' => 0.03,
-	'UUID::Tiny' => 0,
-	're' => 0,
-	'Safe' => 0,
-	'Symbol' => 0,
-	'Template' => 0,
-	'UUID::Tiny' => 0,
-	'YAML::XS' => 0
-};
-
-if ($^O ne 'MSWin32') {
-	$prereq_pm->{'BSD::Resource'} = 0;
-}
-
 WriteMakefile(
 	NAME => 'App::Test::Generator',
 	VERSION_FROM => 'lib/App/Test/Generator.pm',
@@ -57,8 +21,37 @@ WriteMakefile(
 		: ()),
 	EXE_FILES => ['bin/app-test-generator-mutate', 'bin/fuzz-harness-generator', 'bin/extract-schemas', 'bin/extract-schemas2'],
 	MIN_PERL_VERSION => '5.036',
-	PREREQ_PM => $prereq_pm,
-	TEST_REQUIRES => {
+	PREREQ_PM => {
+		'autodie' => 0,
+		'Carp' => 0,
+		'Config::Abstraction' => 0.36,
+		'Data::Dumper' => 0,
+		'Data::Section::Simple' => 0,
+		'File::Copy' => 0,
+		'File::Copy::Recursive' => 0,
+		'File::Path' => 0,
+		'File::Spec' => 0,
+		'File::Temp' => 0,
+		'Getopt::Long' => 0,
+		'HTML::Entities' => 0,
+		'Module::Load::Conditional' => 0,
+		'IPC::Open3' => 0,
+		'JSON::MaybeXS' => 0,
+		'Params::Get' => 0.13,
+		'Params::Validate::Strict' => 0.23,
+		'PPI' => 0,
+		'Pod::Simple' => 0,
+		'Pod::Usage' => 0,
+		'Readonly::Values::Boolean' => 0,
+		'Return::Set' => 0.03,
+		'UUID::Tiny' => 0,
+		're' => 0,
+		'Safe' => 0,
+		'Symbol' => 0,
+		'Template' => 0,
+		'UUID::Tiny' => 0,
+		'YAML::XS' => 0
+	}, TEST_REQUIRES => {
 		'Cwd' => 0,
 		'Data::Random' => 0,
 		'Data::Random::String' => 0,
