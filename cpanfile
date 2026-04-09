@@ -13,6 +13,7 @@ requires 'File::Path';
 requires 'File::Spec';
 requires 'File::Temp';
 requires 'Getopt::Long';
+requires 'HTML::Entities';
 requires 'IPC::Open3';
 requires 'JSON::MaybeXS';
 requires 'Module::Load::Conditional';
