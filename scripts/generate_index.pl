@@ -2976,8 +2976,7 @@ sub _generate_fuzz_schemas {
 
 	# Nothing to do if t/conf/ does not exist yet
 	unless(-d $conf_dir) {
-		print "No $conf_dir directory found, skipping fuzz schema generation\n"
-			if $config{verbose};
+		print "No $conf_dir directory found, skipping fuzz schema generation\n" if $config{verbose};
 		return 0;
 	}
 
@@ -3081,6 +3080,17 @@ sub _generate_fuzz_schemas {
 			}
 
 			next unless defined $bval;
+
+			# --------------------------------------------------
+			# Skip value boundaries that are about internal
+			# data structure sizes rather than argument values.
+			# Patterns like scalar(keys %hash) == 0 are testing
+			# the size of an internal hash, not an argument, so
+			# adding these values to edge_case_array would pass
+			# them as argument values which is meaningless.
+			# --------------------------------------------------
+			next if $source =~ /\bkeys\s+%/;
+			next if $source =~ /scalar\s*\(\s*keys\b/;
 
 			for my $v ($bval - 1, $bval, $bval + 1) {
 				# Clamp to 0 for non-negative contexts such as

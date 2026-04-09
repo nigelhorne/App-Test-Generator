@@ -152,7 +152,7 @@ sub _pick_from {
 }
 
 sub rand_ascii_str {
-	my $len = shift || int(rand(10)) + 1;
+	my $len = shift // int(rand(10)) + 1;
 	# join '', map { chr(97 + int(rand(26))) } 1..$len;
 	return Data::Random::String->create_random_string(length => $len, contains => 'alphanumeric');
 }
@@ -1158,7 +1158,8 @@ sub _generate_string_cases
 		if(exists($spec->{'min'})) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str(($spec->{'min'} + 1) * 1_000), _LINE => __LINE__ ) };
 		} else {
-			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str(10_000), _LINE => __LINE__ ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str(65535), _LINE => __LINE__, _DESCRIPTION => 'Long string nearly 64K characters' ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str(65536), _LINE => __LINE__, _DESCRIPTION => 'Long string 64K characters' ) };
 		}
 		if((!exists($spec->{min})) || ($spec->{min} <= 1)) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => "\x{FEFF}", _STATUS => 'OK', _LINE => __LINE__, _DESCRIPTION => 'Byte order marker' ) };
