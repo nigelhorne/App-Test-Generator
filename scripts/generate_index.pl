@@ -3157,8 +3157,23 @@ sub _generate_fuzz_schemas {
 		}
 
 		# Separate value boundaries from arity boundaries
-		my $bvals       = $survivor->{values} || [];
+		my $bvals = $survivor->{values} || [];
 		my $arity_hints = $survivor->{arity}  || [];
+
+		# --------------------------------------------------
+		# Skip writing a fuzz schema if the only augmentation
+		# is arity boundary cases and there are no value
+		# boundary additions. Arity cases do not benefit from
+		# random string fuzzing — the cases entries alone are
+		# sufficient to exercise the boundary, and random
+		# string fuzzing will only produce meaningless
+		# file-not-found or type-error deaths that obscure
+		# the real boundary condition.
+		# --------------------------------------------------
+		unless(@{$bvals}) {
+			print "  Skipping $schema_file: only argument-count boundaries found, no value boundaries to fuzz\n" if $config{verbose};
+			next;
+		}
 
 		# --------------------------------------------------
 		# Determine which edge key to use for augmentation.
@@ -3169,11 +3184,11 @@ sub _generate_fuzz_schemas {
 
 		if(exists $schema->{edge_case_array}) {
 			# Schema already uses positional edge cases
-			$edge_key      = 'edge_case_array';
+			$edge_key = 'edge_case_array';
 			$numeric_params = [];
 		} elsif(exists $schema->{edge_cases}) {
 			# Schema already uses named edge cases
-			$edge_key      = 'edge_cases';
+			$edge_key = 'edge_cases';
 
 			# Collect existing numeric param names from edge_cases
 			$numeric_params = [ keys %{ $schema->{edge_cases} } ];
