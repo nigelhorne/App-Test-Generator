@@ -328,7 +328,7 @@ Approximate LCSAJ segments: 477<br>
 </span><span class="">   36: 
 </span><span class="">   37: our @EXPORT_OK = qw(generate);
 </span><span class="">   38: 
-</span><span class="">   39: our $VERSION = &#39;0.30&#39;;
+</span><span class="">   39: our $VERSION = &#39;0.31&#39;;
 </span><span class="">   40: 
 </span><span class="">   41: use constant {
 </span><span class="">   42: 	DEFAULT_ITERATIONS =&gt; 30,
@@ -343,7 +343,7 @@ Approximate LCSAJ segments: 477<br>
 </span><span class="">   51: 
 </span><span class="">   52: =head1 VERSION
 </span><span class="">   53: 
-</span><span class="">   54: Version 0.30
+</span><span class="">   54: Version 0.31
 </span><span class="">   55: 
 </span><span class="">   56: =head1 SYNOPSIS
 </span><span class="">   57: 
@@ -3230,217 +3230,215 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2841: 				}
 </span><span class=""> 2842: 			},
 </span><span class=""> 2843: 			description =&gt; &#39;MD5 hashes (32 hex characters)&#39;,
-</span><span class=""> 2844: 		},
-</span><span class=""> 2845: 
-</span><span class=""> 2846: 		sha256 =&gt; {
-</span><span class=""> 2847: 			code =&gt; q{
-</span><span class=""> 2848: 				Gen {
-</span><span class=""> 2849: 					join(&#39;&#39;, map { sprintf(&#39;%x&#39;, int(rand(16))) } 1..64);
-</span><span class=""> 2850: 				}
-</span><span class=""> 2851: 			},
-</span><span class=""> 2852: 			description =&gt; &#39;SHA-256 hashes (64 hex characters)&#39;,
-</span><span class=""> 2853: 		},
-</span><span class=""> 2854: 
-</span><span class=""> 2855: 		unix_timestamp =&gt; {
-</span><span class=""> 2856: 			code =&gt; q{
-</span><span class=""> 2857: 				Gen {
-</span><span class=""> 2858: 					time;
-</span><span class=""> 2859: 				}
-</span><span class=""> 2860: 			}
-</span><span class=""> 2861: 		},
-</span><span class=""> 2862: 	};
-</span><span class=""> 2863: }
+</span><span class=""> 2844: 		}, sha256 =&gt; {
+</span><span class=""> 2845: 			code =&gt; q{
+</span><span class=""> 2846: 				Gen {
+</span><span class=""> 2847: 					join(&#39;&#39;, map { sprintf(&#39;%x&#39;, int(rand(16))) } 1..64);
+</span><span class=""> 2848: 				}
+</span><span class=""> 2849: 			},
+</span><span class=""> 2850: 			description =&gt; &#39;SHA-256 hashes (64 hex characters)&#39;,
+</span><span class=""> 2851: 		},
+</span><span class=""> 2852: 
+</span><span class=""> 2853: 		unix_timestamp =&gt; {
+</span><span class=""> 2854: 			code =&gt; q{
+</span><span class=""> 2855: 				Gen {
+</span><span class=""> 2856: 					time;
+</span><span class=""> 2857: 				}
+</span><span class=""> 2858: 			}
+</span><span class=""> 2859: 		},
+</span><span class=""> 2860: 	};
+</span><span class=""> 2861: }
+</span><span class=""> 2862: 
+</span><span class=""> 2863: =head2 _get_builtin_properties
 </span><span class=""> 2864: 
-</span><span class=""> 2865: =head2 _get_builtin_properties
+</span><span class=""> 2865: Returns a hash of built-in property templates that can be applied to transforms.
 </span><span class=""> 2866: 
-</span><span class=""> 2867: Returns a hash of built-in property templates that can be applied to transforms.
+</span><span class=""> 2867: =cut
 </span><span class=""> 2868: 
-</span><span class=""> 2869: =cut
-</span><span class=""> 2870: 
-</span><span class=""> 2871: sub _get_builtin_properties {
-</span><span class=""> 2872: 	return {
-</span><span class=""> 2873: 		idempotent =&gt; {
-</span><span class=""> 2874: 			description =&gt; &#39;Function is idempotent: f(f(x)) == f(x)&#39;,
-</span><span class=""> 2875: 			code_template =&gt; sub {
-</span><span class=""> 2876: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 2877: 				# Use string comparison - works for all types in Perl
-</span><span class=""> 2878: 				return &quot;do { my \$tmp = $call_code; \$result eq \$tmp }&quot;;
-</span><span class=""> 2879: 			},
-</span><span class=""> 2880: 			applicable_to =&gt; [&#39;all&#39;],
-</span><span class=""> 2881: 		},
-</span><span class=""> 2882: 
-</span><span class=""> 2883: 		non_negative =&gt; {
-</span><span class=""> 2884: 			description =&gt; &#39;Result is always non-negative&#39;,
-</span><span class=""> 2885: 			code_template =&gt; sub {
-</span><span class=""> 2886: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 2887: 				return &#39;$result &gt;= 0&#39;;
-</span><span class=""> 2888: 			},
-</span><span class=""> 2889: 			applicable_to =&gt; [&#39;number&#39;, &#39;integer&#39;, &#39;float&#39;],
-</span><span class=""> 2890: 		},
-</span><span class=""> 2891: 
-</span><span class=""> 2892: 		positive =&gt; {
-</span><span class=""> 2893: 			description =&gt; &#39;Result is always positive (&gt; 0)&#39;,
-</span><span class=""> 2894: 			code_template =&gt; sub {
-</span><span class=""> 2895: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 2896: 				return &#39;$result &gt; 0&#39;;
-</span><span class=""> 2897: 			},
-</span><span class=""> 2898: 			applicable_to =&gt; [&#39;number&#39;, &#39;integer&#39;, &#39;float&#39;],
-</span><span class=""> 2899: 		},
-</span><span class=""> 2900: 
-</span><span class=""> 2901: 		non_empty =&gt; {
-</span><span class=""> 2902: 			description =&gt; &#39;Result is never empty&#39;,
-</span><span class=""> 2903: 			code_template =&gt; sub {
-</span><span class=""> 2904: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 2905: 				return &#39;length($result) &gt; 0&#39;;
-</span><span class=""> 2906: 			},
-</span><span class=""> 2907: 			applicable_to =&gt; [&#39;string&#39;],
-</span><span class=""> 2908: 		},
-</span><span class=""> 2909: 
-</span><span class=""> 2910: 		length_preserved =&gt; {
-</span><span class=""> 2911: 			description =&gt; &#39;Output length equals input length&#39;,
-</span><span class=""> 2912: 			code_template =&gt; sub {
-</span><span class=""> 2913: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 2914: 				my $first_var = $input_vars-&gt;[0];
-</span><span class=""> 2915: 				return &quot;length(\$result) == length(\$$first_var)&quot;;
-</span><span class=""> 2916: 			},
-</span><span class=""> 2917: 			applicable_to =&gt; [&#39;string&#39;],
-</span><span class=""> 2918: 		},
-</span><span class=""> 2919: 
-</span><span class=""> 2920: 		uppercase =&gt; {
-</span><span class=""> 2921: 			description =&gt; &#39;Result is all uppercase&#39;,
-</span><span class=""> 2922: 			code_template =&gt; sub {
-</span><span class=""> 2923: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 2924: 				return &#39;$result eq uc($result)&#39;;
-</span><span class=""> 2925: 			},
-</span><span class=""> 2926: 			applicable_to =&gt; [&#39;string&#39;],
-</span><span class=""> 2927: 		},
-</span><span class=""> 2928: 
-</span><span class=""> 2929: 		lowercase =&gt; {
-</span><span class=""> 2930: 			description =&gt; &#39;Result is all lowercase&#39;,
-</span><span class=""> 2931: 			code_template =&gt; sub {
-</span><span class=""> 2932: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 2933: 				return &#39;$result eq lc($result)&#39;;
-</span><span class=""> 2934: 			},
-</span><span class=""> 2935: 			applicable_to =&gt; [&#39;string&#39;],
-</span><span class=""> 2936: 		},
-</span><span class=""> 2937: 
-</span><span class=""> 2938: 		trimmed =&gt; {
-</span><span class=""> 2939: 			description =&gt; &#39;Result has no leading/trailing whitespace&#39;,
-</span><span class=""> 2940: 			code_template =&gt; sub {
-</span><span class=""> 2941: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 2942: 				return &#39;$result !~ /^\s/ &amp;&amp; $result !~ /\s$/&#39;;
-</span><span class=""> 2943: 			},
-</span><span class=""> 2944: 			applicable_to =&gt; [&#39;string&#39;],
-</span><span class=""> 2945: 		},
-</span><span class=""> 2946: 
-</span><span class=""> 2947: 		sorted_ascending =&gt; {
-</span><span class=""> 2948: 			description =&gt; &#39;Array is sorted in ascending order&#39;,
-</span><span class=""> 2949: 			code_template =&gt; sub {
-</span><span class=""> 2950: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 2951: 				return &#39;do { my @arr = @$result; my $sorted = 1; for my $i (1..$#arr) { $sorted = 0 if $arr[$i] &lt; $arr[$i-1]; } $sorted }&#39;;
-</span><span class=""> 2952: 			},
-</span><span class=""> 2953: 			applicable_to =&gt; [&#39;arrayref&#39;],
-</span><span class=""> 2954: 		},
-</span><span class=""> 2955: 
-</span><span class=""> 2956: 		sorted_descending =&gt; {
-</span><span class=""> 2957: 			description =&gt; &#39;Array is sorted in descending order&#39;,
-</span><span class=""> 2958: 			code_template =&gt; sub {
-</span><span class=""> 2959: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 2960: 				return &#39;do { my @arr = @$result; my $sorted = 1; for my $i (1..$#arr) { $sorted = 0 if $arr[$i] &gt; $arr[$i-1]; } $sorted }&#39;;
-</span><span class=""> 2961: 			},
-</span><span class=""> 2962: 			applicable_to =&gt; [&#39;arrayref&#39;],
-</span><span class=""> 2963: 		},
-</span><span class=""> 2964: 
-</span><span class=""> 2965: 		unique_elements =&gt; {
-</span><span class=""> 2966: 			description =&gt; &#39;Array has no duplicate elements&#39;,
-</span><span class=""> 2967: 			code_template =&gt; sub {
-</span><span class=""> 2968: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 2969: 				return &#39;do { my @arr = @$result; my %seen; !grep { $seen{$_}++ } @arr }&#39;;
-</span><span class=""> 2970: 			},
-</span><span class=""> 2971: 			applicable_to =&gt; [&#39;arrayref&#39;],
-</span><span class=""> 2972: 		},
-</span><span class=""> 2973: 
-</span><span class=""> 2974: 		preserves_keys =&gt; {
-</span><span class=""> 2975: 			description =&gt; &#39;Hash has same keys as input&#39;,
-</span><span class=""> 2976: 			code_template =&gt; sub {
-</span><span class=""> 2977: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 2978: 				my $first_var = $input_vars-&gt;[0];
-</span><span class=""> 2979: 				return &#39;do { my @in = sort keys %{$&#39; . $first_var . &#39;}; my @out = sort keys %$result; join(&quot;,&quot;, @in) eq join(&quot;,&quot;, @out) }&#39;;
-</span><span class=""> 2980: 			},
-</span><span class=""> 2981: 			applicable_to =&gt; [&#39;hashref&#39;],
-</span><span class=""> 2982: 		},
-</span><span class=""> 2983: 
-</span><span class=""> 2984: 		monotonic_increasing =&gt; {
-</span><span class=""> 2985: 			description =&gt; &#39;For x &lt;= y, f(x) &lt;= f(y)&#39;,
-</span><span class=""> 2986: 			code_template =&gt; sub {
-</span><span class=""> 2987: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 2988: 				# This would need multiple inputs - complex
-</span><span class=""> 2989: 				return &#39;1&#39;;	# Placeholder
-</span><span class=""> 2990: 			},
-</span><span class=""> 2991: 			applicable_to =&gt; [&#39;number&#39;, &#39;integer&#39;],
-</span><span class=""> 2992: 		},
-</span><span class=""> 2993: 	};
-</span><span class=""> 2994: }
+</span><span class=""> 2869: sub _get_builtin_properties {
+</span><span class=""> 2870: 	return {
+</span><span class=""> 2871: 		idempotent =&gt; {
+</span><span class=""> 2872: 			description =&gt; &#39;Function is idempotent: f(f(x)) == f(x)&#39;,
+</span><span class=""> 2873: 			code_template =&gt; sub {
+</span><span class=""> 2874: 				my ($function, $call_code, $input_vars) = @_;
+</span><span class=""> 2875: 				# Use string comparison - works for all types in Perl
+</span><span class=""> 2876: 				return &quot;do { my \$tmp = $call_code; \$result eq \$tmp }&quot;;
+</span><span class=""> 2877: 			},
+</span><span class=""> 2878: 			applicable_to =&gt; [&#39;all&#39;],
+</span><span class=""> 2879: 		},
+</span><span class=""> 2880: 
+</span><span class=""> 2881: 		non_negative =&gt; {
+</span><span class=""> 2882: 			description =&gt; &#39;Result is always non-negative&#39;,
+</span><span class=""> 2883: 			code_template =&gt; sub {
+</span><span class=""> 2884: 				my ($function, $call_code, $input_vars) = @_;
+</span><span class=""> 2885: 				return &#39;$result &gt;= 0&#39;;
+</span><span class=""> 2886: 			},
+</span><span class=""> 2887: 			applicable_to =&gt; [&#39;number&#39;, &#39;integer&#39;, &#39;float&#39;],
+</span><span class=""> 2888: 		},
+</span><span class=""> 2889: 
+</span><span class=""> 2890: 		positive =&gt; {
+</span><span class=""> 2891: 			description =&gt; &#39;Result is always positive (&gt; 0)&#39;,
+</span><span class=""> 2892: 			code_template =&gt; sub {
+</span><span class=""> 2893: 				my ($function, $call_code, $input_vars) = @_;
+</span><span class=""> 2894: 				return &#39;$result &gt; 0&#39;;
+</span><span class=""> 2895: 			},
+</span><span class=""> 2896: 			applicable_to =&gt; [&#39;number&#39;, &#39;integer&#39;, &#39;float&#39;],
+</span><span class=""> 2897: 		},
+</span><span class=""> 2898: 
+</span><span class=""> 2899: 		non_empty =&gt; {
+</span><span class=""> 2900: 			description =&gt; &#39;Result is never empty&#39;,
+</span><span class=""> 2901: 			code_template =&gt; sub {
+</span><span class=""> 2902: 				my ($function, $call_code, $input_vars) = @_;
+</span><span class=""> 2903: 				return &#39;length($result) &gt; 0&#39;;
+</span><span class=""> 2904: 			},
+</span><span class=""> 2905: 			applicable_to =&gt; [&#39;string&#39;],
+</span><span class=""> 2906: 		},
+</span><span class=""> 2907: 
+</span><span class=""> 2908: 		length_preserved =&gt; {
+</span><span class=""> 2909: 			description =&gt; &#39;Output length equals input length&#39;,
+</span><span class=""> 2910: 			code_template =&gt; sub {
+</span><span class=""> 2911: 				my ($function, $call_code, $input_vars) = @_;
+</span><span class=""> 2912: 				my $first_var = $input_vars-&gt;[0];
+</span><span class=""> 2913: 				return &quot;length(\$result) == length(\$$first_var)&quot;;
+</span><span class=""> 2914: 			},
+</span><span class=""> 2915: 			applicable_to =&gt; [&#39;string&#39;],
+</span><span class=""> 2916: 		},
+</span><span class=""> 2917: 
+</span><span class=""> 2918: 		uppercase =&gt; {
+</span><span class=""> 2919: 			description =&gt; &#39;Result is all uppercase&#39;,
+</span><span class=""> 2920: 			code_template =&gt; sub {
+</span><span class=""> 2921: 				my ($function, $call_code, $input_vars) = @_;
+</span><span class=""> 2922: 				return &#39;$result eq uc($result)&#39;;
+</span><span class=""> 2923: 			},
+</span><span class=""> 2924: 			applicable_to =&gt; [&#39;string&#39;],
+</span><span class=""> 2925: 		},
+</span><span class=""> 2926: 
+</span><span class=""> 2927: 		lowercase =&gt; {
+</span><span class=""> 2928: 			description =&gt; &#39;Result is all lowercase&#39;,
+</span><span class=""> 2929: 			code_template =&gt; sub {
+</span><span class=""> 2930: 				my ($function, $call_code, $input_vars) = @_;
+</span><span class=""> 2931: 				return &#39;$result eq lc($result)&#39;;
+</span><span class=""> 2932: 			},
+</span><span class=""> 2933: 			applicable_to =&gt; [&#39;string&#39;],
+</span><span class=""> 2934: 		},
+</span><span class=""> 2935: 
+</span><span class=""> 2936: 		trimmed =&gt; {
+</span><span class=""> 2937: 			description =&gt; &#39;Result has no leading/trailing whitespace&#39;,
+</span><span class=""> 2938: 			code_template =&gt; sub {
+</span><span class=""> 2939: 				my ($function, $call_code, $input_vars) = @_;
+</span><span class=""> 2940: 				return &#39;$result !~ /^\s/ &amp;&amp; $result !~ /\s$/&#39;;
+</span><span class=""> 2941: 			},
+</span><span class=""> 2942: 			applicable_to =&gt; [&#39;string&#39;],
+</span><span class=""> 2943: 		},
+</span><span class=""> 2944: 
+</span><span class=""> 2945: 		sorted_ascending =&gt; {
+</span><span class=""> 2946: 			description =&gt; &#39;Array is sorted in ascending order&#39;,
+</span><span class=""> 2947: 			code_template =&gt; sub {
+</span><span class=""> 2948: 				my ($function, $call_code, $input_vars) = @_;
+</span><span class=""> 2949: 				return &#39;do { my @arr = @$result; my $sorted = 1; for my $i (1..$#arr) { $sorted = 0 if $arr[$i] &lt; $arr[$i-1]; } $sorted }&#39;;
+</span><span class=""> 2950: 			},
+</span><span class=""> 2951: 			applicable_to =&gt; [&#39;arrayref&#39;],
+</span><span class=""> 2952: 		},
+</span><span class=""> 2953: 
+</span><span class=""> 2954: 		sorted_descending =&gt; {
+</span><span class=""> 2955: 			description =&gt; &#39;Array is sorted in descending order&#39;,
+</span><span class=""> 2956: 			code_template =&gt; sub {
+</span><span class=""> 2957: 				my ($function, $call_code, $input_vars) = @_;
+</span><span class=""> 2958: 				return &#39;do { my @arr = @$result; my $sorted = 1; for my $i (1..$#arr) { $sorted = 0 if $arr[$i] &gt; $arr[$i-1]; } $sorted }&#39;;
+</span><span class=""> 2959: 			},
+</span><span class=""> 2960: 			applicable_to =&gt; [&#39;arrayref&#39;],
+</span><span class=""> 2961: 		},
+</span><span class=""> 2962: 
+</span><span class=""> 2963: 		unique_elements =&gt; {
+</span><span class=""> 2964: 			description =&gt; &#39;Array has no duplicate elements&#39;,
+</span><span class=""> 2965: 			code_template =&gt; sub {
+</span><span class=""> 2966: 				my ($function, $call_code, $input_vars) = @_;
+</span><span class=""> 2967: 				return &#39;do { my @arr = @$result; my %seen; !grep { $seen{$_}++ } @arr }&#39;;
+</span><span class=""> 2968: 			},
+</span><span class=""> 2969: 			applicable_to =&gt; [&#39;arrayref&#39;],
+</span><span class=""> 2970: 		},
+</span><span class=""> 2971: 
+</span><span class=""> 2972: 		preserves_keys =&gt; {
+</span><span class=""> 2973: 			description =&gt; &#39;Hash has same keys as input&#39;,
+</span><span class=""> 2974: 			code_template =&gt; sub {
+</span><span class=""> 2975: 				my ($function, $call_code, $input_vars) = @_;
+</span><span class=""> 2976: 				my $first_var = $input_vars-&gt;[0];
+</span><span class=""> 2977: 				return &#39;do { my @in = sort keys %{$&#39; . $first_var . &#39;}; my @out = sort keys %$result; join(&quot;,&quot;, @in) eq join(&quot;,&quot;, @out) }&#39;;
+</span><span class=""> 2978: 			},
+</span><span class=""> 2979: 			applicable_to =&gt; [&#39;hashref&#39;],
+</span><span class=""> 2980: 		},
+</span><span class=""> 2981: 
+</span><span class=""> 2982: 		monotonic_increasing =&gt; {
+</span><span class=""> 2983: 			description =&gt; &#39;For x &lt;= y, f(x) &lt;= f(y)&#39;,
+</span><span class=""> 2984: 			code_template =&gt; sub {
+</span><span class=""> 2985: 				my ($function, $call_code, $input_vars) = @_;
+</span><span class=""> 2986: 				# This would need multiple inputs - complex
+</span><span class=""> 2987: 				return &#39;1&#39;;	# Placeholder
+</span><span class=""> 2988: 			},
+</span><span class=""> 2989: 			applicable_to =&gt; [&#39;number&#39;, &#39;integer&#39;],
+</span><span class=""> 2990: 		},
+</span><span class=""> 2991: 	};
+</span><span class=""> 2992: }
+</span><span class=""> 2993: 
+</span><span class=""> 2994: =head2 _schema_to_lectrotest_generator
 </span><span class=""> 2995: 
-</span><span class=""> 2996: =head2 _schema_to_lectrotest_generator
+</span><span class=""> 2996: Converts a schema field spec to a LectroTest generator string.
 </span><span class=""> 2997: 
-</span><span class=""> 2998: Converts a schema field spec to a LectroTest generator string.
+</span><span class=""> 2998: =cut
 </span><span class=""> 2999: 
-</span><span class=""> 3000: =cut
-</span><span class=""> 3001: 
-</span><span class=""> 3002: sub _schema_to_lectrotest_generator {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3003 → 3008 → 3025</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3003 → 3008 → 0</span></span> 3003: 	my ($field_name, $spec) = @_;
+</span><span class=""> 3000: sub _schema_to_lectrotest_generator {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3001 → 3006 → 3023</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3001 → 3006 → 0</span></span> 3001: 	my ($field_name, $spec) = @_;
+</span><span class=""> 3002: 
+</span><span class=""> 3003: 	my $type = $spec-&gt;{type} || &#39;string&#39;;
 </span><span class=""> 3004: 
-</span><span class=""> 3005: 	my $type = $spec-&gt;{type} || &#39;string&#39;;
-</span><span class=""> 3006: 
-</span><span class=""> 3007: 	# Check for semantic generator first
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3008: 	if ($type eq &#39;string&#39; &amp;&amp; defined $spec-&gt;{semantic}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3009: 		my $semantic_type = $spec-&gt;{semantic};
-</span><span class=""> 3010: 		my $generators = _get_semantic_generators();
-</span><span class=""> 3011: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3012: 		if (exists $generators-&gt;{$semantic_type}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3013: 			my $gen_code = $generators-&gt;{$semantic_type}{code};
-</span><span class=""> 3014: 			# Remove leading/trailing whitespace and compress
-</span><span class=""> 3015: 			$gen_code =~ s/^\s+//;
-</span><span class=""> 3016: 			$gen_code =~ s/\s+$//;
-</span><span class=""> 3017: 			$gen_code =~ s/\n\s+/ /g;
-</span><span class=""> 3018: 			return &quot;$field_name &lt;- $gen_code&quot;;
-</span><span class=""> 3019: 		} else {
-</span><span class=""> 3020: 			carp &quot;Unknown semantic type &#39;$semantic_type&#39;, falling back to regular string generator&quot;;
-</span><span class=""> 3021: 			# Fall through to regular string generation
-</span><span class=""> 3022: 		}
-</span><span class=""> 3023: 	}
-</span><span class=""> 3024: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3025 → 3025 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3025 → 3025 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3025 → 3025 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3025 → 3025 → 0</span></span> 3025: 	if ($type eq &#39;integer&#39;) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3026: 		my $min = $spec-&gt;{min};
-</span><span class=""> 3027: 		my $max = $spec-&gt;{max};
-</span><span class=""> 3028: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3029: 		if (!defined($min) &amp;&amp; !defined($max)) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3030: 			return &quot;$field_name &lt;- Int&quot;;
-</span><span class=""> 3031: 		} elsif (!defined($min)) {
-</span><span class=""> 3032: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { int(rand($max + 1)) })&quot;;
-</span><span class=""> 3033: 		} elsif (!defined($max)) {
-</span><span class=""> 3034: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { $min + int(rand(1000)) })&quot;;
-</span><span class=""> 3035: 		} else {
-</span><span class=""> 3036: 			my $range = $max - $min;
-</span><span class=""> 3037: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { $min + int(rand($range + 1)) })&quot;;
-</span><span class=""> 3038: 		}
-</span><span class=""> 3039: 	}
-</span><span class=""> 3040: 	elsif ($type eq &#39;number&#39; || $type eq &#39;float&#39;) {
-</span><span class=""> 3041: 		my $min = $spec-&gt;{min};
-</span><span class=""> 3042: 		my $max = $spec-&gt;{max};
-</span><span class=""> 3043: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3044: 		if (!defined($min) &amp;&amp; !defined($max)) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3045: 			# No constraints - full range
-</span><span class=""> 3046: 			return &quot;$field_name &lt;- Float(sized =&gt; sub { rand(1000) - 500 })&quot;;
-</span><span class=""> 3047: 		} elsif (!defined($min)) {
-</span><span class=""> 3048: 			# Only max defined
-</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3049: 			if ($max == 0) {
+</span><span class=""> 3005: 	# Check for semantic generator first
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3006: 	if ($type eq &#39;string&#39; &amp;&amp; defined $spec-&gt;{semantic}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3007: 		my $semantic_type = $spec-&gt;{semantic};
+</span><span class=""> 3008: 		my $generators = _get_semantic_generators();
+</span><span class=""> 3009: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3010: 		if (exists $generators-&gt;{$semantic_type}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3011: 			my $gen_code = $generators-&gt;{$semantic_type}{code};
+</span><span class=""> 3012: 			# Remove leading/trailing whitespace and compress
+</span><span class=""> 3013: 			$gen_code =~ s/^\s+//;
+</span><span class=""> 3014: 			$gen_code =~ s/\s+$//;
+</span><span class=""> 3015: 			$gen_code =~ s/\n\s+/ /g;
+</span><span class=""> 3016: 			return &quot;$field_name &lt;- $gen_code&quot;;
+</span><span class=""> 3017: 		} else {
+</span><span class=""> 3018: 			carp &quot;Unknown semantic type &#39;$semantic_type&#39;, falling back to regular string generator&quot;;
+</span><span class=""> 3019: 			# Fall through to regular string generation
+</span><span class=""> 3020: 		}
+</span><span class=""> 3021: 	}
+</span><span class=""> 3022: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3023 → 3023 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3023 → 3023 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3023 → 3023 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3023 → 3023 → 0</span></span> 3023: 	if ($type eq &#39;integer&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3024: 		my $min = $spec-&gt;{min};
+</span><span class=""> 3025: 		my $max = $spec-&gt;{max};
+</span><span class=""> 3026: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3027: 		if (!defined($min) &amp;&amp; !defined($max)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3028: 			return &quot;$field_name &lt;- Int&quot;;
+</span><span class=""> 3029: 		} elsif (!defined($min)) {
+</span><span class=""> 3030: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { int(rand($max + 1)) })&quot;;
+</span><span class=""> 3031: 		} elsif (!defined($max)) {
+</span><span class=""> 3032: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { $min + int(rand(1000)) })&quot;;
+</span><span class=""> 3033: 		} else {
+</span><span class=""> 3034: 			my $range = $max - $min;
+</span><span class=""> 3035: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { $min + int(rand($range + 1)) })&quot;;
+</span><span class=""> 3036: 		}
+</span><span class=""> 3037: 	}
+</span><span class=""> 3038: 	elsif ($type eq &#39;number&#39; || $type eq &#39;float&#39;) {
+</span><span class=""> 3039: 		my $min = $spec-&gt;{min};
+</span><span class=""> 3040: 		my $max = $spec-&gt;{max};
+</span><span class=""> 3041: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3042: 		if (!defined($min) &amp;&amp; !defined($max)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3043: 			# No constraints - full range
+</span><span class=""> 3044: 			return &quot;$field_name &lt;- Float(sized =&gt; sub { rand(1000) - 500 })&quot;;
+</span><span class=""> 3045: 		} elsif (!defined($min)) {
+</span><span class=""> 3046: 			# Only max defined
+</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3047: 			if ($max == 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 1, Survived: 1)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_3049: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_3047: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -3449,14 +3447,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 3050: 				# max=0 means negative numbers only
-</span><span class=""> 3051: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { -rand(1000) })&quot;;
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3052: 			} elsif ($max &gt; 0) {
+<span class=""> 3048: 				# max=0 means negative numbers only
+</span><span class=""> 3049: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { -rand(1000) })&quot;;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3050: 			} elsif ($max &gt; 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_3052: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_3050: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -3464,7 +3462,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_3052: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_3050: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -3472,7 +3470,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_3052: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_3050: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -3480,7 +3478,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_3052: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_3050: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -3489,20 +3487,20 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 3053: 				# Positive max, generate 0 to max
-</span><span class=""> 3054: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { rand($max) })&quot;;
-</span><span class=""> 3055: 			} else {
-</span><span class=""> 3056: 				# Negative max, generate from some negative to max
-</span><span class=""> 3057: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { ($max - 1000) + rand(1000 + $max) })&quot;;
-</span><span class=""> 3058: 			}
-</span><span class=""> 3059: 		} elsif (!defined($max)) {
-</span><span class=""> 3060: 			# Only min defined
-</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3061: 			if ($min == 0) {
+<span class=""> 3051: 				# Positive max, generate 0 to max
+</span><span class=""> 3052: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { rand($max) })&quot;;
+</span><span class=""> 3053: 			} else {
+</span><span class=""> 3054: 				# Negative max, generate from some negative to max
+</span><span class=""> 3055: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { ($max - 1000) + rand(1000 + $max) })&quot;;
+</span><span class=""> 3056: 			}
+</span><span class=""> 3057: 		} elsif (!defined($max)) {
+</span><span class=""> 3058: 			# Only min defined
+</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3059: 			if ($min == 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 1, Survived: 1)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_3061: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_3059: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -3511,14 +3509,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 3062: 				# min=0 means positive numbers only
-</span><span class=""> 3063: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { rand(1000) })&quot;;
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3064: 			} elsif ($min &gt; 0) {
+<span class=""> 3060: 				# min=0 means positive numbers only
+</span><span class=""> 3061: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { rand(1000) })&quot;;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3062: 			} elsif ($min &gt; 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_3064: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_3062: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -3526,7 +3524,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_3064: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_3062: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -3534,7 +3532,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_3064: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_3062: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -3542,7 +3540,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_3064: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_3062: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -3551,21 +3549,21 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 3065: 				# Positive min
-</span><span class=""> 3066: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand(1000) })&quot;;
-</span><span class=""> 3067: 			} else {
-</span><span class=""> 3068: 				# Negative min
-</span><span class=""> 3069: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand(-$min + 1000) })&quot;;
-</span><span class=""> 3070: 			}
-</span><span class=""> 3071: 		} else {
-</span><span class=""> 3072: 			# Both min and max defined
-</span><span class=""> 3073: 			my $range = $max - $min;
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3074: 			if ($range &lt;= 0) {
+<span class=""> 3063: 				# Positive min
+</span><span class=""> 3064: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand(1000) })&quot;;
+</span><span class=""> 3065: 			} else {
+</span><span class=""> 3066: 				# Negative min
+</span><span class=""> 3067: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand(-$min + 1000) })&quot;;
+</span><span class=""> 3068: 			}
+</span><span class=""> 3069: 		} else {
+</span><span class=""> 3070: 			# Both min and max defined
+</span><span class=""> 3071: 			my $range = $max - $min;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3072: 			if ($range &lt;= 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 1, Survived: 3)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_3074: Numeric boundary flip <= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_3072: Numeric boundary flip <= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -3573,7 +3571,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_3074: Numeric boundary flip <= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_3072: Numeric boundary flip <= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -3581,7 +3579,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_3074: Numeric boundary flip <= to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_3072: Numeric boundary flip <= to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -3590,202 +3588,202 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 3075: 				carp &quot;Invalid range: min=$min, max=$max&quot;;
-</span><span class=""> 3076: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { $min })&quot;;
-</span><span class=""> 3077: 			}
-</span><span class=""> 3078: 			return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand($range) })&quot;;
-</span><span class=""> 3079: 		}
-</span><span class=""> 3080: 	}
-</span><span class=""> 3081: 	elsif ($type eq &#39;string&#39;) {
-</span><span class=""> 3082: 		my $min_len = $spec-&gt;{min} // 0;
-</span><span class=""> 3083: 		my $max_len = $spec-&gt;{max} // 100;
-</span><span class=""> 3084: 
-</span><span class=""> 3085: 		# Handle regex patterns
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3086: 		if (defined $spec-&gt;{matches}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3087: 			my $pattern = $spec-&gt;{matches};
-</span><span class=""> 3088: 
-</span><span class=""> 3089: 			# Build generator using Data::Random::String::Matches
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3090: 			if (defined $spec-&gt;{max}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3091: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; qr/$pattern/, length =&gt; $spec-&gt;{max} }) }&quot;;
-</span><span class=""> 3092: 			} elsif (defined $spec-&gt;{min}) {
-</span><span class=""> 3093: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; qr/$pattern/, length =&gt; $spec-&gt;{min} }) }&quot;;
-</span><span class=""> 3094: 			} else {
-</span><span class=""> 3095: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; qr/$pattern/ }) }&quot;;
-</span><span class=""> 3096: 			}
-</span><span class=""> 3097: 		}
-</span><span class=""> 3098: 
-</span><span class=""> 3099: 		return &quot;$field_name &lt;- String(length =&gt; [$min_len, $max_len])&quot;;
-</span><span class=""> 3100: 	} elsif ($type eq &#39;boolean&#39;) {
-</span><span class=""> 3101: 		return &quot;$field_name &lt;- Bool&quot;;
-</span><span class=""> 3102: 	}
-</span><span class=""> 3103: 	elsif ($type eq &#39;arrayref&#39;) {
-</span><span class=""> 3104: 		my $min_size = $spec-&gt;{min} // 0;
-</span><span class=""> 3105: 		my $max_size = $spec-&gt;{max} // 10;
-</span><span class=""> 3106: 		return &quot;$field_name &lt;- List(Int, length =&gt; [$min_size, $max_size])&quot;;
-</span><span class=""> 3107: 	}
-</span><span class=""> 3108: 	elsif ($type eq &#39;hashref&#39;) {
-</span><span class=""> 3109: 		# LectroTest doesn&#39;t have built-in Hash, use custom generator
-</span><span class=""> 3110: 		my $min_keys = $spec-&gt;{min} // 0;
-</span><span class=""> 3111: 		my $max_keys = $spec-&gt;{max} // 10;
-</span><span class=""> 3112: 		return &quot;$field_name &lt;- Elements(map { my \%h; for (1..\$_) { \$h{&#39;key&#39;.\$_} = \$_ }; \\\%h } $min_keys..$max_keys)&quot;;
-</span><span class=""> 3113: 	}
-</span><span class=""> 3114: 	else {
-</span><span class=""> 3115: 		carp &quot;Unknown type &#39;$type&#39; for LectroTest generator, using String&quot;;
-</span><span class=""> 3116: 		return &quot;$field_name &lt;- String&quot;;
-</span><span class=""> 3117: 	}
-</span><span class=""> 3118: }
+<span class=""> 3073: 				carp &quot;Invalid range: min=$min, max=$max&quot;;
+</span><span class=""> 3074: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { $min })&quot;;
+</span><span class=""> 3075: 			}
+</span><span class=""> 3076: 			return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand($range) })&quot;;
+</span><span class=""> 3077: 		}
+</span><span class=""> 3078: 	}
+</span><span class=""> 3079: 	elsif ($type eq &#39;string&#39;) {
+</span><span class=""> 3080: 		my $min_len = $spec-&gt;{min} // 0;
+</span><span class=""> 3081: 		my $max_len = $spec-&gt;{max} // 100;
+</span><span class=""> 3082: 
+</span><span class=""> 3083: 		# Handle regex patterns
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3084: 		if (defined $spec-&gt;{matches}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3085: 			my $pattern = $spec-&gt;{matches};
+</span><span class=""> 3086: 
+</span><span class=""> 3087: 			# Build generator using Data::Random::String::Matches
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3088: 			if (defined $spec-&gt;{max}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3089: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; qr/$pattern/, length =&gt; $spec-&gt;{max} }) }&quot;;
+</span><span class=""> 3090: 			} elsif (defined $spec-&gt;{min}) {
+</span><span class=""> 3091: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; qr/$pattern/, length =&gt; $spec-&gt;{min} }) }&quot;;
+</span><span class=""> 3092: 			} else {
+</span><span class=""> 3093: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; qr/$pattern/ }) }&quot;;
+</span><span class=""> 3094: 			}
+</span><span class=""> 3095: 		}
+</span><span class=""> 3096: 
+</span><span class=""> 3097: 		return &quot;$field_name &lt;- String(length =&gt; [$min_len, $max_len])&quot;;
+</span><span class=""> 3098: 	} elsif ($type eq &#39;boolean&#39;) {
+</span><span class=""> 3099: 		return &quot;$field_name &lt;- Bool&quot;;
+</span><span class=""> 3100: 	}
+</span><span class=""> 3101: 	elsif ($type eq &#39;arrayref&#39;) {
+</span><span class=""> 3102: 		my $min_size = $spec-&gt;{min} // 0;
+</span><span class=""> 3103: 		my $max_size = $spec-&gt;{max} // 10;
+</span><span class=""> 3104: 		return &quot;$field_name &lt;- List(Int, length =&gt; [$min_size, $max_size])&quot;;
+</span><span class=""> 3105: 	}
+</span><span class=""> 3106: 	elsif ($type eq &#39;hashref&#39;) {
+</span><span class=""> 3107: 		# LectroTest doesn&#39;t have built-in Hash, use custom generator
+</span><span class=""> 3108: 		my $min_keys = $spec-&gt;{min} // 0;
+</span><span class=""> 3109: 		my $max_keys = $spec-&gt;{max} // 10;
+</span><span class=""> 3110: 		return &quot;$field_name &lt;- Elements(map { my \%h; for (1..\$_) { \$h{&#39;key&#39;.\$_} = \$_ }; \\\%h } $min_keys..$max_keys)&quot;;
+</span><span class=""> 3111: 	}
+</span><span class=""> 3112: 	else {
+</span><span class=""> 3113: 		carp &quot;Unknown type &#39;$type&#39; for LectroTest generator, using String&quot;;
+</span><span class=""> 3114: 		return &quot;$field_name &lt;- String&quot;;
+</span><span class=""> 3115: 	}
+</span><span class=""> 3116: }
+</span><span class=""> 3117: 
+</span><span class=""> 3118: =head2 Helper functions for type detection
 </span><span class=""> 3119: 
-</span><span class=""> 3120: =head2 Helper functions for type detection
+</span><span class=""> 3120: =cut
 </span><span class=""> 3121: 
-</span><span class=""> 3122: =cut
-</span><span class=""> 3123: 
-</span><span class=""> 3124: sub _is_numeric_transform {
-</span><span class=""> 3125: 	my ($input_spec, $output_spec) = @_;
-</span><span class=""> 3126: 
-</span><span class=""> 3127: 	my $out_type = $output_spec-&gt;{type} // &#39;&#39;;
-</span><span class=""> 3128: 	return $out_type eq &#39;number&#39; || $out_type eq &#39;integer&#39; || $out_type eq &#39;float&#39;;
-</span><span class=""> 3129: }
-</span><span class=""> 3130: 
-</span><span class=""> 3131: sub _is_string_transform {
-</span><span class=""> 3132: 	my ($input_spec, $output_spec) = @_;
-</span><span class=""> 3133: 
-</span><span class=""> 3134: 	my $out_type = $output_spec-&gt;{type} // &#39;&#39;;
-</span><span class=""> 3135: 	return $out_type eq &#39;string&#39;;
-</span><span class=""> 3136: }
-</span><span class=""> 3137: 
-</span><span class=""> 3138: sub _same_type {
-</span><span class=""> 3139: 	my ($input_spec, $output_spec) = @_;
-</span><span class=""> 3140: 
-</span><span class=""> 3141: 	# Simplified - would need more sophisticated logic for multiple inputs
-</span><span class=""> 3142: 	my $in_type = _get_dominant_type($input_spec);
-</span><span class=""> 3143: 	my $out_type = _get_dominant_type($output_spec);
-</span><span class=""> 3144: 
-</span><span class=""> 3145: 	return $in_type eq $out_type;
-</span><span class=""> 3146: }
-</span><span class=""> 3147: 
-</span><span class=""> 3148: sub _get_dominant_type {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3149 → 3154 → 3159</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3149 → 3154 → 0</span></span> 3149: 	my $spec = $_[0];
+</span><span class=""> 3122: sub _is_numeric_transform {
+</span><span class=""> 3123: 	my ($input_spec, $output_spec) = @_;
+</span><span class=""> 3124: 
+</span><span class=""> 3125: 	my $out_type = $output_spec-&gt;{type} // &#39;&#39;;
+</span><span class=""> 3126: 	return $out_type eq &#39;number&#39; || $out_type eq &#39;integer&#39; || $out_type eq &#39;float&#39;;
+</span><span class=""> 3127: }
+</span><span class=""> 3128: 
+</span><span class=""> 3129: sub _is_string_transform {
+</span><span class=""> 3130: 	my ($input_spec, $output_spec) = @_;
+</span><span class=""> 3131: 
+</span><span class=""> 3132: 	my $out_type = $output_spec-&gt;{type} // &#39;&#39;;
+</span><span class=""> 3133: 	return $out_type eq &#39;string&#39;;
+</span><span class=""> 3134: }
+</span><span class=""> 3135: 
+</span><span class=""> 3136: sub _same_type {
+</span><span class=""> 3137: 	my ($input_spec, $output_spec) = @_;
+</span><span class=""> 3138: 
+</span><span class=""> 3139: 	# Simplified - would need more sophisticated logic for multiple inputs
+</span><span class=""> 3140: 	my $in_type = _get_dominant_type($input_spec);
+</span><span class=""> 3141: 	my $out_type = _get_dominant_type($output_spec);
+</span><span class=""> 3142: 
+</span><span class=""> 3143: 	return $in_type eq $out_type;
+</span><span class=""> 3144: }
+</span><span class=""> 3145: 
+</span><span class=""> 3146: sub _get_dominant_type {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3147 → 3152 → 3157</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3147 → 3152 → 0</span></span> 3147: 	my $spec = $_[0];
+</span><span class=""> 3148: 
+</span><span class=""> 3149: 	return $spec-&gt;{type} if defined $spec-&gt;{type};
 </span><span class=""> 3150: 
-</span><span class=""> 3151: 	return $spec-&gt;{type} if defined $spec-&gt;{type};
-</span><span class=""> 3152: 
-</span><span class=""> 3153: 	# For multi-field specs, return the first type found
-</span><span class=""> 3154: 	for my $field (keys %$spec) {
-</span><span class=""> 3155: 		next unless ref($spec-&gt;{$field}) eq &#39;HASH&#39;;
-</span><span class=""> 3156: 		return $spec-&gt;{$field}{type} if defined $spec-&gt;{$field}{type};
-</span><span class=""> 3157: 	}
-</span><span class=""> 3158: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3159 → 3159 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3159 → 3159 → 0</span></span> 3159: 	return &#39;string&#39;;	# Default
-</span><span class=""> 3160: }
-</span><span class=""> 3161: 
-</span><span class=""> 3162: sub _has_positions {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3163 → 3165 → 3170</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3163 → 3165 → 0</span></span> 3163: 	my $input_spec = $_[0];
-</span><span class=""> 3164: 
-</span><span class=""> 3165: 	for my $field (keys %$input_spec) {
-</span><span class=""> 3166: 		next unless ref($input_spec-&gt;{$field}) eq &#39;HASH&#39;;
-</span><span class=""> 3167: 		return 1 if defined $input_spec-&gt;{$field}{position};
-</span><span class=""> 3168: 	}
-</span><span class=""> 3169: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3170 → 3170 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3170 → 3170 → 0</span></span> 3170: 	return 0;
-</span><span class=""> 3171: }
+</span><span class=""> 3151: 	# For multi-field specs, return the first type found
+</span><span class=""> 3152: 	for my $field (keys %$spec) {
+</span><span class=""> 3153: 		next unless ref($spec-&gt;{$field}) eq &#39;HASH&#39;;
+</span><span class=""> 3154: 		return $spec-&gt;{$field}{type} if defined $spec-&gt;{$field}{type};
+</span><span class=""> 3155: 	}
+</span><span class=""> 3156: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3157 → 3157 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 3157 → 3157 → 0</span></span> 3157: 	return &#39;string&#39;;	# Default
+</span><span class=""> 3158: }
+</span><span class=""> 3159: 
+</span><span class=""> 3160: sub _has_positions {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3161 → 3163 → 3168</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3161 → 3163 → 0</span></span> 3161: 	my $input_spec = $_[0];
+</span><span class=""> 3162: 
+</span><span class=""> 3163: 	for my $field (keys %$input_spec) {
+</span><span class=""> 3164: 		next unless ref($input_spec-&gt;{$field}) eq &#39;HASH&#39;;
+</span><span class=""> 3165: 		return 1 if defined $input_spec-&gt;{$field}{position};
+</span><span class=""> 3166: 	}
+</span><span class=""> 3167: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3168 → 3168 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3168 → 3168 → 0</span></span> 3168: 	return 0;
+</span><span class=""> 3169: }
+</span><span class=""> 3170: 
+</span><span class=""> 3171: =head2 _render_properties
 </span><span class=""> 3172: 
-</span><span class=""> 3173: =head2 _render_properties
+</span><span class=""> 3173: Renders property definitions into Perl code for the template.
 </span><span class=""> 3174: 
-</span><span class=""> 3175: Renders property definitions into Perl code for the template.
+</span><span class=""> 3175: =cut
 </span><span class=""> 3176: 
-</span><span class=""> 3177: =cut
-</span><span class=""> 3178: 
-</span><span class=""> 3179: sub _render_properties {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3180 → 3184 → 3208</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3180 → 3184 → 0</span></span> 3180: 	my $properties = $_[0];
+</span><span class=""> 3177: sub _render_properties {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3178 → 3182 → 3206</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3178 → 3182 → 0</span></span> 3178: 	my $properties = $_[0];
+</span><span class=""> 3179: 
+</span><span class=""> 3180: 	my $code = &quot;use_ok(&#39;Test::LectroTest::Compat&#39;);\n\n&quot;;
 </span><span class=""> 3181: 
-</span><span class=""> 3182: 	my $code = &quot;use_ok(&#39;Test::LectroTest::Compat&#39;);\n\n&quot;;
-</span><span class=""> 3183: 
-</span><span class=""> 3184: 	for my $prop (@$properties) {
-</span><span class=""> 3185: 		$code .= &quot;# Transform property: $prop-&gt;{name}\n&quot;;
-</span><span class=""> 3186: 		$code .= &quot;my \$$prop-&gt;{name} = Property {\n&quot;;
-</span><span class=""> 3187: 		$code .= &quot;    ##[ $prop-&gt;{generator_spec} ]##\n&quot;;
-</span><span class=""> 3188: 		$code .= &quot;    \n&quot;;
-</span><span class=""> 3189: 		$code .= &quot;    my \$result = eval { $prop-&gt;{call_code} };\n&quot;;
-</span><span class=""> 3190: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3191: 		if ($prop-&gt;{should_die}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3192: 			$code .= &quot;    my \$died = defined(\$\@) &amp;&amp; \$\@;\n&quot;;
-</span><span class=""> 3193: 			$code .= &quot;    \$died;\n&quot;;
-</span><span class=""> 3194: 		} else {
-</span><span class=""> 3195: 			$code .= &quot;    my \$error = \$\@;\n&quot;;
-</span><span class=""> 3196: 			# $code .= &quot;    diag(\&quot;\$$prop-&gt;{name} -&gt; \$error; \&quot;) if(\$ENV{&#39;TEST_VERBOSE&#39;});\n&quot;;
-</span><span class=""> 3197: 			$code .= &quot;    \n&quot;;
-</span><span class=""> 3198: 			$code .= &quot;    !\$error &amp;&amp; (\n&quot;;
-</span><span class=""> 3199: 			$code .= &quot;        $prop-&gt;{property_checks}\n&quot;;
-</span><span class=""> 3200: 			$code .= &quot;    );\n&quot;;
-</span><span class=""> 3201: 		}
+</span><span class=""> 3182: 	for my $prop (@$properties) {
+</span><span class=""> 3183: 		$code .= &quot;# Transform property: $prop-&gt;{name}\n&quot;;
+</span><span class=""> 3184: 		$code .= &quot;my \$$prop-&gt;{name} = Property {\n&quot;;
+</span><span class=""> 3185: 		$code .= &quot;    ##[ $prop-&gt;{generator_spec} ]##\n&quot;;
+</span><span class=""> 3186: 		$code .= &quot;    \n&quot;;
+</span><span class=""> 3187: 		$code .= &quot;    my \$result = eval { $prop-&gt;{call_code} };\n&quot;;
+</span><span class=""> 3188: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3189: 		if ($prop-&gt;{should_die}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3190: 			$code .= &quot;    my \$died = defined(\$\@) &amp;&amp; \$\@;\n&quot;;
+</span><span class=""> 3191: 			$code .= &quot;    \$died;\n&quot;;
+</span><span class=""> 3192: 		} else {
+</span><span class=""> 3193: 			$code .= &quot;    my \$error = \$\@;\n&quot;;
+</span><span class=""> 3194: 			# $code .= &quot;    diag(\&quot;\$$prop-&gt;{name} -&gt; \$error; \&quot;) if(\$ENV{&#39;TEST_VERBOSE&#39;});\n&quot;;
+</span><span class=""> 3195: 			$code .= &quot;    \n&quot;;
+</span><span class=""> 3196: 			$code .= &quot;    !\$error &amp;&amp; (\n&quot;;
+</span><span class=""> 3197: 			$code .= &quot;        $prop-&gt;{property_checks}\n&quot;;
+</span><span class=""> 3198: 			$code .= &quot;    );\n&quot;;
+</span><span class=""> 3199: 		}
+</span><span class=""> 3200: 
+</span><span class=""> 3201: 		$code .= &quot;}, name =&gt; &#39;$prop-&gt;{name}&#39;, trials =&gt; $prop-&gt;{trials};\n\n&quot;;
 </span><span class=""> 3202: 
-</span><span class=""> 3203: 		$code .= &quot;}, name =&gt; &#39;$prop-&gt;{name}&#39;, trials =&gt; $prop-&gt;{trials};\n\n&quot;;
-</span><span class=""> 3204: 
-</span><span class=""> 3205: 		$code .= &quot;holds(\$$prop-&gt;{name});\n&quot;;
-</span><span class=""> 3206: 	}
-</span><span class=""> 3207: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3208 → 3208 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3208 → 3208 → 0</span></span> 3208: 	return $code;
-</span><span class=""> 3209: }
+</span><span class=""> 3203: 		$code .= &quot;holds(\$$prop-&gt;{name});\n&quot;;
+</span><span class=""> 3204: 	}
+</span><span class=""> 3205: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3206 → 3206 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3206 → 3206 → 0</span></span> 3206: 	return $code;
+</span><span class=""> 3207: }
+</span><span class=""> 3208: 
+</span><span class=""> 3209: 1;
 </span><span class=""> 3210: 
-</span><span class=""> 3211: 1;
+</span><span class=""> 3211: =head1 NOTES
 </span><span class=""> 3212: 
-</span><span class=""> 3213: =head1 NOTES
+</span><span class=""> 3213: C&lt;seed&gt; and C&lt;iterations&gt; really should be within C&lt;config&gt;.
 </span><span class=""> 3214: 
-</span><span class=""> 3215: C&lt;seed&gt; and C&lt;iterations&gt; really should be within C&lt;config&gt;.
+</span><span class=""> 3215: =head1 SEE ALSO
 </span><span class=""> 3216: 
-</span><span class=""> 3217: =head1 SEE ALSO
+</span><span class=""> 3217: =over 4
 </span><span class=""> 3218: 
-</span><span class=""> 3219: =over 4
+</span><span class=""> 3219: =item * L&lt;Test Coverage Report|https://nigelhorne.github.io/App-Test-Generator/coverage/&gt;
 </span><span class=""> 3220: 
-</span><span class=""> 3221: =item * L&lt;Test Coverage Report|https://nigelhorne.github.io/App-Test-Generator/coverage/&gt;
+</span><span class=""> 3221: =item * L&lt;App::Test::Generator::Template&gt; - Template of the file of tests created by C&lt;App::Test::Generator&gt;
 </span><span class=""> 3222: 
-</span><span class=""> 3223: =item * L&lt;App::Test::Generator::Template&gt; - Template of the file of tests created by C&lt;App::Test::Generator&gt;
+</span><span class=""> 3223: =item * L&lt;App::Test::Generator::SchemaExtractor&gt; - Create schemas from Perl programs
 </span><span class=""> 3224: 
-</span><span class=""> 3225: =item * L&lt;App::Test::Generator::SchemaExtractor&gt; - Create schemas from Perl programs
+</span><span class=""> 3225: =item * L&lt;Params::Validate::Strict&gt;: Schema Definition
 </span><span class=""> 3226: 
-</span><span class=""> 3227: =item * L&lt;Params::Validate::Strict&gt;: Schema Definition
+</span><span class=""> 3227: =item * L&lt;Params::Get&gt;: Input validation
 </span><span class=""> 3228: 
-</span><span class=""> 3229: =item * L&lt;Params::Get&gt;: Input validation
+</span><span class=""> 3229: =item * L&lt;Return::Set&gt;: Output validation
 </span><span class=""> 3230: 
-</span><span class=""> 3231: =item * L&lt;Return::Set&gt;: Output validation
+</span><span class=""> 3231: =item * L&lt;Test::LectroTest&gt;
 </span><span class=""> 3232: 
-</span><span class=""> 3233: =item * L&lt;Test::LectroTest&gt;
+</span><span class=""> 3233: =item * L&lt;Test::Most&gt;
 </span><span class=""> 3234: 
-</span><span class=""> 3235: =item * L&lt;Test::Most&gt;
+</span><span class=""> 3235: =item * L&lt;YAML::XS&gt;
 </span><span class=""> 3236: 
-</span><span class=""> 3237: =item * L&lt;YAML::XS&gt;
+</span><span class=""> 3237: =back
 </span><span class=""> 3238: 
-</span><span class=""> 3239: =back
+</span><span class=""> 3239: =head1 AUTHOR
 </span><span class=""> 3240: 
-</span><span class=""> 3241: =head1 AUTHOR
+</span><span class=""> 3241: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
 </span><span class=""> 3242: 
-</span><span class=""> 3243: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
-</span><span class=""> 3244: 
-</span><span class=""> 3245: Portions of this module&#39;s initial design and documentation were created with the
-</span><span class=""> 3246: assistance of AI.
+</span><span class=""> 3243: Portions of this module&#39;s initial design and documentation were created with the
+</span><span class=""> 3244: assistance of AI.
+</span><span class=""> 3245: 
+</span><span class=""> 3246: =cut
 </span><span class=""> 3247: 
-</span><span class=""> 3248: =cut
+</span><span class=""> 3248: =head1 LICENCE AND COPYRIGHT
 </span><span class=""> 3249: 
-</span><span class=""> 3250: =head1 LICENCE AND COPYRIGHT
+</span><span class=""> 3250: Copyright 2025-2026 Nigel Horne.
 </span><span class=""> 3251: 
-</span><span class=""> 3252: Copyright 2025-2026 Nigel Horne.
+</span><span class=""> 3252: Usage is subject to licence terms.
 </span><span class=""> 3253: 
-</span><span class=""> 3254: Usage is subject to licence terms.
+</span><span class=""> 3254: The licence terms of this software are as follows:
 </span><span class=""> 3255: 
-</span><span class=""> 3256: The licence terms of this software are as follows:
+</span><span class=""> 3256: =over 4
 </span><span class=""> 3257: 
-</span><span class=""> 3258: =over 4
+</span><span class=""> 3258: =item * Personal single user, single computer use: GPL2
 </span><span class=""> 3259: 
-</span><span class=""> 3260: =item * Personal single user, single computer use: GPL2
-</span><span class=""> 3261: 
-</span><span class=""> 3262: =item * All other users (including Commercial, Charity, Educational, Government)
-</span><span class=""> 3263:   must apply in writing for a licence for use from Nigel Horne at the
-</span><span class=""> 3264:   above e-mail.
+</span><span class=""> 3260: =item * All other users (including Commercial, Charity, Educational, Government)
+</span><span class=""> 3261:   must apply in writing for a licence for use from Nigel Horne at the
+</span><span class=""> 3262:   above e-mail.
+</span><span class=""> 3263: 
+</span><span class=""> 3264: =back
 </span><span class=""> 3265: 
-</span><span class=""> 3266: =back
+</span><span class=""> 3266: =cut
 </span><span class=""> 3267: 
-</span><span class=""> 3268: =cut
-</span><span class=""> 3269: 
-</span><span class=""> 3270: 1;
+</span><span class=""> 3268: 1;
 </span></pre>
 
 <script>
