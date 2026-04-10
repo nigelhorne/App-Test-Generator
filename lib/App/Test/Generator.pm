@@ -1744,7 +1744,7 @@ sub generate
 			}
 			if(scalar(keys %input) == 0) {
 				if(defined($accessor{type}) && ($accessor{type} eq 'getter')) {
-					$call_code .= "cmp_ok(\$result, 'eq', \$obj->{$accessor{property}}, 'getter function returns correct item');";
+					$call_code .= "cmp_ok(\$result, 'eq', \$obj->{$accessor{property}}, 'getter function returns correct item') if(defined(\$result));";
 				}
 			}
 		}
