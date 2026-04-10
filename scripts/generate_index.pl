@@ -89,18 +89,7 @@ each CI push via C<.github/workflows/dashboard.yml>.
 
 =head1 SYNOPSIS
 
-Generates an HTML dashboard for use as a testing dashboard on GitHub Pages.
-The published URL will be:
-
   https://$github_user.github.io/$github_repo/coverage/
-
-This script is automatically run by each 'git push' via the GitHub Actions
-workflow at .github/workflows/dashboard.yml, and can also be run locally
-via scripts/generate_test_dashboard.
-
-The script is shared across projects - copy it into scripts/ of each project that uses it:
-
-  cp ../App-Test-Generator/scripts/generate_index.pl scripts/
 
 =head1 INPUTS
 
@@ -624,7 +613,7 @@ if($counted) {
 		$sum_stmt   / $counted,
 		$sum_branch / $counted,
 		$sum_cond   / $counted,
-		$sum_sub    / $counted,
+		$sum_sub / $counted,
 		$avg_total
 	);
 }
@@ -668,7 +657,11 @@ foreach my $file (reverse sort @history_files) {
 	next unless $json->{summary};
 
 	my ($sha) = $file =~ /-(\w{7})\.json$/;
-	next unless $commit_messages{$sha};    # skip merge commits
+
+	# Skip files that don't match the expected naming pattern
+	# e.g. YYYY-MM-DD-XXXXXXX.json — $sha will be undef otherwise
+	next unless defined $sha;
+	next unless $commit_messages{$sha};	# skip merge commits
 
 	# Compute average across our own files only
 	my ($sum, $count) = (0, 0);

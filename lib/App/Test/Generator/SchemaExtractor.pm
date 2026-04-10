@@ -24,7 +24,7 @@ use IPC::Open3;
 use JSON::MaybeXS qw(encode_json decode_json);
 use Symbol qw(gensym);
 
-our $VERSION = '0.30';
+our $VERSION = '0.31';
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 
 =head1 VERSION
 
-Version 0.30
+Version 0.31
 
 =head1 SYNOPSIS
 
@@ -2997,7 +2997,7 @@ sub _analyze_output {
 	$self->_enhance_boolean_detection(\%output, $pod, $code, $method_name);
 	$self->_detect_list_context(\%output, $code);
 	$self->_detect_void_context(\%output, $code, $method_name);
-	$self->_detect_chaining_pattern(\%output, $code, $method_name);
+	$self->_detect_chaining_pattern(\%output, $code);
 	$self->_detect_error_conventions(\%output, $code);
 
 	$self->_validate_output(\%output) if keys %output;
@@ -3592,7 +3592,7 @@ sub _detect_void_context {
 
 # Detect method chaining patterns
 sub _detect_chaining_pattern {
-	my ($self, $output, $code, $method_name) = @_;
+	my ($self, $output, $code) = @_;
 	return unless $code;
 
 	# Count returns of $self
@@ -3760,23 +3760,23 @@ sub _infer_type_from_expression {
 		return { type => 'hashref' };
 	}
 
-    # Check for hash
-    if ($expr =~ /^\%\w+/ || $expr =~ /^\%\{/) {
-        return { type => 'hash' };
-    }
+	# Check for hash
+	if ($expr =~ /^\%\w+/ || $expr =~ /^\%\{/) {
+		return { type => 'hash' };
+	}
 
 	# Check for strings
 	if ($expr =~ /^['"]/ || $expr =~ /['"]$/) {
 		return { type => 'string' };
 	}
 
-    # Check for numbers
-    if ($expr =~ /^-?\d+$/) {
-        return { type => 'integer' };
-    }
-    if ($expr =~ /^-?\d+\.\d+$/) {
-        return { type => 'number' };
-    }
+	# Check for numbers
+	if ($expr =~ /^-?\d+$/) {
+		return { type => 'integer' };
+	}
+	if ($expr =~ /^-?\d+\.\d+$/) {
+		return { type => 'number' };
+	}
 
 	# Check for booleans
 	if ($expr =~ /^[01]$/) {

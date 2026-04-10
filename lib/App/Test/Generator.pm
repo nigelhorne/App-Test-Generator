@@ -36,7 +36,7 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
-our $VERSION = '0.30';
+our $VERSION = '0.31';
 
 use constant {
 	DEFAULT_ITERATIONS => 30,
@@ -51,7 +51,7 @@ App::Test::Generator - Generate fuzz and corpus-driven test harnesses from test 
 
 =head1 VERSION
 
-Version 0.30
+Version 0.31
 
 =head1 SYNOPSIS
 
@@ -2841,9 +2841,7 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'MD5 hashes (32 hex characters)',
-		},
-
-		sha256 => {
+		}, sha256 => {
 			code => q{
 				Gen {
 					join('', map { sprintf('%x', int(rand(16))) } 1..64);
