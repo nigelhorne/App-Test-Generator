@@ -456,6 +456,7 @@ if($prev_data) {
 	for my $file (keys %{$cover_db->{summary}}) {
 		next if $file eq 'Total';
 		next if $file =~ /^\//;    # skip absolute paths
+		next if $file =~ /^blib\//;    # skip built copies
 		my $curr = $cover_db->{summary}{$file}{total}{percentage} // 0;
 		my $prev = $prev_data->{summary}{$file}{total}{percentage} // 0;
 		my $delta = sprintf('%.1f', $curr - $prev);
@@ -477,14 +478,10 @@ my $github_base = "https://github.com/$config{github_user}/$config{github_repo}/
 # Add rows
 my ($total_files, $total_coverage, $low_coverage_count) = (0, 0, 0);
 
-for my $file (sort keys %{$cover_db->{summary}}) {
+for my $file (keys %{$cover_db->{summary}}) {
 	next if $file eq 'Total';
-
-	# Check it's in our repo e.g. bin or blib
-	if($file =~ /^\//) {
-		# delete $cover_db->{summary};
-		next;
-	}
+	next if $file =~ /^\//;    # skip absolute paths (installed modules)
+	next if $file =~ /^blib\//;	# skip built copies
 
 	my $info = $cover_db->{summary}{$file};
 	my $html_file = $file;
@@ -596,7 +593,7 @@ for my $file (keys %{$cover_db->{summary}}) {
 
 	my $info = $cover_db->{summary}{$file};
 	$sum_stmt   += $info->{statement}{percentage}  // 0;
-	$sum_branch += $info->{branch}{percentage}     // 0;
+	$sum_branch += $info->{branch}{percentage} // 0;
 	$sum_cond   += $info->{condition}{percentage}  // 0;
 	$sum_sub    += $info->{subroutine}{percentage} // 0;
 	$sum_total  += $info->{total}{percentage}      // 0;
@@ -3460,11 +3457,11 @@ sub _mutation_index {
 		my $complexity = _cyclomatic_complexity($file);
 
 		my $complexity_class = $complexity >= $config{med_threshold} ? 'badge-bad'
-					: $score >= $config{low_threshold} ? 'badge-warn'
-					: 'badge-good';
-		my $complexity_tooltip = $complexity >= $config{med_threshold} ? 'Good'
-				 : $complexity >= $config{low_threshold} ? 'Medium'
-				 : 'Bad';
+			: $complexity >= $config{low_threshold} ? 'badge-warn'
+			: 'badge-good';
+		my $complexity_tooltip = $complexity >= $config{med_threshold} ? 'Needs improvement'
+			: $complexity >= $config{low_threshold} ? 'Moderate'
+			: 'Good';
 
 		my $complexity_html = sprintf(
 			'<span class="coverage-badge %s" title="%s">%d</span>',

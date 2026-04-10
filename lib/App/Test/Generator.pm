@@ -1716,8 +1716,7 @@ sub generate
 			if(defined($accessor{type})) {
 				if($accessor{type} eq 'getter') {
 					$position_code .= "my \$prev_value = \$obj->{$accessor{property}};";
-				}
-				if($accessor{type} eq 'getset') {
+				} elsif($accessor{type} eq 'getset') {
 					$position_code .= 'if(scalar(@alist) == 1) { ';
 					$position_code .= "cmp_ok(\$result, 'eq', \$alist[0], 'getset function returns what was put in'); ok(\$obj->$function() eq \$result, 'test getset accessor');";
 					$position_code .= '}';
