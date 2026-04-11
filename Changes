@@ -2,6 +2,17 @@ Revision history for App-Test-Generator
 
 0.32
 
+    - Added detect_scattered_failures() root cause detector. Surfaces a
+      weak-confidence advisory when failures and passes coexist across
+      2 or more common Perl series with no detectable version cliff or
+      OS pattern, suggesting flaky tests, optional dependency
+      differences, or CGI environment assumptions rather than a
+      compatibility issue. Complements detect_universal_failure() which
+      handles the opposite case of near-total failure. Confidence is
+      intentionally set to 0.40 (Weak) since this is a catch-all
+      signal rather than a precise diagnosis, ensuring it appears below
+      stronger signals in the root causes table when multiple detectors
+      fire simultaneously.
     - Added detect_universal_failure() root cause detector. Surfaces a
       high-confidence warning when failures occur across 3 or more
       distinct Perl versions and 2 or more OS types with fewer than
