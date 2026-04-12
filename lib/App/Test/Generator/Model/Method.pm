@@ -60,12 +60,24 @@ sub confidence {
 sub add_evidence {
 	my ($self, %args) = @_;
 
+	# Validate category — must be one of the three recognised kinds
 	my %valid_categories = map { $_ => 1 } qw(return input effect);
 	croak "Invalid evidence category '$args{category}'"
 		unless $valid_categories{ $args{category} // '' };
 
+	# Validate signal — must be a known signal name to catch typos early.
+	# Signals are per-category; we validate the full set across all categories.
+	my %valid_signals = map { $_ => 1 } qw(
+		returns_property returns_constant returns_self
+		legacy_type context_aware error_pattern
+		input_validated input_typed input_optional
+		has_side_effect no_side_effect
+	);
+	croak "Invalid evidence signal '$args{signal}'"
+		unless $valid_signals{ $args{signal} // '' };
+
 	push @{ $self->{evidence} }, {
-		category => $args{category},   # return/input/effect
+		category => $args{category},
 		signal   => $args{signal},
 		value    => $args{value},
 		weight   => defined $args{weight} ? $args{weight} : 1,
@@ -84,26 +96,37 @@ sub evidence_ref {
 
 sub resolve_return_type {
 	my $self = $_[0];
-
 	my %score = (property => 0, constant => 0, object => 0);
 
 	for my $ev (@{ $self->{evidence} }) {
 		next unless $ev->{category} eq 'return';
-
-		if ($ev->{signal} eq 'returns_property') {
+		if($ev->{signal} eq 'returns_property') {
 			$score{property} += $ev->{weight};
-		} elsif ($ev->{signal} eq 'returns_constant') {
+		} elsif($ev->{signal} eq 'returns_constant') {
 			$score{constant} += $ev->{weight};
-		} elsif ($ev->{signal} eq 'returns_self') {
+		} elsif($ev->{signal} eq 'returns_self') {
 			$score{object} += $ev->{weight};
+		} elsif($ev->{signal} eq 'legacy_type') {
+			# Legacy type hint — map to nearest score bucket if recognisable
+			my $t = $ev->{value} // '';
+			if($t eq 'object')   { $score{object}   += $ev->{weight} }
+			elsif($t eq 'self')  { $score{object}   += $ev->{weight} }
+			else                 { $score{property} += $ev->{weight} }
+		} elsif($ev->{signal} eq 'context_aware') {
+			# Context-aware return suggests getter behaviour
+			$score{property} += $ev->{weight};
+		} elsif($ev->{signal} eq 'error_pattern') {
+			# Error pattern return doesn't strongly imply a type —
+			# give a small nudge toward property (scalar return)
+			$score{property} += $ev->{weight};
 		}
+		# Unknown signals are ignored — they may be used by external consumers
 	}
 
 	# Tie-break alphabetically — deterministic but arbitrary
-	my ($winner) = sort { ($score{$b}||0) <=> ($score{$a}||0) || $a cmp $b } keys %score;
+	my ($winner) = sort { ($score{$b} || 0) <=> ($score{$a} || 0) || $a cmp $b } keys %score;
 
 	$self->{return_type} = $winner || 'unknown';
-
 	return $self->{return_type};
 }
 
