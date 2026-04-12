@@ -115,7 +115,11 @@ directly.
 sub analyze {
 	my ($self, $method) = @_;
 
-	my $source = $method->source();
+	# Accept either a Model::Method object or a raw hashref,
+	# since callers in SchemaExtractor pass raw hashrefs
+	my $source = ref($method) && $method->can('source')
+		? $method->source()
+		: ($method->{source} // $method->{body} // '');
 
 	# --------------------------------------------------
 	# Detect: return $self->{property}
