@@ -1,5 +1,22 @@
 Revision history for App-Test-Generator
 
+0.33
+
+    - Added detect_prereq_version_cliffs() to cross-reference declared
+      prerequisites from the MetaCPAN API against installed module
+      versions reported by CPAN Testers. Flags cases where failing
+      reports have an installed version below the declared minimum,
+      surfacing dependency version mismatches (e.g. Test::Mockingbird
+      0.02 installed where >= 0.03 is required) that the existing
+      detect_version_cliffs() misses because it only examines prereq
+      metadata within the reports themselves. Falls back to scanning
+      raw CPAN Testers report output for version complaint patterns if
+      the MetaCPAN API is unavailable. Results are merged into the
+      existing Dependency Version Cliffs section alongside findings
+      from detect_version_cliffs(). Added report HTML caching in
+      fetch_report_html() to avoid fetching the same report twice when
+      both aggregate_dependency_stats() and detect_prereq_version_cliffs()
+      process the same GUIDs.
 0.32	Sun Apr 12 08:16:47 EDT 2026
 
     - Added detect_scattered_failures() root cause detector. Surfaces a
