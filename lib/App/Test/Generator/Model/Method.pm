@@ -2,6 +2,7 @@ package App::Test::Generator::Model::Method;
 
 use strict;
 use warnings;
+use Carp qw(croak);
 
 our $VERSION = '0.32';
 
@@ -13,9 +14,8 @@ Version 0.32
 
 sub new {
 	my ($class, %args) = @_;
-
-	die 'name required'   unless defined $args{name};
-	die 'source required' unless defined $args{source};
+	croak 'name required'   unless defined $args{name};
+	croak 'source required' unless defined $args{source};
 
 	my $self = {
 		name          => $args{name},
@@ -112,7 +112,10 @@ sub resolve_confidence {
 sub resolve_classification {
 	my $self = $_[0];
 
-	if ($self->{return_type} eq 'object') {
+	# Return_type must be resolved before classification can be determined
+	$self->resolve_return_type() unless defined $self->{return_type};
+
+	if($self->{return_type} eq 'object') {
 		$self->{classification} = 'chainable';
 	} elsif ($self->{return_type} eq 'property') {
 		$self->{classification} = 'getter';
@@ -126,9 +129,9 @@ sub resolve_classification {
 }
 
 sub absorb_legacy_output {
-    my ($self, $output) = @_;
+	my ($self, $output) = @_;
 
-    return unless $output && ref $output eq 'HASH';
+	return unless $output && ref $output eq 'HASH';
 
     if ($output->{type}) {
         $self->add_evidence(
