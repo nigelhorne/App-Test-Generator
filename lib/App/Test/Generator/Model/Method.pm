@@ -2,7 +2,12 @@ package App::Test::Generator::Model::Method;
 
 use strict;
 use warnings;
+
 use Carp qw(croak);
+use Readonly;
+
+Readonly my $HIGH_CONFIDENCE_THRESHOLD   => 40;
+Readonly my $MEDIUM_CONFIDENCE_THRESHOLD => 20;
 
 our $VERSION = '0.32';
 
@@ -20,18 +25,19 @@ sub new {
 	my $self = {
 		name          => $args{name},
 		source        => $args{source},
-		parameters    => [],
+		# parameters    => [],
 		evidence      => [],
 		return_type   => undef,
-		classification=> undef,
+		classification => undef,
 		confidence    => undef,
 	};
 
 	return bless $self, $class;
 }
 
-sub name       { $_[0]->{name} }
-sub source     { $_[0]->{source} }
+# Read-only accessors — name and source are immutable after construction
+sub name   { $_[0]->{name}   }
+sub source { $_[0]->{source} }
 
 sub return_type {
 	my ($self, $val) = @_;
@@ -54,6 +60,10 @@ sub confidence {
 sub add_evidence {
 	my ($self, %args) = @_;
 
+	my %valid_categories = map { $_ => 1 } qw(return input effect);
+	croak "Invalid evidence category '$args{category}'"
+		unless $valid_categories{ $args{category} // '' };
+
 	push @{ $self->{evidence} }, {
 		category => $args{category},   # return/input/effect
 		signal   => $args{signal},
@@ -75,7 +85,7 @@ sub evidence_ref {
 sub resolve_return_type {
 	my $self = $_[0];
 
-	my %score;
+	my %score = (property => 0, constant => 0, object => 0);
 
 	for my $ev (@{ $self->{evidence} }) {
 		next unless $ev->{category} eq 'return';
@@ -89,7 +99,8 @@ sub resolve_return_type {
 		}
 	}
 
-	my ($winner) = sort { ($score{$b}||0) <=> ($score{$a}||0) } keys %score;
+	# Tie-break alphabetically — deterministic but arbitrary
+	my ($winner) = sort { ($score{$b}||0) <=> ($score{$a}||0) || $a cmp $b } keys %score;
 
 	$self->{return_type} = $winner || 'unknown';
 
@@ -102,7 +113,7 @@ sub resolve_confidence {
 	my $total = 0;
 	$total += $_->{weight} for @{ $self->{evidence} };
 
-	my $level = $total >= 40 ? 'high' : $total >= 20 ? 'medium' : 'low';
+	my $level = $total >= $HIGH_CONFIDENCE_THRESHOLD ? 'high' : $total >= $MEDIUM_CONFIDENCE_THRESHOLD ? 'medium' : 'low';
 
 	$self->{confidence} = { score => $total, level => $level };
 
@@ -133,39 +144,39 @@ sub absorb_legacy_output {
 
 	return unless $output && ref $output eq 'HASH';
 
-    if ($output->{type}) {
-        $self->add_evidence(
-            category => 'return',
-            signal   => 'legacy_type',
-            value    => $output->{type},
-            weight   => 20,
-        );
-    }
+	if ($output->{type}) {
+		$self->add_evidence(
+			category => 'return',
+			signal   => 'legacy_type',
+			value    => $output->{type},
+			weight   => 20,
+		);
+	}
 
-    if ($output->{_returns_self}) {
-        $self->add_evidence(
-            category => 'return',
-            signal   => 'returns_self',
-            weight   => 25,
-        );
-    }
+	if ($output->{_returns_self}) {
+		$self->add_evidence(
+			category => 'return',
+			signal   => 'returns_self',
+			weight   => 25,
+		);
+	}
 
-    if ($output->{_context_aware}) {
-        $self->add_evidence(
-            category => 'return',
-            signal   => 'context_aware',
-            weight   => 15,
-        );
-    }
+	if ($output->{_context_aware}) {
+		$self->add_evidence(
+			category => 'return',
+			signal   => 'context_aware',
+			weight   => 15,
+		);
+	}
 
-    if ($output->{_error_return}) {
-        $self->add_evidence(
-            category => 'return',
-            signal   => 'error_pattern',
-            value    => $output->{_error_return},
-            weight   => 15,
-        );
-    }
+	if ($output->{_error_return}) {
+		$self->add_evidence(
+			category => 'return',
+			signal   => 'error_pattern',
+			value    => $output->{_error_return},
+			weight   => 15,
+		);
+	}
 }
 
 1;
