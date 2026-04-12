@@ -30,36 +30,89 @@ my %FLIP = (
 	'!=' => [ '==' ],
 );
 
-# --------------------------------------------------
-# mutate
-#
-# Purpose:    Walk a PPI document and generate one
-#             mutant for each comparison operator flip
-#             that could reveal a boundary condition
-#             not caught by the test suite.
-#
-# Entry:      $self - blessed object (subclass of Base)
-#             $doc  - a PPI::Document of the source
-#                     file to mutate
-#
-# Exit:       Returns a list of App::Test::Generator::Mutant
-#             objects, one per (operator, flip) pair found.
-#             Returns an empty list if no comparison
-#             operators are found.
-#
-# Side effects: None. The PPI document is not modified —
-#               each mutant carries a transform closure
-#               that modifies a fresh copy at test time.
-#
-# Notes:      Operators are identified by both line and
-#             column number so that multiple comparison
-#             operators on the same source line are each
-#             mutated independently rather than the first
-#             match being mutated for all.
-#             The mutant id includes the target operator
-#             and flip value to ensure uniqueness even
-#             when multiple operators share a line.
-# --------------------------------------------------
+=head2 mutate
+
+Walk a PPI document and generate one mutant for each comparison operator
+that can be flipped to reveal a boundary condition not caught by the test
+suite. For example, C<E<gt>=> is flipped to C<E<gt>>, C<E<lt>>, and
+C<E<lt>=>  in turn, producing three independent mutants.
+
+    my $mutation = App::Test::Generator::Mutation::NumericBoundary->new;
+    my $doc      = PPI::Document->new(\$source);
+    my @mutants  = $mutation->mutate($doc);
+
+    for my $m (@mutants) {
+        print $m->id, ': ', $m->description, "\n";
+    }
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$self>
+
+An instance of C<App::Test::Generator::Mutation::NumericBoundary>.
+
+=item * C<$doc>
+
+A L<PPI::Document> object representing the parsed source file to mutate.
+The document is not modified by this method.
+
+=back
+
+=head3 Returns
+
+A list of L<App::Test::Generator::Mutant> objects, one per
+(operator, flip) pair found in the document. Returns an empty list if no
+qualifying comparison operators are found.
+
+Each mutant carries a C<transform> closure that when called with a fresh
+L<PPI::Document> copy will replace the targeted operator with its flipped
+equivalent, targeting the exact operator by line and column number to
+ensure that multiple comparison operators on the same source line are each
+mutated independently.
+
+=head3 Notes
+
+The following operators and their flips are supported:
+
+    >   flips to  <  >=  <=
+    <   flips to  >  <=  >=
+    >=  flips to  >  <   <=
+    <=  flips to  <  >   >=
+    ==  flips to  !=
+    !=  flips to  ==
+
+Mutant IDs include line number, column number, and the flip target to
+ensure uniqueness even when multiple operators share a source line.
+
+=head3 API specification
+
+=head4 input
+
+    {
+        self => {
+            type => OBJECT,
+            isa  => 'App::Test::Generator::Mutation::NumericBoundary',
+        },
+        doc => {
+            type => OBJECT,
+            isa  => 'PPI::Document',
+        },
+    }
+
+=head4 output
+
+    {
+        type     => ARRAYREF,
+        elements => {
+            type => OBJECT,
+            isa  => 'App::Test::Generator::Mutant',
+        },
+    }
+
+=cut
+
 sub mutate {
 	my ($self, $doc) = @_;
 
