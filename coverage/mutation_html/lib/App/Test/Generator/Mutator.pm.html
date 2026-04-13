@@ -246,7 +246,7 @@ pre details.mutant-details ul {
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 52.17%<br>
 TER2 (Branch): 7.89%<br>
-TER3 (LCSAJ): 0.0% (0/25)<br>
+TER3 (LCSAJ): 32.0% (8/25)<br>
 Approximate LCSAJ segments: 39<br>
 </div>
 
@@ -349,7 +349,7 @@ Approximate LCSAJ segments: 39<br>
 </span><span class="">   57: }
 </span><span class="">   58: 
 </span><span class="">   59: sub generate_mutants {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 60 → 66 → 70</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 60 → 66 → 0</span></span>   60: 	my $self = $_[0];
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">60 → 66 → 70</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">60 → 66 → 0</span></span>   60: 	my $self = $_[0];
 </span><span class="">   61: 
 </span><span class="">   62: 	my $doc = PPI::Document-&gt;new($self-&gt;{file}) or die &quot;Unable to parse $self-&gt;{file}&quot;;
 </span><span class="">   63: 
@@ -359,7 +359,7 @@ Approximate LCSAJ segments: 39<br>
 </span><span class="">   67: 		push @mutants, $mutation-&gt;mutate($doc);
 </span><span class="">   68: 	}
 </span><span class="">   69: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 70 → 70 → 73</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 70 → 70 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 70 → 70 → 73</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 70 → 70 → 0</span></span>   70: 	if($self-&gt;{mutation_level} eq &#39;fast&#39;) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">70 → 70 → 73</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">70 → 70 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">70 → 70 → 73</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">70 → 70 → 0</span></span>   70: 	if($self-&gt;{mutation_level} eq &#39;fast&#39;) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -368,7 +368,7 @@ Approximate LCSAJ segments: 39<br>
 </li></ul></details>
 <span class="">   71: 		return @{_dedup_mutants(\@mutants)};
 </span><span class="">   72: 	}
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 73 → 73 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 73 → 73 → 0</span></span>   73: 	return @mutants;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">73 → 73 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">73 → 73 → 0</span></span>   73: 	return @mutants;
 </span><span class="">   74: }
 </span><span class="">   75: 
 </span><span class="">   76: sub apply_mutant {
