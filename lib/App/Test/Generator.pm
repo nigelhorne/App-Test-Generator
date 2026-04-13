@@ -1850,7 +1850,7 @@ sub generate
 						perl_quote((ref $inputs eq 'ARRAY') ? (join(', ', map { $_ // '' } @{$inputs})) : $inputs),
 						$expected_str
 					);
-					if($output{'type'} eq 'boolean') {
+					if(($output{'type'} // '') eq 'boolean') {
 						if($expected_str eq '1') {
 							$corpus_code .= "ok(\$obj->$function($input_str), " . q_wrap($desc) . ");\n";
 						} elsif($expected_str eq '0') {

@@ -72,17 +72,21 @@ our %TARGET;
 # The env var contains absolute realpath() output
 # separated by colons. Stray newlines from broken
 # shell pipelines are stripped defensively.
-# _normalize must be defined above this BEGIN block.
 # --------------------------------------------------
 BEGIN {
 	my $targets_env = $ENV{LCSAJ_TARGETS} // '';
-
-	# Strip stray newlines that may appear from broken shell pipelines
 	$targets_env =~ s/\n//g;
 
 	for my $t (split /:/, $targets_env) {
 		next unless length $t;
-		$TARGET{ _normalize($t) } = 1;
+
+		# Inline normalisation — cannot call _normalize here since
+		# BEGIN runs before named subs are compiled when BEGIN
+		# appears at the top of the file
+		my $f = $t;
+		$f =~ s{^.*/blib/lib/}{lib/};
+		$f =~ s{^.*/lib/}{lib/};
+		$TARGET{$f} = 1;
 	}
 }
 
