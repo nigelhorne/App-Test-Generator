@@ -254,43 +254,166 @@ pre details.mutant-details ul {
 </span><span class="">    2: 
 </span><span class="">    3: use strict;
 </span><span class="">    4: use warnings;
-</span><span class="">    5: use JSON::MaybeXS;
-</span><span class="">    6: 
-</span><span class="">    7: sub merge {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 8 → 13 → 28</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 8 → 13 → 0</span></span>    8: 	my ($lcsaj_file,$hits_file,$out_file) = @_;
+</span><span class="">    5: 
+</span><span class="">    6: use autodie qw(:all);
+</span><span class="">    7: use Carp qw(croak);
+</span><span class="">    8: use JSON::MaybeXS;
 </span><span class="">    9: 
-</span><span class="">   10:     my $paths = decode_json(do { local(@ARGV,$/)=$lcsaj_file;&lt;&gt; });
-</span><span class="">   11:     my $hits  = decode_json(do { local(@ARGV,$/)=$hits_file;&lt;&gt; });
-</span><span class="">   12: 
-</span><span class="">   13:     for my $path (@$paths) {
-</span><span class="">   14: 
-</span><span class="">   15:         my $covered = 0;
-</span><span class="">   16: 
-</span><span class="">   17:         for my $line ($path-&gt;{start} .. $path-&gt;{end}) {
-</span><span class="">   18: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   19:             if ($hits-&gt;{$line}) {
+</span><span class="">   10: our $VERSION = &#39;0.32&#39;;
+</span><span class="">   11: 
+</span><span class="">   12: =head1 NAME
+</span><span class="">   13: 
+</span><span class="">   14: App::Test::Generator::LCSAJ::Coverage - Merge LCSAJ path data with runtime hits
+</span><span class="">   15: 
+</span><span class="">   16: =head1 VERSION
+</span><span class="">   17: 
+</span><span class="">   18: Version 0.32
+</span><span class="">   19: 
+</span><span class="">   20: =head1 DESCRIPTION
+</span><span class="">   21: 
+</span><span class="">   22: Merges static LCSAJ path data produced by L&lt;App::Test::Generator::LCSAJ&gt;
+</span><span class="">   23: with runtime line hit data to determine which LCSAJ paths were covered
+</span><span class="">   24: during test execution. The merged result is written as JSON for
+</span><span class="">   25: consumption by C&lt;bin/app-test-generator-index&gt;.
+</span><span class="">   26: 
+</span><span class="">   27: =head2 merge
+</span><span class="">   28: 
+</span><span class="">   29: Merge a static LCSAJ path JSON file with a runtime line hits JSON file
+</span><span class="">   30: and write the annotated result to an output file.
+</span><span class="">   31: 
+</span><span class="">   32:     App::Test::Generator::LCSAJ::Coverage::merge(
+</span><span class="">   33:         &#39;cover_db/lcsaj/MyModule.pm.lcsaj.json&#39;,
+</span><span class="">   34:         &#39;cover_db/lcsaj/MyModule.pm.hits.json&#39;,
+</span><span class="">   35:         &#39;cover_db/lcsaj/MyModule.pm.covered.json&#39;,
+</span><span class="">   36:     );
+</span><span class="">   37: 
+</span><span class="">   38: =head3 Arguments
+</span><span class="">   39: 
+</span><span class="">   40: =over 4
+</span><span class="">   41: 
+</span><span class="">   42: =item * C&lt;$lcsaj_file&gt;
+</span><span class="">   43: 
+</span><span class="">   44: Path to the C&lt;.lcsaj.json&gt; file produced by
+</span><span class="">   45: L&lt;App::Test::Generator::LCSAJ&gt;. Required.
+</span><span class="">   46: 
+</span><span class="">   47: =item * C&lt;$hits_file&gt;
+</span><span class="">   48: 
+</span><span class="">   49: Path to a JSON file mapping line numbers (as strings) to hit counts,
+</span><span class="">   50: as produced by L&lt;Devel::App::Test::Generator::LCSAJ::Runtime&gt;.
+</span><span class="">   51: Required.
+</span><span class="">   52: 
+</span><span class="">   53: =item * C&lt;$out_file&gt;
+</span><span class="">   54: 
+</span><span class="">   55: Path to write the merged output JSON file. Required.
+</span><span class="">   56: 
+</span><span class="">   57: =back
+</span><span class="">   58: 
+</span><span class="">   59: =head3 Returns
+</span><span class="">   60: 
+</span><span class="">   61: Nothing. Writes the annotated LCSAJ path data to C&lt;$out_file&gt;, with
+</span><span class="">   62: a C&lt;covered&gt; key added to each path record.
+</span><span class="">   63: 
+</span><span class="">   64: =head3 Side effects
+</span><span class="">   65: 
+</span><span class="">   66: Writes to C&lt;$out_file&gt;. Croaks if any file cannot be read or written.
+</span><span class="">   67: 
+</span><span class="">   68: =head3 Notes
+</span><span class="">   69: 
+</span><span class="">   70: A path is considered covered if any line in the range C&lt;start..end&gt;
+</span><span class="">   71: was executed at least once. This is a conservative approximation &acirc;&#128;&#148;
+</span><span class="">   72: it does not verify that the jump target was actually reached. As a
+</span><span class="">   73: result, coverage may be slightly overstated for paths where only the
+</span><span class="">   74: beginning of the sequence was executed.
+</span><span class="">   75: 
+</span><span class="">   76: =head3 API specification
+</span><span class="">   77: 
+</span><span class="">   78: =head4 input
+</span><span class="">   79: 
+</span><span class="">   80:     {
+</span><span class="">   81:         lcsaj_file =&gt; { type =&gt; SCALAR },
+</span><span class="">   82:         hits_file  =&gt; { type =&gt; SCALAR },
+</span><span class="">   83:         out_file   =&gt; { type =&gt; SCALAR },
+</span><span class="">   84:     }
+</span><span class="">   85: 
+</span><span class="">   86: =head4 output
+</span><span class="">   87: 
+</span><span class="">   88:     { type =&gt; UNDEF }
+</span><span class="">   89: 
+</span><span class="">   90: =cut
+</span><span class="">   91: 
+</span><span class="">   92: sub merge {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 93 → 108 → 122</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 93 → 108 → 0</span></span>   93: 	my ($lcsaj_file, $hits_file, $out_file) = @_;
+</span><span class="">   94: 
+</span><span class="">   95: 	# Validate all three file arguments before attempting any IO
+</span><span class="">   96: 	croak &#39;lcsaj_file required&#39; unless defined $lcsaj_file;
+</span><span class="">   97: 	croak &#39;hits_file required&#39;  unless defined $hits_file;
+</span><span class="">   98: 	croak &#39;out_file required&#39;   unless defined $out_file;
+</span><span class="">   99: 
+</span><span class="">  100: 	# Load static LCSAJ path data extracted by App::Test::Generator::LCSAJ
+</span><span class="">  101: 	my $paths = decode_json(_slurp($lcsaj_file));
+</span><span class="">  102: 
+</span><span class="">  103: 	# Load runtime line hit counts from Devel::App::Test::Generator::LCSAJ::Runtime
+</span><span class="">  104: 	my $hits  = decode_json(_slurp($hits_file));
+</span><span class="">  105: 
+</span><span class="">  106: 	# Annotate each path with a covered flag &acirc;&#128;&#148; a path is considered
+</span><span class="">  107: 	# covered if any line in the start..end range was executed
+</span><span class="">  108: 	for my $path (@{$paths}) {
+</span><span class="">  109: 		my $covered = 0;
+</span><span class="">  110: 
+</span><span class="">  111: 		for my $line ($path-&gt;{start} .. $path-&gt;{end}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  112: 			if($hits-&gt;{$line}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_19_13: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_112_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">   20:                 $covered = 1;
-</span><span class="">   21:                 last;
-</span><span class="">   22:             }
-</span><span class="">   23:         }
-</span><span class="">   24: 
-</span><span class="">   25:         $path-&gt;{covered} = $covered;
-</span><span class="">   26:     }
-</span><span class="">   27: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 28 → 32 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 28 → 32 → 0</span></span>   28:     open my $fh,&#39;&gt;&#39;,$out_file;
-</span><span class="">   29: 
-</span><span class="">   30:     print $fh encode_json($paths);
-</span><span class="">   31: 
-</span><span class="">   32:     close $fh;
-</span><span class="">   33: }
-</span><span class="">   34: 
-</span><span class="">   35: 1;
+<span class="">  113: 				$covered = 1;
+</span><span class="">  114: 				last;
+</span><span class="">  115: 			}
+</span><span class="">  116: 		}
+</span><span class="">  117: 
+</span><span class="">  118: 		$path-&gt;{covered} = $covered;
+</span><span class="">  119: 	}
+</span><span class="">  120: 
+</span><span class="">  121: 	# Write the annotated paths to the output file
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 122 → 124 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 122 → 124 → 0</span></span>  122: 	open my $fh, &#39;&gt;&#39;, $out_file or croak &quot;Cannot write coverage output to $out_file: $!&quot;;
+</span><span class="">  123: 	print $fh encode_json($paths);
+</span><span class="">  124: 	close $fh;
+</span><span class="">  125: }
+</span><span class="">  126: 
+</span><span class="">  127: # --------------------------------------------------
+</span><span class="">  128: # _slurp
+</span><span class="">  129: #
+</span><span class="">  130: # Purpose:    Read the entire contents of a file and
+</span><span class="">  131: #             return it as a string.
+</span><span class="">  132: #
+</span><span class="">  133: # Entry:      $file - path to the file to read.
+</span><span class="">  134: #
+</span><span class="">  135: # Exit:       Returns the file contents as a scalar
+</span><span class="">  136: #             string. Croaks if the file cannot be
+</span><span class="">  137: #             opened.
+</span><span class="">  138: #
+</span><span class="">  139: # Side effects: None beyond opening and closing the
+</span><span class="">  140: #               file handle.
+</span><span class="">  141: #
+</span><span class="">  142: # Notes:      Uses three-argument open for safety with
+</span><span class="">  143: #             filenames containing special characters.
+</span><span class="">  144: #             Sets $/ to undef to slurp the whole file
+</span><span class="">  145: #             in one read, localised to avoid affecting
+</span><span class="">  146: #             other code.
+</span><span class="">  147: # --------------------------------------------------
+</span><span class="">  148: sub _slurp {
+</span><span class="">  149: 	my $file = $_[0];
+</span><span class="">  150: 
+</span><span class="">  151: 	open my $fh, &#39;&lt;&#39;, $file or croak &quot;Cannot read $file: $!&quot;;
+</span><span class="">  152: 
+</span><span class="">  153: 	# Localise $/ to undef to slurp entire file in one read
+</span><span class="">  154: 	local $/;
+</span><span class="">  155: 	return &lt;$fh&gt;;
+</span><span class="">  156: }
+</span><span class="">  157: 
+</span><span class="">  158: 1;
 </span></pre>
 
 <script>
