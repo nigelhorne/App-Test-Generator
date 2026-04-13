@@ -242,7 +242,7 @@ pre details.mutant-details ul {
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Planner.pm</h1>
 <div class="nav"><a href="Mutator.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
- <a href="Planner/Fixture.pm.html">Next ➡</a></div>
+ <a href="Planner/Mock.pm.html">Next ➡</a></div>
 		<div class="legend">
 			<h3>Mutant Testing Legend</h3>
 			<span class="legend-box survived-1"></span> Survived (tests missed this)
@@ -278,9 +278,9 @@ pre details.mutant-details ul {
 </span><span class="">   26: }
 </span><span class="">   27: 
 </span><span class="">   28: sub plan_all {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 29 → 35 → 68</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 29 → 35 → 0</span></span>   29: 	my $self = $_[0];
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 29 → 35 → 63</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 29 → 35 → 0</span></span>   29: 	my $self = $_[0];
 </span><span class="">   30: 
-</span><span class="">   31: 	my $global = $self-&gt;build_plan();
+</span><span class="">   31: 	# my $global = $self-&gt;build_plan();
 </span><span class="">   32: 
 </span><span class="">   33: 	my %method_plan;
 </span><span class="">   34: 
@@ -294,82 +294,76 @@ pre details.mutant-details ul {
 </span><span class="">   42: 		# Strategy mapping
 </span><span class="">   43: 		# -----------------------------------
 </span><span class="">   44: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   45:         if ($schema-&gt;{accessor} &amp;&amp; $schema-&gt;{accessor}-&gt;{type}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   45: 		if ($schema-&gt;{accessor} &amp;&amp; $schema-&gt;{accessor}-&gt;{type}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_45: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_45_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">   46: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   47:             if ($schema-&gt;{accessor}-&gt;{type} eq &#39;get&#39;) {
+<span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   46: 			if ($schema-&gt;{accessor}-&gt;{type} eq &#39;get&#39;) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_47: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_46_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">   48:                 $plan{getter_test} = 1;
-</span><span class="">   49:             }
-</span><span class="">   50: 
-</span><span class="">   51:             elsif ($schema-&gt;{accessor}-&gt;{type} eq &#39;getset&#39;) {
-</span><span class="">   52:                 $plan{getset_test} = 1;
-</span><span class="">   53:             }
+<span class="">   47: 				$plan{getter_test} = 1;
+</span><span class="">   48: 			} elsif ($schema-&gt;{accessor}-&gt;{type} eq &#39;getset&#39;) {
+</span><span class="">   49: 				$plan{getset_test} = 1;
+</span><span class="">   50: 			} elsif ($schema-&gt;{accessor}-&gt;{type} eq &#39;injector&#39;) {
+</span><span class="">   51: 				$plan{object_injection_test} = 1;
+</span><span class="">   52: 			}
+</span><span class="">   53: 		}
 </span><span class="">   54: 
-</span><span class="">   55:             elsif ($schema-&gt;{accessor}-&gt;{type} eq &#39;injector&#39;) {
-</span><span class="">   56:                 $plan{object_injection_test} = 1;
-</span><span class="">   57:             }
-</span><span class="">   58:         }
-</span><span class="">   59: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   60:         if ($schema-&gt;{output}-&gt;{type} &amp;&amp; $schema-&gt;{output}-&gt;{type} eq &#39;boolean&#39;) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   55: 		if ($schema-&gt;{output}-&gt;{type} &amp;&amp; $schema-&gt;{output}-&gt;{type} eq &#39;boolean&#39;) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_60: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_55_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">   61: 
-</span><span class="">   62:             $plan{boolean_test} = 1;
-</span><span class="">   63:         }
-</span><span class="">   64: 
-</span><span class="">   65:         $method_plan{$method} = \%plan;
-</span><span class="">   66:     }
-</span><span class="">   67: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 68 → 69 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 68 → 69 → 0</span></span>   68: die Dumper(\%method_plan);
-</span><span class="">   69: 	return \%method_plan;
-</span><span class="">   70: }
-</span><span class="">   71: 
-</span><span class="">   72: sub build_plan {
-</span><span class="">   73: 	my $self = $_[0];
+<span class="">   56: 			$plan{boolean_test} = 1;
+</span><span class="">   57: 		}
+</span><span class="">   58: 
+</span><span class="">   59: 		$method_plan{$method} = \%plan;
+</span><span class="">   60: 	}
+</span><span class="">   61: 
+</span><span class="">   62: 	# die Dumper(\%method_plan);
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 63 → 63 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 63 → 63 → 0</span></span>   63: 	return \%method_plan;
+</span><span class="">   64: }
+</span><span class="">   65: 
+</span><span class="">   66: # TODO:  This doesn&#39;t seem to be called anywhere.  Should it be removed?
+</span><span class="">   67: sub build_plan {
+</span><span class="">   68: 	my $self = $_[0];
+</span><span class="">   69: 
+</span><span class="">   70: 	# Strategy
+</span><span class="">   71: 	my $strategy_engine = App::Test::Generator::TestStrategy-&gt;new(schema =&gt; $self-&gt;{schemas});
+</span><span class="">   72: 
+</span><span class="">   73: 	my $strategy = $strategy_engine-&gt;generate_plan();
 </span><span class="">   74: 
-</span><span class="">   75: 	# Strategy
-</span><span class="">   76: 	my $strategy_engine = App::Test::Generator::TestStrategy-&gt;new(schema =&gt; $self-&gt;{schemas});
+</span><span class="">   75: 	# Isolation
+</span><span class="">   76: 	my $isolation = App::Test::Generator::Planner::Isolation-&gt;new()-&gt;plan($self-&gt;{schemas}, $strategy);
 </span><span class="">   77: 
-</span><span class="">   78: 	my $strategy = $strategy_engine-&gt;generate_plan();
-</span><span class="">   79: 
-</span><span class="">   80: 	# Isolation
-</span><span class="">   81: 	my $isolation = App::Test::Generator::Planner::Isolation-&gt;new()-&gt;plan($self-&gt;{schemas}, $strategy);
-</span><span class="">   82: 
-</span><span class="">   83: 	# Fixture
-</span><span class="">   84: 	my $fixture = App::Test::Generator::Planner::Fixture-&gt;new()-&gt;plan($self-&gt;{schemas}, $isolation);
-</span><span class="">   85: 
-</span><span class="">   86: 	# Mock
-</span><span class="">   87: 	my $mock = App::Test::Generator::Planner::Mock-&gt;new()-&gt;plan($self-&gt;{schemas});
-</span><span class="">   88: 
-</span><span class="">   89: 	# Grouping
-</span><span class="">   90: 	my $groups = App::Test::Generator::Planner::Grouping-&gt;new()-&gt;plan($self-&gt;{schemas});
-</span><span class="">   91: 
-</span><span class="">   92: 	return {
-</span><span class="">   93: 		strategy  =&gt; $strategy,
-</span><span class="">   94: 		isolation =&gt; $isolation,
-</span><span class="">   95: 		fixture   =&gt; $fixture,
-</span><span class="">   96: 		mock      =&gt; $mock,
-</span><span class="">   97: 		groups    =&gt; $groups,
-</span><span class="">   98: 	};
-</span><span class="">   99: }
-</span><span class="">  100: 
-</span><span class="">  101: 1;
-</span><span class="">  102: 
+</span><span class="">   78: 	# Fixture
+</span><span class="">   79: 	my $fixture = App::Test::Generator::Planner::Fixture-&gt;new()-&gt;plan($self-&gt;{schemas}, $isolation);
+</span><span class="">   80: 
+</span><span class="">   81: 	# Mock
+</span><span class="">   82: 	my $mock = App::Test::Generator::Planner::Mock-&gt;new()-&gt;plan($self-&gt;{schemas});
+</span><span class="">   83: 
+</span><span class="">   84: 	# Grouping
+</span><span class="">   85: 	my $groups = App::Test::Generator::Planner::Grouping-&gt;new()-&gt;plan($self-&gt;{schemas});
+</span><span class="">   86: 
+</span><span class="">   87: 	return {
+</span><span class="">   88: 		strategy  =&gt; $strategy,
+</span><span class="">   89: 		isolation =&gt; $isolation,
+</span><span class="">   90: 		fixture   =&gt; $fixture,
+</span><span class="">   91: 		mock      =&gt; $mock,
+</span><span class="">   92: 		groups    =&gt; $groups,
+</span><span class="">   93: 	};
+</span><span class="">   94: }
+</span><span class="">   95: 
+</span><span class="">   96: 1;
 </span></pre>
 
 <script>

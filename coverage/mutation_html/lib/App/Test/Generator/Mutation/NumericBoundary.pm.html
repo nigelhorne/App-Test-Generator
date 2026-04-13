@@ -241,13 +241,13 @@ pre details.mutant-details ul {
 <body>
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Mutation/NumericBoundary.pm</h1>
-<div class="nav"><a href="ConditionalInversion.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
- <a href="../Mutator.pm.html">Next ➡</a></div><div class='summary'>
+<div class="nav"><a href="../../../../Devel/App/Test/Generator/LCSAJ/Runtime.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="../../Generator.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
-TER1 (Statement): 100.00%<br>
-TER2 (Branch): 62.50%<br>
+TER1 (Statement): 95.65%<br>
+TER2 (Branch): 50.00%<br>
 TER3 (LCSAJ): 80.0% (4/5)<br>
-Approximate LCSAJ segments: 9<br>
+Approximate LCSAJ segments: 13<br>
 </div>
 
     <div class="legend">
@@ -294,8 +294,8 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">    2: 
 </span><span class="">    3: use strict;
 </span><span class="">    4: use warnings;
-</span><span class="">    5: use parent &#39;App::Test::Generator::Mutation::Base&#39;;
-</span><span class="">    6: 
+</span><span class="">    5: use Carp qw(croak);
+</span><span class="">    6: use parent &#39;App::Test::Generator::Mutation::Base&#39;;
 </span><span class="">    7: use App::Test::Generator::Mutant;
 </span><span class="">    8: use PPI;
 </span><span class="">    9: 
@@ -307,47 +307,154 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">   15: 
 </span><span class="">   16: =cut
 </span><span class="">   17: 
-</span><span class="">   18: sub mutate {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">19 → 24 → 66</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">19 → 24 → 0</span></span>   19: 	my ($self, $doc) = @_;
-</span><span class="">   20: 
-</span><span class="">   21: 	my $ops = $doc-&gt;find(&#39;PPI::Token::Operator&#39;) || [];
-</span><span class="">   22: 	my @mutants;
-</span><span class="">   23: 
-</span><span class="">   24: 	for my $op (@$ops) {
-</span><span class="">   25: 		my $content = $op-&gt;content();
-</span><span class="">   26: 		next unless $content =~ /^(&gt;|&lt;|&gt;=|&lt;=|==)$/;
-</span><span class="">   27: 
-</span><span class="">   28: 		my $line = $op-&gt;location-&gt;[0];
-</span><span class="">   29: 		my $original = $op-&gt;content();
-</span><span class="">   30: 
-</span><span class="">   31: 		my %flip = (
-</span><span class="">   32: 			&#39;&gt;&#39; =&gt; [&#39;&lt;&#39;, &#39;&gt;=&#39;, &#39;&lt;=&#39;, &#39;==&#39;],
-</span><span class="">   33: 			&#39;&lt;&#39; =&gt; [&#39;&gt;&#39;, &#39;&lt;=&#39;, &#39;&gt;=&#39;],
-</span><span class="">   34: 			&#39;&gt;=&#39; =&gt; [&#39;&gt;&#39;, &#39;&lt;&#39;, &#39;&lt;=&#39;],
-</span><span class="">   35: 			&#39;&lt;=&#39; =&gt; [&#39;&lt;&#39;, &#39;&gt;&#39;, &#39;&gt;=&#39;],
-</span><span class="">   36: 			&#39;==&#39; =&gt; [&#39;!=&#39;],
-</span><span class="">   37: 		);
-</span><span class="">   38: 
-</span><span class="">   39: 		next unless $flip{$original};
-</span><span class="">   40: 
-</span><span class="">   41: 		foreach my $change (@{$flip{$original}}) {
-</span><span class="">   42: 			push @mutants, App::Test::Generator::Mutant-&gt;new(
-</span><span class="">   43: 				id =&gt; &quot;NUM_BOUNDARY_$line&quot;,
-</span><span class="">   44: 				group =&gt; &quot;NUM_BOUNDARY:$line&quot;,
-</span><span class="">   45: 				description =&gt; &quot;Numeric boundary flip $original to $change&quot;,
-</span><span class="">   46: 				original =&gt; $original,
-</span><span class="">   47: 				transform =&gt; sub {
-</span><span class="">   48: 					my $doc = $_[0];
+</span><span class="">   18: # --------------------------------------------------
+</span><span class="">   19: # Mapping of each comparison operator to the list of
+</span><span class="">   20: # operators it should be flipped to when mutating.
+</span><span class="">   21: # Both directions are covered so that e.g. != can be
+</span><span class="">   22: # mutated to == and vice versa.
+</span><span class="">   23: # --------------------------------------------------
+</span><span class="">   24: my %FLIP = (
+</span><span class="">   25: 	&#39;&gt;&#39;  =&gt; [ &#39;&lt;&#39;, &#39;&gt;=&#39;, &#39;&lt;=&#39; ],
+</span><span class="">   26: 	&#39;&lt;&#39;  =&gt; [ &#39;&gt;&#39;, &#39;&lt;=&#39;, &#39;&gt;=&#39; ],
+</span><span class="">   27: 	&#39;&gt;=&#39; =&gt; [ &#39;&gt;&#39;, &#39;&lt;&#39;,  &#39;&lt;=&#39; ],
+</span><span class="">   28: 	&#39;&lt;=&#39; =&gt; [ &#39;&lt;&#39;, &#39;&gt;&#39;,  &#39;&gt;=&#39; ],
+</span><span class="">   29: 	&#39;==&#39; =&gt; [ &#39;!=&#39; ],
+</span><span class="">   30: 	&#39;!=&#39; =&gt; [ &#39;==&#39; ],
+</span><span class="">   31: );
+</span><span class="">   32: 
+</span><span class="">   33: =head2 mutate
+</span><span class="">   34: 
+</span><span class="">   35: Walk a PPI document and generate one mutant for each comparison operator
+</span><span class="">   36: that can be flipped to reveal a boundary condition not caught by the test
+</span><span class="">   37: suite. For example, C&lt;E&lt;gt&gt;=&gt; is flipped to C&lt;E&lt;gt&gt;&gt;, C&lt;E&lt;lt&gt;&gt;, and
+</span><span class="">   38: C&lt;E&lt;lt&gt;=&gt;  in turn, producing three independent mutants.
+</span><span class="">   39: 
+</span><span class="">   40:     my $mutation = App::Test::Generator::Mutation::NumericBoundary-&gt;new;
+</span><span class="">   41:     my $doc      = PPI::Document-&gt;new(\$source);
+</span><span class="">   42:     my @mutants  = $mutation-&gt;mutate($doc);
+</span><span class="">   43: 
+</span><span class="">   44:     for my $m (@mutants) {
+</span><span class="">   45:         print $m-&gt;id, &#39;: &#39;, $m-&gt;description, &quot;\n&quot;;
+</span><span class="">   46:     }
+</span><span class="">   47: 
+</span><span class="">   48: =head3 Arguments
 </span><span class="">   49: 
-</span><span class="">   50: 					my $ops = $doc-&gt;find(&#39;PPI::Token::Operator&#39;) || [];
+</span><span class="">   50: =over 4
 </span><span class="">   51: 
-</span><span class="">   52: 					for my $op (@$ops) {
-</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   53: 						next unless $op-&gt;line_number == $line;
+</span><span class="">   52: =item * C&lt;$self&gt;
+</span><span class="">   53: 
+</span><span class="">   54: An instance of C&lt;App::Test::Generator::Mutation::NumericBoundary&gt;.
+</span><span class="">   55: 
+</span><span class="">   56: =item * C&lt;$doc&gt;
+</span><span class="">   57: 
+</span><span class="">   58: A L&lt;PPI::Document&gt; object representing the parsed source file to mutate.
+</span><span class="">   59: The document is not modified by this method.
+</span><span class="">   60: 
+</span><span class="">   61: =back
+</span><span class="">   62: 
+</span><span class="">   63: =head3 Returns
+</span><span class="">   64: 
+</span><span class="">   65: A list of L&lt;App::Test::Generator::Mutant&gt; objects, one per
+</span><span class="">   66: (operator, flip) pair found in the document. Returns an empty list if no
+</span><span class="">   67: qualifying comparison operators are found.
+</span><span class="">   68: 
+</span><span class="">   69: Each mutant carries a C&lt;transform&gt; closure that when called with a fresh
+</span><span class="">   70: L&lt;PPI::Document&gt; copy will replace the targeted operator with its flipped
+</span><span class="">   71: equivalent, targeting the exact operator by line and column number to
+</span><span class="">   72: ensure that multiple comparison operators on the same source line are each
+</span><span class="">   73: mutated independently.
+</span><span class="">   74: 
+</span><span class="">   75: =head3 Notes
+</span><span class="">   76: 
+</span><span class="">   77: The following operators and their flips are supported:
+</span><span class="">   78: 
+</span><span class="">   79:     &gt;   flips to  &lt;  &gt;=  &lt;=
+</span><span class="">   80:     &lt;   flips to  &gt;  &lt;=  &gt;=
+</span><span class="">   81:     &gt;=  flips to  &gt;  &lt;   &lt;=
+</span><span class="">   82:     &lt;=  flips to  &lt;  &gt;   &gt;=
+</span><span class="">   83:     ==  flips to  !=
+</span><span class="">   84:     !=  flips to  ==
+</span><span class="">   85: 
+</span><span class="">   86: Mutant IDs include line number, column number, and the flip target to
+</span><span class="">   87: ensure uniqueness even when multiple operators share a source line.
+</span><span class="">   88: 
+</span><span class="">   89: =head3 API specification
+</span><span class="">   90: 
+</span><span class="">   91: =head4 input
+</span><span class="">   92: 
+</span><span class="">   93:     {
+</span><span class="">   94:         self =&gt; {
+</span><span class="">   95:             type =&gt; OBJECT,
+</span><span class="">   96:             isa  =&gt; &#39;App::Test::Generator::Mutation::NumericBoundary&#39;,
+</span><span class="">   97:         },
+</span><span class="">   98:         doc =&gt; {
+</span><span class="">   99:             type =&gt; OBJECT,
+</span><span class="">  100:             isa  =&gt; &#39;PPI::Document&#39;,
+</span><span class="">  101:         },
+</span><span class="">  102:     }
+</span><span class="">  103: 
+</span><span class="">  104: =head4 output
+</span><span class="">  105: 
+</span><span class="">  106:     {
+</span><span class="">  107:         type     =&gt; ARRAYREF,
+</span><span class="">  108:         elements =&gt; {
+</span><span class="">  109:             type =&gt; OBJECT,
+</span><span class="">  110:             isa  =&gt; &#39;App::Test::Generator::Mutant&#39;,
+</span><span class="">  111:         },
+</span><span class="">  112:     }
+</span><span class="">  113: 
+</span><span class="">  114: =cut
+</span><span class="">  115: 
+</span><span class="">  116: sub mutate {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">117 → 123 → 182</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">117 → 123 → 0</span></span>  117: 	my ($self, $doc) = @_;
+</span><span class="">  118: 
+</span><span class="">  119: 	# Find all operator tokens in the document
+</span><span class="">  120: 	my $ops = $doc-&gt;find(&#39;PPI::Token::Operator&#39;) || [];
+</span><span class="">  121: 	my @mutants;
+</span><span class="">  122: 
+</span><span class="">  123: 	for my $op (@{$ops}) {
+</span><span class="">  124: 		my $original = $op-&gt;content();
+</span><span class="">  125: 
+</span><span class="">  126: 		# Only process comparison operators that have defined flips
+</span><span class="">  127: 		next unless exists $FLIP{$original};
+</span><span class="">  128: 
+</span><span class="">  129: 		# Capture location so the transform closure targets the
+</span><span class="">  130: 		# exact operator rather than the first match on that line
+</span><span class="">  131: 		my $line = $op-&gt;location-&gt;[0];
+</span><span class="">  132: 		my $col  = $op-&gt;location-&gt;[1];
+</span><span class="">  133: 
+</span><span class="">  134: 		# Generate one mutant per flip of this operator
+</span><span class="">  135: 		for my $change (@{ $FLIP{$original} }) {
+</span><span class="">  136: 
+</span><span class="">  137: 			# Build a unique id from location and the specific flip
+</span><span class="">  138: 			# so multiple operators on the same line don&#39;t collide
+</span><span class="">  139: 			my $id = &quot;NUM_BOUNDARY_${line}_${col}_${change}&quot;;
+</span><span class="">  140: 
+</span><span class="">  141: 			my $mutant = eval {
+</span><span class="">  142: 				App::Test::Generator::Mutant-&gt;new(
+</span><span class="">  143: 					id          =&gt; $id,
+</span><span class="">  144: 					group       =&gt; &quot;NUM_BOUNDARY:$line&quot;,
+</span><span class="">  145: 					description =&gt; &quot;Numeric boundary flip $original to $change&quot;,
+</span><span class="">  146: 					original    =&gt; $original,
+</span><span class="">  147: 					line        =&gt; $line,
+</span><span class="">  148: 					type        =&gt; &#39;comparison&#39;,
+</span><span class="">  149: 
+</span><span class="">  150: 					# The transform closure captures line, col, original
+</span><span class="">  151: 					# and change so it targets precisely the right operator
+</span><span class="">  152: 					# in the document copy it receives at test time
+</span><span class="">  153: 					transform   =&gt; sub {
+</span><span class="">  154: 						my $doc  = $_[0];
+</span><span class="">  155: 						my $ops  = $doc-&gt;find(&#39;PPI::Token::Operator&#39;) || [];
+</span><span class="">  156: 
+</span><span class="">  157: 						for my $op (@{$ops}) {
+</span><span class="">  158: 							# Match by line, column and content to avoid
+</span><span class="">  159: 							# mutating the wrong operator on the same line
+</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  160: 							next unless $op-&gt;line_number   == $line;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_53: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_160_39_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -356,22 +463,44 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">   54: 						next unless $op-&gt;content eq $original;
-</span><span class="">   55: 
-</span><span class="">   56: 						$op-&gt;set_content($change);
-</span><span class="">   57: 						last;
-</span><span class="">   58: 					}
-</span><span class="">   59: 				},
-</span><span class="">   60: 				line =&gt; $line,
-</span><span class="">   61: 				type =&gt; &#39;comparison&#39;,
-</span><span class="">   62: 			);
-</span><span class="">   63: 		}
-</span><span class="">   64: 	}
-</span><span class="">   65: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">66 → 66 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">66 → 66 → 0</span></span>   66: 	return @mutants;
-</span><span class="">   67: }
-</span><span class="">   68: 
-</span><span class="">   69: 1;
+<span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  161: 							next unless $op-&gt;column_number == $col;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_161_39_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  162: 							next unless $op-&gt;content       eq $original;
+</span><span class="">  163: 
+</span><span class="">  164: 							$op-&gt;set_content($change);
+</span><span class="">  165: 							last;
+</span><span class="">  166: 						}
+</span><span class="">  167: 					},
+</span><span class="">  168: 				);
+</span><span class="">  169: 			};
+</span><span class="">  170: 
+</span><span class="">  171: 			# If Mutant construction fails, report clearly rather than
+</span><span class="">  172: 			# silently dropping the mutant from the results
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  173: 			if($@ || !$mutant) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  174: 				warn &quot;Failed to construct mutant $id: $@\n&quot; if $@;
+</span><span class="">  175: 				next;
+</span><span class="">  176: 			}
+</span><span class="">  177: 
+</span><span class="">  178: 			push @mutants, $mutant;
+</span><span class="">  179: 		}
+</span><span class="">  180: 	}
+</span><span class="">  181: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">182 → 182 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">182 → 182 → 0</span></span>  182: 	return @mutants;
+</span><span class="">  183: }
+</span><span class="">  184: 
+</span><span class="">  185: 1;
 </span></pre>
 
 <script>

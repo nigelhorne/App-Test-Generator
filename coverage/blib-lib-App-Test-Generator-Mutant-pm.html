@@ -20,41 +20,258 @@ https://pjcj.net
 <h1>File Coverage</h1>
 <table>
 <tr><td class="h" align="right">File:</td><td align="left">blib/lib/App/Test/Generator/Mutant.pm</td></tr>
-<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">72.0%</td></tr>
+<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">66.7%</td></tr>
 </table>
 <div><br/></div>
 <table>
 <tr><th>line</th><th>stmt</th><th>bran</th><th>cond</th><th>sub</th><th>time</th><th>code</th></tr>
 <tr><td class="h">1</td><td></td><td></td><td></td><td></td><td></td><td class="s">package App::Test::Generator::Mutant;</td></tr>
-<tr><td class="h">2</td><td colspan="6"></td></tr><tr><td class="h">3</td><td><div class="c3">2</div><div class="c3">2</div><div class="c3">2</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L3">2</a></div></td><td><div>3</div><div>1</div><div>18</div></td><td class="s">use strict;</td></tr>
-<tr><td class="h">4</td><td><div class="c3">2</div><div class="c3">2</div><div class="c3">2</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L4">2</a></div></td><td><div>2</div><div>3</div><div>172</div></td><td class="s">use warnings;</td></tr>
-<tr><td class="h">5</td><td colspan="6"></td></tr><tr><td class="h">6</td><td></td><td></td><td></td><td></td><td></td><td class="s">our $VERSION = &#39;0.32&#39;;</td></tr>
-<tr><td class="h">7</td><td colspan="6"></td></tr><tr><td class="h">8 - 12</td><td colspan="5"></td><td class="s"><pre>=head1 VERSION
+<tr><td class="h">2</td><td colspan="6"></td></tr><tr><td class="h">3</td><td><div class="c3">2</div><div class="c3">2</div><div class="c3">2</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L3">2</a></div></td><td><div>4</div><div>1</div><div>17</div></td><td class="s">use strict;</td></tr>
+<tr><td class="h">4</td><td><div class="c3">2</div><div class="c3">2</div><div class="c3">2</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L4">2</a></div></td><td><div>3</div><div>1</div><div>26</div></td><td class="s">use warnings;</td></tr>
+<tr><td class="h">5</td><td><div class="c3">2</div><div class="c3">2</div><div class="c3">2</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L5">2</a></div></td><td><div>3</div><div>1</div><div>227</div></td><td class="s">use Carp qw(croak);</td></tr>
+<tr><td class="h">6</td><td colspan="6"></td></tr><tr><td class="h">7</td><td></td><td></td><td></td><td></td><td></td><td class="s">our $VERSION = &#39;0.32&#39;;</td></tr>
+<tr><td class="h">8</td><td colspan="6"></td></tr><tr><td class="h">9 - 100</td><td colspan="5"></td><td class="s"><pre>=head1 VERSION
 
 Version 0.32
 
+=head1 DESCRIPTION
+
+Represents a single mutant - a specific transformation of a source file
+that a test suite should be able to detect. Each mutant carries the
+metadata needed to identify it, locate it in the source, and apply the
+transformation to a fresh L&lt;PPI::Document&gt; copy at test time.
+
+=head2 new
+
+Construct a new mutant object.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $mutant = App::Test::Generator::Mutant-&gt;new(
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;NUM_BOUNDARY_10_5_!=&#39;,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;description =&gt; &#39;Numeric boundary flip == to !=&#39;,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;original&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;==&#39;,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; 10,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;comparison&#39;,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;group&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;NUM_BOUNDARY:10&#39;,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;transform&nbsp;&nbsp;&nbsp;=&gt; sub {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($doc) = @_;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# ... modify $doc in place ...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},
+&nbsp;&nbsp;&nbsp;&nbsp;);
+
+=head3 Arguments
+
+=over 4
+
+=item * C&lt;id&gt;
+
+A unique string identifying this mutant. Required.
+
+=item * C&lt;description&gt;
+
+A human-readable description of the mutation. Required.
+
+=item * C&lt;original&gt;
+
+The original source token or expression being mutated. Required.
+
+=item * C&lt;line&gt;
+
+The line number in the source file where the mutation occurs. Required.
+
+=item * C&lt;transform&gt;
+
+A CODE reference that accepts a L&lt;PPI::Document&gt; and applies the
+mutation to it in place. Required.
+
+=item * C&lt;type&gt;
+
+An optional string classifying the mutation kind e.g. C&lt;comparison&gt;,
+C&lt;boolean&gt;.
+
+=item * C&lt;group&gt;
+
+An optional string grouping related mutants together e.g. all mutations
+on the same source line.
+
+=back
+
+=head3 Returns
+
+A blessed hashref representing the mutant. Croaks if any required
+attribute is missing or if C&lt;transform&gt; is not a CODE reference.
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; { type =&gt; SCALAR },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;description =&gt; { type =&gt; SCALAR },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;original&nbsp;&nbsp;&nbsp;&nbsp;=&gt; { type =&gt; SCALAR },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; { type =&gt; SCALAR },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;transform&nbsp;&nbsp;&nbsp;=&gt; { type =&gt; CODEREF },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; { type =&gt; SCALAR, optional =&gt; 1 },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;group&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; { type =&gt; SCALAR, optional =&gt; 1 },
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;type =&gt; OBJECT,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;isa&nbsp;&nbsp;=&gt; &#39;App::Test::Generator::Mutant&#39;,
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
 =cut</pre></td></tr>
-<tr><td class="h">13</td><td colspan="6"></td></tr><tr><td class="h">14</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub new {</td></tr>
-<tr><td class="h">15</td><td><div class="c3">10</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L15">10</a></div></td><td><div>61</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($class, %args) = @_;</td></tr>
-<tr><td class="h">16</td><td colspan="6"></td></tr><tr><td class="h">17</td><td><div class="c3">10</div></td><td></td><td></td><td></td><td><div>8</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for my $required (qw/id description original line transform/) {</td></tr>
-<tr><td class="h">18</td><td><div class="c3">50</div></td><td><div class="c0" title="-/F"><a href="blib-lib-App-Test-Generator-Mutant-pm--branch.html#L18">50</a></div></td><td></td><td></td><td><div>47</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;die &quot;Missing required attribute: $required&quot; unless exists $args{$required};</td></tr>
-<tr><td class="h">19</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">20</td><td colspan="6"></td></tr><tr><td class="h">21</td><td><div class="c3">10</div></td><td></td><td></td><td></td><td><div>23</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return bless \%args, $class;</td></tr>
-<tr><td class="h">22</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">23</td><td colspan="6"></td></tr><tr><td class="h">24</td><td><div class="c3">10</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L24">10</a></div></td><td><div>1779</div></td><td class="s">sub id { $_[0]-&gt;{id} }</td></tr>
-<tr><td class="h">25</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L25">0</a></div></td><td><div>0</div></td><td class="s">sub description { $_[0]-&gt;{description} }</td></tr>
-<tr><td class="h">26</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L26">0</a></div></td><td><div>0</div></td><td class="s">sub original { $_[0]-&gt;{original} }</td></tr>
-<tr><td class="h">27</td><td><div class="c3">5</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L27">5</a></div></td><td><div>5</div></td><td class="s">sub line { $_[0]-&gt;{line} }</td></tr>
-<tr><td class="h">28</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L28">0</a></div></td><td></td><td class="s">sub transform&nbsp;&nbsp;&nbsp;{ $_[0]-&gt;{transform} }</td></tr>
-<tr><td class="h">29</td><td colspan="6"></td></tr><tr><td class="h">30 - 37</td><td colspan="5"></td><td class="s"><pre>=head1 AUTHOR
+<tr><td class="h">101</td><td colspan="6"></td></tr><tr><td class="h">102</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub new {</td></tr>
+<tr><td class="h">103</td><td><div class="c3">8</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L103">8</a></div></td><td><div>39</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($class, %args) = @_;</td></tr>
+<tr><td class="h">104</td><td colspan="6"></td></tr><tr><td class="h">105</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Validate all required attributes are present</td></tr>
+<tr><td class="h">106</td><td><div class="c3">8</div></td><td></td><td></td><td></td><td><div>11</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for my $required (qw(id description original line transform)) {</td></tr>
+<tr><td class="h">107</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Missing required attribute: $required&quot;</td></tr>
+<tr><td class="h">108</td><td><div class="c3">40</div></td><td><div class="c0" title="-/F"><a href="blib-lib-App-Test-Generator-Mutant-pm--branch.html#L108">50</a></div></td><td></td><td></td><td><div>33</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;unless exists $args{$required};</td></tr>
+<tr><td class="h">109</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">110</td><td colspan="6"></td></tr><tr><td class="h">111</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Ensure transform is actually executable</td></tr>
+<tr><td class="h">112</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;transform must be a CODE reference&#39;</td></tr>
+<tr><td class="h">113</td><td><div class="c3">8</div></td><td><div class="c0" title="-/F"><a href="blib-lib-App-Test-Generator-Mutant-pm--branch.html#L113">50</a></div></td><td></td><td></td><td><div>7</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;unless ref($args{transform}) eq &#39;CODE&#39;;</td></tr>
+<tr><td class="h">114</td><td colspan="6"></td></tr><tr><td class="h">115</td><td><div class="c3">8</div></td><td></td><td></td><td></td><td><div>8</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return bless \%args, $class;</td></tr>
+<tr><td class="h">116</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">117</td><td colspan="6"></td></tr><tr><td class="h">118 - 134</td><td colspan="5"></td><td class="s"><pre>=head2 id
+
+Return the unique identifier for this mutant.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $id = $mutant-&gt;id;
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutant&#39; } }
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; SCALAR }
+
+=cut</pre></td></tr>
+<tr><td class="h">135</td><td colspan="6"></td></tr><tr><td class="h">136</td><td><div class="c3">8</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L136">8</a></div></td><td><div>1381</div></td><td class="s">sub id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ $_[0]-&gt;{id}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">137</td><td colspan="6"></td></tr><tr><td class="h">138 - 154</td><td colspan="5"></td><td class="s"><pre>=head2 description
+
+Return the human-readable description of the mutation.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $desc = $mutant-&gt;description;
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutant&#39; } }
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; SCALAR }
+
+=cut</pre></td></tr>
+<tr><td class="h">155</td><td colspan="6"></td></tr><tr><td class="h">156</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L156">0</a></div></td><td><div>0</div></td><td class="s">sub description { $_[0]-&gt;{description} }</td></tr>
+<tr><td class="h">157</td><td colspan="6"></td></tr><tr><td class="h">158 - 174</td><td colspan="5"></td><td class="s"><pre>=head2 original
+
+Return the original source token or expression that is being mutated.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $orig = $mutant-&gt;original;
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutant&#39; } }
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; SCALAR }
+
+=cut</pre></td></tr>
+<tr><td class="h">175</td><td colspan="6"></td></tr><tr><td class="h">176</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L176">0</a></div></td><td><div>0</div></td><td class="s">sub original&nbsp;&nbsp;&nbsp;&nbsp;{ $_[0]-&gt;{original}&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">177</td><td colspan="6"></td></tr><tr><td class="h">178 - 194</td><td colspan="5"></td><td class="s"><pre>=head2 line
+
+Return the line number in the source file where the mutation occurs.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $line = $mutant-&gt;line;
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutant&#39; } }
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; SCALAR }
+
+=cut</pre></td></tr>
+<tr><td class="h">195</td><td colspan="6"></td></tr><tr><td class="h">196</td><td><div class="c3">4</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L196">4</a></div></td><td><div>5</div></td><td class="s">sub line&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ $_[0]-&gt;{line}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">197</td><td colspan="6"></td></tr><tr><td class="h">198 - 216</td><td colspan="5"></td><td class="s"><pre>=head2 transform
+
+Return the CODE reference that applies the mutation to a
+L&lt;PPI::Document&gt; copy.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $xform = $mutant-&gt;transform;
+&nbsp;&nbsp;&nbsp;&nbsp;$xform-&gt;($doc_copy);
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutant&#39; } }
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; CODEREF }
+
+=cut</pre></td></tr>
+<tr><td class="h">217</td><td colspan="6"></td></tr><tr><td class="h">218</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L218">0</a></div></td><td></td><td class="s">sub transform&nbsp;&nbsp;&nbsp;{ $_[0]-&gt;{transform}&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">219</td><td colspan="6"></td></tr><tr><td class="h">220 - 237</td><td colspan="5"></td><td class="s"><pre>=head2 type
+
+Return the optional mutation type classification string,
+e.g. C&lt;comparison&gt; or C&lt;boolean&gt;.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $type = $mutant-&gt;type;
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutant&#39; } }
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; SCALAR, optional =&gt; 1 }
+
+=cut</pre></td></tr>
+<tr><td class="h">238</td><td colspan="6"></td></tr><tr><td class="h">239</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L239">0</a></div></td><td></td><td class="s">sub type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ $_[0]-&gt;{type}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">240</td><td colspan="6"></td></tr><tr><td class="h">241 - 258</td><td colspan="5"></td><td class="s"><pre>=head2 group
+
+Return the optional group string that clusters related mutants,
+e.g. all mutations targeting the same source line.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $group = $mutant-&gt;group;
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutant&#39; } }
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; SCALAR, optional =&gt; 1 }
+
+=cut</pre></td></tr>
+<tr><td class="h">259</td><td colspan="6"></td></tr><tr><td class="h">260</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Mutant-pm--subroutine.html#L260">0</a></div></td><td></td><td class="s">sub group&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ $_[0]-&gt;{group}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">261</td><td colspan="6"></td></tr><tr><td class="h">262 - 287</td><td colspan="5"></td><td class="s"><pre>=head1 AUTHOR
 
 Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
 
-Portions of this module&#39;s initial design and documentation were created with the
-assistance of AI.
+Portions of this module&#39;s initial design and documentation were created
+with the assistance of AI.
 
-=cut</pre></td></tr>
-<tr><td class="h">38</td><td colspan="6"></td></tr><tr><td class="h">39 - 57</td><td colspan="5"></td><td class="s"><pre>=head1 LICENCE AND COPYRIGHT
+=head1 LICENCE AND COPYRIGHT
 
 Copyright 2026 Nigel Horne.
 
@@ -66,14 +283,14 @@ The licence terms of this software are as follows:
 
 =item * Personal single user, single computer use: GPL2
 
-=item * All other users (including Commercial, Charity, Educational, Government)
-&nbsp;&nbsp;must apply in writing for a licence for use from Nigel Horne at the
-&nbsp;&nbsp;above e-mail.
+=item * All other users (including Commercial, Charity, Educational,
+Government) must apply in writing for a licence for use from Nigel Horne
+at the above e-mail.
 
 =back
 
 =cut</pre></td></tr>
-<tr><td class="h">58</td><td colspan="6"></td></tr><tr><td class="h">59</td><td></td><td></td><td></td><td></td><td></td><td class="s">1;</td></tr>
+<tr><td class="h">288</td><td colspan="6"></td></tr><tr><td class="h">289</td><td></td><td></td><td></td><td></td><td></td><td class="s">1;</td></tr>
 </table>
 </body>
 </html>

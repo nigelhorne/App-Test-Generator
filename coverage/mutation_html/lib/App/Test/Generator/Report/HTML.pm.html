@@ -309,7 +309,7 @@ pre details.mutant-details ul {
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_55: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_55_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">   56: 		open my $cfh, &#39;&lt;&#39;, $cover_json;
 </span><span class="">   57: 		$coverage_data = decode_json(do { local $/; &lt;$cfh&gt; });
@@ -323,7 +323,7 @@ pre details.mutant-details ul {
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_63: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_63_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">   64: 		open my $lfh, &#39;&lt;&#39;, $lcsaj_hits_file;
 </span><span class="">   65: 		$lcsaj_hits = decode_json(do { local $/; &lt;$lfh&gt; });
@@ -344,9 +344,9 @@ pre details.mutant-details ul {
 </span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   80: 		my $prev = $i &gt; 0 ? $sorted_files[$i - 1] : undef;
 </span>
 					<details class="mutant-details">
-					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
+					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_80: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_80_17_<: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -354,7 +354,7 @@ pre details.mutant-details ul {
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_80: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_80_17_>=: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -362,15 +362,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_80: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_80: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_80_17_<=: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -386,7 +378,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_83: Numeric boundary flip < to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_83_17_>: Numeric boundary flip < to ></b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -394,7 +386,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_83: Numeric boundary flip < to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_83_17_<=: Numeric boundary flip < to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -402,7 +394,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_83: Numeric boundary flip < to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_83_17_>=: Numeric boundary flip < to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -468,7 +460,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_136: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_136_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  137: 		print $out &quot;&lt;tr&gt;&lt;th&gt;File&lt;/th&gt;&lt;th&gt;Total&lt;/th&gt;&lt;th&gt;Killed&lt;/th&gt;&lt;th&gt;Survivors&lt;/th&gt;&lt;th&gt;Score%&lt;/th&gt;&lt;th&gt;Complexity&lt;/th&gt;&lt;th&gt;LCSAJ&lt;/th&gt;&lt;/tr&gt;\n&quot;;
 </span><span class="">  138: 	} else {
@@ -498,7 +490,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_160: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_160_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  161: 			$lcsaj_pct = $lcsaj_total ? sprintf(&#39;%.1f&#39;, ($lcsaj_cov / $lcsaj_total) * 100) : &#39;-&#39;;
 </span><span class="">  162: 		} else {
@@ -528,7 +520,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_184: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_184_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  185: 		my ($stmt_total, $stmt_hit, $branch_total, $branch_hit) = _coverage_totals($coverage_data);
 </span><span class="">  186: 
@@ -604,7 +596,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_254: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_254_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  255: 		my $link = _relative_link($file, $prev);
 </span><span class="">  256: 		print $out qq{&lt;a href=&quot;$link&quot;&gt;&acirc;&not;&#133; Previous&lt;/a&gt; };
@@ -622,7 +614,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_266: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_266_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  267: 		my $link = _relative_link($file, $next);
 </span><span class="">  268: 		print $out qq{ &lt;a href=&quot;$link&quot;&gt;Next &acirc;&#158;&iexcl;&lt;/a&gt;};
@@ -638,14 +630,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_276: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_276_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  277: 		if(my $file_cov = _coverage_for_file($coverage_data, $file)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_277: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_277_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  278: 			my $stmt_total = $file_cov-&gt;{statement}{total} || 0;
 </span><span class="">  279: 			my $stmt_hit = $file_cov-&gt;{statement}{covered} || 0;
@@ -717,7 +709,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_343: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_343_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  344: 		my ($cov, $total) = _lcsaj_coverage_for_file($file, $lcsaj_dir, $lcsaj_hits);
 </span><span class="">  345: 
@@ -726,7 +718,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_346: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_346_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  347: 			my $pct = sprintf(&#39;%.1f&#39;, ($cov / $total) * 100);
 </span><span class="">  348: 
@@ -758,7 +750,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_372: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_372_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  373: 		# Normalize the filename so it matches debugger paths
 </span><span class="">  374: 		$file = abs_path($file) if defined $file;
@@ -787,7 +779,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_395: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_395_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  396: 			open my $fh, &#39;&lt;&#39;, $lcsaj_file;
 </span><span class="">  397: 			my $paths = decode_json(do { local $/; &lt;$fh&gt; });
@@ -832,15 +824,15 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_434: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_434_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  435: 			# Assign intensity class based on number of survivors
-</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  436: 			if ($survivor_count == 1) { $class = &#39;survived-1&#39;; }
+</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch.">  436: 			if ($survivor_count == 1) { $class = &#39;survived-1&#39;; }
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_436: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_436_24_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -848,14 +840,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>COND_INV_436: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+							</li><li><b>COND_INV_436_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  437: 			elsif ($survivor_count == 2) { $class = &#39;survived-2&#39;; }
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_437: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_437_27_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -895,7 +887,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_464: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_464_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  465: 			for my $p (@$paths) {
 </span><span class="">  466: 				my $start = $p-&gt;{start};
@@ -933,7 +925,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_496: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_496_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  497: 			# Count totals for summary label
 </span><span class="">  498: 			my $total = scalar @line_mutants;
@@ -945,7 +937,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_502: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_502_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  503: 				$details = qq{
 </span><span class="">  504: 					&lt;details class=&quot;mutant-details&quot;&gt;
@@ -959,7 +951,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_510: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_510_6: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  511: 						my $id = $m-&gt;{id} // &#39;unknown&#39;;
 </span><span class="">  512: 						my $type = $m-&gt;{type} // &#39;&#39;;
@@ -974,7 +966,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_519: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_519_7: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  520: 							$details .= &quot; ($type)&quot;;
 </span><span class="">  521: 						}
@@ -984,7 +976,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_523: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_523_7: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  524: 							$suggest = encode_entities($suggest);
 </span><span class="">  525: 
@@ -1042,7 +1034,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_575: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_575_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  576: 		($type) = $mutant-&gt;{id} =~ /^([A-Z_]+)/;
 </span><span class="">  577: 	}
@@ -1073,12 +1065,12 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  602: 	my $type = $m-&gt;{type};
 </span><span class="">  603: 
 </span><span class="">  604: 	# Fallback: infer from ID prefix
-</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch.">  605: 	if((!$type || (length($type) == 0)) &amp;&amp; $m-&gt;{id}) {
+</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  605: 	if((!$type || (length($type) == 0)) &amp;&amp; $m-&gt;{id}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_605: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_605_31_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -1086,7 +1078,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>COND_INV_605: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+							</li><li><b>COND_INV_605_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  606: 		($type) = $m-&gt;{id} =~ /^([A-Z_]+)/;
 </span><span class="">  607: 	}
@@ -1103,7 +1095,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_616: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_616_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  617: 		return &lt;&lt;&quot;TEST&quot;;
 </span><span class="">  618: # Boundary test suggestion
@@ -1120,7 +1112,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_627: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_627_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  628: 		return &lt;&lt;&quot;TEST&quot;;
 </span><span class="">  629: # Boolean branch test suggestion
@@ -1137,7 +1129,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_638: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_638_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  639: 		return &lt;&lt;&quot;TEST&quot;;
 </span><span class="">  640: # Return value assertion
@@ -1156,7 +1148,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_651: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_651_32_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -1170,7 +1162,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_652: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_652_32_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -1184,7 +1176,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_653: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_653_32_>: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -1192,7 +1184,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_653: Numeric boundary flip >= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_653_32_<: Numeric boundary flip >= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -1200,7 +1192,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_653: Numeric boundary flip >= to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_653_32_<=: Numeric boundary flip >= to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -1559,7 +1551,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_999: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_999_9: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class=""> 1000:             return $summary-&gt;{$k};
 </span><span class=""> 1001:         }
@@ -1614,7 +1606,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_1048: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_1048_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class=""> 1049: 			$complexity++;
 </span><span class=""> 1050: 		}
@@ -1633,7 +1625,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_1061: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_1061_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class=""> 1062: 			$complexity++;
 </span><span class=""> 1063: 		}
@@ -1686,7 +1678,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_1108: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_1108_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class=""> 1109: 				$hit = 1;
 </span><span class=""> 1110: 				last;

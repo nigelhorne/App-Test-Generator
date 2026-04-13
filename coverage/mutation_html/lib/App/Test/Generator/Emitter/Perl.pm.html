@@ -254,290 +254,528 @@ pre details.mutant-details ul {
 </span><span class="">    2: 
 </span><span class="">    3: use strict;
 </span><span class="">    4: use warnings;
-</span><span class="">    5: 
-</span><span class="">    6: our $VERSION = &#39;0.32&#39;;
+</span><span class="">    5: use Carp qw(croak);
+</span><span class="">    6: use Readonly;
 </span><span class="">    7: 
-</span><span class="">    8: =head1 VERSION
-</span><span class="">    9: 
-</span><span class="">   10: Version 0.32
-</span><span class="">   11: 
-</span><span class="">   12: =cut
-</span><span class="">   13: 
-</span><span class="">   14: sub new {
-</span><span class="">   15: 	my ($class, %args) = @_;
-</span><span class="">   16: 	use Data::Dumper;
-</span><span class="">   17: 	warn Dumper($args{plans});
-</span><span class="">   18: 	return bless {
-</span><span class="">   19: 		schema =&gt; $args{schema},
-</span><span class="">   20: 		plans =&gt; $args{plans},
-</span><span class="">   21: 		package =&gt; $args{package},
-</span><span class="">   22: 	}, $class;
-</span><span class="">   23: }
-</span><span class="">   24: 
-</span><span class="">   25: sub emit {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 26 → 30 → 34</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 26 → 30 → 0</span></span>   26: 	my $self = $_[0];
-</span><span class="">   27: 
-</span><span class="">   28: 	my $code = $self-&gt;_emit_header();
-</span><span class="">   29: 
-</span><span class="">   30: 	foreach my $method (sort keys %{ $self-&gt;{plans} }) {
-</span><span class="">   31: 		$code .= $self-&gt;_emit_method_tests($method);
-</span><span class="">   32: 	}
+</span><span class="">    8: # --------------------------------------------------
+</span><span class="">    9: # Plan key names &acirc;&#128;&#148; must match those emitted by
+</span><span class="">   10: # App::Test::Generator::TestStrategy and
+</span><span class="">   11: # App::Test::Generator::Planner
+</span><span class="">   12: # --------------------------------------------------
+</span><span class="">   13: Readonly my $TEST_BASIC           =&gt; &#39;basic_test&#39;;
+</span><span class="">   14: Readonly my $TEST_GETTER          =&gt; &#39;getter_test&#39;;
+</span><span class="">   15: Readonly my $TEST_SETTER          =&gt; &#39;setter_test&#39;;
+</span><span class="">   16: Readonly my $TEST_GETSET          =&gt; &#39;getset_test&#39;;
+</span><span class="">   17: Readonly my $TEST_CHAINING        =&gt; &#39;chaining_test&#39;;
+</span><span class="">   18: Readonly my $TEST_ERROR_HANDLING  =&gt; &#39;error_handling_test&#39;;
+</span><span class="">   19: Readonly my $TEST_CONTEXT         =&gt; &#39;context_tests&#39;;
+</span><span class="">   20: Readonly my $TEST_OBJECT_INJECT   =&gt; &#39;object_injection_test&#39;;
+</span><span class="">   21: Readonly my $TEST_PREDICATE       =&gt; &#39;predicate_test&#39;;
+</span><span class="">   22: Readonly my $TEST_BOOLEAN         =&gt; &#39;boolean_test&#39;;
+</span><span class="">   23: Readonly my $TEST_VOID            =&gt; &#39;void_context_test&#39;;
+</span><span class="">   24: Readonly my $TEST_BOUNDARY        =&gt; &#39;boundary_tests&#39;;
+</span><span class="">   25: 
+</span><span class="">   26: # --------------------------------------------------
+</span><span class="">   27: # Input/output type strings from the schema
+</span><span class="">   28: # --------------------------------------------------
+</span><span class="">   29: Readonly my $TYPE_OBJECT  =&gt; &#39;object&#39;;
+</span><span class="">   30: Readonly my $TYPE_BOOLEAN =&gt; &#39;boolean&#39;;
+</span><span class="">   31: 
+</span><span class="">   32: our $VERSION = &#39;0.32&#39;;
 </span><span class="">   33: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 34 → 36 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 34 → 36 → 0</span></span>   34: 	$code .= &quot;\ndone_testing();\n&quot;;
+</span><span class="">   34: =head1 VERSION
 </span><span class="">   35: 
-</span><span class="">   36: 	return $code;
-</span><span class="">   37: }
-</span><span class="">   38: 
-</span><span class="">   39: sub _emit_header {
-</span><span class="">   40: 	my $self = $_[0];
-</span><span class="">   41: 
-</span><span class="">   42: 	return &lt;&lt;&quot;END_HEADER&quot;;
-</span><span class="">   43: use strict;
-</span><span class="">   44: use warnings;
-</span><span class="">   45: use Test::Most;
+</span><span class="">   36: Version 0.32
+</span><span class="">   37: 
+</span><span class="">   38: =head1 DESCRIPTION
+</span><span class="">   39: 
+</span><span class="">   40: Emits Perl test code for a set of method schemas and their associated
+</span><span class="">   41: test plans. Each method plan is translated into one or more test blocks
+</span><span class="">   42: using L&lt;Test::Most&gt;. The emitted code is returned as a string ready to
+</span><span class="">   43: be written to a C&lt;.t&gt; file.
+</span><span class="">   44: 
+</span><span class="">   45: =head2 new
 </span><span class="">   46: 
-</span><span class="">   47: use_ok(&#39;$self-&gt;{package}&#39;);
+</span><span class="">   47: Construct a new Perl emitter.
 </span><span class="">   48: 
-</span><span class="">   49: my \$obj = new_ok(&#39;$self-&gt;{package}&#39;);
-</span><span class="">   50: 
-</span><span class="">   51: END_HEADER
-</span><span class="">   52: }
-</span><span class="">   53: 
-</span><span class="">   54: sub _emit_method_tests {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 55 → 62 → 66</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 55 → 62 → 0</span></span>   55: 	my ($self, $method) = @_;
+</span><span class="">   49:     my $emitter = App::Test::Generator::Emitter::Perl-&gt;new(
+</span><span class="">   50:         schema  =&gt; \%schemas,
+</span><span class="">   51:         plans   =&gt; \%plans,
+</span><span class="">   52:         package =&gt; &#39;My::Module&#39;,
+</span><span class="">   53:     );
+</span><span class="">   54: 
+</span><span class="">   55: =head3 Arguments
 </span><span class="">   56: 
-</span><span class="">   57:     my $plan = $self-&gt;{plans}{$method};
-</span><span class="">   58:     my $schema = $self-&gt;{schema}{$method};
-</span><span class="">   59: 
-</span><span class="">   60:     my $code = &quot;\n# --- Tests for $method ---\n&quot;;
-</span><span class="">   61: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   62:     if ($plan-&gt;{basic_test}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_62: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">   63:         $code .= $self-&gt;_emit_basic_test($method);
-</span><span class="">   64:     }
-</span><span class="">   65: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 66 → 66 → 70</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 66 → 66 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 66 → 66 → 70</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 66 → 66 → 0</span></span>   66:     if ($plan-&gt;{getter_test}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_66: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">   67:         $code .= $self-&gt;_emit_getter_test($method);
-</span><span class="">   68:     }
-</span><span class="">   69: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 70 → 70 → 74</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 70 → 70 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 70 → 70 → 74</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 70 → 70 → 0</span></span>   70:     if ($plan-&gt;{setter_test}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_70: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">   71:         $code .= $self-&gt;_emit_setter_test($method);
-</span><span class="">   72:     }
-</span><span class="">   73: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 74 → 74 → 78</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 74 → 74 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 74 → 74 → 78</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 74 → 74 → 0</span></span>   74:     if ($plan-&gt;{getset_test}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_74: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">   75:         $code .= $self-&gt;_emit_getset_test($method);
-</span><span class="">   76:     }
-</span><span class="">   77: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 78 → 78 → 82</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 78 → 78 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 78 → 78 → 82</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 78 → 78 → 0</span></span>   78:     if ($plan-&gt;{chaining_test}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_78: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">   79:         $code .= $self-&gt;_emit_chaining_test($method);
-</span><span class="">   80:     }
-</span><span class="">   81: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 82 → 82 → 86</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 82 → 82 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 82 → 82 → 86</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 82 → 82 → 0</span></span>   82:     if ($plan-&gt;{error_handling_test}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_82: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">   83:         $code .= $self-&gt;_emit_error_test($method);
-</span><span class="">   84:     }
-</span><span class="">   85: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 86 → 86 → 90</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 86 → 86 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 86 → 86 → 90</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 86 → 86 → 0</span></span>   86:     if ($plan-&gt;{context_tests}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_86: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">   87:         $code .= $self-&gt;_emit_context_test($method);
-</span><span class="">   88:     }
-</span><span class="">   89: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 90 → 90 → 94</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 90 → 90 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 90 → 90 → 94</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 90 → 90 → 0</span></span>   90: 	if ($plan-&gt;{object_injection_test}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_90: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">   91: 		$code .= $self-&gt;_emit_object_injection_test($method);
-</span><span class="">   92: 	}
-</span><span class="">   93: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 94 → 94 → 98</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 94 → 94 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 94 → 94 → 98</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 94 → 94 → 0</span></span>   94: 	if(($plan-&gt;{predicate_test}) || ($plan-&gt;{boolean_test})) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_94: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">   95: 		$code .= $self-&gt;_emit_boolean_test($method);
-</span><span class="">   96: 	}
+</span><span class="">   57: =over 4
+</span><span class="">   58: 
+</span><span class="">   59: =item * C&lt;schema&gt;
+</span><span class="">   60: 
+</span><span class="">   61: A hashref of method name to schema hashref. Required.
+</span><span class="">   62: 
+</span><span class="">   63: =item * C&lt;plans&gt;
+</span><span class="">   64: 
+</span><span class="">   65: A hashref of method name to test plan hashref, as produced by
+</span><span class="">   66: L&lt;App::Test::Generator::TestStrategy&gt; or
+</span><span class="">   67: L&lt;App::Test::Generator::Planner&gt;. Required.
+</span><span class="">   68: 
+</span><span class="">   69: =item * C&lt;package&gt;
+</span><span class="">   70: 
+</span><span class="">   71: The Perl package name of the module under test. Required.
+</span><span class="">   72: 
+</span><span class="">   73: =back
+</span><span class="">   74: 
+</span><span class="">   75: =head3 Returns
+</span><span class="">   76: 
+</span><span class="">   77: A blessed hashref. Croaks if any required argument is missing.
+</span><span class="">   78: 
+</span><span class="">   79: =head3 API specification
+</span><span class="">   80: 
+</span><span class="">   81: =head4 input
+</span><span class="">   82: 
+</span><span class="">   83:     {
+</span><span class="">   84:         schema  =&gt; { type =&gt; HASHREF },
+</span><span class="">   85:         plans   =&gt; { type =&gt; HASHREF },
+</span><span class="">   86:         package =&gt; { type =&gt; SCALAR  },
+</span><span class="">   87:     }
+</span><span class="">   88: 
+</span><span class="">   89: =head4 output
+</span><span class="">   90: 
+</span><span class="">   91:     {
+</span><span class="">   92:         type =&gt; OBJECT,
+</span><span class="">   93:         isa  =&gt; &#39;App::Test::Generator::Emitter::Perl&#39;,
+</span><span class="">   94:     }
+</span><span class="">   95: 
+</span><span class="">   96: =cut
 </span><span class="">   97: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 98 → 98 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 98 → 98 → 0</span></span>   98:     return $code;
-</span><span class="">   99: }
+</span><span class="">   98: sub new {
+</span><span class="">   99: 	my ($class, %args) = @_;
 </span><span class="">  100: 
-</span><span class="">  101: sub _emit_basic_test {
-</span><span class="">  102:     my ($self, $method) = @_;
-</span><span class="">  103: 
-</span><span class="">  104:     return &lt;&lt;&quot;END_TEST&quot;;
-</span><span class="">  105: {
-</span><span class="">  106:     my \$result = eval { \$obj-&gt;$method() };
-</span><span class="">  107:     ok(!\$@, &#39;$method does not die&#39;);
-</span><span class="">  108: }
-</span><span class="">  109: END_TEST
-</span><span class="">  110: }
-</span><span class="">  111: 
-</span><span class="">  112: sub _emit_getter_test {
-</span><span class="">  113:     my ($self, $method) = @_;
+</span><span class="">  101: 	# All three arguments are required for meaningful emission
+</span><span class="">  102: 	croak &#39;schema required&#39;  unless defined $args{schema};
+</span><span class="">  103: 	croak &#39;plans required&#39;   unless defined $args{plans};
+</span><span class="">  104: 	croak &#39;package required&#39; unless defined $args{package};
+</span><span class="">  105: 
+</span><span class="">  106: 	return bless {
+</span><span class="">  107: 		schema  =&gt; $args{schema},
+</span><span class="">  108: 		plans   =&gt; $args{plans},
+</span><span class="">  109: 		package =&gt; $args{package},
+</span><span class="">  110: 	}, $class;
+</span><span class="">  111: }
+</span><span class="">  112: 
+</span><span class="">  113: =head2 emit
 </span><span class="">  114: 
-</span><span class="">  115:     return &lt;&lt;&quot;END_TEST&quot;;
-</span><span class="">  116: {
-</span><span class="">  117:     my \$value = \$obj-&gt;$method();
-</span><span class="">  118:     ok(defined \$value, &#39;$method returns a value&#39;);
-</span><span class="">  119: }
-</span><span class="">  120: END_TEST
-</span><span class="">  121: }
-</span><span class="">  122: 
-</span><span class="">  123: sub _emit_setter_test {
-</span><span class="">  124:     my ($self, $method) = @_;
-</span><span class="">  125: 
-</span><span class="">  126:     return &lt;&lt;&quot;END_TEST&quot;;
-</span><span class="">  127: {
-</span><span class="">  128:     ok(\$obj-&gt;$method(&#39;test&#39;), &#39;$method accepts input&#39;);
-</span><span class="">  129: }
-</span><span class="">  130: END_TEST
-</span><span class="">  131: }
+</span><span class="">  115: Generate and return the complete Perl test file source as a string,
+</span><span class="">  116: including the file header, one test block per method, and the
+</span><span class="">  117: C&lt;done_testing()&gt; footer.
+</span><span class="">  118: 
+</span><span class="">  119:     my $emitter = App::Test::Generator::Emitter::Perl-&gt;new(
+</span><span class="">  120:         schema  =&gt; \%schemas,
+</span><span class="">  121:         plans   =&gt; \%plans,
+</span><span class="">  122:         package =&gt; &#39;My::Module&#39;,
+</span><span class="">  123:     );
+</span><span class="">  124:     my $test_code = $emitter-&gt;emit;
+</span><span class="">  125:     write_file(&#39;t/generated.t&#39;, $test_code);
+</span><span class="">  126: 
+</span><span class="">  127: =head3 Arguments
+</span><span class="">  128: 
+</span><span class="">  129: None beyond C&lt;$self&gt;.
+</span><span class="">  130: 
+</span><span class="">  131: =head3 Returns
 </span><span class="">  132: 
-</span><span class="">  133: sub _emit_getset_test {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 134 → 145 → 158</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 134 → 145 → 0</span></span>  134: 	my ($self, $method) = @_;
-</span><span class="">  135: 
-</span><span class="">  136: 	my $schema = $self-&gt;{schema}{$method};
-</span><span class="">  137: 
-</span><span class="">  138: 	my ($param) = grep { $_ !~ /^_/ } keys %{ $schema-&gt;{input} || {} };
-</span><span class="">  139: 
-</span><span class="">  140: 	my $type = $schema-&gt;{input}{$param}{type} // &#39;string&#39;;
-</span><span class="">  141: 
-</span><span class="">  142: 	# -------------------------------
-</span><span class="">  143: 	# OBJECT INPUT
-</span><span class="">  144: 	# -------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  145: 	if ($type eq &#39;object&#39;) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_145: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  146: 		return &lt;&lt;&quot;END_TEST&quot;;
-</span><span class="">  147: {
-</span><span class="">  148:     my \$mock = bless {}, &#39;Test::MockObject&#39;;
-</span><span class="">  149:     \$obj-&gt;$method(\$mock);
-</span><span class="">  150:     isa_ok(\$obj-&gt;$method(), ref(\$mock), &#39;$method get/set works&#39;);
-</span><span class="">  151: }
-</span><span class="">  152: END_TEST
-</span><span class="">  153: 	}
+</span><span class="">  133: A string containing the complete Perl test file source.
+</span><span class="">  134: 
+</span><span class="">  135: =head3 API specification
+</span><span class="">  136: 
+</span><span class="">  137: =head4 input
+</span><span class="">  138: 
+</span><span class="">  139:     {
+</span><span class="">  140:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Emitter::Perl&#39; },
+</span><span class="">  141:     }
+</span><span class="">  142: 
+</span><span class="">  143: =head4 output
+</span><span class="">  144: 
+</span><span class="">  145:     { type =&gt; SCALAR }
+</span><span class="">  146: 
+</span><span class="">  147: =cut
+</span><span class="">  148: 
+</span><span class="">  149: sub emit {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 150 → 156 → 161</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 150 → 156 → 0</span></span>  150: 	my $self = $_[0];
+</span><span class="">  151: 
+</span><span class="">  152: 	# Start with the file header then append per-method test blocks
+</span><span class="">  153: 	my $code = $self-&gt;_emit_header();
 </span><span class="">  154: 
-</span><span class="">  155: 	# -------------------------------
-</span><span class="">  156: 	# DEFAULT STRING INPUT
-</span><span class="">  157: 	# -------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 158 → 158 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 158 → 158 → 0</span></span>  158: 	return &lt;&lt;&quot;END_TEST&quot;;
-</span><span class="">  159: {
-</span><span class="">  160:     \$obj-&gt;$method(&#39;value&#39;);
-</span><span class="">  161:     is(\$obj-&gt;$method(), &#39;value&#39;, &#39;$method get/set works&#39;);
-</span><span class="">  162: }
-</span><span class="">  163: END_TEST
+</span><span class="">  155: 	# Sort methods for deterministic output order
+</span><span class="">  156: 	for my $method (sort keys %{ $self-&gt;{plans} }) {
+</span><span class="">  157: 		$code .= $self-&gt;_emit_method_tests($method);
+</span><span class="">  158: 	}
+</span><span class="">  159: 
+</span><span class="">  160: 	# TAP footer required by Test::More / Test::Most
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 161 → 163 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 161 → 163 → 0</span></span>  161: 	$code .= &quot;\ndone_testing();\n&quot;;
+</span><span class="">  162: 
+</span><span class="">  163: 	return $code;
 </span><span class="">  164: }
 </span><span class="">  165: 
-</span><span class="">  166: sub _emit_chaining_test {
-</span><span class="">  167: 	my ($self, $method) = @_;
-</span><span class="">  168: 
-</span><span class="">  169: 	return &lt;&lt;&quot;END_TEST&quot;;
-</span><span class="">  170: {
-</span><span class="">  171:     my \$ret = \$obj-&gt;$method();
-</span><span class="">  172:     isa_ok(\$ret, ref(\$obj), &#39;$method returns self for chaining&#39;);
-</span><span class="">  173: }
-</span><span class="">  174: END_TEST
-</span><span class="">  175: }
-</span><span class="">  176: 
-</span><span class="">  177: sub _emit_error_test {
-</span><span class="">  178: 	my ($self, $method) = @_;
-</span><span class="">  179: 
-</span><span class="">  180: 	return &lt;&lt;&quot;END_TEST&quot;;
-</span><span class="">  181: {
-</span><span class="">  182:     my \$result = eval { \$obj-&gt;$method(undef) };
-</span><span class="">  183:     ok(!\$result || \$@, &#39;$method handles invalid input&#39;);
-</span><span class="">  184: }
-</span><span class="">  185: END_TEST
-</span><span class="">  186: }
-</span><span class="">  187: 
-</span><span class="">  188: sub _emit_context_test {
-</span><span class="">  189: 	my ($self, $method) = @_;
+</span><span class="">  166: # --------------------------------------------------
+</span><span class="">  167: # _emit_header
+</span><span class="">  168: #
+</span><span class="">  169: # Purpose:    Generate the standard test file header
+</span><span class="">  170: #             including strict/warnings, use_ok and
+</span><span class="">  171: #             a default object construction.
+</span><span class="">  172: #
+</span><span class="">  173: # Entry:      None beyond $self.
+</span><span class="">  174: # Exit:       Returns a string of Perl code.
+</span><span class="">  175: # Side effects: None.
+</span><span class="">  176: # Notes:      The generated $obj is used by all
+</span><span class="">  177: #             subsequent test blocks.
+</span><span class="">  178: # --------------------------------------------------
+</span><span class="">  179: sub _emit_header {
+</span><span class="">  180: 	my $self = $_[0];
+</span><span class="">  181: 
+</span><span class="">  182: 	return &lt;&lt;&quot;END_HEADER&quot;;
+</span><span class="">  183: use strict;
+</span><span class="">  184: use warnings;
+</span><span class="">  185: use Test::Most;
+</span><span class="">  186: 
+</span><span class="">  187: use_ok(&#39;$self-&gt;{package}&#39;);
+</span><span class="">  188: 
+</span><span class="">  189: my \$obj = new_ok(&#39;$self-&gt;{package}&#39;);
 </span><span class="">  190: 
-</span><span class="">  191: 	return &lt;&lt;&quot;END_TEST&quot;;
-</span><span class="">  192: {
-</span><span class="">  193:     my \$scalar = \$obj-&gt;$method();
-</span><span class="">  194:     my \@list   = \$obj-&gt;$method();
-</span><span class="">  195: 
-</span><span class="">  196:     ok(defined \$scalar, &#39;$method works in scalar context&#39;);
-</span><span class="">  197:     ok(defined \@list,   &#39;$method works in list context&#39;);
-</span><span class="">  198: }
-</span><span class="">  199: END_TEST
-</span><span class="">  200: }
-</span><span class="">  201: 
-</span><span class="">  202: sub _emit_object_injection_test {
-</span><span class="">  203: 	my ($self, $method) = @_;
-</span><span class="">  204: 
-</span><span class="">  205: 	return &lt;&lt;&quot;END_TEST&quot;;
-</span><span class="">  206: {
-</span><span class="">  207:     my \$mock = bless {}, &#39;Mock::Object&#39;;
-</span><span class="">  208:     \$obj-&gt;$method(\$mock);
-</span><span class="">  209:     isa_ok(\$obj-&gt;$method(), &#39;Mock::Object&#39;,
-</span><span class="">  210:         &#39;$method stores injected object instance&#39;);
-</span><span class="">  211: }
-</span><span class="">  212: END_TEST
-</span><span class="">  213: }
-</span><span class="">  214: 
-</span><span class="">  215: sub _emit_boolean_test {
-</span><span class="">  216: 	my ($self, $method) = @_;
-</span><span class="">  217: 
-</span><span class="">  218: 	return &lt;&lt;&quot;END_TEST&quot;;
-</span><span class="">  219: {
-</span><span class="">  220: 	my \$result = \$obj-&gt;$method();
-</span><span class="">  221: 	ok(defined \$result, &#39;$method returns a value&#39;);
-</span><span class="">  222: 	ok(!ref \$result, &#39;$method returns a scalar&#39;);
-</span><span class="">  223: 	ok(((\$result == 1) || (\$result == 0)), &#39;$method returns a boolean&#39;);
-</span><span class="">  224: }
-</span><span class="">  225: END_TEST
-</span><span class="">  226: }
-</span><span class="">  227: 
-</span><span class="">  228: 1;
+</span><span class="">  191: END_HEADER
+</span><span class="">  192: }
+</span><span class="">  193: 
+</span><span class="">  194: # --------------------------------------------------
+</span><span class="">  195: # _emit_method_tests
+</span><span class="">  196: #
+</span><span class="">  197: # Purpose:    Dispatch to the appropriate emit method
+</span><span class="">  198: #             for each test type flagged in the plan
+</span><span class="">  199: #             for a given method.
+</span><span class="">  200: #
+</span><span class="">  201: # Entry:      $method - the method name string.
+</span><span class="">  202: #             Plan and schema are read from $self.
+</span><span class="">  203: # Exit:       Returns a string of Perl test code.
+</span><span class="">  204: # Side effects: None.
+</span><span class="">  205: # Notes:      Test types are emitted in a fixed order
+</span><span class="">  206: #             for deterministic output. Methods with
+</span><span class="">  207: #             no recognised plan flags produce no
+</span><span class="">  208: #             output beyond the section comment.
+</span><span class="">  209: # --------------------------------------------------
+</span><span class="">  210: sub _emit_method_tests {
+</span><span class="">  211: 	my ($self, $method) = @_;
+</span><span class="">  212: 
+</span><span class="">  213: 	my $plan   = $self-&gt;{plans}{$method};
+</span><span class="">  214: 	my $code   = &quot;\n# --- Tests for $method ---\n&quot;;
+</span><span class="">  215: 
+</span><span class="">  216: 	# Emit each test type in a consistent fixed order
+</span><span class="">  217: 	$code .= $self-&gt;_emit_basic_test($method)
+</span><span class="">  218: 		if $plan-&gt;{$TEST_BASIC};
+</span><span class="">  219: 
+</span><span class="">  220: 	$code .= $self-&gt;_emit_getter_test($method)
+</span><span class="">  221: 		if $plan-&gt;{$TEST_GETTER};
+</span><span class="">  222: 
+</span><span class="">  223: 	$code .= $self-&gt;_emit_setter_test($method)
+</span><span class="">  224: 		if $plan-&gt;{$TEST_SETTER};
+</span><span class="">  225: 
+</span><span class="">  226: 	$code .= $self-&gt;_emit_getset_test($method)
+</span><span class="">  227: 		if $plan-&gt;{$TEST_GETSET};
+</span><span class="">  228: 
+</span><span class="">  229: 	$code .= $self-&gt;_emit_chaining_test($method)
+</span><span class="">  230: 		if $plan-&gt;{$TEST_CHAINING};
+</span><span class="">  231: 
+</span><span class="">  232: 	$code .= $self-&gt;_emit_error_test($method)
+</span><span class="">  233: 		if $plan-&gt;{$TEST_ERROR_HANDLING};
+</span><span class="">  234: 
+</span><span class="">  235: 	$code .= $self-&gt;_emit_context_test($method)
+</span><span class="">  236: 		if $plan-&gt;{$TEST_CONTEXT};
+</span><span class="">  237: 
+</span><span class="">  238: 	$code .= $self-&gt;_emit_object_injection_test($method)
+</span><span class="">  239: 		if $plan-&gt;{$TEST_OBJECT_INJECT};
+</span><span class="">  240: 
+</span><span class="">  241: 	$code .= $self-&gt;_emit_boolean_test($method)
+</span><span class="">  242: 		if $plan-&gt;{$TEST_PREDICATE} || $plan-&gt;{$TEST_BOOLEAN};
+</span><span class="">  243: 
+</span><span class="">  244: 	$code .= $self-&gt;_emit_void_test($method)
+</span><span class="">  245: 		if $plan-&gt;{$TEST_VOID};
+</span><span class="">  246: 
+</span><span class="">  247: 	return $code;
+</span><span class="">  248: }
+</span><span class="">  249: 
+</span><span class="">  250: # --------------------------------------------------
+</span><span class="">  251: # _emit_basic_test
+</span><span class="">  252: #
+</span><span class="">  253: # Purpose:    Emit a minimal test that calls the
+</span><span class="">  254: #             method and verifies it does not die.
+</span><span class="">  255: #
+</span><span class="">  256: # Entry:      $method - method name string.
+</span><span class="">  257: # Exit:       Returns a string of Perl test code.
+</span><span class="">  258: # Side effects: None.
+</span><span class="">  259: # --------------------------------------------------
+</span><span class="">  260: sub _emit_basic_test {
+</span><span class="">  261: 	my ($self, $method) = @_;
+</span><span class="">  262: 
+</span><span class="">  263: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  264: {
+</span><span class="">  265: 	my \$result = eval { \$obj-&gt;$method() };
+</span><span class="">  266: 	ok(!\$@, &#39;$method does not die&#39;);
+</span><span class="">  267: }
+</span><span class="">  268: END_TEST
+</span><span class="">  269: }
+</span><span class="">  270: 
+</span><span class="">  271: # --------------------------------------------------
+</span><span class="">  272: # _emit_getter_test
+</span><span class="">  273: #
+</span><span class="">  274: # Purpose:    Emit a test that calls the getter and
+</span><span class="">  275: #             verifies it returns a defined value.
+</span><span class="">  276: #
+</span><span class="">  277: # Entry:      $method - method name string.
+</span><span class="">  278: # Exit:       Returns a string of Perl test code.
+</span><span class="">  279: # Side effects: None.
+</span><span class="">  280: # --------------------------------------------------
+</span><span class="">  281: sub _emit_getter_test {
+</span><span class="">  282: 	my ($self, $method) = @_;
+</span><span class="">  283: 
+</span><span class="">  284: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  285: {
+</span><span class="">  286: 	my \$value = \$obj-&gt;$method();
+</span><span class="">  287: 	ok(defined \$value, &#39;$method returns a value&#39;);
+</span><span class="">  288: }
+</span><span class="">  289: END_TEST
+</span><span class="">  290: }
+</span><span class="">  291: 
+</span><span class="">  292: # --------------------------------------------------
+</span><span class="">  293: # _emit_setter_test
+</span><span class="">  294: #
+</span><span class="">  295: # Purpose:    Emit a test that calls the setter with
+</span><span class="">  296: #             a string argument and verifies it
+</span><span class="">  297: #             accepts the input without dying.
+</span><span class="">  298: #
+</span><span class="">  299: # Entry:      $method - method name string.
+</span><span class="">  300: # Exit:       Returns a string of Perl test code.
+</span><span class="">  301: # Side effects: None.
+</span><span class="">  302: # --------------------------------------------------
+</span><span class="">  303: sub _emit_setter_test {
+</span><span class="">  304: 	my ($self, $method) = @_;
+</span><span class="">  305: 
+</span><span class="">  306: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  307: {
+</span><span class="">  308: 	ok(\$obj-&gt;$method(&#39;test&#39;), &#39;$method accepts input&#39;);
+</span><span class="">  309: }
+</span><span class="">  310: END_TEST
+</span><span class="">  311: }
+</span><span class="">  312: 
+</span><span class="">  313: # --------------------------------------------------
+</span><span class="">  314: # _emit_getset_test
+</span><span class="">  315: #
+</span><span class="">  316: # Purpose:    Emit a round-trip get/set test. The
+</span><span class="">  317: #             test type (object, boolean, or string)
+</span><span class="">  318: #             is determined from the schema input
+</span><span class="">  319: #             parameter type.
+</span><span class="">  320: #
+</span><span class="">  321: # Entry:      $method - method name string.
+</span><span class="">  322: #             Schema is read from $self.
+</span><span class="">  323: # Exit:       Returns a string of Perl test code.
+</span><span class="">  324: # Side effects: None.
+</span><span class="">  325: # Notes:      Falls back to string round-trip if the
+</span><span class="">  326: #             parameter type is unrecognised.
+</span><span class="">  327: # --------------------------------------------------
+</span><span class="">  328: sub _emit_getset_test {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 329 → 338 → 349</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 329 → 338 → 0</span></span>  329: 	my ($self, $method) = @_;
+</span><span class="">  330: 
+</span><span class="">  331: 	my $schema  = $self-&gt;{schema}{$method};
+</span><span class="">  332: 
+</span><span class="">  333: 	# Find the first non-internal input parameter
+</span><span class="">  334: 	my ($param) = grep { !/^_/ } keys %{ $schema-&gt;{input} || {} };
+</span><span class="">  335: 	my $type    = ($param &amp;&amp; $schema-&gt;{input}{$param}{type}) // &#39;&#39;;
+</span><span class="">  336: 
+</span><span class="">  337: 	# Object injection round-trip
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  338: 	if($type eq $TYPE_OBJECT) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_338_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  339: 		return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  340: {
+</span><span class="">  341: 	my \$mock = bless {}, &#39;Test::MockObject&#39;;
+</span><span class="">  342: 	\$obj-&gt;$method(\$mock);
+</span><span class="">  343: 	isa_ok(\$obj-&gt;$method(), ref(\$mock), &#39;$method get/set works&#39;);
+</span><span class="">  344: }
+</span><span class="">  345: END_TEST
+</span><span class="">  346: 	}
+</span><span class="">  347: 
+</span><span class="">  348: 	# Boolean round-trip
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 349 → 349 → 361</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 349 → 349 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 349 → 349 → 361</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 349 → 349 → 0</span></span>  349: 	if($type eq $TYPE_BOOLEAN) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_349_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  350: 		return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  351: {
+</span><span class="">  352: 	\$obj-&gt;$method(1);
+</span><span class="">  353: 	ok(\$obj-&gt;$method(), &#39;$method get/set boolean true works&#39;);
+</span><span class="">  354: 	\$obj-&gt;$method(0);
+</span><span class="">  355: 	ok(!\$obj-&gt;$method(), &#39;$method get/set boolean false works&#39;);
+</span><span class="">  356: }
+</span><span class="">  357: END_TEST
+</span><span class="">  358: 	}
+</span><span class="">  359: 
+</span><span class="">  360: 	# Default string round-trip
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 361 → 361 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 361 → 361 → 0</span></span>  361: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  362: {
+</span><span class="">  363: 	\$obj-&gt;$method(&#39;value&#39;);
+</span><span class="">  364: 	is(\$obj-&gt;$method(), &#39;value&#39;, &#39;$method get/set works&#39;);
+</span><span class="">  365: }
+</span><span class="">  366: END_TEST
+</span><span class="">  367: }
+</span><span class="">  368: 
+</span><span class="">  369: # --------------------------------------------------
+</span><span class="">  370: # _emit_chaining_test
+</span><span class="">  371: #
+</span><span class="">  372: # Purpose:    Emit a test that verifies the method
+</span><span class="">  373: #             returns $self for method chaining.
+</span><span class="">  374: #
+</span><span class="">  375: # Entry:      $method - method name string.
+</span><span class="">  376: # Exit:       Returns a string of Perl test code.
+</span><span class="">  377: # Side effects: None.
+</span><span class="">  378: # --------------------------------------------------
+</span><span class="">  379: sub _emit_chaining_test {
+</span><span class="">  380: 	my ($self, $method) = @_;
+</span><span class="">  381: 
+</span><span class="">  382: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  383: {
+</span><span class="">  384: 	my \$ret = \$obj-&gt;$method();
+</span><span class="">  385: 	isa_ok(\$ret, ref(\$obj), &#39;$method returns self for chaining&#39;);
+</span><span class="">  386: }
+</span><span class="">  387: END_TEST
+</span><span class="">  388: }
+</span><span class="">  389: 
+</span><span class="">  390: # --------------------------------------------------
+</span><span class="">  391: # _emit_error_test
+</span><span class="">  392: #
+</span><span class="">  393: # Purpose:    Emit a test that calls the method with
+</span><span class="">  394: #             undef input and verifies it handles the
+</span><span class="">  395: #             error gracefully.
+</span><span class="">  396: #
+</span><span class="">  397: # Entry:      $method - method name string.
+</span><span class="">  398: # Exit:       Returns a string of Perl test code.
+</span><span class="">  399: # Side effects: None.
+</span><span class="">  400: # --------------------------------------------------
+</span><span class="">  401: sub _emit_error_test {
+</span><span class="">  402: 	my ($self, $method) = @_;
+</span><span class="">  403: 
+</span><span class="">  404: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  405: {
+</span><span class="">  406: 	my \$result = eval { \$obj-&gt;$method(undef) };
+</span><span class="">  407: 	ok(!\$result || \$@, &#39;$method handles invalid input&#39;);
+</span><span class="">  408: }
+</span><span class="">  409: END_TEST
+</span><span class="">  410: }
+</span><span class="">  411: 
+</span><span class="">  412: # --------------------------------------------------
+</span><span class="">  413: # _emit_context_test
+</span><span class="">  414: #
+</span><span class="">  415: # Purpose:    Emit tests that call the method in
+</span><span class="">  416: #             both scalar and list context to verify
+</span><span class="">  417: #             context-aware return behaviour.
+</span><span class="">  418: #
+</span><span class="">  419: # Entry:      $method - method name string.
+</span><span class="">  420: # Exit:       Returns a string of Perl test code.
+</span><span class="">  421: # Side effects: None.
+</span><span class="">  422: # Notes:      Uses eval to verify the calls survive
+</span><span class="">  423: #             rather than checking return values,
+</span><span class="">  424: #             since context-aware return values vary.
+</span><span class="">  425: # --------------------------------------------------
+</span><span class="">  426: sub _emit_context_test {
+</span><span class="">  427: 	my ($self, $method) = @_;
+</span><span class="">  428: 
+</span><span class="">  429: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  430: {
+</span><span class="">  431: 	my \$scalar = eval { \$obj-&gt;$method() };
+</span><span class="">  432: 	ok(!\$@, &#39;$method survives in scalar context&#39;);
+</span><span class="">  433: 
+</span><span class="">  434: 	my \@list = eval { \$obj-&gt;$method() };
+</span><span class="">  435: 	ok(!\$@, &#39;$method survives in list context&#39;);
+</span><span class="">  436: }
+</span><span class="">  437: END_TEST
+</span><span class="">  438: }
+</span><span class="">  439: 
+</span><span class="">  440: # --------------------------------------------------
+</span><span class="">  441: # _emit_object_injection_test
+</span><span class="">  442: #
+</span><span class="">  443: # Purpose:    Emit a test that injects a mock object
+</span><span class="">  444: #             and verifies the same object is returned
+</span><span class="">  445: #             by the getter.
+</span><span class="">  446: #
+</span><span class="">  447: # Entry:      $method - method name string.
+</span><span class="">  448: # Exit:       Returns a string of Perl test code.
+</span><span class="">  449: # Side effects: None.
+</span><span class="">  450: # --------------------------------------------------
+</span><span class="">  451: sub _emit_object_injection_test {
+</span><span class="">  452: 	my ($self, $method) = @_;
+</span><span class="">  453: 
+</span><span class="">  454: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  455: {
+</span><span class="">  456: 	my \$mock = bless {}, &#39;Mock::Object&#39;;
+</span><span class="">  457: 	\$obj-&gt;$method(\$mock);
+</span><span class="">  458: 	isa_ok(\$obj-&gt;$method(), &#39;Mock::Object&#39;,
+</span><span class="">  459: 		&#39;$method stores injected object instance&#39;);
+</span><span class="">  460: }
+</span><span class="">  461: END_TEST
+</span><span class="">  462: }
+</span><span class="">  463: 
+</span><span class="">  464: # --------------------------------------------------
+</span><span class="">  465: # _emit_boolean_test
+</span><span class="">  466: #
+</span><span class="">  467: # Purpose:    Emit a test that verifies the method
+</span><span class="">  468: #             returns a defined scalar boolean value.
+</span><span class="">  469: #
+</span><span class="">  470: # Entry:      $method - method name string.
+</span><span class="">  471: # Exit:       Returns a string of Perl test code.
+</span><span class="">  472: # Side effects: None.
+</span><span class="">  473: # Notes:      Checks that the return value is defined,
+</span><span class="">  474: #             is not a reference, and is boolean-like
+</span><span class="">  475: #             without using numeric comparison which
+</span><span class="">  476: #             would warn on string returns.
+</span><span class="">  477: # --------------------------------------------------
+</span><span class="">  478: sub _emit_boolean_test {
+</span><span class="">  479: 	my ($self, $method) = @_;
+</span><span class="">  480: 
+</span><span class="">  481: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  482: {
+</span><span class="">  483: 	my \$result = \$obj-&gt;$method();
+</span><span class="">  484: 	ok(defined \$result,  &#39;$method returns a defined value&#39;);
+</span><span class="">  485: 	ok(!ref \$result,     &#39;$method returns a scalar&#39;);
+</span><span class="">  486: 	ok(\$result ? 1 : 0, &#39;$method returns a boolean-like value&#39;);
+</span><span class="">  487: }
+</span><span class="">  488: END_TEST
+</span><span class="">  489: }
+</span><span class="">  490: 
+</span><span class="">  491: # --------------------------------------------------
+</span><span class="">  492: # _emit_void_test
+</span><span class="">  493: #
+</span><span class="">  494: # Purpose:    Emit a test that verifies the method
+</span><span class="">  495: #             does not return a meaningful value,
+</span><span class="">  496: #             consistent with a void return type.
+</span><span class="">  497: #
+</span><span class="">  498: # Entry:      $method - method name string.
+</span><span class="">  499: # Exit:       Returns a string of Perl test code.
+</span><span class="">  500: # Side effects: None.
+</span><span class="">  501: # --------------------------------------------------
+</span><span class="">  502: sub _emit_void_test {
+</span><span class="">  503: 	my ($self, $method) = @_;
+</span><span class="">  504: 
+</span><span class="">  505: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="">  506: {
+</span><span class="">  507: 	my \$result = eval { \$obj-&gt;$method() };
+</span><span class="">  508: 	ok(!\$@,         &#39;$method does not die&#39;);
+</span><span class="">  509: 	ok(!defined \$result || 1, &#39;$method void return noted&#39;);
+</span><span class="">  510: }
+</span><span class="">  511: END_TEST
+</span><span class="">  512: }
+</span><span class="">  513: 
+</span><span class="">  514: 1;
 </span></pre>
 
 <script>

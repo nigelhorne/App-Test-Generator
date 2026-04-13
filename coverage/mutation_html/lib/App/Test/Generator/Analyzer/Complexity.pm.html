@@ -254,241 +254,204 @@ pre details.mutant-details ul {
 </span><span class="">    2: 
 </span><span class="">    3: use strict;
 </span><span class="">    4: use warnings;
-</span><span class="">    5: 
-</span><span class="">    6: our $VERSION = &#39;0.32&#39;;
+</span><span class="">    5: use Carp    qw(croak);
+</span><span class="">    6: use Readonly;
 </span><span class="">    7: 
-</span><span class="">    8: =head1 VERSION
-</span><span class="">    9: 
-</span><span class="">   10: Version 0.32
-</span><span class="">   11: 
-</span><span class="">   12: =cut
-</span><span class="">   13: 
-</span><span class="">   14: sub new { bless {}, shift }
-</span><span class="">   15: 
-</span><span class="">   16: sub analyze {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 17 → 36 → 43</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 17 → 36 → 0</span></span>   17: 	my ($self, $method) = @_;
-</span><span class="">   18: 
-</span><span class="">   19: 	my $body = $method-&gt;{body} || &#39;&#39;;
+</span><span class="">    8: # --------------------------------------------------
+</span><span class="">    9: # Base cyclomatic complexity score before any analysis
+</span><span class="">   10: # --------------------------------------------------
+</span><span class="">   11: Readonly my $CYCLOMATIC_BASE =&gt; 1;
+</span><span class="">   12: 
+</span><span class="">   13: # --------------------------------------------------
+</span><span class="">   14: # Complexity level thresholds &acirc;&#128;&#148; scores at or below
+</span><span class="">   15: # LOW_THRESHOLD are low, at or below HIGH_THRESHOLD
+</span><span class="">   16: # are moderate, above HIGH_THRESHOLD are high
+</span><span class="">   17: # --------------------------------------------------
+</span><span class="">   18: Readonly my $LOW_THRESHOLD  =&gt; 3;
+</span><span class="">   19: Readonly my $HIGH_THRESHOLD =&gt; 7;
 </span><span class="">   20: 
-</span><span class="">   21: 	my %result = (
-</span><span class="">   22: 		cyclomatic_score =&gt; 1,	# base
-</span><span class="">   23: 		branching_points =&gt; 0,
-</span><span class="">   24: 		early_returns	=&gt; 0,
-</span><span class="">   25: 		exception_paths =&gt; 0,
-</span><span class="">   26: 		nesting_depth	=&gt; 0,
-</span><span class="">   27: 	);
-</span><span class="">   28: 
-</span><span class="">   29: 	# -----------------------------------
-</span><span class="">   30: 	# Branching keywords
-</span><span class="">   31: 	# -----------------------------------
-</span><span class="">   32: 	my @branch_tokens = qw(
-</span><span class="">   33: 		if elsif unless for foreach while until given when
-</span><span class="">   34: 	);
-</span><span class="">   35: 
-</span><span class="">   36: 	for my $token (@branch_tokens) {
-</span><span class="">   37: 		my $count = () = $body =~ /\b$token\b/g;
-</span><span class="">   38: 		$result{branching_points} += $count;
-</span><span class="">   39: 		$result{cyclomatic_score} += $count;
-</span><span class="">   40: 	}
+</span><span class="">   21: # --------------------------------------------------
+</span><span class="">   22: # Complexity level labels
+</span><span class="">   23: # --------------------------------------------------
+</span><span class="">   24: Readonly my $LEVEL_LOW      =&gt; &#39;low&#39;;
+</span><span class="">   25: Readonly my $LEVEL_MODERATE =&gt; &#39;moderate&#39;;
+</span><span class="">   26: Readonly my $LEVEL_HIGH     =&gt; &#39;high&#39;;
+</span><span class="">   27: 
+</span><span class="">   28: # --------------------------------------------------
+</span><span class="">   29: # Keywords that introduce branching decision points
+</span><span class="">   30: # --------------------------------------------------
+</span><span class="">   31: Readonly my @BRANCH_TOKENS =&gt; qw(
+</span><span class="">   32: 	if elsif unless for foreach while until given when
+</span><span class="">   33: );
+</span><span class="">   34: 
+</span><span class="">   35: # --------------------------------------------------
+</span><span class="">   36: # Keywords that introduce exception or error paths
+</span><span class="">   37: # --------------------------------------------------
+</span><span class="">   38: Readonly my @EXCEPTION_TOKENS =&gt; qw(
+</span><span class="">   39: 	die croak confess try catch eval
+</span><span class="">   40: );
 </span><span class="">   41: 
-</span><span class="">   42: 	# Logical operators
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 43 → 57 → 66</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 43 → 57 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 43 → 57 → 66</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 43 → 57 → 0</span></span>   43: 	my $logic_count = () = $body =~ /&amp;&amp;|\|\||\?/g;
-</span><span class="">   44: 	$result{cyclomatic_score} += $logic_count;
+</span><span class="">   42: our $VERSION = &#39;0.32&#39;;
+</span><span class="">   43: 
+</span><span class="">   44: =head1 VERSION
 </span><span class="">   45: 
-</span><span class="">   46: 	# -----------------------------------
-</span><span class="">   47: 	# Early returns
-</span><span class="">   48: 	# -----------------------------------
-</span><span class="">   49: 	my $return_count = () = $body =~ /\breturn\b/g;
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   50: 	$result{early_returns} = $return_count &gt; 1 ? $return_count - 1 : 0;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
-					<ul>
-				<li><b>NUM_BOUNDARY_50: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_50: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_50: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_50: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">   51: 	$result{cyclomatic_score} += $result{early_returns};
-</span><span class="">   52: 
-</span><span class="">   53: 	# -----------------------------------
-</span><span class="">   54: 	# Exception paths
-</span><span class="">   55: 	# -----------------------------------
-</span><span class="">   56: 	my @exception_tokens = qw(die croak confess try catch eval);
-</span><span class="">   57: 	for my $token (@exception_tokens) {
-</span><span class="">   58: 		my $count = () = $body =~ /\b$token\b/g;
-</span><span class="">   59: 		$result{exception_paths} += $count;
-</span><span class="">   60: 		$result{cyclomatic_score} += $count;
-</span><span class="">   61: 	}
-</span><span class="">   62: 
-</span><span class="">   63: 	# -----------------------------------
-</span><span class="">   64: 	# Nesting depth calculation
-</span><span class="">   65: 	# -----------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 66 → 69 → 78</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 66 → 69 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 66 → 69 → 78</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 66 → 69 → 0</span></span>   66: 	my $depth = 0;
-</span><span class="">   67: 	my $max_depth = 0;
-</span><span class="">   68: 
-</span><span class="">   69: 	foreach my $char (split //, $body) {
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   70: 		if ($char eq &#39;{&#39;) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_70: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">   71: 			$depth++;
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   72: 			$max_depth = $depth if $depth &gt; $max_depth;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
-					<ul>
-				<li><b>NUM_BOUNDARY_72: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_72: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_72: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_72: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">   73: 		} elsif ($char eq &#39;}&#39;) {
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   74: 			$depth-- if $depth &gt; 0;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
-					<ul>
-				<li><b>NUM_BOUNDARY_74: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_74: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_74: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_74: Numeric boundary flip > to ==</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">   75: 		}
-</span><span class="">   76: 	}
+</span><span class="">   46: Version 0.32
+</span><span class="">   47: 
+</span><span class="">   48: =head1 DESCRIPTION
+</span><span class="">   49: 
+</span><span class="">   50: Analyses the source body of a method and produces a complexity report
+</span><span class="">   51: including cyclomatic score, branching points, early returns, exception
+</span><span class="">   52: paths, and nesting depth. Used by L&lt;App::Test::Generator&gt; to guide test
+</span><span class="">   53: planning &acirc;&#128;&#148; higher complexity methods are prioritised for more thorough
+</span><span class="">   54: test generation.
+</span><span class="">   55: 
+</span><span class="">   56: =head2 new
+</span><span class="">   57: 
+</span><span class="">   58: Construct a new Complexity analyser.
+</span><span class="">   59: 
+</span><span class="">   60:     my $analyser = App::Test::Generator::Analyzer::Complexity-&gt;new;
+</span><span class="">   61: 
+</span><span class="">   62: =head3 Arguments
+</span><span class="">   63: 
+</span><span class="">   64: None.
+</span><span class="">   65: 
+</span><span class="">   66: =head3 Returns
+</span><span class="">   67: 
+</span><span class="">   68: A blessed hashref.
+</span><span class="">   69: 
+</span><span class="">   70: =head3 API specification
+</span><span class="">   71: 
+</span><span class="">   72: =head4 input
+</span><span class="">   73: 
+</span><span class="">   74:     {}
+</span><span class="">   75: 
+</span><span class="">   76: =head4 output
 </span><span class="">   77: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 78 → 85 → 93</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 78 → 85 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 78 → 85 → 93</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 78 → 85 → 0</span></span>   78: 	$result{nesting_depth} = $max_depth;
-</span><span class="">   79: 
-</span><span class="">   80: 	# -----------------------------------
-</span><span class="">   81: 	# Complexity Level Classification
-</span><span class="">   82: 	# -----------------------------------
-</span><span class="">   83: 	my $score = $result{cyclomatic_score};
+</span><span class="">   78:     {
+</span><span class="">   79:         type =&gt; OBJECT,
+</span><span class="">   80:         isa  =&gt; &#39;App::Test::Generator::Analyzer::Complexity&#39;,
+</span><span class="">   81:     }
+</span><span class="">   82: 
+</span><span class="">   83: =cut
 </span><span class="">   84: 
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   85: 	if ($score &lt;= 3) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
-					<ul>
-				<li><b>NUM_BOUNDARY_85: Numeric boundary flip <= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_85: Numeric boundary flip <= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_85: Numeric boundary flip <= to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>COND_INV_85: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">   86: 		$result{complexity_level} = &#39;low&#39;;
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   87: 	} elsif ($score &lt;= 7) {
+</span><span class="">   85: sub new { bless {}, shift }
+</span><span class="">   86: 
+</span><span class="">   87: =head2 analyze
+</span><span class="">   88: 
+</span><span class="">   89: Analyse the source of a method and return a complexity report hashref.
+</span><span class="">   90: 
+</span><span class="">   91:     my $analyser = App::Test::Generator::Analyzer::Complexity-&gt;new;
+</span><span class="">   92:     my $report   = $analyser-&gt;analyze($method);
+</span><span class="">   93: 
+</span><span class="">   94:     printf &quot;Cyclomatic score: %d\n&quot;, $report-&gt;{cyclomatic_score};
+</span><span class="">   95:     printf &quot;Complexity level: %s\n&quot;, $report-&gt;{complexity_level};
+</span><span class="">   96: 
+</span><span class="">   97: =head3 Arguments
+</span><span class="">   98: 
+</span><span class="">   99: =over 4
+</span><span class="">  100: 
+</span><span class="">  101: =item * C&lt;$method&gt;
+</span><span class="">  102: 
+</span><span class="">  103: An L&lt;App::Test::Generator::Model::Method&gt; object. The method source is
+</span><span class="">  104: read via C&lt;source()&gt;.
+</span><span class="">  105: 
+</span><span class="">  106: =back
+</span><span class="">  107: 
+</span><span class="">  108: =head3 Returns
+</span><span class="">  109: 
+</span><span class="">  110: A hashref with the following keys:
+</span><span class="">  111: 
+</span><span class="">  112: =over 4
+</span><span class="">  113: 
+</span><span class="">  114: =item * C&lt;cyclomatic_score&gt; &acirc;&#128;&#148; integer starting at 1, incremented for
+</span><span class="">  115: each branching point, logical operator, early return, and exception path.
+</span><span class="">  116: 
+</span><span class="">  117: =item * C&lt;branching_points&gt; &acirc;&#128;&#148; count of branching keywords found.
+</span><span class="">  118: 
+</span><span class="">  119: =item * C&lt;early_returns&gt; &acirc;&#128;&#148; number of C&lt;return&gt; statements beyond the
+</span><span class="">  120: first (each additional return adds a path).
+</span><span class="">  121: 
+</span><span class="">  122: =item * C&lt;exception_paths&gt; &acirc;&#128;&#148; count of exception-related keywords found.
+</span><span class="">  123: 
+</span><span class="">  124: =item * C&lt;nesting_depth&gt; &acirc;&#128;&#148; maximum brace nesting depth observed.
+</span><span class="">  125: 
+</span><span class="">  126: =item * C&lt;complexity_level&gt; &acirc;&#128;&#148; one of C&lt;low&gt;, C&lt;moderate&gt;, or C&lt;high&gt;
+</span><span class="">  127: based on the cyclomatic score.
+</span><span class="">  128: 
+</span><span class="">  129: =back
+</span><span class="">  130: 
+</span><span class="">  131: =head3 Notes
+</span><span class="">  132: 
+</span><span class="">  133: Nesting depth is computed by naive brace counting and will be
+</span><span class="">  134: inaccurate if the source contains braces inside strings or regexes.
+</span><span class="">  135: This is a known limitation and is acceptable for dashboard display
+</span><span class="">  136: purposes.
+</span><span class="">  137: 
+</span><span class="">  138: =head3 API specification
+</span><span class="">  139: 
+</span><span class="">  140: =head4 input
+</span><span class="">  141: 
+</span><span class="">  142:     {
+</span><span class="">  143:         self   =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Analyzer::Complexity&#39; },
+</span><span class="">  144:         method =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; },
+</span><span class="">  145:     }
+</span><span class="">  146: 
+</span><span class="">  147: =head4 output
+</span><span class="">  148: 
+</span><span class="">  149:     {
+</span><span class="">  150:         type =&gt; HASHREF,
+</span><span class="">  151:         keys =&gt; {
+</span><span class="">  152:             cyclomatic_score  =&gt; { type =&gt; SCALAR },
+</span><span class="">  153:             branching_points  =&gt; { type =&gt; SCALAR },
+</span><span class="">  154:             early_returns     =&gt; { type =&gt; SCALAR },
+</span><span class="">  155:             exception_paths   =&gt; { type =&gt; SCALAR },
+</span><span class="">  156:             nesting_depth     =&gt; { type =&gt; SCALAR },
+</span><span class="">  157:             complexity_level  =&gt; { type =&gt; SCALAR },
+</span><span class="">  158:         },
+</span><span class="">  159:     }
+</span><span class="">  160: 
+</span><span class="">  161: =cut
+</span><span class="">  162: 
+</span><span class="">  163: sub analyze {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 164 → 182 → 189</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 164 → 182 → 0</span></span>  164: 	my ($self, $method) = @_;
+</span><span class="">  165: 
+</span><span class="">  166: 	# The method argument is a raw hashref from SchemaExtractor,
+</span><span class="">  167: 	# not a Model::Method object &acirc;&#128;&#148; access the body key directly
+</span><span class="">  168: 	my $body = $method-&gt;{body} // &#39;&#39;;
+</span><span class="">  169: 
+</span><span class="">  170: 	my %result = (
+</span><span class="">  171: 		cyclomatic_score =&gt; $CYCLOMATIC_BASE,
+</span><span class="">  172: 		branching_points =&gt; 0,
+</span><span class="">  173: 		early_returns    =&gt; 0,
+</span><span class="">  174: 		exception_paths  =&gt; 0,
+</span><span class="">  175: 		nesting_depth    =&gt; 0,
+</span><span class="">  176: 	);
+</span><span class="">  177: 
+</span><span class="">  178: 	# --------------------------------------------------
+</span><span class="">  179: 	# Count branching keywords &acirc;&#128;&#148; each one introduces a
+</span><span class="">  180: 	# new decision point that increases cyclomatic complexity
+</span><span class="">  181: 	# --------------------------------------------------
+</span><span class="">  182: 	for my $token (@BRANCH_TOKENS) {
+</span><span class="">  183: 		my $count = () = $body =~ /\b$token\b/g;
+</span><span class="">  184: 		$result{branching_points} += $count;
+</span><span class="">  185: 		$result{cyclomatic_score} += $count;
+</span><span class="">  186: 	}
+</span><span class="">  187: 
+</span><span class="">  188: 	# Logical operators also introduce implicit branches
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 189 → 204 → 216</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 189 → 204 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 189 → 204 → 216</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 189 → 204 → 0</span></span>  189: 	my $logic_count = () = $body =~ /&amp;&amp;|\|\||\?/g;
+</span><span class="">  190: 	$result{cyclomatic_score} += $logic_count;
+</span><span class="">  191: 
+</span><span class="">  192: 	# --------------------------------------------------
+</span><span class="">  193: 	# Early returns &acirc;&#128;&#148; each return beyond the first adds
+</span><span class="">  194: 	# an additional exit path through the method
+</span><span class="">  195: 	# --------------------------------------------------
+</span><span class="">  196: 	my $return_count = () = $body =~ /\breturn\b/g;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  197: 	$result{early_returns}    = $return_count &gt; 1 ? $return_count - 1 : 0;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_87: Numeric boundary flip <= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_197_44_<: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -496,7 +459,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_87: Numeric boundary flip <= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_197_44_>=: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -504,7 +467,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_87: Numeric boundary flip <= to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_197_44_<=: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -513,15 +476,171 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">   88: 		$result{complexity_level} = &#39;moderate&#39;;
-</span><span class="">   89: 	} else {
-</span><span class="">   90: 		$result{complexity_level} = &#39;high&#39;;
-</span><span class="">   91: 	}
-</span><span class="">   92: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 93 → 93 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 93 → 93 → 0</span></span>   93: 	return \%result;
-</span><span class="">   94: }
-</span><span class="">   95: 
-</span><span class="">   96: 1;
+<span class="">  198: 	$result{cyclomatic_score} += $result{early_returns};
+</span><span class="">  199: 
+</span><span class="">  200: 	# --------------------------------------------------
+</span><span class="">  201: 	# Exception paths &acirc;&#128;&#148; die/croak/eval etc. each introduce
+</span><span class="">  202: 	# a path that must be tested separately
+</span><span class="">  203: 	# --------------------------------------------------
+</span><span class="">  204: 	for my $token (@EXCEPTION_TOKENS) {
+</span><span class="">  205: 		my $count = () = $body =~ /\b$token\b/g;
+</span><span class="">  206: 		$result{exception_paths} += $count;
+</span><span class="">  207: 		$result{cyclomatic_score} += $count;
+</span><span class="">  208: 	}
+</span><span class="">  209: 
+</span><span class="">  210: 	# --------------------------------------------------
+</span><span class="">  211: 	# Nesting depth &acirc;&#128;&#148; count brace depth by scanning chars.
+</span><span class="">  212: 	# NOTE: this is naive and will overcount if braces
+</span><span class="">  213: 	# appear inside strings or regexes. Acceptable for
+</span><span class="">  214: 	# dashboard display purposes.
+</span><span class="">  215: 	# --------------------------------------------------
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 216 → 218 → 226</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 216 → 218 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 216 → 218 → 226</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 216 → 218 → 0</span></span>  216: 	my $depth     = 0;
+</span><span class="">  217: 	my $max_depth = 0;
+</span><span class="">  218: 	for my $char (split //, $body) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  219: 		if($char eq &#39;{&#39;) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_219_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  220: 			$depth++;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  221: 			$max_depth = $depth if $depth &gt; $max_depth;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_221_34_<: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_221_34_>=: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_221_34_<=: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  222: 		} elsif($char eq &#39;}&#39;) {
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  223: 			$depth-- if $depth &gt; 0;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_223_23_<: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_223_23_>=: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_223_23_<=: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  224: 		}
+</span><span class="">  225: 	}
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 226 → 237 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 226 → 237 → 0</span></span>  226: 	$result{nesting_depth} = $max_depth;
+</span><span class="">  227: 
+</span><span class="">  228: 	# --------------------------------------------------
+</span><span class="">  229: 	# Classify complexity level based on cyclomatic score
+</span><span class="">  230: 	# --------------------------------------------------
+</span><span class="">  231: 	my $score = $result{cyclomatic_score};
+</span><span class="">  232: 	$result{complexity_level} =
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  233: 		$score &lt;= $LOW_THRESHOLD  ? $LEVEL_LOW      :
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_233_10_<: Numeric boundary flip <= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_233_10_>: Numeric boundary flip <= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_233_10_>=: Numeric boundary flip <= to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  234: 		$score &lt;= $HIGH_THRESHOLD ? $LEVEL_MODERATE :
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_234_10_<: Numeric boundary flip <= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_234_10_>: Numeric boundary flip <= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_234_10_>=: Numeric boundary flip <= to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  235: 		                            $LEVEL_HIGH;
+</span><span class="">  236: 
+</span><span class="">  237: 	return \%result;
+</span><span class="">  238: }
+</span><span class="">  239: 
+</span><span class="">  240: 1;
 </span></pre>
 
 <script>

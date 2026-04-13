@@ -251,90 +251,224 @@ pre details.mutant-details ul {
 		</div>
 	<pre>
 <span class="">    1: package App::Test::Generator::LCSAJ;
-</span><span class="">    2: use strict;
-</span><span class="">    3: use warnings;
-</span><span class="">    4: use PPI;
-</span><span class="">    5: use JSON::MaybeXS;
-</span><span class="">    6: use File::Spec;
-</span><span class="">    7: use File::Path qw(make_path);
-</span><span class="">    8: use Carp;
-</span><span class="">    9: 
-</span><span class="">   10: =head1 NAME
-</span><span class="">   11: 
-</span><span class="">   12: App::Test::Generator::LCSAJ - Static LCSAJ extraction for Perl
-</span><span class="">   13: 
-</span><span class="">   14: =head1 SYNOPSIS
-</span><span class="">   15:   use App::Test::Generator::LCSAJ;
-</span><span class="">   16:   App::Test::Generator::LCSAJ-&gt;generate(&#39;lib/MyModule.pm&#39;);
+</span><span class="">    2: 
+</span><span class="">    3: use strict;
+</span><span class="">    4: use warnings;
+</span><span class="">    5: use Carp            qw(croak);
+</span><span class="">    6: use File::Basename  qw(basename);
+</span><span class="">    7: use File::Path      qw(make_path);
+</span><span class="">    8: use File::Spec;
+</span><span class="">    9: use JSON::MaybeXS;
+</span><span class="">   10: use PPI;
+</span><span class="">   11: use Readonly;
+</span><span class="">   12: 
+</span><span class="">   13: # --------------------------------------------------
+</span><span class="">   14: # Default output directory for LCSAJ JSON files
+</span><span class="">   15: # --------------------------------------------------
+</span><span class="">   16: Readonly my $DEFAULT_OUT_DIR =&gt; &#39;lcsaj&#39;;
 </span><span class="">   17: 
-</span><span class="">   18: =head1 DESCRIPTION
+</span><span class="">   18: our $VERSION = &#39;0.32&#39;;
 </span><span class="">   19: 
-</span><span class="">   20: Extracts linear code sequences and jump targets from Perl files.
-</span><span class="">   21: =cut
-</span><span class="">   22: 
-</span><span class="">   23: sub generate {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 24 → 33 → 43</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 24 → 33 → 0</span></span>   24:     my ($class, $file, $out_dir) = @_;
-</span><span class="">   25:     $out_dir //= &#39;lcsaj&#39;;
-</span><span class="">   26: 
-</span><span class="">   27:     my $doc = PPI::Document-&gt;new($file)
-</span><span class="">   28:       or croak &quot;Cannot parse $file&quot;;
-</span><span class="">   29: 
-</span><span class="">   30:     my $subs = $doc-&gt;find(&#39;PPI::Statement::Sub&#39;) || [];
-</span><span class="">   31:     my @all_paths;
+</span><span class="">   20: =head1 NAME
+</span><span class="">   21: 
+</span><span class="">   22: App::Test::Generator::LCSAJ - Static LCSAJ extraction for Perl
+</span><span class="">   23: 
+</span><span class="">   24: =head1 SYNOPSIS
+</span><span class="">   25: 
+</span><span class="">   26:     use App::Test::Generator::LCSAJ;
+</span><span class="">   27: 
+</span><span class="">   28:     my $paths = App::Test::Generator::LCSAJ-&gt;generate(
+</span><span class="">   29:         &#39;lib/MyModule.pm&#39;,
+</span><span class="">   30:         &#39;cover_html/mutation_html/lib&#39;,
+</span><span class="">   31:     );
 </span><span class="">   32: 
-</span><span class="">   33:     for my $sub (@$subs) {
-</span><span class="">   34:         my $blocks = _build_cfg($sub);
-</span><span class="">   35:         my $paths  = _cfg_to_lcsaj($blocks);
-</span><span class="">   36:         push @all_paths, @$paths;
-</span><span class="">   37: 
-</span><span class="">   38:         # Save DOT
-</span><span class="">   39:         my $dot = _cfg_to_dot($blocks);
-</span><span class="">   40:         _save_dot($file, $out_dir, $dot);
-</span><span class="">   41:     }
-</span><span class="">   42: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 43 → 44 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 43 → 44 → 0</span></span>   43: 	_save_lcsaj($file, $out_dir, \@all_paths);
-</span><span class="">   44: 	return \@all_paths;
-</span><span class="">   45: }
-</span><span class="">   46: 
-</span><span class="">   47: # --- CFG Building ---
-</span><span class="">   48: sub _build_cfg {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 49 → 56 → 71</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 49 → 56 → 0</span></span>   49:     my ($sub) = @_;
-</span><span class="">   50:     my $block = $sub-&gt;block or return [];
-</span><span class="">   51:     my @statements = $block-&gt;schildren;
-</span><span class="">   52:     my @blocks;
-</span><span class="">   53:     my $id = 1;
-</span><span class="">   54:     my $current = _new_block($id);
-</span><span class="">   55: 
-</span><span class="">   56:     for my $stmt (@statements) {
-</span><span class="">   57:         my $line = $stmt-&gt;line_number;
-</span><span class="">   58:         push @{ $current-&gt;{lines} }, $line;
+</span><span class="">   33: =head1 DESCRIPTION
+</span><span class="">   34: 
+</span><span class="">   35: Extracts Linear Code Sequence and Jump (LCSAJ) paths from Perl source
+</span><span class="">   36: files using static analysis via L&lt;PPI&gt;. Each LCSAJ path describes a
+</span><span class="">   37: linear sequence of statements followed by a jump to another sequence,
+</span><span class="">   38: forming the basis for TER3 (third-level Test Effectiveness Ratio)
+</span><span class="">   39: measurement.
+</span><span class="">   40: 
+</span><span class="">   41: The extracted paths are written as JSON to a C&lt;.lcsaj.json&gt; file under
+</span><span class="">   42: the output directory, where they are consumed by
+</span><span class="">   43: C&lt;bin/app-test-generator-index&gt; for dashboard display and TER3
+</span><span class="">   44: calculation.
+</span><span class="">   45: 
+</span><span class="">   46: =head1 VERSION
+</span><span class="">   47: 
+</span><span class="">   48: Version 0.32
+</span><span class="">   49: 
+</span><span class="">   50: =head2 generate
+</span><span class="">   51: 
+</span><span class="">   52: Extract LCSAJ paths from all subroutines in a Perl source file and
+</span><span class="">   53: write the results to a JSON file.
+</span><span class="">   54: 
+</span><span class="">   55:     my $paths = App::Test::Generator::LCSAJ-&gt;generate(
+</span><span class="">   56:         &#39;lib/MyModule.pm&#39;,
+</span><span class="">   57:         &#39;cover_html/mutation_html/lib&#39;,
+</span><span class="">   58:     );
 </span><span class="">   59: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   60:         if (_is_branch($stmt)) {
+</span><span class="">   60:     printf &quot;Extracted %d LCSAJ paths\n&quot;, scalar @{$paths};
+</span><span class="">   61: 
+</span><span class="">   62: =head3 Arguments
+</span><span class="">   63: 
+</span><span class="">   64: =over 4
+</span><span class="">   65: 
+</span><span class="">   66: =item * C&lt;$file&gt;
+</span><span class="">   67: 
+</span><span class="">   68: Path to the Perl source file to analyse. Required.
+</span><span class="">   69: 
+</span><span class="">   70: =item * C&lt;$out_dir&gt;
+</span><span class="">   71: 
+</span><span class="">   72: Directory under which the C&lt;.lcsaj.json&gt; file will be written.
+</span><span class="">   73: Optional &acirc;&#128;&#148; defaults to C&lt;lcsaj&gt;.
+</span><span class="">   74: 
+</span><span class="">   75: =back
+</span><span class="">   76: 
+</span><span class="">   77: =head3 Returns
+</span><span class="">   78: 
+</span><span class="">   79: An arrayref of LCSAJ path hashrefs, each with keys C&lt;start&gt;, C&lt;end&gt;,
+</span><span class="">   80: and C&lt;target&gt; representing the first line, last line, and jump target
+</span><span class="">   81: line of the path respectively.
+</span><span class="">   82: 
+</span><span class="">   83: =head3 Side effects
+</span><span class="">   84: 
+</span><span class="">   85: Creates C&lt;$out_dir&gt; if it does not exist. Writes a C&lt;.lcsaj.json&gt;
+</span><span class="">   86: file to C&lt;$out_dir&gt;.
+</span><span class="">   87: 
+</span><span class="">   88: =head3 Notes
+</span><span class="">   89: 
+</span><span class="">   90: Only named subroutines are analysed. Anonymous subs and file-level
+</span><span class="">   91: code are not included. The control flow graph is built using a
+</span><span class="">   92: simplified model that treats branching compound statements as
+</span><span class="">   93: split points &acirc;&#128;&#148; complex nested structures may not be fully represented.
+</span><span class="">   94: 
+</span><span class="">   95: =head3 API specification
+</span><span class="">   96: 
+</span><span class="">   97: =head4 input
+</span><span class="">   98: 
+</span><span class="">   99:     {
+</span><span class="">  100:         class   =&gt; { type =&gt; SCALAR },
+</span><span class="">  101:         file    =&gt; { type =&gt; SCALAR },
+</span><span class="">  102:         out_dir =&gt; { type =&gt; SCALAR, optional =&gt; 1 },
+</span><span class="">  103:     }
+</span><span class="">  104: 
+</span><span class="">  105: =head4 output
+</span><span class="">  106: 
+</span><span class="">  107:     {
+</span><span class="">  108:         type     =&gt; ARRAYREF,
+</span><span class="">  109:         elements =&gt; {
+</span><span class="">  110:             type =&gt; HASHREF,
+</span><span class="">  111:             keys =&gt; {
+</span><span class="">  112:                 start  =&gt; { type =&gt; SCALAR },
+</span><span class="">  113:                 end    =&gt; { type =&gt; SCALAR },
+</span><span class="">  114:                 target =&gt; { type =&gt; SCALAR },
+</span><span class="">  115:             },
+</span><span class="">  116:         },
+</span><span class="">  117:     }
+</span><span class="">  118: 
+</span><span class="">  119: =cut
+</span><span class="">  120: 
+</span><span class="">  121: sub generate {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 122 → 135 → 145</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 122 → 135 → 0</span></span>  122: 	my ($class, $file, $out_dir) = @_;
+</span><span class="">  123: 
+</span><span class="">  124: 	# Apply default output directory if not supplied
+</span><span class="">  125: 	$out_dir //= $DEFAULT_OUT_DIR;
+</span><span class="">  126: 
+</span><span class="">  127: 	# Parse the source file &acirc;&#128;&#148; croak early with a clear message
+</span><span class="">  128: 	my $doc = PPI::Document-&gt;new($file) or croak &quot;Cannot parse $file&quot;;
+</span><span class="">  129: 
+</span><span class="">  130: 	# Find all named subroutines in the document
+</span><span class="">  131: 	my $subs = $doc-&gt;find(&#39;PPI::Statement::Sub&#39;) || [];
+</span><span class="">  132: 
+</span><span class="">  133: 	my @all_paths;
+</span><span class="">  134: 
+</span><span class="">  135: 	for my $sub (@{$subs}) {
+</span><span class="">  136: 		# Build a simplified control flow graph for this sub
+</span><span class="">  137: 		my $blocks = _build_cfg($sub);
+</span><span class="">  138: 
+</span><span class="">  139: 		# Convert the CFG to LCSAJ path records
+</span><span class="">  140: 		my $paths  = _cfg_to_lcsaj($blocks);
+</span><span class="">  141: 		push @all_paths, @{$paths};
+</span><span class="">  142: 	}
+</span><span class="">  143: 
+</span><span class="">  144: 	# Write all extracted paths to a JSON file in the output directory
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 145 → 147 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 145 → 147 → 0</span></span>  145: 	_save_lcsaj($file, $out_dir, \@all_paths);
+</span><span class="">  146: 
+</span><span class="">  147: 	return \@all_paths;
+</span><span class="">  148: }
+</span><span class="">  149: 
+</span><span class="">  150: # --------------------------------------------------
+</span><span class="">  151: # _build_cfg
+</span><span class="">  152: #
+</span><span class="">  153: # Purpose:    Build a simplified control flow graph
+</span><span class="">  154: #             (CFG) for a single subroutine. Each
+</span><span class="">  155: #             block in the CFG represents a linear
+</span><span class="">  156: #             sequence of statements terminated by a
+</span><span class="">  157: #             branch or the end of the sub.
+</span><span class="">  158: #
+</span><span class="">  159: # Entry:      $sub - a PPI::Statement::Sub node.
+</span><span class="">  160: #
+</span><span class="">  161: # Exit:       Returns an arrayref of block hashrefs,
+</span><span class="">  162: #             each with keys id, lines, and edges.
+</span><span class="">  163: #             Returns an empty arrayref if the sub
+</span><span class="">  164: #             has no body.
+</span><span class="">  165: #
+</span><span class="">  166: # Side effects: None.
+</span><span class="">  167: #
+</span><span class="">  168: # Notes:      Only compound statements (if, unless,
+</span><span class="">  169: #             while, for, foreach) are treated as
+</span><span class="">  170: #             branch points. Complex nested structures
+</span><span class="">  171: #             may not be fully represented.
+</span><span class="">  172: # --------------------------------------------------
+</span><span class="">  173: sub _build_cfg {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 174 → 184 → 204</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 174 → 184 → 0</span></span>  174: 	my ($sub) = @_;
+</span><span class="">  175: 
+</span><span class="">  176: 	# Return empty graph if the sub has no body block
+</span><span class="">  177: 	my $block = $sub-&gt;block or return [];
+</span><span class="">  178: 
+</span><span class="">  179: 	my @statements = $block-&gt;schildren;
+</span><span class="">  180: 	my @blocks;
+</span><span class="">  181: 	my $id      = 1;
+</span><span class="">  182: 	my $current = _new_block($id);
+</span><span class="">  183: 
+</span><span class="">  184: 	for my $stmt (@statements) {
+</span><span class="">  185: 		my $line = $stmt-&gt;line_number;
+</span><span class="">  186: 		push @{ $current-&gt;{lines} }, $line;
+</span><span class="">  187: 
+</span><span class="">  188: 		# Branch points split the current block and start two new ones
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  189: 		if(_is_branch($stmt)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_60: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_189_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">   61:             push @blocks, $current;
-</span><span class="">   62:             my $true_block  = _new_block(++$id);
-</span><span class="">   63:             my $false_block = _new_block(++$id);
-</span><span class="">   64:             _connect_blocks($current, $true_block);
-</span><span class="">   65:             _connect_blocks($current, $false_block);
-</span><span class="">   66:             push @blocks, $true_block, $false_block;
-</span><span class="">   67:             $current = $true_block;
-</span><span class="">   68:         }
-</span><span class="">   69:     }
-</span><span class="">   70: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 71 → 74 → 79</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 71 → 74 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 71 → 74 → 79</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 71 → 74 → 0</span></span>   71:     push @blocks, $current;
-</span><span class="">   72: 
-</span><span class="">   73:     # Connect fallthrough edges
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   74:     for (my $i=0;$i&lt;$#blocks;$i++) {
+<span class="">  190: 			push @blocks, $current;
+</span><span class="">  191: 
+</span><span class="">  192: 			# Create true and false successor blocks
+</span><span class="">  193: 			my $true_block  = _new_block(++$id);
+</span><span class="">  194: 			my $false_block = _new_block(++$id);
+</span><span class="">  195: 			_connect_blocks($current, $true_block);
+</span><span class="">  196: 			_connect_blocks($current, $false_block);
+</span><span class="">  197: 
+</span><span class="">  198: 			push @blocks, $true_block, $false_block;
+</span><span class="">  199: 			$current = $true_block;
+</span><span class="">  200: 		}
+</span><span class="">  201: 	}
+</span><span class="">  202: 
+</span><span class="">  203: 	# Append the final block after all statements are processed
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 204 → 208 → 213</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 204 → 208 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 204 → 208 → 213</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 204 → 208 → 0</span></span>  204: 	push @blocks, $current;
+</span><span class="">  205: 
+</span><span class="">  206: 	# Connect sequential fallthrough edges between adjacent blocks
+</span><span class="">  207: 	# that have no outgoing edges yet
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  208: 	for(my $i = 0; $i &lt; $#blocks; $i++) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_74: Numeric boundary flip < to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_208_20_>: Numeric boundary flip < to ></b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -342,7 +476,7 @@ pre details.mutant-details ul {
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_74: Numeric boundary flip < to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_208_20_<=: Numeric boundary flip < to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -350,7 +484,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_74: Numeric boundary flip < to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_208_20_>=: Numeric boundary flip < to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -359,63 +493,158 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">   75:         next if @{ $blocks[$i]{edges} };
-</span><span class="">   76:         _connect_blocks($blocks[$i], $blocks[$i+1]);
-</span><span class="">   77:     }
-</span><span class="">   78: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 79 → 79 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 79 → 79 → 0</span></span>   79:     return \@blocks;
-</span><span class="">   80: }
-</span><span class="">   81: 
-</span><span class="">   82: sub _new_block { my ($id)=@_; {id=&gt;$id, lines=&gt;[], edges=&gt;[]} }
-</span><span class="">   83: sub _connect_blocks { my ($from,$to)=@_; push @{ $from-&gt;{edges} }, $to-&gt;{id} }
-</span><span class="">   84: sub _is_branch { my $s=shift; return 0 unless $s-&gt;isa(&#39;PPI::Statement::Compound&#39;); my $t=$s-&gt;type||&#39;&#39;; return 1 if $t=~/^(if|unless|while|for|foreach)$/; 0 }
-</span><span class="">   85: 
-</span><span class="">   86: # --- CFG &acirc;&#134;&#146; LCSAJ ---
-</span><span class="">   87: sub _cfg_to_lcsaj {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 88 → 92 → 100</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 88 → 92 → 0</span></span>   88:     my $blocks = shift;
-</span><span class="">   89:     my @paths;
-</span><span class="">   90:     my %id2line = map { $_-&gt;{id} =&gt; $_-&gt;{lines}[0] } grep { @{ $_-&gt;{lines} } } @$blocks;
-</span><span class="">   91: 
-</span><span class="">   92:     for my $b (@$blocks) {
-</span><span class="">   93:         next unless @{ $b-&gt;{edges} };
-</span><span class="">   94:         my $start = $b-&gt;{lines}[0];
-</span><span class="">   95:         my $end   = $b-&gt;{lines}[-1];
-</span><span class="">   96:         for my $t (@{ $b-&gt;{edges} }) {
-</span><span class="">   97:             push @paths, {start=&gt;$start, end=&gt;$end, target=&gt;$id2line{$t}//0};
-</span><span class="">   98:         }
-</span><span class="">   99:     }
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 100 → 100 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 100 → 100 → 0</span></span>  100:     \@paths;
-</span><span class="">  101: }
-</span><span class="">  102: 
-</span><span class="">  103: # --- DOT ---
-</span><span class="">  104: sub _cfg_to_dot {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 105 → 107 → 110</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 105 → 107 → 0</span></span>  105:     my $blocks = shift;
-</span><span class="">  106:     my $dot=&quot;digraph cfg {\n&quot;;
-</span><span class="">  107:     for my $b (@$blocks) {
-</span><span class="">  108:         for my $e (@{ $b-&gt;{edges} }) { $dot.=&quot;  $b-&gt;{id} -&gt; $e;\n&quot; }
-</span><span class="">  109:     }
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 110 → 110 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 110 → 110 → 0</span></span>  110:     $dot.=&quot;}\n&quot;;
-</span><span class="">  111: }
-</span><span class="">  112: 
-</span><span class="">  113: sub _save_lcsaj {
-</span><span class="">  114:     my ($file,$dir,$paths)=@_;
-</span><span class="">  115:     make_path($dir) unless -d $dir;
-</span><span class="">  116:     my $out = File::Spec-&gt;catfile($dir, (split m{/}, $file)[-1] . &#39;.lcsaj.json&#39;);
-</span><span class="">  117:     open my $fh, &#39;&gt;&#39;, $out or die $!;
-</span><span class="">  118:     print $fh encode_json($paths);
-</span><span class="">  119:     close $fh;
-</span><span class="">  120: }
-</span><span class="">  121: 
-</span><span class="">  122: sub _save_dot {
-</span><span class="">  123:     my ($file,$dir,$dot)=@_;
-</span><span class="">  124:     make_path($dir) unless -d $dir;
-</span><span class="">  125:     my $out = File::Spec-&gt;catfile($dir, (split m{/}, $file)[-1] . &#39;.lcsaj.dot&#39;);
-</span><span class="">  126:     open my $fh, &#39;&gt;&#39;, $out or die $!;
-</span><span class="">  127:     print $fh $dot;
-</span><span class="">  128:     close $fh;
-</span><span class="">  129: }
-</span><span class="">  130: 
-</span><span class="">  131: 1;
+<span class="">  209: 		next if @{ $blocks[$i]{edges} };
+</span><span class="">  210: 		_connect_blocks($blocks[$i], $blocks[$i + 1]);
+</span><span class="">  211: 	}
+</span><span class="">  212: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 213 → 213 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 213 → 213 → 0</span></span>  213: 	return \@blocks;
+</span><span class="">  214: }
+</span><span class="">  215: 
+</span><span class="">  216: # --------------------------------------------------
+</span><span class="">  217: # _new_block
+</span><span class="">  218: #
+</span><span class="">  219: # Purpose:    Construct a new CFG block hashref with
+</span><span class="">  220: #             an id, empty lines list, and empty
+</span><span class="">  221: #             edges list.
+</span><span class="">  222: #
+</span><span class="">  223: # Entry:      $id - integer block identifier.
+</span><span class="">  224: # Exit:       Returns a hashref.
+</span><span class="">  225: # Side effects: None.
+</span><span class="">  226: # --------------------------------------------------
+</span><span class="">  227: sub _new_block {
+</span><span class="">  228: 	my ($id) = @_;
+</span><span class="">  229: 	return { id =&gt; $id, lines =&gt; [], edges =&gt; [] };
+</span><span class="">  230: }
+</span><span class="">  231: 
+</span><span class="">  232: # --------------------------------------------------
+</span><span class="">  233: # _connect_blocks
+</span><span class="">  234: #
+</span><span class="">  235: # Purpose:    Add a directed edge from one CFG block
+</span><span class="">  236: #             to another by recording the target
+</span><span class="">  237: #             block&#39;s id in the source block&#39;s edges.
+</span><span class="">  238: #
+</span><span class="">  239: # Entry:      $from - source block hashref.
+</span><span class="">  240: #             $to   - target block hashref.
+</span><span class="">  241: # Exit:       Modifies $from-&gt;{edges} in place.
+</span><span class="">  242: # Side effects: Modifies $from.
+</span><span class="">  243: # --------------------------------------------------
+</span><span class="">  244: sub _connect_blocks {
+</span><span class="">  245: 	my ($from, $to) = @_;
+</span><span class="">  246: 	push @{ $from-&gt;{edges} }, $to-&gt;{id};
+</span><span class="">  247: }
+</span><span class="">  248: 
+</span><span class="">  249: # --------------------------------------------------
+</span><span class="">  250: # _is_branch
+</span><span class="">  251: #
+</span><span class="">  252: # Purpose:    Return true if a PPI statement node
+</span><span class="">  253: #             represents a branching control structure
+</span><span class="">  254: #             that should split the current CFG block.
+</span><span class="">  255: #
+</span><span class="">  256: # Entry:      $stmt - a PPI::Statement node.
+</span><span class="">  257: # Exit:       Returns 1 if the statement is a branch,
+</span><span class="">  258: #             0 otherwise.
+</span><span class="">  259: # Side effects: None.
+</span><span class="">  260: # Notes:      Only compound statement types are
+</span><span class="">  261: #             considered &acirc;&#128;&#148; simple expressions are not.
+</span><span class="">  262: # --------------------------------------------------
+</span><span class="">  263: sub _is_branch {
+</span><span class="">  264: 	my ($stmt) = @_;
+</span><span class="">  265: 
+</span><span class="">  266: 	# Only compound statements can be branch points
+</span><span class="">  267: 	return 0 unless $stmt-&gt;isa(&#39;PPI::Statement::Compound&#39;);
+</span><span class="">  268: 
+</span><span class="">  269: 	my $type = $stmt-&gt;type // &#39;&#39;;
+</span><span class="">  270: 	return $type =~ /^(?:if|unless|while|for|foreach)$/ ? 1 : 0;
+</span><span class="">  271: }
+</span><span class="">  272: 
+</span><span class="">  273: # --------------------------------------------------
+</span><span class="">  274: # _cfg_to_lcsaj
+</span><span class="">  275: #
+</span><span class="">  276: # Purpose:    Convert a CFG block list into a list of
+</span><span class="">  277: #             LCSAJ path records. Each path represents
+</span><span class="">  278: #             one linear sequence from a block&#39;s first
+</span><span class="">  279: #             line to its last line, with a jump to
+</span><span class="">  280: #             the first line of the target block.
+</span><span class="">  281: #
+</span><span class="">  282: # Entry:      $blocks - arrayref of CFG block hashrefs
+</span><span class="">  283: #             as produced by _build_cfg.
+</span><span class="">  284: #
+</span><span class="">  285: # Exit:       Returns an arrayref of path hashrefs,
+</span><span class="">  286: #             each with keys start, end, and target.
+</span><span class="">  287: #
+</span><span class="">  288: # Side effects: None.
+</span><span class="">  289: #
+</span><span class="">  290: # Notes:      Blocks with no lines (empty blocks) are
+</span><span class="">  291: #             excluded from the id-to-line mapping and
+</span><span class="">  292: #             their target lines default to 0.
+</span><span class="">  293: # --------------------------------------------------
+</span><span class="">  294: sub _cfg_to_lcsaj {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 295 → 303 → 320</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 295 → 303 → 0</span></span>  295: 	my ($blocks) = @_;
+</span><span class="">  296: 
+</span><span class="">  297: 	# Build a lookup from block id to its first line number
+</span><span class="">  298: 	my %id2line = map { $_-&gt;{id} =&gt; $_-&gt;{lines}[0] }
+</span><span class="">  299: 		grep { @{ $_-&gt;{lines} } } @{$blocks};
+</span><span class="">  300: 
+</span><span class="">  301: 	my @paths;
+</span><span class="">  302: 
+</span><span class="">  303: 	for my $b (@{$blocks}) {
+</span><span class="">  304: 		# Skip blocks with no outgoing edges &acirc;&#128;&#148; they are leaf nodes
+</span><span class="">  305: 		next unless @{ $b-&gt;{edges} };
+</span><span class="">  306: 
+</span><span class="">  307: 		my $start = $b-&gt;{lines}[0];
+</span><span class="">  308: 		my $end   = $b-&gt;{lines}[-1];
+</span><span class="">  309: 
+</span><span class="">  310: 		# Emit one path record per outgoing edge
+</span><span class="">  311: 		for my $target_id (@{ $b-&gt;{edges} }) {
+</span><span class="">  312: 			push @paths, {
+</span><span class="">  313: 				start  =&gt; $start,
+</span><span class="">  314: 				end    =&gt; $end,
+</span><span class="">  315: 				target =&gt; $id2line{$target_id} // 0,
+</span><span class="">  316: 			};
+</span><span class="">  317: 		}
+</span><span class="">  318: 	}
+</span><span class="">  319: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 320 → 320 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 320 → 320 → 0</span></span>  320: 	return \@paths;
+</span><span class="">  321: }
+</span><span class="">  322: 
+</span><span class="">  323: # --------------------------------------------------
+</span><span class="">  324: # _save_lcsaj
+</span><span class="">  325: #
+</span><span class="">  326: # Purpose:    Serialise LCSAJ path records to a JSON
+</span><span class="">  327: #             file in the output directory. The
+</span><span class="">  328: #             filename is derived from the source
+</span><span class="">  329: #             file&#39;s basename.
+</span><span class="">  330: #
+</span><span class="">  331: # Entry:      $file  - path to the source .pm file.
+</span><span class="">  332: #             $dir   - output directory path.
+</span><span class="">  333: #             $paths - arrayref of path hashrefs.
+</span><span class="">  334: #
+</span><span class="">  335: # Exit:       Returns nothing. Writes a .lcsaj.json
+</span><span class="">  336: #             file to $dir.
+</span><span class="">  337: #
+</span><span class="">  338: # Side effects: Creates $dir if it does not exist.
+</span><span class="">  339: #               Writes a file to $dir.
+</span><span class="">  340: #
+</span><span class="">  341: # Notes:      Uses File::Basename::basename for
+</span><span class="">  342: #             portability across operating systems.
+</span><span class="">  343: # --------------------------------------------------
+</span><span class="">  344: sub _save_lcsaj {
+</span><span class="">  345: 	my ($file, $dir, $paths) = @_;
+</span><span class="">  346: 
+</span><span class="">  347: 	# Create the output directory if it does not exist
+</span><span class="">  348: 	make_path($dir) unless -d $dir;
+</span><span class="">  349: 
+</span><span class="">  350: 	# Derive output filename from the source file basename
+</span><span class="">  351: 	my $base = basename($file);
+</span><span class="">  352: 	my $out  = File::Spec-&gt;catfile($dir, &quot;$base.lcsaj.json&quot;);
+</span><span class="">  353: 
+</span><span class="">  354: 	open my $fh, &#39;&gt;&#39;, $out
+</span><span class="">  355: 		or croak &quot;Cannot write LCSAJ output to $out: $!&quot;;
+</span><span class="">  356: 	print $fh encode_json($paths);
+</span><span class="">  357: 	close $fh;
+</span><span class="">  358: }
+</span><span class="">  359: 
+</span><span class="">  360: 1;
 </span></pre>
 
 <script>

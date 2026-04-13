@@ -254,75 +254,187 @@ pre details.mutant-details ul {
 </span><span class="">    2: 
 </span><span class="">    3: use strict;
 </span><span class="">    4: use warnings;
-</span><span class="">    5: 
-</span><span class="">    6: our $VERSION = &#39;0.32&#39;;
+</span><span class="">    5: use Carp    qw(croak);
+</span><span class="">    6: use Readonly;
 </span><span class="">    7: 
-</span><span class="">    8: =head1 VERSION
-</span><span class="">    9: 
-</span><span class="">   10: Version 0.32
-</span><span class="">   11: 
-</span><span class="">   12: =cut
-</span><span class="">   13: 
-</span><span class="">   14: sub new {
-</span><span class="">   15: 	my $class = $_[0];
-</span><span class="">   16: 	return bless {}, $class;
-</span><span class="">   17: }
+</span><span class="">    8: # --------------------------------------------------
+</span><span class="">    9: # Evidence weights for each detected return pattern.
+</span><span class="">   10: # Higher weights indicate stronger signals that the
+</span><span class="">   11: # detected pattern is the primary return behaviour.
+</span><span class="">   12: # --------------------------------------------------
+</span><span class="">   13: Readonly my $WEIGHT_RETURNS_PROPERTY =&gt; 20;
+</span><span class="">   14: Readonly my $WEIGHT_RETURNS_SELF     =&gt; 15;
+</span><span class="">   15: Readonly my $WEIGHT_RETURNS_CONSTANT =&gt; 10;
+</span><span class="">   16: 
+</span><span class="">   17: our $VERSION = &#39;0.32&#39;;
 </span><span class="">   18: 
-</span><span class="">   19: sub analyze {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 20 → 25 → 35</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 20 → 25 → 0</span></span>   20: 	my ($self, $method) = @_;
-</span><span class="">   21: 
-</span><span class="">   22: 	my $source = $method-&gt;source();
-</span><span class="">   23: 
-</span><span class="">   24: 	# return $self-&gt;{property}
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   25: 	if ($source =~ /return\s+\$self-&gt;\{(\w+)\}/) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_25: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">   26: 		$method-&gt;add_evidence(
-</span><span class="">   27: 			category =&gt; &#39;return&#39;,
-</span><span class="">   28: 			signal   =&gt; &#39;returns_property&#39;,
-</span><span class="">   29: 			value    =&gt; $1,
-</span><span class="">   30: 			weight   =&gt; 20,
-</span><span class="">   31: 		);
-</span><span class="">   32: 	}
-</span><span class="">   33: 
-</span><span class="">   34: 	# return $self
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 35 → 35 → 44</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 35 → 35 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 35 → 35 → 44</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 35 → 35 → 0</span></span>   35: 	if ($source =~ /return\s+\$self\b/) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_35: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">   36: 		$method-&gt;add_evidence(
-</span><span class="">   37: 			category =&gt; &#39;return&#39;,
-</span><span class="">   38: 			signal   =&gt; &#39;returns_self&#39;,
-</span><span class="">   39: 			weight   =&gt; 15,
-</span><span class="">   40: 		);
-</span><span class="">   41: 	}
+</span><span class="">   19: =head1 VERSION
+</span><span class="">   20: 
+</span><span class="">   21: Version 0.32
+</span><span class="">   22: 
+</span><span class="">   23: =head1 DESCRIPTION
+</span><span class="">   24: 
+</span><span class="">   25: Analyses the source code of a method and adds evidence to a
+</span><span class="">   26: L&lt;App::Test::Generator::Model::Method&gt; object describing what kind of
+</span><span class="">   27: value the method returns. Evidence is used downstream by
+</span><span class="">   28: L&lt;App::Test::Generator::Model::Method/resolve_return_type&gt; to determine
+</span><span class="">   29: the most likely return type.
+</span><span class="">   30: 
+</span><span class="">   31: =head2 new
+</span><span class="">   32: 
+</span><span class="">   33: Construct a new Return analyser.
+</span><span class="">   34: 
+</span><span class="">   35:     my $analyser = App::Test::Generator::Analyzer::Return-&gt;new;
+</span><span class="">   36: 
+</span><span class="">   37: =head3 Arguments
+</span><span class="">   38: 
+</span><span class="">   39: None.
+</span><span class="">   40: 
+</span><span class="">   41: =head3 Returns
 </span><span class="">   42: 
-</span><span class="">   43: 	# return constant literal
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 44 → 44 → 52</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 44 → 44 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 44 → 44 → 52</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 44 → 44 → 0</span></span>   44: 	if ($source =~ /return\s+([&#39;&quot;])/) {
+</span><span class="">   43: A blessed hashref.
+</span><span class="">   44: 
+</span><span class="">   45: =head3 API specification
+</span><span class="">   46: 
+</span><span class="">   47: =head4 input
+</span><span class="">   48: 
+</span><span class="">   49:     {}
+</span><span class="">   50: 
+</span><span class="">   51: =head4 output
+</span><span class="">   52: 
+</span><span class="">   53:     {
+</span><span class="">   54:         type =&gt; OBJECT,
+</span><span class="">   55:         isa  =&gt; &#39;App::Test::Generator::Analyzer::Return&#39;,
+</span><span class="">   56:     }
+</span><span class="">   57: 
+</span><span class="">   58: =cut
+</span><span class="">   59: 
+</span><span class="">   60: sub new {
+</span><span class="">   61: 	my $class = $_[0];
+</span><span class="">   62: 	return bless {}, $class;
+</span><span class="">   63: }
+</span><span class="">   64: 
+</span><span class="">   65: =head2 analyze
+</span><span class="">   66: 
+</span><span class="">   67: Scan the source code of a method for return patterns and add weighted
+</span><span class="">   68: evidence to the method object. Detects three patterns: returning a
+</span><span class="">   69: property from C&lt;$self&gt;, returning C&lt;$self&gt; itself, and returning a
+</span><span class="">   70: constant literal value.
+</span><span class="">   71: 
+</span><span class="">   72:     my $analyser = App::Test::Generator::Analyzer::Return-&gt;new;
+</span><span class="">   73:     $analyser-&gt;analyze($method);
+</span><span class="">   74: 
+</span><span class="">   75:     my $type = $method-&gt;resolve_return_type;
+</span><span class="">   76: 
+</span><span class="">   77: =head3 Arguments
+</span><span class="">   78: 
+</span><span class="">   79: =over 4
+</span><span class="">   80: 
+</span><span class="">   81: =item * C&lt;$method&gt;
+</span><span class="">   82: 
+</span><span class="">   83: An L&lt;App::Test::Generator::Model::Method&gt; object. Evidence is added
+</span><span class="">   84: to this object in place via C&lt;add_evidence&gt;.
+</span><span class="">   85: 
+</span><span class="">   86: =back
+</span><span class="">   87: 
+</span><span class="">   88: =head3 Returns
+</span><span class="">   89: 
+</span><span class="">   90: Nothing (undef). All results are communicated via side effects on the
+</span><span class="">   91: C&lt;$method&gt; object.
+</span><span class="">   92: 
+</span><span class="">   93: =head3 Notes
+</span><span class="">   94: 
+</span><span class="">   95: The interface of this analyser differs from
+</span><span class="">   96: L&lt;App::Test::Generator::Analyzer::ReturnMeta&gt;, which operates on a raw
+</span><span class="">   97: schema hashref. This analyser operates on a C&lt;Model::Method&gt; object
+</span><span class="">   98: directly.
+</span><span class="">   99: 
+</span><span class="">  100: =head3 API specification
+</span><span class="">  101: 
+</span><span class="">  102: =head4 input
+</span><span class="">  103: 
+</span><span class="">  104:     {
+</span><span class="">  105:         self   =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Analyzer::Return&#39; },
+</span><span class="">  106:         method =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; },
+</span><span class="">  107:     }
+</span><span class="">  108: 
+</span><span class="">  109: =head4 output
+</span><span class="">  110: 
+</span><span class="">  111:     { type =&gt; UNDEF }
+</span><span class="">  112: 
+</span><span class="">  113: =cut
+</span><span class="">  114: 
+</span><span class="">  115: sub analyze {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 116 → 129 → 143</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 116 → 129 → 0</span></span>  116: 	my ($self, $method) = @_;
+</span><span class="">  117: 
+</span><span class="">  118: 	# Accept either a Model::Method object or a raw hashref,
+</span><span class="">  119: 	# since callers in SchemaExtractor pass raw hashrefs
+</span><span class="">  120: 	my $source = ref($method) &amp;&amp; $method-&gt;can(&#39;source&#39;)
+</span><span class="">  121: 		? $method-&gt;source()
+</span><span class="">  122: 		: ($method-&gt;{source} // $method-&gt;{body} // &#39;&#39;);
+</span><span class="">  123: 
+</span><span class="">  124: 	# --------------------------------------------------
+</span><span class="">  125: 	# Detect: return $self-&gt;{property}
+</span><span class="">  126: 	# Negative lookahead ensures this does not also match
+</span><span class="">  127: 	# plain return $self (handled separately below)
+</span><span class="">  128: 	# --------------------------------------------------
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  129: 	if($source =~ /return\s+\$self-&gt;\{(\w+)\}/) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_44: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_129_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">   45: 		$method-&gt;add_evidence(
-</span><span class="">   46: 			category =&gt; &#39;return&#39;,
-</span><span class="">   47: 			signal   =&gt; &#39;returns_constant&#39;,
-</span><span class="">   48: 			weight   =&gt; 10,
-</span><span class="">   49: 		);
-</span><span class="">   50: 	}
-</span><span class="">   51: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 52 → 52 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 52 → 52 → 0</span></span>   52: 	return;
-</span><span class="">   53: }
-</span><span class="">   54: 
-</span><span class="">   55: 1;
+<span class="">  130: 		$method-&gt;add_evidence(
+</span><span class="">  131: 			category =&gt; &#39;return&#39;,
+</span><span class="">  132: 			signal   =&gt; &#39;returns_property&#39;,
+</span><span class="">  133: 			value    =&gt; $1,
+</span><span class="">  134: 			weight   =&gt; $WEIGHT_RETURNS_PROPERTY,
+</span><span class="">  135: 		);
+</span><span class="">  136: 	}
+</span><span class="">  137: 
+</span><span class="">  138: 	# --------------------------------------------------
+</span><span class="">  139: 	# Detect: return $self
+</span><span class="">  140: 	# Use negative lookahead to avoid matching
+</span><span class="">  141: 	# return $self-&gt;{...} which is a property return
+</span><span class="">  142: 	# --------------------------------------------------
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 143 → 143 → 156</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 143 → 143 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 143 → 143 → 156</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 143 → 143 → 0</span></span>  143: 	if($source =~ /return\s+\$self(?!-&gt;)/) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_143_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  144: 		$method-&gt;add_evidence(
+</span><span class="">  145: 			category =&gt; &#39;return&#39;,
+</span><span class="">  146: 			signal   =&gt; &#39;returns_self&#39;,
+</span><span class="">  147: 			weight   =&gt; $WEIGHT_RETURNS_SELF,
+</span><span class="">  148: 		);
+</span><span class="">  149: 	}
+</span><span class="">  150: 
+</span><span class="">  151: 	# --------------------------------------------------
+</span><span class="">  152: 	# Detect: return of a constant literal &acirc;&#128;&#148; quoted string,
+</span><span class="">  153: 	# numeric literal, or undef. All indicate the method
+</span><span class="">  154: 	# returns a fixed value rather than computed state.
+</span><span class="">  155: 	# --------------------------------------------------
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 156 → 156 → 164</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 156 → 156 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 156 → 156 → 164</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 156 → 156 → 0</span></span>  156: 	if($source =~ /return\s+(?:[&#39;&quot;\d]|undef\b)/) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_156_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  157: 		$method-&gt;add_evidence(
+</span><span class="">  158: 			category =&gt; &#39;return&#39;,
+</span><span class="">  159: 			signal   =&gt; &#39;returns_constant&#39;,
+</span><span class="">  160: 			weight   =&gt; $WEIGHT_RETURNS_CONSTANT,
+</span><span class="">  161: 		);
+</span><span class="">  162: 	}
+</span><span class="">  163: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 164 → 164 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 164 → 164 → 0</span></span>  164: 	return;
+</span><span class="">  165: }
+</span><span class="">  166: 
+</span><span class="">  167: 1;
 </span></pre>
 
 <script>

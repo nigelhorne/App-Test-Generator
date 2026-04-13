@@ -242,12 +242,12 @@ pre details.mutant-details ul {
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Mutation/ConditionalInversion.pm</h1>
 <div class="nav"><a href="../Model/Method.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
- <a href="NumericBoundary.pm.html">Next ➡</a></div><div class='summary'>
+ <a href="../Mutator.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
-TER1 (Statement): 59.52%<br>
-TER2 (Branch): 14.29%<br>
-TER3 (LCSAJ): 40.0% (4/10)<br>
-Approximate LCSAJ segments: 15<br>
+TER1 (Statement): 75.00%<br>
+TER2 (Branch): 25.00%<br>
+TER3 (LCSAJ): 80.0% (4/5)<br>
+Approximate LCSAJ segments: 17<br>
 </div>
 
     <div class="legend">
@@ -294,84 +294,137 @@ Approximate LCSAJ segments: 15<br>
 </span><span class="">    2: 
 </span><span class="">    3: use strict;
 </span><span class="">    4: use warnings;
-</span><span class="">    5: 
+</span><span class="">    5: use Carp qw(croak);
 </span><span class="">    6: use parent &#39;App::Test::Generator::Mutation::Base&#39;;
-</span><span class="">    7: 
-</span><span class="">    8: use App::Test::Generator::Mutant;
-</span><span class="">    9: use PPI;
-</span><span class="">   10: 
-</span><span class="">   11: our $VERSION = &#39;0.32&#39;;
-</span><span class="">   12: 
-</span><span class="">   13: =head1 VERSION
-</span><span class="">   14: 
-</span><span class="">   15: Version 0.32
-</span><span class="">   16: 
-</span><span class="">   17: =cut
-</span><span class="">   18: 
-</span><span class="">   19: sub mutate {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">20 → 25 → 63</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">20 → 25 → 0</span></span>   20: 	my ($self, $doc) = @_;
+</span><span class="">    7: use App::Test::Generator::Mutant;
+</span><span class="">    8: use PPI;
+</span><span class="">    9: 
+</span><span class="">   10: our $VERSION = &#39;0.32&#39;;
+</span><span class="">   11: 
+</span><span class="">   12: =head1 VERSION
+</span><span class="">   13: 
+</span><span class="">   14: Version 0.32
+</span><span class="">   15: 
+</span><span class="">   16: =head2 mutate
+</span><span class="">   17: 
+</span><span class="">   18: Walk a PPI document and generate one mutant for each C&lt;if&gt; or C&lt;unless&gt;
+</span><span class="">   19: statement, inverting the keyword to its opposite. This detects cases where
+</span><span class="">   20: the test suite does not exercise both branches of a conditional.
 </span><span class="">   21: 
-</span><span class="">   22: 	my $compounds = $doc-&gt;find(&#39;PPI::Statement::Compound&#39;) || [];
-</span><span class="">   23: 	my @mutants;
-</span><span class="">   24: 
-</span><span class="">   25: 	for my $stmt (@$compounds) {
-</span><span class="">   26: 		next unless(($stmt-&gt;type||&#39;&#39;) eq &#39;if&#39; || ($stmt-&gt;type||&#39;&#39;) eq &#39;unless&#39;);
-</span><span class="">   27: 
-</span><span class="">   28: 		my ($cond) = grep { $_-&gt;isa(&#39;PPI::Structure::Condition&#39;) } $stmt-&gt;children;
+</span><span class="">   22:     my $mutation = App::Test::Generator::Mutation::ConditionalInversion-&gt;new;
+</span><span class="">   23:     my $doc      = PPI::Document-&gt;new(\$source);
+</span><span class="">   24:     my @mutants  = $mutation-&gt;mutate($doc);
+</span><span class="">   25: 
+</span><span class="">   26:     for my $m (@mutants) {
+</span><span class="">   27:         print $m-&gt;id, &#39;: &#39;, $m-&gt;description, &quot;\n&quot;;
+</span><span class="">   28:     }
 </span><span class="">   29: 
-</span><span class="">   30: 		next unless $cond;
+</span><span class="">   30: =head3 Arguments
 </span><span class="">   31: 
-</span><span class="">   32: 		push @mutants, App::Test::Generator::Mutant-&gt;new(
-</span><span class="">   33: 			id =&gt; &#39;COND_INV_&#39; . $stmt-&gt;location-&gt;[0],
-</span><span class="">   34: 			group =&gt; &#39;COND_INV:&#39; . $stmt-&gt;location-&gt;[0],
-</span><span class="">   35: 			description =&gt; &#39;Invert condition&#39;,
-</span><span class="">   36: 			line =&gt; $stmt-&gt;location-&gt;[0],
-</span><span class="">   37: 			type =&gt; &#39;boolean&#39;,
-</span><span class="">   38: 			original =&gt; $cond-&gt;content(),
-</span><span class="">   39: 			transform =&gt; sub {
-</span><span class="">   40: 				my ($doc) = @_;
-</span><span class="">   41: 
-</span><span class="">   42: 				my $stmts = $doc-&gt;find(&#39;PPI::Statement::Compound&#39;) || [];
-</span><span class="">   43: 
-</span><span class="">   44: 				for my $stmt (@$stmts) {
-</span><span class="">   45: 					my @children = $stmt-&gt;children;
-</span><span class="">   46: 					next unless @children;
-</span><span class="">   47: 
-</span><span class="">   48: 					my $first = $children[0];
-</span><span class="">   49: 					next unless $first-&gt;isa(&#39;PPI::Token::Word&#39;);
+</span><span class="">   32: =over 4
+</span><span class="">   33: 
+</span><span class="">   34: =item * C&lt;$self&gt;
+</span><span class="">   35: 
+</span><span class="">   36: An instance of C&lt;App::Test::Generator::Mutation::ConditionalInversion&gt;.
+</span><span class="">   37: 
+</span><span class="">   38: =item * C&lt;$doc&gt;
+</span><span class="">   39: 
+</span><span class="">   40: A L&lt;PPI::Document&gt; object representing the parsed source file to mutate.
+</span><span class="">   41: The document is not modified by this method.
+</span><span class="">   42: 
+</span><span class="">   43: =back
+</span><span class="">   44: 
+</span><span class="">   45: =head3 Returns
+</span><span class="">   46: 
+</span><span class="">   47: A list of L&lt;App::Test::Generator::Mutant&gt; objects, one per C&lt;if&gt; or
+</span><span class="">   48: C&lt;unless&gt; statement found in the document. Returns an empty list if no
+</span><span class="">   49: qualifying statements are found.
 </span><span class="">   50: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   51: 					if ($first-&gt;content eq &#39;if&#39;) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_51: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">   52: 						$first-&gt;set_content(&#39;unless&#39;);
-</span><span class="">   53: 						last;
-</span><span class="">   54: 					} elsif ($first-&gt;content eq &#39;unless&#39;) {
-</span><span class="">   55: 						$first-&gt;set_content(&#39;if&#39;);
-</span><span class="">   56: 						last;
-</span><span class="">   57: 					}
-</span><span class="">   58: 				}
-</span><span class="">   59: 			},
-</span><span class="">   60: 		);
-</span><span class="">   61: 	}
-</span><span class="">   62: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">63 → 63 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">63 → 63 → 0</span></span>   63: 	return @mutants;
-</span><span class="">   64: }
+</span><span class="">   51: Each mutant carries a C&lt;transform&gt; closure that when called with a fresh
+</span><span class="">   52: L&lt;PPI::Document&gt; copy will flip the targeted keyword from C&lt;if&gt; to
+</span><span class="">   53: C&lt;unless&gt; or vice versa, targeting the exact statement by line and column
+</span><span class="">   54: number.
+</span><span class="">   55: 
+</span><span class="">   56: =head3 Notes
+</span><span class="">   57: 
+</span><span class="">   58: Multiple conditionals on the same source line are each mutated
+</span><span class="">   59: independently. Mutant IDs include both line and column number to ensure
+</span><span class="">   60: uniqueness.
+</span><span class="">   61: 
+</span><span class="">   62: =head3 API specification
+</span><span class="">   63: 
+</span><span class="">   64: =head4 input
 </span><span class="">   65: 
-</span><span class="">   66: sub _find_stmt_by_line {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 67 → 70 → 73</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 67 → 70 → 0</span></span>   67: 	my ($doc, $line) = @_;
-</span><span class="">   68: 	my $stmts = $doc-&gt;find(&#39;PPI::Statement::Compound&#39;) || [];
-</span><span class="">   69: 
-</span><span class="">   70: 	for my $s (@$stmts) {
-</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">   71: 		return $s if $s-&gt;location-&gt;[0] == $line;
+</span><span class="">   66:     {
+</span><span class="">   67:         self =&gt; {
+</span><span class="">   68:             type =&gt; OBJECT,
+</span><span class="">   69:             isa  =&gt; &#39;App::Test::Generator::Mutation::ConditionalInversion&#39;,
+</span><span class="">   70:         },
+</span><span class="">   71:         doc =&gt; {
+</span><span class="">   72:             type =&gt; OBJECT,
+</span><span class="">   73:             isa  =&gt; &#39;PPI::Document&#39;,
+</span><span class="">   74:         },
+</span><span class="">   75:     }
+</span><span class="">   76: 
+</span><span class="">   77: =head4 output
+</span><span class="">   78: 
+</span><span class="">   79:     {
+</span><span class="">   80:         type     =&gt; ARRAYREF,
+</span><span class="">   81:         elements =&gt; {
+</span><span class="">   82:             type =&gt; OBJECT,
+</span><span class="">   83:             isa  =&gt; &#39;App::Test::Generator::Mutant&#39;,
+</span><span class="">   84:         },
+</span><span class="">   85:     }
+</span><span class="">   86: 
+</span><span class="">   87: =cut
+</span><span class="">   88: 
+</span><span class="">   89: sub mutate {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">90 → 96 → 152</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">90 → 96 → 0</span></span>   90: 	my ($self, $doc) = @_;
+</span><span class="">   91: 
+</span><span class="">   92: 	# Find all compound statements in the document
+</span><span class="">   93: 	my $compounds = $doc-&gt;find(&#39;PPI::Statement::Compound&#39;) || [];
+</span><span class="">   94: 	my @mutants;
+</span><span class="">   95: 
+</span><span class="">   96: 	for my $stmt (@{$compounds}) {
+</span><span class="">   97: 		# Only process if and unless statements
+</span><span class="">   98: 		my $type = $stmt-&gt;type || &#39;&#39;;
+</span><span class="">   99: 		next unless $type eq &#39;if&#39; || $type eq &#39;unless&#39;;
+</span><span class="">  100: 
+</span><span class="">  101: 		# Verify the statement has a condition block to invert
+</span><span class="">  102: 		my ($cond) = grep { $_-&gt;isa(&#39;PPI::Structure::Condition&#39;) } $stmt-&gt;children;
+</span><span class="">  103: 		next unless $cond;
+</span><span class="">  104: 
+</span><span class="">  105: 		# Capture location for precise targeting in the transform closure
+</span><span class="">  106: 		my $line = $stmt-&gt;location-&gt;[0];
+</span><span class="">  107: 		my $col  = $stmt-&gt;location-&gt;[1];
+</span><span class="">  108: 
+</span><span class="">  109: 		# Determine what the keyword flips to
+</span><span class="">  110: 		my $flipped = $type eq &#39;if&#39; ? &#39;unless&#39; : &#39;if&#39;;
+</span><span class="">  111: 
+</span><span class="">  112: 		my $mutant = eval {
+</span><span class="">  113: 			App::Test::Generator::Mutant-&gt;new(
+</span><span class="">  114: 				id          =&gt; &quot;COND_INV_${line}_${col}&quot;,
+</span><span class="">  115: 				group       =&gt; &quot;COND_INV:$line&quot;,
+</span><span class="">  116: 				description =&gt; &quot;Invert condition $type to $flipped&quot;,
+</span><span class="">  117: 				line        =&gt; $line,
+</span><span class="">  118: 				type        =&gt; &#39;boolean&#39;,
+</span><span class="">  119: 				original    =&gt; $cond-&gt;content(),
+</span><span class="">  120: 
+</span><span class="">  121: 				# Closure captures line, col and flipped so it targets
+</span><span class="">  122: 				# exactly the right statement in the document copy
+</span><span class="">  123: 				transform   =&gt; sub {
+</span><span class="">  124: 					my ($doc) = @_;
+</span><span class="">  125: 					my $stmts = $doc-&gt;find(&#39;PPI::Statement::Compound&#39;) || [];
+</span><span class="">  126: 
+</span><span class="">  127: 					for my $stmt (@{$stmts}) {
+</span><span class="">  128: 						# Match by line and column to avoid mutating
+</span><span class="">  129: 						# the wrong conditional on the same line
+</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  130: 						next unless $stmt-&gt;location-&gt;[0] == $line;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_71: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_130_40_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -380,11 +433,50 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">   72: 	}
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 73 → 73 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 73 → 73 → 0</span></span>   73: 	return;
-</span><span class="">   74: }
-</span><span class="">   75: 
-</span><span class="">   76: 1;
+<span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  131: 						next unless $stmt-&gt;location-&gt;[1] == $col;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_131_40_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  132: 
+</span><span class="">  133: 						# Flip the leading keyword
+</span><span class="">  134: 						my $first = $stmt-&gt;schild(0);
+</span><span class="">  135: 						next unless $first &amp;&amp; $first-&gt;isa(&#39;PPI::Token::Word&#39;);
+</span><span class="">  136: 						$first-&gt;set_content($flipped);
+</span><span class="">  137: 						last;
+</span><span class="">  138: 					}
+</span><span class="">  139: 				},
+</span><span class="">  140: 			);
+</span><span class="">  141: 		};
+</span><span class="">  142: 
+</span><span class="">  143: 		# Report construction failures clearly rather than silently dropping
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  144: 		if($@ || !$mutant) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_144_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  145: 			warn &quot;Failed to construct mutant COND_INV_${line}_${col}: $@\n&quot; if $@;
+</span><span class="">  146: 			next;
+</span><span class="">  147: 		}
+</span><span class="">  148: 
+</span><span class="">  149: 		push @mutants, $mutant;
+</span><span class="">  150: 	}
+</span><span class="">  151: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">152 → 152 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">152 → 152 → 0</span></span>  152: 	return @mutants;
+</span><span class="">  153: }
+</span><span class="">  154: 
+</span><span class="">  155: 1;
 </span></pre>
 
 <script>

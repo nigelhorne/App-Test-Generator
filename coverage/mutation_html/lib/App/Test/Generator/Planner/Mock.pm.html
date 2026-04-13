@@ -241,7 +241,7 @@ pre details.mutant-details ul {
 <body>
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Planner/Mock.pm</h1>
-<div class="nav"><a href="Isolation.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+<div class="nav"><a href="../Planner.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
  <a href="../Report/HTML.pm.html">Next ➡</a></div>
 		<div class="legend">
 			<h3>Mutant Testing Legend</h3>
@@ -254,36 +254,158 @@ pre details.mutant-details ul {
 </span><span class="">    2: 
 </span><span class="">    3: use strict;
 </span><span class="">    4: use warnings;
-</span><span class="">    5: 
-</span><span class="">    6: sub new { bless {}, shift }
+</span><span class="">    5: use Carp    qw(croak);
+</span><span class="">    6: use Readonly;
 </span><span class="">    7: 
-</span><span class="">    8: sub plan {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 9 → 13 → 25</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 9 → 13 → 0</span></span>    9:     my ($self, $schema) = @_;
-</span><span class="">   10: 
-</span><span class="">   11:     my %mock_plan;
-</span><span class="">   12: 
-</span><span class="">   13:     foreach my $method (keys %$schema) {
-</span><span class="">   14: 
-</span><span class="">   15:         my $effects = $schema-&gt;{$method}{_analysis}{side_effects} || {};
-</span><span class="">   16: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   17:         if ($effects-&gt;{calls_external}) {
+</span><span class="">    8: # --------------------------------------------------
+</span><span class="">    9: # Mock strategy labels written to the plan output.
+</span><span class="">   10: # mock_system is used when a method calls external
+</span><span class="">   11: # commands; capture_io when it performs IO operations.
+</span><span class="">   12: # Note: if a method does both, mock_system takes
+</span><span class="">   13: # precedence &acirc;&#128;&#148; see note in plan() below.
+</span><span class="">   14: # --------------------------------------------------
+</span><span class="">   15: Readonly my $MOCK_SYSTEM     =&gt; &#39;mock_system&#39;;
+</span><span class="">   16: Readonly my $MOCK_CAPTURE_IO =&gt; &#39;capture_io&#39;;
+</span><span class="">   17: 
+</span><span class="">   18: our $VERSION = &#39;0.32&#39;;
+</span><span class="">   19: 
+</span><span class="">   20: =head1 VERSION
+</span><span class="">   21: 
+</span><span class="">   22: Version 0.32
+</span><span class="">   23: 
+</span><span class="">   24: =head1 DESCRIPTION
+</span><span class="">   25: 
+</span><span class="">   26: Plans mock strategy for each method that has external side effects,
+</span><span class="">   27: based on side effect analysis metadata in the schema. Methods that
+</span><span class="">   28: call external commands are assigned a system mock; methods that
+</span><span class="">   29: perform IO are assigned IO capture. Used by
+</span><span class="">   30: L&lt;App::Test::Generator::Emitter::Perl&gt; to generate appropriate mock
+</span><span class="">   31: setup code in the test output.
+</span><span class="">   32: 
+</span><span class="">   33: =head2 new
+</span><span class="">   34: 
+</span><span class="">   35: Construct a new Mock planner.
+</span><span class="">   36: 
+</span><span class="">   37:     my $planner = App::Test::Generator::Planner::Mock-&gt;new;
+</span><span class="">   38: 
+</span><span class="">   39: =head3 Arguments
+</span><span class="">   40: 
+</span><span class="">   41: None.
+</span><span class="">   42: 
+</span><span class="">   43: =head3 Returns
+</span><span class="">   44: 
+</span><span class="">   45: A blessed hashref.
+</span><span class="">   46: 
+</span><span class="">   47: =head3 API specification
+</span><span class="">   48: 
+</span><span class="">   49: =head4 input
+</span><span class="">   50: 
+</span><span class="">   51:     {}
+</span><span class="">   52: 
+</span><span class="">   53: =head4 output
+</span><span class="">   54: 
+</span><span class="">   55:     {
+</span><span class="">   56:         type =&gt; OBJECT,
+</span><span class="">   57:         isa  =&gt; &#39;App::Test::Generator::Planner::Mock&#39;,
+</span><span class="">   58:     }
+</span><span class="">   59: 
+</span><span class="">   60: =cut
+</span><span class="">   61: 
+</span><span class="">   62: sub new { bless {}, shift }
+</span><span class="">   63: 
+</span><span class="">   64: =head2 plan
+</span><span class="">   65: 
+</span><span class="">   66: Produce a mock plan for each method that requires external mocking,
+</span><span class="">   67: based on side effect analysis metadata in the schema.
+</span><span class="">   68: 
+</span><span class="">   69:     my $planner   = App::Test::Generator::Planner::Mock-&gt;new;
+</span><span class="">   70:     my $mock_plan = $planner-&gt;plan($schema);
+</span><span class="">   71: 
+</span><span class="">   72:     for my $method (keys %{$mock_plan}) {
+</span><span class="">   73:         printf &quot;%s: %s\n&quot;, $method, $mock_plan-&gt;{$method};
+</span><span class="">   74:     }
+</span><span class="">   75: 
+</span><span class="">   76: =head3 Arguments
+</span><span class="">   77: 
+</span><span class="">   78: =over 4
+</span><span class="">   79: 
+</span><span class="">   80: =item * C&lt;$schema&gt;
+</span><span class="">   81: 
+</span><span class="">   82: A hashref of method schemas, each optionally containing a
+</span><span class="">   83: C&lt;_analysis&gt; key with a C&lt;side_effects&gt; sub-key as produced by
+</span><span class="">   84: L&lt;App::Test::Generator::Analyzer::SideEffect&gt;.
+</span><span class="">   85: 
+</span><span class="">   86: =back
+</span><span class="">   87: 
+</span><span class="">   88: =head3 Returns
+</span><span class="">   89: 
+</span><span class="">   90: A hashref mapping method names to mock strategy strings. Only methods
+</span><span class="">   91: that require mocking appear in the output &acirc;&#128;&#148; pure methods are omitted.
+</span><span class="">   92: 
+</span><span class="">   93: Currently supported strategy values are C&lt;mock_system&gt; and
+</span><span class="">   94: C&lt;capture_io&gt;. If a method both calls external commands and performs
+</span><span class="">   95: IO, C&lt;mock_system&gt; takes precedence. This is a known limitation and
+</span><span class="">   96: may be revised in a future version to support multiple strategies per
+</span><span class="">   97: method.
+</span><span class="">   98: 
+</span><span class="">   99: =head3 API specification
+</span><span class="">  100: 
+</span><span class="">  101: =head4 input
+</span><span class="">  102: 
+</span><span class="">  103:     {
+</span><span class="">  104:         self   =&gt; { type =&gt; OBJECT,  isa =&gt; &#39;App::Test::Generator::Planner::Mock&#39; },
+</span><span class="">  105:         schema =&gt; { type =&gt; HASHREF },
+</span><span class="">  106:     }
+</span><span class="">  107: 
+</span><span class="">  108: =head4 output
+</span><span class="">  109: 
+</span><span class="">  110:     {
+</span><span class="">  111:         type =&gt; HASHREF,
+</span><span class="">  112:         keys =&gt; {
+</span><span class="">  113:             &#39;*&#39; =&gt; { type =&gt; SCALAR },
+</span><span class="">  114:         },
+</span><span class="">  115:     }
+</span><span class="">  116: 
+</span><span class="">  117: =cut
+</span><span class="">  118: 
+</span><span class="">  119: sub plan {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 120 → 127 → 147</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 120 → 127 → 0</span></span>  120: 	my ($self, $schema) = @_;
+</span><span class="">  121: 
+</span><span class="">  122: 	# Validate that schema is a hashref before iterating
+</span><span class="">  123: 	croak &#39;schema must be a hashref&#39; unless ref($schema) eq &#39;HASH&#39;;
+</span><span class="">  124: 
+</span><span class="">  125: 	my %mock_plan;
+</span><span class="">  126: 
+</span><span class="">  127: 	for my $method (keys %{$schema}) {
+</span><span class="">  128: 		# Extract side effect analysis if present &acirc;&#128;&#148;
+</span><span class="">  129: 		# default to empty hashref if not available
+</span><span class="">  130: 		my $effects = $schema-&gt;{$method}{_analysis}{side_effects} || {};
+</span><span class="">  131: 
+</span><span class="">  132: 		# --------------------------------------------------
+</span><span class="">  133: 		# Assign mock strategy based on detected side effects.
+</span><span class="">  134: 		# mock_system takes precedence over capture_io when
+</span><span class="">  135: 		# both are present &acirc;&#128;&#148; this is a known limitation.
+</span><span class="">  136: 		# TODO: consider supporting multiple strategies per
+</span><span class="">  137: 		# method as an arrayref in a future version.
+</span><span class="">  138: 		# --------------------------------------------------
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  139: 		if($effects-&gt;{calls_external}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_17: Invert condition</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_139_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">   18:             $mock_plan{$method} = &#39;mock_system&#39;;
-</span><span class="">   19:         }
-</span><span class="">   20:         elsif ($effects-&gt;{performs_io}) {
-</span><span class="">   21:             $mock_plan{$method} = &#39;capture_io&#39;;
-</span><span class="">   22:         }
-</span><span class="">   23:     }
-</span><span class="">   24: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 25 → 25 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 25 → 25 → 0</span></span>   25:     return \%mock_plan;
-</span><span class="">   26: }
-</span><span class="">   27: 
-</span><span class="">   28: 1;
+<span class="">  140: 			$mock_plan{$method} = $MOCK_SYSTEM;
+</span><span class="">  141: 		} elsif($effects-&gt;{performs_io}) {
+</span><span class="">  142: 			$mock_plan{$method} = $MOCK_CAPTURE_IO;
+</span><span class="">  143: 		}
+</span><span class="">  144: 		# Pure methods require no mocking &acirc;&#128;&#148; omit from plan
+</span><span class="">  145: 	}
+</span><span class="">  146: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 147 → 147 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 147 → 147 → 0</span></span>  147: 	return \%mock_plan;
+</span><span class="">  148: }
+</span><span class="">  149: 
+</span><span class="">  150: 1;
 </span></pre>
 
 <script>
