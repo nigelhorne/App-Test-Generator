@@ -339,7 +339,7 @@ Approximate LCSAJ segments: 477<br>
 </span><span class="">   47: 
 </span><span class="">   48: =head1 NAME
 </span><span class="">   49: 
-</span><span class="">   50: App::Test::Generator - Generate fuzz and corpus-driven test harnesses from test schemas
+</span><span class="">   50: App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Dashboard for Perl modules
 </span><span class="">   51: 
 </span><span class="">   52: =head1 VERSION
 </span><span class="">   53: 
@@ -1859,8 +1859,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1532: 			my $valid_input = 1;
 </span><span class=""> 1533: 			for my $expected (keys %{$yaml_data}) {
 </span><span class=""> 1534: 				my $outputs = $yaml_data-&gt;{$expected};
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1535: 				unless($outputs &amp;&amp; (ref $outputs eq &#39;ARRAY&#39;)) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 1536: 					carp(&quot;$yaml_cases: $expected does not point to an array ref, ignoring&quot;);
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1535: 				unless($outputs &amp;&amp; (ref $outputs eq &#39;ARRAY&#39;)) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_1535_5: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 1536: 					carp(&quot;$yaml_cases: $expected does not point to an array ref, ignoring&quot;);
 </span><span class=""> 1537: 					$valid_input = 0;
 </span><span class=""> 1538: 				}
 </span><span class=""> 1539: 			}
@@ -1878,8 +1884,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1551: 		}
 </span><span class=""> 1552: 	}
 </span><span class=""> 1553: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1554 → 1554 → 1564</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1554 → 1554 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1554 → 1554 → 1564</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1554 → 1554 → 0</span></span> 1554: 	if(my $hints = delete $schema-&gt;{_yamltest_hints}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1555: 		if(my $boundaries = $hints-&gt;{boundary_values}) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1554 → 1554 → 1564</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1554 → 1554 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1554 → 1554 → 1564</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1554 → 1554 → 0</span></span> 1554: 	if(my $hints = delete $schema-&gt;{_yamltest_hints}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_1554_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1555: 		if(my $boundaries = $hints-&gt;{boundary_values}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -1888,14 +1900,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </li></ul></details>
 <span class=""> 1556: 			push @edge_case_array, @{$boundaries};
 </span><span class=""> 1557: 		}
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1558: 		if(my $invalid = $hints-&gt;{invalid}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_1558_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 1559: 			carp(&#39;TODO: handle yamltest_hints-&gt;invalid&#39;);
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1558: 		if(my $invalid = $hints-&gt;{invalid}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 1559: 			carp(&#39;TODO: handle yamltest_hints-&gt;invalid&#39;);
 </span><span class=""> 1560: 		}
 </span><span class=""> 1561: 	}
 </span><span class=""> 1562: 
@@ -1991,14 +1997,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1633: 		$input_code = render_hash(\%input);
 </span><span class=""> 1634: 	}
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1635 → 1635 → 1641</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1635 → 1635 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1635 → 1635 → 1641</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1635 → 1635 → 0</span></span> 1635: 	if(defined(my $re = $output{&#39;matches&#39;})) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1636: 		if(ref($re) ne &#39;Regexp&#39;) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_1636_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 1637: 			$re = qr/$re/;
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1636: 		if(ref($re) ne &#39;Regexp&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 1637: 			$re = qr/$re/;
 </span><span class=""> 1638: 			$output{&#39;matches&#39;} = $re;
 </span><span class=""> 1639: 		}
 </span><span class=""> 1640: 	}
@@ -2033,8 +2033,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1663 → 1666 → 1683</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1663 → 1666 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1663 → 1666 → 1683</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1663 → 1666 → 0</span></span> 1663: 	my $transform_properties_code = &#39;&#39;;
 </span><span class=""> 1664: 	my $use_properties = 0;
 </span><span class=""> 1665: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1666: 	if (keys %transforms &amp;&amp; ($config{properties}{enable} // 0)) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 1667: 		$use_properties = 1;
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1666: 	if (keys %transforms &amp;&amp; ($config{properties}{enable} // 0)) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_1666_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 1667: 		$use_properties = 1;
 </span><span class=""> 1668: 
 </span><span class=""> 1669: 		# Generate property-based tests for transforms
 </span><span class=""> 1670: 		my $properties = _generate_transform_properties(
@@ -2088,7 +2094,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </li></ul></details>
 <span class=""> 1693: 				croak(&quot;BUG: $property: getset must take one input argument, incorrectly tagged as getset&quot;);
 </span><span class=""> 1694: 			}
-</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 1695: 			if(scalar(keys %output) == 0) {
+</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 1695: 			if(scalar(keys %output) == 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2149,14 +2155,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1721: 					$position_code .= &quot;cmp_ok(\$result, &#39;eq&#39;, \$alist[0], &#39;getset function returns what was put in&#39;); ok(\$obj-&gt;$function() eq \$result, &#39;test getset accessor&#39;);&quot;;
 </span><span class=""> 1722: 					$position_code .= &#39;}&#39;;
 </span><span class=""> 1723: 				}
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1724: 				if(($accessor{type} eq &#39;getset&#39;) || ($accessor{type} eq &#39;getter&#39;)) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_1724_5: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 1725: 					# Since Perl doesn&#39;t support data encapsulation, we can test the getter returns the correct item
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1724: 				if(($accessor{type} eq &#39;getset&#39;) || ($accessor{type} eq &#39;getter&#39;)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 1725: 					# Since Perl doesn&#39;t support data encapsulation, we can test the getter returns the correct item
 </span><span class=""> 1726: 					$position_code .= &#39;if(scalar(@alist) == 1) { &#39;;
 </span><span class=""> 1727: 					$position_code .= &quot;cmp_ok(\$result, &#39;eq&#39;, \$obj-&gt;{$accessor{property}}, &#39;getset function returns correct item&#39;);&quot;;
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1728: 					if($accessor{type} eq &#39;getter&#39;) {
@@ -2309,14 +2309,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1801: 			} else {
 </span><span class=""> 1802: 				$input_str = $inputs;
 </span><span class=""> 1803: 			}
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1804: 			if(($input_str eq &#39;undef&#39;) &amp;&amp; (!$config{&#39;test_undef&#39;})) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_1804_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 1805: 				carp(&#39;corpus case set to undef, yet test_undef is not set in config&#39;);
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1804: 			if(($input_str eq &#39;undef&#39;) &amp;&amp; (!$config{&#39;test_undef&#39;})) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 1805: 				carp(&#39;corpus case set to undef, yet test_undef is not set in config&#39;);
 </span><span class=""> 1806: 			}
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1807: 			if($new) {
 </span>
@@ -2342,8 +2336,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1816: 						perl_quote(join(&#39;, &#39;, map { $_ // &#39;&#39; } @$inputs )),
 </span><span class=""> 1817: 						$expected_str
 </span><span class=""> 1818: 					);
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1819: 					if($output{&#39;type&#39;} eq &#39;boolean&#39;) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1820: 						if($expected_str eq &#39;1&#39;) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1819: 					if($output{&#39;type&#39;} eq &#39;boolean&#39;) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_1819_6: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1820: 						if($expected_str eq &#39;1&#39;) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -2368,14 +2368,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<ul>
 				<li><b>COND_INV_1832_5: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1833: 					if($module) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_1833_6: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 1834: 						$corpus_code .= &quot;dies_ok { $module\::$function($input_str) } &quot; .
+<span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1833: 					if($module) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 1834: 						$corpus_code .= &quot;dies_ok { $module\::$function($input_str) } &quot; .
 </span><span class=""> 1835: 							&quot;&#39;Corpus $expected dies&#39;;\n&quot;;
 </span><span class=""> 1836: 					} else {
 </span><span class=""> 1837: 						$corpus_code .= &quot;dies_ok { ::$function($input_str) } &quot; .
@@ -2672,40 +2666,28 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2086: 			my $transform = $config-&gt;{transforms}{$transform_name};
 </span><span class=""> 2087: 
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 2088: 			if (exists $transform-&gt;{properties}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2089: 				unless (ref($transform-&gt;{properties}) eq &#39;ARRAY&#39;) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_2089_5: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 2090: 					croak &quot;Transform &#39;$transform_name&#39;: properties must be an array&quot;;
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 2089: 				unless (ref($transform-&gt;{properties}) eq &#39;ARRAY&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 2090: 					croak &quot;Transform &#39;$transform_name&#39;: properties must be an array&quot;;
 </span><span class=""> 2091: 				}
 </span><span class=""> 2092: 
 </span><span class=""> 2093: 				for my $prop (@{$transform-&gt;{properties}}) {
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2094: 					if (!ref($prop)) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 2094: 					if (!ref($prop)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 2095: 						# Check if builtin exists
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2096: 						unless (exists $builtin_props-&gt;{$prop}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_2094_6: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_2096_7: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class=""> 2095: 						# Check if builtin exists
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 2096: 						unless (exists $builtin_props-&gt;{$prop}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 2097: 							carp &quot;Transform &#39;$transform_name&#39;: unknown built-in property &#39;$prop&#39;. Available: &quot;,
+<span class=""> 2097: 							carp &quot;Transform &#39;$transform_name&#39;: unknown built-in property &#39;$prop&#39;. Available: &quot;,
 </span><span class=""> 2098: 								join(&#39;, &#39;, sort keys %$builtin_props);
 </span><span class=""> 2099: 						}
 </span><span class=""> 2100: 					}
 </span><span class=""> 2101: 					elsif (ref($prop) eq &#39;HASH&#39;) {
 </span><span class=""> 2102: 						# Validate custom property structure
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2103: 						unless ($prop-&gt;{name} &amp;&amp; $prop-&gt;{code}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_2103_7: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 2104: 							croak &quot;Transform &#39;$transform_name&#39;: custom properties must have &#39;name&#39; and &#39;code&#39; fields&quot;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 2103: 						unless ($prop-&gt;{name} &amp;&amp; $prop-&gt;{code}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 2104: 							croak &quot;Transform &#39;$transform_name&#39;: custom properties must have &#39;name&#39; and &#39;code&#39; fields&quot;;
 </span><span class=""> 2105: 						}
 </span><span class=""> 2106: 					}
 </span><span class=""> 2107: 					else {
@@ -3077,8 +3059,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2396: 
 </span><span class=""> 2397: 		# Build argument list (respect positions if defined)
 </span><span class=""> 2398: 		my @args;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 2399: 		if (_has_positions($input_spec)) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 2400: 			my @sorted = sort {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2399: 		if (_has_positions($input_spec)) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_2399_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 2400: 			my @sorted = sort {
 </span><span class=""> 2401: 				$input_spec-&gt;{$a}{position} &lt;=&gt; $input_spec-&gt;{$b}{position}
 </span><span class=""> 2402: 			} keys %$input_spec;
 </span><span class=""> 2403: 			@args = map { &quot;\$$_&quot; } @sorted;
@@ -3127,8 +3115,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2446: 		my $prop_code;
 </span><span class=""> 2447: 		my $prop_desc;
 </span><span class=""> 2448: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 2449: 		if (!ref($prop_def)) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 2450: 			# Simple string - lookup builtin property
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2449: 		if (!ref($prop_def)) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_2449_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 2450: 			# Simple string - lookup builtin property
 </span><span class=""> 2451: 			$prop_name = $prop_def;
 </span><span class=""> 2452: 
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2453: 			if (exists $builtin_properties-&gt;{$prop_name}) {
@@ -3192,14 +3186,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2493: 			$prop_code = $prop_def-&gt;{code};
 </span><span class=""> 2494: 			$prop_desc = $prop_def-&gt;{description} || &quot;Custom property: $prop_name&quot;;
 </span><span class=""> 2495: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2496: 			unless ($prop_code) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_2496_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 2497: 				carp &quot;Custom property &#39;$prop_name&#39; missing &#39;code&#39; field, skipping&quot;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 2496: 			unless ($prop_code) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 2497: 				carp &quot;Custom property &#39;$prop_name&#39; missing &#39;code&#39; field, skipping&quot;;
 </span><span class=""> 2498: 				next;
 </span><span class=""> 2499: 			}
 </span><span class=""> 2500: 
@@ -3252,14 +3240,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<ul>
 				<li><b>COND_INV_2537_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2538: 		if (defined $output_spec-&gt;{min}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_2538_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 2539: 			my $min = $output_spec-&gt;{min};
+<span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 2538: 		if (defined $output_spec-&gt;{min}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 2539: 			my $min = $output_spec-&gt;{min};
 </span><span class=""> 2540: 			push @properties, {
 </span><span class=""> 2541: 				name =&gt; &#39;min_constraint&#39;,
 </span><span class=""> 2542: 				# code =&gt; &quot;\$result &gt;= $min&quot;
@@ -3339,8 +3321,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2592: 			};
 </span><span class=""> 2593: 		}
 </span><span class=""> 2594: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 2595: 		if (defined $output_spec-&gt;{matches}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 2596: 			my $pattern = $output_spec-&gt;{matches};
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2595: 		if (defined $output_spec-&gt;{matches}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_2595_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 2596: 			my $pattern = $output_spec-&gt;{matches};
 </span><span class=""> 2597: 			push @properties, {
 </span><span class=""> 2598: 				name =&gt; &#39;pattern_match&#39;,
 </span><span class=""> 2599: 				code =&gt; &quot;\$result =~ qr/$pattern/&quot;
@@ -3373,8 +3361,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2614: 	}
 </span><span class=""> 2615: 
 </span><span class=""> 2616: 	# Property 5: Definedness (unless output can be undef)
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2617 → 2617 → 2624</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2617 → 2617 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2617 → 2617 → 2624</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2617 → 2617 → 0</span></span> 2617: 	unless (($output_spec-&gt;{type} // &#39;&#39;) eq &#39;undef&#39;) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 2618: 		push @properties, {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2617 → 2617 → 2624</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2617 → 2617 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2617 → 2617 → 2624</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">2617 → 2617 → 0</span></span> 2617: 	unless (($output_spec-&gt;{type} // &#39;&#39;) eq &#39;undef&#39;) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_2617_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 2618: 		push @properties, {
 </span><span class=""> 2619: 			name =&gt; &#39;defined&#39;,
 </span><span class=""> 2620: 			code =&gt; &quot;defined(\$result)&quot;
 </span><span class=""> 2621: 		};
@@ -3826,7 +3820,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3043: 			return &quot;$field_name &lt;- Float(sized =&gt; sub { rand(1000) - 500 })&quot;;
 </span><span class=""> 3044: 		} elsif (!defined($min)) {
 </span><span class=""> 3045: 			# Only max defined
-</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3046: 			if ($max == 0) {
+</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3046: 			if ($max == 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -3937,7 +3931,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3068: 		} else {
 </span><span class=""> 3069: 			# Both min and max defined
 </span><span class=""> 3070: 			my $range = $max - $min;
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3071: 			if ($range &lt;= 0) {
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3071: 			if ($range &lt;= 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
