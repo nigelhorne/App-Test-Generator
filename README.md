@@ -1,10 +1,10 @@
 # NAME
 
-App::Test::Generator - Generate fuzz and corpus-driven test harnesses from test schemas
+App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Dashboard for Perl modules
 
 # VERSION
 
-Version 0.30
+Version 0.32
 
 # SYNOPSIS
 

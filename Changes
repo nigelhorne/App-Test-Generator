@@ -2,6 +2,17 @@ Revision history for App-Test-Generator
 
 0.33
 
+    - Fixed NumericBoundary mutator incorrectly identifying the '<' in
+      open() mode strings and readline operators (<$fh>) as numeric
+      comparison operators, producing invalid mutants that caused
+      compilation errors in the mutated code. Two guards added to
+      mutate(): skip any operator whose next sibling is a PPI symbol
+      token (catching <$fh>), and skip operators not parented by a
+      PPI::Statement, PPI::Structure::Condition, or
+      PPI::Structure::Block (catching quoted mode strings in open()
+      argument lists). The same readline guard is also applied inside
+      the transform closure to prevent mutation at apply time if PPI
+      tokenisation differs between the analysis and mutation documents.
     - Rationalised program names so that they can be used in other modules
       without the need to have copies
     - Added detect_prereq_version_cliffs() to cross-reference declared

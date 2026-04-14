@@ -123,8 +123,20 @@ sub mutate {
 	for my $op (@{$ops}) {
 		my $original = $op->content();
 
+		# Skip readline operators — < immediately followed by
+		# a symbol token is <$fh> not a numeric comparison
+		my $next_sib = $op->next_sibling();
+		next if $next_sib && $next_sib->isa('PPI::Token::Symbol');
+
 		# Only process comparison operators that have defined flips
 		next unless exists $FLIP{$original};
+
+		# Only mutate operators that are direct children of
+		# a condition or expression, not list arguments
+		my $parent = $op->parent;
+		next unless $parent->isa('PPI::Statement')
+			|| $parent->isa('PPI::Structure::Condition')
+			|| $parent->isa('PPI::Structure::Block');
 
 		# Capture location so the transform closure targets the
 		# exact operator rather than the first match on that line
@@ -150,16 +162,23 @@ sub mutate {
 					# The transform closure captures line, col, original
 					# and change so it targets precisely the right operator
 					# in the document copy it receives at test time
-					transform   => sub {
+					transform => sub {
 						my $doc  = $_[0];
 						my $ops  = $doc->find('PPI::Token::Operator') || [];
 
 						for my $op (@{$ops}) {
-							# Match by line, column and content to avoid
-							# mutating the wrong operator on the same line
 							next unless $op->line_number   == $line;
 							next unless $op->column_number == $col;
 							next unless $op->content       eq $original;
+
+							# Safety check — do not mutate if this looks like
+							# a readline operator (<$fh>) rather than a numeric
+							# comparison. A readline < is immediately followed
+							# by a symbol token starting with $
+							my $next_sib = $op->next_sibling;
+							if($next_sib && $next_sib->isa('PPI::Token::Symbol')) {
+								last;
+							}
 
 							$op->set_content($change);
 							last;

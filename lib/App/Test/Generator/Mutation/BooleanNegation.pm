@@ -30,29 +30,26 @@ sub mutate {
 		my $expr = $ret->schild(1) or next;
 
 		my $original = $ret->content;
-		my $line     = $ret->location->[0];
+		my $line = $ret->location->[0];
 
 		push @mutants, App::Test::Generator::Mutant->new(
-			id          => "BOOL_NEGATE_$line",
-			group          => "BOOL_NEGATE:$line",
+			id => "BOOL_NEGATE_$line",
+			group => "BOOL_NEGATE:$line",
 			description => 'Negate return expression',
-            original    => $original,
-            transform => sub {
-		my $doc = $_[0];
+			original => $original,
+			transform => sub {
+				my $doc = $_[0];
+				my $stmt = _find_stmt_by_line($doc, $line) or return;
 
-		my $stmt = _find_stmt_by_line($doc, $line) or return;
-
-		# Example simple rewrite:
-		$stmt->replace(
-			PPI::Statement->new("return !($expr->content);")
+				# Example simple rewrite:
+				$stmt->replace(PPI::Statement->new("return !($expr->content);"));
+			},
+			line => $line,
+			type => 'boolean'
 		);
-	},
-            line        => $line,
-	    type => 'boolean'
-        );
-    }
+	}
 
-    return @mutants;
+	return @mutants;
 }
 
 1;
