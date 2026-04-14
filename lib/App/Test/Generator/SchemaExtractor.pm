@@ -1185,9 +1185,7 @@ The schema for the method "example" will include:
 
 =head2 new
 
-Private methods are not included, unless C<include_private> is used in C<new()>.
-
-The extractor supports several configuration parameters:
+Construct a new SchemaExtractor for a given Perl source file.
 
     my $extractor = App::Test::Generator::SchemaExtractor->new(
         input_file           => 'lib/MyModule.pm',  # Required
@@ -1199,11 +1197,77 @@ The extractor supports several configuration parameters:
         strict_pod           => 0|1|2,              # Default: 0 (off)
     );
 
-C<output_dir> is optional.
-It is only required if schema files will be
-written to disk. Callers that pass C<no_write =E<gt> 1> to C<extract_all>
-do not need to supply it. If C<output_dir> is omitted and C<_write_schema>
-is called, it will croak with a clear error message.
+=head3 Arguments
+
+=over 4
+
+=item * C<input_file>
+
+Path to the Perl source file to analyse. Required. Must exist on disk.
+
+=item * C<output_dir>
+
+Directory to write generated schema YAML files. Optional - only
+required if C<_write_schema> will be called. Callers passing
+C<no_write =E<gt> 1> to C<extract_all> do not need to supply it.
+
+=item * C<verbose>
+
+Print progress messages to stdout during analysis. Optional, default 0.
+
+=item * C<include_private>
+
+Include methods whose names begin with C<_> in the analysis. Optional,
+default 0. Methods named C<_new>, C<_init>, and C<_build> are always
+included regardless of this setting.
+
+=item * C<max_parameters>
+
+Safety limit on the number of parameters analysed per method to prevent
+runaway processing on pathological code. Optional, default 20.
+
+=item * C<confidence_threshold>
+
+Minimum confidence score (0.0-1.0) below which a schema is marked with
+C<_low_confidence =E<gt> 1>. Optional, default 0.5.
+
+=item * C<strict_pod>
+
+Controls POD/code agreement validation. C<0> disables validation,
+C<1> emits warnings, C<2> croaks on first disagreement. Also accepts
+the strings C<off>, C<warn>, and C<fatal>. Optional, default 0.
+
+=back
+
+=head3 Returns
+
+A blessed hashref. Croaks if C<input_file> is missing or does not
+exist on disk.
+
+=head3 Side effects
+
+Reads and parses the input file using L<PPI> at construction time.
+
+=head3 API specification
+
+=head4 input
+
+    {
+        input_file           => { type => SCALAR },
+        output_dir           => { type => SCALAR,  optional => 1 },
+        verbose              => { type => SCALAR,  optional => 1 },
+        include_private      => { type => SCALAR,  optional => 1 },
+        max_parameters       => { type => SCALAR,  optional => 1 },
+        confidence_threshold => { type => SCALAR,  optional => 1 },
+        strict_pod           => { type => SCALAR,  optional => 1 },
+    }
+
+=head4 output
+
+    {
+        type => OBJECT,
+        isa  => 'App::Test::Generator::SchemaExtractor',
+    }
 
 =cut
 
@@ -1237,75 +1301,76 @@ sub new {
 
 =head2 extract_all
 
-Extract schemas for all methods in the module.
-
-Returns a hashref of method_name => schema.
+Extract schemas for all qualifying methods in the module and return
+them as a hashref.
 
     my $schemas = $extractor->extract_all();
 
-    # Suppress writing .yml files to disk (returns schemas only)
+    # Suppress writing .yml files to disk
     my $schemas = $extractor->extract_all(no_write => 1);
 
-Accepts an optional hashref or named parameters:
+=head3 Arguments
 
 =over 4
 
 =item * C<no_write>
 
-When set to a true value, schema files are not written to C<output_dir>.
-The schemas hashref is still fully populated and returned.
-This is useful when the caller wants to inspect or augment schemas
-before deciding whether and where to write them.
+When true, schema files are not written to C<output_dir>. The returned
+hashref is still fully populated. Useful when the caller wants to
+inspect or augment schemas before deciding whether to write them.
+Optional, default 0.
 
 =back
 
-The extraction process performs comprehensive validation of the agreement between
-POD documentation and the actual code, controlled by the C<strict_pod> option
-specified in the constructor. This validation operates at three distinct levels:
+=head3 Returns
 
-=over 4
+A hashref mapping method name strings to schema hashrefs. Each schema
+contains at minimum the keys C<function>, C<module>, C<input>,
+C<output>, and C<_analysis>. See L</Generated Schema Structure> for
+the full structure.
 
-=item * C<0> (default, no validation)
+=head3 Side effects
 
-No POD/code validation is performed. Any disagreements between the documented
-parameters in POD and the actual parameters in the code are silently ignored.
-The extractor proceeds with schema generation regardless of inconsistencies.
+Parses the input file with L<PPI>. Writes one YAML file per method to
+C<output_dir> unless C<no_write> is set. Creates C<output_dir> if it
+does not exist and writing is enabled.
 
-=item * C<1> (warning mode)
+=head3 Notes
 
-Validation errors are collected and attached to each method's schema under the
-C<_pod_validation_errors> key. The extraction continues even when errors are found,
-allowing batch processing and comprehensive reporting. Errors include:
-  - Parameters documented in POD but not found in code signatures
-  - Parameters present in code but undocumented in POD
-  - Type mismatches (incompatible types flagged as "Type mismatch")
-  - Type differences (compatible but different types flagged as "Type difference")
-  - Optional/required status disagreements
-  - Constraint mismatches (min/max bounds, regex patterns)
+Private methods (names beginning with C<_>) are excluded unless
+C<include_private =E<gt> 1> was passed to C<new>. Duplicate method
+names are deduplicated with a warning logged to stdout in verbose mode.
 
-=item * C<2> (strict mode)
+POD/code agreement validation is applied if C<strict_pod> was set in
+C<new>. At level 2 (fatal), the first disagreement causes an immediate
+croak.
 
-The extraction immediately C<croak>s when the first validation error is encountered,
-providing a detailed error message. This mode is useful for enforcing documentation
-quality in development pipelines or CI/CD processes. Even compatible type differences
-(such as POD "integer" vs. code "number") will trigger failure in this mode.
+=head3 API specification
 
-=back
+=head4 input
 
-Validation checks encompass parameter existence, type compatibility, optional/required
-status, and constraint consistency. The system distinguishes between "compatible"
-type differences (e.g., "integer" and "number", "array" and "arrayref") which are
-tolerated in warning mode but still reported, and "incompatible" type mismatches
-(e.g., "string" vs. "hashref") which are always flagged as errors. A comprehensive
-validation report can be generated using the C<generate_pod_validation_report> method.
+    {
+        self     => { type => OBJECT, isa => 'App::Test::Generator::SchemaExtractor' },
+        no_write => { type => SCALAR, optional => 1 },
+    }
 
-=head3 Pseudo Code
+=head4 output
 
-  FOREACH method
-  DO
-    analyze the method
-    write a schema file for that method (unless no_write is set)
-  END
+    {
+        type => HASHREF,
+        keys => {
+            '*' => {
+                type => HASHREF,
+                keys => {
+                    function  => { type => SCALAR  },
+                    module    => { type => SCALAR  },
+                    input     => { type => HASHREF },
+                    output    => { type => HASHREF },
+                    _analysis => { type => HASHREF },
+                },
+            },
+        },
+    }
 
 =cut
 
@@ -7556,6 +7621,57 @@ sub _types_are_compatible {
 
 	return 0;	# Not compatible
 }
+
+=head2 generate_pod_validation_report
+
+Generate a human-readable report of all POD/code disagreements found
+across a set of extracted schemas.
+
+    my $schemas = $extractor->extract_all(no_write => 1);
+    my $report  = $extractor->generate_pod_validation_report($schemas);
+    print $report;
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$schemas>
+
+A hashref of method name to schema hashref as returned by
+C<extract_all>. Required.
+
+=back
+
+=head3 Returns
+
+A string containing the full validation report, or a single line
+confirming all methods passed if no disagreements were found.
+
+=head3 Side effects
+
+None.
+
+=head3 Notes
+
+Only methods whose schemas contain a C<_pod_validation_errors> key
+(populated when C<strict_pod> is 1 or 2) appear in the report. If
+C<strict_pod> was 0 when C<extract_all> was called, this method will
+always return the all-passed message.
+
+=head3 API specification
+
+=head4 input
+
+    {
+        self    => { type => OBJECT,  isa => 'App::Test::Generator::SchemaExtractor' },
+        schemas => { type => HASHREF },
+    }
+
+=head4 output
+
+    { type => SCALAR }
+
+=cut
 
 sub generate_pod_validation_report {
 	my ($self, $schemas) = @_;
