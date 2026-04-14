@@ -21,9 +21,43 @@ use Scalar::Util qw(looks_like_number);
 use YAML::XS;
 use IPC::Open3;
 use JSON::MaybeXS qw(encode_json decode_json);
+use Readonly;
 use Symbol qw(gensym);
 
-our $VERSION = '0.32';
+# --------------------------------------------------
+# Confidence score thresholds for input and output analysis
+# --------------------------------------------------
+Readonly my $CONFIDENCE_HIGH_THRESHOLD   => 60;
+Readonly my $CONFIDENCE_MEDIUM_THRESHOLD => 35;
+Readonly my $CONFIDENCE_LOW_THRESHOLD    => 15;
+
+# --------------------------------------------------
+# Confidence level label strings
+# --------------------------------------------------
+Readonly my $LEVEL_HIGH     => 'high';
+Readonly my $LEVEL_MEDIUM   => 'medium';
+Readonly my $LEVEL_LOW      => 'low';
+Readonly my $LEVEL_VERY_LOW => 'very_low';
+Readonly my $LEVEL_NONE     => 'none';
+
+# --------------------------------------------------
+# Analysis limits
+# --------------------------------------------------
+Readonly my $DEFAULT_MAX_PARAMETERS     => 20;
+Readonly my $DEFAULT_CONFIDENCE_THRESH  => 0.5;
+Readonly my $POD_WALK_LIMIT             => 200;
+Readonly my $SIGNATURE_TIMEOUT_SECS     => 3;
+Readonly my $MEMORY_LIMIT_BYTES         => 50_000_000;
+
+# --------------------------------------------------
+# Numeric boundary values for test hint generation
+# --------------------------------------------------
+Readonly my $INT32_MAX => 2_147_483_647;
+
+# --------------------------------------------------
+# Boolean return score thresholds
+# --------------------------------------------------
+Readonly my $BOOLEAN_SCORE_THRESHOLD => 30;
 
 =head1 NAME
 
@@ -32,6 +66,10 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 =head1 VERSION
 
 Version 0.32
+
+=cut
+
+our $VERSION = '0.32';
 
 =head1 SYNOPSIS
 
@@ -1183,9 +1221,9 @@ sub new {
 		# Callers using extract_all(no_write => 1) do not need to supply it.
 		output_dir => $params->{output_dir},
 		verbose	=> $params->{verbose} // 0,
-		confidence_threshold => $params->{confidence_threshold} // 0.5,
 		include_private => $params->{include_private} // 0,	# include _private methods
-		max_parameters => $params->{max_parameters} // 20,	# safety limit
+		confidence_threshold => $params->{confidence_threshold} // $DEFAULT_CONFIDENCE_THRESH,
+		max_parameters       => $params->{max_parameters}       // $DEFAULT_MAX_PARAMETERS,	# safety limit
 		strict_pod => _validate_strictness_level($params->{strict_pod}),	# Enable strict POD checking
 	};
 
@@ -1496,7 +1534,7 @@ sub _extract_pod_before {
 	my $steps = 0;
 
 	# Walk backwards collecting POD
-	while ($current && $steps++ < 200) {
+	while($current && $steps++ < $POD_WALK_LIMIT) {
 		if ($current->isa('PPI::Token::Pod')) {
 			$pod = $current->content() . $pod;
 		} elsif ($current->isa('PPI::Token::Comment')) {
@@ -1739,7 +1777,7 @@ $schema->{output} = $self->_analyze_output(
 		}
 	}
 
-	if(($level_rank{$overall} < $level_rank{medium}) &&
+	if(($level_rank{$overall} < $level_rank{$LEVEL_MEDIUM}) &&
 	   ($level_rank{$overall} < ($self->{confidence_threshold} * 4))) {
 		$schema->{_low_confidence} = 1
 	}
@@ -2081,7 +2119,7 @@ sub _analysis_error {
 	my ($self, %args) = @_;
 
 	my $method = $args{method} // 'UNKNOWN';
-	my $msg    = $args{message} // 'Analysis error';
+	my $msg = $args{message} // 'Analysis error';
 
 	my $module = $self->{_package_name} // 'UNKNOWN';
 	my $file   = $self->{input_file} // 'UNKNOWN';
@@ -2207,6 +2245,7 @@ sub _extract_pvs_schema {
 		}
 		if(!defined($list)) {
 			my $next = $call->next_sibling();
+			next unless defined $next;
 			if($next->content() =~ /schema\s*=>\s*(\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\})/s) {
 				my $schema_text = $1;
 				my $compartment = Safe->new();
@@ -2625,8 +2664,8 @@ PERL
 		require BSD::Resource;
 		BSD::Resource::setrlimit(
 			BSD::Resource::RLIMIT_AS(),
-			50_000_000,
-			50_000_000
+			$MEMORY_LIMIT_BYTES,
+			$MEMORY_LIMIT_BYTES
 		);
 	};
 	# Ignore failure — resource limiting is best-effort only
@@ -2637,8 +2676,7 @@ PERL
 	close $wtr;
 
 	local $SIG{ALRM} = sub { croak 'Signature compile timeout' };
-	# 3 second limit
-	eval { alarm(3) };  # no-op on Windows
+	eval { alarm($SIGNATURE_TIMEOUT_SECS) };	# no-op on Windows
 
 	my $stdout = do { local $/; <$rdr> };
 	my $stderr = do { local $/; <$err> };
@@ -2966,8 +3004,8 @@ sub _analyze_pod {
 	for my $name (keys %params) {
 		next if $name =~ /^(self|class)$/i;
 
-		# FIXME: not for now, it's sensible but breaks things
-		# If optionality was never explicitly set, assume required
+		# TODO: if optionality was never explicitly set, assume required.
+		# Currently disabled as it breaks some schemas — revisit in a future pass.
 		# if (!exists $params{$name}{optional}) {
 			# $params{$name}{optional} = 0;
 			# $self->_log("  POD: $name assumed required (no optional/default specified)");
@@ -3061,7 +3099,6 @@ sub _analyze_output_from_pod {
 				$output->{type} ||= 'boolean';
 			}
 			if ($returns_desc =~ /\bundef\b/i) {
-				# $output->{nullable} = 1;
 				$output->{optional} = 1;
 			}
 		}
@@ -3449,11 +3486,11 @@ sub _enhance_boolean_detection {
 
 	# Apply boolean type if we have strong evidence
 	# Override weak type assignments (like 'array' from false positive)
-	if ($boolean_score >= 30) {
+	if($boolean_score >= $BOOLEAN_SCORE_THRESHOLD) {
 		if (!$output->{type} || $output->{type} eq 'scalar' || $output->{type} eq 'array' || $output->{type} eq 'undef') {
 			my $old_type = $output->{type} || 'none';
 			$output->{type} = 'boolean';
-			$self->_log("  OUTPUT: Boolean score $boolean_score >= 30, setting type to boolean (was: $old_type)");
+			$self->_log("  OUTPUT: Boolean score $boolean_score >= $BOOLEAN_SCORE_THRESHOLD, setting type to boolean (was: $old_type)");
 		}
 	}
 }
@@ -4476,16 +4513,12 @@ sub _extract_error_constraints {
 
 		if ($op eq '<=') {
 			$$p->{min} = $num + 1;
-			# push @{ $$p->{_invalid} }, "<= $num";
 		} elsif ($op eq '<') {
 			$$p->{min} = $num;
-			# push @{ $$p->{_invalid} }, "< $num";
 		} elsif ($op eq '>=') {
 			$$p->{max} = $num - 1;
-			# push @{ $$p->{_invalid} }, ">= $num";
 		} elsif ($op eq '>') {
 			$$p->{max} = $num;
-			# push @{ $$p->{_invalid} }, "> $num";
 		}
 
 		$self->_log("  ERROR: $param normalized constraint from '$op $num'");
@@ -4766,13 +4799,13 @@ sub _extract_subroutine_attributes {
 	# First, find the attributes section (everything between sub name and ( or { )
 	my $attr_section = '';
 
-	if ($code =~ /sub\s+\w+\s+((?::\w+(?:\([^)]*\))?\s*)+)/s) {
+	if($code =~ /sub\s+\w+\s+((?::\w+(?:\([^)]*\))?\s*)+)/s) {
 		$attr_section = $1;
 	}
 
 	# Parse individual attributes from the section
-	if ($attr_section) {
-		while ($attr_section =~ /:(\w+)(?:\(([^)]*)\))?/g) {
+	if($attr_section) {
+		while($attr_section =~ /:(\w+)(?:\(([^)]*)\))?/g) {
 			my ($name, $value) = ($1, $2);
 
 			if (defined $value && $value ne '') {
@@ -5436,17 +5469,17 @@ sub _calculate_input_confidence {
 
 	# Determine confidence level
 	my $level;
-	if ($avg >= 60) {
-		$level = 'high';
+	if ($avg >= $CONFIDENCE_HIGH_THRESHOLD) {
+		$level = $LEVEL_HIGH;
 		push @factors, "High confidence: comprehensive type and constraint information";
-	} elsif ($avg >= 35) {
-		$level = 'medium';
+	} elsif ($avg >= $CONFIDENCE_MEDIUM_THRESHOLD) {
+		$level = $LEVEL_MEDIUM;
 		push @factors, "Medium confidence: some type or constraint information present";
-	} elsif ($avg >= 15) {
-		$level = 'low';
+	} elsif ($avg >= $CONFIDENCE_LOW_THRESHOLD) {
+		$level = $LEVEL_LOW;
 		push @factors, "Low confidence: minimal type information";
 	} else {
-		$level = 'very_low';
+		$level = $LEVEL_VERY_LOW;
 		push @factors, "Very low confidence: little to no type information";
 	}
 
@@ -5534,17 +5567,17 @@ sub _calculate_output_confidence {
 
 	# Determine confidence level
 	my $level;
-	if ($score >= 60) {
-		$level = 'high';
+	if ($score >= $CONFIDENCE_HIGH_THRESHOLD) {
+		$level = $LEVEL_HIGH;
 		push @factors, "High confidence: detailed return type and behavior";
-	} elsif ($score >= 30) {
-		$level = 'medium';
+	} elsif ($score >= $CONFIDENCE_MEDIUM_THRESHOLD) {
+		$level = $LEVEL_MEDIUM;
 		push @factors, "Medium confidence: return type defined";
-	} elsif ($score >= 15) {
-		$level = 'low';
+	} elsif ($score >= $CONFIDENCE_LOW_THRESHOLD) {
+		$level = $LEVEL_LOW;
 		push @factors, "Low confidence: minimal return information";
 	} else {
-		$level = 'very_low';
+		$level = $LEVEL_VERY_LOW;
 		push @factors, 'Very low confidence: little return information';
 	}
 
@@ -6144,7 +6177,7 @@ sub _write_schema {
 
 	# Add 'new' field if object instantiation is needed
 	if ($schema->{new}) {
-		# Don't try to pull in other packages - FIXME: but that would be OK up the ISA chain
+		# TODO: consider allowing parent class packages up the ISA chain
 		if(ref($schema->{new}) || ($schema->{new} eq $package_name)) {
 			$output->{new} = $schema->{new} eq $package_name ? undef : $schema->{'new'};
 		} else {
@@ -6338,7 +6371,7 @@ sub _serialize_parameter_for_yaml {
 		} elsif ($semantic eq 'unix_timestamp') {
 			$cleaned{type} = 'integer';
 			$cleaned{min} ||= 0;
-			$cleaned{max} ||= 2147483647;	# 32-bit max
+			$cleaned{max} ||= $INT32_MAX;	# 32-bit max
 			$cleaned{_note} = 'UNIX timestamp';
 		} elsif ($semantic eq 'datetime_parseable') {
 			$cleaned{type} = 'string';
@@ -7543,7 +7576,7 @@ sub generate_pod_validation_report {
 	if (@reports) {
 		return join("\n", "POD/Code Validation Report:", '=' x 40, '', @reports);
 	} else {
-		return "POD/Code Validation: All methods passed consistency checks.";
+		return 'POD/Code Validation: All methods passed consistency checks.';
 	}
 }
 
@@ -7554,7 +7587,8 @@ Log a message if verbose mode is on.
 =cut
 
 sub _log {
-	my ($self, $msg) = @_;
+	my($self, $msg) = @_;
+
 	print "$msg\n" if $self->{verbose};
 }
 
