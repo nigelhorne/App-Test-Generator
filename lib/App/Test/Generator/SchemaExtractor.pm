@@ -11,7 +11,6 @@ use App::Test::Generator::Analyzer::ReturnMeta;
 use App::Test::Generator::Analyzer::SideEffect;
 
 use Carp qw(carp croak);
-use Data::Dumper;	# For debugging
 use PPI;
 use Pod::Simple::Text;
 use File::Basename;
@@ -2234,16 +2233,6 @@ sub _extract_pvs_schema {
 		return $self->_normalize_validator_schema($schema) if $schema;
 	}
 
-	if($code =~ /validate_strict\s*\(\s*(\{.*?\})\s*\)/s) {
-		my $schema_text = $1;
-		my $schema = $self->_parse_schema_hash($schema_text);
-		return {
-			input => $schema,
-			style => 'hash',
-			source => 'validator',
-		};
-	}
-
 	return;
 }
 
@@ -2305,16 +2294,6 @@ sub _extract_pv_schema
 
 		my $schema = $self->_extract_schema_hash_from_block($schema_block);
 		return $self->_normalize_validator_schema($schema) if $schema;
-	}
-
-	if($code =~ /validate\s*\(\s*(\{.*?\})\s*\)/s) {
-		my $schema_text = $1;
-		my $schema = $self->_parse_schema_hash($schema_text);
-		return {
-			input => $schema,
-			style => 'hash',
-			source => 'validator',
-		};
 	}
 
 	return;
@@ -2440,17 +2419,39 @@ sub _extract_moosex_params_schema
 		return $self->_normalize_validator_schema($schema) if $schema;
 	}
 
-	if($code =~ /validated_hash\s*\(\s*(\{.*?\})\s*\)/s) {
-		my $schema_text = $1;
-		my $schema = $self->_parse_schema_hash($schema_text);
-		return {
-			input => $schema,
-			style => 'hash',
-			source => 'validator',
-		};
-	}
-
 	return;
+}
+
+# --------------------------------------------------
+# _extract_schema_hash_from_block
+#
+# Purpose:    Extract a parameter schema hashref from
+#             a PPI::Structure::Block node representing
+#             the schema argument to a validator call
+#             such as validate_strict({ ... }).
+#
+# Entry:      $block - a PPI::Structure::Block node.
+#
+# Exit:       Returns a hashref of parameter name to
+#             spec hashref, or undef if parsing fails.
+#
+# Side effects: None.
+#
+# Notes:      Delegates to _parse_schema_hash which
+#             expects a PPI node with a children()
+#             method. This method exists to provide
+#             a clear semantic name at the call site.
+# --------------------------------------------------
+sub _extract_schema_hash_from_block {
+	my ($self, $block) = @_;
+
+	return unless $block && $block->can('children');
+
+	my $result = $self->_parse_schema_hash($block);
+
+	return unless $result && ref($result) eq 'HASH' && $result->{input};
+
+	return $result->{input};
 }
 
 sub _normalize_validator_schema {
@@ -5186,7 +5187,7 @@ sub _analyze_parameter_validation {
 			}
 		}
 
-		$self->_log("  CODE: $param has default value: " .  (ref($default_value) ? Dumper($default_value) : $default_value));
+		$self->_log("  CODE: $param has default value: " . (ref($default_value) ? ref($default_value) . ' ref' : $default_value));
 	}
 
 	# Also check for simple default assignment without condition
