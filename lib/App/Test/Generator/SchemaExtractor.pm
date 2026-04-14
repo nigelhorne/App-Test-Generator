@@ -2636,12 +2636,13 @@ PERL
 	close $wtr;
 
 	local $SIG{ALRM} = sub { croak 'Signature compile timeout' };
-	alarm 3;	# 3 second limit
+	# 3 second limit
+	eval { alarm(3) };  # no-op on Windows
 
 	my $stdout = do { local $/; <$rdr> };
 	my $stderr = do { local $/; <$err> };
 
-	alarm 0;
+	eval { alarm 0 };
 
 	waitpid($pid, 0);
 
@@ -5185,8 +5186,7 @@ sub _analyze_parameter_validation {
 			}
 		}
 
-		$self->_log("  CODE: $param has default value: " .
-		(ref($default_value) ? Dumper($default_value) : $default_value));
+		$self->_log("  CODE: $param has default value: " .  (ref($default_value) ? Dumper($default_value) : $default_value));
 	}
 
 	# Also check for simple default assignment without condition
@@ -5650,9 +5650,9 @@ sub _set_defaults
 
 		next unless(ref($p) eq 'HASH');
 		unless ($p->{type}) {
-			$self->_log("  DEBUG ${mode}{$param}: Setting to 'string' as a default");
+			$self->_log("  DEBUG {$mode}{$param}: Setting to 'string' as a default");
 			$p->{'type'} = 'string';
-			$schema->{_confidence}{mode}->{level} = 'low';	# Setting a default means it's a guess
+			$schema->{_confidence}{$mode}->{level} = 'low';	# Setting a default means it's a guess
 		}
 	}
 }

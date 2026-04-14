@@ -109,11 +109,11 @@ A CODE reference to the function under test. Required.
 
 =item * C<iterations>
 
-Number of fuzzing iterations to run. Optional — defaults to 100.
+Number of fuzzing iterations to run. Optional - defaults to 100.
 
 =item * C<seed>
 
-Random seed for reproducible runs. Optional — defaults to C<time()>.
+Random seed for reproducible runs. Optional - defaults to C<time()>.
 
 =item * C<instance>
 
