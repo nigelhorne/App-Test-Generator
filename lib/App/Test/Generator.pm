@@ -25,7 +25,7 @@ use File::Basename qw(basename);
 use File::Spec;
 use Module::Load::Conditional qw(check_install can_load);
 use Params::Get;
-use Params::Validate::Strict;
+use Params::Validate::Strict 0.30;
 use Readonly::Values::Boolean;
 use Scalar::Util qw(looks_like_number);
 use re 'regexp_pattern';
@@ -1707,7 +1707,7 @@ sub generate
 	my $call_code;	# Code to call the function being test when used with named arguments
 	my $position_code;	# Code to call the function being test when used with position arguments
 	my $has_positions = _has_positions(\%input);
-	if(defined($new)) {
+	if(defined($new) && defined($module)) {
 		# keep use_ok regardless (user found earlier issue)
 		if($new_code eq '') {
 			$new_code = "new_ok('$module')";

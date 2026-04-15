@@ -282,8 +282,7 @@ subtest 'OO with new parameters' => sub {
 	App::Test::Generator->generate($oo_conf, $oo_t);
 
 	my $content = slurp($oo_t);
-	like($content, qr/new_ok.*Test::Most.*param1.*value1/,
-		'should generate OO test with constructor parameters');
+	like($content, qr/new_ok.*Test::Most.*param1.*value1/, 'should generate OO test with constructor parameters');
 
 	unlink $oo_conf, $oo_t;
 };

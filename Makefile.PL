@@ -38,7 +38,7 @@ WriteMakefile(
 		'IPC::Open3' => 0,
 		'JSON::MaybeXS' => 0,
 		'Params::Get' => 0.13,
-		'Params::Validate::Strict' => 0.23,
+		'Params::Validate::Strict' => 0.30,
 		'PPI' => 0,
 		'Pod::Simple' => 0,
 		'Pod::Usage' => 0,
