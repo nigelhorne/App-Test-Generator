@@ -572,8 +572,15 @@ for my $file (sort keys %{$cover_db->{summary}}) {
 		my $json = $historical_cache{$hist_file};
 		next unless $json;	# Skip if not cached (shouldn't happen, but be safe)
 
-		if($json->{summary}{$file}) {
-			my $pct = $json->{summary}{$file}{total}{percentage} // 0;
+		# Try both with and without blib/ prefix since older history
+		# files store paths under blib/lib/... while the dashboard
+		# displays them as lib/...
+		my $hist_key = $json->{summary}{"blib/$file"} ? "blib/$file"
+			     : $json->{summary}{$file}         ? $file
+			     : undef;
+
+		if($hist_key) {
+			my $pct = $json->{summary}{$hist_key}{total}{percentage} // 0;
 			push @file_history, sprintf('%.1f', $pct);
 		}
 	}
