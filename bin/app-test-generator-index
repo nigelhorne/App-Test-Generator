@@ -654,25 +654,50 @@ my $short_sha = substr($commit_sha, 0, 7);
 push @html, '</tbody></table>';
 
 # Inject chart if we have data
+# Use full 40-character SHAs as keys throughout to avoid the
+# ambiguity of Git's variable-length short SHA abbreviations,
+# which grow beyond 7 characters as the repository expands
 my %commit_times;
-my $log_output = run_git('log', '--all', '--pretty=format:%H %h %ci');
-if ($log_output) {
+my $log_output = run_git('log', '--all', '--pretty=format:%H %ci');
+
+if($log_output) {
 	for my $line (split /\n/, $log_output) {
-		my ($full_sha, $short_sha, $datetime) = split ' ', $line, 3;
-		$commit_times{$short_sha} = $datetime if $short_sha;
+		# Full SHA and datetime are space-separated; limit split
+		# to 2 fields so datetime with spaces is preserved intact
+		my ($full_sha, $datetime) = split ' ', $line, 2;
+		$commit_times{$full_sha} = $datetime if $full_sha;
 	}
 }
 
 my %commit_messages;
-$log_output = run_git('log', '--pretty=format:%h %s');
-if ($log_output) {
+$log_output = run_git('log', '--pretty=format:%H %s');
+
+if($log_output) {
 	for my $line (split /\n/, $log_output) {
-		my ($short_sha, $message) = $line =~ /^(\w+)\s+(.*)$/;
-		if ($message && $message =~ /^Merge branch /) {
-			delete $commit_times{$short_sha};
+		# Extract full 40-char SHA and commit subject line
+		my ($full_sha, $message) = $line =~ /^([0-9a-f]{40})\s+(.*)$/;
+
+		# Skip merge commits — they add noise to the trend chart
+		if($message && $message =~ /^Merge branch /) {
+			delete $commit_times{$full_sha};
 		} else {
-			$commit_messages{$short_sha} = $message if $message;
+			$commit_messages{$full_sha} = $message if $message;
 		}
+	}
+}
+
+# Build short-to-full SHA mapping so filename SHAs of any
+# length can be resolved to their full commit SHA.
+# We use //= so that if two commits share a prefix (unlikely
+# but possible), the first one wins rather than silently
+# overwriting with a later one
+my %sha_lookup;
+for my $full (keys %commit_messages) {
+	# Index every prefix from 7 chars up to the full SHA length
+	# so that history filenames with any abbreviation length match
+	for my $len (7 .. length($full)) {
+		my $prefix = substr($full, 0, $len);
+		$sha_lookup{$prefix} //= $full;
 	}
 }
 
@@ -686,12 +711,21 @@ foreach my $file (reverse sort @history_files) {
 	my $json = $historical_cache{$file};
 	next unless $json->{summary};
 
-	my ($sha) = $file =~ /-(\w{7})\.json$/;
+	# Extract the commit SHA from the history filename.
+	# SHA length varies (7+ chars) as Git increases abbreviation
+	# length automatically when the repository grows — so we match
+	# any run of hex characters rather than a fixed 7-character width
+	my ($sha) = $file =~ /-([0-9a-f]+)\.json$/i;
 
 	# Skip files that don't match the expected naming pattern
-	# e.g. YYYY-MM-DD-XXXXXXX.json — $sha will be undef otherwise
+	# e.g. YYYY-MM-DD-SHA.json — $sha will be undef otherwise
 	next unless defined $sha;
-	next unless $commit_messages{$sha};	# skip merge commits
+
+	# Resolve the short filename SHA to a full SHA first,
+	# then check the full SHA in %commit_messages
+	my $full_sha = $sha_lookup{$sha};
+	next unless defined $full_sha;
+	next unless $commit_messages{$full_sha}; # skip merge commits
 
 	# Compute average across our own files only
 	my ($sum, $count) = (0, 0);
@@ -704,7 +738,8 @@ foreach my $file (reverse sort @history_files) {
 	}
 	next unless $count;
 
-	my $timestamp = $commit_times{$sha} // strftime('%Y-%m-%dT%H:%M:%S', localtime((stat($file))->mtime));
+	# Use full SHA for lookups and URL
+	my $timestamp = $commit_times{$full_sha} // strftime('%Y-%m-%dT%H:%M:%S', localtime((stat($file))->mtime));
 
 	# Git log returns format like: "2024-01-15 14:30:45 -0500" or "2024-01-15 14:30:45 +0000"
 	# We need ISO 8601 format: "2024-01-15T14:30:45-05:00"
@@ -720,8 +755,8 @@ foreach my $file (reverse sort @history_files) {
 
 	my $pct = $sum / $count;
 	my $color = 'gray';	# Will be set properly after sorting
-	my $url = "https://github.com/$config{github_user}/$config{github_repo}/commit/$sha";
-	my $comment = $commit_messages{$sha};
+	my $url = "https://github.com/$config{github_user}/$config{github_repo}/commit/$full_sha";
+	my $comment = $commit_messages{$full_sha};
 
 	# Store with timestamp for sorting
 	push @data_points_with_time, {
