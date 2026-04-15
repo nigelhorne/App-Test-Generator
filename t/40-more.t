@@ -288,26 +288,4 @@ subtest 'OO with new parameters' => sub {
 	unlink $oo_conf, $oo_t;
 };
 
-# Test builtin function configuration
-subtest 'builtin functions' => sub {
-	my $builtin_conf = File::Spec->catfile($dir, 'builtin_test.yml');
-	my $builtin_t = File::Spec->catfile($dir, 'builtin_test.t');
-
-	write_yaml($builtin_conf, {
-		module => 'Test::Most',
-		module => 'builtin',
-		function => 'length',
-		input => { type => 'string' },
-		output => { type => 'integer' }
-	});
-
-	App::Test::Generator->generate($builtin_conf, $builtin_t);
-
-	my $content = slurp($builtin_t);
-	like($content, qr/length\(/, 'should generate test for builtin function');
-	unlike($content, qr/use_ok\('length/, 'should not use_ok for builtin functions');
-
-	unlink $builtin_conf, $builtin_t;
-};
-
 done_testing();

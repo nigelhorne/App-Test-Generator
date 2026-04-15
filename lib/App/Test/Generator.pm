@@ -1698,6 +1698,10 @@ sub generate
 		}
 	}
 
+	# TEMPORARY DEBUG — remove before release
+	# And replace test in t/cli-fuzz-harness-generator.t
+	warn "DEBUG pre-setup: module=", ($module // 'UNDEF'), " function=$function";
+
 	# Setup / call code (always load module)
 	my $setup_code = ($module) ? "BEGIN { use_ok('$module') }" : '';
 	my $call_code;	# Code to call the function being test when used with named arguments
