@@ -116,12 +116,12 @@ tests that kill them on the next run, without manual intervention.
 ## How to Use It
 
 The pipeline is driven by three flags passed to
-`scripts/generate_index.pl`, which is invoked automatically by
-`scripts/generate_test_dashboard` on each CI push.
+`bin/app-test-generator-index`, which is invoked automatically by
+`bin/generate-test-dashboard` on each CI push.
 
 ### Step 1: Generate TODO stubs for all survivors
 
-    scripts/generate_index.pl --generate_mutant_tests=t
+    bin/app-test-generator-index --generate_mutant_tests=t
 
 Produces `t/mutant_YYYYMMDD_HHMMSS.t` containing:
 
@@ -135,7 +135,7 @@ stub. One good test kills all variants on that line.
 
 ### Step 2: Generate runnable schemas for NUM\_BOUNDARY survivors
 
-    scripts/generate_index.pl \
+    bin/app-test-generator-index \
         --generate_mutant_tests=t \
         --generate_test=mutant
 
@@ -154,7 +154,7 @@ Falls back to a TODO stub if:
 
 ### Step 3: Augment existing schemas with survivor boundary values
 
-    scripts/generate_index.pl \
+    bin/app-test-generator-index \
         --generate_mutant_tests=t \
         --generate_test=mutant \
         --generate_fuzz
@@ -172,10 +172,10 @@ are skipped, with a note if `--verbose` is active.
 
 ### Putting It All Together
 
-The recommended invocation in `scripts/generate_test_dashboard`
+The recommended invocation in `bin/generate-test-dashboard`
 Step 7 runs all three stages together:
 
-    scripts/generate_index.pl \
+    bin/app-test-generator-index \
         --generate_mutant_tests=t \
         --generate_test=mutant \
         --generate_fuzz
@@ -220,9 +220,9 @@ schemas.
 
 - [App::Test::Generator::SchemaExtractor](https://metacpan.org/pod/App%3A%3ATest%3A%3AGenerator%3A%3ASchemaExtractor) - Schema extraction
 from Perl source code
-- ["generate\_index.pl" in scripts](https://metacpan.org/pod/scripts#generate_index.pl) - Dashboard generator and
+- ["app-test-generator-index" in bin](https://metacpan.org/pod/bin#app-test-generator-index) - Dashboard generator and
 pipeline driver
-- ["generate\_test\_dashboard" in scripts](https://metacpan.org/pod/scripts#generate_test_dashboard) - Full pipeline runner
+- ["generate-test-dashboard" in bin](https://metacpan.org/pod/bin#generate-test-dashboard) - Full pipeline runner
 
 # CONFIGURATION
 

@@ -183,12 +183,12 @@ tests that kill them on the next run, without manual intervention.
 =head2 How to Use It
 
 The pipeline is driven by three flags passed to
-C<scripts/generate_index.pl>, which is invoked automatically by
-C<scripts/generate_test_dashboard> on each CI push.
+C<bin/app-test-generator-index>, which is invoked automatically by
+C<bin/generate-test-dashboard> on each CI push.
 
 =head3 Step 1: Generate TODO stubs for all survivors
 
-    scripts/generate_index.pl --generate_mutant_tests=t
+    bin/app-test-generator-index --generate_mutant_tests=t
 
 Produces C<t/mutant_YYYYMMDD_HHMMSS.t> containing:
 
@@ -207,7 +207,7 @@ stub. One good test kills all variants on that line.
 
 =head3 Step 2: Generate runnable schemas for NUM_BOUNDARY survivors
 
-    scripts/generate_index.pl \
+    bin/app-test-generator-index \
         --generate_mutant_tests=t \
         --generate_test=mutant
 
@@ -232,7 +232,7 @@ Falls back to a TODO stub if:
 
 =head3 Step 3: Augment existing schemas with survivor boundary values
 
-    scripts/generate_index.pl \
+    bin/app-test-generator-index \
         --generate_mutant_tests=t \
         --generate_test=mutant \
         --generate_fuzz
@@ -250,10 +250,10 @@ are skipped, with a note if C<--verbose> is active.
 
 =head3 Putting It All Together
 
-The recommended invocation in C<scripts/generate_test_dashboard>
+The recommended invocation in C<bin/generate-test-dashboard>
 Step 7 runs all three stages together:
 
-    scripts/generate_index.pl \
+    bin/app-test-generator-index \
         --generate_mutant_tests=t \
         --generate_test=mutant \
         --generate_fuzz
@@ -310,10 +310,10 @@ merged in. Picked up by C<t/fuzz.t>.
 =item * L<App::Test::Generator::SchemaExtractor> - Schema extraction
 from Perl source code
 
-=item * L<scripts/generate_index.pl> - Dashboard generator and
+=item * L<bin/app-test-generator-index> - Dashboard generator and
 pipeline driver
 
-=item * L<scripts/generate_test_dashboard> - Full pipeline runner
+=item * L<bin/generate-test-dashboard> - Full pipeline runner
 
 =back
 
