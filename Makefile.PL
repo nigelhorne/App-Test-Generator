@@ -24,7 +24,7 @@ WriteMakefile(
 		'bin/fuzz-harness-generator',
 		'bin/extract-schemas',
 		'bin/extract-schemas2',
-		'bin/app-test-generator-index'
+		'bin/app-test-generator-index',
 		'bin/generator-test-dashboard'
 	], MIN_PERL_VERSION => '5.036',
 	PREREQ_PM => {
