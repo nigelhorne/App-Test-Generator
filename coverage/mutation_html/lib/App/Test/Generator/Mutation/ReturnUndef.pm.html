@@ -1,0 +1,593 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+    color: #5555ff;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-dot-uncovered {
+    color: #cc4444;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/App/Test/Generator/Mutation/ReturnUndef.pm</h1>
+<div class="nav"><a href="ConditionalInversion.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="../Mutator.pm.html">Next ➡</a></div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 50.00%<br>
+TER2 (Branch): 0.00%<br>
+TER3 (LCSAJ): 80.0% (4/5)<br>
+Approximate LCSAJ segments: 13<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package App::Test::Generator::Mutation::ReturnUndef;
+</span><span class="">    2: 
+</span><span class="">    3: use strict;
+</span><span class="">    4: use warnings;
+</span><span class="">    5: use parent &#39;App::Test::Generator::Mutation::Base&#39;;
+</span><span class="">    6: use App::Test::Generator::Mutant;
+</span><span class="">    7: use PPI;
+</span><span class="">    8: 
+</span><span class="">    9: our $VERSION = &#39;0.32&#39;;
+</span><span class="">   10: 
+</span><span class="">   11: =head1 NAME
+</span><span class="">   12: 
+</span><span class="">   13: App::Test::Generator::Mutation::ReturnUndef - Replace return expressions
+</span><span class="">   14: with undef to expose missing undef-return checks in the test suite
+</span><span class="">   15: 
+</span><span class="">   16: =head1 VERSION
+</span><span class="">   17: 
+</span><span class="">   18: Version 0.32
+</span><span class="">   19: 
+</span><span class="">   20: =head2 applies_to
+</span><span class="">   21: 
+</span><span class="">   22: Return true if this mutation strategy applies to the given PPI node.
+</span><span class="">   23: Used by the mutation framework to pre-filter nodes before calling
+</span><span class="">   24: C&lt;mutate&gt;.
+</span><span class="">   25: 
+</span><span class="">   26:     my $applies = $mutation-&gt;applies_to($node);
+</span><span class="">   27: 
+</span><span class="">   28: =head3 Arguments
+</span><span class="">   29: 
+</span><span class="">   30: =over 4
+</span><span class="">   31: 
+</span><span class="">   32: =item * C&lt;$node&gt;
+</span><span class="">   33: 
+</span><span class="">   34: A L&lt;PPI::Element&gt; node to test.
+</span><span class="">   35: 
+</span><span class="">   36: =back
+</span><span class="">   37: 
+</span><span class="">   38: =head3 Returns
+</span><span class="">   39: 
+</span><span class="">   40: True if the node is a C&lt;PPI::Statement::Return&gt;, false otherwise.
+</span><span class="">   41: 
+</span><span class="">   42: =head3 API specification
+</span><span class="">   43: 
+</span><span class="">   44: =head4 input
+</span><span class="">   45: 
+</span><span class="">   46:     {
+</span><span class="">   47:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutation::ReturnUndef&#39; },
+</span><span class="">   48:         node =&gt; { type =&gt; OBJECT, isa =&gt; &#39;PPI::Element&#39; },
+</span><span class="">   49:     }
+</span><span class="">   50: 
+</span><span class="">   51: =head4 output
+</span><span class="">   52: 
+</span><span class="">   53:     { type =&gt; SCALAR }
+</span><span class="">   54: 
+</span><span class="">   55: =cut
+</span><span class="">   56: 
+</span><span class="">   57: sub applies_to {
+</span><span class="">   58: 	my ($self, $node) = @_;
+</span><span class="">   59: 
+</span><span class="">   60: 	# This strategy only targets return statements &acirc;&#128;&#148; other node
+</span><span class="">   61: 	# types cannot produce return-undef mutants
+</span><span class="">   62: 	return $node-&gt;isa(&#39;PPI::Statement::Return&#39;);
+</span><span class="">   63: }
+</span><span class="">   64: 
+</span><span class="">   65: =head2 mutate
+</span><span class="">   66: 
+</span><span class="">   67: Walk a PPI document and generate one mutant for each non-bare return
+</span><span class="">   68: statement, replacing its expression with C&lt;undef&gt;. For example,
+</span><span class="">   69: C&lt;return $result&gt; becomes C&lt;return undef&gt;.
+</span><span class="">   70: 
+</span><span class="">   71: Bare C&lt;return;&gt; statements are skipped because they already return
+</span><span class="">   72: undef - mutating them would produce a redundant mutant that can never
+</span><span class="">   73: be killed.
+</span><span class="">   74: 
+</span><span class="">   75:     my $mutation = App::Test::Generator::Mutation::ReturnUndef-&gt;new;
+</span><span class="">   76:     my $doc      = PPI::Document-&gt;new(\$source);
+</span><span class="">   77:     my @mutants  = $mutation-&gt;mutate($doc);
+</span><span class="">   78: 
+</span><span class="">   79:     for my $m (@mutants) {
+</span><span class="">   80:         print $m-&gt;id, &#39;: &#39;, $m-&gt;description, &quot;\n&quot;;
+</span><span class="">   81:     }
+</span><span class="">   82: 
+</span><span class="">   83: =head3 Arguments
+</span><span class="">   84: 
+</span><span class="">   85: =over 4
+</span><span class="">   86: 
+</span><span class="">   87: =item * C&lt;$self&gt;
+</span><span class="">   88: 
+</span><span class="">   89: An instance of C&lt;App::Test::Generator::Mutation::ReturnUndef&gt;.
+</span><span class="">   90: 
+</span><span class="">   91: =item * C&lt;$doc&gt;
+</span><span class="">   92: 
+</span><span class="">   93: A L&lt;PPI::Document&gt; object representing the parsed source to mutate.
+</span><span class="">   94: The document is not modified by this method.
+</span><span class="">   95: 
+</span><span class="">   96: =back
+</span><span class="">   97: 
+</span><span class="">   98: =head3 Returns
+</span><span class="">   99: 
+</span><span class="">  100: A list of L&lt;App::Test::Generator::Mutant&gt; objects, one per qualifying
+</span><span class="">  101: return statement found in the document. Returns an empty list if no
+</span><span class="">  102: non-bare return statements are found.
+</span><span class="">  103: 
+</span><span class="">  104: Each mutant carries a C&lt;transform&gt; closure that when called with a
+</span><span class="">  105: fresh L&lt;PPI::Document&gt; copy will replace the targeted return expression
+</span><span class="">  106: with the literal C&lt;undef&gt;.
+</span><span class="">  107: 
+</span><span class="">  108: =head3 Notes
+</span><span class="">  109: 
+</span><span class="">  110: Mutant IDs include both line and column number to ensure uniqueness
+</span><span class="">  111: when multiple return statements appear in the same source file.
+</span><span class="">  112: 
+</span><span class="">  113: Only return statements with an expression child are mutated - bare
+</span><span class="">  114: C&lt;return;&gt; statements are skipped as they already return undef.
+</span><span class="">  115: 
+</span><span class="">  116: =head3 API specification
+</span><span class="">  117: 
+</span><span class="">  118: =head4 input
+</span><span class="">  119: 
+</span><span class="">  120:     {
+</span><span class="">  121:         self =&gt; {
+</span><span class="">  122:             type =&gt; OBJECT,
+</span><span class="">  123:             isa  =&gt; &#39;App::Test::Generator::Mutation::ReturnUndef&#39;,
+</span><span class="">  124:         },
+</span><span class="">  125:         doc =&gt; {
+</span><span class="">  126:             type =&gt; OBJECT,
+</span><span class="">  127:             isa  =&gt; &#39;PPI::Document&#39;,
+</span><span class="">  128:         },
+</span><span class="">  129:     }
+</span><span class="">  130: 
+</span><span class="">  131: =head4 output
+</span><span class="">  132: 
+</span><span class="">  133:     {
+</span><span class="">  134:         type     =&gt; ARRAYREF,
+</span><span class="">  135:         elements =&gt; {
+</span><span class="">  136:             type =&gt; OBJECT,
+</span><span class="">  137:             isa  =&gt; &#39;App::Test::Generator::Mutant&#39;,
+</span><span class="">  138:         },
+</span><span class="">  139:     }
+</span><span class="">  140: 
+</span><span class="">  141: =cut
+</span><span class="">  142: 
+</span><span class="">  143: sub mutate {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">144 → 150 → 214</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">144 → 150 → 0</span></span>  144: 	my ($self, $doc) = @_;
+</span><span class="">  145: 
+</span><span class="">  146: 	# Find all return statements in the document
+</span><span class="">  147: 	my $returns = $doc-&gt;find(&#39;PPI::Statement::Return&#39;) || [];
+</span><span class="">  148: 	my @mutants;
+</span><span class="">  149: 
+</span><span class="">  150: 	for my $ret (@{$returns}) {
+</span><span class="">  151: 		# Skip bare return statements &acirc;&#128;&#148; they already return undef
+</span><span class="">  152: 		# so mutating them would produce a redundant mutant that
+</span><span class="">  153: 		# can never be killed by any meaningful test
+</span><span class="">  154: 		my $expr = $ret-&gt;schild(1) or next;
+</span><span class="">  155: 
+</span><span class="">  156: 		# Capture location so the transform closure targets the
+</span><span class="">  157: 		# exact statement rather than the first match on that line
+</span><span class="">  158: 		my $line = $ret-&gt;location-&gt;[0];
+</span><span class="">  159: 		my $col  = $ret-&gt;location-&gt;[1];
+</span><span class="">  160: 
+</span><span class="">  161: 		# Build a unique ID from line and column so multiple return
+</span><span class="">  162: 		# statements in the same file never collide
+</span><span class="">  163: 		my $id = &quot;RETURN_UNDEF_${line}_${col}&quot;;
+</span><span class="">  164: 
+</span><span class="">  165: 		my $mutant = eval {
+</span><span class="">  166: 			App::Test::Generator::Mutant-&gt;new(
+</span><span class="">  167: 				id          =&gt; $id,
+</span><span class="">  168: 				group       =&gt; &quot;RETURN_UNDEF:$line&quot;,
+</span><span class="">  169: 				description =&gt; &#39;Replace return expression with undef&#39;,
+</span><span class="">  170: 				original    =&gt; $ret-&gt;content(),
+</span><span class="">  171: 				line        =&gt; $line,
+</span><span class="">  172: 				type        =&gt; &#39;return&#39;,
+</span><span class="">  173: 
+</span><span class="">  174: 				# The transform closure captures line and col so it
+</span><span class="">  175: 				# targets precisely the right return statement in the
+</span><span class="">  176: 				# document copy it receives at test time
+</span><span class="">  177: 				transform =&gt; sub {
+</span><span class="">  178: 					my $doc  = $_[0];
+</span><span class="">  179: 
+</span><span class="">  180: 					# Find all return statements in the fresh document copy
+</span><span class="">  181: 					my $rets = $doc-&gt;find(&#39;PPI::Statement::Return&#39;) || [];
+</span><span class="">  182: 
+</span><span class="">  183: 					for my $ret (@{$rets}) {
+</span><span class="">  184: 						# Match by line and column to avoid mutating
+</span><span class="">  185: 						# the wrong return statement
+</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  186: 						next unless $ret-&gt;line_number   == $line;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_186_39_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  187: 						next unless $ret-&gt;column_number == $col;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_187_39_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  188: 
+</span><span class="">  189: 						# Skip bare returns &acirc;&#128;&#148; already return undef,
+</span><span class="">  190: 						# redundant to mutate
+</span><span class="">  191: 						my $expr = $ret-&gt;schild(1) or last;
+</span><span class="">  192: 
+</span><span class="">  193: 						# Replace the expression with the literal undef.
+</span><span class="">  194: 						# Operate on the token content directly to avoid
+</span><span class="">  195: 						# PPI document ownership issues that arise when
+</span><span class="">  196: 						# replacing entire statement nodes
+</span><span class="">  197: 						$expr-&gt;set_content(&#39;undef&#39;);
+</span><span class="">  198: 						last;
+</span><span class="">  199: 					}
+</span><span class="">  200: 				},
+</span><span class="">  201: 			);
+</span><span class="">  202: 		};
+</span><span class="">  203: 
+</span><span class="">  204: 		# If Mutant construction fails, report clearly rather than
+</span><span class="">  205: 		# silently dropping the mutant from the results
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  206: 		if($@ || !$mutant) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_206_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  207: 			warn &quot;Failed to construct mutant $id: $@\n&quot; if $@;
+</span><span class="">  208: 			next;
+</span><span class="">  209: 		}
+</span><span class="">  210: 
+</span><span class="">  211: 		push @mutants, $mutant;
+</span><span class="">  212: 	}
+</span><span class="">  213: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">214 → 214 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">214 → 214 → 0</span></span>  214: 	return @mutants;
+</span><span class="">  215: }
+</span><span class="">  216: 
+</span><span class="">  217: =head1 AUTHOR
+</span><span class="">  218: 
+</span><span class="">  219: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  220: 
+</span><span class="">  221: =head1 LICENCE AND COPYRIGHT
+</span><span class="">  222: 
+</span><span class="">  223: Copyright 2026 Nigel Horne.
+</span><span class="">  224: 
+</span><span class="">  225: Usage is subject to licence terms.
+</span><span class="">  226: 
+</span><span class="">  227: The licence terms of this software are as follows:
+</span><span class="">  228: 
+</span><span class="">  229: =over 4
+</span><span class="">  230: 
+</span><span class="">  231: =item * Personal single user, single computer use: GPL2
+</span><span class="">  232: 
+</span><span class="">  233: =item * All other users (including Commercial, Charity, Educational,
+</span><span class="">  234: Government) must apply in writing for a licence for use from Nigel Horne
+</span><span class="">  235: at the above e-mail.
+</span><span class="">  236: 
+</span><span class="">  237: =back
+</span><span class="">  238: 
+</span><span class="">  239: =cut
+</span><span class="">  240: 
+</span><span class="">  241: 1;
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
+</script>
+</body>
+</html>
+	
