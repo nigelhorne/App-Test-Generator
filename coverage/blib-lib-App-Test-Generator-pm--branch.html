@@ -172,7 +172,7 @@ https://pjcj.net
 <tr><td class="h"><a id="L2117">2117</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (ref $config-&gt;{&#39;config&#39;} eq &quot;HASH&quot;)</td></tr>
 <tr><td class="h"><a id="L2120">2120</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless (grep {$_ eq $k;} (&#39;test_nuls&#39;, &#39;test_undef&#39;, &#39;test_empty&#39;, &#39;test_non_ascii&#39;, &#39;dedup&#39;, &#39;properties&#39;, &#39;close_stdin&#39;, &#39;test_security&#39;))</td></tr>
 <tr><td class="h"><a id="L2134">2134</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if $field eq &quot;properties&quot;</td></tr>
-<tr><td class="h"><a id="L2135">2135</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (exists $config-&gt;{$field}) { }</td></tr>
+<tr><td class="h"><a id="L2135">2135</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (exists $config-&gt;{$field} and defined $config-&gt;{$field}) { }</td></tr>
 <tr><td class="h"><a id="L2136">2136</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (defined(my $b = $Readonly::Values::Boolean::booleans{$config-&gt;{$field}}))</td></tr>
 <tr><td class="h"><a id="L2144">2144</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless ref $config-&gt;{&#39;properties&#39;} eq &quot;HASH&quot;</td></tr>
 <tr><td class="h"><a id="L2151">2151</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless defined $type</td></tr>
