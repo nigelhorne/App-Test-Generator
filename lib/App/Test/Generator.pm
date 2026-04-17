@@ -2132,7 +2132,7 @@ sub _normalize_config
 
 	foreach my $field (CONFIG_TYPES) {
 		next if($field eq 'properties');	# Not a boolean
-		if(exists($config->{$field})) {
+		if(exists($config->{$field}) && defined($config->{$field})) {
 			if(defined(my $b = $Readonly::Values::Boolean::booleans{$config->{$field}})) {
 				$config->{$field} = $b;
 			}
