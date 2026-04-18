@@ -77,6 +77,14 @@ Readonly my @Q_SINGLE_DELIMITERS => (
 # --------------------------------------------------
 Readonly my $INDEX_NOT_FOUND => -1;
 
+# --------------------------------------------------
+# Readonly constants for schema validation
+# --------------------------------------------------
+Readonly my $CONFIG_PROPERTIES_KEY => 'properties';
+Readonly my $LEGACY_PERL_KEY_1     => '$module';
+Readonly my $LEGACY_PERL_KEY_2     => 'our $module';
+Readonly my $SOURCE_KEY            => '_source';
+
 =head1 NAME
 
 App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Dashboard for Perl modules
@@ -1976,215 +1984,444 @@ sub generate
 
 # --- Helpers for rendering data structures into Perl code for the generated test ---
 
+# --------------------------------------------------
+# _load_schema
+#
+# Purpose:    Load and parse a schema file using
+#             Config::Abstraction, returning the
+#             schema as a hashref.
+#
+# Entry:      $schema_file - path to the schema file.
+#             Must be defined, non-empty, and readable.
+#
+# Exit:       Returns a hashref of the parsed schema
+#             with a '_source' key added containing
+#             the originating file path.
+#             Croaks on any error.
+#
+# Side effects: Reads from the filesystem.
+#
+# Notes:      Legacy Perl-file configs (containing
+#             '$module' or 'our $module' keys) are
+#             rejected with a clear error. Config::
+#             Abstraction is used rather than require()
+#             to avoid executing arbitrary code from
+#             user-supplied config files.
+# --------------------------------------------------
 sub _load_schema {
 	my $schema_file = $_[0];
 
-	if(!defined($schema_file)) {
-		croak(__PACKAGE__, ': Usage: _load_schema($schema_file)');
-	}
+	# Validate the argument before touching the filesystem
+	croak(__PACKAGE__, ': Usage: _load_schema($schema_file)')
+		unless defined $schema_file;
 
-	if(length($schema_file) == 0) {
-		croak(__PACKAGE__, ': _load_schema given empty filename');
-	}
+	croak(__PACKAGE__, ': _load_schema given empty filename')
+		unless length($schema_file);
 
-	if(!-r $schema_file) {
-		croak(__PACKAGE__, ": _load_schema($schema_file): $!");
-	}
+	# Confirm the file exists and is readable before attempting
+	# to load it — gives a clearer error than Config::Abstraction would
+	croak(__PACKAGE__, ": _load_schema($schema_file): $!")
+		unless -r $schema_file;
 
-	# --- Load configuration safely (require so config can use 'our' variables) ---
-
-	if(my $schema = Config::Abstraction->new(config_dirs => ['.', ''], config_file => $schema_file, no_fixate => 1)) {
+	# Load configuration via Config::Abstraction which supports
+	# YAML, JSON, and other formats without executing arbitrary code.
+	# no_fixate prevents automatic type coercion that could alter values
+	if(my $schema = Config::Abstraction->new(
+		config_dirs  => ['.', ''],
+		config_file  => $schema_file,
+		no_fixate    => 1,
+	)) {
 		if($schema = $schema->all()) {
-			if(exists($schema->{'$module'}) || exists($schema->{'our $module'}) || !exists($schema->{'module'})) {
+			# Detect legacy Perl config files by the presence of
+			# variable declaration keys — these are no longer supported
+			if(exists($schema->{$LEGACY_PERL_KEY_1}) ||
+			   exists($schema->{$LEGACY_PERL_KEY_2})) {
 				croak("$schema_file: Loading perl files as configs is no longer supported");
 			}
-			$schema->{'_source'} = $schema_file;
+
+			# Tag the schema with its source path for error messages
+			$schema->{$SOURCE_KEY} = $schema_file;
 			return $schema;
 		}
 	}
+
 	croak "Failed to load schema from $schema_file";
 }
 
-sub _load_schema_section
-{
-	my($schema, $section, $schema_file) = @_;
+# --------------------------------------------------
+# _load_schema_section
+#
+# Purpose:    Extract a named section from a parsed
+#             schema hashref, validating that it is
+#             a hashref if present.
+#
+# Entry:      $schema      - the full parsed schema hashref.
+#             $section     - name of the section to extract
+#                            (e.g. 'input', 'output').
+#             $schema_file - path of the schema file,
+#                            used in error messages only.
+#
+# Exit:       Returns the section hashref if present,
+#             or an empty hashref {} if absent.
+#             Croaks if the section exists but is not
+#             a hashref (and not the string 'undef').
+#
+# Side effects: None.
+#
+# Notes:      The string 'undef' is treated as an
+#             absent section — callers that set a
+#             section to 'undef' in YAML get the same
+#             result as omitting it entirely.
+# --------------------------------------------------
+sub _load_schema_section {
+	my ($schema, $section, $schema_file) = @_;
 
-	if(exists($schema->{$section})) {
-		if(ref($schema->{$section}) eq 'HASH') {
-			return $schema->{$section};
-		} elsif(defined($schema->{$section}) && ($schema->{$section} ne 'undef')) {
-			# carp(Dumper($schema));
-			if(ref($schema->{$section}) && length($schema->{$section})) {
-				croak("$schema_file: $section should be a hash, not ", ref($schema->{$section}));
-			} else {
-				croak("$schema_file: $section should be a hash, not ", $schema->{$section});
-			}
-		}
-	}
-	return {};
+	# Section absent — return empty hash as the safe default
+	return {} unless exists $schema->{$section};
+
+	# Section present and is a hashref — return it directly
+	return $schema->{$section}
+		if ref($schema->{$section}) eq 'HASH';
+
+	# Treat the YAML scalar 'undef' as equivalent to absent
+	return {}
+		if defined($schema->{$section}) &&
+		   $schema->{$section} eq 'undef';
+
+	# Section present but wrong type — croak with a clear message
+	# showing what type was found so the user can fix their schema
+	croak(
+		"$schema_file: $section should be a hash, not ",
+		ref($schema->{$section}) || $schema->{$section}
+	);
 }
 
-# Input validation for configuration
+# --------------------------------------------------
+# _validate_config
+#
+# Purpose:    Validate the top-level schema hashref
+#             loaded from a schema file, checking that
+#             required fields are present and that all
+#             input parameters, types, positions, and
+#             transform properties are well-formed.
+#
+# Entry:      $schema - the full parsed schema hashref
+#             as returned by _load_schema().
+#
+# Exit:       Returns nothing on success.
+#             Croaks on any structural error.
+#             Carps on non-fatal warnings (unknown
+#             semantic types, position gaps, missing
+#             input/output definitions).
+#
+# Side effects: May delete $schema->{input} if its
+#               value is the string 'undef'.
+#
+# Notes:      The parameter is named $schema throughout
+#             to distinguish the top-level schema from
+#             the nested config sub-hash. _validate_config
+#             is called before _normalize_config so config
+#             boolean normalisation has not yet occurred.
+# --------------------------------------------------
 sub _validate_config {
-	my $config = $_[0];
+	my $schema = $_[0];
 
-	if((!defined($config->{'module'})) && (!defined($config->{'function'}))) {
-		# Can't work out what should be tested
+	# At least one of module or function must be present —
+	# without these we cannot generate any meaningful test
+	if(!defined($schema->{'module'}) && !defined($schema->{'function'})) {
 		croak('At least one of function and module must be defined');
 	}
 
-	if((!defined($config->{'input'})) && (!defined($config->{'output'}))) {
-		# Routine takes no input and no output, so there's nothing that would be gained using this software
+	# Warn if neither input nor output is defined — a few
+	# generic tests can still be generated but it is unusual
+	if(!defined($schema->{'input'}) && !defined($schema->{'output'})) {
 		carp('Neither input nor output is defined, only a few tests will be generated');
 	}
-	if(($config->{'input'}) && (ref($config->{input}) ne 'HASH')) {
-		if($config->{'input'} eq 'undef') {
-			delete $config->{'input'};
+
+	# Normalise input: the string 'undef' means no input defined
+	if($schema->{'input'} && ref($schema->{input}) ne 'HASH') {
+		if($schema->{'input'} eq 'undef') {
+			delete $schema->{'input'};
 		} else {
-			croak('Invalid input specification')
+			croak("Invalid input specification: expected hash, got '$schema->{'input'}'");
 		}
 	}
 
-	if($config->{input}) {
-		# Validate types, constraints, etc.
-		for my $param (keys %{$config->{input}}) {
-			if(!length($param)) {
-				croak 'Empty input parameter name';
-			}
-			my $spec = $config->{input}{$param};
-			if(ref($spec)) {
-				croak("Missing type for parameter '$param'") unless(defined $spec->{type});
-				croak("Invalid type '$spec->{type}' for parameter '$param'") unless _valid_type($spec->{type});
-			} else {
-				croak "Invalid type '$spec' for parameter '$param'" unless _valid_type($spec);
-			}
-		}
-
-		# Check if using positional arguments
-		my $has_positions = 0;
-		my %positions;
-
-		for my $param (keys %{$config->{input}}) {
-			my $spec = $config->{input}{$param};
-			if (ref($spec) eq 'HASH' && defined($spec->{position})) {
-				$has_positions = 1;
-				my $pos = $spec->{position};
-
-				# Validate position is non-negative integer
-				croak "Position for '$param' must be a non-negative integer" unless $pos =~ /^\d+$/;
-
-				# Check for duplicate positions
-				croak "Duplicate position $pos for parameters '$positions{$pos}' and '$param'" if exists $positions{$pos};
-
-				$positions{$pos} = $param;
-			}
-		}
-
-		# If using positions, all params must have positions
-		if ($has_positions) {
-			for my $param (keys %{$config->{input}}) {
-				my $spec = $config->{input}{$param};
-				unless (ref($spec) eq 'HASH' && defined($spec->{position})) {
-					croak "Parameter '$param' missing position (all params must have positions if any do)";
-				}
-			}
-
-			# Check for gaps in positions (0, 1, 3 - missing 2)
-			my @sorted = sort { $a <=> $b } keys %positions;
-			for my $i (0..$#sorted) {
-				if ($sorted[$i] != $i) {
-					carp "Warning: Position sequence has gaps (positions: @sorted)";
-					last;
-				}
-			}
-		}
-
-		# Validate input types
-		my $semantic_generators = _get_semantic_generators();
-		for my $param (keys %{$config->{input}}) {
-			my $spec = $config->{input}{$param};
-			if(ref($spec) eq 'HASH') {
-				if(defined($spec->{semantic})) {
-					my $semantic = $spec->{semantic};
-					unless (exists $semantic_generators->{$semantic}) {
-						carp "Warning: $config->{_source}: Unknown semantic type '$semantic' for parameter '$param'. Available types: ",
-							join(', ', sort keys %$semantic_generators);
-					}
-				}
-				if($spec->{'enum'} && $spec->{'memberof'}) {
-					croak "$param: has both enum and memberof";
-				}
-				for my $type('enum', 'memberof') {
-					if(exists $spec->{$type}) {
-						croak "$type must be arrayref" unless(ref($spec->{$type}) eq 'ARRAY');
-					}
-				}
-			}
-		}
+	# Validate each input parameter if input is defined
+	if($schema->{input}) {
+		_validate_input_params($schema);
+		_validate_input_positions($schema);
+		_validate_input_semantics($schema);
 	}
 
-	# Validate custom properties in transforms
-	if (exists $config->{transforms} && ref($config->{transforms}) eq 'HASH') {
-		my $builtin_props = _get_builtin_properties();
-
-		for my $transform_name (keys %{$config->{transforms}}) {
-			my $transform = $config->{transforms}{$transform_name};
-
-			if (exists $transform->{properties}) {
-				unless (ref($transform->{properties}) eq 'ARRAY') {
-					croak "Transform '$transform_name': properties must be an array";
-				}
-
-				for my $prop (@{$transform->{properties}}) {
-					if (!ref($prop)) {
-						# Check if builtin exists
-						unless (exists $builtin_props->{$prop}) {
-							carp "Transform '$transform_name': unknown built-in property '$prop'. Available: ",
-								join(', ', sort keys %$builtin_props);
-						}
-					}
-					elsif (ref($prop) eq 'HASH') {
-						# Validate custom property structure
-						unless ($prop->{name} && $prop->{code}) {
-							croak "Transform '$transform_name': custom properties must have 'name' and 'code' fields";
-						}
-					}
-					else {
-						croak "Transform '$transform_name': invalid property definition";
-					}
-				}
-			}
-		}
+	# Validate transform property definitions if present
+	if(exists($schema->{transforms}) && ref($schema->{transforms}) eq 'HASH') {
+		_validate_transform_properties($schema);
 	}
 
-	if(ref($config->{config}) eq 'HASH') {
-		# Validate the config variables, checking that they are ones we know
-		foreach my $k (keys %{$config->{'config'}}) {
-			if(!grep { $_ eq $k } (CONFIG_TYPES) ) {
-				croak "unknown config setting $k";
+	# Validate any nested config sub-hash keys against known types
+	if(ref($schema->{config}) eq 'HASH') {
+		for my $k (keys %{$schema->{'config'}}) {
+			# CONFIG_TYPES is the authoritative list of valid keys
+			croak "unknown config setting '$k'"
+				unless grep { $_ eq $k } CONFIG_TYPES;
+		}
+	}
+}
+
+# --------------------------------------------------
+# _validate_input_params
+#
+# Purpose:    Validate type specifications for each
+#             named input parameter.
+#
+# Entry:      $schema - the full parsed schema hashref.
+#             $schema->{input} must be a hashref.
+#
+# Exit:       Returns nothing. Croaks on invalid type.
+# Side effects: None.
+# --------------------------------------------------
+sub _validate_input_params {
+	my $schema = $_[0];
+
+	for my $param (keys %{$schema->{input}}) {
+		# Catch empty parameter names — these would produce
+		# broken Perl variable names in the generated test
+		croak 'Empty input parameter name'
+			unless length($param);
+
+		my $spec = $schema->{input}{$param};
+
+		# Validate the type field — required for all parameters
+		if(ref($spec)) {
+			croak("Missing type for parameter '$param'")
+				unless defined $spec->{type};
+			croak("Invalid type '$spec->{type}' for parameter '$param'")
+				unless _valid_type($spec->{type});
+		} else {
+			croak("Invalid type '$spec' for parameter '$param'")
+				unless _valid_type($spec);
+		}
+	}
+}
+
+# --------------------------------------------------
+# _validate_input_positions
+#
+# Purpose:    Validate positional argument declarations
+#             in the input schema — positions must be
+#             non-negative integers with no duplicates,
+#             and either all or no parameters must have
+#             positions.
+#
+# Entry:      $schema - the full parsed schema hashref.
+#             $schema->{input} must be a hashref.
+#
+# Exit:       Returns nothing. Croaks on invalid or
+#             duplicate positions. Carps on gaps.
+# Side effects: None.
+# --------------------------------------------------
+sub _validate_input_positions {
+	my $schema = $_[0];
+
+	my $has_positions = 0;
+	my %positions;
+
+	for my $param (keys %{$schema->{input}}) {
+		my $spec = $schema->{input}{$param};
+
+		# Only process params that explicitly declare a position
+		next unless ref($spec) eq 'HASH' && defined($spec->{position});
+
+		$has_positions = 1;
+		my $pos = $spec->{position};
+
+		# Position must be a non-negative integer
+		croak "Position for '$param' must be a non-negative integer"
+			unless $pos =~ /^\d+$/;
+
+		# Duplicate positions would produce ambiguous generated tests
+		croak "Duplicate position $pos for parameters '$positions{$pos}' and '$param'"
+			if exists $positions{$pos};
+
+		$positions{$pos} = $param;
+	}
+
+	# If any param has a position, all params must have one
+	if($has_positions) {
+		for my $param (keys %{$schema->{input}}) {
+			my $spec = $schema->{input}{$param};
+			unless(ref($spec) eq 'HASH' && defined($spec->{position})) {
+				croak "Parameter '$param' missing position " .
+					'(all params must have positions if any do)';
+			}
+		}
+
+		# Check for gaps — positions must be a contiguous sequence
+		# starting at 0, otherwise the generated test will be wrong
+		my @sorted = sort { $a <=> $b } keys %positions;
+		for my $i (0 .. $#sorted) {
+			if($sorted[$i] != $i) {
+				carp "Position sequence has gaps (positions: @sorted)";
+				last;
 			}
 		}
 	}
 }
 
-# Handle the various possible boolean settings for config values
-# Note that the default for everything is true
-sub _normalize_config
-{
+# --------------------------------------------------
+# _validate_input_semantics
+#
+# Purpose:    Validate semantic type annotations and
+#             enum/memberof constraints on input params.
+#
+# Entry:      $schema - the full parsed schema hashref.
+#             $schema->{input} must be a hashref.
+#
+# Exit:       Returns nothing. Croaks on conflicting
+#             or malformed enum/memberof. Carps on
+#             unknown semantic types.
+# Side effects: None.
+# --------------------------------------------------
+sub _validate_input_semantics {
+	my $schema = $_[0];
+
+	my $semantic_generators = _get_semantic_generators();
+
+	for my $param (keys %{$schema->{input}}) {
+		my $spec = $schema->{input}{$param};
+		next unless ref($spec) eq 'HASH';
+
+		# Warn on unknown semantic types rather than croaking —
+		# new semantic types may be added without updating this list
+		if(defined($spec->{semantic})) {
+			my $semantic = $spec->{semantic};
+			unless(exists $semantic_generators->{$semantic}) {
+				carp "Unknown semantic type '$semantic' for parameter '$param'. " .
+					'Available types: ' .
+					join(', ', sort keys %{$semantic_generators});
+			}
+		}
+
+		# enum and memberof are mutually exclusive representations
+		# of the same concept — having both is always a schema error
+		if($spec->{'enum'} && $spec->{'memberof'}) {
+			croak "$param: has both enum and memberof";
+		}
+
+		# Both enum and memberof must be arrayrefs when present
+		for my $type ('enum', 'memberof') {
+			if(exists $spec->{$type}) {
+				croak "$type must be an arrayref"
+					unless ref($spec->{$type}) eq 'ARRAY';
+			}
+		}
+	}
+}
+
+# --------------------------------------------------
+# _validate_transform_properties
+#
+# Purpose:    Validate the properties array in each
+#             transform definition, checking that each
+#             property is either a known builtin name
+#             or a custom hashref with name and code.
+#
+# Entry:      $schema - the full parsed schema hashref.
+#             $schema->{transforms} must be a hashref.
+#
+# Exit:       Returns nothing. Croaks on invalid property
+#             definitions. Carps on unknown builtins.
+# Side effects: None.
+# --------------------------------------------------
+sub _validate_transform_properties {
+	my $schema = $_[0];
+
+	my $builtin_props = _get_builtin_properties();
+
+	for my $transform_name (keys %{$schema->{transforms}}) {
+		my $transform = $schema->{transforms}{$transform_name};
+
+		# properties is optional — skip transforms that don't define it
+		next unless exists $transform->{properties};
+
+		croak "Transform '$transform_name': properties must be an array"
+			unless ref($transform->{properties}) eq 'ARRAY';
+
+		for my $prop (@{$transform->{properties}}) {
+			if(!ref($prop)) {
+				# Plain string — must be a known builtin property name
+				unless(exists $builtin_props->{$prop}) {
+					carp "Transform '$transform_name': unknown built-in property '$prop'. " .
+						'Available: ' .
+						join(', ', sort keys %{$builtin_props});
+				}
+			} elsif(ref($prop) eq 'HASH') {
+				# Custom property — must have both name and code fields
+				unless($prop->{name} && $prop->{code}) {
+					croak "Transform '$transform_name': " .
+						"custom properties must have 'name' and 'code' fields";
+				}
+			} else {
+				croak "Transform '$transform_name': invalid property definition";
+			}
+		}
+	}
+}
+
+# --------------------------------------------------
+# _normalize_config
+#
+# Purpose:    Normalise boolean string values in the
+#             config sub-hash to Perl integers (1/0),
+#             and default absent boolean fields to 1
+#             (enabled). The 'properties' field is a
+#             hashref not a boolean and is handled
+#             separately.
+#
+# Entry:      $config - the config sub-hash extracted
+#             from the schema (i.e. $schema->{config}).
+#             May be empty.
+#
+# Exit:       Returns nothing. Modifies $config in place.
+#
+# Side effects: Modifies the caller's config hashref.
+#
+# Notes:      String-to-boolean conversion is delegated
+#             to %Readonly::Values::Boolean::booleans
+#             which handles 'yes'/'no', 'on'/'off',
+#             'true'/'false' etc. Fields not present in
+#             the config hash are defaulted to 1 so
+#             that test generation is maximally thorough
+#             unless the schema explicitly disables a
+#             feature.
+# --------------------------------------------------
+sub _normalize_config {
 	my $config = $_[0];
 
-	foreach my $field (CONFIG_TYPES) {
-		next if($field eq 'properties');	# Not a boolean
+	for my $field (CONFIG_TYPES) {
+		# The properties field is a hashref not a boolean —
+		# it is handled at the end of this function separately
+		next if $field eq $CONFIG_PROPERTIES_KEY;
+
 		if(exists($config->{$field}) && defined($config->{$field})) {
+			# Convert string boolean representations to integers
+			# using the lookup table from Readonly::Values::Boolean
 			if(defined(my $b = $Readonly::Values::Boolean::booleans{$config->{$field}})) {
 				$config->{$field} = $b;
 			}
 		} else {
+			# Default absent boolean fields to enabled (1) so that
+			# test generation is comprehensive unless explicitly disabled
 			$config->{$field} = 1;
 		}
 	}
 
-	$config->{properties} = { enable => 0 } unless ref $config->{properties} eq 'HASH';
+	# Ensure properties is always a hashref — if absent or set to
+	# a non-hash value, replace with a disabled default so that
+	# downstream code can safely dereference it without checking ref()
+	$config->{$CONFIG_PROPERTIES_KEY} = { enable => 0 }
+		unless ref($config->{$CONFIG_PROPERTIES_KEY}) eq 'HASH';
 }
 
 sub _valid_type
