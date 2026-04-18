@@ -91,6 +91,12 @@ Readonly my $SOURCE_KEY            => '_source';
 Readonly my $KEY_MATCHES => 'matches';
 Readonly my $KEY_NOMATCH => 'nomatch';
 
+# --------------------------------------------------
+# Reserved module name indicating a Perl builtin
+# function rather than a CPAN or user module
+# --------------------------------------------------
+Readonly my $MODULE_BUILTIN => 'builtin';
+
 =head1 NAME
 
 App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Dashboard for Perl modules
@@ -3025,38 +3031,97 @@ sub perl_quote {
 	return looks_like_number($v) ? $v : "'" . perl_sq($v) . "'";
 }
 
-=head2 _generate_transform_properties
-
-Converts transform specifications into LectroTest property definitions.
-
-=cut
-
+# --------------------------------------------------
+# _generate_transform_properties
+#
+# Convert a hashref of transform
+#     specifications into an arrayref of
+#     LectroTest property definition hashrefs,
+#     one per transform. Each hashref contains
+#     all the information needed by
+#     _render_properties to emit a runnable
+#     Test::LectroTest property block.
+#
+# Entry:      $transforms  - hashref of transform name
+#                            => transform spec, as
+#                            loaded from the schema.
+#             $function    - name of the function under
+#                            test.
+#             $module      - module name, or undef for
+#                            builtin functions.
+#             $input       - the top-level input spec
+#                            hashref from the schema
+#                            (used for position sorting).
+#             $config      - the normalised config
+#                            hashref, used to read
+#                            properties.trials.
+#             $new         - defined if the function is
+#                            an object method; the value
+#                            is not used here since
+#                            property tests always
+#                            construct a fresh object
+#                            via new_ok() with no args.
+#                            Presence vs absence is the
+#                            only signal used.
+#
+# Exit:       Returns an arrayref of property hashrefs.
+#             Returns an empty arrayref if no transforms
+#             produce any testable properties.
+#             Never returns undef.
+#
+# Side effects: None. Does not modify any argument.
+#
+# Notes:      Transforms whose input is the string
+#             'undef' or whose input spec is not a
+#             hashref are silently skipped — they
+#             represent error-case transforms that have
+#             no meaningful generator.
+#
+#             The 'WARN' vs 'WARNS' distinction in
+#             _STATUS: the schema convention uses
+#             'WARNS' throughout. This function checks
+#             for 'WARNS' to match that convention.
+# --------------------------------------------------
 sub _generate_transform_properties {
 	my ($transforms, $function, $module, $input, $config, $new) = @_;
 
 	my @properties;
 
-	for my $transform_name (sort keys %$transforms) {
-		my $transform = $transforms->{$transform_name};
+	for my $transform_name (sort keys %{$transforms}) {
+		my $transform   = $transforms->{$transform_name};
 
-		my $input_spec = $transform->{input};
-		my $output_spec = $transform->{output};
+		my $input_spec  = $transform->{input};
 
-		# Skip if input is 'undef'
-		if (!ref($input_spec) && $input_spec eq 'undef') {
+		# Guard: skip transforms with no input or with the
+		# YAML scalar 'undef' as their input — these have no
+		# generator and cannot produce meaningful properties
+		if(!defined($input_spec) ||
+		   (!ref($input_spec) && $input_spec eq 'undef')) {
 			next;
 		}
 
+		# Guard: skip transforms whose input is not a hashref —
+		# must come before the helper calls below so we never
+		# pass a non-hash to _detect_transform_properties or
+		# _process_custom_properties
+		next unless ref($input_spec) eq 'HASH';
+
+		# Default output spec to empty hash so _STATUS lookups
+		# below are always safe regardless of schema content
+		my $output_spec = $transform->{output} // {};
+
 		# Detect automatic properties from the transform spec
+		# (range constraints, type preservation, definedness)
 		my @detected_props = _detect_transform_properties(
 			$transform_name,
 			$input_spec,
 			$output_spec
 		);
 
-		# Process custom properties from schema
+		# Process any custom properties defined in the schema
 		my @custom_props = ();
-		if (exists $transform->{properties} && ref($transform->{properties}) eq 'ARRAY') {
+		if(exists($transform->{properties}) &&
+		   ref($transform->{properties}) eq 'ARRAY') {
 			@custom_props = _process_custom_properties(
 				$transform->{properties},
 				$function,
@@ -3067,72 +3132,91 @@ sub _generate_transform_properties {
 			);
 		}
 
-		# Combine detected and custom properties
+		# Combine auto-detected and custom properties into one list
 		my @all_props = (@detected_props, @custom_props);
 
-		# Skip if no properties detected or defined
+		# Skip this transform if no properties were produced —
+		# nothing useful to render into the generated test
 		next unless @all_props;
 
-		next unless ref($input_spec) eq 'HASH';
-
-		# Build LectroTest generator specification
+		# Build the LectroTest generator specification string,
+		# one entry per input field that has a generator
 		my @generators;
 		my @var_names;
 
-		for my $field (sort keys %$input_spec) {
+		for my $field (sort keys %{$input_spec}) {
 			my $spec = $input_spec->{$field};
+
+			# Skip non-hashref field specs — scalar types
+			# like 'string' have no generator sub-structure
 			next unless ref($spec) eq 'HASH';
 
-			if(defined(my $gen = _schema_to_lectrotest_generator($field, $spec))) {
-				if(length($gen)) {
-					push @generators, $gen;
-					push @var_names, $field;
-				}
+			my $gen = _schema_to_lectrotest_generator($field, $spec);
+			if(defined($gen) && length($gen)) {
+				push @generators, $gen;
+				push @var_names, $field;
 			}
 		}
 
 		my $gen_spec = join(', ', @generators);
 
-		# Build the call code
+		# Build the call expression for the function under test.
+		# Note: property tests always construct a fresh object
+		# via new_ok() with no constructor arguments, regardless
+		# of what $new holds in the caller — the intent here is
+		# to test the method in isolation, not with specific
+		# construction state.
 		my $call_code;
 		if($module && defined($new)) {
-			$call_code = "my \$obj = new_ok('$module');";
-			$call_code .= "\$obj->$function";	# Method call
-		} elsif($module && $module ne 'builtin') {
-			# $call_code = "$module->$function";
+			# OO mode — construct a fresh object for each trial
+			$call_code  = "my \$obj = new_ok('$module');";
+			$call_code .= "\$obj->$function";
+		} elsif($module && $module ne $MODULE_BUILTIN) {
+			# Functional mode with a named module
 			$call_code = "$module\::$function";
 		} else {
+			# Builtin or unqualified function call
 			$call_code = $function;
 		}
 
-		# Build argument list (respect positions if defined)
+		# Build the argument list, respecting positional order
+		# if the input spec declares positions
 		my @args;
-		if (_has_positions($input_spec)) {
+		if(_has_positions($input_spec)) {
+			# Sort fields by declared position so the generated
+			# call passes arguments in the correct order
 			my @sorted = sort {
-				$input_spec->{$a}{position} <=> $input_spec->{$b}{position}
-			} keys %$input_spec;
+				$input_spec->{$a}{position} <=>
+				$input_spec->{$b}{position}
+			} keys %{$input_spec};
 			@args = map { "\$$_" } @sorted;
 		} else {
+			# No positions — use alphabetical order from @var_names
 			@args = map { "\$$_" } @var_names;
 		}
+
 		my $args_str = join(', ', @args);
 
-		# Build property checks
+		# Concatenate all property check expressions with &&
+		# so the generated property block passes only when
+		# every check holds
 		my @checks = map { $_->{code} } @all_props;
 		my $property_checks = join(" &&\n\t", @checks);
 
-		# Handle _STATUS in output
-		my $should_die = ($output_spec->{_STATUS} // '') eq 'DIES';
-		my $should_warn = ($output_spec->{_STATUS} // '') eq 'WARN';
+		# Determine expected behaviour from output _STATUS.
+		# Note: the schema convention uses 'WARNS' not 'WARN'
+		my $should_die  = ($output_spec->{'_STATUS'} // '') eq 'DIES';
+		my $should_warn = ($output_spec->{'_STATUS'} // '') eq 'WARNS';
 
 		push @properties, {
-			name => $transform_name,
-			generator_spec => $gen_spec,
-			call_code => "$call_code($args_str)",
-			property_checks => $property_checks,
-			should_die => $should_die,
-			should_warn => $should_warn,
-			trials => $config->{properties}{trials} // DEFAULT_PROPERTY_TRIALS,
+			name             => $transform_name,
+			generator_spec   => $gen_spec,
+			call_code        => "$call_code($args_str)",
+			property_checks  => $property_checks,
+			should_die       => $should_die,
+			should_warn      => $should_warn,
+			trials           => $config->{'properties'}{'trials'}
+			                    // DEFAULT_PROPERTY_TRIALS,
 		};
 	}
 
