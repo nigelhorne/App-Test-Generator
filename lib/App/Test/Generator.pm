@@ -97,6 +97,13 @@ Readonly my $KEY_NOMATCH => 'nomatch';
 # --------------------------------------------------
 Readonly my $MODULE_BUILTIN => 'builtin';
 
+# --------------------------------------------------
+# Regex pattern matched against transform names to
+# detect the positive/non-negative idempotence
+# heuristic in _detect_transform_properties
+# --------------------------------------------------
+Readonly my $TRANSFORM_POSITIVE_PATTERN => 'positive';
+
 =head1 NAME
 
 App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Dashboard for Perl modules
@@ -3223,202 +3230,6 @@ sub _generate_transform_properties {
 	return \@properties;
 }
 
-=head2 _process_custom_properties
-
-Processes custom property definitions from the schema.
-
-=cut
-
-sub _process_custom_properties {
-	my ($properties_spec, $function, $module, $input_spec, $output_spec, $schema) = @_;
-
-	my @properties;
-	my $builtin_properties = _get_builtin_properties();
-	my $new = defined($schema->{'new'}) ? $schema->{new} : '_UNDEF';
-
-	for my $prop_def (@$properties_spec) {
-		my $prop_name;
-		my $prop_code;
-		my $prop_desc;
-
-		if (!ref($prop_def)) {
-			# Simple string - lookup builtin property
-			$prop_name = $prop_def;
-
-			if (exists $builtin_properties->{$prop_name}) {
-				my $builtin = $builtin_properties->{$prop_name};
-
-				# Get input variable names
-				my @var_names = sort keys %$input_spec;
-
-				# Build args
-				my @args;
-				if (_has_positions($input_spec)) {
-					my @sorted = sort {
-						$input_spec->{$a}{position} <=> $input_spec->{$b}{position}
-					} @var_names;
-					@args = map { "\$$_" } @sorted;
-				} else {
-					@args = map { "\$$_" } @var_names;
-				}
-
-				# Build call code
-				my $call_code;
-				# Check if this is OO mode
-				if($module && defined($new)) {
-					$call_code = "my \$obj = new_ok('$module');";
-					$call_code .= "\$obj->$function";	# Method call
-				} elsif($module && $module ne 'builtin') {
-					$call_code = "$module\::$function";	# Function call
-				} else {
-					$call_code = $function;	# Builtin
-				}
-				$call_code .= '(' . join(', ', @args) . ')';
-
-				# Generate property code from template
-				$prop_code = $builtin->{code_template}->($function, $call_code, \@var_names);
-				$prop_desc = $builtin->{description};
-			} else {
-				carp "Unknown built-in property '$prop_name', skipping";
-				next;
-			}
-		} elsif (ref($prop_def) eq 'HASH') {
-			# Custom property with code
-			$prop_name = $prop_def->{name} || 'custom_property';
-			$prop_code = $prop_def->{code};
-			$prop_desc = $prop_def->{description} || "Custom property: $prop_name";
-
-			unless ($prop_code) {
-				carp "Custom property '$prop_name' missing 'code' field, skipping";
-				next;
-			}
-
-			# Validate that the code looks reasonable
-			unless ($prop_code =~ /\$/ || $prop_code =~ /\w+/) {
-				carp "Custom property '$prop_name' code looks invalid: $prop_code";
-				next;
-			}
-		}
-		else {
-			carp 'Invalid property definition: ', Dumper($prop_def);
-			next;
-		}
-
-		push @properties, {
-			name => $prop_name,
-			code => $prop_code,
-			description => $prop_desc,
-		};
-	}
-
-	return @properties;
-}
-
-=head2 _detect_transform_properties
-
-Automatically detects testable properties from transform input/output specs.
-
-=cut
-
-sub _detect_transform_properties {
-	my ($transform_name, $input_spec, $output_spec) = @_;
-
-	my @properties;
-
-	# Skip if input is 'undef'
-	return @properties if (!ref($input_spec) && $input_spec eq 'undef');
-
-	# Property 1: Output range constraints (numeric)
-	if (_is_numeric_transform($input_spec, $output_spec)) {
-		if (defined $output_spec->{min}) {
-			my $min = $output_spec->{min};
-			push @properties, {
-				name => 'min_constraint',
-				# code => "\$result >= $min"
-				code => "defined(\$result) && looks_like_number(\$result) && \$result >= $min"
-			};
-		}
-
-		if (defined $output_spec->{max}) {
-			my $max = $output_spec->{max};
-			push @properties, {
-				name => 'max_constraint',
-				# code => "\$result <= $max"
-				code => "defined(\$result) && looks_like_number(\$result) && \$result <= $max"
-			};
-		}
-
-		# For transforms, add an idempotence check where appropriate
-		# e.g., abs(abs(x)) == abs(x)
-		if ($transform_name =~ /positive/i) {
-			push @properties, {
-				name => 'non_negative',
-				# code => "\$result >= 0"
-				code => "defined(\$result) && looks_like_number(\$result) && \$result >= 0"
-			};
-		}
-	}
-
-	# Property 2: Specific value output
-	if (defined $output_spec->{value}) {
-		my $expected = $output_spec->{value};
-		push @properties, {
-			name => 'exact_value',
-			# code => "\$result == $expected"
-			(ref($expected))
-			? "\$result == $expected"	# maybe
-			: "\$result eq " . perl_quote($expected)
-		};
-	}
-
-	# Property 3: String length constraints
-	if (_is_string_transform($input_spec, $output_spec)) {
-		if (defined $output_spec->{min}) {
-			push @properties, {
-				name => 'min_length',
-				code => "length(\$result) >= $output_spec->{min}"
-			};
-		}
-
-		if (defined $output_spec->{max}) {
-			push @properties, {
-				name => 'max_length',
-				code => "length(\$result) <= $output_spec->{max}"
-			};
-		}
-
-		if (defined $output_spec->{matches}) {
-			my $pattern = $output_spec->{matches};
-			push @properties, {
-				name => 'pattern_match',
-				code => "\$result =~ qr/$pattern/"
-			};
-		}
-	}
-
-	# Property 4: Type preservation
-	if (_same_type($input_spec, $output_spec)) {
-		my $type = _get_dominant_type($output_spec);
-
-		if ($type eq 'number' || $type eq 'integer' || $type eq 'float') {
-			push @properties, {
-				name => 'numeric_type',
-				code => "looks_like_number(\$result)"
-			};
-		}
-	}
-
-	# Property 5: Definedness (unless output can be undef)
-	unless (($output_spec->{type} // '') eq 'undef') {
-		push @properties, {
-			name => 'defined',
-			code => "defined(\$result)"
-		};
-	}
-
-	return @properties;
-}
-
 =head2 _get_semantic_generators
 
 Returns a hash of built-in semantic generators for common data types.
@@ -3951,42 +3762,368 @@ sub _get_dominant_type {
 	return 'string';	# Default
 }
 
-=head2 _render_properties
-
-Renders property definitions into Perl code for the template.
-
-=cut
-
+# --------------------------------------------------
+# _render_properties
+#
+# Purpose:    Render an arrayref of property definition
+#             hashrefs (as produced by
+#             _generate_transform_properties) into a
+#             string of Perl source code suitable for
+#             embedding in a generated test file.
+#             The output uses Test::LectroTest::Compat
+#             to run each property as a holds() check.
+#
+# Entry:      $properties - arrayref of property
+#             hashrefs, each containing: name,
+#             generator_spec, call_code,
+#             property_checks, should_die,
+#             should_warn, trials.
+#             May be undef or an empty arrayref.
+#
+# Exit:       Returns a string of Perl source code.
+#             Returns an empty string if $properties
+#             is undef, not an arrayref, or empty.
+#
+# Side effects: None.
+#
+# Notes:      The generated code uses 4-space
+#             indentation deliberately — this is the
+#             indentation style of the generated test
+#             file, not of this module. Tabs are used
+#             in this module's own source; spaces are
+#             emitted into generated output for
+#             readability of the produced test files.
+# --------------------------------------------------
 sub _render_properties {
 	my $properties = $_[0];
 
+	# Return empty string for absent or non-array input —
+	# callers treat '' as no property block to emit
+	return '' unless defined($properties) && ref($properties) eq 'ARRAY';
+	return '' unless @{$properties};
+
 	my $code = "use_ok('Test::LectroTest::Compat');\n\n";
 
-	for my $prop (@$properties) {
-		$code .= "# Transform property: $prop->{name}\n";
-		$code .= "my \$$prop->{name} = Property {\n";
-		$code .= "    ##[ $prop->{generator_spec} ]##\n";
+	for my $prop (@{$properties}) {
+		# Emit a labelled Property block for each transform property
+		$code .= "# Transform property: $prop->{'name'}\n";
+		$code .= "my \$$prop->{'name'} = Property {\n";
+		$code .= "    ##[ $prop->{'generator_spec'} ]##\n";
 		$code .= "    \n";
-		$code .= "    my \$result = eval { $prop->{call_code} };\n";
+		$code .= "    my \$result = eval { $prop->{'call_code'} };\n";
 
-		if ($prop->{should_die}) {
+		if($prop->{'should_die'}) {
+			# For transforms that expect death, pass if the
+			# eval caught an exception
 			$code .= "    my \$died = defined(\$\@) && \$\@;\n";
 			$code .= "    \$died;\n";
 		} else {
+			# For normal transforms, pass only if no exception
+			# was thrown and all property checks hold
 			$code .= "    my \$error = \$\@;\n";
-			# $code .= "    diag(\"\$$prop->{name} -> \$error; \") if(\$ENV{'TEST_VERBOSE'});\n";
 			$code .= "    \n";
 			$code .= "    !\$error && (\n";
-			$code .= "        $prop->{property_checks}\n";
+			$code .= "        $prop->{'property_checks'}\n";
 			$code .= "    );\n";
 		}
 
-		$code .= "}, name => '$prop->{name}', trials => $prop->{trials};\n\n";
-
-		$code .= "holds(\$$prop->{name});\n";
+		$code .= "}, name => '$prop->{'name'}', trials => $prop->{'trials'};\n\n";
+		$code .= "holds(\$$prop->{'name'});\n";
 	}
 
 	return $code;
+}
+
+# --------------------------------------------------
+# _detect_transform_properties
+#
+# Purpose:    Automatically derive a list of testable
+#             LectroTest property hashrefs from a
+#             transform's input and output specs.
+#             Detects numeric range constraints, exact
+#             value matches, string length constraints,
+#             type preservation, and definedness.
+#
+# Entry:      $transform_name - string name of the
+#                               transform, used for
+#                               heuristic matching
+#                               (e.g. 'positive').
+#             $input_spec     - the transform's input
+#                               hashref, or the string
+#                               'undef'.
+#             $output_spec    - the transform's output
+#                               hashref, or undef if
+#                               absent.
+#
+# Exit:       Returns a list of property hashrefs,
+#             each containing 'name' and 'code' keys.
+#             Returns an empty list if no properties
+#             can be detected or if $input_spec is
+#             undef or the string 'undef'.
+#
+# Side effects: None.
+#
+# Notes:      The 'positive' heuristic checks the
+#             transform name case-insensitively against
+#             $TRANSFORM_POSITIVE_PATTERN and adds a
+#             non-negative constraint if matched.
+#             This is intentionally a rough heuristic
+#             rather than a precise semantic check.
+# --------------------------------------------------
+sub _detect_transform_properties {
+	my ($transform_name, $input_spec, $output_spec) = @_;
+
+	my @properties;
+
+	# Guard: skip undef input and the YAML scalar 'undef'
+	return @properties
+		unless defined($input_spec);
+	return @properties
+		if(!ref($input_spec) && $input_spec eq 'undef');
+
+	# Default output spec to empty hash so all key lookups
+	# below are safe regardless of what the schema provides
+	$output_spec //= {};
+
+	# --------------------------------------------------
+	# Property 1: Output range constraints (numeric)
+	# --------------------------------------------------
+	if(_is_numeric_transform($input_spec, $output_spec)) {
+		if(defined($output_spec->{'min'})) {
+			my $min = $output_spec->{'min'};
+			push @properties, {
+				name => 'min_constraint',
+				code => "defined(\$result) && looks_like_number(\$result) && \$result >= $min",
+			};
+		}
+
+		if(defined($output_spec->{'max'})) {
+			my $max = $output_spec->{'max'};
+			push @properties, {
+				name => 'max_constraint',
+				code => "defined(\$result) && looks_like_number(\$result) && \$result <= $max",
+			};
+		}
+
+		# Heuristic: transforms named 'positive' (case-insensitive)
+		# imply a non-negative result constraint
+		if($transform_name =~ /$TRANSFORM_POSITIVE_PATTERN/i) {
+			push @properties, {
+				name => 'non_negative',
+				code => "defined(\$result) && looks_like_number(\$result) && \$result >= 0",
+			};
+		}
+	}
+
+	# --------------------------------------------------
+	# Property 2: Specific value output
+	# --------------------------------------------------
+	if(defined($output_spec->{'value'})) {
+		my $expected = $output_spec->{'value'};
+
+		# Numeric refs use == for comparison; scalars use eq
+		# via perl_quote to produce the correct quoted literal
+		push @properties, {
+			name => 'exact_value',
+			code => ref($expected)
+				? "\$result == $expected"
+				: "\$result eq " . perl_quote($expected),
+		};
+	}
+
+	# --------------------------------------------------
+	# Property 3: String length constraints
+	# --------------------------------------------------
+	if(_is_string_transform($input_spec, $output_spec)) {
+		if(defined($output_spec->{'min'})) {
+			push @properties, {
+				name => 'min_length',
+				code => "length(\$result) >= $output_spec->{'min'}",
+			};
+		}
+
+		if(defined($output_spec->{'max'})) {
+			push @properties, {
+				name => 'max_length',
+				code => "length(\$result) <= $output_spec->{'max'}",
+			};
+		}
+
+		if(defined($output_spec->{'matches'})) {
+			my $pattern = $output_spec->{'matches'};
+			push @properties, {
+				name => 'pattern_match',
+				code => "\$result =~ qr/$pattern/",
+			};
+		}
+	}
+
+	# --------------------------------------------------
+	# Property 4: Type preservation
+	# --------------------------------------------------
+	if(_same_type($input_spec, $output_spec)) {
+		my $type = _get_dominant_type($output_spec);
+
+		# Only emit a numeric_type check for numeric types —
+		# string and other types have no equivalent simple check
+		if($type eq 'number' || $type eq 'integer' || $type eq 'float') {
+			push @properties, {
+				name => 'numeric_type',
+				code => 'looks_like_number($result)',
+			};
+		}
+	}
+
+	# --------------------------------------------------
+	# Property 5: Definedness
+	# --------------------------------------------------
+	# Emit a defined() check for all transforms except those
+	# whose output type is explicitly 'undef' — those are
+	# expected to return nothing
+	unless(($output_spec->{'type'} // '') eq 'undef') {
+		push @properties, {
+			name => 'defined',
+			code => 'defined($result)',
+		};
+	}
+
+	return @properties;
+}
+
+# --------------------------------------------------
+# _process_custom_properties
+#
+# Purpose:    Process the 'properties' array from a
+#             transform definition, resolving each
+#             entry to either a named builtin property
+#             (looked up from _get_builtin_properties)
+#             or a custom property with inline code.
+#
+# Entry:      $properties_spec - arrayref of property
+#                                definitions from the
+#                                schema. Each element
+#                                is either a string
+#                                (builtin name) or a
+#                                hashref with 'name'
+#                                and 'code' fields.
+#             $function        - name of the function
+#                                under test.
+#             $module          - module name, or undef
+#                                for builtins.
+#             $input_spec      - the transform's input
+#                                spec hashref.
+#             $output_spec     - the transform's output
+#                                spec hashref.
+#             $new             - defined if the function
+#                                is an OO method; value
+#                                is not used, only
+#                                presence is checked.
+#
+# Exit:       Returns a list of property hashrefs,
+#             each containing 'name', 'code', and
+#             'description' keys.
+#             Invalid or unrecognised entries are
+#             skipped with a carp warning.
+#
+# Side effects: Carps on unrecognised builtin names,
+#               missing code fields, and invalid
+#               property definition types.
+#
+# Notes:      The sixth argument is $new (the OO
+#             constructor signal), not the full schema
+#             hashref. It is used only to determine
+#             whether to emit OO-style call code for
+#             builtin property templates.
+# --------------------------------------------------
+sub _process_custom_properties {
+	my ($properties_spec, $function, $module, $input_spec, $output_spec, $new) = @_;
+
+	my @properties;
+	my $builtin_properties = _get_builtin_properties();
+
+	for my $prop_def (@{$properties_spec}) {
+		my $prop_name;
+		my $prop_code;
+		my $prop_desc;
+
+		if(!ref($prop_def)) {
+			# Plain string — look up as a named builtin property
+			$prop_name = $prop_def;
+
+			unless(exists($builtin_properties->{$prop_name})) {
+				carp "Unknown built-in property '$prop_name', skipping";
+				next;
+			}
+
+			my $builtin = $builtin_properties->{$prop_name};
+
+			# Build the argument list, respecting positional order
+			my @var_names = sort keys %{$input_spec};
+			my @args;
+			if(_has_positions($input_spec)) {
+				my @sorted = sort {
+					$input_spec->{$a}{'position'} <=>
+					$input_spec->{$b}{'position'}
+				} @var_names;
+				@args = map { "\$$_" } @sorted;
+			} else {
+				@args = map { "\$$_" } @var_names;
+			}
+
+			# Build the call expression for the builtin template.
+			# $new here is the raw OO signal from the caller —
+			# defined means OO mode, undef means functional
+			my $call_code;
+			if($module && defined($new)) {
+				# OO mode — fresh object per trial
+				$call_code  = "my \$obj = new_ok('$module');";
+				$call_code .= "\$obj->$function";
+			} elsif($module && $module ne $MODULE_BUILTIN) {
+				# Functional mode with a named module
+				$call_code = "$module\::$function";
+			} else {
+				# Builtin or unqualified function call
+				$call_code = $function;
+			}
+			$call_code .= '(' . join(', ', @args) . ')';
+
+			# Instantiate the builtin's code template with the
+			# call expression and input variable list
+			$prop_code = $builtin->{'code_template'}->($function, $call_code, \@var_names);
+			$prop_desc = $builtin->{'description'};
+
+		} elsif(ref($prop_def) eq 'HASH') {
+			# Hashref — custom property with inline Perl code
+			$prop_name = $prop_def->{'name'} || 'custom_property';
+			$prop_code = $prop_def->{'code'};
+			$prop_desc = $prop_def->{'description'} || "Custom property: $prop_name";
+
+			unless($prop_code) {
+				carp "Custom property '$prop_name' missing 'code' field, skipping";
+				next;
+			}
+
+			# Sanity-check: code must contain at least a variable
+			# reference or a word character to be meaningful
+			unless($prop_code =~ /\$/ || $prop_code =~ /\w+/) {
+				carp "Custom property '$prop_name' code looks invalid: $prop_code";
+				next;
+			}
+
+		} else {
+			# Neither string nor hashref — unrecognised definition type
+			carp 'Invalid property definition: ', render_fallback($prop_def);
+			next;
+		}
+
+		push @properties, {
+			name        => $prop_name,
+			code        => $prop_code,
+			description => $prop_desc,
+		};
+	}
+
+	return @properties;
 }
 
 1;
