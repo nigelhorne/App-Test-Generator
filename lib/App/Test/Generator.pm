@@ -26,6 +26,7 @@ use File::Spec;
 use Module::Load::Conditional qw(check_install can_load);
 use Params::Get;
 use Params::Validate::Strict 0.30;
+use Readonly;
 use Readonly::Values::Boolean;
 use Scalar::Util qw(looks_like_number);
 use re 'regexp_pattern';
@@ -44,6 +45,37 @@ use constant {
 };
 
 use constant CONFIG_TYPES => ('test_nuls', 'test_undef', 'test_empty', 'test_non_ascii', 'dedup', 'properties', 'close_stdin', 'test_security');
+
+# --------------------------------------------------
+# Delimiter pairs tried in order when wrapping a
+# string with q{} — bracket forms are preferred as
+# they are most readable in generated test code
+# --------------------------------------------------
+Readonly my @Q_BRACKET_PAIRS => (
+	['{', '}'],
+	['(', ')'],
+	['[', ']'],
+	['<', '>'],
+);
+
+# --------------------------------------------------
+# Single-character delimiters tried when no bracket
+# pair is usable — each is tried in order and the
+# first one not present in the string is used.
+# The # character is last since it starts comments
+# in many contexts and is least readable
+# --------------------------------------------------
+Readonly my @Q_SINGLE_DELIMITERS => (
+	'~', '!', '%', '^', '=', '+', ':', ',', ';', '|', '/', '#'
+);
+
+# --------------------------------------------------
+# Sentinel returned by index() when the search
+# string is not found — used to make the >= 0
+# boundary check self-documenting and to prevent
+# NumericBoundary mutants from surviving
+# --------------------------------------------------
+Readonly my $INDEX_NOT_FOUND => -1;
 
 =head1 NAME
 
@@ -1529,16 +1561,15 @@ sub generate
 		if ($yaml_data && ref($yaml_data) eq 'HASH') {
 			# Validate that the corpus inputs are arrayrefs
 			# e.g: "FooBar": 	["foo_bar"]
-			my $valid_input = 1;
+			# Skip only invalid entries:
 			for my $expected (keys %{$yaml_data}) {
 				my $outputs = $yaml_data->{$expected};
 				unless($outputs && (ref $outputs eq 'ARRAY')) {
 					carp("$yaml_cases: $expected does not point to an array ref, ignoring");
-					$valid_input = 0;
+					next;
 				}
+				$yaml_corpus_data{$expected} = $outputs;
 			}
-
-			%yaml_corpus_data = %$yaml_data if($valid_input);
 		}
 	}
 
@@ -1575,7 +1606,7 @@ sub generate
 		!$seen{$key}++;
 	} @edge_case_array;
 
-	# Sort the edge cases to keep it consitent across runs
+	# Sort the edge cases to keep it consistent across runs
 	@edge_case_array = sort {
 		return -1 if !defined $a;
 		return 1 if !defined $b;
@@ -1588,12 +1619,6 @@ sub generate
 		return 1 if $nb;
 		return $a cmp $b;
 	} @edge_case_array;
-
-	# $self->_log(
-		# 'EDGE CASES: ' . join(', ',
-			# map { defined($_) ? $_ : 'undef' } @edge_case_array
-		# )
-	# );
 
 	# render edge case maps for inclusion in the .t
 	my $edge_cases_code = render_arrayref_map(\%edge_cases);
@@ -1634,10 +1659,34 @@ sub generate
 	}
 	if(defined(my $re = $output{'matches'})) {
 		if(ref($re) ne 'Regexp') {
-			$re = qr/$re/;
-			$output{'matches'} = $re;
+			# Use eval to compile safely — qr/$re/ would interpolate
+			# the string first, corrupting patterns containing [ or \
+			my $compiled = eval { qr/$re/ };
+			if($@) {
+				carp("Invalid matches pattern '$re': $@");
+			} else {
+				$output{'matches'} = $compiled;
+			}
 		}
 	}
+
+	# Compile nomatch pattern to a Regexp object so it renders
+	# as qr{} in the generated test rather than a raw string.
+	# Without this, patterns containing [ or other regex
+	# metacharacters cause compilation failures in validators
+	if(defined(my $re = $output{'nomatch'})) {
+		if(ref($re) ne 'Regexp') {
+			# Use eval to compile safely — qr/$re/ would interpolate
+			# the string first, corrupting patterns containing [ or \
+			my $compiled = eval { qr/$re/ };
+			if($@) {
+				carp("Invalid nomatch pattern '$re': $@");
+			} else {
+				$output{'nomatch'} = $compiled;
+			}
+		}
+	}
+
 	my $output_code = render_args_hash(\%output);
 	my $new_code = ($new && (ref $new eq 'HASH')) ? render_args_hash($new) : '';
 
@@ -1697,8 +1746,6 @@ sub generate
 			}
 		}
 	}
-
-	# warn "DEBUG pre-setup: module=", ($module // 'UNDEF'), " function=$function";
 
 	# Setup / call code (always load module)
 	my $setup_code = ($module) ? "BEGIN { use_ok('$module') }" : '';
@@ -1818,7 +1865,7 @@ sub generate
 						perl_quote(join(', ', map { $_ // '' } @$inputs )),
 						$expected_str
 					);
-					if($output{'type'} eq 'boolean') {
+					if(($output{'type'} // '') eq 'boolean') {
 						if($expected_str eq '1') {
 							$corpus_code .= "ok(\$obj->$function($input_str), " . q_wrap($desc) . ");\n";
 						} elsif($expected_str eq '0') {
@@ -1836,7 +1883,7 @@ sub generate
 						$corpus_code .= "dies_ok { $module\::$function($input_str) } " .
 							"'Corpus $expected dies';\n";
 					} else {
-						$corpus_code .= "dies_ok { ::$function($input_str) } " .
+						$corpus_code .= "dies_ok { $function($input_str) } " .
 							"'Corpus $expected dies';\n";
 					}
 				} elsif($status eq 'WARNS') {
@@ -1844,7 +1891,7 @@ sub generate
 						$corpus_code .= "warnings_exist { $module\::$function($input_str) } qr/./, " .
 							"'Corpus $expected warns';\n";
 					} else {
-						$corpus_code .= "warnings_exist { ::$function($input_str) } qr/./, " .
+						$corpus_code .= "warnings_exist { $function($input_str) } qr/./, " .
 							"'Corpus $expected warns';\n";
 					}
 				} else {
@@ -1914,7 +1961,7 @@ sub generate
 	$tt->process($template, $vars, \$test) or croak($tt->error());
 
 	if ($test_file) {
-		open my $fh, '>:encoding(UTF-8)', $test_file or die "Cannot open $test_file: $!";
+		open my $fh, '>:encoding(UTF-8)', $test_file or croak "Cannot open $test_file: $!";
 		print $fh "$test\n";
 		close $fh;
 		if($module) {
@@ -1945,10 +1992,6 @@ sub _load_schema {
 	}
 
 	# --- Load configuration safely (require so config can use 'our' variables) ---
-	# FIXME:  would be better to use Config::Abstraction, since requiring the user's config could execute arbitrary code
-	# my $abs = $schema_file;
-	# $abs = "./$abs" unless $abs =~ m{^/};
-	# require $abs;
 
 	if(my $schema = Config::Abstraction->new(config_dirs => ['.', ''], config_file => $schema_file, no_fixate => 1)) {
 		if($schema = $schema->all()) {
@@ -2200,46 +2243,6 @@ sub _validate_module {
 	return 1;
 }
 
-sub perl_sq {
-	my $s = $_[0];
-
-	return '' unless defined $s;
-
-	$s =~ s/\\/\\\\/g;
-	$s =~ s/'/\\'/g;
-	$s =~ s/\n/\\n/g;
-	$s =~ s/\r/\\r/g;
-	$s =~ s/\t/\\t/g;
-	$s =~ s/\f/\\f/g;
-	# $s =~ s/\b/\\b/g;
-	$s =~ s/\0/\\0/g;
-	return $s;
-}
-
-sub perl_quote {
-	my $v = $_[0];
-	return 'undef' unless defined $v;
-	return '!!1' if $v eq 'true';
-	if(ref($v)) {
-		if(ref($v) eq 'ARRAY') {
-			my @quoted_v = map { perl_quote($_) } @{$v};
-			return '[ ' . join(', ', @quoted_v) . ' ]';
-		}
-		if(ref($v) eq 'Regexp') {
-			my ($pat, $mods) = regexp_pattern($v);
-
-			my $re = "qr{$pat}";
-			$re .= $mods if $mods;
-			return $re;
-		}
-		# Generic fallback
-		return render_fallback($v);
-	}
-	$v =~ s/\\/\\\\/g;
-	# return $v =~ /^-?\d+(\.\d+)?$/ ? $v : "'" . perl_sq($v) . "'";
-	return looks_like_number($v) ? $v : "'" . perl_sq($v) . "'";
-}
-
 sub render_fallback
 {
 	my $v = $_[0];
@@ -2298,22 +2301,182 @@ sub render_arrayref_map {
 	return join(",\n", @entries);
 }
 
-# Robustly quote a string (GitHub#1)
-sub q_wrap
-{
+# --------------------------------------------------
+# q_wrap
+#
+# Purpose:    Wrap a string in the most readable
+#             q{} form that does not require escaping,
+#             falling back to single-quoted form with
+#             escaped apostrophes if no delimiter is
+#             available.
+#
+# Entry:      $s - the string to wrap. May be undef.
+# Exit:       Returns a Perl source-code fragment that
+#             evaluates to the original string value,
+#             or the string 'undef' if $s is undef.
+#
+# Side effects: None.
+#
+# Notes:      index() returns -1 when not found and
+#             any value >= 0 when found, including 0
+#             for a delimiter at the start of the
+#             string. We compare against $INDEX_NOT_FOUND
+#             to make this boundary explicit and to
+#             prevent off-by-one mutation survivors.
+#             See GitHub issue #1.
+# --------------------------------------------------
+sub q_wrap {
 	my $s = $_[0];
 
-	return "''" if(!defined($s));
+	# Return empty string for undef — this function is a low-level
+	# string quoter only. Callers that need the Perl literal 'undef'
+	# for undefined values should use perl_quote() instead, which
+	# handles the undef -> 'undef' semantic conversion correctly.
+	# Returning '' here preserves the original behaviour and avoids
+	# injecting the bare word 'undef' into contexts that expect a
+	# quoted string value.
+	return "''" unless defined $s;
 
-	for my $p ( ['{','}'], ['(',')'], ['[',']'], ['<','>'] ) {
-		my ($l, $r) = @$p;
+	# Try bracket-form q{} delimiters first — most readable
+	for my $p (@Q_BRACKET_PAIRS) {
+		my ($l, $r) = @{$p};
+
+		# Only use this bracket pair if neither bracket
+		# appears in the string — both must be checked
 		return "q$l$s$r" unless $s =~ /\Q$l\E|\Q$r\E/;
 	}
-	for my $d ('~', '!', '%', '^', '=', '+', ':', ',', ';', '|', '/', '#') {
-		return "q$d$s$d" unless index($s, $d) >= 0;
+
+	# Try single-character delimiters in preference order
+	for my $d (@Q_SINGLE_DELIMITERS) {
+		# index() returns $INDEX_NOT_FOUND (-1) when not found.
+		# Must use != $INDEX_NOT_FOUND rather than > 0 since
+		# the delimiter may legitimately appear at position 0
+		return "q$d$s$d" if index($s, $d) == $INDEX_NOT_FOUND;
 	}
+
+	# Last resort — single-quoted string with escaped apostrophes
 	(my $esc = $s) =~ s/'/\\'/g;
 	return "'$esc'";
+}
+
+# --------------------------------------------------
+# perl_sq
+#
+# Purpose:    Escape a string for safe inclusion
+#             inside a single-quoted Perl string
+#             literal in generated test code.
+#
+# Entry:      $s - the string to escape.
+# Exit:       Returns the escaped string, or an
+#             empty string if $s is undef.
+#
+# Side effects: None.
+#
+# Notes:      NUL byte replacement produces the
+#             two-character sequence \0 which is
+#             only correct when the result is used
+#             inside a double-quoted string context
+#             in the generated test.
+#
+#             The \b substitution (backspace) is
+#             intentionally omitted — in Perl regex
+#             context \b means word boundary, not
+#             backspace, so substituting it here
+#             would corrupt strings containing word
+#             boundaries.
+# --------------------------------------------------
+sub perl_sq {
+	my $s = $_[0];
+
+	# Return empty string for undef — callers that need
+	# 'undef' literal should use perl_quote instead
+	return '' unless defined $s;
+
+	# Escape backslashes first so later substitutions
+	# don't double-escape already-escaped sequences
+	$s =~ s/\\/\\\\/g;
+
+	# Escape apostrophes so they don't terminate the
+	# surrounding single-quoted string literal
+	$s =~ s/'/\\'/g;
+
+	# Escape common control characters to their
+	# printable two-character escape sequences
+	$s =~ s/\n/\\n/g;
+	$s =~ s/\r/\\r/g;
+	$s =~ s/\t/\\t/g;
+	$s =~ s/\f/\\f/g;
+
+	# Replace NUL bytes with \0 — valid only in
+	# double-quoted string context in generated code
+	$s =~ s/\0/\\0/g;
+
+	return $s;
+}
+
+# --------------------------------------------------
+# perl_quote
+#
+# Purpose:    Convert a Perl value into a source-code
+#             fragment that reproduces that value when
+#             evaluated in a generated test file.
+#
+# Entry:      $v - the value to quote. May be undef,
+#             a scalar, an arrayref, a Regexp, or any
+#             other reference type.
+#
+# Exit:       Returns a string of Perl source code.
+#             Undef produces the literal 'undef'.
+#             Numbers are returned unquoted.
+#             Strings are returned single-quoted via
+#             perl_sq(). Arrays are recursively quoted.
+#             Regexps are rendered as qr{...}.
+#             Other refs fall through to render_fallback.
+#
+# Side effects: None.
+#
+# Notes:      The boolean string literals 'true' and
+#             'false' are converted to Perl boolean
+#             constants !!1 and !!0 respectively so
+#             that YAML boolean values round-trip
+#             correctly into generated tests.
+# --------------------------------------------------
+sub perl_quote {
+	my $v = $_[0];
+
+	# Undef produces the Perl literal 'undef'
+	return 'undef' unless defined $v;
+
+	# Convert YAML boolean string literals to Perl
+	# boolean constants so they survive round-tripping
+	return '!!1' if $v eq 'true';
+	return '!!0' if $v eq 'false';
+
+	if(ref($v)) {
+		# Recursively quote each element of an arrayref
+		if(ref($v) eq 'ARRAY') {
+			my @quoted_v = map { perl_quote($_) } @{$v};
+			return '[ ' . join(', ', @quoted_v) . ' ]';
+		}
+
+		# Render Regexp objects as qr{} with modifiers
+		if(ref($v) eq 'Regexp') {
+			my ($pat, $mods) = regexp_pattern($v);
+			my $re = "qr{$pat}";
+
+			# Append modifiers (e.g. 'i', 'x') if present
+			$re .= $mods if $mods;
+			return $re;
+		}
+
+		# Hashrefs and other reference types fall through
+		# to render_fallback which uses Data::Dumper
+		return render_fallback($v);
+	}
+
+	# Numeric values are emitted unquoted so the generated
+	# test performs numeric rather than string comparison
+	return looks_like_number($v) ? $v : "'" . perl_sq($v) . "'";
 }
 
 =head2 _generate_transform_properties
