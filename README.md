@@ -1208,17 +1208,180 @@ The generated test:
 
 Takes a schema file and produces a test file (or STDOUT).
 
-## \_generate\_transform\_properties
+## render\_fallback
 
-Converts transform specifications into LectroTest property definitions.
+Render any Perl value into a compact Perl source-code string using
+[Data::Dumper](https://metacpan.org/pod/Data%3A%3ADumper). Used as a catch-all when no more specific renderer
+applies.
 
-## \_process\_custom\_properties
+    my $code = render_fallback({ key => 'value' });
+    # returns: "{'key' => 'value'}"
 
-Processes custom property definitions from the schema.
+### Arguments
 
-## \_detect\_transform\_properties
+- `$v`
 
-Automatically detects testable properties from transform input/output specs.
+    Any Perl value, including undef, scalars, refs, and blessed objects.
+
+### Returns
+
+A string of Perl source code that reproduces the value when evaluated.
+Returns the string `'undef'` when `$v` is undef.
+
+### Side effects
+
+Temporarily sets `$Data::Dumper::Terse` and `$Data::Dumper::Indent`
+to produce compact single-line output. Both are restored on return via
+`local`.
+
+### Notes
+
+The output is always a single line with no trailing newline. Suitable
+for embedding in generated test code where readability is secondary to
+correctness.
+
+### API specification
+
+#### input
+
+    { v => { type => SCALAR|REF, optional => 1 } }
+
+#### output
+
+    { type => SCALAR }
+
+## render\_hash
+
+Render a two-level hashref (parameter name => spec hashref) into Perl
+source code suitable for embedding in a generated test file as the
+input specification passed to [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict).
+
+    my $code = render_hash(\%input);
+
+### Arguments
+
+- `$href`
+
+    A hashref whose values are themselves hashrefs containing field
+    specifications. Keys whose values are not hashrefs are skipped with
+    a warning.
+
+### Returns
+
+A string of comma-separated Perl source-code lines, one per key, of
+the form:
+
+    'key' => { subkey => value, ... }
+
+Returns an empty string if `$href` is undef, empty, or not a hashref.
+
+### Side effects
+
+None. Does not modify `$href`.
+
+### Notes
+
+The `matches` and `nomatch` sub-keys are treated specially — their
+values are compiled to `Regexp` objects via `eval { qr/.../ }` and
+then rendered using `perl_quote` so they appear as `qr{...}` in the
+generated test. This prevents unmatched bracket characters in the
+pattern from causing compilation failures.
+
+Other sub-keys are rendered via `perl_quote`.
+
+### API specification
+
+#### input
+
+    { href => { type => HASHREF, optional => 1 } }
+
+#### output
+
+    { type => SCALAR }
+
+## render\_args\_hash
+
+Render a flat hashref into a Perl source-code argument list of the
+form `'key' =` value, ...>, suitable for embedding in a function call
+in a generated test file.
+
+    my $code = render_args_hash({ type => 'string', min => 1 });
+    # returns: "'min' => 1, 'type' => 'string'"
+
+### Arguments
+
+- `$href`
+
+    A flat hashref of key-value pairs. Values may be scalars, arrayrefs,
+    or Regexp objects — all are handled by `perl_quote`.
+
+### Returns
+
+A comma-separated string of `key =` value> pairs sorted by key.
+Returns an empty string if `$href` is undef, empty, or not a hashref.
+
+### Side effects
+
+None.
+
+### Notes
+
+Keys and values are both rendered via `perl_quote`. In particular,
+`Regexp` values are rendered as `qr{...}` which is correct for
+[Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict) and [Return::Set](https://metacpan.org/pod/Return%3A%3ASet) schema arguments in
+the generated test.
+
+### API specification
+
+#### input
+
+    { href => { type => HASHREF, optional => 1 } }
+
+#### output
+
+    { type => SCALAR }
+
+## render\_arrayref\_map
+
+Render a hashref whose values are arrayrefs into a Perl source-code
+fragment suitable for use as a hash literal in a generated test file.
+
+    my $code = render_arrayref_map({ name => ['', 'a' x 100] });
+
+### Arguments
+
+- `$href`
+
+    A hashref whose values are arrayrefs. Keys whose values are not
+    arrayrefs are silently skipped.
+
+### Returns
+
+A comma-separated string of `'key' =` \[ val, ... \]> entries, one per
+qualifying key, sorted alphabetically. Returns the string `'()'` if
+`$href` is undef, empty, or not a hashref — this produces an empty
+hash assignment in the generated test rather than a syntax error.
+
+### Side effects
+
+None.
+
+### Notes
+
+Array element values are rendered via `perl_quote` which handles
+scalars, arrayrefs, and Regexp objects. Non-arrayref values are
+skipped without warning — this is intentional since callers may pass
+mixed-value hashes and only want the arrayref entries rendered.
+
+### API specification
+
+#### input
+
+    { href => { type => HASHREF, optional => 1 } }
+
+#### output
+
+    { type => SCALAR }
 
 ## \_get\_semantic\_generators
 
@@ -1233,10 +1396,6 @@ Returns a hash of built-in property templates that can be applied to transforms.
 Converts a schema field spec to a LectroTest generator string.
 
 ## Helper functions for type detection
-
-## \_render\_properties
-
-Renders property definitions into Perl code for the template.
 
 # NOTES
 
@@ -1265,11 +1424,4 @@ assistance of AI.
 
 Copyright 2025-2026 Nigel Horne.
 
-Usage is subject to licence terms.
-
-The licence terms of this software are as follows:
-
-- Personal single user, single computer use: GPL2
-- All other users (including Commercial, Charity, Educational, Government)
-  must apply in writing for a licence for use from Nigel Horne at the
-  above e-mail.
+Usage is subject to licence terms of GPL2.
