@@ -85,6 +85,12 @@ Readonly my $LEGACY_PERL_KEY_1     => '$module';
 Readonly my $LEGACY_PERL_KEY_2     => 'our $module';
 Readonly my $SOURCE_KEY            => '_source';
 
+# --------------------------------------------------
+# Readonly constants for render_hash key detection
+# --------------------------------------------------
+Readonly my $KEY_MATCHES => 'matches';
+Readonly my $KEY_NOMATCH => 'nomatch';
+
 =head1 NAME
 
 App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Dashboard for Perl modules
@@ -1987,9 +1993,9 @@ sub generate
 # --------------------------------------------------
 # _load_schema
 #
-# Purpose:    Load and parse a schema file using
-#             Config::Abstraction, returning the
-#             schema as a hashref.
+# Load and parse a schema file using
+#     Config::Abstraction, returning the
+#     schema as a hashref.
 #
 # Entry:      $schema_file - path to the schema file.
 #             Must be defined, non-empty, and readable.
@@ -2012,16 +2018,13 @@ sub _load_schema {
 	my $schema_file = $_[0];
 
 	# Validate the argument before touching the filesystem
-	croak(__PACKAGE__, ': Usage: _load_schema($schema_file)')
-		unless defined $schema_file;
+	croak(__PACKAGE__, ': Usage: _load_schema($schema_file)') unless defined $schema_file;
 
-	croak(__PACKAGE__, ': _load_schema given empty filename')
-		unless length($schema_file);
+	croak(__PACKAGE__, ': _load_schema given empty filename') unless length($schema_file);
 
 	# Confirm the file exists and is readable before attempting
 	# to load it — gives a clearer error than Config::Abstraction would
-	croak(__PACKAGE__, ": _load_schema($schema_file): $!")
-		unless -r $schema_file;
+	croak(__PACKAGE__, ": _load_schema($schema_file): $!") unless -r $schema_file;
 
 	# Load configuration via Config::Abstraction which supports
 	# YAML, JSON, and other formats without executing arbitrary code.
@@ -2480,62 +2483,368 @@ sub _validate_module {
 	return 1;
 }
 
-sub render_fallback
-{
+=head2 render_fallback
+
+Render any Perl value into a compact Perl source-code string using
+L<Data::Dumper>. Used as a catch-all when no more specific renderer
+applies.
+
+    my $code = render_fallback({ key => 'value' });
+    # returns: "{'key' => 'value'}"
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$v>
+
+Any Perl value, including undef, scalars, refs, and blessed objects.
+
+=back
+
+=head3 Returns
+
+A string of Perl source code that reproduces the value when evaluated.
+Returns the string C<'undef'> when C<$v> is undef.
+
+=head3 Side effects
+
+Temporarily sets C<$Data::Dumper::Terse> and C<$Data::Dumper::Indent>
+to produce compact single-line output. Both are restored on return via
+C<local>.
+
+=head3 Notes
+
+The output is always a single line with no trailing newline. Suitable
+for embedding in generated test code where readability is secondary to
+correctness.
+
+=head3 API specification
+
+=head4 input
+
+    { v => { type => SCALAR|REF, optional => 1 } }
+
+=head4 output
+
+    { type => SCALAR }
+
+=cut
+
+sub render_fallback {
 	my $v = $_[0];
 
-	local $Data::Dumper::Terse = 1;
+	# Handle undef explicitly rather than letting Dumper produce
+	# 'undef' without the localised settings applied
+	return 'undef' unless defined $v;
+
+	# Use Terse+Indent=0 to produce compact single-line output
+	# suitable for embedding in generated test code
+	local $Data::Dumper::Terse  = 1;
 	local $Data::Dumper::Indent = 0;
+
 	my $s = Dumper($v);
+
+	# Remove trailing newline that Dumper always appends
 	chomp $s;
 	return $s;
 }
 
+=head2 render_hash
+
+Render a two-level hashref (parameter name => spec hashref) into Perl
+source code suitable for embedding in a generated test file as the
+input specification passed to L<Params::Validate::Strict>.
+
+    my $code = render_hash(\%input);
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$href>
+
+A hashref whose values are themselves hashrefs containing field
+specifications. Keys whose values are not hashrefs are skipped with
+a warning.
+
+=back
+
+=head3 Returns
+
+A string of comma-separated Perl source-code lines, one per key, of
+the form:
+
+    'key' => { subkey => value, ... }
+
+Returns an empty string if C<$href> is undef, empty, or not a hashref.
+
+=head3 Side effects
+
+None. Does not modify C<$href>.
+
+=head3 Notes
+
+The C<matches> and C<nomatch> sub-keys are treated specially — their
+values are compiled to C<Regexp> objects via C<eval { qr/.../ }> and
+then rendered using C<perl_quote> so they appear as C<qr{...}> in the
+generated test. This prevents unmatched bracket characters in the
+pattern from causing compilation failures.
+
+Other sub-keys are rendered via C<perl_quote>.
+
+=head3 API specification
+
+=head4 input
+
+    { href => { type => HASHREF, optional => 1 } }
+
+=head4 output
+
+    { type => SCALAR }
+
+=cut
+
 sub render_hash {
 	my $href = $_[0];
+
+	# Return empty string for absent or non-hash input — callers
+	# treat '' as "no input specification" in the generated test
 	return '' unless $href && ref($href) eq 'HASH';
+
 	my @lines;
-	for my $k (sort keys %$href) {
-		my $def = $href->{$k} // {};
-		next unless ref $def eq 'HASH';
+
+	for my $k (sort keys %{$href}) {
+		my $def = $href->{$k};
+
+		# Skip non-hashref values with a warning rather than silently
+		# producing an empty spec block that would mislead callers
+		unless(defined($def) && ref($def) eq 'HASH') {
+			carp "render_hash: skipping key '$k' — value is not a hashref";
+			next;
+		}
+
 		my @pairs;
-		for my $subk (sort keys %$def) {
+
+		for my $subk (sort keys %{$def}) {
+			# Skip undef sub-values — they contribute nothing to the spec
 			next unless defined $def->{$subk};
+
+			# Validate that reference types are ones we can render —
+			# nested hashrefs are not yet supported
 			if(ref($def->{$subk})) {
-				unless((ref($def->{$subk}) eq 'ARRAY') || (ref($def->{$subk}) eq 'Regexp')) {
-					croak(__PACKAGE__, ": schema_file, $subk is a nested element, not yet supported (", ref($def->{$subk}), ')');
+				unless((ref($def->{$subk}) eq 'ARRAY') ||
+				       (ref($def->{$subk}) eq 'Regexp')) {
+					croak(
+						__PACKAGE__,
+						": $subk is a nested element, not yet supported (",
+						ref($def->{$subk}), ')'
+					);
 				}
 			}
-			if(($subk eq 'matches') || ($subk eq 'nomatch')) {
-				# push @pairs, "$subk => qr/$def->{$subk}/";
-				push @pairs, "$subk => " . perl_quote(qr/$def->{$subk}/);
+
+			# matches and nomatch values must be Regexp objects in the
+			# generated test — compile raw strings safely via eval so
+			# patterns containing [ or \ don't cause compile failures
+			if(($subk eq $KEY_MATCHES) || ($subk eq $KEY_NOMATCH)) {
+				my $re = ref($def->{$subk}) eq 'Regexp'
+					? $def->{$subk}
+					: eval { qr/$def->{$subk}/ };
+				if($@ || !defined($re)) {
+					carp "render_hash: invalid $subk pattern '$def->{$subk}': $@";
+					next;
+				}
+				push @pairs, "$subk => " . perl_quote($re);
 			} else {
+				# All other sub-keys are rendered via perl_quote which
+				# handles scalars, arrayrefs, and Regexp objects correctly
 				push @pairs, "$subk => " . perl_quote($def->{$subk});
 			}
 		}
-		push @lines, '	' . perl_quote($k) . " => { " . join(", ", @pairs) . " }";
+
+		# Use "\t" rather than a literal tab for clarity and grep-ability
+		push @lines, "\t" . perl_quote($k) . ' => { ' . join(', ', @pairs) . ' }';
 	}
+
 	return join(",\n", @lines);
 }
 
+=head2 render_args_hash
+
+Render a flat hashref into a Perl source-code argument list of the
+form C<'key' => value, ...>, suitable for embedding in a function call
+in a generated test file.
+
+    my $code = render_args_hash({ type => 'string', min => 1 });
+    # returns: "'min' => 1, 'type' => 'string'"
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$href>
+
+A flat hashref of key-value pairs. Values may be scalars, arrayrefs,
+or Regexp objects — all are handled by C<perl_quote>.
+
+=back
+
+=head3 Returns
+
+A comma-separated string of C<key => value> pairs sorted by key.
+Returns an empty string if C<$href> is undef, empty, or not a hashref.
+
+=head3 Side effects
+
+None.
+
+=head3 Notes
+
+Keys and values are both rendered via C<perl_quote>. In particular,
+C<Regexp> values are rendered as C<qr{...}> which is correct for
+L<Params::Validate::Strict> and L<Return::Set> schema arguments in
+the generated test.
+
+=head3 API specification
+
+=head4 input
+
+    { href => { type => HASHREF, optional => 1 } }
+
+=head4 output
+
+    { type => SCALAR }
+
+=cut
+
 sub render_args_hash {
 	my $href = $_[0];
+
+	# Return empty string for absent or non-hash input
 	return '' unless $href && ref($href) eq 'HASH';
-	my @pairs = map { perl_quote($_) . ' => ' . perl_quote($href->{$_}) } sort keys %$href;
+
+	# Sort keys for deterministic output across runs — important for
+	# generated test files that are committed to version control
+	my @pairs = map {
+		perl_quote($_) . ' => ' . perl_quote($href->{$_})
+	} sort keys %{$href};
+
 	return join(', ', @pairs);
 }
 
+=head2 render_arrayref_map
+
+Render a hashref whose values are arrayrefs into a Perl source-code
+fragment suitable for use as a hash literal in a generated test file.
+
+    my $code = render_arrayref_map({ name => ['', 'a' x 100] });
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$href>
+
+A hashref whose values are arrayrefs. Keys whose values are not
+arrayrefs are silently skipped.
+
+=back
+
+=head3 Returns
+
+A comma-separated string of C<'key' => [ val, ... ]> entries, one per
+qualifying key, sorted alphabetically. Returns the string C<'()'> if
+C<$href> is undef, empty, or not a hashref — this produces an empty
+hash assignment in the generated test rather than a syntax error.
+
+=head3 Side effects
+
+None.
+
+=head3 Notes
+
+Array element values are rendered via C<perl_quote> which handles
+scalars, arrayrefs, and Regexp objects. Non-arrayref values are
+skipped without warning — this is intentional since callers may pass
+mixed-value hashes and only want the arrayref entries rendered.
+
+=head3 API specification
+
+=head4 input
+
+    { href => { type => HASHREF, optional => 1 } }
+
+=head4 output
+
+    { type => SCALAR }
+
+=cut
+
 sub render_arrayref_map {
 	my $href = $_[0];
+
+	# Return '()' rather than '' so callers get a valid empty hash
+	# literal rather than a syntax error in the generated test
 	return '()' unless $href && ref($href) eq 'HASH';
+
 	my @entries;
-	for my $k (sort keys %$href) {
+
+	for my $k (sort keys %{$href}) {
 		my $aref = $href->{$k};
-		next unless ref $aref eq 'ARRAY';
-		my $vals = join(', ', map { perl_quote($_) } @$aref);
-		push @entries, '	' . perl_quote($k) . " => [ $vals ]";
+
+		# Skip non-arrayref values — mixed hashes are allowed by callers
+		next unless ref($aref) eq 'ARRAY';
+
+		# Render each array element via perl_quote so strings are
+		# properly quoted and numbers are left unquoted
+		my $vals = join(', ', map { perl_quote($_) } @{$aref});
+
+		# Use "\t" rather than a literal tab for clarity
+		push @entries, "\t" . perl_quote($k) . " => [ $vals ]";
 	}
+
 	return join(",\n", @entries);
+}
+
+# --------------------------------------------------
+# _has_positions
+#
+# Purpose:    Determine whether any field in an input
+#             spec hashref declares a positional argument
+#             via the 'position' key.
+#
+# Entry:      $input_spec - the input section of a parsed
+#             schema, expected to be a hashref whose values
+#             are themselves hashrefs containing field specs.
+#             May be undef or a non-hash ref.
+#
+# Exit:       Returns 1 if any field has a defined
+#             'position' key, 0 otherwise.
+#
+# Side effects: None.
+#
+# Notes:      Returns 0 immediately for undef or non-hash
+#             input rather than throwing — callers use the
+#             return value as a boolean and do not expect
+#             exceptions from this function.
+# --------------------------------------------------
+sub _has_positions {
+	my $input_spec = $_[0];
+
+	# Guard against undef or non-hash input — keys %$undef would throw
+	return 0 unless defined($input_spec) && ref($input_spec) eq 'HASH';
+
+	for my $field (keys %{$input_spec}) {
+		# Only examine fields whose spec is a hashref — scalar specs
+		# (e.g. input: { type: string }) cannot have positions
+		next unless ref($input_spec->{$field}) eq 'HASH';
+
+		# Return immediately on first match — no need to scan further
+		return 1 if defined $input_spec->{$field}{position};
+	}
+
+	# No positional arguments found in any field
+	return 0;
 }
 
 # --------------------------------------------------
@@ -3556,17 +3865,6 @@ sub _get_dominant_type {
 	}
 
 	return 'string';	# Default
-}
-
-sub _has_positions {
-	my $input_spec = $_[0];
-
-	for my $field (keys %$input_spec) {
-		next unless ref($input_spec->{$field}) eq 'HASH';
-		return 1 if defined $input_spec->{$field}{position};
-	}
-
-	return 0;
 }
 
 =head2 _render_properties
