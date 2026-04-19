@@ -2167,8 +2167,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1761: 		my $property = $accessor{property};
 </span><span class=""> 1762: 		my $type = $accessor{type};
 </span><span class=""> 1763: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1764: 		if(!defined($new)) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 1765: 			croak(&quot;BUG: $property: accessor $type can only work on an object, incorrectly tagged as $type&quot;);
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1764: 		if(!defined($new)) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_1764_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 1765: 			croak(&quot;BUG: $property: accessor $type can only work on an object, incorrectly tagged as $type&quot;);
 </span><span class=""> 1766: 		}
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1767: 		if($type eq &#39;getset&#39;) {
 </span>
@@ -2194,7 +2200,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </li></ul></details>
 <span class=""> 1769: 				croak(&quot;BUG: $property: getset must take one input argument, incorrectly tagged as getset&quot;);
 </span><span class=""> 1770: 			}
-</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 1771: 			if(scalar(keys %output) == 0) {
+</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 1771: 			if(scalar(keys %output) == 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2288,18 +2294,12 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1812: 			}
 </span><span class=""> 1813: 		} else {
 </span><span class=""> 1814: 			$call_code = &quot;\$result = \$obj-&gt;$function(\$input);&quot;;
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1815: 			if($output{&#39;_returns_self&#39;}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_1815_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 1816: 				$call_code .= &quot;ok(defined(\$result)); ok(\$result eq \$obj, &#39;$function returns self&#39;)&quot;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1815: 			if($output{&#39;_returns_self&#39;}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 1816: 				$call_code .= &quot;ok(defined(\$result)); ok(\$result eq \$obj, &#39;$function returns self&#39;)&quot;;
 </span><span class=""> 1817: 			} elsif(defined($accessor{type}) &amp;&amp; ($accessor{type} eq &#39;getset&#39;)) {
 </span><span class=""> 1818: 				$call_code .= &quot;ok(\$obj-&gt;$function() eq \$result, &#39;test getset accessor&#39;);&quot;
 </span><span class=""> 1819: 			}
-</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 1820: 			if(scalar(keys %input) == 0) {
+</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 1820: 			if(scalar(keys %input) == 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2513,14 +2513,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1927: 						$expected_str
 </span><span class=""> 1928: 					);
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1929: 					if(($output{&#39;type&#39;} // &#39;&#39;) eq &#39;boolean&#39;) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1930: 						if($expected_str eq &#39;1&#39;) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_1930_7: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 1931: 							$corpus_code .= &quot;ok(\$obj-&gt;$function($input_str), &quot; . q_wrap($desc) . &quot;);\n&quot;;
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1930: 						if($expected_str eq &#39;1&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 1931: 							$corpus_code .= &quot;ok(\$obj-&gt;$function($input_str), &quot; . q_wrap($desc) . &quot;);\n&quot;;
 </span><span class=""> 1932: 						} elsif($expected_str eq &#39;0&#39;) {
 </span><span class=""> 1933: 							$corpus_code .= &quot;ok(!\$obj-&gt;$function($input_str), &quot; . q_wrap($desc) . &quot;);\n&quot;;
 </span><span class=""> 1934: 						} else {
@@ -4354,8 +4348,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 <span class=""> 3629: 		my $min = $spec-&gt;{min};
 </span><span class=""> 3630: 		my $max = $spec-&gt;{max};
 </span><span class=""> 3631: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3632: 		if (!defined($min) &amp;&amp; !defined($max)) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3633: 			return &quot;$field_name &lt;- Int&quot;;
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 3632: 		if (!defined($min) &amp;&amp; !defined($max)) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_3632_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 3633: 			return &quot;$field_name &lt;- Int&quot;;
 </span><span class=""> 3634: 		} elsif (!defined($min)) {
 </span><span class=""> 3635: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { int(rand($max + 1)) })&quot;;
 </span><span class=""> 3636: 		} elsif (!defined($max)) {
@@ -4491,7 +4491,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3674: 		} else {
 </span><span class=""> 3675: 			# Both min and max defined
 </span><span class=""> 3676: 			my $range = $max - $min;
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3677: 			if ($range &lt;= 0) {
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3677: 			if ($range &lt;= 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
@@ -4965,14 +4965,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 4046: 		my $prop_code;
 </span><span class=""> 4047: 		my $prop_desc;
 </span><span class=""> 4048: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4049: 		if(!ref($prop_def)) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_4049_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 4050: 			# Plain string &acirc;&#128;&#148; look up as a named builtin property
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4049: 		if(!ref($prop_def)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4050: 			# Plain string &acirc;&#128;&#148; look up as a named builtin property
 </span><span class=""> 4051: 			$prop_name = $prop_def;
 </span><span class=""> 4052: 
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4053: 			unless(exists($builtin_properties-&gt;{$prop_name})) {
@@ -4991,8 +4985,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 4060: 			# Build the argument list, respecting positional order
 </span><span class=""> 4061: 			my @var_names = sort keys %{$input_spec};
 </span><span class=""> 4062: 			my @args;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4063: 			if(_has_positions($input_spec)) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4064: 				my @sorted = sort {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4063: 			if(_has_positions($input_spec)) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_4063_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 4064: 				my @sorted = sort {
 </span><span class=""> 4065: 					$input_spec-&gt;{$a}{&#39;position&#39;} &lt;=&gt;
 </span><span class=""> 4066: 					$input_spec-&gt;{$b}{&#39;position&#39;}
 </span><span class=""> 4067: 				} @var_names;
@@ -5075,54 +5075,84 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 4126 → 4126 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 4126 → 4126 → 0</span></span> 4126: 	return @properties;
 </span><span class=""> 4127: }
 </span><span class=""> 4128: 
-</span><span class=""> 4129: 1;
+</span><span class=""> 4129: =head1 NOTES
 </span><span class=""> 4130: 
-</span><span class=""> 4131: =head1 NOTES
+</span><span class=""> 4131: C&lt;seed&gt; and C&lt;iterations&gt; really should be within C&lt;config&gt;.
 </span><span class=""> 4132: 
-</span><span class=""> 4133: C&lt;seed&gt; and C&lt;iterations&gt; really should be within C&lt;config&gt;.
+</span><span class=""> 4133: =head1 SEE ALSO
 </span><span class=""> 4134: 
-</span><span class=""> 4135: =head1 SEE ALSO
+</span><span class=""> 4135: =over 4
 </span><span class=""> 4136: 
-</span><span class=""> 4137: =over 4
+</span><span class=""> 4137: =item * L&lt;Test Coverage Report|https://nigelhorne.github.io/App-Test-Generator/coverage/&gt;
 </span><span class=""> 4138: 
-</span><span class=""> 4139: =item * L&lt;Test Coverage Report|https://nigelhorne.github.io/App-Test-Generator/coverage/&gt;
+</span><span class=""> 4139: =item * L&lt;App::Test::Generator::Template&gt; - Template of the file of tests created by C&lt;App::Test::Generator&gt;
 </span><span class=""> 4140: 
-</span><span class=""> 4141: =item * L&lt;App::Test::Generator::Template&gt; - Template of the file of tests created by C&lt;App::Test::Generator&gt;
+</span><span class=""> 4141: =item * L&lt;App::Test::Generator::SchemaExtractor&gt; - Create schemas from Perl programs
 </span><span class=""> 4142: 
-</span><span class=""> 4143: =item * L&lt;App::Test::Generator::SchemaExtractor&gt; - Create schemas from Perl programs
+</span><span class=""> 4143: =item * L&lt;Params::Validate::Strict&gt;: Schema Definition
 </span><span class=""> 4144: 
-</span><span class=""> 4145: =item * L&lt;Params::Validate::Strict&gt;: Schema Definition
+</span><span class=""> 4145: =item * L&lt;Params::Get&gt;: Input validation
 </span><span class=""> 4146: 
-</span><span class=""> 4147: =item * L&lt;Params::Get&gt;: Input validation
+</span><span class=""> 4147: =item * L&lt;Return::Set&gt;: Output validation
 </span><span class=""> 4148: 
-</span><span class=""> 4149: =item * L&lt;Return::Set&gt;: Output validation
+</span><span class=""> 4149: =item * L&lt;Test::LectroTest&gt;
 </span><span class=""> 4150: 
-</span><span class=""> 4151: =item * L&lt;Test::LectroTest&gt;
+</span><span class=""> 4151: =item * L&lt;Test::Most&gt;
 </span><span class=""> 4152: 
-</span><span class=""> 4153: =item * L&lt;Test::Most&gt;
+</span><span class=""> 4153: =item * L&lt;YAML::XS&gt;
 </span><span class=""> 4154: 
-</span><span class=""> 4155: =item * L&lt;YAML::XS&gt;
+</span><span class=""> 4155: =back
 </span><span class=""> 4156: 
-</span><span class=""> 4157: =back
+</span><span class=""> 4157: =head1 AUTHOR
 </span><span class=""> 4158: 
-</span><span class=""> 4159: =head1 AUTHOR
+</span><span class=""> 4159: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
 </span><span class=""> 4160: 
-</span><span class=""> 4161: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
-</span><span class=""> 4162: 
-</span><span class=""> 4163: Portions of this module&#39;s initial design and documentation were created with the
-</span><span class=""> 4164: assistance of AI.
+</span><span class=""> 4161: Portions of this module&#39;s initial design and documentation were created with the
+</span><span class=""> 4162: assistance of AI.
+</span><span class=""> 4163: 
+</span><span class=""> 4164: =head1 SUPPORT
 </span><span class=""> 4165: 
-</span><span class=""> 4166: =cut
+</span><span class=""> 4166: This module is provided as-is without any warranty.
 </span><span class=""> 4167: 
-</span><span class=""> 4168: =head1 LICENCE AND COPYRIGHT
+</span><span class=""> 4168: You can find documentation for this module with the perldoc command.
 </span><span class=""> 4169: 
-</span><span class=""> 4170: Copyright 2025-2026 Nigel Horne.
+</span><span class=""> 4170:     perldoc App::Test::Generator
 </span><span class=""> 4171: 
-</span><span class=""> 4172: Usage is subject to licence terms of GPL2.
+</span><span class=""> 4172: You can also look for information at:
 </span><span class=""> 4173: 
-</span><span class=""> 4174: =cut
+</span><span class=""> 4174: =over 4
 </span><span class=""> 4175: 
-</span><span class=""> 4176: 1;
+</span><span class=""> 4176: =item * MetaCPAN
+</span><span class=""> 4177: 
+</span><span class=""> 4178: L&lt;https://metacpan.org/release/App-Test-Generator&gt;
+</span><span class=""> 4179: 
+</span><span class=""> 4180: =item * GitHub
+</span><span class=""> 4181: 
+</span><span class=""> 4182: L&lt;https://github.com/nigelhorne/App-Test-Generator&gt;
+</span><span class=""> 4183: 
+</span><span class=""> 4184: =item * CPANTS
+</span><span class=""> 4185: 
+</span><span class=""> 4186: L&lt;http://cpants.cpanauthors.org/dist/App-Test-Generator&gt;
+</span><span class=""> 4187: 
+</span><span class=""> 4188: =item * CPAN Testers&#39; Matrix
+</span><span class=""> 4189: 
+</span><span class=""> 4190: L&lt;http://matrix.cpantesters.org/?dist=App-Test-Generator&gt;
+</span><span class=""> 4191: 
+</span><span class=""> 4192: =item * CPAN Testers Dependencies
+</span><span class=""> 4193: 
+</span><span class=""> 4194: L&lt;http://deps.cpantesters.org/?module=App::Test::Generator&gt;
+</span><span class=""> 4195: 
+</span><span class=""> 4196: =back
+</span><span class=""> 4197: 
+</span><span class=""> 4198: =head1 LICENCE AND COPYRIGHT
+</span><span class=""> 4199: 
+</span><span class=""> 4200: Copyright 2025-2026 Nigel Horne.
+</span><span class=""> 4201: 
+</span><span class=""> 4202: Usage is subject to licence terms of GPL2.
+</span><span class=""> 4203: 
+</span><span class=""> 4204: =cut
+</span><span class=""> 4205: 
+</span><span class=""> 4206: 1;
 </span></pre>
 
 <script>
