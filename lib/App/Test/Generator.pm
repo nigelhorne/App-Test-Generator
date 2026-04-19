@@ -2482,8 +2482,7 @@ sub _normalize_config {
 	# Ensure properties is always a hashref — if absent or set to
 	# a non-hash value, replace with a disabled default so that
 	# downstream code can safely dereference it without checking ref()
-	$config->{$CONFIG_PROPERTIES_KEY} = { enable => 0 }
-		unless ref($config->{$CONFIG_PROPERTIES_KEY}) eq 'HASH';
+	$config->{$CONFIG_PROPERTIES_KEY} = { enable => 0 } unless ref($config->{$CONFIG_PROPERTIES_KEY}) eq 'HASH';
 }
 
 # --------------------------------------------------
@@ -3355,20 +3354,40 @@ sub _generate_transform_properties {
 			property_checks  => $property_checks,
 			should_die       => $should_die,
 			should_warn      => $should_warn,
-			trials           => $config->{'properties'}{'trials'}
-			                    // DEFAULT_PROPERTY_TRIALS,
+			trials           => $config->{'properties'}{'trials'} // DEFAULT_PROPERTY_TRIALS,
 		};
 	}
 
 	return \@properties;
 }
 
-=head2 _get_semantic_generators
-
-Returns a hash of built-in semantic generators for common data types.
-
-=cut
-
+# --------------------------------------------------
+# _get_semantic_generators
+#
+# Return a hashref of named semantic
+#     generator definitions for use in
+#     LectroTest property-based tests.
+#     Each entry contains a 'code' key
+#     holding a Gen {} block string and a
+#     'description' key for documentation
+#     and validation messages.
+#
+# Entry:      None.
+#
+# Exit:       Returns a hashref keyed by semantic
+#             type name. Each value is a hashref
+#             with 'code' and 'description' keys.
+#
+# Side effects: None.
+#
+# Notes:      The returned hashref is built fresh
+#             on every call — callers that need it
+#             repeatedly should cache the result.
+#             The 'code' strings are multi-line
+#             Gen {} blocks; callers are responsible
+#             for compressing whitespace before
+#             embedding them in generated test files.
+# --------------------------------------------------
 sub _get_semantic_generators {
 	return {
 		email => {
@@ -3394,6 +3413,7 @@ sub _get_semantic_generators {
 			},
 			description => 'Valid email addresses',
 		},
+
 		url => {
 			code => q{
 				Gen {
@@ -3538,8 +3558,8 @@ sub _get_semantic_generators {
 			code => q{
 				Gen {
 					my @chars = ('A'..'Z', 'a'..'z', '0'..'9', '-', '_');
-					my $header = join('', map { $chars[int(rand(@chars))] } 1..20);
-					my $payload = join('', map { $chars[int(rand(@chars))] } 1..40);
+					my $header    = join('', map { $chars[int(rand(@chars))] } 1..20);
+					my $payload   = join('', map { $chars[int(rand(@chars))] } 1..40);
 					my $signature = join('', map { $chars[int(rand(@chars))] } 1..30);
 					"$header.$payload.$signature";
 				}
@@ -3579,7 +3599,9 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'MD5 hashes (32 hex characters)',
-		}, sha256 => {
+		},
+
+		sha256 => {
 			code => q{
 				Gen {
 					join('', map { sprintf('%x', int(rand(16))) } 1..64);
@@ -3593,31 +3615,72 @@ sub _get_semantic_generators {
 				Gen {
 					time;
 				}
-			}
+			},
+			description => 'Unix timestamps (seconds since epoch)',
 		},
 	};
 }
 
-=head2 _get_builtin_properties
-
-Returns a hash of built-in property templates that can be applied to transforms.
-
-=cut
-
+# --------------------------------------------------
+# _get_builtin_properties
+#
+# Purpose:    Return a hashref of named built-in
+#             property templates that can be
+#             referenced by name in a transform's
+#             'properties' list in the schema.
+#             Each entry contains a 'description'
+#             string, a 'code_template' coderef, and
+#             an 'applicable_to' arrayref.
+#
+# Entry:      None.
+#
+# Exit:       Returns a hashref keyed by property
+#             name. Each value is a hashref with
+#             'description', 'code_template', and
+#             'applicable_to' keys.
+#
+# Side effects: None.
+#
+# Notes:      'applicable_to' lists the types for
+#             which each property is meaningful. It
+#             is stored for documentation purposes
+#             and potential future filtering — it is
+#             not currently enforced by any caller.
+#
+#             Each 'code_template' coderef receives
+#             three arguments: ($function, $call_code,
+#             $input_vars). Most templates use only
+#             $call_code; $function and $input_vars
+#             are provided for templates that need
+#             them (e.g. idempotent, length_preserved,
+#             preserves_keys).
+#
+#             'monotonic_increasing' has been
+#             intentionally omitted. A correct
+#             implementation requires calling the
+#             function twice with ordered inputs,
+#             which the current single-call property
+#             framework does not support. A
+#             placeholder that unconditionally returns
+#             true would give false confidence and has
+#             therefore been removed.
+# --------------------------------------------------
 sub _get_builtin_properties {
 	return {
 		idempotent => {
-			description => 'Function is idempotent: f(f(x)) == f(x)',
+			description   => 'Function is idempotent: f(f(x)) == f(x)',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
-				# Use string comparison - works for all types in Perl
+
+				# String comparison works for all scalar types in Perl —
+				# numeric values stringify consistently for eq
 				return "do { my \$tmp = $call_code; \$result eq \$tmp }";
 			},
 			applicable_to => ['all'],
 		},
 
 		non_negative => {
-			description => 'Result is always non-negative',
+			description   => 'Result is always non-negative',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
 				return '$result >= 0';
@@ -3626,7 +3689,7 @@ sub _get_builtin_properties {
 		},
 
 		positive => {
-			description => 'Result is always positive (> 0)',
+			description   => 'Result is always positive (> 0)',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
 				return '$result > 0';
@@ -3635,7 +3698,7 @@ sub _get_builtin_properties {
 		},
 
 		non_empty => {
-			description => 'Result is never empty',
+			description   => 'Result is never empty',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
 				return 'length($result) > 0';
@@ -3644,7 +3707,7 @@ sub _get_builtin_properties {
 		},
 
 		length_preserved => {
-			description => 'Output length equals input length',
+			description   => 'Output length equals input length',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
 				my $first_var = $input_vars->[0];
@@ -3654,7 +3717,7 @@ sub _get_builtin_properties {
 		},
 
 		uppercase => {
-			description => 'Result is all uppercase',
+			description   => 'Result is all uppercase',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
 				return '$result eq uc($result)';
@@ -3663,7 +3726,7 @@ sub _get_builtin_properties {
 		},
 
 		lowercase => {
-			description => 'Result is all lowercase',
+			description   => 'Result is all lowercase',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
 				return '$result eq lc($result)';
@@ -3672,7 +3735,7 @@ sub _get_builtin_properties {
 		},
 
 		trimmed => {
-			description => 'Result has no leading/trailing whitespace',
+			description   => 'Result has no leading or trailing whitespace',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
 				return '$result !~ /^\s/ && $result !~ /\s$/';
@@ -3681,25 +3744,29 @@ sub _get_builtin_properties {
 		},
 
 		sorted_ascending => {
-			description => 'Array is sorted in ascending order',
+			description   => 'Array is sorted in ascending order',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
-				return 'do { my @arr = @$result; my $sorted = 1; for my $i (1..$#arr) { $sorted = 0 if $arr[$i] < $arr[$i-1]; } $sorted }';
+				return 'do { my @arr = @$result; my $sorted = 1; ' .
+					'for my $i (1..$#arr) { $sorted = 0 if $arr[$i] < $arr[$i-1]; } ' .
+					'$sorted }';
 			},
 			applicable_to => ['arrayref'],
 		},
 
 		sorted_descending => {
-			description => 'Array is sorted in descending order',
+			description   => 'Array is sorted in descending order',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
-				return 'do { my @arr = @$result; my $sorted = 1; for my $i (1..$#arr) { $sorted = 0 if $arr[$i] > $arr[$i-1]; } $sorted }';
+				return 'do { my @arr = @$result; my $sorted = 1; ' .
+					'for my $i (1..$#arr) { $sorted = 0 if $arr[$i] > $arr[$i-1]; } ' .
+					'$sorted }';
 			},
 			applicable_to => ['arrayref'],
 		},
 
 		unique_elements => {
-			description => 'Array has no duplicate elements',
+			description   => 'Array has no duplicate elements',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
 				return 'do { my @arr = @$result; my %seen; !grep { $seen{$_}++ } @arr }';
@@ -3708,23 +3775,15 @@ sub _get_builtin_properties {
 		},
 
 		preserves_keys => {
-			description => 'Hash has same keys as input',
+			description   => 'Hash has same keys as input',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
 				my $first_var = $input_vars->[0];
-				return 'do { my @in = sort keys %{$' . $first_var . '}; my @out = sort keys %$result; join(",", @in) eq join(",", @out) }';
+				return 'do { my @in  = sort keys %{$' . $first_var . '}; ' .
+					'my @out = sort keys %$result; ' .
+					'join(",", @in) eq join(",", @out) }';
 			},
 			applicable_to => ['hashref'],
-		},
-
-		monotonic_increasing => {
-			description => 'For x <= y, f(x) <= f(y)',
-			code_template => sub {
-				my ($function, $call_code, $input_vars) = @_;
-				# This would need multiple inputs - complex
-				return '1';	# Placeholder
-			},
-			applicable_to => ['number', 'integer'],
 		},
 	};
 }
