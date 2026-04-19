@@ -2762,11 +2762,17 @@ sub render_hash {
 	for my $k (sort keys %{$href}) {
 		my $def = $href->{$k};
 
-		# Skip non-hashref values with a warning rather than silently
-		# producing an empty spec block that would mislead callers
+		# Handle scalar shorthand — 'arg1: string' is equivalent to
+		# 'arg1: { type: string }' and is explicitly supported by the
+		# validation layer in _validate_input_params
 		unless(defined($def) && ref($def) eq 'HASH') {
-			carp "render_hash: skipping key '$k' — value is not a hashref";
-			next;
+			if(defined($def) && !ref($def) && _valid_type($def)) {
+				# Expand scalar type shorthand to a full spec hashref
+				$def = { type => $def };
+			} else {
+				carp "render_hash: skipping key '$k' — value is not a hashref or recognised type string";
+				next;
+			}
 		}
 
 		my @pairs;
@@ -4435,10 +4441,7 @@ sub _process_custom_properties {
 			my @var_names = sort keys %{$input_spec};
 			my @args;
 			if(_has_positions($input_spec)) {
-				my @sorted = sort {
-					$input_spec->{$a}{'position'} <=>
-					$input_spec->{$b}{'position'}
-				} @var_names;
+				my @sorted = sort { $input_spec->{$a}{'position'} <=> $input_spec->{$b}{'position'} } @var_names;
 				@args = map { "\$$_" } @sorted;
 			} else {
 				@args = map { "\$$_" } @var_names;
