@@ -1892,10 +1892,10 @@ sub collect_dependency_versions {
 # --------------------------------------------------
 # detect_universal_failure
 #
-# Purpose:    Detect when failures occur across all
-#             tested Perl versions and OS types,
-#             suggesting a broken release rather than
-#             a version- or platform-specific issue.
+# Detect when failures occur across all
+#     tested Perl versions and OS types,
+#     suggesting a broken release rather than
+#     a version- or platform-specific issue.
 #
 # Entry:      $fail_reports - arrayref of fail report hashrefs
 #             $pass_reports - arrayref of pass report hashrefs
@@ -1909,24 +1909,47 @@ sub collect_dependency_versions {
 #             distinct Perl versions AND 2+ distinct OS
 #             types AND pass reports are absent or very
 #             sparse (< 10% of total reports).
+#
+#             NA results are explicitly excluded from
+#             the broken-release diagnosis — a wall of
+#             NAs on old Perls is the correct and
+#             expected outcome of a minimum Perl version
+#             declared in Makefile.PL, not evidence of
+#             a broken release. The function returns
+#             undef when all non-passing reports are NA
+#             so that detect_perl_version_cliff() can
+#             provide the correct diagnosis instead.
 # --------------------------------------------------
 sub detect_universal_failure {
 	my ($fail_reports, $pass_reports) = @_;
 
 	return unless @{$fail_reports} >= 3;
 
-	# Count distinct Perl versions and OS types in failures
-	my %fail_perls = map { $_->{perl} => 1 }
-		grep { $_->{perl} } @{$fail_reports};
-	my %fail_os = map { $_->{osname} => 1 }
-		grep { $_->{osname} } @{$fail_reports};
+	# Partition the incoming non-passing reports into genuine
+	# FAILs/UNKNOWNs and NA results — only genuine failures
+	# indicate a broken release
+	my @genuine_fails = grep { ($_->{status} // '') ne 'NA' } @{$fail_reports};
+	my @na_reports    = grep { ($_->{status} // '') eq 'NA' } @{$fail_reports};
 
-	# Need failures on 3+ Perl versions and 2+ OS types
+	# If every non-passing report is NA, this is a Perl version
+	# gate firing correctly — not a broken release. Return undef
+	# so the version-cliff detector can diagnose it instead.
+	if(@na_reports && !@genuine_fails) {
+		return;
+	}
+
+	# Count distinct Perl versions and OS types in genuine failures
+	# only — NA results on old Perls must not inflate these counts
+	my %fail_perls = map { $_->{perl} => 1 } grep { $_->{perl} } @genuine_fails;
+	my %fail_os = map { $_->{osname} => 1 } grep { $_->{osname} } @genuine_fails;
+
+	# Need genuine failures on 3+ Perl versions and 2+ OS types
 	return unless scalar(keys %fail_perls) >= 3;
 	return unless scalar(keys %fail_os)    >= 2;
 
-	# Check that passes are absent or very sparse
-	my $total = scalar(@{$fail_reports}) + scalar(@{$pass_reports});
+	# Check that passes are absent or very sparse relative to
+	# genuine failures only — NAs are excluded from the ratio
+	my $total = scalar(@genuine_fails) + scalar(@{$pass_reports});
 	my $pass_ratio = $total ? scalar(@{$pass_reports}) / $total : 0;
 
 	# If more than 10% are passing, this is not universal failure
@@ -1943,12 +1966,10 @@ sub detect_universal_failure {
 			sprintf('Failures on %d Perl versions: %s',
 				scalar(@perl_list),
 				join(', ', @perl_list)
-			),
-			sprintf('Failures on %d OS types: %s',
+			), sprintf('Failures on %d OS types: %s',
 				scalar(@os_list),
 				join(', ', @os_list)
-			),
-			'Likely causes: missing file in tarball, broken Makefile.PL, or undeclared dependency',
+			), 'Likely causes: missing file in tarball, broken Makefile.PL, or undeclared dependency',
 		],
 	};
 }

@@ -4126,8 +4126,6 @@ sub _process_custom_properties {
 	return @properties;
 }
 
-1;
-
 =head1 NOTES
 
 C<seed> and C<iterations> really should be within C<config>.
@@ -4163,7 +4161,39 @@ Nigel Horne, C<< <njh at nigelhorne.com> >>
 Portions of this module's initial design and documentation were created with the
 assistance of AI.
 
-=cut
+=head1 SUPPORT
+
+This module is provided as-is without any warranty.
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc App::Test::Generator
+
+You can also look for information at:
+
+=over 4
+
+=item * MetaCPAN
+
+L<https://metacpan.org/release/App-Test-Generator>
+
+=item * GitHub
+
+L<https://github.com/nigelhorne/App-Test-Generator>
+
+=item * CPANTS
+
+L<http://cpants.cpanauthors.org/dist/App-Test-Generator>
+
+=item * CPAN Testers' Matrix
+
+L<http://matrix.cpantesters.org/?dist=App-Test-Generator>
+
+=item * CPAN Testers Dependencies
+
+L<http://deps.cpantesters.org/?module=App::Test::Generator>
+
+=back
 
 =head1 LICENCE AND COPYRIGHT
 
