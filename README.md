@@ -1383,20 +1383,6 @@ mixed-value hashes and only want the arrayref entries rendered.
 
     { type => SCALAR }
 
-## \_get\_semantic\_generators
-
-Returns a hash of built-in semantic generators for common data types.
-
-## \_get\_builtin\_properties
-
-Returns a hash of built-in property templates that can be applied to transforms.
-
-## \_schema\_to\_lectrotest\_generator
-
-Converts a schema field spec to a LectroTest generator string.
-
-## Helper functions for type detection
-
 # NOTES
 
 `seed` and `iterations` really should be within `config`.
@@ -1419,6 +1405,36 @@ Nigel Horne, `<njh at nigelhorne.com>`
 
 Portions of this module's initial design and documentation were created with the
 assistance of AI.
+
+# SUPPORT
+
+This module is provided as-is without any warranty.
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc App::Test::Generator
+
+You can also look for information at:
+
+- MetaCPAN
+
+    [https://metacpan.org/release/App-Test-Generator](https://metacpan.org/release/App-Test-Generator)
+
+- GitHub
+
+    [https://github.com/nigelhorne/App-Test-Generator](https://github.com/nigelhorne/App-Test-Generator)
+
+- CPANTS
+
+    [http://cpants.cpanauthors.org/dist/App-Test-Generator](http://cpants.cpanauthors.org/dist/App-Test-Generator)
+
+- CPAN Testers' Matrix
+
+    [http://matrix.cpantesters.org/?dist=App-Test-Generator](http://matrix.cpantesters.org/?dist=App-Test-Generator)
+
+- CPAN Testers Dependencies
+
+    [http://deps.cpantesters.org/?module=App::Test::Generator](http://deps.cpantesters.org/?module=App::Test::Generator)
 
 # LICENCE AND COPYRIGHT
 
