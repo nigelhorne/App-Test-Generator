@@ -104,6 +104,42 @@ Readonly my $MODULE_BUILTIN => 'builtin';
 # --------------------------------------------------
 Readonly my $TRANSFORM_POSITIVE_PATTERN => 'positive';
 
+# --------------------------------------------------
+# Default type assumed for schema fields that declare
+# no explicit type — used in generator selection and
+# dominant-type detection
+# --------------------------------------------------
+Readonly my $DEFAULT_FIELD_TYPE => 'string';
+
+# --------------------------------------------------
+# Default range used by the LectroTest float/integer
+# generators when no min or max constraint is given.
+# Chosen to provide a useful spread without producing
+# values so large they overflow downstream arithmetic.
+# --------------------------------------------------
+Readonly my $DEFAULT_GENERATOR_RANGE => 1000;
+
+# --------------------------------------------------
+# Default upper bound on the number of elements in
+# generated arrayrefs and hashrefs when no max is
+# declared in the schema.
+# --------------------------------------------------
+Readonly my $DEFAULT_MAX_COLLECTION_SIZE => 10;
+
+# --------------------------------------------------
+# Default upper bound on generated string length
+# when no max is declared in the schema.
+# --------------------------------------------------
+Readonly my $DEFAULT_MAX_STRING_LEN => 100;
+
+# --------------------------------------------------
+# Sentinel for the zero boundary used in float
+# generator selection — comparing min/max against
+# this constant makes the boundary intent explicit
+# and prevents NumericBoundary mutants from surviving.
+# --------------------------------------------------
+Readonly my $ZERO_BOUNDARY => 0;
+
 =head1 NAME
 
 App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Dashboard for Perl modules
@@ -3596,170 +3632,354 @@ sub _get_builtin_properties {
 	};
 }
 
-=head2 _schema_to_lectrotest_generator
-
-Converts a schema field spec to a LectroTest generator string.
-
-=cut
-
+# --------------------------------------------------
+# _schema_to_lectrotest_generator
+#
+# Purpose:    Convert a single schema field spec
+#             hashref into a LectroTest generator
+#             declaration string of the form
+#             '$field <- Generator(...)'.
+#             Used to build the ##[ ... ]## generator
+#             block inside a Property definition.
+#
+# Entry:      $field_name - the parameter name as it
+#                           will appear in the
+#                           generated test code.
+#             $spec       - hashref containing at
+#                           minimum a 'type' key.
+#                           May also contain 'min',
+#                           'max', 'semantic', and
+#                           'matches' keys depending
+#                           on type.
+#
+# Exit:       Returns a string of the form
+#             '$field <- Generator(...)' on success.
+#             Returns undef if the spec is not a
+#             hashref or if range constraints are
+#             invalid (min >= max for numeric types).
+#             Returns a String generator with a carp
+#             warning for unknown types.
+#
+# Side effects: Carps on unknown semantic types,
+#               invalid numeric ranges, and unknown
+#               field types.
+#
+# Notes:      Semantic generators are checked first
+#             for string fields and take precedence
+#             over the regular string generator.
+#             The $input_spec parameter in the type-
+#             detection helpers is reserved for future
+#             use and is currently unused.
+# --------------------------------------------------
 sub _schema_to_lectrotest_generator {
 	my ($field_name, $spec) = @_;
 
-	my $type = $spec->{type} || 'string';
+	# Guard: must be a hashref to dereference safely
+	return unless defined($spec) && ref($spec) eq 'HASH';
 
-	# Check for semantic generator first
-	if ($type eq 'string' && defined $spec->{semantic}) {
-		my $semantic_type = $spec->{semantic};
-		my $generators = _get_semantic_generators();
+	# Default to string when no type is declared
+	my $type = $spec->{'type'} || $DEFAULT_FIELD_TYPE;
 
-		if (exists $generators->{$semantic_type}) {
-			my $gen_code = $generators->{$semantic_type}{code};
-			# Remove leading/trailing whitespace and compress
+	# --------------------------------------------------
+	# Semantic generators take precedence for string
+	# fields — they produce realistic domain-specific
+	# values rather than random character sequences
+	# --------------------------------------------------
+	if($type eq 'string' && defined($spec->{'semantic'})) {
+		my $semantic_type = $spec->{'semantic'};
+		my $generators    = _get_semantic_generators();
+
+		if(exists($generators->{$semantic_type})) {
+			my $gen_code = $generators->{$semantic_type}{'code'};
+
+			# Compress the multi-line generator code into a
+			# single line for embedding in the ##[ ]## block
 			$gen_code =~ s/^\s+//;
 			$gen_code =~ s/\s+$//;
 			$gen_code =~ s/\n\s+/ /g;
+
 			return "$field_name <- $gen_code";
 		} else {
-			carp "Unknown semantic type '$semantic_type', falling back to regular string generator";
-			# Fall through to regular string generation
+			carp "Unknown semantic type '$semantic_type', " .
+				"falling back to regular string generator";
+			# Fall through to regular string generation below
 		}
 	}
 
-	if ($type eq 'integer') {
-		my $min = $spec->{min};
-		my $max = $spec->{max};
+	# --------------------------------------------------
+	# Integer generator
+	# --------------------------------------------------
+	if($type eq 'integer') {
+		my $min = $spec->{'min'};
+		my $max = $spec->{'max'};
 
-		if (!defined($min) && !defined($max)) {
+		if(!defined($min) && !defined($max)) {
+			# Unconstrained — use LectroTest's built-in Int
 			return "$field_name <- Int";
-		} elsif (!defined($min)) {
+		} elsif(!defined($min)) {
+			# Only max defined — generate 0 to max
 			return "$field_name <- Int(sized => sub { int(rand($max + 1)) })";
-		} elsif (!defined($max)) {
-			return "$field_name <- Int(sized => sub { $min + int(rand(1000)) })";
+		} elsif(!defined($max)) {
+			# Only min defined — generate min to min + range
+			return "$field_name <- Int(sized => sub { $min + int(rand($DEFAULT_GENERATOR_RANGE)) })";
 		} else {
+			# Both defined — generate within [min, max]
 			my $range = $max - $min;
 			return "$field_name <- Int(sized => sub { $min + int(rand($range + 1)) })";
 		}
 	}
-	elsif ($type eq 'number' || $type eq 'float') {
-		my $min = $spec->{min};
-		my $max = $spec->{max};
 
-		if (!defined($min) && !defined($max)) {
-			# No constraints - full range
-			return "$field_name <- Float(sized => sub { rand(1000) - 500 })";
-		} elsif (!defined($min)) {
-			# Only max defined
-			if ($max == 0) {
-				# max=0 means negative numbers only
-				return "$field_name <- Float(sized => sub { -rand(1000) })";
-			} elsif ($max > 0) {
-				# Positive max, generate 0 to max
+	# --------------------------------------------------
+	# Float / number generator
+	# --------------------------------------------------
+	if($type eq 'number' || $type eq 'float') {
+		my $min = $spec->{'min'};
+		my $max = $spec->{'max'};
+
+		if(!defined($min) && !defined($max)) {
+			# Unconstrained — symmetric range around zero
+			return "$field_name <- Float(sized => sub { rand($DEFAULT_GENERATOR_RANGE) - $DEFAULT_GENERATOR_RANGE / 2 })";
+
+		} elsif(!defined($min)) {
+			# Only max defined — choose range based on sign of max
+			if($max == $ZERO_BOUNDARY) {
+				# max=0: negative numbers only
+				return "$field_name <- Float(sized => sub { -rand($DEFAULT_GENERATOR_RANGE) })";
+			} elsif($max > $ZERO_BOUNDARY) {
+				# Positive max: generate 0 to max
 				return "$field_name <- Float(sized => sub { rand($max) })";
 			} else {
-				# Negative max, generate from some negative to max
-				return "$field_name <- Float(sized => sub { ($max - 1000) + rand(1000 + $max) })";
+				# Negative max: generate from (max - range) to max
+				return "$field_name <- Float(sized => sub { ($max - $DEFAULT_GENERATOR_RANGE) + rand($DEFAULT_GENERATOR_RANGE + $max) })";
 			}
-		} elsif (!defined($max)) {
-			# Only min defined
-			if ($min == 0) {
-				# min=0 means positive numbers only
-				return "$field_name <- Float(sized => sub { rand(1000) })";
-			} elsif ($min > 0) {
-				# Positive min
-				return "$field_name <- Float(sized => sub { $min + rand(1000) })";
+
+		} elsif(!defined($max)) {
+			# Only min defined — choose range based on sign of min
+			if($min == $ZERO_BOUNDARY) {
+				# min=0: positive numbers only
+				return "$field_name <- Float(sized => sub { rand($DEFAULT_GENERATOR_RANGE) })";
+			} elsif($min > $ZERO_BOUNDARY) {
+				# Positive min: generate min to min + range
+				return "$field_name <- Float(sized => sub { $min + rand($DEFAULT_GENERATOR_RANGE) })";
 			} else {
-				# Negative min
-				return "$field_name <- Float(sized => sub { $min + rand(-$min + 1000) })";
+				# Negative min: generate from min to min + range
+				return "$field_name <- Float(sized => sub { $min + rand(-$min + $DEFAULT_GENERATOR_RANGE) })";
 			}
+
 		} else {
-			# Both min and max defined
+			# Both min and max defined — validate then generate
 			my $range = $max - $min;
-			if ($range <= 0) {
-				carp "Invalid range: min=$min, max=$max";
-				return "$field_name <- Float(sized => sub { $min })";
+			if($range <= $ZERO_BOUNDARY) {
+				carp "Invalid range for '$field_name': min=$min, max=$max";
+				# Return undef rather than emitting a degenerate
+				# generator that would silently produce wrong values
+				return;
 			}
 			return "$field_name <- Float(sized => sub { $min + rand($range) })";
 		}
 	}
-	elsif ($type eq 'string') {
-		my $min_len = $spec->{min} // 0;
-		my $max_len = $spec->{max} // 100;
 
-		# Handle regex patterns
-		if (defined $spec->{matches}) {
-			my $pattern = $spec->{matches};
+	# --------------------------------------------------
+	# String generator
+	# --------------------------------------------------
+	if($type eq 'string') {
+		my $min_len = $spec->{'min'} // 0;
+		my $max_len = $spec->{'max'} // $DEFAULT_MAX_STRING_LEN;
 
-			# Build generator using Data::Random::String::Matches
-			if (defined $spec->{max}) {
-				return "$field_name <- Gen { Data::Random::String::Matches->create_random_string({ regex => qr/$pattern/, length => $spec->{max} }) }";
-			} elsif (defined $spec->{min}) {
-				return "$field_name <- Gen { Data::Random::String::Matches->create_random_string({ regex => qr/$pattern/, length => $spec->{min} }) }";
+		# If a regex pattern is declared, delegate to
+		# Data::Random::String::Matches for pattern-aware generation
+		if(defined($spec->{'matches'})) {
+			my $pattern = $spec->{'matches'};
+
+			if(defined($spec->{'max'})) {
+				return "$field_name <- Gen { Data::Random::String::Matches->create_random_string({ regex => qr/$pattern/, length => $spec->{'max'} }) }";
+			} elsif(defined($spec->{'min'})) {
+				return "$field_name <- Gen { Data::Random::String::Matches->create_random_string({ regex => qr/$pattern/, length => $spec->{'min'} }) }";
 			} else {
 				return "$field_name <- Gen { Data::Random::String::Matches->create_random_string({ regex => qr/$pattern/ }) }";
 			}
 		}
 
 		return "$field_name <- String(length => [$min_len, $max_len])";
-	} elsif ($type eq 'boolean') {
+	}
+
+	# --------------------------------------------------
+	# Boolean generator
+	# --------------------------------------------------
+	if($type eq 'boolean') {
 		return "$field_name <- Bool";
 	}
-	elsif ($type eq 'arrayref') {
-		my $min_size = $spec->{min} // 0;
-		my $max_size = $spec->{max} // 10;
+
+	# --------------------------------------------------
+	# Arrayref generator
+	# --------------------------------------------------
+	if($type eq 'arrayref') {
+		my $min_size = $spec->{'min'} // 0;
+		my $max_size = $spec->{'max'} // $DEFAULT_MAX_COLLECTION_SIZE;
 		return "$field_name <- List(Int, length => [$min_size, $max_size])";
 	}
-	elsif ($type eq 'hashref') {
-		# LectroTest doesn't have built-in Hash, use custom generator
-		my $min_keys = $spec->{min} // 0;
-		my $max_keys = $spec->{max} // 10;
+
+	# --------------------------------------------------
+	# Hashref generator
+	# LectroTest has no built-in Hash generator so we
+	# use Elements over a pre-built list of hashrefs
+	# --------------------------------------------------
+	if($type eq 'hashref') {
+		my $min_keys = $spec->{'min'} // 0;
+		my $max_keys = $spec->{'max'} // $DEFAULT_MAX_COLLECTION_SIZE;
 		return "$field_name <- Elements(map { my \%h; for (1..\$_) { \$h{'key'.\$_} = \$_ }; \\\%h } $min_keys..$max_keys)";
 	}
-	else {
-		carp "Unknown type '$type' for LectroTest generator, using String";
-		return "$field_name <- String";
-	}
+
+	# --------------------------------------------------
+	# Unknown type — fall back to String with a warning
+	# --------------------------------------------------
+	carp "Unknown type '$type' for '$field_name' LectroTest generator, using String";
+	return "$field_name <- String";
 }
 
-=head2 Helper functions for type detection
-
-=cut
-
+# --------------------------------------------------
+# _is_numeric_transform
+#
+# Purpose:    Determine whether a transform's output
+#             spec declares a numeric type, indicating
+#             that numeric range properties should be
+#             generated for it.
+#
+# Entry:      $input_spec  - the transform's input
+#                            spec hashref. Currently
+#                            unused; reserved for
+#                            future input-type checks.
+#             $output_spec - the transform's output
+#                            spec hashref.
+#
+# Exit:       Returns 1 if the output type is one of
+#             'number', 'integer', or 'float'.
+#             Returns 0 otherwise.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _is_numeric_transform {
 	my ($input_spec, $output_spec) = @_;
 
-	my $out_type = $output_spec->{type} // '';
-	return $out_type eq 'number' || $out_type eq 'integer' || $out_type eq 'float';
+	# $input_spec is currently unused — reserved for future
+	# input-side type checking when detecting mixed transforms
+	my $out_type = ($output_spec // {})->{'type'} // '';
+
+	return($out_type eq 'number' || $out_type eq 'integer' || $out_type eq 'float');
 }
 
+# --------------------------------------------------
+# _is_string_transform
+#
+# Purpose:    Determine whether a transform's output
+#             spec declares a string type, indicating
+#             that string length and pattern properties
+#             should be generated for it.
+#
+# Entry:      $input_spec  - the transform's input
+#                            spec hashref. Currently
+#                            unused; reserved for
+#                            future input-type checks.
+#             $output_spec - the transform's output
+#                            spec hashref.
+#
+# Exit:       Returns 1 if the output type is 'string'.
+#             Returns 0 otherwise.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _is_string_transform {
 	my ($input_spec, $output_spec) = @_;
 
-	my $out_type = $output_spec->{type} // '';
-	return $out_type eq 'string';
+	# $input_spec is currently unused — reserved for future
+	# input-side type checking when detecting mixed transforms
+	my $out_type = ($output_spec // {})->{'type'} // '';
+
+	return($out_type eq 'string');
 }
 
+# --------------------------------------------------
+# _same_type
+#
+# Purpose:    Determine whether the dominant type of
+#             a transform's input and output specs
+#             match, indicating that type-preservation
+#             properties are meaningful.
+#
+# Entry:      $input_spec  - the transform's input
+#                            spec hashref, or a nested
+#                            multi-field hashref.
+#             $output_spec - the transform's output
+#                            spec hashref.
+#
+# Exit:       Returns 1 if the dominant input and
+#             output types are identical strings.
+#             Returns 0 otherwise.
+#
+# Side effects: None.
+#
+# Notes:      Uses _get_dominant_type for both sides.
+#             For multi-field input specs, dominant
+#             type is the type of the first field
+#             encountered — this is a simplification.
+#             TODO: extend to handle mixed-type inputs
+#             by checking all fields, not just the
+#             first one found.
+# --------------------------------------------------
 sub _same_type {
 	my ($input_spec, $output_spec) = @_;
 
-	# Simplified - would need more sophisticated logic for multiple inputs
-	my $in_type = _get_dominant_type($input_spec);
-	my $out_type = _get_dominant_type($output_spec);
+	# Guard: treat missing specs as untyped — two untyped
+	# specs both default to $DEFAULT_FIELD_TYPE and would
+	# compare equal, which is intentionally conservative
+	my $in_type  = _get_dominant_type($input_spec  // {});
+	my $out_type = _get_dominant_type($output_spec // {});
 
-	return $in_type eq $out_type;
+	return($in_type eq $out_type);
 }
 
+# --------------------------------------------------
+# _get_dominant_type
+#
+# Purpose:    Extract the most representative type
+#             string from a spec hashref. For flat
+#             output specs this is simply the 'type'
+#             key. For multi-field input specs it is
+#             the type of the first sub-field found
+#             that declares one.
+#
+# Entry:      $spec - a spec hashref. May be a flat
+#                     output spec ({ type => '...' })
+#                     or a multi-field input spec
+#                     ({ field => { type => '...' } }).
+#                     May be undef or empty.
+#
+# Exit:       Returns a type string. Returns
+#             $DEFAULT_FIELD_TYPE ('string') if no
+#             type can be determined.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _get_dominant_type {
 	my $spec = $_[0];
 
-	return $spec->{type} if defined $spec->{type};
+	# Guard: return default for undef or non-hash input
+	return $DEFAULT_FIELD_TYPE
+		unless defined($spec) && ref($spec) eq 'HASH';
 
-	# For multi-field specs, return the first type found
-	for my $field (keys %$spec) {
+	# Flat spec — type declared directly
+	return $spec->{'type'} if defined($spec->{'type'});
+
+	# Multi-field spec — return the type of the first
+	# sub-field that declares one
+	for my $field (keys %{$spec}) {
 		next unless ref($spec->{$field}) eq 'HASH';
-		return $spec->{$field}{type} if defined $spec->{$field}{type};
+		return $spec->{$field}{'type'}
+			if defined($spec->{$field}{'type'});
 	}
 
-	return 'string';	# Default
+	# No type found anywhere — return the safe default
+	return $DEFAULT_FIELD_TYPE;
 }
 
 # --------------------------------------------------
