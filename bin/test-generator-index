@@ -5,7 +5,6 @@ use warnings;
 use autodie qw(:all);
 
 use Cwd qw(abs_path);
-# use Data::Dumper;
 use File::Basename qw(dirname basename);
 use File::Glob ':glob';
 use File::Path qw(make_path);
@@ -179,7 +178,7 @@ each CI push via C<.github/workflows/dashboard.yml>.
 
 =head1 DEPENDENCIES
 
-  Cwd, Data::Dumper, File::Basename, File::Glob, File::Path,
+  Cwd, File::Basename, File::Glob, File::Path,
   File::Slurp, File::Spec, File::stat, Getopt::Long, HTML::Entities,
   HTTP::Tiny, IPC::Run3, JSON::MaybeXS, List::Util, POSIX,
   Readonly, Time::HiRes, URI::Escape, WWW::RT::CPAN, version
@@ -1203,13 +1202,10 @@ if($success) {
 
 	$version = $versions[0];	# current
 	$prev_version = $versions[1];	# previous (may be undef)
-
-	# push @html, "<p>CPAN Release: $version</p>";
 } else {
 	push @html, "<p><a href=\"$cpan_api\">$cpan_api</a>: $res->{status} $res->{reason}</p>";
 }
 
-# $version ||= 'latest';
 my @fail_reports;
 my @pass_reports;
 if($version) {
@@ -1697,7 +1693,6 @@ HTML
 		push @html, "<p>No <A HREF=\"https://fast2-matrix.cpantesters.org/?dist=$dist_name+$version\">CPAN Testers</A> failures reported for $dist_name $version</p>";
 	}
 } elsif($res->{status} == 404) {	# 404 means no fail reports
-	# push @html, "<A HREF=\"$cpan_api\">$cpan_api</A>";
 	push @html, "<p>No CPAN Testers failures reported for $dist_name $version.</p>";
 } else {
 	my $reason = $res->{status} == $HTTP_CONNECTION_FAILED
@@ -1907,7 +1902,6 @@ sub fetch_report_html {
 	return unless $guid;
 
 	my $url = "https://www.cpantesters.org/cpan/report/$guid";
-	# print "fetching report HTML $url\n";
 
 	my $res = $http->get($url);
 	return unless $res->{success};
@@ -2504,8 +2498,8 @@ sub detect_perl_version_root_cause {
 
 	return unless @$fail_versions && @$pass_versions;
 
-	my $max_fail = List::Util::max(@$fail_versions);
-	my $min_pass = List::Util::min(@$pass_versions);
+	my $max_fail = max(@$fail_versions);
+	my $min_pass = min(@$pass_versions);
 
 	return unless $max_fail < $min_pass;
 
@@ -2674,16 +2668,34 @@ sub make_key
 # --------------------------------------------------
 # _enclosing_sub
 #
-# Scan backwards through source lines from a given
-# line number to find the enclosing subroutine name.
+# Purpose:    Scan backwards through source lines
+#             from a given line number to find the
+#             name of the enclosing subroutine.
+#             Used to provide navigation context in
+#             generated test stubs and to look up
+#             schemas in SchemaExtractor output.
 #
-# Arguments:
-#   $source_lines - arrayref of source lines (1-indexed content)
-#   $line_no      - line number to search backwards from
+# Entry:      $source_lines - arrayref of source
+#                             lines (1-indexed
+#                             content, as returned
+#                             by readline).
+#             $line_no      - line number to search
+#                             backwards from.
 #
-# Returns:
-#   The subroutine name string, or undef if not found
-#   (e.g. for file-level code outside any sub)
+# Exit:       Returns the subroutine name string,
+#             or undef if no enclosing sub was found
+#             (e.g. for file-level code outside any
+#             sub declaration).
+#
+# Side effects: None.
+#
+# Notes:      Matches 'sub name' at the start of a
+#             line, optionally indented. Does not
+#             attempt to track brace depth — it
+#             returns the nearest preceding sub
+#             declaration regardless of whether the
+#             line is actually inside that sub's
+#             body.
 # --------------------------------------------------
 sub _enclosing_sub {
 	my ($source_lines, $line_no) = @_;
@@ -2702,22 +2714,41 @@ sub _enclosing_sub {
 # --------------------------------------------------
 # _boundary_edge_case_key
 #
-# Detect whether a schema uses positional
-# or named parameters, to determine which
-# YAML key to use for boundary edge cases.
-# Positional functions use edge_case_array;
-# named-parameter functions use edge_cases.
+# Purpose:    Determine which YAML edge-case key
+#             should be used when augmenting a schema
+#             with boundary values from a surviving
+#             NUM_BOUNDARY mutant, based on whether
+#             the schema uses positional or named
+#             parameters.
 #
-# Entry:      $schema is a hashref from SchemaExtractor.
+# Entry:      $schema - hashref from SchemaExtractor
+#                       containing at minimum an
+#                       'input' key.
 #
-# Exit:       Returns the string 'edge_case_array' or
-#             'edge_cases'.
+# Exit:       Returns a two-element list:
+#               ($edge_key, $numeric_params)
+#             where $edge_key is either
+#             'edge_case_array' (positional) or
+#             'edge_cases' (named), and
+#             $numeric_params is an arrayref of
+#             parameter names whose type is numeric
+#             (integer, number, or float). For
+#             positional schemas, $numeric_params
+#             is always an empty arrayref.
 #
-# Notes:      For named params, also returns the list
-#             of numeric parameter names to annotate,
-#             since we cannot always tell from the
-#             mutant context which param the boundary
-#             comparison is about.
+# Side effects: None.
+#
+# Notes:      A schema with a single top-level 'type'
+#             key in its input (i.e. no named params)
+#             is treated as a single positional
+#             argument. A schema where all params
+#             have explicit 'position' keys is also
+#             treated as positional. Mixed or named
+#             schemas use 'edge_cases' and the
+#             boundary value is applied to all
+#             numeric params since the mutant context
+#             does not reveal which param was
+#             compared.
 # --------------------------------------------------
 sub _boundary_edge_case_key {
 	my ($schema) = @_;
@@ -4277,7 +4308,7 @@ sub _mutant_file_report {
 	# Preserve directory structure inside report
 	my $relative_path = File::Spec->catfile($dir, $file . '.html');
 
-	my $out_dir = File::Basename::dirname($relative_path);
+	my $out_dir = dirname($relative_path);
 
 	make_path($out_dir) unless -d $out_dir;
 
@@ -4707,9 +4738,6 @@ sub _suggest_test {
 		($type) = $m->{id} =~ /^([A-Z_]+)/;
 	}
 
-	# my $orig = $m->{original} // '';
-	# my $new = $m->{transform} // '';
-
 	# ---------------------------------------------------------
 	# Boundary condition mutation
 	# ---------------------------------------------------------
@@ -4805,7 +4833,7 @@ sub _relative_link {
 	$to .= '.html';
 
 	# Use File::Spec to compute correct relative path
-	return File::Spec->abs2rel($to, File::Basename::dirname($from));
+	return File::Spec->abs2rel($to, dirname($from));
 }
 
 sub _mutant_file_header {
@@ -5084,26 +5112,43 @@ document.addEventListener("mousemove", function(e) {
 	};
 }
 
-# ------------------------------------------------------------
+# --------------------------------------------------
 # _coverage_totals
 #
-# Extract structural coverage totals from a Devel::Cover JSON
-# report, computed only across the project's own files.
-# Returns four scalar values in list context:
+# Purpose:    Extract aggregate structural coverage
+#             totals from a Devel::Cover JSON report,
+#             computed only across the project's own
+#             source files. Used to populate the
+#             Structural Coverage and Executive
+#             Summary sections of the dashboard.
 #
-#   ($statement_total, $statement_hit,
-#    $branch_total,    $branch_hit)
+# Entry:      $cov - decoded Devel::Cover JSON
+#                    hashref as returned by
+#                    decode_json(read_file(...)).
+#                    May be undef.
 #
-# This matches how the routine is used elsewhere in this file.
+# Exit:       Returns a four-element list:
+#               ($stmt_total, $stmt_hit,
+#                $branch_total, $branch_hit)
+#             Returns (0, 0, 0, 0) if $cov is undef,
+#             not a hashref, or contains no summary.
 #
-# NOTE:
-# Devel::Cover's pre-aggregated Total key includes all
-# instrumented files — CPAN dependencies, blib/ copies,
-# and absolute paths — which massively deflates the
-# reported percentage. We recompute from individual file
-# entries, applying the same own-file filter used in the
-# coverage table and badge calculation.
-# ------------------------------------------------------------
+# Side effects: None.
+#
+# Notes:      Devel::Cover's pre-aggregated 'Total'
+#             key includes all instrumented files —
+#             CPAN dependencies, blib/ copies, and
+#             absolute paths — which inflates the
+#             reported percentage. This function
+#             recomputes from per-file entries,
+#             applying the same own-file filter
+#             (lib/, blib/, bin/ prefixes only, no
+#             absolute paths) used in the coverage
+#             table and badge calculation.
+#             blib/ entries that have a corresponding
+#             lib/ entry are skipped to avoid
+#             double-counting.
+# --------------------------------------------------
 sub _coverage_totals
 {
 	my $cov = $_[0];
@@ -5143,30 +5188,56 @@ sub _coverage_totals
 	return ($stmt_total, $stmt_hit, $branch_total, $branch_hit);
 }
 
-# ------------------------------------------------------------
+# --------------------------------------------------
 # _coverage_for_file
 #
-# Attempts to find coverage data for a given source file.
-# Devel::Cover JSON keys may store paths relative to project
-# root, so we try multiple match strategies.
-# ------------------------------------------------------------
+# Purpose:    Look up Devel::Cover coverage data for
+#             a single source file, trying multiple
+#             path forms to cope with the variety of
+#             ways Devel::Cover records file paths
+#             across different project layouts and
+#             Perl versions.
+#
+# Entry:      $cov  - decoded Devel::Cover JSON
+#                     hashref. May be undef.
+#             $file - path to the source file as
+#                     used elsewhere in the script
+#                     (may be relative, blib-prefixed,
+#                     or absolute).
+#
+# Exit:       Returns the per-file coverage hashref
+#             from $cov->{summary} on success, or
+#             undef if no match is found.
+#
+# Side effects: None.
+#
+# Notes:      Match strategies tried in order:
+#               1. Exact key match
+#               2. Basename match across all keys
+#               3. lib/-relative path
+#               4. blib/lib/-prefixed path
+#             The basename fallback is intentionally
+#             broad — it will return the first file
+#             whose basename matches, so it may
+#             produce incorrect results if two files
+#             share a basename in different
+#             directories.
+# --------------------------------------------------
 sub _coverage_for_file {
 	my ($cov, $file) = @_;
 
-    return unless $cov && $cov->{summary};
-    my $summary = $cov->{summary};
+	return unless $cov && $cov->{summary};
+	my $summary = $cov->{summary};
 
-    # 1. exact match (what worked before)
-    return $summary->{$file} if exists $summary->{$file};
+	# 1. exact match (what worked before)
+	return $summary->{$file} if exists $summary->{$file};
 
-    require File::Basename;
-
-    my $base = File::Basename::basename($file);
+	my $base = basename($file);
 
     # 2. basename match (what worked before)
     for my $k (keys %$summary) {
         next if $k eq 'Total';
-        if(File::Basename::basename($k) eq $base) {
+        if(basename($k) eq $base) {
             return $summary->{$k};
         }
     }
@@ -5184,17 +5255,42 @@ sub _coverage_for_file {
     return;
 }
 
-# ------------------------------------------------------------
+# --------------------------------------------------
 # _cyclomatic_complexity
 #
-# Compute a simple cyclomatic complexity metric using PPI.
+# Purpose:    Compute an approximate cyclomatic
+#             complexity metric for a source file
+#             using PPI, for display in the mutation
+#             heatmap table. Higher complexity
+#             correlates with more mutation survivors
+#             and harder-to-test code.
 #
-# Formula:
-#   complexity = 1 + number_of_decision_points
+# Entry:      $file - path to the source .pm or .pl
+#                     file to analyse.
 #
-# This is an approximation but works well for dashboards.
-# ------------------------------------------------------------
-
+# Exit:       Returns a non-negative integer.
+#             Returns 0 if the file does not exist
+#             or PPI fails to parse it.
+#             Returns 1 (the base complexity) for
+#             a file with no decision points.
+#
+# Side effects: Loads PPI transiently via require.
+#
+# Notes:      Formula: complexity = 1 + decision_points
+#             where decision points are control-flow
+#             keywords (if, elsif, unless, while, for,
+#             foreach, until, when) plus logical
+#             operators (&&, ||, ?).
+#             This is a standard approximation of
+#             McCabe cyclomatic complexity and works
+#             well for dashboard ranking, though it
+#             does not account for Perl's postfix
+#             conditionals or given/when exhaustively.
+#             PPI is require'd rather than use'd so
+#             it is only loaded when the dashboard
+#             generator actually runs, not during
+#             module load.
+# --------------------------------------------------
 sub _cyclomatic_complexity {
 	my $file = $_[0];
 
@@ -5236,39 +5332,61 @@ sub _cyclomatic_complexity {
 	return $complexity;
 }
 
-# ------------------------------------------------------------
-# _lcsaj_coverage_for_file($file, $lcsaj_dir, $hits, $html)
+# --------------------------------------------------
+# _lcsaj_coverage_for_file
 #
-# Look up LCSAJ path coverage for a single source file.
+# Purpose:    Look up LCSAJ (Linear Code Sequence
+#             And Jump) path coverage for a single
+#             source file by locating its .lcsaj.json
+#             definition file and counting how many
+#             paths were executed during the test run.
 #
-# Arguments:
-#   $file      - path to the source file (relative or absolute)
-#   $lcsaj_dir - root directory where .lcsaj.json files were written
-#   $hits      - hashref of { normalised_path => { line => count } }
-#                as produced by Devel::App::Test::Generator::LCSAJ::Runtime
-#   $html      - arrayref to push HTML comments into (for diagnostics)
+# Entry:      $file      - path to the source file
+#                          (relative or absolute).
+#             $lcsaj_dir - root directory where
+#                          .lcsaj.json files were
+#                          written by the analyser.
+#             $hits      - hashref of:
+#                          { normalised_path =>
+#                            { line_no => count } }
+#                          as produced by
+#                          Devel::App::Test::Generator
+#                          ::LCSAJ::Runtime.
+#             $html      - arrayref for diagnostic
+#                          HTML comments (currently
+#                          unused; retained for
+#                          future debug output).
 #
-# Returns:
-#   ($covered, $total)  - both defined if the .lcsaj.json was found
-#   (undef, undef)      - if no .lcsaj.json could be located
+# Exit:       Returns a two-element list:
+#               ($covered, $total)
+#             where $covered is the number of LCSAJ
+#             paths that had at least one line
+#             executed, and $total is the total
+#             number of paths defined for the file.
+#             Returns (undef, undef) if the
+#             .lcsaj.json file cannot be located.
+#             Returns (0, 0) if the file is found
+#             but defines no paths.
 #
-# Path resolution strategy
-# ------------------------
-# The .lcsaj.json file path is derived by stripping the source tree
-# prefix from $file to get a repo-relative name, then appending
-# ".lcsaj.json" under $lcsaj_dir.  We try several prefix-strip
-# strategies to cope with:
+# Side effects: Opens and reads .lcsaj.json files
+#               from disk.
 #
-#   1. Standard layout:   lib/Foo/Bar.pm
-#   2. Build tree:        blib/lib/Foo/Bar.pm  (same strip target)
-#   3. Non-standard:      src/Foo/Bar.pm, or Bar.pm at repo root
-#      -> falls back to basename only
-#
-# The $hits lookup also tries multiple key forms because Runtime.pm
-# writes normalised lib-relative keys (e.g. "lib/Foo/Bar.pm") while
-# callers may pass an absolute path or a blib-prefixed path.
-# ------------------------------------------------------------
-
+# Notes:      Path resolution tries two candidate
+#             forms derived from $file:
+#               1. lib-relative: Foo/Bar.pm
+#                  (strips any .../lib/ prefix)
+#               2. basename only: Bar.pm
+#                  (last resort fallback)
+#             The hit-map lookup tries four key
+#             forms (normalised absolute, normalised
+#             original, raw absolute, raw original)
+#             because Runtime.pm normalises its keys
+#             to lib-relative form while callers may
+#             pass various path forms.
+#             A path is counted as covered if any
+#             line in its [start..end] range appears
+#             in the hit map.
+# --------------------------------------------------
 sub _lcsaj_coverage_for_file {
 	my ($file, $lcsaj_dir, $hits, $html) = @_;
 
