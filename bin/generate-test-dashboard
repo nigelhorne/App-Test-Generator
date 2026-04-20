@@ -92,7 +92,7 @@ echo "${LCSAJ_TARGETS:0:500}"
 # --- Step 6: Run mutation analysis ---
 echo "Running mutation analysis..."
 mkdir -p mutation_html/lib cover_html
-bin/app-test-generator-mutate \
+bin/test-generator-mutate \
     -v \
     --lib lib \
     --tests t \
@@ -112,7 +112,7 @@ set -e
 # survivors via SchemaExtractor where confidence is sufficient.
 # --generate_fuzz augments existing t/conf/ schemas with boundary values
 # from surviving mutants, writing timestamped copies for t/fuzz.t.
-bin/app-test-generator-index \
+bin/test-generator-index \
 	--generate_mutant_tests=t \
 	--generate_test=mutant \
 	--generate_fuzz
