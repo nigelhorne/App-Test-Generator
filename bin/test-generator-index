@@ -29,11 +29,11 @@ use YAML::XS qw(LoadFile);
 
 =head1 NAME
 
-app-test-generator-index - Test coverage dashboard generator
+test-generator-index - Test coverage dashboard generator
 
 =head1 DESCRIPTION
 
-C<app-test-generator-index> generates an HTML test coverage dashboard for
+C<test-generator-index> generates an HTML test coverage dashboard for
 publication on GitHub Pages, combining four sources of test quality
 data into a single report:
 
@@ -46,7 +46,7 @@ which lines and branches were exercised by the test suite.
 showing which control-flow paths were executed. Displayed as blue
 (covered) or red (uncovered) dots on per-file mutation pages.
 
-=item * B<Mutation testing results> from C<bin/app-test-generator-mutate>,
+=item * B<Mutation testing results> from C<bin/test-generator-mutate>,
 showing which injected faults the test suite detected (killed) and
 which it missed (survived).
 
@@ -83,7 +83,7 @@ copies that are picked up automatically by C<t/fuzz.t>.
 The script is designed to be shared across projects. Copy it into the
 C<scripts/> directory of each project that uses it:
 
-    cp ../App-Test-Generator/scripts/app-test-generator-index scripts/
+    cp ../App-Test-Generator/scripts/test-generator-index scripts/
 
 It is invoked automatically by C<scripts/generate_test_dashboard> on
 each CI push via C<.github/workflows/dashboard.yml>.
@@ -95,7 +95,7 @@ each CI push via C<.github/workflows/dashboard.yml>.
 =head1 INPUTS
 
   cover_html/cover.json     - Devel::Cover JSON report (statement/branch/condition)
-  mutation.json             - Mutation testing results from app-test-generator-mutate
+  mutation.json             - Mutation testing results from test-generator-mutate
   cover_html/lcsaj_hits.json - LCSAJ path hit data from the LCSAJ runtime debugger
   cover_html/mutation_html/lib/ - Per-file LCSAJ path definitions (.lcsaj.json)
   coverage_history/*.json   - Historical coverage snapshots for the trend chart
@@ -3004,7 +3004,7 @@ sub _dump_schema_yaml {
 # Generate a test stub file for surviving mutants,
 # to be placed in the project's t/ directory.
 #
-# This sub is called from app-test-generator-index which
+# This sub is called from test-generator-index which
 # runs from the project root (e.g. CGI-Info/ or
 # App-Test-Generator/). The t/ directory written to
 # belongs to the project under test, not to
@@ -3115,7 +3115,7 @@ sub _generate_mutant_tests {
 #!/usr/bin/env perl
 # Auto-generated mutant test stubs
 # Generated: $generated_at
-# Generator: scripts/app-test-generator-index
+# Generator: scripts/test-generator-index
 #
 # DO NOT COMMIT without completing the TODO sections.
 #
