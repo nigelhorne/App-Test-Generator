@@ -2385,8 +2385,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<ul>
 				<li><b>COND_INV_1873_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1874: 			if($has_positions) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 1875: 				$position_code = &quot;\$result = (scalar(\@alist) == 1) ? ${module}\-&gt;$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}\-&gt;$function() : ${module}\-&gt;$function(\@alist);&quot;;
+<span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1874: 			if($has_positions) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_1874_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 1875: 				$position_code = &quot;\$result = (scalar(\@alist) == 1) ? ${module}\-&gt;$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}\-&gt;$function() : ${module}\-&gt;$function(\@alist);&quot;;
 </span><span class=""> 1876: 			} else {
 </span><span class=""> 1877: 				$call_code = &quot;\$result = ${module}\-&gt;$function(\$input);&quot;;
 </span><span class=""> 1878: 			}
@@ -4647,7 +4653,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3904: 
 </span><span class=""> 3905: 		} elsif(!defined($min)) {
 </span><span class=""> 3906: 			# Only max defined &acirc;&#128;&#148; choose range based on sign of max
-</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3907: 			if($max == $ZERO_BOUNDARY) {
+</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3907: 			if($max == $ZERO_BOUNDARY) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -4703,7 +4709,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3917: 
 </span><span class=""> 3918: 		} elsif(!defined($max)) {
 </span><span class=""> 3919: 			# Only min defined &acirc;&#128;&#148; choose range based on sign of min
-</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3920: 			if($min == $ZERO_BOUNDARY) {
+</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3920: 			if($min == $ZERO_BOUNDARY) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -4760,7 +4766,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3931: 		} else {
 </span><span class=""> 3932: 			# Both min and max defined &acirc;&#128;&#148; validate then generate
 </span><span class=""> 3933: 			my $range = $max - $min;
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3934: 			if($range &lt;= $ZERO_BOUNDARY) {
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3934: 			if($range &lt;= $ZERO_BOUNDARY) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
@@ -5587,7 +5593,7 @@ function toggleTheme() {
 
 (function() {
     const saved = localStorage.getItem('theme');
-    if (saved) {
+    if(saved) {
         document.documentElement.setAttribute('data-theme', saved);
     }
 })();
