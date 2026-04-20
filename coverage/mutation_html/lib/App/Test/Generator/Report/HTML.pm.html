@@ -289,7 +289,7 @@ pre details.mutant-details ul {
 </span><span class="">   37: =cut
 </span><span class="">   38: 
 </span><span class="">   39: sub generate {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 40 → 55 → 61</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 40 → 55 → 0</span></span>   40: 	my ($class, $json_file, $output_dir, $cover_json, $lcsaj_dir, $lcsaj_hits_file) = @_;
+</span><span class="">   40: 	my ($class, $json_file, $output_dir, $cover_json, $lcsaj_dir, $lcsaj_hits_file) = @_;
 </span><span class="">   41: 
 </span><span class="">   42: 	make_path($output_dir);
 </span><span class="">   43: 
@@ -316,7 +316,7 @@ pre details.mutant-details ul {
 </span><span class="">   58: 		close $cfh;
 </span><span class="">   59: 	}
 </span><span class="">   60: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 61 → 63 → 69</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 61 → 63 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 61 → 63 → 69</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 61 → 63 → 0</span></span>   61: 	my $lcsaj_hits;
+</span><span class="">   61: 	my $lcsaj_hits;
 </span><span class="">   62: 
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">   63: 	if ($lcsaj_hits_file &amp;&amp; -f $lcsaj_hits_file) {
 </span>
@@ -330,7 +330,7 @@ pre details.mutant-details ul {
 </span><span class="">   66: 		close $lfh;
 </span><span class="">   67: 	}
 </span><span class="">   68: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 69 → 76 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 69 → 76 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 69 → 76 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 69 → 76 → 0</span></span>   69: 	my $files = _group_by_file($data);
+</span><span class="">   69: 	my $files = _group_by_file($data);
 </span><span class="">   70: 
 </span><span class="">   71: 	_write_index($output_dir, $data, $files, $coverage_data, $lcsaj_dir, $lcsaj_hits);
 </span><span class="">   72: 
@@ -413,7 +413,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">   91: # --------------------------------------------------
 </span><span class="">   92: 
 </span><span class="">   93: sub _group_by_file {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 94 → 98 → 109</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 94 → 98 → 0</span></span>   94: 	my $data = $_[0];
+</span><span class="">   94: 	my $data = $_[0];
 </span><span class="">   95: 
 </span><span class="">   96: 	my %files;
 </span><span class="">   97: 
@@ -428,7 +428,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  106: 		}
 </span><span class="">  107: 	}
 </span><span class="">  108: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 109 → 109 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 109 → 109 → 0</span></span>  109: 	return \%files;
+</span><span class="">  109: 	return \%files;
 </span><span class="">  110: }
 </span><span class="">  111: 
 </span><span class="">  112: # --------------------------------------------------
@@ -436,7 +436,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  114: # --------------------------------------------------
 </span><span class="">  115: 
 </span><span class="">  116: sub _write_index {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 117 → 136 → 142</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 117 → 136 → 0</span></span>  117: 	my ($dir, $data, $files, $coverage_data, $lcsaj_dir, $lcsaj_hits) = @_;
+</span><span class="">  117: 	my ($dir, $data, $files, $coverage_data, $lcsaj_dir, $lcsaj_hits) = @_;
 </span><span class="">  118: 
 </span><span class="">  119: 	open my $out, &#39;&gt;&#39;, File::Spec-&gt;catfile($dir, &#39;index.html&#39;) or die $!;
 </span><span class="">  120: 
@@ -467,7 +467,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  139: 		print $out &quot;&lt;tr&gt;&lt;th&gt;File&lt;/th&gt;&lt;th&gt;Total&lt;/th&gt;&lt;th&gt;Killed&lt;/th&gt;&lt;th&gt;Survivors&lt;/th&gt;&lt;th&gt;Score%&lt;/th&gt;&lt;th&gt;Complexity&lt;/th&gt;&lt;/tr&gt;\n&quot;;
 </span><span class="">  140: 	}
 </span><span class="">  141: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 142 → 142 → 179</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 142 → 142 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 142 → 142 → 179</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 142 → 142 → 0</span></span>  142: 	for my $file (
+</span><span class="">  142: 	for my $file (
 </span><span class="">  143: 		sort { _file_score($files-&gt;{$a}) &lt;=&gt; _file_score($files-&gt;{$b}) || $a cmp $b } keys %$files
 </span><span class="">  144: 	) {
 </span><span class="">  145: 		my $killed = scalar @{ $files-&gt;{$file}{killed} || [] };
@@ -510,7 +510,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  176: };
 </span><span class="">  177: 	}
 </span><span class="">  178: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 179 → 184 → 209</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 179 → 184 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 179 → 184 → 209</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 179 → 184 → 0</span></span>  179: 	print $out &quot;&lt;/table&gt;\n&quot;;
+</span><span class="">  179: 	print $out &quot;&lt;/table&gt;\n&quot;;
 </span><span class="">  180: 
 </span><span class="">  181: 	# --------------------------------------------------
 </span><span class="">  182: 	# Structural Coverage Summary (if provided)
@@ -546,7 +546,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  206: 		print $out &quot;&lt;/div&gt;\n&quot;;
 </span><span class="">  207: 	}
 </span><span class="">  208: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 209 → 211 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 209 → 211 → 0</span></span>  209: 	print $out _footer();
+</span><span class="">  209: 	print $out _footer();
 </span><span class="">  210: 
 </span><span class="">  211: 	close $out;
 </span><span class="">  212: }
@@ -555,7 +555,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  215: # Write per-file report with heatmap
 </span><span class="">  216: # --------------------------------------------------
 </span><span class="">  217: sub _write_file_report {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 218 → 254 → 259</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 218 → 254 → 0</span></span>  218: 	my (
+</span><span class="">  218: 	my (
 </span><span class="">  219: 		$dir,
 </span><span class="">  220: 		$file,
 </span><span class="">  221: 		$mutants,
@@ -602,7 +602,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  256: 		print $out qq{&lt;a href=&quot;$link&quot;&gt;&acirc;&not;&#133; Previous&lt;/a&gt; };
 </span><span class="">  257: 	}
 </span><span class="">  258: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 259 → 266 → 271</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 259 → 266 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 259 → 266 → 271</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 259 → 266 → 0</span></span>  259: 	print $out qq{&lt;a href=&quot;},
+</span><span class="">  259: 	print $out qq{&lt;a href=&quot;},
 </span><span class="">  260: 		File::Spec-&gt;abs2rel(&#39;index.html&#39;, File::Basename::dirname(&quot;$file.html&quot;)),
 </span><span class="">  261: 		qq{&quot;&gt;Index&lt;/a&gt;};
 </span><span class="">  262: 
@@ -620,7 +620,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  268: 		print $out qq{ &lt;a href=&quot;$link&quot;&gt;Next &acirc;&#158;&iexcl;&lt;/a&gt;};
 </span><span class="">  269: 	}
 </span><span class="">  270: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 271 → 276 → 334</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 271 → 276 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 271 → 276 → 334</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 271 → 276 → 0</span></span>  271: 	print $out qq{&lt;/div&gt;};
+</span><span class="">  271: 	print $out qq{&lt;/div&gt;};
 </span><span class="">  272: 
 </span><span class="">  273: 	# --------------------------------------------------
 </span><span class="">  274: 	# File-level structural coverage (if available)
@@ -695,7 +695,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  331: 	# --------------------------------------------------
 </span><span class="">  332: 	# Legend explaining line colours
 </span><span class="">  333: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 334 → 343 → 356</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 334 → 343 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 334 → 343 → 356</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 334 → 343 → 0</span></span>  334: 	print $out qq{
+</span><span class="">  334: 	print $out qq{
 </span><span class="">  335: 		&lt;div class=&quot;legend&quot;&gt;
 </span><span class="">  336: 			&lt;h3&gt;Mutant Testing Legend&lt;/h3&gt;
 </span><span class="">  337: 			&lt;span class=&quot;legend-box survived-1&quot;&gt;&lt;/span&gt; Survived (tests missed this)
@@ -729,7 +729,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  353: 		}
 </span><span class="">  354: 	}
 </span><span class="">  355: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 356 → 359 → 364</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 356 → 359 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 356 → 359 → 364</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 356 → 359 → 0</span></span>  356: 	my %survived_by_line;
+</span><span class="">  356: 	my %survived_by_line;
 </span><span class="">  357: 	my %killed_by_line;
 </span><span class="">  358: 
 </span><span class="">  359: 	for my $m (@{ $mutants-&gt;{survived} || [] }) {
@@ -737,11 +737,11 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  361: 		push @{ $survived_by_line{ $m-&gt;{line} } }, $m;
 </span><span class="">  362: 	}
 </span><span class="">  363: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 364 → 364 → 368</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 364 → 364 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 364 → 364 → 368</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 364 → 364 → 0</span></span>  364: 	for my $m (@{ $mutants-&gt;{killed} || [] }) {
+</span><span class="">  364: 	for my $m (@{ $mutants-&gt;{killed} || [] }) {
 </span><span class="">  365: 		next unless defined $m-&gt;{line};
 </span><span class="">  366: 		push @{ $killed_by_line{ $m-&gt;{line} } }, $m;
 </span><span class="">  367: 	}
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 368 → 372 → 418</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 368 → 372 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 368 → 372 → 418</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 368 → 372 → 0</span></span>  368: 	print $out &quot;&lt;pre&gt;\n&quot;;
+</span><span class="">  368: 	print $out &quot;&lt;pre&gt;\n&quot;;
 </span><span class="">  369: 
 </span><span class="">  370: 	my %lcsaj_by_line;
 </span><span class="">  371: 
@@ -803,7 +803,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  415: 		}
 </span><span class="">  416: 	}
 </span><span class="">  417: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 418 → 418 → 547</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 418 → 418 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 418 → 418 → 547</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 418 → 418 → 0</span></span>  418: 	for my $i (0 .. $#lines) {
+</span><span class="">  418: 	for my $i (0 .. $#lines) {
 </span><span class="">  419: 		my $line_no = $i + 1;
 </span><span class="">  420: 		my $content = encode_entities($lines[$i]);
 </span><span class="">  421: 
@@ -827,7 +827,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 				<li><b>COND_INV_434_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class="">  435: 			# Assign intensity class based on number of survivors
-</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch.">  436: 			if ($survivor_count == 1) { $class = &#39;survived-1&#39;; }
+</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  436: 			if ($survivor_count == 1) { $class = &#39;survived-1&#39;; }
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1001,7 +1001,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  544: 		print $out &quot;&lt;/span&gt;$details&quot;;
 </span><span class="">  545: 	}
 </span><span class="">  546: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 547 → 551 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 547 → 551 → 0</span></span>  547: 	print $out &quot;&lt;/pre&gt;\n&quot;;
+</span><span class="">  547: 	print $out &quot;&lt;/pre&gt;\n&quot;;
 </span><span class="">  548: 
 </span><span class="">  549: 	print $out _footer();
 </span><span class="">  550: 
@@ -1022,7 +1022,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  565: # Generate smart advisory text based on mutation type
 </span><span class="">  566: # --------------------------------------------------
 </span><span class="">  567: sub _mutation_advice {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 568 → 575 → 580</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 568 → 575 → 0</span></span>  568: 	my $mutant = $_[0];
+</span><span class="">  568: 	my $mutant = $_[0];
 </span><span class="">  569: 
 </span><span class="">  570: 	# Determine mutation type
 </span><span class="">  571: 	# Prefer explicit type field if present
@@ -1040,7 +1040,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  577: 	}
 </span><span class="">  578: 
 </span><span class="">  579: 	# Default advice
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 580 → 591 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 580 → 591 → 0</span></span>  580: 	return &#39;Tests did not detect this behavioural change. Consider adding assertions.&#39; unless $type;
+</span><span class="">  580: 	return &#39;Tests did not detect this behavioural change. Consider adding assertions.&#39; unless $type;
 </span><span class="">  581: 
 </span><span class="">  582: 	# Advice per mutation type
 </span><span class="">  583: 	return &#39;Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).&#39; if $type =~ /NUM|BOUNDARY/;
@@ -1055,7 +1055,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  592: }
 </span><span class="">  593: 
 </span><span class="">  594: sub _suggest_test {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 595 → 605 → 616</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 595 → 605 → 0</span></span>  595: 	my $m = $_[0];
+</span><span class="">  595: 	my $m = $_[0];
 </span><span class="">  596: 
 </span><span class="">  597: 	# ---------------------------------------------------------
 </span><span class="">  598: 	# Determine mutation type
@@ -1090,7 +1090,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  613: 	# Boundary condition mutation
 </span><span class="">  614: 	# ---------------------------------------------------------
 </span><span class="">  615: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 616 → 616 → 627</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 616 → 616 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 616 → 616 → 627</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 616 → 616 → 0</span></span>  616: 	if ($type &amp;&amp; $type =~ /NUM|BOUNDARY/) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  616: 	if ($type &amp;&amp; $type =~ /NUM|BOUNDARY/) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -1107,7 +1107,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  624: 	# Boolean mutation
 </span><span class="">  625: 	# ---------------------------------------------------------
 </span><span class="">  626: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 627 → 627 → 638</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 627 → 627 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 627 → 627 → 638</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 627 → 627 → 0</span></span>  627: 	if ($type &amp;&amp; $type =~ /BOOL|NEGATION/) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  627: 	if ($type &amp;&amp; $type =~ /BOOL|NEGATION/) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -1124,7 +1124,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  635: 	# Return value mutation
 </span><span class="">  636: 	# ---------------------------------------------------------
 </span><span class="">  637: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 638 → 638 → 645</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 638 → 638 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 638 → 638 → 645</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 638 → 638 → 0</span></span>  638: 	if ($type &amp;&amp; $type =~ /RETURN/) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  638: 	if ($type &amp;&amp; $type =~ /RETURN/) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -1137,7 +1137,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  642: TEST
 </span><span class="">  643: 	}
 </span><span class="">  644: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 645 → 645 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 645 → 645 → 0</span></span>  645: 	return;
+</span><span class="">  645: 	return;
 </span><span class="">  646: }
 </span><span class="">  647: 
 </span><span class="">  648: sub _survivor_class {
@@ -1531,7 +1531,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  981: # root, so we try multiple match strategies.
 </span><span class="">  982: # ------------------------------------------------------------
 </span><span class="">  983: sub _coverage_for_file {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 984 → 997 → 1005</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 984 → 997 → 0</span></span>  984:     my ($cov, $file) = @_;
+</span><span class="">  984:     my ($cov, $file) = @_;
 </span><span class="">  985: 
 </span><span class="">  986:     return unless $cov &amp;&amp; $cov-&gt;{summary};
 </span><span class="">  987:     my $summary = $cov-&gt;{summary};
@@ -1558,7 +1558,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1002:     }
 </span><span class=""> 1003: 
 </span><span class=""> 1004:     # 3. try lib/ relative path
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1005 → 1014 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1005 → 1014 → 0</span></span> 1005:     my $rel = $file;
+</span><span class=""> 1005:     my $rel = $file;
 </span><span class=""> 1006:     $rel =~ s{.*?/lib/}{lib/};
 </span><span class=""> 1007: 
 </span><span class=""> 1008:     return $summary-&gt;{$rel} if exists $summary-&gt;{$rel};
@@ -1582,7 +1582,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1026: # ------------------------------------------------------------
 </span><span class=""> 1027: 
 </span><span class=""> 1028: sub _cyclomatic_complexity {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1029 → 1045 → 1056</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1029 → 1045 → 0</span></span> 1029: 	my $file = $_[0];
+</span><span class=""> 1029: 	my $file = $_[0];
 </span><span class=""> 1030: 
 </span><span class=""> 1031: 	return 0 unless -f $file;
 </span><span class=""> 1032: 
@@ -1615,7 +1615,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1053: 	# --------------------------------------------------
 </span><span class=""> 1054: 	# Logical operators (extra branches)
 </span><span class=""> 1055: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1056 → 1058 → 1066</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1056 → 1058 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1056 → 1058 → 1066</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1056 → 1058 → 0</span></span> 1056: 	my $ops = $doc-&gt;find(&#39;PPI::Token::Operator&#39;) || [];
+</span><span class=""> 1056: 	my $ops = $doc-&gt;find(&#39;PPI::Token::Operator&#39;) || [];
 </span><span class=""> 1057: 
 </span><span class=""> 1058: 	foreach my $op (@$ops) {
 </span><span class=""> 1059: 		my $c = $op-&gt;content;
@@ -1631,11 +1631,11 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1063: 		}
 </span><span class=""> 1064: 	}
 </span><span class=""> 1065: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1066 → 1066 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1066 → 1066 → 0</span></span> 1066: 	return $complexity;
+</span><span class=""> 1066: 	return $complexity;
 </span><span class=""> 1067: }
 </span><span class=""> 1068: 
 </span><span class=""> 1069: sub _lcsaj_coverage_for_file {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1070 → 1099 → 1117</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1070 → 1099 → 0</span></span> 1070: 	my ($file, $lcsaj_dir, $hits) = @_;
+</span><span class=""> 1070: 	my ($file, $lcsaj_dir, $hits) = @_;
 </span><span class=""> 1071: 
 </span><span class=""> 1072: 	return unless $lcsaj_dir &amp;&amp; $hits;
 </span><span class=""> 1073: 
@@ -1688,7 +1688,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1114: 		$covered++ if $hit;
 </span><span class=""> 1115: 	}
 </span><span class=""> 1116: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1117 → 1117 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1117 → 1117 → 0</span></span> 1117: 	return ($covered, $total);
+</span><span class=""> 1117: 	return ($covered, $total);
 </span><span class=""> 1118: }
 </span><span class=""> 1119: 
 </span><span class=""> 1120: 1;

@@ -412,7 +412,7 @@ pre details.mutant-details ul {
 </span><span class="">  160: =cut
 </span><span class="">  161: 
 </span><span class="">  162: sub analyze {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 163 → 181 → 195</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 163 → 181 → 0</span></span>  163: 	my ($self, $method) = @_;
+</span><span class="">  163: 	my ($self, $method) = @_;
 </span><span class="">  164: 
 </span><span class="">  165: 	# Method argument is a raw hashref from SchemaExtractor
 </span><span class="">  166: 	my $body = $method-&gt;{body} // &#39;&#39;;
@@ -444,7 +444,7 @@ pre details.mutant-details ul {
 </span><span class="">  192: 	# @ARGV and common Perl special variables.
 </span><span class="">  193: 	# NOTE: does not catch all possible globals.
 </span><span class="">  194: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 195 → 195 → 203</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 195 → 195 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 195 → 195 → 203</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 195 → 195 → 0</span></span>  195: 	if($body =~ $GLOBAL_PATTERN) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  195: 	if($body =~ $GLOBAL_PATTERN) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -458,7 +458,7 @@ pre details.mutant-details ul {
 </span><span class="">  200: 	# Detect IO operations &acirc;&#128;&#148; print, say, warn, open etc.
 </span><span class="">  201: 	# Higher-level logging abstractions are not detected.
 </span><span class="">  202: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 203 → 203 → 211</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 203 → 203 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 203 → 203 → 211</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 203 → 203 → 0</span></span>  203: 	if($body =~ $IO_PATTERN) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  203: 	if($body =~ $IO_PATTERN) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -472,7 +472,7 @@ pre details.mutant-details ul {
 </span><span class="">  208: 	# Detect external command execution via system(),
 </span><span class="">  209: 	# exec(), qx() or backtick operators
 </span><span class="">  210: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 211 → 211 → 221</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 211 → 211 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 211 → 211 → 221</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 211 → 211 → 0</span></span>  211: 	if($body =~ $EXEC_PATTERN) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  211: 	if($body =~ $EXEC_PATTERN) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -488,7 +488,7 @@ pre details.mutant-details ul {
 </span><span class="">  218: 	# self_mutating &acirc;&#128;&#148; only mutates own state, no external effects
 </span><span class="">  219: 	# impure       &acirc;&#128;&#148; any external side effect present
 </span><span class="">  220: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 221 → 230 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 221 → 230 → 0</span></span>  221: 	my $has_external = $result{mutates_globals}
+</span><span class="">  221: 	my $has_external = $result{mutates_globals}
 </span><span class="">  222: 		|| $result{performs_io}
 </span><span class="">  223: 		|| $result{calls_external};
 </span><span class="">  224: 

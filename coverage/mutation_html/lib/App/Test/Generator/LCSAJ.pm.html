@@ -371,7 +371,7 @@ pre details.mutant-details ul {
 </span><span class="">  119: =cut
 </span><span class="">  120: 
 </span><span class="">  121: sub generate {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 122 → 135 → 145</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 122 → 135 → 0</span></span>  122: 	my ($class, $file, $out_dir) = @_;
+</span><span class="">  122: 	my ($class, $file, $out_dir) = @_;
 </span><span class="">  123: 
 </span><span class="">  124: 	# Apply default output directory if not supplied
 </span><span class="">  125: 	$out_dir //= $DEFAULT_OUT_DIR;
@@ -394,7 +394,7 @@ pre details.mutant-details ul {
 </span><span class="">  142: 	}
 </span><span class="">  143: 
 </span><span class="">  144: 	# Write all extracted paths to a JSON file in the output directory
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 145 → 147 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 145 → 147 → 0</span></span>  145: 	_save_lcsaj($file, $out_dir, \@all_paths);
+</span><span class="">  145: 	_save_lcsaj($file, $out_dir, \@all_paths);
 </span><span class="">  146: 
 </span><span class="">  147: 	return \@all_paths;
 </span><span class="">  148: }
@@ -423,7 +423,7 @@ pre details.mutant-details ul {
 </span><span class="">  171: #             may not be fully represented.
 </span><span class="">  172: # --------------------------------------------------
 </span><span class="">  173: sub _build_cfg {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 174 → 184 → 204</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 174 → 184 → 0</span></span>  174: 	my ($sub) = @_;
+</span><span class="">  174: 	my ($sub) = @_;
 </span><span class="">  175: 
 </span><span class="">  176: 	# Return empty graph if the sub has no body block
 </span><span class="">  177: 	my $block = $sub-&gt;block or return [];
@@ -459,7 +459,7 @@ pre details.mutant-details ul {
 </span><span class="">  201: 	}
 </span><span class="">  202: 
 </span><span class="">  203: 	# Append the final block after all statements are processed
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 204 → 208 → 213</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 204 → 208 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 204 → 208 → 213</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 204 → 208 → 0</span></span>  204: 	push @blocks, $current;
+</span><span class="">  204: 	push @blocks, $current;
 </span><span class="">  205: 
 </span><span class="">  206: 	# Connect sequential fallthrough edges between adjacent blocks
 </span><span class="">  207: 	# that have no outgoing edges yet
@@ -497,7 +497,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  210: 		_connect_blocks($blocks[$i], $blocks[$i + 1]);
 </span><span class="">  211: 	}
 </span><span class="">  212: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 213 → 213 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 213 → 213 → 0</span></span>  213: 	return \@blocks;
+</span><span class="">  213: 	return \@blocks;
 </span><span class="">  214: }
 </span><span class="">  215: 
 </span><span class="">  216: # --------------------------------------------------
@@ -579,7 +579,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  292: #             their target lines default to 0.
 </span><span class="">  293: # --------------------------------------------------
 </span><span class="">  294: sub _cfg_to_lcsaj {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 295 → 303 → 320</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 295 → 303 → 0</span></span>  295: 	my ($blocks) = @_;
+</span><span class="">  295: 	my ($blocks) = @_;
 </span><span class="">  296: 
 </span><span class="">  297: 	# Build a lookup from block id to its first line number
 </span><span class="">  298: 	my %id2line = map { $_-&gt;{id} =&gt; $_-&gt;{lines}[0] }
@@ -604,7 +604,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  317: 		}
 </span><span class="">  318: 	}
 </span><span class="">  319: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 320 → 320 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 320 → 320 → 0</span></span>  320: 	return \@paths;
+</span><span class="">  320: 	return \@paths;
 </span><span class="">  321: }
 </span><span class="">  322: 
 </span><span class="">  323: # --------------------------------------------------
