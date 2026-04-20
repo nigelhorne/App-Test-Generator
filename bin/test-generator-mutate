@@ -30,8 +30,7 @@ app-test-generator-mutate - Run mutation testing against a Perl test suite
 
 =head1 QUICK START
 
-    app-test-generator-mutate --lib lib --min-score 85 --json mutation.json --html mutation_html
-    open mutation_html/index.html
+    app-test-generator-mutate --lib lib --min-score 85 --json mutation.json
 
 =head2 Numeric Boundary Mutants
 
@@ -346,7 +345,6 @@ my %opt = (
 	quiet => 0,
 	man	=> 0,
 	help	=> 0,
-	html => 0,
 	mutation_level => 'full',
 	lcsaj_root  => 'lcsaj',
 	lcsaj_hits => 'cover_html/lcsaj_hits.json',
@@ -364,7 +362,6 @@ GetOptions(
 	'verbose' => \$opt{verbose},
 	'quiet' => \$opt{quiet},
 	'help|h' => \$opt{help},
-	'html=s'	=> \$opt{html},
 	'mutation_level=s'	=> \$opt{mutation_level},
 	'man|m' => \$opt{man},
 	'lcsaj_root=s'  => \$opt{lcsaj_root},
@@ -545,22 +542,6 @@ if ($opt{json}) {
 	});
 
 	close $fh;
-}
-
-if ($opt{html}) {
-	if(!$opt{json}) {
-		die '--html needs --json';
-	}
-	require App::Test::Generator::Report::HTML;
-	App::Test::Generator::Report::HTML->import();
-
-	App::Test::Generator::Report::HTML->generate(
-		$opt{json},             # mutation results
-		$opt{html},             # output directory
-		$opt{cover_json},       # optional Devel::Cover JSON
-		$opt{lcsaj_root},                # directory containing *.lcsaj.json files
-		$opt{lcsaj_hits},  # runtime LCSAJ hit data
-	);
 }
 
 if($score < $opt{min_score}) {

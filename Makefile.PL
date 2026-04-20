@@ -20,11 +20,11 @@ WriteMakefile(
 		? ('LICENSE'=> 'GPL')
 		: ()),
 	EXE_FILES => [
-		'bin/app-test-generator-mutate',
+		'bin/test-generator-mutate',
 		'bin/fuzz-harness-generator',
 		'bin/extract-schemas',
 		'bin/extract-schemas2',
-		'bin/app-test-generator-index',
+		'bin/test-generator-index',
 		'bin/generate-test-dashboard'
 	], MIN_PERL_VERSION => '5.036',
 	PREREQ_PM => {

@@ -40,7 +40,7 @@ measurement.
 
 The extracted paths are written as JSON to a C<.lcsaj.json> file under
 the output directory, where they are consumed by
-C<bin/app-test-generator-index> for dashboard display and TER3
+C<bin/test-generator-index> for dashboard display and TER3
 calculation.
 
 =head1 VERSION

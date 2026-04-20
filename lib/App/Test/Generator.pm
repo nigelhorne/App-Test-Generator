@@ -288,12 +288,12 @@ tests that kill them on the next run, without manual intervention.
 =head2 How to Use It
 
 The pipeline is driven by three flags passed to
-C<bin/app-test-generator-index>, which is invoked automatically by
+C<bin/test-generator-index>, which is invoked automatically by
 C<bin/generate-test-dashboard> on each CI push.
 
 =head3 Step 1: Generate TODO stubs for all survivors
 
-    bin/app-test-generator-index --generate_mutant_tests=t
+    bin/test-generator-index --generate_mutant_tests=t
 
 Produces C<t/mutant_YYYYMMDD_HHMMSS.t> containing:
 
@@ -312,7 +312,7 @@ stub. One good test kills all variants on that line.
 
 =head3 Step 2: Generate runnable schemas for NUM_BOUNDARY survivors
 
-    bin/app-test-generator-index \
+    bin/test-generator-index \
         --generate_mutant_tests=t \
         --generate_test=mutant
 
@@ -337,7 +337,7 @@ Falls back to a TODO stub if:
 
 =head3 Step 3: Augment existing schemas with survivor boundary values
 
-    bin/app-test-generator-index \
+    bin/test-generator-index \
         --generate_mutant_tests=t \
         --generate_test=mutant \
         --generate_fuzz
@@ -358,7 +358,7 @@ are skipped, with a note if C<--verbose> is active.
 The recommended invocation in C<bin/generate-test-dashboard>
 Step 7 runs all three stages together:
 
-    bin/app-test-generator-index \
+    bin/test-generator-index \
         --generate_mutant_tests=t \
         --generate_test=mutant \
         --generate_fuzz
@@ -415,7 +415,7 @@ merged in. Picked up by C<t/fuzz.t>.
 =item * L<App::Test::Generator::SchemaExtractor> - Schema extraction
 from Perl source code
 
-=item * L<bin/app-test-generator-index> - Dashboard generator and
+=item * L<bin/test-generator-index> - Dashboard generator and
 pipeline driver
 
 =item * L<bin/generate-test-dashboard> - Full pipeline runner
@@ -4576,7 +4576,9 @@ L<http://deps.cpantesters.org/?module=App::Test::Generator>
 
 Copyright 2025-2026 Nigel Horne.
 
-Usage is subject to licence terms of GPL2.
+Usage is subject to the terms of GPL2.
+If you use it,
+please let me know.
 
 =cut
 

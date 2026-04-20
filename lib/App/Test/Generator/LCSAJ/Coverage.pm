@@ -22,7 +22,7 @@ Version 0.32
 Merges static LCSAJ path data produced by L<App::Test::Generator::LCSAJ>
 with runtime line hit data to determine which LCSAJ paths were covered
 during test execution. The merged result is written as JSON for
-consumption by C<bin/app-test-generator-index>.
+consumption by C<bin/test-generator-index>.
 
 =head2 merge
 

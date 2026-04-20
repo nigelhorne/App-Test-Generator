@@ -455,7 +455,7 @@ sub _is_redundant_mutation {
 
 =over 4
 
-=item C<bin/app-test-generator-mutate>
+=item C<bin/test-generator-mutate>
 
 =item L<Devel::Mutator>
 
@@ -472,19 +472,9 @@ with the assistance of AI.
 
 Copyright 2026 Nigel Horne.
 
-Usage is subject to licence terms.
-
-The licence terms of this software are as follows:
-
-=over 4
-
-=item * Personal single user, single computer use: GPL2
-
-=item * All other users (including Commercial, Charity, Educational,
-Government) must apply in writing for a licence for use from Nigel Horne
-at the above e-mail.
-
-=back
+Usage is subject to the terms of GPL2.
+If you use it,
+please let me know.
 
 =cut
 
