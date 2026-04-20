@@ -5,7 +5,7 @@ use warnings;
 use autodie qw(:all);
 
 use Cwd qw(abs_path);
-use Data::Dumper;
+# use Data::Dumper;
 use File::Basename qw(dirname basename);
 use File::Glob ':glob';
 use File::Path qw(make_path);
@@ -15,24 +15,25 @@ use File::stat;
 use Getopt::Long qw(GetOptions);
 use IPC::Run3;
 use JSON::MaybeXS;
-use List::Util;
+use List::Util qw(max min);
 use POSIX qw(strftime);
 use HTML::Entities;
 use HTTP::Tiny;
 use Readonly;
+use Storable qw(dclone);
 use Time::HiRes qw(sleep);
 use URI::Escape qw(uri_escape);
 use version;
 use WWW::RT::CPAN;
-use YAML::XS qw(Dump LoadFile);
+use YAML::XS qw(LoadFile);
 
 =head1 NAME
 
-generate_index.pl - Test coverage dashboard generator
+app-test-generator-index - Test coverage dashboard generator
 
 =head1 DESCRIPTION
 
-C<generate_index.pl> generates an HTML test coverage dashboard for
+C<app-test-generator-index> generates an HTML test coverage dashboard for
 publication on GitHub Pages, combining four sources of test quality
 data into a single report:
 
@@ -82,7 +83,7 @@ copies that are picked up automatically by C<t/fuzz.t>.
 The script is designed to be shared across projects. Copy it into the
 C<scripts/> directory of each project that uses it:
 
-    cp ../App-Test-Generator/scripts/generate_index.pl scripts/
+    cp ../App-Test-Generator/scripts/app-test-generator-index scripts/
 
 It is invoked automatically by C<scripts/generate_test_dashboard> on
 each CI push via C<.github/workflows/dashboard.yml>.
@@ -183,10 +184,6 @@ each CI push via C<.github/workflows/dashboard.yml>.
   HTTP::Tiny, IPC::Run3, JSON::MaybeXS, List::Util, POSIX,
   Readonly, Time::HiRes, URI::Escape, WWW::RT::CPAN, version
 
-=head1 AUTHOR
-
-  Nigel Horne <njh@nigelhorne.com>
-
 =cut
 
 my ($github_user, $github_repo);
@@ -194,7 +191,7 @@ my ($github_user, $github_repo);
 if (my $repo = $ENV{GITHUB_REPOSITORY}) {
 	($github_user, $github_repo) = split m{/}, $repo, 2;
 } else {
-	die 'What repo are you?';
+	die 'GITHUB_REPOSITORY environment variable is not set';
 }
 
 my $package_name = $github_repo;
@@ -220,6 +217,44 @@ Readonly my %config => (
 );
 
 # --------------------------------------------------
+# HTTP and retry constants
+# --------------------------------------------------
+
+# HTTP status code returned by HTTP::Tiny when the
+# connection itself fails (as opposed to a server error)
+Readonly my $HTTP_CONNECTION_FAILED => 599;
+
+# Base for exponential backoff between API retries
+Readonly my $BACKOFF_BASE_SECS => 2;
+
+# Maximum number of seconds to sleep between retries —
+# caps the exponential backoff to avoid excessive waits
+Readonly my $BACKOFF_MAX_SECS => 16;
+
+# --------------------------------------------------
+# Root cause detection thresholds
+# --------------------------------------------------
+
+# Fraction of total reports that may be passing before
+# a 'universal failure' diagnosis is ruled out —
+# if more than this fraction pass, the release is not
+# universally broken
+Readonly my $UNIVERSAL_FAILURE_PASS_THRESHOLD => 0.10;
+
+# Confidence score assigned to the 'scattered failures'
+# root cause — intentionally low since it is a weak
+# signal with no clear version or OS pattern
+Readonly my $SCATTERED_FAILURES_CONFIDENCE => 0.40;
+
+# --------------------------------------------------
+# Test stub generation constants
+# --------------------------------------------------
+
+# Width of the separator lines printed between file
+# sections in the generated mutant test stub file
+Readonly my $STUB_SEPARATOR_WIDTH => 64;
+
+# --------------------------------------------------
 # Parse command-line options.
 # --generate_mutant_tests=dir enables test stub
 # generation into the named directory.
@@ -240,8 +275,21 @@ GetOptions(
 # -------------------------------
 # Dependency correlation analysis
 # -------------------------------
-my $MAX_REPORTS_PER_GRADE = 20;	# safety rail
-my $ENABLE_DEP_ANALYSIS = 1;
+
+# --------------------------------------------------
+# Maximum number of CPAN Testers reports to fetch
+# per grade when performing dependency correlation
+# analysis — acts as a safety rail against runaway
+# API requests on distributions with many failures
+# --------------------------------------------------
+Readonly my $MAX_REPORTS_PER_GRADE => 20;
+
+# --------------------------------------------------
+# Enable dependency correlation analysis against
+# CPAN Testers reports. Set to 0 to disable if the
+# API is unreachable or the analysis is too slow.
+# --------------------------------------------------
+Readonly my $ENABLE_DEP_ANALYSIS => 1;
 
 # Read and decode data
 my $cover_db = eval { decode_json(read_file($config{cover_db})) };
@@ -1134,8 +1182,8 @@ while($retry < $config{max_retry}) {
 	}
 	$retry++;
 	# Cap sleep at 16 seconds — exponential backoff but don't wait forever
-	my $sleep_secs = 2 ** $retry;
-	$sleep_secs = 16 if $sleep_secs > 16;
+	my $sleep_secs = $BACKOFF_BASE_SECS ** $retry;
+	$sleep_secs = $BACKOFF_MAX_SECS if $sleep_secs > $BACKOFF_MAX_SECS;
 	sleep($sleep_secs);
 }
 
@@ -1659,7 +1707,7 @@ HTML
 	# push @html, "<A HREF=\"$cpan_api\">$cpan_api</A>";
 	push @html, "<p>No CPAN Testers failures reported for $dist_name $version.</p>";
 } else {
-	my $reason = $res->{status} == 599
+	my $reason = $res->{status} == $HTTP_CONNECTION_FAILED
 		? 'CPAN Testers API temporarily unreachable'
 		: "$res->{status} $res->{reason}";
 	push @html, "<p><em>CPAN Testers data unavailable: $reason. "
@@ -1953,7 +2001,7 @@ sub detect_universal_failure {
 	my $pass_ratio = $total ? scalar(@{$pass_reports}) / $total : 0;
 
 	# If more than 10% are passing, this is not universal failure
-	return unless $pass_ratio < 0.10;
+	return unless $pass_ratio < $UNIVERSAL_FAILURE_PASS_THRESHOLD;
 
 	my @perl_list = sort keys %fail_perls;
 	my @os_list   = sort keys %fail_os;
@@ -2531,7 +2579,7 @@ sub detect_scattered_failures {
 	return {
 		type       => 'scattered',
 		label      => 'Scattered failures (no clear version or OS pattern)',
-		confidence => 0.40,
+		confidence => $SCATTERED_FAILURES_CONFIDENCE,
 		evidence   => [
 			sprintf('Failures and passes both seen on %d common Perl series', $overlap),
 			'Possible causes: flaky tests, optional dependency differences, or CGI environment assumptions',
@@ -2827,9 +2875,7 @@ sub _write_mutant_schema {
 	# Ensure t/conf/ exists before attempting to write
 	my $conf_dir = "$test_dir/conf";
 	unless(-d $conf_dir) {
-		require File::Path;
-		File::Path::make_path($conf_dir)
-			or do { warn "Cannot create $conf_dir: $!\n"; return };
+		make_path($conf_dir) or do { warn "Cannot create $conf_dir: $!"; return };
 	}
 
 	my $path = "$conf_dir/mutant_${safe_module}_${safe_function}_${timestamp}.yml";
@@ -2958,7 +3004,7 @@ sub _dump_schema_yaml {
 # Generate a test stub file for surviving mutants,
 # to be placed in the project's t/ directory.
 #
-# This sub is called from generate_index.pl which
+# This sub is called from app-test-generator-index which
 # runs from the project root (e.g. CGI-Info/ or
 # App-Test-Generator/). The t/ directory written to
 # belongs to the project under test, not to
@@ -3069,7 +3115,7 @@ sub _generate_mutant_tests {
 #!/usr/bin/env perl
 # Auto-generated mutant test stubs
 # Generated: $generated_at
-# Generator: scripts/generate_index.pl
+# Generator: scripts/app-test-generator-index
 #
 # DO NOT COMMIT without completing the TODO sections.
 #
@@ -3101,9 +3147,9 @@ HEADER
 	# --------------------------------------------------
 	for my $file (@files) {
 		# Section header for this source file
-		print $fh '#' x 64 . "\n";
+		print $fh '#' x $STUB_SEPARATOR_WIDTH . "\n";
 		print $fh "# FILE: $file\n";
-		print $fh '#' x 64 . "\n\n";
+		print $fh '#' x $STUB_SEPARATOR_WIDTH . "\n";
 
 		# Read source lines for context in comments (1-indexed)
 		my @source_lines;
@@ -3627,8 +3673,7 @@ sub _generate_fuzz_schemas {
 		# Make a deep copy of the schema so we never modify
 		# the original data structure in memory
 		# --------------------------------------------------
-		require Storable;
-		my $augmented = Storable::dclone($schema);
+		my $augmented = dclone($schema);
 
 		# --------------------------------------------------
 		# Merge boundary values into the appropriate key,
@@ -5188,3 +5233,9 @@ sub _own_file_coverage_pct {
 
 	return $count ? $sum / $count : undef;
 }
+
+=head1 AUTHOR
+
+  Nigel Horne <njh@nigelhorne.com>
+
+=cut
