@@ -188,7 +188,7 @@ each CI push via C<.github/workflows/dashboard.yml>.
 
 my ($github_user, $github_repo);
 
-if (my $repo = $ENV{GITHUB_REPOSITORY}) {
+if(my $repo = $ENV{GITHUB_REPOSITORY}) {
 	($github_user, $github_repo) = split m{/}, $repo, 2;
 } else {
 	die 'GITHUB_REPOSITORY environment variable is not set';
@@ -494,7 +494,7 @@ for my $hist_file (@history_files) {
 my @history = sort { $a cmp $b } @history_files;
 my $prev_data;
 
-if (@history >= 1) {
+if(@history >= 1) {
 	my $prev_file = $history[-1];	# Most recent before current
 	$prev_data = $historical_cache{$prev_file};
 }
@@ -522,12 +522,12 @@ if($prev_data) {
 }
 
 # Check if we're in a git repository first
-unless (run_git('rev-parse', '--git-dir')) {
+unless(run_git('rev-parse', '--git-dir')) {
 	die 'Error: Not in a git repository or git is not available';
 }
 
 my $commit_sha = run_git('rev-parse', 'HEAD');
-unless (defined $commit_sha && $commit_sha =~ /^[0-9a-f]{40}$/i) {
+unless(defined $commit_sha && $commit_sha =~ /^[0-9a-f]{40}$/i) {
 	die 'Error: Could not get valid git commit SHA';
 }
 my $github_base = "https://github.com/$config{github_user}/$config{github_repo}/blob/$commit_sha/";
@@ -581,7 +581,7 @@ for my $file (sort keys %{$cover_db->{summary}}) {
 	);
 
 	my $delta_html;
-	if (exists $deltas{$file}) {
+	if(exists $deltas{$file}) {
 		my $delta = $deltas{$file};
 		my $delta_class = $delta > 0 ? 'positive' : $delta < 0 ? 'negative' : 'neutral';
 		my $delta_icon = $delta > 0 ? '&#9650;' : $delta < 0 ? '&#9660;' : '&#9679;';
@@ -868,7 +868,7 @@ function linearRegression(data) {
 	const sumXY = xs.reduce((acc, val, i) => acc + val * ys[i], 0);
 	const sumX2 = xs.reduce((acc, val) => acc + val * val, 0);
 
-	if (n < 2 || (n * sumX2 - sumX * sumX) === 0) {
+	if(n < 2 || (n * sumX2 - sumX * sumX) === 0) {
 		return [];
 	}
 	const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
@@ -891,8 +891,8 @@ const regressionPoints = linearRegression(dataPoints);
 (function registerZoomPlugin(){
 	try {
 		const candidates = ['chartjsPluginZoom','ChartZoom','zoomPlugin','chartjs_plugin_zoom','ChartjsPluginZoom','chartjsPluginZoom'];
-		for (const name of candidates) {
-			if (window[name]) {
+		for(const name of candidates) {
+			if(window[name]) {
 				try { Chart.register(window[name]); console.log('Registered zoom plugin:', name); return; } catch(e) { console.warn('zoom register failed for', name, e); }
 			}
 		}
@@ -977,7 +977,7 @@ const chart = new Chart(ctx, {
 			}
 		}, onClick: (e) => {
 			const points = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
-			if (points.length) {
+			if(points.length) {
 				const url = chart.data.datasets[0].data[points[0].index].url;
 				window.open(url, '_blank');
 			}
@@ -994,10 +994,10 @@ document.getElementById('toggleTrend').addEventListener('change', function(e) {
 
 // Reset Zoom button handler (calls plugin API if available)
 const resetBtn = document.getElementById('resetZoomBtn');
-if (resetBtn) {
+if(resetBtn) {
 	resetBtn.addEventListener('click', function() {
 		try {
-			if (chart && typeof chart.resetZoom === 'function') {
+			if(chart && typeof chart.resetZoom === 'function') {
 				chart.resetZoom();
 			} else {
 				console.warn('resetZoom not available; zoom plugin may not be registered.');
@@ -1010,7 +1010,7 @@ if (resetBtn) {
 
 function sortTable(th, colIndex) {
 	const table = th.closest("table");
-	if (!table || !table.tBodies.length) return;
+	if(!table || !table.tBodies.length) return;
 
 	const tbody = table.tBodies[0];
 	const rows = Array.from(tbody.rows);
@@ -1028,7 +1028,7 @@ function sortTable(th, colIndex) {
 		let x = a.cells[colIndex]?.innerText.trim() || "";
 		let y = b.cells[colIndex]?.innerText.trim() || "";
 
-		if (isNumeric) {
+		if(isNumeric) {
 			x = Date.parse(x) || 0;
 			y = Date.parse(y) || 0;
 		} else {
@@ -1036,8 +1036,8 @@ function sortTable(th, colIndex) {
 			y = y.toLowerCase();
 		}
 
-		if (x < y) return asc ? -1 : 1;
-		if (x > y) return asc ? 1 : -1;
+		if(x < y) return asc ? -1 : 1;
+		if(x > y) return asc ? 1 : -1;
 		return 0;
 	});
 
@@ -1046,11 +1046,11 @@ function sortTable(th, colIndex) {
 
 	// Update arrows
 	const headers = table.tHead.rows[0].cells;
-	for (let i = 0; i < headers.length; i++) {
+	for(let i = 0; i < headers.length; i++) {
 		const arrow = headers[i].querySelector(".arrow");
-		if (!arrow) continue;
+		if(!arrow) continue;
 
-		if (i === colIndex) {
+		if(i === colIndex) {
 			arrow.textContent = asc ? "▲" : "▼";
 			arrow.classList.add("active");
 		} else {
@@ -1068,14 +1068,14 @@ function sortTable(th, colIndex) {
 // The table has been set up sorted in ascending order on the filename; reflect that in the GUI
 document.addEventListener("DOMContentLoaded", () => {
 	const table = document.querySelector("table");
-	if (!table) return;
+	if(!table) return;
 
 	const headers = table.tHead.rows[0].cells;
-	for (let i = 0; i < headers.length; i++) {
+	for(let i = 0; i < headers.length; i++) {
 		const arrow = headers[i].querySelector(".arrow");
-		if (!arrow) continue;
+		if(!arrow) continue;
 
-		if (i === 0) {
+		if(i === 0) {
 			arrow.textContent = "▲";
 			arrow.classList.add("active");
 		} else {
@@ -1088,7 +1088,7 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("DOMContentLoaded", () => {
 	document.querySelectorAll("canvas.sparkline").forEach(canvas => {
 		const raw = canvas.getAttribute("data-points");
-		if (!raw) return;
+		if(!raw) return;
 		const points = raw.split(",").map(v => parseFloat(v));
 
 		new Chart(canvas.getContext("2d"), {
@@ -1221,10 +1221,6 @@ if($version) {
 		'na',
 	);
 
-	# warn 'Fetched ', scalar(@fail_reports), ' rows from API';
-	# use Data::Dumper;
-	# warn Dumper($fail_reports[0]) if scalar(@fail_reports);
-
 	@pass_reports = fetch_reports_by_grades(
 		$dist_name,
 		$version,
@@ -1234,7 +1230,7 @@ if($version) {
 	if(scalar(@fail_reports)) {
 		push @html, "<h2>CPAN Testers Failures for $dist_name $version</h2>";
 		my @prev_fail_reports;
-		if ($prev_version) {
+		if($prev_version) {
 			@prev_fail_reports = fetch_reports_by_grades(
 				$dist_name,
 				$prev_version,
@@ -1244,7 +1240,7 @@ if($version) {
 			);
 		}
 
-		if ($ENABLE_DEP_ANALYSIS) {
+		if($ENABLE_DEP_ANALYSIS) {
 			my %dep_stats;
 
 			# Split GUIDs by grade
@@ -1273,7 +1269,7 @@ if($version) {
 
 			my @suspects = find_suspected_dependencies(\%dep_stats);
 
-			if (@suspects) {
+			if(@suspects) {
 				push @html, '<h3>Suspected Dependency Interactions</h3>';
 				push @html, '<ul>';
 
@@ -1317,7 +1313,7 @@ if($version) {
 			);
 			push @cliffs, @{$prereq_cliffs};
 
-			if (@cliffs) {
+			if(@cliffs) {
 				push @html, '<h3>Dependency Version Cliffs</h3>';
 				push @html, '<ul>';
 
@@ -1333,7 +1329,7 @@ if($version) {
 				\@pass_reports,
 			);
 
-			if ($perl_cliff) {
+			if($perl_cliff) {
 				my $perl_cutoff = parse_version($perl_cliff->{fails_up_to});
 
 				my $fail_support = 0;
@@ -1408,7 +1404,7 @@ if($version) {
 			my @top_perl_os = sort { $clusters{perl_os}{$b} <=> $clusters{perl_os}{$a} }
 				keys %{ $clusters{perl_os} };
 
-			if (@top_perl_series) {
+			if(@top_perl_series) {
 				my $k = $top_perl_series[0];
 				push @html, sprintf(
 					'<li><b>Perl %s.x</b>: %d failures</li>',
@@ -1418,7 +1414,7 @@ if($version) {
 				my $total = scalar @fail_reports;
 				my $ratio_pct = ($clusters{perl_series}{$k} / $total) * 100;
 
-				if ($ratio_pct >= $config{low_threshold}) {
+				if($ratio_pct >= $config{low_threshold}) {
 					push @html, sprintf(
 						'<p><em>%d%% of failures occur on Perl %s.x</em></p>',
 						int($ratio_pct),
@@ -1427,7 +1423,7 @@ if($version) {
 				}
 			}
 
-			if (@top_os) {
+			if(@top_os) {
 				my $k = $top_os[0];
 				push @html, sprintf(
 					'<li><b>%s</b>: %d failures</li>',
@@ -1436,7 +1432,7 @@ if($version) {
 				);
 			}
 
-			if (@top_perl_os) {
+			if(@top_perl_os) {
 				my $k = $top_perl_os[0];
 				push @html, sprintf(
 					'<li><b>%s</b>: %d failures</li>',
@@ -1465,7 +1461,7 @@ if($version) {
 
 				my $ratio = $fail / $total * 100;
 
-				if ($ratio >= $config{low_threshold} && is_non_english_locale($loc)) {
+				if($ratio >= $config{low_threshold} && is_non_english_locale($loc)) {
 					push @locale_clusters, {
 						locale => $loc,
 						fail => $fail,
@@ -1495,10 +1491,7 @@ if($version) {
 				pass_perl_versions => \@pass_perl_versions,
 			);
 
-			# warn 'Root causes found: ', scalar(@root_causes) . "\n";
-			# warn 'Pass reports: ', scalar(@pass_reports) . "\n";
-
-			if (@root_causes) {
+			if(@root_causes) {
 				push @html, <<'HTML';
 <h3>Likely Root Causes</h3>
 <table class="root-causes">
@@ -1533,7 +1526,7 @@ HTML
 					my $label = $rc->{label};
 
 					# Optional perldelta link
-					if ($rc->{type} eq 'perl' && $rc->{perldelta}) {
+					if($rc->{type} eq 'perl' && $rc->{perldelta}) {
 						$label .= sprintf(
 							q{ (<a href="%s" target="_blank">perldelta</a>)},
 							$rc->{perldelta}
@@ -1573,7 +1566,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	function update() {
 		document.querySelectorAll('tr').forEach(row => {
 			// Skip header rows
-			if (row.querySelector('th')) return;
+			if(row.querySelector('th')) return;
 
 			// Determine row status
 			const isFail = row.classList.contains('cpan-fail');
@@ -1584,24 +1577,24 @@ document.addEventListener("DOMContentLoaded", function () {
 			// Decide whether to show the row
 			let show = true;
 
-			if (toggleFail && !toggleFail.checked && isFail) show = false;
-			if (toggleUnknown && !toggleUnknown.checked && isUnknown) show = false;
-			if (toggleNA && !toggleNA.checked && isNA) show = false;
-			if (toggleNew && toggleNew.checked && !isNew) show = false;
+			if(toggleFail && !toggleFail.checked && isFail) show = false;
+			if(toggleUnknown && !toggleUnknown.checked && isUnknown) show = false;
+			if(toggleNA && !toggleNA.checked && isNA) show = false;
+			if(toggleNew && toggleNew.checked && !isNew) show = false;
 
 			row.style.display = show ? '' : 'none';
 		});
 	}
 
 	[toggleFail, toggleUnknown, toggleNA, toggleNew].forEach(cb => {
-		if (cb) cb.addEventListener('change', update);
+		if(cb) cb.addEventListener('change', update);
 	});
 
 	update();
 });
 document.addEventListener("DOMContentLoaded", () => {
 	const th = document.querySelector("table.sortable-table th");
-	if (th) sortTable(th, 0);
+	if(th) sortTable(th, 0);
 });
 </script>
 
@@ -1745,7 +1738,7 @@ if($mutation_db) {
 }
 
 my $timestamp = 'Unknown';
-if (my $stat = stat($config{cover_db})) {
+if(my $stat = stat($config{cover_db})) {
 	$timestamp = strftime('%Y-%m-%d %H:%M:%S', localtime($stat->mtime));
 }
 
@@ -1775,7 +1768,25 @@ if($mutation_db && $generate_fuzz) {
 	_generate_fuzz_schemas($mutation_db);
 }
 
-# Safe git command execution
+# --------------------------------------------------
+# run_git
+#
+# Purpose:    Execute a git command safely and return
+#             its stdout, or undef on failure.
+#
+# Entry:      @cmd - list of git subcommand and args
+#             to pass directly to git.
+#
+# Exit:       Returns the chomped stdout string on
+#             success, or undef if the command exits
+#             non-zero.
+#
+# Side effects: Forks a child process. Discards stderr.
+#
+# Notes:      Uses IPC::Run3 to capture output without
+#             a shell, avoiding injection risks from
+#             user-supplied filenames.
+# --------------------------------------------------
 sub run_git {
 	my @cmd = @_;
 	my ($out, $err);
@@ -1785,6 +1796,25 @@ sub run_git {
 	return $out;
 }
 
+# --------------------------------------------------
+# js_escape
+#
+# Purpose:    Escape a string for safe embedding in a
+#             JavaScript double-quoted string literal
+#             in generated HTML.
+#
+# Entry:      $str - the string to escape.
+#
+# Exit:       Returns the escaped string. Backslashes
+#             are doubled, double quotes are escaped,
+#             and newlines are replaced with \n.
+#
+# Side effects: None.
+#
+# Notes:      Does not escape single quotes or other
+#             JS metacharacters — only the minimum
+#             needed for double-quoted string context.
+# --------------------------------------------------
 sub js_escape {
 	my $str = $_[0];
 	$str =~ s/\\/\\\\/g;
@@ -1793,6 +1823,31 @@ sub js_escape {
 	return $str;
 }
 
+# --------------------------------------------------
+# fetch_reports_by_grades
+#
+# Purpose:    Fetch CPAN Testers reports for a given
+#             distribution and version, across one or
+#             more grade types (fail, pass, na, etc.),
+#             deduplicating across grades by make_key.
+#
+# Entry:      $dist    - distribution name
+#             $version - version string
+#             @grades  - list of grade strings to fetch
+#                        e.g. ('fail', 'unknown', 'na')
+#
+# Exit:       Returns a list of report hashrefs,
+#             deduplicated across all requested grades.
+#             Returns an empty list if no reports found
+#             or all API calls fail.
+#
+# Side effects: Makes HTTP GET requests to the CPAN
+#               Testers API for each grade.
+#
+# Notes:      Each grade is fetched separately since
+#             the API does not support multiple grades
+#             in a single request.
+# --------------------------------------------------
 sub fetch_reports_by_grades {
 	my ($dist, $version, @grades) = @_;
 
@@ -1866,9 +1921,9 @@ sub extract_installed_modules {
 
 	return \%mods unless $html;
 
-	if ($html =~ /Installed modules:(.*?)(?:\n\n|\z)/s) {
+	if($html =~ /Installed modules:(.*?)(?:\n\n|\z)/s) {
 		my $block = $1;
-		while ($block =~ /^\s*([A-Z]\w*(?:::\w+)*)\s+v?([\d._]+)/mg) {
+		while($block =~ /^\s*([A-Z]\w*(?:::\w+)*)\s+v?([\d._]+)/mg) {
 			my ($module, $version) = ($1, $2);
 
 			# skip obvious noise
@@ -1892,7 +1947,7 @@ sub find_suspected_dependencies {
 		next unless $fail >= 2;
 
 		# signal 1: fail-only
-		if ($fail && !$pass) {
+		if($fail && !$pass) {
 			push @suspects, {
 				module => $mod,
 				fail => $fail,
@@ -1905,7 +1960,7 @@ sub find_suspected_dependencies {
 		# signal 2: strong skew
 		my $ratio = $fail / ($fail + $pass);
 		my $ratio_pct = $ratio * 100;
-		if ($fail >= 3 && $ratio_pct >= $config{low_threshold}) {
+		if($fail >= 3 && $ratio_pct >= $config{low_threshold}) {
 			push @suspects, {
 				module => $mod,
 				fail => $fail,
@@ -1930,7 +1985,7 @@ sub collect_dependency_versions {
 		my $pr = $r->{prereqs} or next;
 		my $rt = $pr->{runtime}{requires} or next;
 
-		while (my ($mod, $ver) = each %$rt) {
+		while(my ($mod, $ver) = each %$rt) {
 			next unless defined $ver && $ver =~ /\d/;
 			push @{ $dep_store->{$mod}{$grade} }, $ver;
 		}
@@ -2038,7 +2093,7 @@ sub detect_version_cliffs {
 		my $pass_max = parse_version($pass[-1]);
 
 		# Classic cliff: PASS versions entirely below FAIL versions
-		if ($pass_max < $fail_min) {
+		if($pass_max < $fail_min) {
 			push @suspects, {
 				module => $mod,
 				type => 'hard',
@@ -2055,7 +2110,7 @@ sub detect_version_cliffs {
 		my $fail_median = $fail[ int(@fail / 2) ];
 		my $pass_median = $pass[ int(@pass / 2) ];
 
-		if (parse_version($fail_median) > parse_version($pass_median)) {
+		if(parse_version($fail_median) > parse_version($pass_median)) {
 			push @suspects, {
 				module => $mod,
 				type => 'soft',
@@ -2111,7 +2166,7 @@ sub confidence_score {
 	my $fail = $args{fail} // 0;
 	my $pass = $args{pass} // 0;
 
-	return (0, 'none') if ($fail + $pass) == 0;
+	return (0, 'none') if($fail + $pass) == 0;
 
 	my $score = $fail / ($fail + $pass);
 
@@ -2152,7 +2207,7 @@ sub perl_series {
 	return unless defined $perl;
 
 	# map "5.16.3" to "5.16"
-	if ($perl =~ /^(\d+\.\d+)/) {
+	if($perl =~ /^(\d+\.\d+)/) {
 		return $1;
 	}
 	return;
@@ -2163,14 +2218,14 @@ sub extract_locale {
 
 	# Preferred: explicit environment
 	for my $k (qw(LANG LC_ALL LC_CTYPE)) {
-		if (my $v = $r->{env}{$k}) {
+		if(my $v = $r->{env}{$k}) {
 			return $v;
 		}
 	}
 
 	# Fallback: scan report body
-	if (my $body = $r->{raw} || $r->{body}) {
-		if ($body =~ /\b([a-z]{2}_[A-Z]{2})\b/) {
+	if(my $body = $r->{raw} || $r->{body}) {
+		if($body =~ /\b([a-z]{2}_[A-Z]{2})\b/) {
 			return $1;
 		}
 	}
@@ -2255,7 +2310,7 @@ sub fetch_dist_prereqs {
 			my %prereqs;
 			for my $dep (@{ $data->{dependency} }) {
 				# Include all phases, requires relationship only
-				next unless ($dep->{relationship} // '') eq 'requires';
+				next unless($dep->{relationship} // '') eq 'requires';
 				next unless defined $dep->{module};
 				my $min = $dep->{version} // 0;
 				# Skip perl itself and zero-version deps
@@ -2516,7 +2571,7 @@ sub detect_root_causes {
 	push @hints, detect_os_root_cause($args{fail_reports}, \%config) if $args{fail_reports};
 	push @hints, detect_locale_root_cause($args{fail_reports}, \%config);
 
-	if ($args{fail_perl_versions} && $args{pass_perl_versions}) {
+	if($args{fail_perl_versions} && $args{pass_perl_versions}) {
 		push @hints,
 			detect_perl_version_root_cause(
 				$args{fail_perl_versions},
@@ -2588,6 +2643,27 @@ sub detect_scattered_failures {
 	};
 }
 
+# --------------------------------------------------
+# make_key
+#
+# Purpose:    Produce a normalised deduplication key
+#             from a CPAN Testers report hashref,
+#             combining OS, Perl version, architecture,
+#             and platform into a single lowercase
+#             pipe-separated string.
+#
+# Entry:      $r - report hashref. Missing fields are
+#             treated as empty strings.
+#
+# Exit:       Returns a lowercase string suitable for
+#             use as a hash key.
+#
+# Side effects: None.
+#
+# Notes:      Used to deduplicate fail reports so only
+#             one row per OS/Perl/arch/platform
+#             combination is displayed in the table.
+# --------------------------------------------------
 sub make_key
 {
 	my $r = $_[0];
@@ -3470,7 +3546,7 @@ sub _generate_fuzz_schemas {
 		# Only process NUM_BOUNDARY mutations — these have
 		# the clearest boundary value inference path
 		next unless ref $m;
-		next unless ($m->{id} // '') =~ /NUM_BOUNDARY/;
+		next unless($m->{id} // '') =~ /NUM_BOUNDARY/;
 		next unless defined $m->{file} && defined $m->{line};
 
 		# Derive module name from file path for matching
@@ -3701,7 +3777,7 @@ sub _generate_fuzz_schemas {
 					my $p = $schema->{input}{$name};
 					next unless ref $p eq 'HASH';
 					push @targets, $name
-						if ($p->{type} // '') =~ /^(integer|number|float)$/;
+						if($p->{type} // '') =~ /^(integer|number|float)$/;
 				}
 			}
 
@@ -3761,12 +3837,10 @@ sub _generate_fuzz_schemas {
 				# Label includes the arg count so multiple arity
 				# boundaries on the same function don't collide.
 				my $die_label  = "arity_dies_${die_count}_args";
-				my $live_label = "arity_lives_${live_count}_args";
 
 				# Build placeholder input list — undef args,
 				# since we only care about the count here
 				my @die_inputs  = (undef) x $die_count;
-				my @live_inputs = (undef) x $live_count;
 
 				# Only add the DIES case — the live case with
 				# undef placeholder args causes generated test
@@ -3777,13 +3851,6 @@ sub _generate_fuzz_schemas {
 					input   => \@die_inputs,
 					_STATUS => 'DIES',
 				} unless exists $augmented->{cases}{$die_label};
-
-				# Skip the live case — undef placeholders produce
-				# uncompilable generated test code
-				# $augmented->{cases}{$live_label} = {
-					# input   => \@live_inputs,
-					# _STATUS => 'OK',
-				# } unless exists $augmented->{cases}{$live_label};
 			}
 		}
 
@@ -3875,7 +3942,6 @@ sub _mutation_index {
 
 	my @html;
 
-	# print $out _header('Mutation Report');
 	push @html, '<h2>Mutation Report</h2>';
 
 	push @html, '<h3>Mutation Summary</h3>';
@@ -4028,7 +4094,7 @@ sub _mutation_index {
 	# --------------------------------------------------
 	# Structural Coverage Summary (if provided)
 	# --------------------------------------------------
-	if ($coverage_data) {
+	if($coverage_data) {
 		my ($stmt_total, $stmt_hit, $branch_total, $branch_hit) = _coverage_totals($coverage_data);
 
 		my $stmt_pct = $stmt_total ? sprintf('%.2f', ($stmt_hit / $stmt_total) * 100) : 0;
@@ -4052,8 +4118,6 @@ sub _mutation_index {
 		push @html, "Tests execute $stmt_pct% of the code, but detect only $data->{score}% of injected faults.";
 		push @html, '</div>';
 	}
-
-	# print $out _footer();
 
 	return \@html;
 }
@@ -4112,9 +4176,25 @@ sub _ter_badge {
 }
 
 # --------------------------------------------------
-# Group mutants by file
+# _group_by_file
+#
+# Purpose:    Partition a flat list of mutant hashrefs
+#             (from the mutation JSON) into a nested
+#             hashref keyed by source file, then by
+#             status (survived/killed).
+#
+# Entry:      $data - decoded mutation JSON hashref
+#             containing 'survived' and 'killed'
+#             arrayrefs.
+#
+# Exit:       Returns a hashref of the form:
+#               { filename => { survived => [...],
+#                               killed   => [...] } }
+#             Mutants missing a 'file' field are
+#             silently skipped.
+#
+# Side effects: None.
 # --------------------------------------------------
-
 sub _group_by_file {
 	my $data = $_[0];
 
@@ -4135,7 +4215,43 @@ sub _group_by_file {
 }
 
 # --------------------------------------------------
-# Write per-file report with heatmap
+# _mutant_file_report
+#
+# Purpose:    Generate a standalone per-file HTML
+#             mutation heatmap page, showing each
+#             source line colour-coded by mutation
+#             status (survived/killed/uncovered),
+#             with expandable mutant details,
+#             LCSAJ path markers, and navigation
+#             links to adjacent files.
+#
+# Entry:      $dir          - output directory for
+#                             the HTML file
+#             $file         - path to the source file
+#             $mutants      - hashref of survived/killed
+#                             mutant lists for this file
+#             $prev         - path of the previous file
+#                             for navigation, or undef
+#             $next         - path of the next file
+#                             for navigation, or undef
+#             $coverage_data - Devel::Cover JSON hashref
+#                              or undef
+#             $lcsaj_dir    - LCSAJ data root directory
+#                             or undef
+#             $lcsaj_hits   - LCSAJ hit hashref or undef
+#
+# Exit:       Returns nothing. Writes an HTML file to
+#             $dir/$file.html. Returns silently if the
+#             source file is unreadable.
+#
+# Side effects: Creates directories under $dir as
+#               needed. Writes one HTML file per call.
+#
+# Notes:      Each per-file page is a self-contained
+#             HTML document with its own embedded CSS
+#             (via _mutant_file_header) because it is
+#             served as a standalone GitHub Pages file
+#             with no shared stylesheet.
 # --------------------------------------------------
 sub _mutant_file_report {
 	my (
@@ -4173,7 +4289,7 @@ sub _mutant_file_report {
 
 	# Navigation bar
 	print $out qq{<div class="nav">};
-	if ($prev) {
+	if($prev) {
 		my $link = _relative_link($file, $prev);
 		print $out qq{<a href="$link">⬅ Previous</a> };
 	}
@@ -4188,7 +4304,7 @@ sub _mutant_file_report {
 
 	print $out qq{<a href="$index_link">Index</a>\n};
 
-	if ($next) {
+	if($next) {
 		my $link = _relative_link($file, $next);
 		print $out qq{ <a href="$link">Next ➡</a>};
 	}
@@ -4197,7 +4313,7 @@ sub _mutant_file_report {
 	# --------------------------------------------------
 	# File-level structural coverage (if available)
 	# --------------------------------------------------
-	if ($coverage_data) {
+	if($coverage_data) {
 		if(my $file_cov = _coverage_for_file($coverage_data, $file)) {
 			my $stmt_total = $file_cov->{statement}{total} || 0;
 			my $stmt_hit = $file_cov->{statement}{covered} || 0;
@@ -4217,10 +4333,10 @@ sub _mutant_file_report {
 				$file, $lcsaj_dir, $lcsaj_hits, []
 			);
 			my $ter3_str;
-			if (!defined $lcsaj_cov) {
+			if(!defined $lcsaj_cov) {
 				# .lcsaj.json not found — TER3 unavailable for this file
 				$ter3_str = 'n/a';
-			} elsif (!$lcsaj_total) {
+			} elsif(!$lcsaj_total) {
 				# File found but no paths defined
 				$ter3_str = '-';
 			} else {
@@ -4319,7 +4435,7 @@ sub _mutant_file_report {
 		// {} )
 		: {};
 
-	if ($lcsaj_hits) {
+	if($lcsaj_hits) {
 		# Normalize the filename so it matches debugger paths
 		$file = abs_path($file) if defined $file;
 
@@ -4335,14 +4451,7 @@ sub _mutant_file_report {
 			"$base.lcsaj.json"
 		);
 
-		# warn "LCSAJ DEBUG\n";
-		# warn "  file = $file\n";
-		# warn "  base = $base\n";
-		# warn "  lcsaj_dir = $lcsaj_dir\n";
-		# warn "  lookup = $lcsaj_file\n";
-		# warn "  exists = " . (-f $lcsaj_file ? "YES" : "NO") . "\n";
-
-		if (-f $lcsaj_file) {
+		if(-f $lcsaj_file) {
 			open my $fh, '<', $lcsaj_file;
 			my $paths = decode_json(do { local $/; <$fh> });
 			close $fh;
@@ -4359,7 +4468,7 @@ sub _mutant_file_report {
 				# Check if any line in the path range was hit
 				my $covered = 0;
 				for my $line ($start .. $end) {
-					if ($file_hits->{$line}) {
+					if($file_hits->{$line}) {
 						$covered = 1;
 						last;
 					}
@@ -4392,10 +4501,10 @@ sub _mutant_file_report {
 		# -----------------------------
 		# Survived mutations (red shades)
 		# -----------------------------
-		if ($survivor_count) {
+		if($survivor_count) {
 			# Assign intensity class based on number of survivors
-			if ($survivor_count == 1) { $class = 'survived-1'; }
-			elsif ($survivor_count == 2) { $class = 'survived-2'; }
+			if($survivor_count == 1) { $class = 'survived-1'; }
+			elsif($survivor_count == 2) { $class = 'survived-2'; }
 			else { $class = 'survived-3'; }
 
 			# Collect smart advice per mutation type
@@ -4407,7 +4516,7 @@ sub _mutant_file_report {
 			}
 
 			$tooltip = join(' ', keys %unique_advice);
-		} elsif ($killed_count) {
+		} elsif($killed_count) {
 			# -----------------------------
 			# Killed mutations (green)
 			# -----------------------------
@@ -4422,7 +4531,7 @@ sub _mutant_file_report {
 
 		my $lcsaj_marker = '';
 
-		if (my $paths = $lcsaj_by_line{$line_no}) {
+		if(my $paths = $lcsaj_by_line{$line_no}) {
 			for my $p (@$paths) {
 				my $start     = $p->{start};
 				my $end       = $p->{end};
@@ -4456,7 +4565,7 @@ sub _mutant_file_report {
 
 		my $details = '';
 
-		if (@line_mutants) {
+		if(@line_mutants) {
 			# Count totals for summary label
 			my $killed = scalar @{ $killed_by_line{$line_no} || [] };
 			my $total = scalar @line_mutants;
@@ -4479,7 +4588,7 @@ sub _mutant_file_report {
 						$details .= "$m->{difficulty}: $m->{hint}\n";
 
 						# Show mutation type if available
-						if ($type) {
+						if($type) {
 							$details .= " ($type)";
 						}
 
@@ -4506,15 +4615,35 @@ sub _mutant_file_report {
 		print $out "</span>$details";
 	}
 
-	print $out "</pre>\n";
-
-	print $out _mutant_file_footer();
+	print $out "</pre>\n",
+		_mutant_file_footer();
 
 	close $out;
 }
 
 # --------------------------------------------------
-# Generate smart advisory text based on mutation type
+# _mutation_advice
+#
+# Purpose:    Generate a short advisory tooltip string
+#             for a surviving mutant, based on its
+#             mutation type, to help the developer
+#             understand what kind of test would kill
+#             it.
+#
+# Entry:      $mutant - mutant hashref containing at
+#             least an 'id' field. The 'type' field
+#             is used if present; otherwise type is
+#             inferred from the ID prefix.
+#
+# Exit:       Returns a non-empty advisory string.
+#             Never returns undef.
+#
+# Side effects: None.
+#
+# Notes:      The type inference from ID prefix is a
+#             heuristic — it works because mutant IDs
+#             are named with the mutation type as a
+#             prefix (e.g. NUM_BOUNDARY_42_3_>).
 # --------------------------------------------------
 sub _mutation_advice {
 	my $mutant = $_[0];
@@ -4524,7 +4653,7 @@ sub _mutation_advice {
 	my $type = $mutant->{type};
 
 	# Fallback: infer from ID prefix
-	if (!$type && $mutant->{id}) {
+	if(!$type && $mutant->{id}) {
 		($type) = $mutant->{id} =~ /^([A-Z_]+)/;
 	}
 
@@ -4543,6 +4672,26 @@ sub _mutation_advice {
 	return 'Mutation survived. Add targeted tests to validate this branch.'
 }
 
+# --------------------------------------------------
+# _suggest_test
+#
+# Generate a short Perl code snippet
+#     suggesting a test that would kill a
+#     surviving mutant, based on its mutation
+#     type. Displayed in the expandable mutant
+#     details panel on per-file heatmap pages.
+#
+# Entry:      $m - mutant hashref containing at least
+#             an 'id' field. The 'type' field is used
+#             if present; otherwise type is inferred
+#             from the ID prefix.
+#
+# Exit:       Returns a string of Perl test code, or
+#             undef if no suggestion is available for
+#             this mutation type.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _suggest_test {
 	my $m = $_[0];
 
@@ -4565,7 +4714,7 @@ sub _suggest_test {
 	# Boundary condition mutation
 	# ---------------------------------------------------------
 
-	if ($type && $type =~ /NUM|BOUNDARY/) {
+	if($type && $type =~ /NUM|BOUNDARY/) {
 		return <<"TEST";
 # Boundary test suggestion
 is( func(VALUE_AT_BOUNDARY), EXPECTED, 'Test boundary behaviour' );
@@ -4576,7 +4725,7 @@ TEST
 	# Boolean mutation
 	# ---------------------------------------------------------
 
-	if ($type && $type =~ /BOOL|NEGATION/) {
+	if($type && $type =~ /BOOL|NEGATION/) {
 		return <<"TEST";
 # Boolean branch test suggestion
 ok( !func(INPUT), 'Verify boolean branch behaviour' );
@@ -4587,7 +4736,7 @@ TEST
 	# Return value mutation
 	# ---------------------------------------------------------
 
-	if ($type && $type =~ /RETURN/) {
+	if($type && $type =~ /RETURN/) {
 		return <<"TEST";
 # Return value assertion
 is( func(INPUT), EXPECTED, 'Verify correct return value' );
@@ -4597,6 +4746,25 @@ TEST
 	return;
 }
 
+# --------------------------------------------------
+# _survivor_class
+#
+# Purpose:    Map a survivor count to the appropriate
+#             CSS class name for colour-coding a
+#             source line in the mutation heatmap.
+#             Higher counts map to darker red classes.
+#
+# Entry:      $count - number of surviving mutants on
+#             a single source line.
+#
+# Exit:       Returns a CSS class name string:
+#             'survived-1', 'survived-2', or
+#             'survived-3' (for 3 or more).
+#             Returns 'survived' as a fallback for
+#             zero (should not occur in practice).
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _survivor_class {
 	my $count = $_[0];
 
@@ -4608,7 +4776,26 @@ sub _survivor_class {
 }
 
 # --------------------------------------------------
-# Compute relative link between two files
+# _relative_link
+#
+# Purpose:    Compute a relative HTML href from one
+#             per-file mutation page to another, so
+#             Previous/Next navigation links work
+#             correctly regardless of directory depth.
+#
+# Entry:      $from - source file path (relative to
+#                     project root, e.g. lib/Foo.pm)
+#             $to   - target file path (same form)
+#
+# Exit:       Returns a relative URL string suitable
+#             for use in an href attribute.
+#
+# Side effects: None.
+#
+# Notes:      Both paths are converted to .html
+#             filenames before computing the relative
+#             path, mirroring how _mutant_file_report
+#             names its output files.
 # --------------------------------------------------
 sub _relative_link {
 	my ($from, $to) = @_;
@@ -4880,7 +5067,7 @@ function toggleTheme() {
 
 (function() {
     const saved = localStorage.getItem('theme');
-    if (saved) {
+    if(saved) {
         document.documentElement.setAttribute('data-theme', saved);
     }
 })();
@@ -4979,7 +5166,7 @@ sub _coverage_for_file {
     # 2. basename match (what worked before)
     for my $k (keys %$summary) {
         next if $k eq 'Total';
-        if (File::Basename::basename($k) eq $base) {
+        if(File::Basename::basename($k) eq $base) {
             return $summary->{$k};
         }
     }
@@ -5028,7 +5215,7 @@ sub _cyclomatic_complexity {
 	foreach my $w (@$words) {
 		my $c = $w->content;
 
-		if ($c =~ /^(if|elsif|unless|while|for|foreach|until|when)$/) {
+		if($c =~ /^(if|elsif|unless|while|for|foreach|until|when)$/) {
 			$complexity++;
 		}
 	}
@@ -5041,7 +5228,7 @@ sub _cyclomatic_complexity {
 	foreach my $op (@$ops) {
 		my $c = $op->content;
 
-		if ($c eq '&&' || $c eq '||' || $c eq '?') {
+		if($c eq '&&' || $c eq '||' || $c eq '?') {
 			$complexity++;
 		}
 	}
@@ -5085,8 +5272,6 @@ sub _cyclomatic_complexity {
 sub _lcsaj_coverage_for_file {
 	my ($file, $lcsaj_dir, $hits, $html) = @_;
 
-	# push @{$html}, "<!-- _lcsaj_coverage_for_file: dir=$lcsaj_dir file=$file -->";
-
 	return (undef, undef) unless $lcsaj_dir && $hits && defined $file;
 
 	# ----------------------------------------------------------
@@ -5108,16 +5293,16 @@ sub _lcsaj_coverage_for_file {
 	# ----------------------------------------------------------
 	my @rel_candidates;
 
-    if ($abs =~ m{(?:^|/)(?:blib/)?lib/(.+)$}) {
-        push @rel_candidates, $1;               # e.g. Foo/Bar.pm
-    }
-    push @rel_candidates, $base                 # e.g. Bar.pm
-        unless @rel_candidates && $rel_candidates[0] eq $base;
+	if($abs =~ m{(?:^|/)(?:blib/)?lib/(.+)$}) {
+		push @rel_candidates, $1;               # e.g. Foo/Bar.pm
+	}
+	push @rel_candidates, $base                 # e.g. Bar.pm
+		unless @rel_candidates && $rel_candidates[0] eq $base;
 
-    # ----------------------------------------------------------
-    # Search for the .lcsaj.json file using each candidate.
-    # ----------------------------------------------------------
-    my $lcsaj_file;
+	# ----------------------------------------------------------
+	# Search for the .lcsaj.json file using each candidate.
+	# ----------------------------------------------------------
+	my $lcsaj_file;
 
     for my $rel (@rel_candidates) {
 	my $base = basename($rel);
@@ -5126,11 +5311,8 @@ sub _lcsaj_coverage_for_file {
 		"$rel.lcsaj",
 		"$base.lcsaj.json"
 	);
-	# push @{$html}, "<!-- _lcsaj_coverage_for_file: trying $candidate -->";
-
-	if (-f $candidate) {
+	if(-f $candidate) {
 		$lcsaj_file = $candidate;
-		# push @{$html}, "<!-- _lcsaj_coverage_for_file: found $candidate -->";
 		last;
 	}
     }
@@ -5142,7 +5324,6 @@ sub _lcsaj_coverage_for_file {
     # ----------------------------------------------------------
     open my $fh, '<', $lcsaj_file
         or do {
-            # push @{$html}, "<!-- _lcsaj_coverage_for_file: cannot open $lcsaj_file: $! -->";
             return (undef, undef);
         };
     my $paths = decode_json(do { local $/; <$fh> });
@@ -5172,8 +5353,6 @@ sub _lcsaj_coverage_for_file {
         // $hits->{$original}          # raw arg as-is
         // {};
 
-    # push @{$html}, "<!-- _lcsaj_coverage_for_file: hit key=$norm_abs hits=" . scalar(keys %$file_hits) . " -->";
-
     # ----------------------------------------------------------
     # Count how many LCSAJ paths had at least one line executed.
     # A path is considered covered if any line in [start..end]
@@ -5189,7 +5368,7 @@ sub _lcsaj_coverage_for_file {
         next unless defined $start && defined $end;
 
         for my $line ($start .. $end) {
-            if ($file_hits->{$line}) {
+            if($file_hits->{$line}) {
                 $covered++;
                 last;
             }
