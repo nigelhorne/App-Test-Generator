@@ -21,7 +21,6 @@ export PERL5OPT='-Ilib'
 # --- Step 2: Run tests under Devel::Cover ---
 echo "Running tests with Devel::Cover..."
 cover -test -outputdir cover_html -select '^lib/'
-cover -report json -outputdir cover_html
 
 # --- Step 3: Generate JSON coverage report ---
 echo "Generating JSON coverage report..."
@@ -101,7 +100,6 @@ bin/test-generator-mutate \
     --cover_json cover_html/cover.json \
     --lcsaj_root cover_html/mutation_html/lib \
     --lcsaj_hits cover_html/lcsaj_hits.json < /dev/null
-    # --html cover_html/mutation_html \
     # --min-score 85
 
 set -e
