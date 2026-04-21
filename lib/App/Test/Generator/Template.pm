@@ -1101,7 +1101,6 @@ sub _generate_string_cases
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
 				} elsif((!defined($spec->{max})) || ($spec->{max} >= 5)) {
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'OK' ) };
-					push @cases, { %{$mandatory_args}, ( $arg_name => ' hell', _LINE => __LINE__, _STATUS => 'OK' ) };
 				} else {
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'plugh', _LINE => __LINE__, _STATUS => 'DIES' ) };
 					push @cases, { %{$mandatory_args}, ( $arg_name => '     ', _LINE => __LINE__, _STATUS => 'DIES' ) };
@@ -1110,6 +1109,11 @@ sub _generate_string_cases
 				push @cases, { %{$mandatory_args}, ( $arg_name => ' ' x $len, _LINE => __LINE__, _STATUS => 'OK' ) };
 			} else {
 				push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
+			}
+			if(!defined($spec->{'memberof'})) {
+				push @cases, { %{$mandatory_args}, ( $arg_name => "he\nlo", _LINE => __LINE__, _STATUS => 'OK' ) };
+				push @cases, { %{$mandatory_args}, ( $arg_name => ' hell', _LINE => __LINE__, _STATUS => 'OK' ) };
+				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len) . "\n" . rand_str($len), _LINE => __LINE__, _STATUS => 'OK' ) };
 			}
 
 			if($len <= 0) {
