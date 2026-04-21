@@ -1672,6 +1672,69 @@ sub generate
 		}
 	}
 
+	# Load relationships from the schema if present and well-formed.
+	# SchemaExtractor may set this to undef or an empty arrayref when
+	# no relationships were detected, so guard both existence and type.
+	my @relationships;
+	if(exists($schema->{relationships}) && ref($schema->{relationships}) eq 'ARRAY') {
+		@relationships = @{$schema->{relationships}};
+	}
+
+	# Serialise the relationships array from the schema into Perl source
+	# code for embedding in the generated test file. Each relationship
+	# type is rendered as a hashref in the @relationships array.
+
+	my $relationships_code = '';
+
+	# Walk each relationship in the order SchemaExtractor produced them
+	for my $rel (@relationships) {
+		my $type = $rel->{type} // '';
+
+		# Mutually exclusive: both params being set should cause the method to die
+		if($type eq 'mutually_exclusive') {
+			$relationships_code .= "{ type => 'mutually_exclusive', params => [" .
+				join(', ', map { perl_quote($_) } @{$rel->{params}}) .
+				"] },\n";
+
+		# Required group: at least one of the params must be present
+		} elsif($type eq 'required_group') {
+			$relationships_code .= "{ type => 'required_group', params => [" .
+				join(', ', map { perl_quote($_) } @{$rel->{params}}) .
+				"], logic => " . perl_quote($rel->{logic} // 'or') . " },\n";
+
+		# Conditional requirement: if one param is set, another becomes mandatory
+		} elsif($type eq 'conditional_requirement') {
+			$relationships_code .= "{ type => 'conditional_requirement', if => " .
+				perl_quote($rel->{'if'}) . ", then_required => " .
+				perl_quote($rel->{then_required}) . " },\n";
+
+		# Dependency: one param requires another to also be present
+		} elsif($type eq 'dependency') {
+			$relationships_code .= "{ type => 'dependency', param => " .
+				perl_quote($rel->{param}) . ", requires => " .
+				perl_quote($rel->{requires}) . " },\n";
+
+		# Value constraint: one param being set forces another to a specific value
+		} elsif($type eq 'value_constraint') {
+			$relationships_code .= "{ type => 'value_constraint', if => " .
+				perl_quote($rel->{'if'}) . ", then => " .
+				perl_quote($rel->{then}) . ", operator => " .
+				perl_quote($rel->{operator}) . ", value => " .
+				perl_quote($rel->{value}) . " },\n";
+
+		# Value conditional: one param equalling a specific value requires another param
+		} elsif($type eq 'value_conditional') {
+			$relationships_code .= "{ type => 'value_conditional', if => " .
+				perl_quote($rel->{'if'}) . ", equals => " .
+				perl_quote($rel->{equals}) . ", then_required => " .
+				perl_quote($rel->{then_required}) . " },\n";
+
+		# Unknown type — warn and skip rather than emitting broken code
+		} else {
+			carp "Unknown relationship type '$type', skipping";
+		}
+	}
+
 	# Dedup the edge cases
 	my %seen;
 	@edge_case_array = grep {
@@ -2027,6 +2090,7 @@ sub generate
 		use_properties => $use_properties,
 		transform_properties_code => $transform_properties_code,
 		property_trials => $config{properties}{trials} // DEFAULT_PROPERTY_TRIALS,
+		relationships_code => $relationships_code,
 		module => $module
 	};
 

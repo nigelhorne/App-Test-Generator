@@ -1057,7 +1057,9 @@ sub _generate_float_cases {
 			{ %{$mandatory_args}, ( $arg_name => "test string in float field $arg_name", _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => \42.1, _STATUS => 'DIES' ) },	# Scalar ref
-			{ %{$mandatory_args}, ( $arg_name => "NaN", _STATUS => 'DIES' ) },
+			# NaN and Inf are valid according to looks_like_number() so we
+			# cannot assume they die
+			# { %{$mandatory_args}, ( $arg_name => "NaN", _STATUS => 'DIES' ) },
 			{ %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
 	[% END %]
 
@@ -1088,7 +1090,9 @@ sub _generate_float_cases {
 			{ %{$mandatory_args}, ( $arg_name => $max + 0.000001, _STATUS => 'DIES' ) };
 
 		[% IF module %]
-			push @cases, { %{$mandatory_args}, ( $arg_name => "inf", _STATUS => 'DIES' ) };
+			push @cases,
+				{ %{$mandatory_args}, ( $arg_name => "inf", _STATUS => 'DIES' ) },
+				{ %{$mandatory_args}, ( $arg_name => 9**9**9, _STATUS => 'DIES' ) };
 		[% END %]
 
 		if(defined $spec->{min}) {
