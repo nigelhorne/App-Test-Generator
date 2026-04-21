@@ -1409,12 +1409,28 @@ sub extract_all {
 	return \%schemas;
 }
 
-=head2 _extract_package_name
-
-Extract the package name from the document.
-
-=cut
-
+# --------------------------------------------------
+# _extract_package_name
+#
+# Purpose:    Extract the Perl package name from a
+#             PPI document, or from the cached value
+#             stored at construction time.
+#
+# Entry:      $document - a PPI::Document, or undef
+#                         to use $self->{_document}.
+#
+# Exit:       Returns the package namespace string,
+#             or an empty string if no package
+#             statement is found.
+#
+# Side effects: Stores the package name in
+#               $self->{_package_name} if not already
+#               set.
+#
+# Notes:      Croaks if more than one package
+#             declaration is found — multi-package
+#             files are not supported.
+# --------------------------------------------------
 sub _extract_package_name {
 	my ($self, $document) = @_;
 
@@ -1431,15 +1447,35 @@ sub _extract_package_name {
 	return $pkgs->[0]->namespace();
 }
 
-=head2 _find_methods
-
-Find all subroutines/methods in the document.
-
-Returns an arrayref of hashrefs with the structure:
-  { name => $name, node => $ppi_node, body => $code_text }
-
-=cut
-
+# --------------------------------------------------
+# _find_methods
+#
+# Purpose:    Locate all subroutine and method
+#             declarations in a PPI document,
+#             including Moose-style method modifiers
+#             and Perl 5.38 class/method syntax.
+#
+# Entry:      $document - a PPI::Document.
+#
+# Exit:       Returns an arrayref of method hashrefs,
+#             each containing: name, node, body, pod,
+#             type, and optionally modifier, class,
+#             and fields keys.
+#             Private methods (names beginning with
+#             _) are excluded unless include_private
+#             was set in new(), except for _new,
+#             _init, and _build which are always
+#             included.
+#
+# Side effects: Logs progress and warnings to stdout
+#               when verbose is set.
+#
+# Notes:      Duplicate method names are silently
+#             deduplicated — the second occurrence
+#             is dropped with a verbose warning.
+#             Class/method detection is regex-based
+#             and may misbehave on complex code.
+# --------------------------------------------------
 sub _find_methods {
 	my ($self, $document) = @_;
 
@@ -1520,6 +1556,32 @@ sub _find_methods {
 	return \@methods;
 }
 
+# --------------------------------------------------
+# _extract_class_methods
+#
+# Purpose:    Extract method declarations from
+#             Perl 5.38 class { method {} } syntax
+#             by regex-based scanning of the class
+#             body content.
+#
+# Entry:      $content - full document source string.
+#             $methods - arrayref to push discovered
+#                        method hashrefs onto
+#                        (modified in place).
+#
+# Exit:       Returns nothing. Appends to $methods.
+#
+# Side effects: Logs class and method discoveries
+#               to stdout when verbose is set.
+#
+# Notes:      This is experimental — regex-based
+#             class body parsing may misbehave on
+#             complex or nested class declarations.
+#             Class body boundaries are tracked by
+#             simple brace counting, which will
+#             fail on unbalanced braces in strings
+#             or heredocs.
+# --------------------------------------------------
 sub _extract_class_methods {
 	my ($self, $content, $methods) = @_;
 
@@ -1584,12 +1646,32 @@ sub _extract_class_methods {
 	}
 }
 
-=head2 _extract_pod_before
-
-Extract POD documentation that appears before a subroutine.
-
-=cut
-
+# --------------------------------------------------
+# _extract_pod_before
+#
+# Purpose:    Collect the POD documentation that
+#             appears immediately before a
+#             subroutine in the PPI document, by
+#             walking backwards through siblings.
+#
+# Entry:      $sub - a PPI node (typically a
+#                    PPI::Statement::Sub).
+#
+# Exit:       Returns a string containing all POD
+#             content found before the sub, with
+#             inline parameter comments converted
+#             to =item format. Returns an empty
+#             string if no POD is found.
+#
+# Side effects: None.
+#
+# Notes:      Stops walking backwards on the first
+#             non-POD, non-whitespace, non-separator,
+#             non-include node encountered.
+#             Walking is capped at $POD_WALK_LIMIT
+#             steps to prevent runaway processing
+#             on pathological documents.
+# --------------------------------------------------
 sub _extract_pod_before {
 	my ($self, $sub) = @_;
 
@@ -1623,14 +1705,43 @@ sub _extract_pod_before {
 	return $pod;
 }
 
-=head2 _analyze_method
-
-Analyze a method and generate its schema.
-
-Combines POD analysis, code pattern analysis, and signature analysis.
-
-=cut
-
+# --------------------------------------------------
+# _analyze_method
+#
+# Purpose:    Perform full multi-source analysis of
+#             a single method and produce a complete
+#             schema hashref, combining POD analysis,
+#             code pattern detection, signature
+#             analysis, validator schema extraction,
+#             confidence scoring, relationship
+#             detection, and modern Perl feature
+#             extraction.
+#
+# Entry:      $method - a method hashref as produced
+#                       by _find_methods, containing
+#                       at minimum: name, body, pod.
+#
+# Exit:       Returns a schema hashref containing:
+#             function, input, output, _confidence,
+#             _analysis, _notes, and optionally:
+#             new, accessor, relationships,
+#             _yamltest_hints, _attributes,
+#             _modern_features, _fields, _model,
+#             _low_confidence.
+#
+# Side effects: Logs progress to stdout when verbose
+#               is set. May carp or croak if
+#               strict_pod is enabled and POD/code
+#               disagreements are found.
+#
+# Notes:      This is the central analysis entry
+#             point — it orchestrates all other
+#             analysis helpers and merges their
+#             results. The non-invasive reasoning
+#             layer (Model::Method, Analyzer::*)
+#             runs after the main schema is built
+#             and attaches metadata only.
+# --------------------------------------------------
 sub _analyze_method {
 	my ($self, $method) = @_;
 	my $code = $method->{body};
@@ -1907,6 +2018,24 @@ $schema->{output} = $self->_analyze_output(
 	return $schema;
 }
 
+# --------------------------------------------------
+# _method_has_numeric_intent
+#
+# Purpose:    Determine whether a method schema
+#             has numeric intent — either a numeric
+#             output type or at least one required
+#             numeric input parameter — to decide
+#             whether to add standard numeric
+#             boundary hint values.
+#
+# Entry:      $schema - schema hashref as built by
+#                       _analyze_method.
+#
+# Exit:       Returns 1 if numeric intent is
+#             detected, 0 otherwise.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _method_has_numeric_intent {
 	my ($self, $schema) = @_;
 
@@ -1922,10 +2051,57 @@ sub _method_has_numeric_intent {
 	return 0;
 }
 
+# --------------------------------------------------
+# _numeric_boundary_values
+#
+# Purpose:    Return the standard set of numeric
+#             boundary values used as test hints
+#             for methods with numeric intent.
+#
+# Entry:      None.
+#
+# Exit:       Returns an arrayref of boundary
+#             values: [-1, 0, 1, 2, 100].
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _numeric_boundary_values {
 	return [ -1, 0, 1, 2, 100 ];
 }
 
+# --------------------------------------------------
+# _detect_accessor_methods
+#
+# Purpose:    Detect whether a method is a getter,
+#             setter, or combined getter/setter
+#             accessor by analysing assignment and
+#             return patterns involving $self->{...}.
+#
+# Entry:      $method - method hashref containing
+#                       at minimum 'body' and
+#                       optionally 'pod'.
+#             $schema - schema hashref (modified
+#                       in place).
+#
+# Exit:       Returns nothing. Modifies $schema in
+#             place, setting accessor, input,
+#             input_style, output, and _confidence
+#             keys as appropriate.
+#
+# Side effects: Croaks if a getter/setter has more
+#               than one argument, or if a setter
+#               returns non-self data.
+#               Logs detections to stdout when
+#               verbose is set.
+#
+# Notes:      Four accessor patterns are detected
+#             in order: (1) combined getter/setter
+#             with shift, (2) combined getter/setter
+#             with validated input, (3) getter only,
+#             (4) setter that returns $self. Methods
+#             accessing multiple $self fields are
+#             skipped immediately.
+# --------------------------------------------------
 sub _detect_accessor_methods {
 	my ($self, $method, $schema) = @_;
 
@@ -2180,6 +2356,21 @@ sub _detect_accessor_methods {
 	}
 }
 
+# --------------------------------------------------
+# _analysis_error
+#
+# Purpose:    Report a fatal analysis error with
+#             module, method, and file context,
+#             then croak.
+#
+# Entry:      Named args:
+#               method  - method name string.
+#               message - error description string.
+#
+# Exit:       Does not return — always croaks.
+#
+# Side effects: None beyond the croak.
+# --------------------------------------------------
 sub _analysis_error {
 	my ($self, %args) = @_;
 
@@ -2197,7 +2388,31 @@ sub _analysis_error {
 	'';
 }
 
-# Look at the parameter validation that may exist in the code, and infer the input schema from that
+# --------------------------------------------------
+# _extract_validator_schema
+#
+# Purpose:    Try each supported validator extractor
+#             in priority order and return the first
+#             schema that yields a non-empty input
+#             spec. Used to detect explicit
+#             parameter validation declarations
+#             before falling back to heuristic
+#             code analysis.
+#
+# Entry:      $code - method body source string.
+#
+# Exit:       Returns a schema hashref on success,
+#             or undef if no supported validator
+#             call is detected.
+#
+# Side effects: None.
+#
+# Notes:      Extractors tried in order:
+#             Params::Validate::Strict,
+#             Params::Validate,
+#             MooseX::Params::Validate,
+#             Type::Params.
+# --------------------------------------------------
 sub _extract_validator_schema {
 	my ($self, $code) = @_;
 
@@ -2209,6 +2424,27 @@ sub _extract_validator_schema {
 	return;
 }
 
+# --------------------------------------------------
+# _parse_schema_hash
+#
+# Purpose:    Parse a PPI block node representing
+#             a validator schema hash literal and
+#             return a normalised schema structure
+#             suitable for use as input spec.
+#
+# Entry:      $hash - a PPI node with a children()
+#                     method, typically a
+#                     PPI::Structure::Block from
+#                     a validate_strict call.
+#
+# Exit:       Returns a hashref with keys:
+#               input       - hashref of param specs
+#               input_style - 'hash'
+#               _confidence - confidence hashref
+#             or undef if parsing fails.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _parse_schema_hash {
 	my ($self, $hash) = @_;
 
@@ -2281,7 +2517,26 @@ sub _parse_schema_hash {
 	};
 }
 
-# Normalize to PPI::Document if needed
+# --------------------------------------------------
+# _ppi
+#
+# Purpose:    Return a PPI::Document for a code
+#             string, using a per-instance cache
+#             to avoid re-parsing the same string
+#             multiple times during a single
+#             analysis pass.
+#
+# Entry:      $code - either a string of Perl source
+#                     code, or an object that
+#                     already has a find() method
+#                     (returned as-is).
+#
+# Exit:       Returns a PPI::Document, or the
+#             original object if it already
+#             supports find().
+#
+# Side effects: Populates $self->{_ppi_cache}.
+# --------------------------------------------------
 sub _ppi {
 	my ($self, $code) = @_;
 
@@ -2291,7 +2546,23 @@ sub _ppi {
 	return $self->{_ppi_cache}{$code} //= PPI::Document->new(\$code);
 }
 
-# Params::Validate::Strict
+# --------------------------------------------------
+# _extract_pvs_schema
+#
+# Purpose:    Detect and extract a parameter schema
+#             from a Params::Validate::Strict
+#             validate_strict() call in the method
+#             body.
+#
+# Entry:      $code - method body source string.
+#
+# Exit:       Returns a schema hashref with input,
+#             style, and source keys on success,
+#             or undef if no validate_strict call
+#             is found or parsing fails.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _extract_pvs_schema {
 	my ($self, $code) = @_;
 
@@ -2340,9 +2611,23 @@ sub _extract_pvs_schema {
 	return;
 }
 
-# Params::Validate
-sub _extract_pv_schema
-{
+# --------------------------------------------------
+# _extract_pv_schema
+#
+# Purpose:    Detect and extract a parameter schema
+#             from a Params::Validate validate()
+#             call in the method body.
+#
+# Entry:      $code - method body source string.
+#
+# Exit:       Returns a schema hashref with input,
+#             style, and source keys on success,
+#             or undef if no validate() call is
+#             found or parsing fails.
+#
+# Side effects: None.
+# --------------------------------------------------
+sub _extract_pv_schema {
 	my ($self, $code) = @_;
 
 	return unless $code =~ /\bvalidate\s*\(/;
@@ -2403,13 +2688,25 @@ sub _extract_pv_schema
 	return;
 }
 
-# Parse the calls to Params::Validate
-# Usage:
-# my ($first, $hash) = parse_params_call($string);
-# returns:
-#	$first_arg = '@_'
-#	$hash_str = '{ username => { ... }, ... }'
-
+# --------------------------------------------------
+# _parse_pv_call
+#
+# Purpose:    Split a Params::Validate call argument
+#             string into its two components: the
+#             first argument (typically \@_) and
+#             the schema hash string.
+#
+# Entry:      $string - the raw argument string
+#                       from the validate() call,
+#                       including outer parentheses.
+#
+# Exit:       Returns a two-element list:
+#               ($first_arg, $hash_str)
+#             or an empty list if no comma is found
+#             at brace depth zero (malformed call).
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _parse_pv_call {
 	my ($self, $string) = @_;
 
@@ -2447,6 +2744,23 @@ sub _parse_pv_call {
 	return ($first_arg, $hash_str);
 }
 
+# --------------------------------------------------
+# _extract_moosex_params_schema
+#
+# Purpose:    Detect and extract a parameter schema
+#             from a MooseX::Params::Validate
+#             validated_hash() call in the method
+#             body.
+#
+# Entry:      $code - method body source string.
+#
+# Exit:       Returns a schema hashref with input,
+#             style, and source keys on success,
+#             or undef if no validated_hash() call
+#             is found or parsing fails.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _extract_moosex_params_schema
 {
 	my ($self, $code) = @_;
@@ -2558,6 +2872,28 @@ sub _extract_schema_hash_from_block {
 	return $result->{input};
 }
 
+# --------------------------------------------------
+# _normalize_validator_schema
+#
+# Purpose:    Normalise a raw validator schema
+#             hashref (as extracted from PPI) into
+#             the standard input spec format used
+#             throughout the extractor.
+#
+# Entry:      $schema - hashref of parameter name
+#                       to raw spec hashref, as
+#                       produced by
+#                       _extract_schema_hash_from_block.
+#
+# Exit:       Returns a hashref with keys:
+#               input_style - 'hash'
+#               input       - normalised param specs
+#             Each param spec gains an explicit
+#             optional key and _source / _type_confidence
+#             metadata.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _normalize_validator_schema {
 	my ($self, $schema) = @_;
 
@@ -2580,9 +2916,26 @@ sub _normalize_validator_schema {
 	};
 }
 
-# Type::Param support
-# The declaration isn't in $code, it's in a 'signature_for' declaration elsewhere in the file
-# So need to parse $self->{_document} to find the 'signature_for $method =>'
+# --------------------------------------------------
+# _extract_type_params_schema
+#
+# Purpose:    Detect and extract a parameter schema
+#             from a Type::Params signature_for()
+#             declaration for the current method,
+#             located in the module-level document.
+#
+# Entry:      $code - method body source string
+#                     (used to extract the function
+#                     name for lookup).
+#
+# Exit:       Returns a schema hashref on success,
+#             or undef if no signature_for
+#             declaration is found or compilation
+#             fails.
+#
+# Side effects: May fork a child process to compile
+#               the signature in isolation.
+# --------------------------------------------------
 sub _extract_type_params_schema {
 	my ($self, $code) = @_;
 
@@ -2598,12 +2951,42 @@ sub _extract_type_params_schema {
 	return $self->_build_schema_from_meta($meta);
 }
 
+# --------------------------------------------------
+# _extract_function_name
+#
+# Purpose:    Extract the subroutine name from the
+#             start of a method body string, used
+#             to look up its Type::Params signature.
+#
+# Entry:      $code - method body source string.
+#
+# Exit:       Returns the subroutine name string,
+#             or undef if no 'sub name' declaration
+#             is found.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _extract_function_name {
 	my ($self, $code) = @_;
 	return $1 if $code =~ /^\s*sub\s+([a-zA-Z0-9_]+)/;
 	return;
 }
 
+# --------------------------------------------------
+# _find_signature_statement
+#
+# Purpose:    Search a PPI document for a
+#             signature_for statement that
+#             corresponds to a named function.
+#
+# Entry:      $doc      - PPI::Document to search.
+#             $function - function name string.
+#
+# Exit:       Returns the matching PPI::Statement
+#             node, or undef if none is found.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _find_signature_statement {
 	my ($self, $doc, $function) = @_;
 
@@ -2623,6 +3006,23 @@ sub _find_signature_statement {
 	return;
 }
 
+# --------------------------------------------------
+# _extract_signature_expression
+#
+# Purpose:    Extract the Type::Params signature
+#             expression (everything after =>) from
+#             a signature_for statement node.
+#
+# Entry:      $stmt     - PPI::Statement node.
+#             $function - function name string,
+#                         used in the match pattern.
+#
+# Exit:       Returns the signature expression
+#             string, or undef if the pattern
+#             does not match.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _extract_signature_expression {
 	my ($self, $stmt, $function) = @_;
 
@@ -2635,7 +3035,33 @@ sub _extract_signature_expression {
 	return;
 }
 
-# Build a payload to run in a clean Perl process
+# --------------------------------------------------
+# _compile_signature_isolated
+#
+# Purpose:    Compile and evaluate a Type::Params
+#             signature expression in an isolated
+#             environment to extract parameter
+#             metadata without polluting the
+#             current process.
+#
+# Entry:      $function        - function name string.
+#             $signature_expr  - Type::Params
+#                                signature expression
+#                                string.
+#
+# Exit:       Returns a decoded JSON hashref
+#             containing parameters and returns
+#             metadata on success.
+#             Croaks on unsafe expressions, timeout,
+#             or compile errors.
+#
+# Side effects: May fork a child process with a
+#               memory limit applied via
+#               BSD::Resource if available.
+#               Memory limiting is best-effort and
+#               silently skipped on platforms where
+#               BSD::Resource is unavailable.
+# --------------------------------------------------
 sub _compile_signature_isolated {
 	my ($self, $function, $signature_expr) = @_;
 
@@ -2757,6 +3183,30 @@ PERL
 	return decode_json($stdout);
 }
 
+# --------------------------------------------------
+# _build_schema_from_meta
+#
+# Purpose:    Convert the parameter and return type
+#             metadata produced by
+#             _compile_signature_isolated into a
+#             standard schema hashref.
+#
+# Entry:      $meta - hashref with 'parameters'
+#                     arrayref and optional
+#                     'returns' hashref, as decoded
+#                     from the isolated compile
+#                     JSON output.
+#
+# Exit:       Returns a schema hashref with input,
+#             output, style, source, _notes, and
+#             _confidence keys.
+#
+# Side effects: None.
+#
+# Notes:      Unknown Type::Params type names are
+#             mapped to 'string' with a note added
+#             and confidence downgraded to 'medium'.
+# --------------------------------------------------
 sub _build_schema_from_meta {
 	my ($self, $meta) = @_;
 
@@ -2820,17 +3270,37 @@ sub _build_schema_from_meta {
 	};
 }
 
-=head2 _analyze_pod
-
-Parse POD documentation to extract parameter information.
-
-Looks for patterns like:
-  $name - string (3-50 chars), username
-  $age - integer, must be positive
-  $email - string, matches /\@/
-
-=cut
-
+# --------------------------------------------------
+# _analyze_pod
+#
+# Purpose:    Parse POD documentation for a method
+#             and extract parameter names, types,
+#             constraints, and optionality from
+#             multiple POD patterns.
+#
+# Entry:      $pod - string of POD content as
+#                    returned by _extract_pod_before.
+#                    May be undef or empty.
+#
+# Exit:       Returns a hashref of parameter name
+#             to parameter spec hashref. Returns an
+#             empty hashref if no POD is provided
+#             or no parameters are found.
+#
+# Side effects: Carps when a semantic type is
+#               detected, advising the caller to
+#               set config->properties.
+#               Logs progress to stdout when
+#               verbose is set.
+#
+# Notes:      Three pattern strategies are tried
+#             in order: (1) named Parameters section,
+#             (2) inline $name - type format,
+#             (3) =over/=item list. Parameters found
+#             earlier take precedence over later
+#             discoveries. Default values from POD
+#             are merged in last.
+# --------------------------------------------------
 sub _analyze_pod {
 	my ($self, $pod) = @_;
 
@@ -3080,18 +3550,32 @@ sub _analyze_pod {
 	return \%params;
 }
 
-=head2 _analyze_output
-
-Analyze return values from POD and code.
-
-Looks for:
-  - Returns: section in POD
-  - return statements in code
-  - Common patterns like "returns 1 on success"
-
-=cut
-
-# Enhanced _analyze_output that incorporates all improvements
+# --------------------------------------------------
+# _analyze_output
+#
+# Purpose:    Orchestrate analysis of a method's
+#             return value by combining POD return
+#             section parsing, code return statement
+#             analysis, boolean detection, context
+#             detection, void detection, chaining
+#             detection, and error convention
+#             detection.
+#
+# Entry:      $pod         - POD string for the method.
+#             $code        - method body source string.
+#             $method_name - name of the method being
+#                            analysed, used for
+#                            boolean heuristics.
+#
+# Exit:       Returns a hashref describing the
+#             output type and behaviour, or an empty
+#             hashref if nothing could be determined.
+#             Keys include: type, value, isa, and
+#             various _* metadata keys.
+#
+# Side effects: Logs progress to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _analyze_output {
 	my ($self, $pod, $code, $method_name) = @_;
 
@@ -3111,7 +3595,29 @@ sub _analyze_output {
 	return (keys %output) ? \%output : {};
 }
 
-# Analyze POD for Returns section
+# --------------------------------------------------
+# _analyze_output_from_pod
+#
+# Purpose:    Parse the POD documentation for a
+#             method's return value and populate
+#             an output hashref with type, value,
+#             and behaviour information.
+#
+# Entry:      $output - hashref to populate
+#                       (modified in place).
+#             $pod    - POD string for the method.
+#
+# Exit:       Returns nothing. Modifies $output
+#             in place.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+#
+# Notes:      Two patterns are tried: (1) a
+#             'Returns:' section of up to 3 lines,
+#             and (2) an inline 'returns X' phrase.
+#             The section pattern takes precedence.
+# --------------------------------------------------
 sub _analyze_output_from_pod {
 	my ($self, $output, $pod) = @_;
 	my %VALID_OUTPUT_TYPES = map { $_ => 1 }
@@ -3206,17 +3712,31 @@ sub _analyze_output_from_pod {
 	}
 }
 
-=head2 _extract_defaults_from_pod
-
-Extract default values from POD documentation.
-
-Looks for patterns like:
-  - Default: 'value'
-  - Defaults to: value
-  - Optional, default: value
-
-=cut
-
+# --------------------------------------------------
+# _extract_defaults_from_pod
+#
+# Purpose:    Extract default values for parameters
+#             from POD documentation using multiple
+#             pattern strategies.
+#
+# Entry:      $pod - POD string for the method.
+#                    May be undef or empty.
+#
+# Exit:       Returns a hashref of parameter name
+#             to cleaned default value. Returns an
+#             empty hashref if no POD is provided
+#             or no defaults are found.
+#
+# Side effects: None.
+#
+# Notes:      Three strategies are tried: (1) lines
+#             containing 'Default:' or 'Defaults to:',
+#             (2) lines containing 'Optional, default',
+#             (3) inline $name - type, default value
+#             format. Parameter names are inferred
+#             by scanning backwards from the default
+#             phrase to the nearest $variable.
+# --------------------------------------------------
 sub _extract_defaults_from_pod {
 	my ($self, $pod) = @_;
 
@@ -3272,7 +3792,25 @@ sub _extract_defaults_from_pod {
 	return \%defaults;
 }
 
-# Analyze code for return statements
+# --------------------------------------------------
+# _analyze_output_from_code
+#
+# Purpose:    Analyse return statements in a method
+#             body to infer the output type by
+#             counting and classifying each return
+#             expression.
+#
+# Entry:      $output      - hashref to populate
+#                            (modified in place).
+#             $code        - method body source string.
+#             $method_name - method name string.
+#
+# Exit:       Returns nothing. Modifies $output
+#             in place.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _analyze_output_from_code
 {
 	my ($self, $output, $code, $method_name) = @_;
@@ -3484,6 +4022,33 @@ sub _analyze_output_from_code
 	}
 }
 
+# --------------------------------------------------
+# _enhance_boolean_detection
+#
+# Purpose:    Apply additional boolean-specific
+#             detection heuristics using a weighted
+#             scoring system, to override weak
+#             type assignments when there is strong
+#             evidence of a boolean return.
+#
+# Entry:      $output      - output hashref
+#                            (modified in place).
+#             $pod         - POD string.
+#             $code        - method body source string.
+#             $method_name - method name string.
+#
+# Exit:       Returns nothing. Modifies $output
+#             in place, setting type to 'boolean'
+#             if the score reaches
+#             $BOOLEAN_SCORE_THRESHOLD.
+#
+# Side effects: Logs scoring details to stdout when
+#               verbose is set.
+#
+# Notes:      Only fires when output type is
+#             not yet set or is 'unknown'. Does not
+#             override explicitly set types.
+# --------------------------------------------------
 sub _enhance_boolean_detection {
 	my ($self, $output, $pod, $code, $method_name) = @_;
 
@@ -3560,7 +4125,26 @@ sub _enhance_boolean_detection {
 	}
 }
 
-# Enhanced return value analysis
+# --------------------------------------------------
+# _detect_list_context
+#
+# Purpose:    Detect methods that return different
+#             values depending on calling context
+#             via wantarray, and methods that
+#             return explicit lists.
+#
+# Entry:      $output - output hashref (modified
+#                       in place).
+#             $code   - method body source string.
+#
+# Exit:       Returns nothing. Modifies $output
+#             in place, setting _context_aware,
+#             _list_context, _scalar_context,
+#             _list_return, and/or type keys.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _detect_list_context {
 	my ($self, $output, $code) = @_;
 	return unless $code;
@@ -3626,6 +4210,28 @@ sub _detect_list_context {
 	}
 }
 
+# --------------------------------------------------
+# _detect_void_context
+#
+# Purpose:    Detect methods that return nothing
+#             meaningful (void context), methods
+#             that always return 1 as a success
+#             indicator, and methods whose name
+#             suggests void context (setters,
+#             mutators, loggers).
+#
+# Entry:      $output      - output hashref
+#                            (modified in place).
+#             $code        - method body source string.
+#             $method_name - method name string.
+#
+# Exit:       Returns nothing. Modifies $output
+#             in place, setting _void_context,
+#             _success_indicator, and/or type.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _detect_void_context {
 	my ($self, $output, $code, $method_name) = @_;
 	return unless $code;
@@ -3694,7 +4300,27 @@ sub _detect_void_context {
 	}
 }
 
-# Detect method chaining patterns
+# --------------------------------------------------
+# _detect_chaining_pattern
+#
+# Purpose:    Detect methods that return $self for
+#             fluent interface chaining, by counting
+#             the proportion of return statements
+#             that return $self.
+#
+# Entry:      $output - output hashref (modified
+#                       in place).
+#             $code   - method body source string.
+#
+# Exit:       Returns nothing. Modifies $output
+#             in place, setting type to 'object',
+#             _returns_self to 1, and isa to the
+#             current package name when the
+#             proportion of $self returns is >= 0.8.
+#
+# Side effects: Logs detection to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _detect_chaining_pattern {
 	my ($self, $output, $code) = @_;
 	return unless $code;
@@ -3730,7 +4356,28 @@ sub _detect_chaining_pattern {
 	}
 }
 
-# Detect error return conventions
+# --------------------------------------------------
+# _detect_error_conventions
+#
+# Purpose:    Analyse how a method signals errors
+#             by detecting patterns such as
+#             'return undef if', implicit bare
+#             returns, empty list returns, 0/1
+#             boolean error patterns, and eval
+#             exception handling.
+#
+# Entry:      $output - output hashref (modified
+#                       in place).
+#             $code   - method body source string.
+#
+# Exit:       Returns nothing. Modifies $output
+#             in place, setting _error_handling,
+#             _error_return, and
+#             _success_failure_pattern keys.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _detect_error_conventions {
 	my ($self, $output, $code) = @_;
 
@@ -3821,7 +4468,27 @@ sub _detect_error_conventions {
 	}
 }
 
-# Helper method: Infer type from an expression
+# --------------------------------------------------
+# _infer_type_from_expression
+#
+# Purpose:    Infer the data type of a return
+#             expression string by matching it
+#             against common Perl literal and
+#             variable patterns.
+#
+# Entry:      $expr - return expression string,
+#                     trimmed of leading and
+#                     trailing whitespace.
+#                     May be undef.
+#
+# Exit:       Returns a type hashref of the form
+#             { type => '...' } and optionally
+#             { min => N }. Defaults to
+#             { type => 'scalar' } when no
+#             pattern matches.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _infer_type_from_expression {
 	my ($self, $expr) = @_;
 
@@ -3900,7 +4567,24 @@ sub _infer_type_from_expression {
 	return { type => 'scalar' };
 }
 
-# Addition to _analyze_output_from_pod to detect chaining documentation
+# --------------------------------------------------
+# _detect_chaining_from_pod
+#
+# Purpose:    Check POD documentation for explicit
+#             indications that a method is chainable
+#             or part of a fluent interface.
+#
+# Entry:      $output - output hashref (modified
+#                       in place).
+#             $pod    - POD string for the method.
+#
+# Exit:       Returns nothing. Sets _returns_self
+#             in $output if chaining keywords are
+#             found.
+#
+# Side effects: Logs detection to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _detect_chaining_from_pod {
 	my ($self, $output, $pod) = @_;
 	return unless $pod;
@@ -3916,6 +4600,24 @@ sub _detect_chaining_from_pod {
 	}
 }
 
+# --------------------------------------------------
+# _validate_output
+#
+# Purpose:    Apply basic sanity checks to the
+#             assembled output hashref and warn
+#             about suspicious type combinations,
+#             normalising clearly invalid types to
+#             'string'.
+#
+# Entry:      $output - output hashref (modified
+#                       in place).
+#
+# Exit:       Returns nothing. May modify type key
+#             in $output. Logs warnings to stdout
+#             when verbose is set.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _validate_output {
 	my ($self, $output) = @_;
 
@@ -3935,12 +4637,27 @@ sub _validate_output {
 	}
 }
 
-=head2 _parse_constraints
-
-Parse constraint strings like "3-50 chars" or "positive" or "1-100".
-
-=cut
-
+# --------------------------------------------------
+# _parse_constraints
+#
+# Purpose:    Parse a constraint string extracted
+#             from POD documentation and populate
+#             min, max, or other constraint fields
+#             in a parameter hashref.
+#
+# Entry:      $param      - hashref for the parameter
+#                           being annotated (modified
+#                           in place).
+#             $constraint - the constraint string,
+#                           e.g. '3-50', 'positive',
+#                           '>= 0', 'min 3'.
+#
+# Exit:       Returns nothing. Modifies $param in
+#             place by setting min and/or max keys.
+#
+# Side effects: Logs min/max values to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _parse_constraints {
 	my ($self, $param, $constraint) = @_;
 
@@ -3993,20 +4710,35 @@ sub _parse_constraints {
 	}
 }
 
-=head2 _analyze_code
-
-Analyze code patterns to infer parameter types and constraints.
-
-Looks for common validation patterns:
-  - defined checks
-  - ref() checks
-  - regex matches
-  - length checks
-  - numeric comparisons
-
-=cut
-
-# Enhanced _analyze_code with more pattern detection
+# --------------------------------------------------
+# _analyze_code
+#
+# Purpose:    Analyse a method's source code using
+#             pattern matching to infer parameter
+#             names, types, constraints, defaults,
+#             and optionality. Orchestrates all
+#             per-parameter code analysis helpers.
+#
+# Entry:      $code   - method body source string.
+#             $method - method hashref (used for
+#                       constructor-specific logic
+#                       when extracting parameters
+#                       from @_ patterns).
+#
+# Exit:       Returns a hashref of parameter name
+#             to parameter spec hashref, with as
+#             much type and constraint information
+#             as could be inferred from the code.
+#
+# Side effects: Logs progress and warnings to stdout
+#               when verbose is set.
+#
+# Notes:      Analysis is capped at max_parameters
+#             to prevent runaway processing on
+#             pathological methods. Falls back to
+#             classic @_ extraction if signature
+#             extraction found no parameters.
+# --------------------------------------------------
 sub _analyze_code {
 	my ($self, $code, $method) = @_;
 
@@ -4121,6 +4853,27 @@ sub _analyze_code {
 	return \%params;
 }
 
+# --------------------------------------------------
+# _analyze_parameter_type
+#
+# Purpose:    Infer the type of a single parameter
+#             from ref() checks, isa() calls,
+#             bless patterns, array/hash operations,
+#             and numeric operator usage in the
+#             method body.
+#
+# Entry:      $p_ref - reference to the parameter
+#                      hashref (modified in place
+#                      via the referenced hash).
+#             $param - parameter name string.
+#             $code  - method body source string.
+#
+# Exit:       Returns nothing. Modifies the
+#             referenced parameter hashref.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _analyze_parameter_type {
 	my ($self, $p_ref, $param, $code) = @_;
 	my $p = $$p_ref;
@@ -4192,13 +4945,37 @@ sub _analyze_parameter_type {
 	}
 }
 
-=head2 _analyze_advanced_types
-
-Enhanced type detection for DateTime, file handles, coderefs, and enums.
-This adds semantic type information that can guide test generation.
-
-=cut
-
+# --------------------------------------------------
+# _analyze_advanced_types
+#
+# Purpose:    Apply enhanced type detection to a
+#             single parameter, checking for
+#             DateTime objects, file handles,
+#             coderefs, and enum-like constraints
+#             beyond what basic type inference
+#             can determine.
+#
+# Entry:      $p_ref - reference to the parameter
+#                      hashref (modified in place
+#                      via the referenced hash).
+#             $param - the parameter name string.
+#             $code  - method body source string.
+#
+# Exit:       Returns nothing. Modifies the
+#             referenced parameter hashref in place.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+#
+# Notes:      Delegates to four specialised
+#             detectors: _detect_datetime_type,
+#             _detect_filehandle_type,
+#             _detect_coderef_type, and
+#             _detect_enum_type. Each detector
+#             returns early on first match so
+#             detectors are implicitly prioritised
+#             in that order.
+# --------------------------------------------------
 sub _analyze_advanced_types {
 	my ($self, $p_ref, $param, $code) = @_;
 
@@ -4212,12 +4989,28 @@ sub _analyze_advanced_types {
 	$self->_detect_enum_type($p, $param, $code);
 }
 
-=head2 _detect_datetime_type
-
-Detect DateTime objects and date/time string parameters.
-
-=cut
-
+# --------------------------------------------------
+# _detect_datetime_type
+#
+# Purpose:    Detect DateTime objects, Time::Piece
+#             objects, date strings, ISO 8601
+#             strings, and UNIX timestamps by
+#             analysing code patterns involving
+#             the parameter.
+#
+# Entry:      $p     - parameter hashref (modified
+#                      in place).
+#             $param - parameter name string.
+#             $code  - method body source string.
+#
+# Exit:       Returns nothing. Modifies $p in place,
+#             setting type, isa, semantic, min,
+#             matches, and/or format keys.
+#             Returns immediately on first match.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _detect_datetime_type {
 	my ($self, $p, $param, $code) = @_;
 
@@ -4291,12 +5084,27 @@ sub _detect_datetime_type {
 	}
 }
 
-=head2 _detect_filehandle_type
-
-Detect file handle parameters and file path strings.
-
-=cut
-
+# --------------------------------------------------
+# _detect_filehandle_type
+#
+# Purpose:    Detect file handle parameters and
+#             file path string parameters by
+#             analysing I/O operations, file test
+#             operators, and path manipulation
+#             patterns involving the parameter.
+#
+# Entry:      $p     - parameter hashref (modified
+#                      in place).
+#             $param - parameter name string.
+#             $code  - method body source string.
+#
+# Exit:       Returns nothing. Modifies $p in place,
+#             setting type, isa, and semantic keys.
+#             Returns immediately on first match.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _detect_filehandle_type {
 	my ($self, $p, $param, $code) = @_;
 
@@ -4357,12 +5165,26 @@ sub _detect_filehandle_type {
 	}
 }
 
-=head2 _detect_coderef_type
-
-Detect coderef/callback parameters.
-
-=cut
-
+# --------------------------------------------------
+# _detect_coderef_type
+#
+# Purpose:    Detect coderef and callback parameters
+#             by analysing ref() checks, invocation
+#             patterns, and parameter naming
+#             conventions.
+#
+# Entry:      $p     - parameter hashref (modified
+#                      in place).
+#             $param - parameter name string.
+#             $code  - method body source string.
+#
+# Exit:       Returns nothing. Modifies $p in place,
+#             setting type and semantic keys.
+#             Returns immediately on first match.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _detect_coderef_type {
 	my ($self, $p, $param, $code) = @_;
 
@@ -4405,12 +5227,32 @@ sub _detect_coderef_type {
 	}
 }
 
-=head2 _detect_enum_type
-
-Detect enum-like parameters with fixed set of valid values.
-
-=cut
-
+# --------------------------------------------------
+# _detect_enum_type
+#
+# Purpose:    Detect enum-like parameters whose
+#             valid values are a fixed set, by
+#             analysing validation patterns
+#             including regex alternations, hash
+#             lookups, grep checks, given/when,
+#             if/elsif chains, and smart match.
+#
+# Entry:      $p     - parameter hashref (modified
+#                      in place).
+#             $param - parameter name string.
+#             $code  - method body source string.
+#
+# Exit:       Returns nothing. Modifies $p in place,
+#             setting type, enum, and semantic keys.
+#             Returns immediately on first match.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+#
+# Notes:      Requires at least 3 if/elsif branches
+#             for pattern 5 to avoid false positives
+#             from ordinary conditional code.
+# --------------------------------------------------
 sub _detect_enum_type {
 	my ($self, $p, $param, $code) = @_;
 
@@ -4510,6 +5352,27 @@ sub _detect_enum_type {
 	}
 }
 
+# --------------------------------------------------
+# _extract_error_constraints
+#
+# Purpose:    Extract invalid-value constraints and
+#             error messages from die/croak patterns
+#             referencing a specific parameter, and
+#             infer numeric bounds from comparisons
+#             with literals.
+#
+# Entry:      $p_ref - reference to the parameter
+#                      hashref (modified in place).
+#             $param - parameter name string.
+#             $code  - method body source string.
+#
+# Exit:       Returns nothing. May add _invalid,
+#             _errors, min, and/or max to the
+#             referenced parameter hashref.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _extract_error_constraints {
 	my ($self, $p, $param, $code) = @_;
 
@@ -4590,7 +5453,32 @@ sub _extract_error_constraints {
 	}
 }
 
-# Enhanced signature extraction with modern Perl support
+# --------------------------------------------------
+# _extract_parameters_from_signature
+#
+# Purpose:    Extract parameter names and positions
+#             from a method's signature, trying
+#             modern Perl subroutine signatures
+#             first and falling back to traditional
+#             @_ extraction styles.
+#
+# Entry:      $params - hashref to populate with
+#                       parameter specs (modified
+#                       in place).
+#             $code   - method body source string.
+#
+# Exit:       Returns nothing. Populates $params.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+#
+# Notes:      Three traditional styles are
+#             supported: (1) my ($self, ...) = @_,
+#             (2) my $self = shift; my $x = shift,
+#             (3) my $x = $_[N]. $self and $class
+#             are always excluded from the returned
+#             parameters.
+# --------------------------------------------------
 sub _extract_parameters_from_signature {
 	my ($self, $params, $code) = @_;
 
@@ -4670,7 +5558,25 @@ sub _extract_parameters_from_signature {
 	}
 }
 
-# Parse modern Perl signatures (5.20+)
+# --------------------------------------------------
+# _parse_modern_signature
+#
+# Purpose:    Parse a Perl 5.20+ subroutine
+#             signature string into individual
+#             parameter specs, respecting nested
+#             structures when splitting on commas.
+#
+# Entry:      $params - hashref to populate
+#                       (modified in place).
+#             $sig    - signature string with outer
+#                       parentheses already removed.
+#
+# Exit:       Returns nothing. Populates $params
+#             via _parse_signature_parameter.
+#
+# Side effects: Logs parsing details to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _parse_modern_signature {
 	my ($self, $params, $sig) = @_;
 
@@ -4718,14 +5624,42 @@ sub _parse_modern_signature {
 
 			$params->{$name} = $param_info;
 			$self->_log("  SIG: $name has position $position" .
-				($param_info->{optional} ? " (optional)" : '') .
+				($param_info->{optional} ? ' (optional)' : '') .
 				($param_info->{_default} ? ", default: $param_info->{_default}" : ''));
 			$position++;
 		}
 	}
 }
 
-# Parse individual signature parameter
+# --------------------------------------------------
+# _parse_signature_parameter
+#
+# Purpose:    Parse a single parameter declaration
+#             from a modern Perl signature, handling
+#             type constraints, default values,
+#             plain scalars, and slurpy array/hash
+#             parameters.
+#
+# Entry:      $part     - a single parameter string
+#                         (one comma-separated
+#                         element from the signature).
+#             $position - zero-based position index
+#                         of this parameter.
+#
+# Exit:       Returns a parameter info hashref on
+#             success, or undef if the string does
+#             not match any known pattern.
+#
+# Side effects: None.
+#
+# Notes:      Six patterns are tried in order:
+#             (1) :Type with default,
+#             (2) :Type without default,
+#             (3) default without type,
+#             (4) plain $name,
+#             (5) slurpy @name,
+#             (6) slurpy %name.
+# --------------------------------------------------
 sub _parse_signature_parameter {
 	my ($self, $part, $position) = @_;
 
@@ -4829,7 +5763,24 @@ sub _parse_signature_parameter {
 	return undef;
 }
 
-# Helper: Infer type from default value
+# --------------------------------------------------
+# _infer_type_from_default
+#
+# Purpose:    Infer a parameter type from its
+#             default value when no explicit type
+#             annotation is available.
+#
+# Entry:      $default - the cleaned default value
+#                        scalar, hashref, or
+#                        arrayref. May be undef.
+#
+# Exit:       Returns a type string ('hashref',
+#             'arrayref', 'integer', 'number',
+#             'boolean', 'string'), or undef if
+#             $default is undef.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _infer_type_from_default {
 	my ($self, $default) = @_;
 
@@ -4850,7 +5801,25 @@ sub _infer_type_from_default {
 	}
 }
 
-# Extract subroutine attributes
+# --------------------------------------------------
+# _extract_subroutine_attributes
+#
+# Purpose:    Extract Perl subroutine attributes
+#             (e.g. :lvalue, :method, :Returns(Int))
+#             from a method's source string.
+#
+# Entry:      $code - method body source string.
+#
+# Exit:       Returns a hashref of attribute name
+#             to value (1 for flag-only attributes,
+#             the attribute argument string for
+#             attributes with values).
+#             Returns an empty hashref if no
+#             attributes are found.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _extract_subroutine_attributes {
 	my ($self, $code) = @_;
 
@@ -4896,13 +5865,33 @@ sub _extract_subroutine_attributes {
 	}
 
 	if ($attributes{method}) {
-		$self->_log("  ATTR: Method explicitly marked as :method");
+		$self->_log('  ATTR: Method explicitly marked as :method');
 	}
 
 	return \%attributes;
 }
 
-# Detect postfix dereferencing in code
+# --------------------------------------------------
+# _analyze_postfix_dereferencing
+#
+# Purpose:    Detect usage of Perl 5.20+ postfix
+#             dereferencing syntax in a method body
+#             and record which dereference forms
+#             are used.
+#
+# Entry:      $code - method body source string.
+#
+# Exit:       Returns a hashref whose keys are
+#             dereference form names (array_deref,
+#             hash_deref, scalar_deref, code_deref,
+#             array_slice, hash_slice) with value 1
+#             when detected.
+#             Returns an empty hashref if no
+#             postfix dereferencing is found.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _analyze_postfix_dereferencing {
 	my ($self, $code) = @_;
 
@@ -4920,34 +5909,54 @@ sub _analyze_postfix_dereferencing {
 		$self->_log("  MODERN: Uses postfix hash dereferencing (->%*)");
 	}
 
-    # Scalar dereference: $ref->$*
-    if ($code =~ /\$\w+\s*->\s*\$\*/) {
-        $derefs{scalar_deref} = 1;
-        $self->_log('  MODERN: Uses postfix scalar dereferencing (->$*)');
-    }
+	# Scalar dereference: $ref->$*
+	if ($code =~ /\$\w+\s*->\s*\$\*/) {
+		$derefs{scalar_deref} = 1;
+		$self->_log('  MODERN: Uses postfix scalar dereferencing (->$*)');
+	}
 
-    # Code dereference: $ref->&*
-    if ($code =~ /\$\w+\s*->\s*\&\*/) {
-        $derefs{code_deref} = 1;
-        $self->_log("  MODERN: Uses postfix code dereferencing (->&*)");
-    }
+	# Code dereference: $ref->&*
+	if ($code =~ /\$\w+\s*->\s*\&\*/) {
+		$derefs{code_deref} = 1;
+		$self->_log("  MODERN: Uses postfix code dereferencing (->&*)");
+	}
 
-    # Array element: $ref->@[0,2,4]
-    if ($code =~ /\$\w+\s*->\s*\@\[/) {
-        $derefs{array_slice} = 1;
-        $self->_log("  MODERN: Uses postfix array slice (->@[...])");
-    }
+	# Array element: $ref->@[0,2,4]
+	if ($code =~ /\$\w+\s*->\s*\@\[/) {
+		$derefs{array_slice} = 1;
+		$self->_log("  MODERN: Uses postfix array slice (->@[...])");
+	}
 
-    # Hash element: $ref->%{key1,key2}
-    if ($code =~ /\$\w+\s*->\s*\%\{/) {
-        $derefs{hash_slice} = 1;
-        $self->_log("  MODERN: Uses postfix hash slice (->%{...})");
-    }
+	# Hash element: $ref->%{key1,key2}
+	if ($code =~ /\$\w+\s*->\s*\%\{/) {
+		$derefs{hash_slice} = 1;
+		$self->_log("  MODERN: Uses postfix hash slice (->%{...})");
+	}
 
-    return \%derefs;
+	return \%derefs;
 }
 
-# Extract field declarations (Perl 5.38+)
+# --------------------------------------------------
+# _extract_field_declarations
+#
+# Purpose:    Extract Perl 5.38 field declarations
+#             from a class body or method source
+#             string, capturing field names,
+#             :param attributes, default values,
+#             and :isa type constraints.
+#
+# Entry:      $code - source string potentially
+#                     containing 'field $name ...'
+#                     declarations.
+#
+# Exit:       Returns a hashref of field name to
+#             field_info hashref. Returns an empty
+#             hashref if no field declarations
+#             are found.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _extract_field_declarations {
 	my ($self, $code) = @_;
 
@@ -5004,7 +6013,34 @@ sub _extract_field_declarations {
 	return \%fields;
 }
 
-# Integrate field declarations into parameters
+# --------------------------------------------------
+# _merge_field_declarations
+#
+# Purpose:    Integrate Perl 5.38 field declarations
+#             that carry the :param attribute into
+#             the code parameter hashref, so they
+#             appear as constructor parameters in
+#             the generated schema.
+#
+# Entry:      $params - hashref of parameters
+#                       extracted from code analysis
+#                       (modified in place).
+#             $fields - hashref of field declarations
+#                       as returned by
+#                       _extract_field_declarations.
+#
+# Exit:       Returns nothing. Modifies $params
+#             in place.
+#
+# Side effects: Logs merges to stdout when verbose
+#               is set.
+#
+# Notes:      Only fields with is_param => 1 are
+#             merged. The param_name key in the
+#             field (which may differ from the
+#             field name if :param(name) was used)
+#             determines the parameter key.
+# --------------------------------------------------
 sub _merge_field_declarations {
 	my ($self, $params, $fields) = @_;
 
@@ -5038,6 +6074,36 @@ sub _merge_field_declarations {
 	}
 }
 
+# --------------------------------------------------
+# _extract_defaults_from_code
+#
+# Purpose:    Scan a method body for default value
+#             assignment patterns and populate the
+#             optional and _default fields of
+#             known parameters.
+#
+# Entry:      $params - hashref of parameters
+#                       (modified in place).
+#             $code   - method body source string.
+#             $method - method hashref, used for
+#                       constructor-specific
+#                       exclusions of $class and
+#                       $self.
+#
+# Exit:       Returns nothing. Modifies $params
+#             in place.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+#
+# Notes:      Eight default patterns are tried.
+#             Only parameters already present in
+#             $params are updated — this method
+#             does not add new parameters.
+#             Falls back to extracting all @_
+#             assignments if $params is empty
+#             after the main pass.
+# --------------------------------------------------
 sub _extract_defaults_from_code {
 	my ($self, $params, $code, $method) = @_;
 
@@ -5186,6 +6252,24 @@ sub _extract_defaults_from_code {
 	}
 }
 
+# --------------------------------------------------
+# _format_default
+#
+# Purpose:    Format a default value for display
+#             in verbose log output.
+#
+# Entry:      $default - the default value to
+#                        format. May be undef,
+#                        a scalar, a hashref, or
+#                        an arrayref.
+#
+# Exit:       Returns a display string: 'undef'
+#             for undef, 'HASH ref' / 'ARRAY ref'
+#             for references, or the value itself
+#             for scalars.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _format_default {
 	my ($self, $default) = @_;
 	return 'undef' unless defined $default;
@@ -5193,6 +6277,32 @@ sub _format_default {
 	return $default;
 }
 
+# --------------------------------------------------
+# _analyze_parameter_constraints
+#
+# Purpose:    Infer min, max, and regex match
+#             constraints for a single parameter
+#             from length checks, numeric
+#             comparisons, and regex match
+#             patterns in the method body.
+#
+# Entry:      $p_ref - reference to the parameter
+#                      hashref (modified in place).
+#             $param - parameter name string.
+#             $code  - method body source string.
+#
+# Exit:       Returns nothing. Modifies the
+#             referenced parameter hashref.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+#
+# Notes:      Numeric comparisons that appear
+#             inside die/croak guard conditions
+#             are excluded to avoid inferring
+#             invalid-input ranges as valid
+#             constraints.
+# --------------------------------------------------
 sub _analyze_parameter_constraints {
 	my ($self, $p_ref, $param, $code) = @_;
 	my $p = $$p_ref;
@@ -5252,6 +6362,30 @@ sub _analyze_parameter_constraints {
 	}
 }
 
+# --------------------------------------------------
+# _analyze_parameter_validation
+#
+# Purpose:    Determine optionality and extract
+#             default values for a single parameter
+#             by analysing explicit required checks
+#             (die/croak unless defined) and default
+#             assignment patterns in the method body.
+#
+# Entry:      $p_ref - reference to the parameter
+#                      hashref (modified in place).
+#             $param - parameter name string.
+#             $code  - method body source string.
+#
+# Exit:       Returns nothing. Modifies the
+#             referenced parameter hashref.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+#
+# Notes:      Explicit required checks take highest
+#             priority and override any default
+#             value detected earlier.
+# --------------------------------------------------
 sub _analyze_parameter_validation {
 	my ($self, $p_ref, $param, $code) = @_;
 	my $p = $$p_ref;
@@ -5313,15 +6447,40 @@ sub _analyze_parameter_validation {
 	}
 }
 
-=head2 _merge_parameter_analyses
-
-Merge parameter information from multiple sources.
-
-Priority: POD > Code > Signature
-
-=cut
-
-# Enhanced merge with better position handling
+# --------------------------------------------------
+# _merge_parameter_analyses
+#
+# Purpose:    Merge parameter information from POD,
+#             code, and signature analysis into a
+#             single authoritative parameter hashref
+#             for each parameter.
+#
+# Entry:      $pod - hashref of parameters from POD
+#                    analysis.
+#             $code - hashref of parameters from
+#                     code analysis.
+#             $sig  - hashref of parameters from
+#                     signature analysis (optional,
+#                     defaults to empty hashref).
+#
+# Exit:       Returns a merged hashref of parameter
+#             name to spec hashref. Each spec has
+#             all available information combined,
+#             with POD taking highest priority,
+#             code second, and signature filling
+#             remaining gaps.
+#
+# Side effects: Logs merged parameter details to
+#               stdout when verbose is set.
+#
+# Notes:      Position is determined by majority
+#             vote across all sources, with the
+#             lowest position winning ties. Optional
+#             status is determined by
+#             _determine_optional_status. Internal
+#             _source keys are stripped from the
+#             merged result.
+# --------------------------------------------------
 sub _merge_parameter_analyses {
 	my ($self, $pod, $code, $sig) = @_;
 
@@ -5398,6 +6557,27 @@ sub _merge_parameter_analyses {
 	return \%merged;
 }
 
+# --------------------------------------------------
+# _determine_optional_status
+#
+# Purpose:    Set the optional field on a merged
+#             parameter spec based on evidence from
+#             POD and code analysis, with POD taking
+#             highest priority.
+#
+# Entry:      $merged_param - the merged parameter
+#                             hashref (modified in
+#                             place).
+#             $pod_param    - parameter spec from
+#                             POD analysis, or undef.
+#             $code_param   - parameter spec from
+#                             code analysis, or undef.
+#
+# Exit:       Returns nothing. Sets or leaves
+#             $merged_param->{optional}.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _determine_optional_status {
 	my ($self, $merged_param, $pod_param, $code_param) = @_;
 
@@ -5420,16 +6600,36 @@ sub _determine_optional_status {
 }
 
 
-=head2 _calculate_input_confidence
-
-Calculate confidence score for parameter analysis.
-
-Returns: 'high', 'medium', 'low'
-
-=cut
-
-# Enhanced confidence scoring with detailed factor tracking
-
+# --------------------------------------------------
+# _calculate_input_confidence
+#
+# Purpose:    Calculate a confidence score and level
+#             for the input parameter analysis,
+#             based on how much type, constraint,
+#             and semantic information was inferred
+#             for each parameter.
+#
+# Entry:      $params - hashref of merged parameter
+#                       specs as produced by
+#                       _merge_parameter_analyses.
+#
+# Exit:       Returns a hashref with keys:
+#               level         - one of: none,
+#                               very_low, low,
+#                               medium, high
+#               score         - numeric average
+#                               across all params
+#               factors       - arrayref of
+#                               human-readable
+#                               factor strings
+#               per_parameter - hashref of per-
+#                               parameter score
+#                               and factor detail
+#             Returns { level => 'none', ... } if
+#             no parameters were found.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _calculate_input_confidence {
 	my ($self, $params) = @_;
 
@@ -5556,6 +6756,28 @@ sub _calculate_input_confidence {
 	};
 }
 
+# --------------------------------------------------
+# _calculate_output_confidence
+#
+# Purpose:    Calculate a confidence score and level
+#             for the output analysis based on how
+#             much return type, value, class,
+#             context, and error convention
+#             information was determined.
+#
+# Entry:      $output - the output hashref as built
+#                       by _analyze_output.
+#
+# Exit:       Returns a hashref with keys:
+#               level   - one of: none, very_low,
+#                         low, medium, high
+#               score   - numeric confidence score
+#               factors - arrayref of factor strings
+#             Returns { level => 'none', ... } if
+#             output is empty.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _calculate_output_confidence {
 	my ($self, $output) = @_;
 
@@ -5653,7 +6875,23 @@ sub _calculate_output_confidence {
 	};
 }
 
-# Method to generate human-readable confidence report
+# --------------------------------------------------
+# _generate_confidence_report
+#
+# Purpose:    Generate a human-readable text report
+#             of all confidence factors for a
+#             schema, for debugging and review
+#             purposes.
+#
+# Entry:      $schema - schema hashref containing
+#                       a populated _analysis key.
+#
+# Exit:       Returns a multi-line string report,
+#             or nothing if $schema->{_analysis}
+#             is absent.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _generate_confidence_report
 {
 	my ($self, $schema) = @_;
@@ -5705,12 +6943,24 @@ sub _generate_confidence_report
 	return join("\n", @report);
 }
 
-=head2 _generate_notes
-
-Generate helpful notes about the analysis.
-
-=cut
-
+# --------------------------------------------------
+# _generate_notes
+#
+# Purpose:    Generate human-readable advisory notes
+#             about parameters whose type or
+#             optionality could not be determined,
+#             to guide manual schema review.
+#
+# Entry:      $params - hashref of merged parameter
+#                       specs.
+#
+# Exit:       Returns an arrayref of note strings.
+#             Returns an empty arrayref if all
+#             parameters have known types and
+#             optionality.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _generate_notes {
 	my ($self, $params) = @_;
 
@@ -5732,14 +6982,32 @@ sub _generate_notes {
 	return \@notes;
 }
 
-=head2 _set_defaults
-
-Set defaults in the schema, called after the schema has been set up
-
-=cut
-
-sub _set_defaults
-{
+# --------------------------------------------------
+# _set_defaults
+#
+# Purpose:    Apply default type values to any
+#             parameters in a schema mode (input
+#             or output) whose type was not set
+#             during analysis, setting them to
+#             'string' as a conservative fallback.
+#
+# Entry:      $schema - the schema hashref being
+#                       built by _analyze_method.
+#             $mode   - either 'input' or 'output'.
+#
+# Exit:       Returns nothing. Modifies $schema in
+#             place by setting type => 'string' on
+#             any parameter that lacks a type, and
+#             downgrading input confidence to 'low'.
+#
+# Side effects: Logs type defaulting to stdout when
+#               verbose is set.
+#
+# Notes:      Called after all analysis is complete
+#             so that genuine type unknowns can be
+#             distinguished from analysis gaps.
+# --------------------------------------------------
+sub _set_defaults {
 	my ($self, $schema, $mode) = @_;
 
 	my $params = $schema->{$mode};
@@ -5756,19 +7024,33 @@ sub _set_defaults
 	}
 }
 
-=head2 _analyze_relationships
-
-Analyze relationships and dependencies between parameters.
-
-Detects:
-- Mutually exclusive parameters (can't use both)
-- Required parameter groups (must use one of)
-- Conditional requirements (if X then Y)
-- Parameter dependencies (X requires Y)
-- Value-based constraints (X=5 requires Y)
-
-=cut
-
+# --------------------------------------------------
+# _analyze_relationships
+#
+# Purpose:    Detect inter-parameter relationships
+#             in a method's source code, including
+#             mutually exclusive parameters, required
+#             groups, conditional requirements,
+#             dependencies, and value-based
+#             constraints.
+#
+# Entry:      $method - method hashref containing
+#                       at minimum a 'body' key
+#                       with the source string.
+#
+# Exit:       Returns an arrayref of relationship
+#             hashrefs. Returns an empty arrayref
+#             if no parameters or no relationships
+#             are found.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+#
+# Notes:      Parameter names are extracted from
+#             the my (...) = @_ pattern only —
+#             shift-style parameters are not
+#             currently analysed for relationships.
+# --------------------------------------------------
 sub _analyze_relationships {
 	my ($self, $method) = @_;
 
@@ -5805,12 +7087,22 @@ sub _analyze_relationships {
 	return \@unique;
 }
 
-=head2 _deduplicate_relationships
-
-Remove duplicate relationship entries.
-
-=cut
-
+# --------------------------------------------------
+# _deduplicate_relationships
+#
+# Purpose:    Remove duplicate relationship entries
+#             from the relationships list by
+#             computing a canonical signature for
+#             each relationship type.
+#
+# Entry:      $relationships - arrayref of
+#                              relationship hashrefs.
+#
+# Exit:       Returns a deduplicated list of
+#             relationship hashrefs.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _deduplicate_relationships {
 	my ($self, $relationships) = @_;
 
@@ -5844,17 +7136,25 @@ sub _deduplicate_relationships {
 	return @unique;
 }
 
-=head2 _detect_mutually_exclusive
-
-Detect parameters that cannot be used together.
-
-Patterns:
-  die if $file && $content
-  croak "Cannot specify both" if $x && $y
-  die unless !($a && $b)
-
-=cut
-
+# --------------------------------------------------
+# _detect_mutually_exclusive
+#
+# Purpose:    Detect pairs of parameters that cannot
+#             be specified together, by searching
+#             for die/croak/confess patterns
+#             that fire when both are truthy.
+#
+# Entry:      $code        - method body source string.
+#             $param_names - arrayref of parameter
+#                            name strings.
+#
+# Exit:       Returns an arrayref of relationship
+#             hashrefs of type 'mutually_exclusive'.
+#             Returns an empty arrayref if none found.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _detect_mutually_exclusive {
 	my ($self, $code, $param_names) = @_;
 
@@ -5920,16 +7220,26 @@ sub _detect_mutually_exclusive {
 	return \@relationships;
 }
 
-=head2 _detect_required_groups
-
-Detect parameter groups where at least one must be specified (OR logic).
-
-Patterns:
-  die unless $id || $name
-  croak "Must specify either X or Y" unless $x || $y
-
-=cut
-
+# --------------------------------------------------
+# _detect_required_groups
+#
+# Purpose:    Detect parameter groups where at least
+#             one parameter must be specified (OR
+#             logic), by searching for die/croak
+#             patterns that fire unless any of the
+#             group is truthy.
+#
+# Entry:      $code        - method body source string.
+#             $param_names - arrayref of parameter
+#                            name strings.
+#
+# Exit:       Returns an arrayref of relationship
+#             hashrefs of type 'required_group'.
+#             Returns an empty arrayref if none found.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _detect_required_groups {
 	my ($self, $code, $param_names) = @_;
 
@@ -5995,16 +7305,27 @@ sub _detect_required_groups {
 	return \@relationships;
 }
 
-=head2 _detect_conditional_requirements
-
-Detect conditional requirements (IF-THEN logic).
-
-Patterns:
-  die if $async && !$callback
-  croak "X requires Y" if $x && !$y
-
-=cut
-
+# --------------------------------------------------
+# _detect_conditional_requirements
+#
+# Purpose:    Detect IF-THEN parameter relationships
+#             where one parameter being present
+#             makes another required, by searching
+#             for die/croak patterns of the form
+#             'die if $x && !$y'.
+#
+# Entry:      $code        - method body source string.
+#             $param_names - arrayref of parameter
+#                            name strings.
+#
+# Exit:       Returns an arrayref of relationship
+#             hashrefs of type
+#             'conditional_requirement'.
+#             Returns an empty arrayref if none found.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _detect_conditional_requirements {
 	my ($self, $code, $param_names) = @_;
 
@@ -6055,15 +7376,26 @@ sub _detect_conditional_requirements {
 	return \@relationships;
 }
 
-=head2 _detect_dependencies
-
-Detect simple parameter dependencies (X requires Y to exist).
-
-Patterns:
-  die 'Port requires host' if $port && !$host
-
-=cut
-
+# --------------------------------------------------
+# _detect_dependencies
+#
+# Purpose:    Detect simple parameter dependencies
+#             where one parameter requires another
+#             to also be present, by combining
+#             error message pattern matching with
+#             code condition matching.
+#
+# Entry:      $code        - method body source string.
+#             $param_names - arrayref of parameter
+#                            name strings.
+#
+# Exit:       Returns an arrayref of relationship
+#             hashrefs of type 'dependency'.
+#             Returns an empty arrayref if none found.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _detect_dependencies {
 	my ($self, $code, $param_names) = @_;
 
@@ -6093,16 +7425,26 @@ sub _detect_dependencies {
 	return \@relationships;
 }
 
-=head2 _detect_value_constraints
-
-Detect value-based constraints between parameters.
-
-Patterns:
-  die if $ssl && $port != 443
-  croak "Invalid combination" if $mode eq 'secure' && !$key
-
-=cut
-
+# --------------------------------------------------
+# _detect_value_constraints
+#
+# Purpose:    Detect value-based constraints between
+#             parameters, such as 'if $ssl then
+#             $port must equal 443' or 'if $mode
+#             eq secure then $key is required'.
+#
+# Entry:      $code        - method body source string.
+#             $param_names - arrayref of parameter
+#                            name strings.
+#
+# Exit:       Returns an arrayref of relationship
+#             hashrefs of type 'value_constraint'
+#             or 'value_conditional'.
+#             Returns an empty arrayref if none found.
+#
+# Side effects: Logs detections to stdout when
+#               verbose is set.
+# --------------------------------------------------
 sub _detect_value_constraints {
 	my ($self, $code, $param_names) = @_;
 
@@ -6279,12 +7621,29 @@ sub _write_schema {
 				($schema->{new} ? " [requires: $schema->{new}]" : '') . $rel_info);
 }
 
-=head2 _generate_schema_comments
-
-Generate helpful comments at the end of the YAML file.
-
-=cut
-
+# --------------------------------------------------
+# _generate_schema_comments
+#
+# Purpose:    Generate the YAML comment block
+#             appended to the end of each written
+#             schema file, containing provenance,
+#             confidence levels, parameter type
+#             notes, relationship summaries, and
+#             warnings about types requiring
+#             special test setup.
+#
+# Entry:      $schema      - the schema hashref as
+#                            built by _analyze_method.
+#             $method_name - the method name string,
+#                            used in the fuzz
+#                            command hint.
+#
+# Exit:       Returns a string of YAML comment lines
+#             beginning with a blank line and ending
+#             with a trailing newline.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _generate_schema_comments {
 	my ($self, $schema, $method_name) = @_;
 
@@ -6397,12 +7756,33 @@ sub _generate_schema_comments {
 	return join("\n", @comments);
 }
 
-=head2 _serialize_parameter_for_yaml
-
-Convert parameter hash to YAML-serializable format with proper type handling.
-
-=cut
-
+# --------------------------------------------------
+# _serialize_parameter_for_yaml
+#
+# Purpose:    Convert a parameter spec hashref into
+#             a cleaned, YAML-serialisable form
+#             suitable for App::Test::Generator
+#             consumption, handling semantic type
+#             mappings, enum values, and object
+#             class annotations.
+#
+# Entry:      $param - parameter spec hashref as
+#                      produced by the merge and
+#                      analysis pipeline.
+#
+# Exit:       Returns a new hashref containing only
+#             the fields App::Test::Generator
+#             understands, with internal _ keys
+#             and semantic keys removed or converted.
+#
+# Side effects: None.
+#
+# Notes:      Semantic types are mapped to
+#             appropriate base types with additional
+#             constraint and note fields.
+#             The original $param hashref is not
+#             modified.
+# --------------------------------------------------
 sub _serialize_parameter_for_yaml {
 	my ($self, $param) = @_;
 
@@ -6490,6 +7870,23 @@ sub _serialize_parameter_for_yaml {
 	return \%cleaned;
 }
 
+# --------------------------------------------------
+# _format_relationship
+#
+# Purpose:    Format a relationship hashref as a
+#             short human-readable description
+#             string for use in YAML comments.
+#
+# Entry:      $rel - relationship hashref as
+#                    produced by the relationship
+#                    detection methods.
+#
+# Exit:       Returns a description string.
+#             Returns 'Unknown relationship' for
+#             unrecognised types.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _format_relationship {
 	my $rel = $_[0];
 
@@ -6509,22 +7906,36 @@ sub _format_relationship {
 	return 'Unknown relationship';
 }
 
-=head2 _needs_object_instantiation
-
-Enhanced object detection that:
-- Detects factory methods that return instances
-- Recognizes singleton patterns
-- Identifies when constructor needs specific parameters
-- Handles inheritance (when parent class new() is needed)
-- Detects both instance methods and class methods that require objects
-
-Returns:
-- undef if no object needed
-- package name if object instantiation is needed
-- hashref with constructor details if specific parameters are needed
-
-=cut
-
+# --------------------------------------------------
+# _needs_object_instantiation
+#
+# Purpose:    Determine whether a method requires
+#             an object to be instantiated before
+#             it can be called, and if so return
+#             the package name to instantiate.
+#
+# Entry:      $method_name - name of the method.
+#             $method_body - method source string.
+#             $method_info - method hashref from
+#                            _find_methods (optional,
+#                            for backward compat).
+#
+# Exit:       Returns the package name string if
+#             object instantiation is required.
+#             Returns undef if the method is a
+#             constructor, factory, singleton, or
+#             pure class method.
+#
+# Side effects: Logs analysis decisions to stdout
+#               when verbose is set.
+#
+# Notes:      Orchestrates five detection sub-steps:
+#             factory detection, singleton detection,
+#             instance method detection, inheritance
+#             check, and constructor requirements.
+#             Instance method detection overrides
+#             factory detection when both fire.
+# --------------------------------------------------
 sub _needs_object_instantiation {
 	my ($self, $method_name, $method_body, $method_info) = @_;
 
@@ -6651,18 +8062,30 @@ sub _needs_object_instantiation {
 	return undef;
 }
 
-=head2 _detect_factory_method
-
-Detect factory methods that create and return instances.
-
-Patterns:
-- Returns blessed references
-- Returns objects created with ->new()
-- Method names like create_*, make_*, build_*
-- Returns $self->new(...) or Class->new(...)
-
-=cut
-
+# --------------------------------------------------
+# _detect_factory_method
+#
+# Purpose:    Detect whether a method is a factory
+#             that creates and returns object
+#             instances rather than operating on
+#             an existing instance.
+#
+# Entry:      $method_name     - method name string.
+#             $method_body     - method source string.
+#             $current_package - current package name.
+#             $method_info     - method hashref
+#                                (optional).
+#
+# Exit:       Returns a factory_info hashref on
+#             detection, or undef if the method
+#             is not a factory.
+#             The hashref includes: returns_class,
+#             confidence, and one of:
+#             returns_blessed, returns_new,
+#             returns_factory_result, pod_hint.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _detect_factory_method {
 	my ($self, $method_name, $method_body, $current_package, $method_info) = @_;
 
@@ -6737,15 +8160,32 @@ sub _detect_factory_method {
 	return undef;
 }
 
-=head2 _detect_singleton_pattern
-
-Detect singleton patterns:
-- Class methods that return $instance or $_instance
-- Static variable holding instance
-- Method names like instance(), get_instance()
-
-=cut
-
+# --------------------------------------------------
+# _detect_singleton_pattern
+#
+# Purpose:    Detect singleton accessor methods
+#             that return a shared instance rather
+#             than creating a new object, by
+#             checking the method name and body
+#             for singleton patterns.
+#
+# Entry:      $method_name - method name string.
+#             $method_body - method source string.
+#
+# Exit:       Returns a singleton_info hashref on
+#             detection (always contains at least
+#             name_pattern => 1), or undef if the
+#             method name does not match the
+#             singleton accessor pattern.
+#
+# Side effects: None.
+#
+# Notes:      Only fires for methods named
+#             instance, get_instance, singleton,
+#             or shared_instance. Methods not
+#             matching these names always return
+#             undef regardless of body content.
+# --------------------------------------------------
 sub _detect_singleton_pattern {
 	my ($self, $method_name, $method_body) = @_;
 
@@ -6791,14 +8231,30 @@ sub _detect_singleton_pattern {
 	return undef;
 }
 
-=head2 _detect_instance_method
-
-Detect if a method is an instance method that needs an object.
-
-Enhanced detection with multiple patterns.
-
-=cut
-
+# --------------------------------------------------
+# _detect_instance_method
+#
+# Purpose:    Detect whether a method is an
+#             instance method that requires a
+#             blessed object ($self) to be called,
+#             through multiple detection patterns
+#             of varying confidence.
+#
+# Entry:      $method_name - method name string.
+#             $method_body - method source string.
+#
+# Exit:       Returns an instance_info hashref if
+#             any instance method signal is found.
+#             Returns undef if no signals are
+#             detected.
+#             The hashref may contain: explicit_self,
+#             shift_self, uses_self,
+#             accesses_object_data,
+#             calls_instance_methods,
+#             private_method, and confidence.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _detect_instance_method {
 	my ($self, $method_name, $method_body) = @_;
 
@@ -6849,18 +8305,31 @@ sub _detect_instance_method {
 	return undef;
 }
 
-=head2 _check_inheritance_for_constructor
-
-Check if inheritance affects which constructor should be used.
-
-Patterns:
-- use parent/base statements
-- @ISA array
-- SUPER::new calls
-- parent class methods
-
-=cut
-
+# --------------------------------------------------
+# _check_inheritance_for_constructor
+#
+# Purpose:    Determine whether the current package
+#             uses an inherited constructor from a
+#             parent class, by examining use parent,
+#             use base, and @ISA declarations.
+#
+# Entry:      $current_package - current package
+#                                name string.
+#             $method_body     - method source string
+#                                (checked for SUPER::
+#                                calls).
+#
+# Exit:       Returns an inheritance_info hashref
+#             if any inheritance information is
+#             found, or undef otherwise.
+#             The hashref may contain:
+#             parent_statements, isa_array,
+#             uses_super, calls_super_new,
+#             has_own_constructor,
+#             use_parent_constructor, parent_class.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _check_inheritance_for_constructor {
 	my ($self, $current_package, $method_body) = @_;
 
@@ -6940,14 +8409,32 @@ sub _check_inheritance_for_constructor {
 	return undef;
 }
 
-=head2 _detect_constructor_requirements
-
-Detect if constructor (new method) needs specific parameters.
-
-Analyzes the new method to determine required parameters.
-
-=cut
-
+# --------------------------------------------------
+# _detect_constructor_requirements
+#
+# Purpose:    Analyse the new() method of the
+#             current or target package to determine
+#             what parameters the constructor
+#             requires, including required and
+#             optional parameters and their defaults.
+#
+# Entry:      $current_package - the package being
+#                                analysed.
+#             $target_package  - the package whose
+#                                constructor will
+#                                be called (may
+#                                differ from current
+#                                for inherited
+#                                constructors).
+#
+# Exit:       Returns a requirements hashref on
+#             success, or undef if no new() method
+#             is found. For external classes,
+#             returns a minimal hashref with
+#             external_class => 1.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _detect_constructor_requirements {
 	my ($self, $current_package, $target_package) = @_;
 
@@ -7041,17 +8528,29 @@ sub _detect_constructor_requirements {
 }
 
 
-=head2 _detect_external_object_dependency
-
-Detect if method depends on objects from other classes.
-
-Patterns:
-- Creates objects of other classes
-- Calls methods on objects from other classes
-- Receives objects as parameters
-
-=cut
-
+# --------------------------------------------------
+# _detect_external_object_dependency
+#
+# Purpose:    Detect whether a method creates or
+#             depends on objects from classes other
+#             than the current package, by scanning
+#             for ->new() calls on named classes
+#             and method calls on typed variables.
+#
+# Entry:      $method_body - method source string.
+#                            May be undef.
+#
+# Exit:       Returns a dependency_info hashref if
+#             external object usage is found, or
+#             undef otherwise.
+#             The hashref may contain:
+#             creates_objects (arrayref of class
+#             names), uses_objects (arrayref of
+#             class names), and package (the primary
+#             dependency class).
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _detect_external_object_dependency {
 	my ($self, $method_body) = @_;
 
@@ -7106,6 +8605,21 @@ sub _detect_external_object_dependency {
 	return undef;
 }
 
+# --------------------------------------------------
+# _get_parent_class
+#
+# Purpose:    Find the first parent class of the
+#             current package by searching the
+#             PPI document for use parent, use base,
+#             or our @ISA declarations.
+#
+# Entry:      None (operates on $self->{_document}).
+#
+# Exit:       Returns the parent class name string,
+#             or undef if no parent is found.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _get_parent_class {
 	my $self = $_[0];
 
@@ -7136,6 +8650,27 @@ sub _get_parent_class {
 	return;
 }
 
+# --------------------------------------------------
+# _get_class_for_instance_method
+#
+# Purpose:    Determine which class should be used
+#             for object instantiation when testing
+#             an instance method, preferring the
+#             current package if it has a new()
+#             method, falling back to the parent
+#             class otherwise.
+#
+# Entry:      None (operates on $self->{_document}).
+#
+# Exit:       Returns the package name string to
+#             use for instantiation. Returns
+#             'UNKNOWN_PACKAGE' if no package
+#             statement is found.
+#
+# Side effects: Stores the package name in
+#               $self->{_package_name} if not
+#               already set.
+# --------------------------------------------------
 sub _get_class_for_instance_method {
 	my $self = $_[0];
 
@@ -7163,22 +8698,33 @@ sub _get_class_for_instance_method {
 	return $package_name;
 }
 
-=head2 _extract_default_value
-
-Extract default values from common Perl patterns:
-
-Patterns:
-  - $param = $param || 'default_value'
-  - $param //= 'default_value'
-  - $param = defined $param ? $param : 'default'
-  - $param = 'default' unless defined $param;
-  - $param = $arg // 'default'
-  - $param ||= 'default'
-
-Returns the default value as a string if found, undef otherwise.
-
-=cut
-
+# --------------------------------------------------
+# _extract_default_value
+#
+# Purpose:    Extract a default value for a named
+#             parameter from a method body by
+#             matching multiple common Perl default
+#             assignment idioms.
+#
+# Entry:      $param - parameter name string.
+#             $code  - method body source string.
+#
+# Exit:       Returns the cleaned default value
+#             scalar on success, or undef if no
+#             default assignment pattern is found.
+#
+# Side effects: None.
+#
+# Notes:      Eight patterns are tried in order:
+#             ||, //=, defined ternary, unless
+#             defined, ||=, //, multi-line if
+#             !defined, unless defined block.
+#             Comment lines are stripped from the
+#             code before matching to avoid false
+#             positives. Delegates to
+#             _clean_default_value for value
+#             normalisation.
+# --------------------------------------------------
 sub _extract_default_value {
 	my ($self, $param, $code) = @_;
 
@@ -7258,6 +8804,26 @@ sub _extract_default_value {
 	return undef;
 }
 
+# --------------------------------------------------
+# _extract_test_hints
+#
+# Purpose:    Extract structured test hints from
+#             a method's code and schema, including
+#             boundary values, invalid inputs, and
+#             valid input examples from POD.
+#
+# Entry:      $method - method hashref.
+#             $schema - schema hashref as built so
+#                       far by _analyze_method.
+#
+# Exit:       Returns a hints hashref with keys:
+#             boundary_values, invalid_inputs,
+#             equivalence_classes, valid_inputs.
+#             Keys with empty arrays are deleted
+#             before returning.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _extract_test_hints {
 	my ($self, $method, $schema) = @_;
 
@@ -7282,6 +8848,23 @@ sub _extract_test_hints {
 	return \%hints;
 }
 
+# --------------------------------------------------
+# _extract_invalid_input_hints
+#
+# Purpose:    Detect likely invalid input values
+#             from a method body by looking for
+#             defined checks, empty string checks,
+#             and negative number checks.
+#
+# Entry:      $code  - method body source string.
+#             $hints - hints hashref (modified in
+#                      place via invalid_inputs key).
+#
+# Exit:       Returns nothing. Appends to
+#             $hints->{invalid_inputs}.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _extract_invalid_input_hints {
 	my ($self, $code, $hints) = @_;
 
@@ -7301,6 +8884,23 @@ sub _extract_invalid_input_hints {
 	}
 }
 
+# --------------------------------------------------
+# _extract_boundary_value_hints
+#
+# Purpose:    Extract numeric boundary values from
+#             comparison operators in a method body,
+#             adding both the boundary value and
+#             the value one step either side.
+#
+# Entry:      $code  - method body source string.
+#             $hints - hints hashref (modified in
+#                      place via boundary_values key).
+#
+# Exit:       Returns nothing. Appends to and
+#             deduplicates $hints->{boundary_values}.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _extract_boundary_value_hints {
 	my ($self, $code, $hints) = @_;
 
@@ -7323,7 +8923,24 @@ sub _extract_boundary_value_hints {
 	$hints->{boundary_values} = [ grep { !$seen{$_}++ } @{ $hints->{boundary_values} } ];
 }
 
-# --- POD example extraction (non-authoritative hints) ---
+# --------------------------------------------------
+# _extract_pod_examples
+#
+# Purpose:    Extract example method call patterns
+#             from a method's SYNOPSIS POD section
+#             and add them as valid_inputs hints.
+#
+# Entry:      $pod   - POD string for the method.
+#                      May be undef.
+#             $hints - hints hashref (modified in
+#                      place via valid_inputs key).
+#
+# Exit:       Returns $hints. Appends to
+#             $hints->{valid_inputs}.
+#
+# Side effects: Logs the number of examples found
+#               to stdout when verbose is set.
+# --------------------------------------------------
 sub _extract_pod_examples {
 	my ($self, $pod, $hints) = @_;
 
@@ -7388,20 +9005,35 @@ sub _extract_pod_examples {
 	return $hints;
 }
 
-=head2 _clean_default_value
-
-Clean and normalize extracted default values.
-
-Handles:
-  - Removing quotes from strings
-  - Converting numeric strings to actual numbers
-  - Handling boolean values
-  - Removing parentheses
-
-=cut
-
-sub _clean_default_value
-{
+# --------------------------------------------------
+# _clean_default_value
+#
+# Purpose:    Normalise a raw default value string
+#             extracted from code or POD into a
+#             clean Perl scalar, handling quoted
+#             strings, numeric literals, boolean
+#             keywords, empty containers, and
+#             undef.
+#
+# Entry:      $value     - raw value string.
+#                          May be undef.
+#             $from_code - true if the value was
+#                          extracted from source
+#                          code (affects escape
+#                          sequence handling).
+#
+# Exit:       Returns the cleaned value:
+#               undef   for undef or unparseable
+#               {}      for empty hashrefs
+#               []      for empty arrayrefs
+#               integer for whole numbers
+#               float   for decimal numbers
+#               1 or 0  for boolean keywords
+#               string  for everything else
+#
+# Side effects: None.
+# --------------------------------------------------
+sub _clean_default_value {
 	my ($self, $value, $from_code) = @_;
 
 	return unless defined $value;
@@ -7513,6 +9145,36 @@ sub _clean_default_value
 	return $value;
 }
 
+# --------------------------------------------------
+# _validate_pod_code_agreement
+#
+# Purpose:    Compare POD parameter documentation
+#             against code-inferred parameters and
+#             return a list of disagreements when
+#             strict_pod mode is enabled.
+#
+# Entry:      $pod_params  - hashref of parameters
+#                            from POD analysis.
+#             $code_params - hashref of parameters
+#                            from code analysis.
+#             $method_name - method name string,
+#                            used for context in
+#                            error messages.
+#
+# Exit:       Returns a list of disagreement
+#             strings. Returns an empty list if
+#             all parameters agree.
+#
+# Side effects: None.
+#
+# Notes:      Type mismatches are classified as
+#             either 'compatible' (e.g. integer vs
+#             number) or 'incompatible' via
+#             _types_are_compatible. $self and
+#             $class are excluded from undocumented
+#             parameter warnings in appropriate
+#             context.
+# --------------------------------------------------
 sub _validate_pod_code_agreement {
 	my ($self, $pod_params, $code_params, $method_name) = @_;
 
@@ -7580,6 +9242,23 @@ sub _validate_pod_code_agreement {
 	return @errors;
 }
 
+# --------------------------------------------------
+# _validate_strictness_level
+#
+# Purpose:    Validate and normalise the strict_pod
+#             option value accepted by new() into
+#             an integer level: 0 (off), 1 (warn),
+#             or 2 (fatal).
+#
+# Entry:      $val - the raw value passed to
+#                    strict_pod in new(). May be
+#                    undef, a number, or a string.
+#
+# Exit:       Returns 0, 1, or 2.
+#             Croaks if the value is not recognised.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _validate_strictness_level {
 	my $val = $_[0];
 
@@ -7593,6 +9272,23 @@ sub _validate_strictness_level {
 	croak("Invalid value for --strict-pod: '$val' (use off|warn|fatal)");
 }
 
+# --------------------------------------------------
+# _types_are_compatible
+#
+# Purpose:    Determine whether two type strings
+#             are compatible for POD/code agreement
+#             checking, allowing semantically
+#             equivalent types (e.g. 'integer' and
+#             'number') to coexist without
+#             triggering a strict POD warning.
+#
+# Entry:      $pod_type  - type string from POD.
+#             $code_type - type string from code.
+#
+# Exit:       Returns 1 if compatible, 0 otherwise.
+#
+# Side effects: None.
+# --------------------------------------------------
 sub _types_are_compatible {
 	my ($self, $pod_type, $code_type) = @_;
 

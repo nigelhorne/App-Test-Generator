@@ -1101,9 +1101,13 @@ sub _generate_string_cases
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
 				} elsif((!defined($spec->{max})) || ($spec->{max} >= 5)) {
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'OK' ) };
+					push @cases, { %{$mandatory_args}, ( $arg_name => ' hell', _LINE => __LINE__, _STATUS => 'OK' ) };
 				} else {
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'plugh', _LINE => __LINE__, _STATUS => 'DIES' ) };
+					push @cases, { %{$mandatory_args}, ( $arg_name => '     ', _LINE => __LINE__, _STATUS => 'DIES' ) };
 				}
+				# Check that trimmed strings work
+				push @cases, { %{$mandatory_args}, ( $arg_name => ' ' x $len, _LINE => __LINE__, _STATUS => 'OK' ) };
 			} else {
 				push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
 			}
@@ -1152,6 +1156,12 @@ sub _generate_string_cases
 				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len), _LINE => __LINE__ ) };	# border
 				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len + 1), _LINE => __LINE__, _STATUS => 'DIES' ) }; # outside
 			}
+		} elsif(defined($spec->{min}) && ($spec->{min} == $len)) {
+			if($len >= 2) {
+				push @cases, { %{$mandatory_args}, ( $arg_name => ' ' x $len - 1, _LINE => __LINE__, _DESCRIPTION => 'max == min', _STATUS => 'DIES' ) };
+			}
+			push @cases, { %{$mandatory_args}, ( $arg_name => ' ' x $len, _LINE => __LINE__, _DESCRIPTION => 'max == min' ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => ' ' x $len + 1, _LINE => __LINE__, _DESCRIPTION => 'max == min', _STATUS => 'DIES' ) };
 		}
 	} elsif((!$spec->{matches}) && (!$spec->{memberof})) {
 		# TODO: send them if they match the regex
