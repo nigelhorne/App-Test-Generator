@@ -930,16 +930,12 @@ sub _generate_integer_cases {
 			{ %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
 	[% END %]
 
-	push @cases,
-		{ %{$mandatory_args}, ( $arg_name => 1e5, _STATUS => 'OK' ) },	# Scientific notation
-		{ %{$mandatory_args}, ( $arg_name => 1_000, _STATUS => 'OK' ) },	# Underscored
-		{ %{$mandatory_args}, ( $arg_name => '   42   ', _STATUS => 'OK' ) };	# Padded integer
-
 	# min/max numeric boundaries
 	if (defined $spec->{min}) {
 		my $min = $spec->{min};
 		push @cases,
 			{ %{$mandatory_args}, ( $arg_name => $min - 1, _STATUS => 'DIES' ) },
+			{ %{$mandatory_args}, ( $arg_name => "  $min  ", _LINE => __LINE__ ) },	# border, padded integer
 			{ %{$mandatory_args}, ( $arg_name => $min, _LINE => __LINE__ ) },	# border
 			{ %{$mandatory_args}, ( $arg_name => $min + 1 ) };	# just inside
 
@@ -949,7 +945,13 @@ sub _generate_integer_cases {
 		if($min <= 0) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => -0.0, _STATUS => 'OK' ) };	# Negative 0
 		}
+	} else {
+		push @cases,
+			{ %{$mandatory_args}, ( $arg_name => 1e5, _STATUS => 'OK' ) },	# Scientific notation
+			{ %{$mandatory_args}, ( $arg_name => 1_000, _STATUS => 'OK' ) },	# Underscored
+			{ %{$mandatory_args}, ( $arg_name => '   42   ', _STATUS => 'OK' ) };	# Padded integer
 	}
+
 	if (defined $spec->{max}) {
 		my $max = $spec->{max};
 		push @cases,
