@@ -37,11 +37,11 @@ Readonly my $EXEC_PATTERN =>
 Readonly my $GLOBAL_PATTERN =>
 	qr/\$(?:GLOBAL|ENV|SIG|ARGV|_|\/|!|0)\b|%ENV\b|%SIG\b|@ARGV\b/;
 
-our $VERSION = '0.32';
+our $VERSION = '0.33';
 
 =head1 VERSION
 
-Version 0.32
+Version 0.33
 
 =head1 DESCRIPTION
 

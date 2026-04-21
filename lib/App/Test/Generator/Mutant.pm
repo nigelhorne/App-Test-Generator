@@ -4,11 +4,11 @@ use strict;
 use warnings;
 use Carp qw(croak);
 
-our $VERSION = '0.32';
+our $VERSION = '0.33';
 
 =head1 VERSION
 
-Version 0.32
+Version 0.33
 
 =head1 DESCRIPTION
 
@@ -257,7 +257,7 @@ e.g. all mutations targeting the same source line.
 
 =cut
 
-sub group       { $_[0]->{group}       }
+sub group { $_[0]->{group} }
 
 =head1 AUTHOR
 
@@ -268,21 +268,11 @@ with the assistance of AI.
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright 2026 Nigel Horne.
+Copyright 2025-2026 Nigel Horne.
 
-Usage is subject to licence terms.
-
-The licence terms of this software are as follows:
-
-=over 4
-
-=item * Personal single user, single computer use: GPL2
-
-=item * All other users (including Commercial, Charity, Educational,
-Government) must apply in writing for a licence for use from Nigel Horne
-at the above e-mail.
-
-=back
+Usage is subject to the terms of GPL2.
+If you use it,
+please let me know.
 
 =cut
 

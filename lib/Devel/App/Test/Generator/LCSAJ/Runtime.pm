@@ -16,7 +16,7 @@ use Readonly;
 # --------------------------------------------------
 Readonly my $OUT_DIR => 'cover_html/lcsaj_hits';
 
-our $VERSION = '0.32';
+our $VERSION = '0.33';
 
 =head1 NAME
 

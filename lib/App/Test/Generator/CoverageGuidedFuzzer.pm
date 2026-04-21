@@ -36,7 +36,7 @@ Readonly my $TYPE_STRING  => 'string';
 # --------------------------------------------------
 Readonly my @JSON_MODULES => qw(JSON::MaybeXS JSON);
 
-our $VERSION = '0.32';
+our $VERSION = '0.33';
 
 =head1 NAME
 
@@ -45,7 +45,7 @@ fuzzing for App::Test::Generator
 
 =head1 VERSION
 
-Version 0.32
+Version 0.33
 
 =head1 SYNOPSIS
 
