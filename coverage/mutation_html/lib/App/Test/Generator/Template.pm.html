@@ -1395,887 +1395,901 @@ Approximate LCSAJ segments: 3<br>
 </span><span class=""> 1103: 					push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;hello&#39;, _LINE =&gt; __LINE__, _STATUS =&gt; &#39;OK&#39; ) };
 </span><span class=""> 1104: 				} else {
 </span><span class=""> 1105: 					push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;plugh&#39;, _LINE =&gt; __LINE__, _STATUS =&gt; &#39;DIES&#39; ) };
-</span><span class=""> 1106: 				}
-</span><span class=""> 1107: 			} else {
-</span><span class=""> 1108: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;hello&#39;, _LINE =&gt; __LINE__, _STATUS =&gt; &#39;DIES&#39; ) };
-</span><span class=""> 1109: 			}
-</span><span class=""> 1110: 
-</span><span class=""> 1111: 			if($len &lt;= 0) {
-</span><span class=""> 1112: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;&#39;, _LINE =&gt; __LINE__, _DESCRIPTION =&gt; &#39;min == 0 so empty should be allowed&#39; ) } if($config{&#39;test_empty&#39;});	# min == 0, empty string should be allowable
-</span><span class=""> 1113: 				push @cases,
-</span><span class=""> 1114: 					{ %{$mandatory_args}, ( $arg_name =&gt; &#39; &#39;, _LINE =&gt; __LINE__ ) },
-</span><span class=""> 1115: 					{ %{$mandatory_args}, ( $arg_name =&gt; &quot;\n&quot;, _LINE =&gt; __LINE__ ) },
-</span><span class=""> 1116: 					# Don&#39;t confuse if() with if(defined())
-</span><span class=""> 1117: 					{ %{$mandatory_args}, ( $arg_name =&gt; &#39;0&#39;, _STATUS =&gt; &#39;DIES&#39; ) };
+</span><span class=""> 1106: 					push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;     &#39;, _LINE =&gt; __LINE__, _STATUS =&gt; &#39;DIES&#39; ) };
+</span><span class=""> 1107: 				}
+</span><span class=""> 1108: 				# Check that trimmed strings work
+</span><span class=""> 1109: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39; &#39; x $len, _LINE =&gt; __LINE__, _STATUS =&gt; &#39;OK&#39; ) };
+</span><span class=""> 1110: 			} else {
+</span><span class=""> 1111: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;hello&#39;, _LINE =&gt; __LINE__, _STATUS =&gt; &#39;DIES&#39; ) };
+</span><span class=""> 1112: 			}
+</span><span class=""> 1113: 			if(!defined($spec-&gt;{&#39;memberof&#39;})) {
+</span><span class=""> 1114: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &quot;he\nlo&quot;, _LINE =&gt; __LINE__, _STATUS =&gt; &#39;OK&#39; ) };
+</span><span class=""> 1115: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39; hell&#39;, _LINE =&gt; __LINE__, _STATUS =&gt; &#39;OK&#39; ) };
+</span><span class=""> 1116: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len) . &quot;\n&quot; . rand_str($len), _LINE =&gt; __LINE__, _STATUS =&gt; &#39;OK&#39; ) };
+</span><span class=""> 1117: 			}
 </span><span class=""> 1118: 
-</span><span class=""> 1119: 				if($config{&#39;test_security&#39;}) {
-</span><span class=""> 1120: 					push @cases,
-</span><span class=""> 1121: 						{ %{$mandatory_args}, ( $arg_name =&gt; &#39;&lt;script&gt;alert(1)&lt;/script&gt;&#39;, _LINE =&gt; __LINE__ ) },
-</span><span class=""> 1122: 						{ %{$mandatory_args}, ( $arg_name =&gt; &quot;&#39;; DROP TABLE foo --&quot;, _LINE =&gt; __LINE__ ) };
-</span><span class=""> 1123: 				}
-</span><span class=""> 1124: 			}
-</span><span class=""> 1125: 		}
-</span><span class=""> 1126: 	} elsif($config{&#39;test_empty&#39;}) {
-</span><span class=""> 1127: 		# No min, empty string should be allowable
-</span><span class=""> 1128: 		if(defined($spec-&gt;{&#39;memberof&#39;}) &amp;&amp; (!grep { $_ eq &#39;&#39; } @{$spec-&gt;{&#39;memberof&#39;}})) {
-</span><span class=""> 1129: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;&#39;, _LINE =&gt; __LINE__, _STATUS =&gt; &#39;DIES&#39; ) };
-</span><span class=""> 1130: 		} else {
-</span><span class=""> 1131: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;&#39;, _LINE =&gt; __LINE__ ) };
-</span><span class=""> 1132: 		}
-</span><span class=""> 1133: 	}
-</span><span class=""> 1134: 	if (defined $spec-&gt;{max}) {
-</span><span class=""> 1135: 		my $len = $spec-&gt;{max};
-</span><span class=""> 1136: 		if((!defined($spec-&gt;{min})) || ($spec-&gt;{min} != $len)) {
-</span><span class=""> 1137: 			if(my $re = $spec-&gt;{matches}) {
-</span><span class=""> 1138: 				for my $count ($len - 1, $len, $len + 1) {
-</span><span class=""> 1139: 					my $str = rand_str($count);
-</span><span class=""> 1140: 					if($str =~ $re) {
-</span><span class=""> 1141: 						if($count &gt; $len) {
-</span><span class=""> 1142: 							push @cases, { %{$mandatory_args}, ( $arg_name =&gt; $str, _LINE =&gt; __LINE__, _STATUS =&gt; &#39;DIES&#39; ) };
-</span><span class=""> 1143: 						} else {
-</span><span class=""> 1144: 							push @cases, { %{$mandatory_args}, ( $arg_name =&gt; $str, _LINE =&gt; __LINE__ ) };
-</span><span class=""> 1145: 						}
-</span><span class=""> 1146: 					} else {
-</span><span class=""> 1147: 						push @cases, { %{$mandatory_args}, ( $arg_name =&gt; $str, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) };
-</span><span class=""> 1148: 					}
-</span><span class=""> 1149: 				}
-</span><span class=""> 1150: 			} else {
-</span><span class=""> 1151: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len - 1), _LINE =&gt; __LINE__ ) };	# just inside
-</span><span class=""> 1152: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len), _LINE =&gt; __LINE__ ) };	# border
-</span><span class=""> 1153: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len + 1), _LINE =&gt; __LINE__, _STATUS =&gt; &#39;DIES&#39; ) }; # outside
-</span><span class=""> 1154: 			}
-</span><span class=""> 1155: 		}
-</span><span class=""> 1156: 	} elsif((!$spec-&gt;{matches}) &amp;&amp; (!$spec-&gt;{memberof})) {
-</span><span class=""> 1157: 		# TODO: send them if they match the regex
-</span><span class=""> 1158: 		if(exists($spec-&gt;{&#39;min&#39;})) {
-</span><span class=""> 1159: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str(($spec-&gt;{&#39;min&#39;} + 1) * 1_000), _LINE =&gt; __LINE__ ) };
-</span><span class=""> 1160: 		} else {
-</span><span class=""> 1161: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str(65535), _LINE =&gt; __LINE__, _DESCRIPTION =&gt; &#39;Long string nearly 64K characters&#39; ) };
-</span><span class=""> 1162: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str(65536), _LINE =&gt; __LINE__, _DESCRIPTION =&gt; &#39;Long string 64K characters&#39; ) };
-</span><span class=""> 1163: 		}
-</span><span class=""> 1164: 		if((!exists($spec-&gt;{min})) || ($spec-&gt;{min} &lt;= 1)) {
-</span><span class=""> 1165: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &quot;\x{FEFF}&quot;, _STATUS =&gt; &#39;OK&#39;, _LINE =&gt; __LINE__, _DESCRIPTION =&gt; &#39;Byte order marker&#39; ) };
-</span><span class=""> 1166: 		} else {
-</span><span class=""> 1167: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &quot;\x{FEFF}&quot;, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__, _DESCRIPTION =&gt; &#39;Byte order marker&#39; ) };
-</span><span class=""> 1168: 		}
-</span><span class=""> 1169: 	}
-</span><span class=""> 1170: 
-</span><span class=""> 1171: 	if((!exists($spec-&gt;{min})) || ($spec-&gt;{min} == 0)) {
-</span><span class=""> 1172: 		# &#39;&#39; should die unless it&#39;s in the memberof list
-</span><span class=""> 1173: 		if(defined($spec-&gt;{&#39;memberof&#39;}) &amp;&amp; (!grep { $_ eq &#39;&#39; } @{$spec-&gt;{&#39;memberof&#39;}})) {
-</span><span class=""> 1174: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;&#39;, _NAME =&gt; $arg_name, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) }
-</span><span class=""> 1175: 		} elsif(defined($spec-&gt;{&#39;memberof&#39;}) &amp;&amp; !defined($spec-&gt;{&#39;max&#39;})) {
-</span><span class=""> 1176: 			# Data::Random
-</span><span class=""> 1177: 			push @cases, { %{$mandatory_args}, _input =&gt; (rand_set(set =&gt; $spec-&gt;{&#39;memberof&#39;}, size =&gt; 1))[0] }
-</span><span class=""> 1178: 		} elsif($config{&#39;test_empty&#39;} &amp;&amp; !$spec-&gt;{&#39;memberof&#39;}) {
-</span><span class=""> 1179: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;&#39;, _NAME =&gt; $arg_name, _LINE =&gt; __LINE__ ) };
-</span><span class=""> 1180: 		}
-</span><span class=""> 1181: 	}
-</span><span class=""> 1182: 	# push @cases, { $arg_name =&gt; &quot;emoji \x{1F600}&quot; };
-</span><span class=""> 1183: 
-</span><span class=""> 1184: 	unless(defined($spec-&gt;{memberof}) || defined($spec-&gt;{matches})) {
-</span><span class=""> 1185: 		# --- min/max string/array boundaries ---
-</span><span class=""> 1186: 		if(defined $spec-&gt;{min}) {
-</span><span class=""> 1187: 			my $len = $spec-&gt;{min};
-</span><span class=""> 1188: 			if($len == 1) {
-</span><span class=""> 1189: 				if($config{&#39;test_empty&#39;}) {
-</span><span class=""> 1190: 					push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;&#39;, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) };
-</span><span class=""> 1191: 				}
-</span><span class=""> 1192: 			} elsif($len &gt; 0) {
-</span><span class=""> 1193: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len - 1), _STATUS =&gt; &#39;DIES&#39; ) };
-</span><span class=""> 1194: 			}
-</span><span class=""> 1195: 			if((!defined($spec-&gt;{max})) || ($spec-&gt;{max} &gt;= $len + 1)) {
-</span><span class=""> 1196: 				push @cases,
-</span><span class=""> 1197: 					{ %{$mandatory_args}, ( $arg_name =&gt; rand_str($len) ) },
-</span><span class=""> 1198: 					{ %{$mandatory_args}, ( $arg_name =&gt; rand_str($len + 1) ) };
-</span><span class=""> 1199: 			}
-</span><span class=""> 1200: 			if($len &lt;= 1) {
-</span><span class=""> 1201: 				push @cases,
-</span><span class=""> 1202: 					{ %{$mandatory_args}, ( $arg_name =&gt; &quot;\n&quot; ) },	# new lines are fun
-</span><span class=""> 1203: 					{ %{$mandatory_args}, ( $arg_name =&gt; &#39; &#39; ) },
-</span><span class=""> 1204: 					{ %{$mandatory_args}, ( $arg_name =&gt; &quot; \n &quot; ) };
-</span><span class=""> 1205: 			}
-</span><span class=""> 1206: 		} else {
-</span><span class=""> 1207: 			push @cases,
-</span><span class=""> 1208: 				{ %{$mandatory_args}, ( $arg_name =&gt; &quot;\n&quot; ) },	# new lines are fun
-</span><span class=""> 1209: 				{ %{$mandatory_args}, ( $arg_name =&gt; &#39; &#39; ) },
-</span><span class=""> 1210: 				{ %{$mandatory_args}, ( $arg_name =&gt; &quot; \n &quot; ) };
-</span><span class=""> 1211: 		}
-</span><span class=""> 1212: 		if (defined $spec-&gt;{max}) {
-</span><span class=""> 1213: 			my $len = $spec-&gt;{max};
-</span><span class=""> 1214: 			if((!defined($spec-&gt;{min})) || ($spec-&gt;{min} &lt; ($len - 1))) {
-</span><span class=""> 1215: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len - 1) ) };
-</span><span class=""> 1216: 			} else {
-</span><span class=""> 1217: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len - 1), _STATUS =&gt; &#39;DIES&#39; ) };
-</span><span class=""> 1218: 			}
-</span><span class=""> 1219: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len) ) };
-</span><span class=""> 1220: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len + 1), _STATUS =&gt; &#39;DIES&#39; ) };
-</span><span class=""> 1221: 		}
-</span><span class=""> 1222: 	}
-</span><span class=""> 1223: 
-</span><span class=""> 1224: 	if(defined $spec-&gt;{matches}) {
-</span><span class=""> 1225: 		my $re = $spec-&gt;{matches};
-</span><span class=""> 1226: 
-</span><span class=""> 1227: 		# --- Positive controls ---
-</span><span class=""> 1228: 		foreach my $val (@candidate_good) {
-</span><span class=""> 1229: 			if ($val =~ $re) {
-</span><span class=""> 1230: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; $val ) };
-</span><span class=""> 1231: 				last; # one good match is enough
+</span><span class=""> 1119: 			if($len &lt;= 0) {
+</span><span class=""> 1120: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;&#39;, _LINE =&gt; __LINE__, _DESCRIPTION =&gt; &#39;min == 0 so empty should be allowed&#39; ) } if($config{&#39;test_empty&#39;});	# min == 0, empty string should be allowable
+</span><span class=""> 1121: 				push @cases,
+</span><span class=""> 1122: 					{ %{$mandatory_args}, ( $arg_name =&gt; &#39; &#39;, _LINE =&gt; __LINE__ ) },
+</span><span class=""> 1123: 					{ %{$mandatory_args}, ( $arg_name =&gt; &quot;\n&quot;, _LINE =&gt; __LINE__ ) },
+</span><span class=""> 1124: 					# Don&#39;t confuse if() with if(defined())
+</span><span class=""> 1125: 					{ %{$mandatory_args}, ( $arg_name =&gt; &#39;0&#39;, _STATUS =&gt; &#39;DIES&#39; ) };
+</span><span class=""> 1126: 
+</span><span class=""> 1127: 				if($config{&#39;test_security&#39;}) {
+</span><span class=""> 1128: 					push @cases,
+</span><span class=""> 1129: 						{ %{$mandatory_args}, ( $arg_name =&gt; &#39;&lt;script&gt;alert(1)&lt;/script&gt;&#39;, _LINE =&gt; __LINE__ ) },
+</span><span class=""> 1130: 						{ %{$mandatory_args}, ( $arg_name =&gt; &quot;&#39;; DROP TABLE foo --&quot;, _LINE =&gt; __LINE__ ) };
+</span><span class=""> 1131: 				}
+</span><span class=""> 1132: 			}
+</span><span class=""> 1133: 		}
+</span><span class=""> 1134: 	} elsif($config{&#39;test_empty&#39;}) {
+</span><span class=""> 1135: 		# No min, empty string should be allowable
+</span><span class=""> 1136: 		if(defined($spec-&gt;{&#39;memberof&#39;}) &amp;&amp; (!grep { $_ eq &#39;&#39; } @{$spec-&gt;{&#39;memberof&#39;}})) {
+</span><span class=""> 1137: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;&#39;, _LINE =&gt; __LINE__, _STATUS =&gt; &#39;DIES&#39; ) };
+</span><span class=""> 1138: 		} else {
+</span><span class=""> 1139: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;&#39;, _LINE =&gt; __LINE__ ) };
+</span><span class=""> 1140: 		}
+</span><span class=""> 1141: 	}
+</span><span class=""> 1142: 	if (defined $spec-&gt;{max}) {
+</span><span class=""> 1143: 		my $len = $spec-&gt;{max};
+</span><span class=""> 1144: 		if((!defined($spec-&gt;{min})) || ($spec-&gt;{min} != $len)) {
+</span><span class=""> 1145: 			if(my $re = $spec-&gt;{matches}) {
+</span><span class=""> 1146: 				for my $count ($len - 1, $len, $len + 1) {
+</span><span class=""> 1147: 					my $str = rand_str($count);
+</span><span class=""> 1148: 					if($str =~ $re) {
+</span><span class=""> 1149: 						if($count &gt; $len) {
+</span><span class=""> 1150: 							push @cases, { %{$mandatory_args}, ( $arg_name =&gt; $str, _LINE =&gt; __LINE__, _STATUS =&gt; &#39;DIES&#39; ) };
+</span><span class=""> 1151: 						} else {
+</span><span class=""> 1152: 							push @cases, { %{$mandatory_args}, ( $arg_name =&gt; $str, _LINE =&gt; __LINE__ ) };
+</span><span class=""> 1153: 						}
+</span><span class=""> 1154: 					} else {
+</span><span class=""> 1155: 						push @cases, { %{$mandatory_args}, ( $arg_name =&gt; $str, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) };
+</span><span class=""> 1156: 					}
+</span><span class=""> 1157: 				}
+</span><span class=""> 1158: 			} else {
+</span><span class=""> 1159: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len - 1), _LINE =&gt; __LINE__ ) };	# just inside
+</span><span class=""> 1160: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len), _LINE =&gt; __LINE__ ) };	# border
+</span><span class=""> 1161: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len + 1), _LINE =&gt; __LINE__, _STATUS =&gt; &#39;DIES&#39; ) }; # outside
+</span><span class=""> 1162: 			}
+</span><span class=""> 1163: 		} elsif(defined($spec-&gt;{min}) &amp;&amp; ($spec-&gt;{min} == $len)) {
+</span><span class=""> 1164: 			if($len &gt;= 2) {
+</span><span class=""> 1165: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39; &#39; x $len - 1, _LINE =&gt; __LINE__, _DESCRIPTION =&gt; &#39;max == min&#39;, _STATUS =&gt; &#39;DIES&#39; ) };
+</span><span class=""> 1166: 			}
+</span><span class=""> 1167: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39; &#39; x $len, _LINE =&gt; __LINE__, _DESCRIPTION =&gt; &#39;max == min&#39; ) };
+</span><span class=""> 1168: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39; &#39; x $len + 1, _LINE =&gt; __LINE__, _DESCRIPTION =&gt; &#39;max == min&#39;, _STATUS =&gt; &#39;DIES&#39; ) };
+</span><span class=""> 1169: 		}
+</span><span class=""> 1170: 	} elsif((!$spec-&gt;{matches}) &amp;&amp; (!$spec-&gt;{memberof})) {
+</span><span class=""> 1171: 		# TODO: send them if they match the regex
+</span><span class=""> 1172: 		if(exists($spec-&gt;{&#39;min&#39;})) {
+</span><span class=""> 1173: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str(($spec-&gt;{&#39;min&#39;} + 1) * 1_000), _LINE =&gt; __LINE__ ) };
+</span><span class=""> 1174: 		} else {
+</span><span class=""> 1175: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str(65535), _LINE =&gt; __LINE__, _DESCRIPTION =&gt; &#39;Long string nearly 64K characters&#39; ) };
+</span><span class=""> 1176: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str(65536), _LINE =&gt; __LINE__, _DESCRIPTION =&gt; &#39;Long string 64K characters&#39; ) };
+</span><span class=""> 1177: 		}
+</span><span class=""> 1178: 		if((!exists($spec-&gt;{min})) || ($spec-&gt;{min} &lt;= 1)) {
+</span><span class=""> 1179: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &quot;\x{FEFF}&quot;, _STATUS =&gt; &#39;OK&#39;, _LINE =&gt; __LINE__, _DESCRIPTION =&gt; &#39;Byte order marker&#39; ) };
+</span><span class=""> 1180: 		} else {
+</span><span class=""> 1181: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &quot;\x{FEFF}&quot;, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__, _DESCRIPTION =&gt; &#39;Byte order marker&#39; ) };
+</span><span class=""> 1182: 		}
+</span><span class=""> 1183: 	}
+</span><span class=""> 1184: 
+</span><span class=""> 1185: 	if((!exists($spec-&gt;{min})) || ($spec-&gt;{min} == 0)) {
+</span><span class=""> 1186: 		# &#39;&#39; should die unless it&#39;s in the memberof list
+</span><span class=""> 1187: 		if(defined($spec-&gt;{&#39;memberof&#39;}) &amp;&amp; (!grep { $_ eq &#39;&#39; } @{$spec-&gt;{&#39;memberof&#39;}})) {
+</span><span class=""> 1188: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;&#39;, _NAME =&gt; $arg_name, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) }
+</span><span class=""> 1189: 		} elsif(defined($spec-&gt;{&#39;memberof&#39;}) &amp;&amp; !defined($spec-&gt;{&#39;max&#39;})) {
+</span><span class=""> 1190: 			# Data::Random
+</span><span class=""> 1191: 			push @cases, { %{$mandatory_args}, _input =&gt; (rand_set(set =&gt; $spec-&gt;{&#39;memberof&#39;}, size =&gt; 1))[0] }
+</span><span class=""> 1192: 		} elsif($config{&#39;test_empty&#39;} &amp;&amp; !$spec-&gt;{&#39;memberof&#39;}) {
+</span><span class=""> 1193: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;&#39;, _NAME =&gt; $arg_name, _LINE =&gt; __LINE__ ) };
+</span><span class=""> 1194: 		}
+</span><span class=""> 1195: 	}
+</span><span class=""> 1196: 	# push @cases, { $arg_name =&gt; &quot;emoji \x{1F600}&quot; };
+</span><span class=""> 1197: 
+</span><span class=""> 1198: 	unless(defined($spec-&gt;{memberof}) || defined($spec-&gt;{matches})) {
+</span><span class=""> 1199: 		# --- min/max string/array boundaries ---
+</span><span class=""> 1200: 		if(defined $spec-&gt;{min}) {
+</span><span class=""> 1201: 			my $len = $spec-&gt;{min};
+</span><span class=""> 1202: 			if($len == 1) {
+</span><span class=""> 1203: 				if($config{&#39;test_empty&#39;}) {
+</span><span class=""> 1204: 					push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &#39;&#39;, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) };
+</span><span class=""> 1205: 				}
+</span><span class=""> 1206: 			} elsif($len &gt; 0) {
+</span><span class=""> 1207: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len - 1), _STATUS =&gt; &#39;DIES&#39; ) };
+</span><span class=""> 1208: 			}
+</span><span class=""> 1209: 			if((!defined($spec-&gt;{max})) || ($spec-&gt;{max} &gt;= $len + 1)) {
+</span><span class=""> 1210: 				push @cases,
+</span><span class=""> 1211: 					{ %{$mandatory_args}, ( $arg_name =&gt; rand_str($len) ) },
+</span><span class=""> 1212: 					{ %{$mandatory_args}, ( $arg_name =&gt; rand_str($len + 1) ) };
+</span><span class=""> 1213: 			}
+</span><span class=""> 1214: 			if($len &lt;= 1) {
+</span><span class=""> 1215: 				push @cases,
+</span><span class=""> 1216: 					{ %{$mandatory_args}, ( $arg_name =&gt; &quot;\n&quot; ) },	# new lines are fun
+</span><span class=""> 1217: 					{ %{$mandatory_args}, ( $arg_name =&gt; &#39; &#39; ) },
+</span><span class=""> 1218: 					{ %{$mandatory_args}, ( $arg_name =&gt; &quot; \n &quot; ) };
+</span><span class=""> 1219: 			}
+</span><span class=""> 1220: 		} else {
+</span><span class=""> 1221: 			push @cases,
+</span><span class=""> 1222: 				{ %{$mandatory_args}, ( $arg_name =&gt; &quot;\n&quot; ) },	# new lines are fun
+</span><span class=""> 1223: 				{ %{$mandatory_args}, ( $arg_name =&gt; &#39; &#39; ) },
+</span><span class=""> 1224: 				{ %{$mandatory_args}, ( $arg_name =&gt; &quot; \n &quot; ) };
+</span><span class=""> 1225: 		}
+</span><span class=""> 1226: 		if (defined $spec-&gt;{max}) {
+</span><span class=""> 1227: 			my $len = $spec-&gt;{max};
+</span><span class=""> 1228: 			if((!defined($spec-&gt;{min})) || ($spec-&gt;{min} &lt; ($len - 1))) {
+</span><span class=""> 1229: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len - 1) ) };
+</span><span class=""> 1230: 			} else {
+</span><span class=""> 1231: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len - 1), _STATUS =&gt; &#39;DIES&#39; ) };
 </span><span class=""> 1232: 			}
-</span><span class=""> 1233: 		}
-</span><span class=""> 1234: 
-</span><span class=""> 1235: 		# --- Negative controls ---
-</span><span class=""> 1236: 		foreach my $val (@candidate_bad) {
-</span><span class=""> 1237: 			if(!defined($val)) {
-</span><span class=""> 1238: 				push @cases, { _input =&gt; undef, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ } if($config{&#39;test_undef&#39;});
-</span><span class=""> 1239: 			} elsif ($val !~ $re) {
-</span><span class=""> 1240: 				push @cases, { _input =&gt; $val, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ };
-</span><span class=""> 1241: 			}
-</span><span class=""> 1242: 		}
-</span><span class=""> 1243: 		push @cases, { $arg_name =&gt; undef, _STATUS =&gt; &#39;DIES&#39; } if($config{&#39;test_undef&#39;});
-</span><span class=""> 1244: 	}
-</span><span class=""> 1245: 	if(defined $spec-&gt;{nomatch}) {
-</span><span class=""> 1246: 		my $re = $spec-&gt;{nomatch};
-</span><span class=""> 1247: 
-</span><span class=""> 1248: 		# --- Positive controls ---
-</span><span class=""> 1249: 		foreach my $val (@candidate_good) {
-</span><span class=""> 1250: 			if ($val !~ $re) {
-</span><span class=""> 1251: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; $val ) };
-</span><span class=""> 1252: 				last; # one good match is enough
-</span><span class=""> 1253: 			}
-</span><span class=""> 1254: 		}
-</span><span class=""> 1255: 
-</span><span class=""> 1256: 		# --- Negative controls ---
-</span><span class=""> 1257: 		foreach my $val (@candidate_bad) {
-</span><span class=""> 1258: 			if ($val =~ $re) {
-</span><span class=""> 1259: 				push @cases, { $arg_name =&gt; $val, _STATUS =&gt; &#39;DIES&#39; };
-</span><span class=""> 1260: 			}
-</span><span class=""> 1261: 		}
-</span><span class=""> 1262: 	}
-</span><span class=""> 1263: 
-</span><span class=""> 1264: 	[% IF module %]
-</span><span class=""> 1265: 		# Send wrong data type - builtins aren&#39;t good at checking this
-</span><span class=""> 1266: 		if($config{&#39;test_nuls&#39;}) {
-</span><span class=""> 1267: 			push @cases,
-</span><span class=""> 1268: 				{ %{$mandatory_args}, $arg_name =&gt; &quot;\0&quot;, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ },
-</span><span class=""> 1269: 				{ %{$mandatory_args}, $arg_name =&gt; &quot;nul\0&quot;, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ },
-</span><span class=""> 1270: 				{ %{$mandatory_args}, $arg_name =&gt; &quot;\0nul&quot;, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ };
-</span><span class=""> 1271: 		}
-</span><span class=""> 1272: 		if($config{&#39;test_empty&#39;}) {
-</span><span class=""> 1273: 			push @cases,
-</span><span class=""> 1274: 				{ %{$mandatory_args}, ( $arg_name =&gt; [], _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) },
-</span><span class=""> 1275: 				{ %{$mandatory_args}, ( $arg_name =&gt; {}, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) };
-</span><span class=""> 1276: 		}
-</span><span class=""> 1277: 		push @cases,
-</span><span class=""> 1278: 			{ %{$mandatory_args}, ( $arg_name =&gt; \&#39;ref to scalar&#39;, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) },
-</span><span class=""> 1279: 			{ %{$mandatory_args}, ( $arg_name =&gt; sub { die &#39;boom&#39; }, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) },
-</span><span class=""> 1280: 			{ %{$mandatory_args}, ( $arg_name =&gt; bless({}, &#39;Evil::Class&#39;), _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) },
-</span><span class=""> 1281: 			# { %{$mandatory_args}, ( $arg_name =&gt; [1, 2, 3], _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) },	# Generates false positives. Why?
-</span><span class=""> 1282: 			{ %{$mandatory_args}, ( $arg_name =&gt; { a =&gt; 1 }, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) };
-</span><span class=""> 1283: 	[% END %]
-</span><span class=""> 1284: 
-</span><span class=""> 1285: 	return \@cases;
-</span><span class=""> 1286: }
-</span><span class=""> 1287: 
-</span><span class=""> 1288: # dedup, fuzzing can easily generate repeats
-</span><span class=""> 1289: # FIXME: I don&#39;t think this catches them all
-</span><span class=""> 1290: # FIXME: Handle cases with Class::Simple calls
-</span><span class=""> 1291: # FIXME: The JSON encoding fails on various data types that are sent (e.g. scalar refs, objects) so don&#39;t bother
-</span><span class=""> 1292: sub _dedup_cases
-</span><span class=""> 1293: {
-</span><span class=""> 1294: 	my $cases = shift;
-</span><span class=""> 1295: 
-</span><span class=""> 1296: 	# Do not use JSON::MaybeXS because it will fail on non utf-8 characters
-</span><span class=""> 1297: 	require JSON::PP;
-</span><span class=""> 1298: 	JSON::PP-&gt;import();
-</span><span class=""> 1299: 
-</span><span class=""> 1300: 	eval {
-</span><span class=""> 1301: 		my %seen;
-</span><span class=""> 1302: 		my @rc = grep {
-</span><span class=""> 1303: 			my $dump = encode_json($_);
-</span><span class=""> 1304: 			!$seen{$dump}++
-</span><span class=""> 1305: 		} @{$cases};
-</span><span class=""> 1306: 
-</span><span class=""> 1307: 		return \@rc;
-</span><span class=""> 1308: 	};
-</span><span class=""> 1309: 	# Carp::carp(__PACKAGE__, &quot;: disabling deduping: $@&quot;);
-</span><span class=""> 1310: 
-</span><span class=""> 1311: 	return $cases;
-</span><span class=""> 1312: }
+</span><span class=""> 1233: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len) ) };
+</span><span class=""> 1234: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; rand_str($len + 1), _STATUS =&gt; &#39;DIES&#39; ) };
+</span><span class=""> 1235: 		}
+</span><span class=""> 1236: 	}
+</span><span class=""> 1237: 
+</span><span class=""> 1238: 	if(defined $spec-&gt;{matches}) {
+</span><span class=""> 1239: 		my $re = $spec-&gt;{matches};
+</span><span class=""> 1240: 
+</span><span class=""> 1241: 		# --- Positive controls ---
+</span><span class=""> 1242: 		foreach my $val (@candidate_good) {
+</span><span class=""> 1243: 			if ($val =~ $re) {
+</span><span class=""> 1244: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; $val ) };
+</span><span class=""> 1245: 				last; # one good match is enough
+</span><span class=""> 1246: 			}
+</span><span class=""> 1247: 		}
+</span><span class=""> 1248: 
+</span><span class=""> 1249: 		# --- Negative controls ---
+</span><span class=""> 1250: 		foreach my $val (@candidate_bad) {
+</span><span class=""> 1251: 			if(!defined($val)) {
+</span><span class=""> 1252: 				push @cases, { _input =&gt; undef, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ } if($config{&#39;test_undef&#39;});
+</span><span class=""> 1253: 			} elsif ($val !~ $re) {
+</span><span class=""> 1254: 				push @cases, { _input =&gt; $val, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ };
+</span><span class=""> 1255: 			}
+</span><span class=""> 1256: 		}
+</span><span class=""> 1257: 		push @cases, { $arg_name =&gt; undef, _STATUS =&gt; &#39;DIES&#39; } if($config{&#39;test_undef&#39;});
+</span><span class=""> 1258: 	}
+</span><span class=""> 1259: 	if(defined $spec-&gt;{nomatch}) {
+</span><span class=""> 1260: 		my $re = $spec-&gt;{nomatch};
+</span><span class=""> 1261: 
+</span><span class=""> 1262: 		# --- Positive controls ---
+</span><span class=""> 1263: 		foreach my $val (@candidate_good) {
+</span><span class=""> 1264: 			if ($val !~ $re) {
+</span><span class=""> 1265: 				push @cases, { %{$mandatory_args}, ( $arg_name =&gt; $val ) };
+</span><span class=""> 1266: 				last; # one good match is enough
+</span><span class=""> 1267: 			}
+</span><span class=""> 1268: 		}
+</span><span class=""> 1269: 
+</span><span class=""> 1270: 		# --- Negative controls ---
+</span><span class=""> 1271: 		foreach my $val (@candidate_bad) {
+</span><span class=""> 1272: 			if ($val =~ $re) {
+</span><span class=""> 1273: 				push @cases, { $arg_name =&gt; $val, _STATUS =&gt; &#39;DIES&#39; };
+</span><span class=""> 1274: 			}
+</span><span class=""> 1275: 		}
+</span><span class=""> 1276: 	}
+</span><span class=""> 1277: 
+</span><span class=""> 1278: 	[% IF module %]
+</span><span class=""> 1279: 		# Send wrong data type - builtins aren&#39;t good at checking this
+</span><span class=""> 1280: 		if($config{&#39;test_nuls&#39;}) {
+</span><span class=""> 1281: 			push @cases,
+</span><span class=""> 1282: 				{ %{$mandatory_args}, $arg_name =&gt; &quot;\0&quot;, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ },
+</span><span class=""> 1283: 				{ %{$mandatory_args}, $arg_name =&gt; &quot;nul\0&quot;, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ },
+</span><span class=""> 1284: 				{ %{$mandatory_args}, $arg_name =&gt; &quot;\0nul&quot;, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ };
+</span><span class=""> 1285: 		}
+</span><span class=""> 1286: 		if($config{&#39;test_empty&#39;}) {
+</span><span class=""> 1287: 			push @cases,
+</span><span class=""> 1288: 				{ %{$mandatory_args}, ( $arg_name =&gt; [], _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) },
+</span><span class=""> 1289: 				{ %{$mandatory_args}, ( $arg_name =&gt; {}, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) };
+</span><span class=""> 1290: 		}
+</span><span class=""> 1291: 		push @cases,
+</span><span class=""> 1292: 			{ %{$mandatory_args}, ( $arg_name =&gt; \&#39;ref to scalar&#39;, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) },
+</span><span class=""> 1293: 			{ %{$mandatory_args}, ( $arg_name =&gt; sub { die &#39;boom&#39; }, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) },
+</span><span class=""> 1294: 			{ %{$mandatory_args}, ( $arg_name =&gt; bless({}, &#39;Evil::Class&#39;), _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) },
+</span><span class=""> 1295: 			# { %{$mandatory_args}, ( $arg_name =&gt; [1, 2, 3], _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) },	# Generates false positives. Why?
+</span><span class=""> 1296: 			{ %{$mandatory_args}, ( $arg_name =&gt; { a =&gt; 1 }, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ ) };
+</span><span class=""> 1297: 	[% END %]
+</span><span class=""> 1298: 
+</span><span class=""> 1299: 	return \@cases;
+</span><span class=""> 1300: }
+</span><span class=""> 1301: 
+</span><span class=""> 1302: # dedup, fuzzing can easily generate repeats
+</span><span class=""> 1303: # FIXME: I don&#39;t think this catches them all
+</span><span class=""> 1304: # FIXME: Handle cases with Class::Simple calls
+</span><span class=""> 1305: # FIXME: The JSON encoding fails on various data types that are sent (e.g. scalar refs, objects) so don&#39;t bother
+</span><span class=""> 1306: sub _dedup_cases
+</span><span class=""> 1307: {
+</span><span class=""> 1308: 	my $cases = shift;
+</span><span class=""> 1309: 
+</span><span class=""> 1310: 	# Do not use JSON::MaybeXS because it will fail on non utf-8 characters
+</span><span class=""> 1311: 	require JSON::PP;
+</span><span class=""> 1312: 	JSON::PP-&gt;import();
 </span><span class=""> 1313: 
-</span><span class=""> 1314: sub generate_tests
-</span><span class=""> 1315: {
-</span><span class=""> 1316: 	my $input = $_[0];
-</span><span class=""> 1317: 	my %mandatory_args = %{$_[1]};
-</span><span class=""> 1318: 
-</span><span class=""> 1319: 	my @cases;
+</span><span class=""> 1314: 	eval {
+</span><span class=""> 1315: 		my %seen;
+</span><span class=""> 1316: 		my @rc = grep {
+</span><span class=""> 1317: 			my $dump = encode_json($_);
+</span><span class=""> 1318: 			!$seen{$dump}++
+</span><span class=""> 1319: 		} @{$cases};
 </span><span class=""> 1320: 
-</span><span class=""> 1321: 	foreach my $field (keys %input) {
-</span><span class=""> 1322: 		my $spec = $input{$field} || {};
-</span><span class=""> 1323: 		foreach my $field(keys %{$spec}) {
-</span><span class=""> 1324: 			next if($field =~ /^_/);	# Ignore comments
-</span><span class=""> 1325: 			if(!grep({ $_ eq $field } (&#39;type&#39;, &#39;min&#39;, &#39;max&#39;, &#39;optional&#39;, &#39;matches&#39;, &#39;can&#39;, &#39;position&#39;, &#39;memberof&#39;, &#39;semantic&#39;, &#39;isa&#39;))) {
-</span><span class=""> 1326: 				die(&quot;TODO: handle schema keyword &#39;$field&#39;&quot;);
-</span><span class=""> 1327: 			}
-</span><span class=""> 1328: 		}
-</span><span class=""> 1329: 	}
-</span><span class=""> 1330: 
-</span><span class=""> 1331: 	# Build a test of the mandatory args
-</span><span class=""> 1332: 	push @cases, { _input =&gt; \%mandatory_args, status =&gt; &#39;OK&#39; } if(keys %mandatory_args);
-</span><span class=""> 1333: 
-</span><span class=""> 1334: 	for (1..[% iterations_code %]) {
-</span><span class=""> 1335: 		# One by one change each of the mandatory fields
-</span><span class=""> 1336: 		foreach my $field (keys %input) {
-</span><span class=""> 1337: 			my $spec = $input{$field} || {};
-</span><span class=""> 1338: 			next if $spec-&gt;{&#39;memberof&#39;};	# Memberof data is created below
-</span><span class=""> 1339: 			my $type = $spec-&gt;{type} || &#39;string&#39;;
-</span><span class=""> 1340: 
-</span><span class=""> 1341: 			my %case_input = (%mandatory_args);
-</span><span class=""> 1342: 			# 1) Sometimes pick a field-specific edge-case
-</span><span class=""> 1343: 			if (exists $edge_cases{$field} &amp;&amp; rand() &lt; PROB_EDGE_CASE) {
-</span><span class=""> 1344: 				push @cases, { _input =&gt; \%case_input, status =&gt; &#39;OK&#39; } if(keys %case_input);
-</span><span class=""> 1345: 				$case_input{$field} = _pick_from($edge_cases{$field});
-</span><span class=""> 1346: 				next;
-</span><span class=""> 1347: 			}
-</span><span class=""> 1348: 
-</span><span class=""> 1349: 			# 2) Sometimes pick a type-level edge-case
-</span><span class=""> 1350: 			if (exists $type_edge_cases{$type} &amp;&amp; rand() &lt; 0.3) {
-</span><span class=""> 1351: 				$case_input{$field} = _pick_from($type_edge_cases{$type});
-</span><span class=""> 1352: 				push @cases, { _input =&gt; \%case_input, status =&gt; &#39;OK&#39; } if(keys %case_input);
-</span><span class=""> 1353: 				next;
-</span><span class=""> 1354: 			}
-</span><span class=""> 1355: 
-</span><span class=""> 1356: 			# 3) Sormal random generation by type
-</span><span class=""> 1357: 			if ($type eq &#39;string&#39;) {
-</span><span class=""> 1358: 				if(my $re = $spec-&gt;{matches}) {
-</span><span class=""> 1359: 					if(ref($re) ne &#39;Regexp&#39;) {
-</span><span class=""> 1360: 						$re = qr/$re/;
-</span><span class=""> 1361: 					}
-</span><span class=""> 1362: 					if($spec-&gt;{&#39;max&#39;}) {
-</span><span class=""> 1363: 						$case_input{$field} = Data::Random::String::Matches-&gt;create_random_string({ length =&gt; $spec-&gt;{&#39;max&#39;}, regex =&gt; $re });
-</span><span class=""> 1364: 					} elsif($spec-&gt;{&#39;min&#39;}) {
-</span><span class=""> 1365: 						$case_input{$field} = Data::Random::String::Matches-&gt;create_random_string({ length =&gt; $spec-&gt;{&#39;min&#39;}, regex =&gt; $re });
-</span><span class=""> 1366: 					} else {
-</span><span class=""> 1367: 						$case_input{$field} = Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; $re });
-</span><span class=""> 1368: 					}
-</span><span class=""> 1369: 				} elsif(my $semantic = $spec-&gt;{&#39;semantic&#39;}) {
-</span><span class=""> 1370: 					if($semantic eq &#39;email&#39;) {
-</span><span class=""> 1371: 						$case_input{$field} = rand_email($spec-&gt;{&#39;max&#39;} // $spec-&gt;{&#39;min&#39;});
-</span><span class=""> 1372: 					} else {
-</span><span class=""> 1373: 						diag(__LINE__, &quot;: TODO: handle semantic type &#39;$semantic&#39;&quot;);
-</span><span class=""> 1374: 					}
-</span><span class=""> 1375: 				} elsif(!$spec-&gt;{&#39;memberof&#39;}) {
-</span><span class=""> 1376: 					if(my $min = $spec-&gt;{min}) {
-</span><span class=""> 1377: 						$case_input{$field} = rand_str($min);
-</span><span class=""> 1378: 						if($config{&#39;test_empty&#39;} &amp;&amp; ($min == 0)) {
-</span><span class=""> 1379: 							push @cases, { _input =&gt; \%case_input, status =&gt; &#39;OK&#39; } if(keys %case_input);
-</span><span class=""> 1380: 							$case_input{$field} = &#39;&#39;;
-</span><span class=""> 1381: 						}
-</span><span class=""> 1382: 					} else {
-</span><span class=""> 1383: 						$case_input{$field} = rand_str();
-</span><span class=""> 1384: 						if($config{&#39;test_empty&#39;}) {
-</span><span class=""> 1385: 							push @cases, { _input =&gt; \%case_input, status =&gt; &#39;OK&#39; } if(keys %case_input);
-</span><span class=""> 1386: 							$case_input{$field} = &#39;&#39;;
-</span><span class=""> 1387: 						}
+</span><span class=""> 1321: 		return \@rc;
+</span><span class=""> 1322: 	};
+</span><span class=""> 1323: 	# Carp::carp(__PACKAGE__, &quot;: disabling deduping: $@&quot;);
+</span><span class=""> 1324: 
+</span><span class=""> 1325: 	return $cases;
+</span><span class=""> 1326: }
+</span><span class=""> 1327: 
+</span><span class=""> 1328: sub generate_tests
+</span><span class=""> 1329: {
+</span><span class=""> 1330: 	my $input = $_[0];
+</span><span class=""> 1331: 	my %mandatory_args = %{$_[1]};
+</span><span class=""> 1332: 
+</span><span class=""> 1333: 	my @cases;
+</span><span class=""> 1334: 
+</span><span class=""> 1335: 	foreach my $field (keys %input) {
+</span><span class=""> 1336: 		my $spec = $input{$field} || {};
+</span><span class=""> 1337: 		foreach my $field(keys %{$spec}) {
+</span><span class=""> 1338: 			next if($field =~ /^_/);	# Ignore comments
+</span><span class=""> 1339: 			if(!grep({ $_ eq $field } (&#39;type&#39;, &#39;min&#39;, &#39;max&#39;, &#39;optional&#39;, &#39;matches&#39;, &#39;can&#39;, &#39;position&#39;, &#39;memberof&#39;, &#39;semantic&#39;, &#39;isa&#39;))) {
+</span><span class=""> 1340: 				die(&quot;TODO: handle schema keyword &#39;$field&#39;&quot;);
+</span><span class=""> 1341: 			}
+</span><span class=""> 1342: 		}
+</span><span class=""> 1343: 	}
+</span><span class=""> 1344: 
+</span><span class=""> 1345: 	# Build a test of the mandatory args
+</span><span class=""> 1346: 	push @cases, { _input =&gt; \%mandatory_args, status =&gt; &#39;OK&#39; } if(keys %mandatory_args);
+</span><span class=""> 1347: 
+</span><span class=""> 1348: 	for (1..[% iterations_code %]) {
+</span><span class=""> 1349: 		# One by one change each of the mandatory fields
+</span><span class=""> 1350: 		foreach my $field (keys %input) {
+</span><span class=""> 1351: 			my $spec = $input{$field} || {};
+</span><span class=""> 1352: 			next if $spec-&gt;{&#39;memberof&#39;};	# Memberof data is created below
+</span><span class=""> 1353: 			my $type = $spec-&gt;{type} || &#39;string&#39;;
+</span><span class=""> 1354: 
+</span><span class=""> 1355: 			my %case_input = (%mandatory_args);
+</span><span class=""> 1356: 			# 1) Sometimes pick a field-specific edge-case
+</span><span class=""> 1357: 			if (exists $edge_cases{$field} &amp;&amp; rand() &lt; PROB_EDGE_CASE) {
+</span><span class=""> 1358: 				push @cases, { _input =&gt; \%case_input, status =&gt; &#39;OK&#39; } if(keys %case_input);
+</span><span class=""> 1359: 				$case_input{$field} = _pick_from($edge_cases{$field});
+</span><span class=""> 1360: 				next;
+</span><span class=""> 1361: 			}
+</span><span class=""> 1362: 
+</span><span class=""> 1363: 			# 2) Sometimes pick a type-level edge-case
+</span><span class=""> 1364: 			if (exists $type_edge_cases{$type} &amp;&amp; rand() &lt; 0.3) {
+</span><span class=""> 1365: 				$case_input{$field} = _pick_from($type_edge_cases{$type});
+</span><span class=""> 1366: 				push @cases, { _input =&gt; \%case_input, status =&gt; &#39;OK&#39; } if(keys %case_input);
+</span><span class=""> 1367: 				next;
+</span><span class=""> 1368: 			}
+</span><span class=""> 1369: 
+</span><span class=""> 1370: 			# 3) Sormal random generation by type
+</span><span class=""> 1371: 			if ($type eq &#39;string&#39;) {
+</span><span class=""> 1372: 				if(my $re = $spec-&gt;{matches}) {
+</span><span class=""> 1373: 					if(ref($re) ne &#39;Regexp&#39;) {
+</span><span class=""> 1374: 						$re = qr/$re/;
+</span><span class=""> 1375: 					}
+</span><span class=""> 1376: 					if($spec-&gt;{&#39;max&#39;}) {
+</span><span class=""> 1377: 						$case_input{$field} = Data::Random::String::Matches-&gt;create_random_string({ length =&gt; $spec-&gt;{&#39;max&#39;}, regex =&gt; $re });
+</span><span class=""> 1378: 					} elsif($spec-&gt;{&#39;min&#39;}) {
+</span><span class=""> 1379: 						$case_input{$field} = Data::Random::String::Matches-&gt;create_random_string({ length =&gt; $spec-&gt;{&#39;min&#39;}, regex =&gt; $re });
+</span><span class=""> 1380: 					} else {
+</span><span class=""> 1381: 						$case_input{$field} = Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; $re });
+</span><span class=""> 1382: 					}
+</span><span class=""> 1383: 				} elsif(my $semantic = $spec-&gt;{&#39;semantic&#39;}) {
+</span><span class=""> 1384: 					if($semantic eq &#39;email&#39;) {
+</span><span class=""> 1385: 						$case_input{$field} = rand_email($spec-&gt;{&#39;max&#39;} // $spec-&gt;{&#39;min&#39;});
+</span><span class=""> 1386: 					} else {
+</span><span class=""> 1387: 						diag(__LINE__, &quot;: TODO: handle semantic type &#39;$semantic&#39;&quot;);
 </span><span class=""> 1388: 					}
-</span><span class=""> 1389: 				}
-</span><span class=""> 1390: 			} elsif ($type eq &#39;integer&#39;) {
-</span><span class=""> 1391: 				if(my $min = $spec-&gt;{min}) {
-</span><span class=""> 1392: 					if(my $max = $spec-&gt;{&#39;max&#39;}) {
-</span><span class=""> 1393: 						$case_input{$field} = int(rand($max - $min + 1)) + $min;
-</span><span class=""> 1394: 					} else {
-</span><span class=""> 1395: 						$case_input{$field} = rand_int() + $min;
-</span><span class=""> 1396: 					}
-</span><span class=""> 1397: 				} elsif(exists($spec-&gt;{min})) {
-</span><span class=""> 1398: 					# min == 0
-</span><span class=""> 1399: 					if(my $max = $spec-&gt;{&#39;max&#39;}) {
-</span><span class=""> 1400: 						$case_input{$field} = int(rand($max + 1));
-</span><span class=""> 1401: 					} else {
-</span><span class=""> 1402: 						$case_input{$field} = int(abs(rand_int()));
-</span><span class=""> 1403: 					}
-</span><span class=""> 1404: 				} else {
-</span><span class=""> 1405: 					# If it&#39;s takes an integer, a float should die
-</span><span class=""> 1406: 					push @cases, { _input =&gt; rand_int() + 0.2, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ };
-</span><span class=""> 1407: 					$case_input{$field} = rand_int();
-</span><span class=""> 1408: 				}
-</span><span class=""> 1409: 			} elsif ($type eq &#39;boolean&#39;) {
-</span><span class=""> 1410: 				$case_input{$field} = rand_bool();
-</span><span class=""> 1411: 			} elsif ($type eq &#39;number&#39;) {
-</span><span class=""> 1412: 				if(my $min = $spec-&gt;{min}) {
-</span><span class=""> 1413: 					$case_input{$field} = rand_num() + $min;
-</span><span class=""> 1414: 				} else {
-</span><span class=""> 1415: 					$case_input{$field} = rand_num();
-</span><span class=""> 1416: 				}
-</span><span class=""> 1417: 			}
-</span><span class=""> 1418: 			elsif ($type eq &#39;arrayref&#39;) {
-</span><span class=""> 1419: 				$case_input{$field} = rand_arrayref();
-</span><span class=""> 1420: 			}
-</span><span class=""> 1421: 			elsif ($type eq &#39;hashref&#39;) {
-</span><span class=""> 1422: 				$case_input{$field} = rand_hashref();
-</span><span class=""> 1423: 			} elsif($config{&#39;test_undef&#39;}) {
-</span><span class=""> 1424: 				$case_input{$field} = undef;
-</span><span class=""> 1425: 			}
-</span><span class=""> 1426: 
-</span><span class=""> 1427: 			# 4) occasionally drop optional fields
-</span><span class=""> 1428: 			if ($spec-&gt;{optional} &amp;&amp; rand() &lt; 0.25) {
-</span><span class=""> 1429: 				delete $case_input{$field};
-</span><span class=""> 1430: 			}
-</span><span class=""> 1431: 			push @cases, { _input =&gt; \%case_input, status =&gt; &#39;OK&#39; } if(keys %case_input);
-</span><span class=""> 1432: 
-</span><span class=""> 1433: 			#####################
-</span><span class=""> 1434: 			# FIXME: Start of duplicated code from the above part of the loop.
-</span><span class=""> 1435: 			#	Go through and remove duplications then remove this code
-</span><span class=""> 1436: 			if (exists $spec-&gt;{memberof} &amp;&amp; ref $spec-&gt;{memberof} eq &#39;ARRAY&#39; &amp;&amp; @{$spec-&gt;{memberof}}) {
-</span><span class=""> 1437: 				# Generate edge cases for memberof
-</span><span class=""> 1438: 				# inside values
-</span><span class=""> 1439: 				foreach my $val (@{$spec-&gt;{memberof}}) {
-</span><span class=""> 1440: 					push @cases, { %mandatory_args, ( $field =&gt; $val ) };
-</span><span class=""> 1441: 				}
-</span><span class=""> 1442: 				# outside value
-</span><span class=""> 1443: 				my $outside;
-</span><span class=""> 1444: 				if ($type eq &#39;integer&#39; || $type eq &#39;number&#39;) {
-</span><span class=""> 1445: 					$outside = (sort { $a &lt;=&gt; $b } @{$spec-&gt;{memberof}})[-1] + 1;
-</span><span class=""> 1446: 				} else {
-</span><span class=""> 1447: 					$outside = &#39;INVALID_MEMBEROF&#39;;
-</span><span class=""> 1448: 				}
-</span><span class=""> 1449: 				push @cases, { %mandatory_args, ( $field =&gt; $outside, _STATUS =&gt; &#39;DIES&#39; ) };
-</span><span class=""> 1450: 			} else {
-</span><span class=""> 1451: 				# Generate edge cases for min/max
-</span><span class=""> 1452: 				if($type eq &#39;integer&#39;) {
-</span><span class=""> 1453: 					push @cases, @{_generate_integer_cases($field, $spec, \%mandatory_args, _LINE =&gt; __LINE__)};
-</span><span class=""> 1454: 				} elsif(($type eq &#39;number&#39;) || ($type eq &#39;float&#39;)) {
-</span><span class=""> 1455: 					push @cases, @{_generate_float_cases($field, $spec, \%mandatory_args, _LINE =&gt; __LINE__)};
-</span><span class=""> 1456: 				} elsif($type eq &#39;string&#39;) {
-</span><span class=""> 1457: 					push @cases, @{_generate_string_cases($field, $spec, \%mandatory_args)};
-</span><span class=""> 1458: 				} elsif ($type eq &#39;arrayref&#39;) {
-</span><span class=""> 1459: 					if (defined $spec-&gt;{min}) {
-</span><span class=""> 1460: 						my $len = $spec-&gt;{min};
-</span><span class=""> 1461: 						push @cases,
-</span><span class=""> 1462: 							{ $field =&gt; [ (1) x ($len + 1) ] },	# just inside
-</span><span class=""> 1463: 							{ $field =&gt; [ (1) x $len ] };	# border
-</span><span class=""> 1464: 						push @cases, { $field =&gt; [ (1) x ($len - 1) ], _STATUS =&gt; &#39;DIES&#39; } if $len &gt; 0; # outside
-</span><span class=""> 1465: 					} else {
-</span><span class=""> 1466: 						push @cases, { $field =&gt; [] } if($config{&#39;test_empty&#39;});	# No min, empty array should be allowable
-</span><span class=""> 1467: 					}
-</span><span class=""> 1468: 					if (defined $spec-&gt;{max}) {
-</span><span class=""> 1469: 						my $len = $spec-&gt;{max};
-</span><span class=""> 1470: 						push @cases,
-</span><span class=""> 1471: 							{ $field =&gt; [ (1) x ($len - 1) ] },	# just inside
-</span><span class=""> 1472: 							{ $field =&gt; [ (1) x $len ] },	# border
-</span><span class=""> 1473: 							{ $field =&gt; [ (1) x ($len + 1) ], _STATUS =&gt; &#39;DIES&#39; }; # outside
-</span><span class=""> 1474: 					}
-</span><span class=""> 1475: 				} elsif ($type eq &#39;hashref&#39;) {
-</span><span class=""> 1476: 					if (defined $spec-&gt;{min}) {
-</span><span class=""> 1477: 						my $len = $spec-&gt;{min};
-</span><span class=""> 1478: 						push @cases,
-</span><span class=""> 1479: 							{ $field =&gt; { map { &quot;k$_&quot; =&gt; 1 }, 1 .. ($len + 1) } },
-</span><span class=""> 1480: 							{ $field =&gt; { map { &quot;k$_&quot; =&gt; 1 }, 1 .. $len } };
-</span><span class=""> 1481: 						push @cases, { $field =&gt; { map { &quot;k$_&quot; =&gt; 1 }, 1 .. ($len - 1) }, _STATUS =&gt; &#39;DIES&#39; } if $len &gt; 0;
-</span><span class=""> 1482: 					} else {
-</span><span class=""> 1483: 						push @cases, { $field =&gt; {} } if($config{&#39;test_empty&#39;});	# No min, empty hash should be allowable
-</span><span class=""> 1484: 					}
-</span><span class=""> 1485: 					if (defined $spec-&gt;{max}) {
-</span><span class=""> 1486: 						my $len = $spec-&gt;{max};
-</span><span class=""> 1487: 						push @cases,
-</span><span class=""> 1488: 							{ $field =&gt; { map { &quot;k$_&quot; =&gt; 1 }, 1 .. ($len - 1) } },
-</span><span class=""> 1489: 							{ $field =&gt; { map { &quot;k$_&quot; =&gt; 1 }, 1 .. $len } },
-</span><span class=""> 1490: 							{ $field =&gt; { map { &quot;k$_&quot; =&gt; 1 }, 1 .. ($len + 1) }, _STATUS =&gt; &#39;DIES&#39; };
-</span><span class=""> 1491: 					}
-</span><span class=""> 1492: 				} elsif ($type eq &#39;boolean&#39;) {
-</span><span class=""> 1493: 					push @cases, @{_generate_boolean_cases($field, $spec, \%mandatory_args)};
-</span><span class=""> 1494: 				}
-</span><span class=""> 1495: 			}
-</span><span class=""> 1496: 
-</span><span class=""> 1497: 			# case_sensitive tests for memberof
-</span><span class=""> 1498: 			if (defined $spec-&gt;{memberof} &amp;&amp; exists $spec-&gt;{case_sensitive}) {
-</span><span class=""> 1499: 				if (!$spec-&gt;{case_sensitive}) {
-</span><span class=""> 1500: 					# Generate mixed-case versions of memberof values
-</span><span class=""> 1501: 					foreach my $val (@{$spec-&gt;{memberof}}) {
-</span><span class=""> 1502: 						push @cases, { %mandatory_args, ( $field =&gt; uc($val) ) },
-</span><span class=""> 1503: 							{ %mandatory_args, ( $field =&gt; lc($val) ) },
-</span><span class=""> 1504: 							{ %mandatory_args, ( $field =&gt; ucfirst(lc($val)) ) };
+</span><span class=""> 1389: 				} elsif(!$spec-&gt;{&#39;memberof&#39;}) {
+</span><span class=""> 1390: 					if(my $min = $spec-&gt;{min}) {
+</span><span class=""> 1391: 						$case_input{$field} = rand_str($min);
+</span><span class=""> 1392: 						if($config{&#39;test_empty&#39;} &amp;&amp; ($min == 0)) {
+</span><span class=""> 1393: 							push @cases, { _input =&gt; \%case_input, status =&gt; &#39;OK&#39; } if(keys %case_input);
+</span><span class=""> 1394: 							$case_input{$field} = &#39;&#39;;
+</span><span class=""> 1395: 						}
+</span><span class=""> 1396: 					} else {
+</span><span class=""> 1397: 						$case_input{$field} = rand_str();
+</span><span class=""> 1398: 						if($config{&#39;test_empty&#39;}) {
+</span><span class=""> 1399: 							push @cases, { _input =&gt; \%case_input, status =&gt; &#39;OK&#39; } if(keys %case_input);
+</span><span class=""> 1400: 							$case_input{$field} = &#39;&#39;;
+</span><span class=""> 1401: 						}
+</span><span class=""> 1402: 					}
+</span><span class=""> 1403: 				}
+</span><span class=""> 1404: 			} elsif ($type eq &#39;integer&#39;) {
+</span><span class=""> 1405: 				if(my $min = $spec-&gt;{min}) {
+</span><span class=""> 1406: 					if(my $max = $spec-&gt;{&#39;max&#39;}) {
+</span><span class=""> 1407: 						$case_input{$field} = int(rand($max - $min + 1)) + $min;
+</span><span class=""> 1408: 					} else {
+</span><span class=""> 1409: 						$case_input{$field} = rand_int() + $min;
+</span><span class=""> 1410: 					}
+</span><span class=""> 1411: 				} elsif(exists($spec-&gt;{min})) {
+</span><span class=""> 1412: 					# min == 0
+</span><span class=""> 1413: 					if(my $max = $spec-&gt;{&#39;max&#39;}) {
+</span><span class=""> 1414: 						$case_input{$field} = int(rand($max + 1));
+</span><span class=""> 1415: 					} else {
+</span><span class=""> 1416: 						$case_input{$field} = int(abs(rand_int()));
+</span><span class=""> 1417: 					}
+</span><span class=""> 1418: 				} else {
+</span><span class=""> 1419: 					# If it&#39;s takes an integer, a float should die
+</span><span class=""> 1420: 					push @cases, { _input =&gt; rand_int() + 0.2, _STATUS =&gt; &#39;DIES&#39;, _LINE =&gt; __LINE__ };
+</span><span class=""> 1421: 					$case_input{$field} = rand_int();
+</span><span class=""> 1422: 				}
+</span><span class=""> 1423: 			} elsif ($type eq &#39;boolean&#39;) {
+</span><span class=""> 1424: 				$case_input{$field} = rand_bool();
+</span><span class=""> 1425: 			} elsif ($type eq &#39;number&#39;) {
+</span><span class=""> 1426: 				if(my $min = $spec-&gt;{min}) {
+</span><span class=""> 1427: 					$case_input{$field} = rand_num() + $min;
+</span><span class=""> 1428: 				} else {
+</span><span class=""> 1429: 					$case_input{$field} = rand_num();
+</span><span class=""> 1430: 				}
+</span><span class=""> 1431: 			}
+</span><span class=""> 1432: 			elsif ($type eq &#39;arrayref&#39;) {
+</span><span class=""> 1433: 				$case_input{$field} = rand_arrayref();
+</span><span class=""> 1434: 			}
+</span><span class=""> 1435: 			elsif ($type eq &#39;hashref&#39;) {
+</span><span class=""> 1436: 				$case_input{$field} = rand_hashref();
+</span><span class=""> 1437: 			} elsif($config{&#39;test_undef&#39;}) {
+</span><span class=""> 1438: 				$case_input{$field} = undef;
+</span><span class=""> 1439: 			}
+</span><span class=""> 1440: 
+</span><span class=""> 1441: 			# 4) occasionally drop optional fields
+</span><span class=""> 1442: 			if ($spec-&gt;{optional} &amp;&amp; rand() &lt; 0.25) {
+</span><span class=""> 1443: 				delete $case_input{$field};
+</span><span class=""> 1444: 			}
+</span><span class=""> 1445: 			push @cases, { _input =&gt; \%case_input, status =&gt; &#39;OK&#39; } if(keys %case_input);
+</span><span class=""> 1446: 
+</span><span class=""> 1447: 			#####################
+</span><span class=""> 1448: 			# FIXME: Start of duplicated code from the above part of the loop.
+</span><span class=""> 1449: 			#	Go through and remove duplications then remove this code
+</span><span class=""> 1450: 			if (exists $spec-&gt;{memberof} &amp;&amp; ref $spec-&gt;{memberof} eq &#39;ARRAY&#39; &amp;&amp; @{$spec-&gt;{memberof}}) {
+</span><span class=""> 1451: 				# Generate edge cases for memberof
+</span><span class=""> 1452: 				# inside values
+</span><span class=""> 1453: 				foreach my $val (@{$spec-&gt;{memberof}}) {
+</span><span class=""> 1454: 					push @cases, { %mandatory_args, ( $field =&gt; $val ) };
+</span><span class=""> 1455: 				}
+</span><span class=""> 1456: 				# outside value
+</span><span class=""> 1457: 				my $outside;
+</span><span class=""> 1458: 				if ($type eq &#39;integer&#39; || $type eq &#39;number&#39;) {
+</span><span class=""> 1459: 					$outside = (sort { $a &lt;=&gt; $b } @{$spec-&gt;{memberof}})[-1] + 1;
+</span><span class=""> 1460: 				} else {
+</span><span class=""> 1461: 					$outside = &#39;INVALID_MEMBEROF&#39;;
+</span><span class=""> 1462: 				}
+</span><span class=""> 1463: 				push @cases, { %mandatory_args, ( $field =&gt; $outside, _STATUS =&gt; &#39;DIES&#39; ) };
+</span><span class=""> 1464: 			} else {
+</span><span class=""> 1465: 				# Generate edge cases for min/max
+</span><span class=""> 1466: 				if($type eq &#39;integer&#39;) {
+</span><span class=""> 1467: 					push @cases, @{_generate_integer_cases($field, $spec, \%mandatory_args, _LINE =&gt; __LINE__)};
+</span><span class=""> 1468: 				} elsif(($type eq &#39;number&#39;) || ($type eq &#39;float&#39;)) {
+</span><span class=""> 1469: 					push @cases, @{_generate_float_cases($field, $spec, \%mandatory_args, _LINE =&gt; __LINE__)};
+</span><span class=""> 1470: 				} elsif($type eq &#39;string&#39;) {
+</span><span class=""> 1471: 					push @cases, @{_generate_string_cases($field, $spec, \%mandatory_args)};
+</span><span class=""> 1472: 				} elsif ($type eq &#39;arrayref&#39;) {
+</span><span class=""> 1473: 					if (defined $spec-&gt;{min}) {
+</span><span class=""> 1474: 						my $len = $spec-&gt;{min};
+</span><span class=""> 1475: 						push @cases,
+</span><span class=""> 1476: 							{ $field =&gt; [ (1) x ($len + 1) ] },	# just inside
+</span><span class=""> 1477: 							{ $field =&gt; [ (1) x $len ] };	# border
+</span><span class=""> 1478: 						push @cases, { $field =&gt; [ (1) x ($len - 1) ], _STATUS =&gt; &#39;DIES&#39; } if $len &gt; 0; # outside
+</span><span class=""> 1479: 					} else {
+</span><span class=""> 1480: 						push @cases, { $field =&gt; [] } if($config{&#39;test_empty&#39;});	# No min, empty array should be allowable
+</span><span class=""> 1481: 					}
+</span><span class=""> 1482: 					if (defined $spec-&gt;{max}) {
+</span><span class=""> 1483: 						my $len = $spec-&gt;{max};
+</span><span class=""> 1484: 						push @cases,
+</span><span class=""> 1485: 							{ $field =&gt; [ (1) x ($len - 1) ] },	# just inside
+</span><span class=""> 1486: 							{ $field =&gt; [ (1) x $len ] },	# border
+</span><span class=""> 1487: 							{ $field =&gt; [ (1) x ($len + 1) ], _STATUS =&gt; &#39;DIES&#39; }; # outside
+</span><span class=""> 1488: 					}
+</span><span class=""> 1489: 				} elsif ($type eq &#39;hashref&#39;) {
+</span><span class=""> 1490: 					if (defined $spec-&gt;{min}) {
+</span><span class=""> 1491: 						my $len = $spec-&gt;{min};
+</span><span class=""> 1492: 						push @cases,
+</span><span class=""> 1493: 							{ $field =&gt; { map { &quot;k$_&quot; =&gt; 1 }, 1 .. ($len + 1) } },
+</span><span class=""> 1494: 							{ $field =&gt; { map { &quot;k$_&quot; =&gt; 1 }, 1 .. $len } };
+</span><span class=""> 1495: 						push @cases, { $field =&gt; { map { &quot;k$_&quot; =&gt; 1 }, 1 .. ($len - 1) }, _STATUS =&gt; &#39;DIES&#39; } if $len &gt; 0;
+</span><span class=""> 1496: 					} else {
+</span><span class=""> 1497: 						push @cases, { $field =&gt; {} } if($config{&#39;test_empty&#39;});	# No min, empty hash should be allowable
+</span><span class=""> 1498: 					}
+</span><span class=""> 1499: 					if (defined $spec-&gt;{max}) {
+</span><span class=""> 1500: 						my $len = $spec-&gt;{max};
+</span><span class=""> 1501: 						push @cases,
+</span><span class=""> 1502: 							{ $field =&gt; { map { &quot;k$_&quot; =&gt; 1 }, 1 .. ($len - 1) } },
+</span><span class=""> 1503: 							{ $field =&gt; { map { &quot;k$_&quot; =&gt; 1 }, 1 .. $len } },
+</span><span class=""> 1504: 							{ $field =&gt; { map { &quot;k$_&quot; =&gt; 1 }, 1 .. ($len + 1) }, _STATUS =&gt; &#39;DIES&#39; };
 </span><span class=""> 1505: 					}
-</span><span class=""> 1506: 				}
-</span><span class=""> 1507: 			}
-</span><span class=""> 1508: 
-</span><span class=""> 1509: 			# Add notmemberof tests
-</span><span class=""> 1510: 			if (defined $spec-&gt;{notmemberof}) {
-</span><span class=""> 1511: 				my @blacklist = @{$spec-&gt;{notmemberof}};
-</span><span class=""> 1512: 				# Each blacklisted value should die
-</span><span class=""> 1513: 				foreach my $val (@blacklist) {
-</span><span class=""> 1514: 					push @cases, { %mandatory_args, ( $field =&gt; $val, _STATUS =&gt; &#39;DIES&#39; ) };
-</span><span class=""> 1515: 				}
-</span><span class=""> 1516: 				# Non-blacklisted value should pass
-</span><span class=""> 1517: 				push @cases, { %mandatory_args, ( $field =&gt; &#39;_not_in_blacklist_&#39; ) };
-</span><span class=""> 1518: 			}
-</span><span class=""> 1519: 
-</span><span class=""> 1520: 			# semantic tests
-</span><span class=""> 1521: 			if(defined(my $semantic = $spec-&gt;{&#39;semantic&#39;})) {
-</span><span class=""> 1522: 				if($semantic eq &#39;unix_timestamp&#39;) {
-</span><span class=""> 1523: 					push @cases, { %mandatory_args, ( -1, _STATUS =&gt; &#39;DIES&#39; ) },
-</span><span class=""> 1524: 						{ %mandatory_args, ( 0 ) },
-</span><span class=""> 1525: 						{ %mandatory_args, ( 1 ) },
-</span><span class=""> 1526: 						{ %mandatory_args, ( time ) },
-</span><span class=""> 1527: 						{ %mandatory_args, ( 2147483647 ) },
-</span><span class=""> 1528: 						{ %mandatory_args, ( 2147483648, _STATUS =&gt; &#39;DIES&#39; ) };
-</span><span class=""> 1529: 				} else {
-</span><span class=""> 1530: 					diag(&quot;semantic type $semantic is not yet supported&quot;);
-</span><span class=""> 1531: 				}
+</span><span class=""> 1506: 				} elsif ($type eq &#39;boolean&#39;) {
+</span><span class=""> 1507: 					push @cases, @{_generate_boolean_cases($field, $spec, \%mandatory_args)};
+</span><span class=""> 1508: 				}
+</span><span class=""> 1509: 			}
+</span><span class=""> 1510: 
+</span><span class=""> 1511: 			# case_sensitive tests for memberof
+</span><span class=""> 1512: 			if (defined $spec-&gt;{memberof} &amp;&amp; exists $spec-&gt;{case_sensitive}) {
+</span><span class=""> 1513: 				if (!$spec-&gt;{case_sensitive}) {
+</span><span class=""> 1514: 					# Generate mixed-case versions of memberof values
+</span><span class=""> 1515: 					foreach my $val (@{$spec-&gt;{memberof}}) {
+</span><span class=""> 1516: 						push @cases, { %mandatory_args, ( $field =&gt; uc($val) ) },
+</span><span class=""> 1517: 							{ %mandatory_args, ( $field =&gt; lc($val) ) },
+</span><span class=""> 1518: 							{ %mandatory_args, ( $field =&gt; ucfirst(lc($val)) ) };
+</span><span class=""> 1519: 					}
+</span><span class=""> 1520: 				}
+</span><span class=""> 1521: 			}
+</span><span class=""> 1522: 
+</span><span class=""> 1523: 			# Add notmemberof tests
+</span><span class=""> 1524: 			if (defined $spec-&gt;{notmemberof}) {
+</span><span class=""> 1525: 				my @blacklist = @{$spec-&gt;{notmemberof}};
+</span><span class=""> 1526: 				# Each blacklisted value should die
+</span><span class=""> 1527: 				foreach my $val (@blacklist) {
+</span><span class=""> 1528: 					push @cases, { %mandatory_args, ( $field =&gt; $val, _STATUS =&gt; &#39;DIES&#39; ) };
+</span><span class=""> 1529: 				}
+</span><span class=""> 1530: 				# Non-blacklisted value should pass
+</span><span class=""> 1531: 				push @cases, { %mandatory_args, ( $field =&gt; &#39;_not_in_blacklist_&#39; ) };
 </span><span class=""> 1532: 			}
-</span><span class=""> 1533: 			# TODO:	How do we generate tests for cross-field validation?
-</span><span class=""> 1534: 		}
-</span><span class=""> 1535: 	}
-</span><span class=""> 1536: 
-</span><span class=""> 1537: 	return \@cases;
-</span><span class=""> 1538: }
-</span><span class=""> 1539: 
-</span><span class=""> 1540: sub populate_positions
-</span><span class=""> 1541: {
-</span><span class=""> 1542: 	my $input = shift;
-</span><span class=""> 1543: 
-</span><span class=""> 1544: 	my $rc;
-</span><span class=""> 1545: 	foreach my $arg (keys %{$input}) {
-</span><span class=""> 1546: 		my $spec = $input-&gt;{$arg} || {};
-</span><span class=""> 1547: 		if(((ref($spec)) eq &#39;HASH&#39;) &amp;&amp; defined($spec-&gt;{&#39;position&#39;})) {
-</span><span class=""> 1548: 			$rc-&gt;{$arg} = $spec-&gt;{&#39;position&#39;};
-</span><span class=""> 1549: 		} else {
-</span><span class=""> 1550: 			if($rc) {
-</span><span class=""> 1551: 				::diag(&quot;$arg is missing a position parameter in its schema&quot;);
-</span><span class=""> 1552: 			}
-</span><span class=""> 1553: 			return;	# All must be defined
-</span><span class=""> 1554: 		}
-</span><span class=""> 1555: 	}
-</span><span class=""> 1556: 
-</span><span class=""> 1557: 	return $rc;
-</span><span class=""> 1558: }
-</span><span class=""> 1559: 
-</span><span class=""> 1560: sub run_test
-</span><span class=""> 1561: {
-</span><span class=""> 1562: 	my($case, $input, $output, $positions) = @_;
-</span><span class=""> 1563: 
-</span><span class=""> 1564: 	if($ENV{&#39;TEST_VERBOSE&#39;}) {
-</span><span class=""> 1565: 		diag(&#39;input: &#39;, Dumper($input));
-</span><span class=""> 1566: 	}
-</span><span class=""> 1567: 
-</span><span class=""> 1568: 	my $name = delete local $case-&gt;{&#39;_NAME&#39;};
-</span><span class=""> 1569: 	my $properties = delete local $case-&gt;{_PROPERTIES};
-</span><span class=""> 1570: 	my $description = delete local $case-&gt;{_DESCRIPTION};
-</span><span class=""> 1571: 	my $result;
-</span><span class=""> 1572: 	my $mess;
-</span><span class=""> 1573: 	my @alist = ();
-</span><span class=""> 1574: 	if(defined($input) &amp;&amp; !ref($input)) {
-</span><span class=""> 1575: 		if($name) {
-</span><span class=""> 1576: 			$mess = &quot;[% function %]($name = &#39;$input&#39;) %s&quot;;
-</span><span class=""> 1577: 		} else {
-</span><span class=""> 1578: 			$mess = &quot;[% function %](&#39;$input&#39;) %s&quot;;
-</span><span class=""> 1579: 		}
-</span><span class=""> 1580: 	} elsif(defined($input)) {
-</span><span class=""> 1581: 		if($positions) {
-</span><span class=""> 1582: 			# Positional args
-</span><span class=""> 1583: 			foreach my $key (keys %{$input}) {
-</span><span class=""> 1584: 				if(($key ne &#39;_STATUS&#39;) &amp;&amp; ($key ne &#39;_NAME&#39;) &amp;&amp; ($key ne &#39;_LINE&#39;) &amp;&amp; ($key ne &#39;_PROPERTIES&#39;) &amp;&amp; ($key ne &#39;_DESCRIPTION&#39;)) {
-</span><span class=""> 1585: 					if(exists($positions-&gt;{$key})) {
-</span><span class=""> 1586: 						$alist[$positions-&gt;{$key}] = delete $input-&gt;{$key};
-</span><span class=""> 1587: 					} else {
-</span><span class=""> 1588: 						diag(&quot;Lost position number for $key&quot;);
-</span><span class=""> 1589: 					}
-</span><span class=""> 1590: 				}
-</span><span class=""> 1591: 			}
-</span><span class=""> 1592: 			@alist = grep { defined $_ } @alist;	# Undefs will cause not enough args to be sent, which is a nice test
-</span><span class=""> 1593: 			$input = join(&#39;, &#39;, @alist);
-</span><span class=""> 1594: 		} else {
-</span><span class=""> 1595: 			# Named args
-</span><span class=""> 1596: 			if(ref($input) ne &#39;HASH&#39;) {
-</span><span class=""> 1597: 				if($case-&gt;{&#39;_STATUS&#39;} ne &#39;DIES&#39;) {
-</span><span class=""> 1598: 					die(&#39;Input is missing list of arguments (perhaps you only listed types)&#39;);
-</span><span class=""> 1599: 				}
-</span><span class=""> 1600: 				# e.g., we are passing a ref to a scalar to something that only takes a scalar, so it should cause the routine to die
-</span><span class=""> 1601: 				$positions = {};
-</span><span class=""> 1602: 				$alist[0] = $input;
-</span><span class=""> 1603: 			} else {
-</span><span class=""> 1604: 				foreach my $key (sort keys %{$input}) {
-</span><span class=""> 1605: 					if(($key ne &#39;_STATUS&#39;) &amp;&amp; ($key ne &#39;_NAME&#39;) &amp;&amp; ($key ne &#39;_LINE&#39;) &amp;&amp; ($key ne &#39;_PROPERTIES&#39;)) {
-</span><span class=""> 1606: 						if(defined($input-&gt;{$key})) {
-</span><span class=""> 1607: 							push @alist, &quot;&#39;$key&#39; =&gt; &#39;$input-&gt;{$key}&#39;&quot;;
-</span><span class=""> 1608: 						} else {
-</span><span class=""> 1609: 							push @alist, &quot;&#39;$key&#39; =&gt; undef&quot;;
-</span><span class=""> 1610: 						}
-</span><span class=""> 1611: 					}
-</span><span class=""> 1612: 				}
-</span><span class=""> 1613: 			}
-</span><span class=""> 1614: 		}
-</span><span class=""> 1615: 		my $args = join(&#39;, &#39;, @alist);
-</span><span class=""> 1616: 		$args =~ s/%/%%/g;
-</span><span class=""> 1617: 		$mess = &quot;[% function %]($args) %s&quot;;
-</span><span class=""> 1618: 	} else {
-</span><span class=""> 1619: 		$mess = &quot;[% function %] %s&quot;;
-</span><span class=""> 1620: 	}
-</span><span class=""> 1621: 
-</span><span class=""> 1622: 	my $status = delete $case-&gt;{&#39;_STATUS&#39;} || $output-&gt;{&#39;_STATUS&#39;};
-</span><span class=""> 1623: 	my $line = delete $case-&gt;{&#39;_LINE&#39;};
-</span><span class=""> 1624: 	my %ENV_before = %ENV;
-</span><span class=""> 1625: 	my $cwd_before = Cwd::getcwd();
-</span><span class=""> 1626: 
-</span><span class=""> 1627: 	local $SIG{ALRM} = sub { die &#39;__TIMEOUT__&#39; };
-</span><span class=""> 1628: 	if((!defined($config{timeout})) || ($config{timeout} &gt; 0)) {
-</span><span class=""> 1629: 		alarm($config{&#39;timeout&#39;} // 10);
-</span><span class=""> 1630: 	}
-</span><span class=""> 1631: 	my $old_warn = $SIG{__WARN__};
-</span><span class=""> 1632: 	my $old_die = $SIG{__DIE__};
-</span><span class=""> 1633: 	my $ok = eval {
-</span><span class=""> 1634: 		if(defined($status)) {
-</span><span class=""> 1635: 			if($status eq &#39;DIES&#39;) {
-</span><span class=""> 1636: 				my $err;
-</span><span class=""> 1637: 				if($positions) {
-</span><span class=""> 1638: 					[% IF position_code %]
-</span><span class=""> 1639: 						if(defined($name)) {
-</span><span class=""> 1640: 							dies_ok { [% position_code %] } sprintf($mess, &quot;dies (position test) - $name (status = DIES)&quot;);
-</span><span class=""> 1641: 						} else {
-</span><span class=""> 1642: 							dies_ok { [% position_code %] } sprintf($mess, &#39;dies (position test, status = DIES)&#39;);
-</span><span class=""> 1643: 						}
-</span><span class=""> 1644: 						$err = $@;
-</span><span class=""> 1645: 					[% ELSE %]
-</span><span class=""> 1646: 						ok(0, &#39;dies: position_code not defined&#39;);
-</span><span class=""> 1647: 					[% END %]
-</span><span class=""> 1648: 				} else {
-</span><span class=""> 1649: 					dies_ok { [% call_code %] } sprintf($mess, &#39;dies&#39;);
-</span><span class=""> 1650: 					$err = $@;
-</span><span class=""> 1651: 					ok(!defined($result));
-</span><span class=""> 1652: 				}
-</span><span class=""> 1653: 				ok(defined($err));
-</span><span class=""> 1654: 				ok(length($err));
-</span><span class=""> 1655: 				ok(!ref($err));
-</span><span class=""> 1656: 				if(defined($name)) {
-</span><span class=""> 1657: 					unlike($err, qr/unitialized/, &quot;$name doesn&#39;t involve an uninitialized variable&quot;);
-</span><span class=""> 1658: 				} else {
-</span><span class=""> 1659: 					unlike($err, qr/unitialized/, &quot;Test doesn&#39;t involve an uninitialized variable&quot;);
-</span><span class=""> 1660: 				}
-</span><span class=""> 1661: 				return;	# There should be no output to validate
-</span><span class=""> 1662: 			} elsif($status eq &#39;WARNS&#39;) {
-</span><span class=""> 1663: 				warnings_exist { [% call_code %] } qr/./, sprintf($mess, &#39;warns&#39;);
-</span><span class=""> 1664: 			} else {
-</span><span class=""> 1665: 				die &#39;TODO: properties&#39; if(scalar keys %{$properties});
-</span><span class=""> 1666: 				if($positions) {
-</span><span class=""> 1667: 					[% IF position_code %]
-</span><span class=""> 1668: 						if(defined($name)) {
-</span><span class=""> 1669: 							lives_ok { [% position_code %] } sprintf($mess, &quot;survives (position test) - $name (status = LIVES)&quot;);
-</span><span class=""> 1670: 						} else {
-</span><span class=""> 1671: 							lives_ok { [% position_code %] } sprintf($mess, &#39;survives (position test, status = LIVES)&#39;);
-</span><span class=""> 1672: 						}
-</span><span class=""> 1673: 					[% ELSE %]
-</span><span class=""> 1674: 						ok(0, &#39;position_code not defined&#39;);
-</span><span class=""> 1675: 					[% END %]
-</span><span class=""> 1676: 				} elsif(defined($description)) {
-</span><span class=""> 1677: 					lives_ok { [% call_code %] } sprintf($mess, &quot;survives ($description; status = LIVES)&quot;);
-</span><span class=""> 1678: 				} elsif(defined($line)) {
-</span><span class=""> 1679: 					lives_ok { [% call_code %] } sprintf($mess, &quot;survives (line = $line; status = LIVES)&quot;);
-</span><span class=""> 1680: 				} else {
-</span><span class=""> 1681: 					lives_ok { [% call_code %] } sprintf($mess, &#39;survives (status = LIVES)&#39;);
-</span><span class=""> 1682: 				}
-</span><span class=""> 1683: 				if($properties-&gt;{idempotent}) {
-</span><span class=""> 1684: 					[% determinism_code %]
-</span><span class=""> 1685: 				}
-</span><span class=""> 1686: 			}
-</span><span class=""> 1687: 		} elsif($positions) {
-</span><span class=""> 1688: 			if(defined($name)) {
-</span><span class=""> 1689: 				lives_ok { [% position_code %] } sprintf($mess, &quot;survives (position test) - $name&quot;);
-</span><span class=""> 1690: 				if($properties-&gt;{idempotent} &amp;&amp; (scalar(@alist) == 1)) {
-</span><span class=""> 1691: 					[% UNLESS module %]
-</span><span class=""> 1692: 						ok([% function %]($alist[0]) eq [% function %]([% function %]($alist[0])), &#39;function is idempotent&#39;);
-</span><span class=""> 1693: 						ok([% function %]($alist[0]) eq [% function %]($alist[0]), &#39;function is idempotent&#39;);
-</span><span class=""> 1694: 					[% END %]
-</span><span class=""> 1695: 				}
-</span><span class=""> 1696: 			} else {
-</span><span class=""> 1697: 				die &#39;TODO: properties&#39; if(scalar keys %{$properties});
-</span><span class=""> 1698: 				lives_ok { [% position_code %] } sprintf($mess, &#39;survives (position test)&#39;);
-</span><span class=""> 1699: 
-</span><span class=""> 1700: 				# An extra argument should be ignored, except for getsetters, so only test if there&#39;s more than one arg
-</span><span class=""> 1701: 				if(scalar(@alist) &gt; 1) {
-</span><span class=""> 1702: 					push(@alist, &#39;foo&#39;);
-</span><span class=""> 1703: 					lives_ok { [% position_code %] } sprintf($mess, &#39;survives (position test, with extra argument)&#39;);
-</span><span class=""> 1704: 				}
-</span><span class=""> 1705: 			}
-</span><span class=""> 1706: 			if($properties-&gt;{idempotent}) {
-</span><span class=""> 1707: 				[% determinism_code %]
-</span><span class=""> 1708: 			}
-</span><span class=""> 1709: 		} else {
-</span><span class=""> 1710: 			# Status not given, assume set to LIVES
-</span><span class=""> 1711: 			die &#39;TODO: properties&#39; if(scalar keys %{$properties});
-</span><span class=""> 1712: 			if(defined($description)) {
-</span><span class=""> 1713: 				lives_ok { [% call_code %] } sprintf($mess, &quot;survives ($description)&quot;);
-</span><span class=""> 1714: 			} elsif(defined($line)) {
-</span><span class=""> 1715: 				lives_ok { [% call_code %] } sprintf($mess, &quot;survives (line = $line)&quot;);
-</span><span class=""> 1716: 			} else {
-</span><span class=""> 1717: 				lives_ok { [% call_code %] } sprintf($mess, &#39;survives&#39;);
-</span><span class=""> 1718: 			}
-</span><span class=""> 1719: 			if($properties-&gt;{idempotent}) {
-</span><span class=""> 1720: 				[% determinism_code %]
-</span><span class=""> 1721: 			}
-</span><span class=""> 1722: 		}
-</span><span class=""> 1723: 		1;
-</span><span class=""> 1724: 	};
-</span><span class=""> 1725: 
-</span><span class=""> 1726: 	alarm 0;
-</span><span class=""> 1727: 
-</span><span class=""> 1728: 	# Check the test did not timeout
-</span><span class=""> 1729: 	diag($@) if($@);
-</span><span class=""> 1730: 	ok((!defined($@)) || (length($@) == 0));
-</span><span class=""> 1731: 
-</span><span class=""> 1732: 	# Global side effect detection
-</span><span class=""> 1733: 	is(Cwd::getcwd(), $cwd_before, &#39;cwd not modified&#39;);
-</span><span class=""> 1734: 	is_deeply(_filtered_env(\%ENV), _filtered_env(\%ENV_before), &#39;ENV not modified&#39;);
-</span><span class=""> 1735: 	is($SIG{__WARN__}, $old_warn, &#39;warn handler is not changed&#39;);
-</span><span class=""> 1736: 	is($SIG{__DIE__}, $old_die, &#39;die handler is not changed&#39;);
-</span><span class=""> 1737: 
-</span><span class=""> 1738: 	delete local $output-&gt;{&#39;_STATUS&#39;};
+</span><span class=""> 1533: 
+</span><span class=""> 1534: 			# semantic tests
+</span><span class=""> 1535: 			if(defined(my $semantic = $spec-&gt;{&#39;semantic&#39;})) {
+</span><span class=""> 1536: 				if($semantic eq &#39;unix_timestamp&#39;) {
+</span><span class=""> 1537: 					push @cases, { %mandatory_args, ( -1, _STATUS =&gt; &#39;DIES&#39; ) },
+</span><span class=""> 1538: 						{ %mandatory_args, ( 0 ) },
+</span><span class=""> 1539: 						{ %mandatory_args, ( 1 ) },
+</span><span class=""> 1540: 						{ %mandatory_args, ( time ) },
+</span><span class=""> 1541: 						{ %mandatory_args, ( 2147483647 ) },
+</span><span class=""> 1542: 						{ %mandatory_args, ( 2147483648, _STATUS =&gt; &#39;DIES&#39; ) };
+</span><span class=""> 1543: 				} else {
+</span><span class=""> 1544: 					diag(&quot;semantic type $semantic is not yet supported&quot;);
+</span><span class=""> 1545: 				}
+</span><span class=""> 1546: 			}
+</span><span class=""> 1547: 			# TODO:	How do we generate tests for cross-field validation?
+</span><span class=""> 1548: 		}
+</span><span class=""> 1549: 	}
+</span><span class=""> 1550: 
+</span><span class=""> 1551: 	return \@cases;
+</span><span class=""> 1552: }
+</span><span class=""> 1553: 
+</span><span class=""> 1554: sub populate_positions
+</span><span class=""> 1555: {
+</span><span class=""> 1556: 	my $input = shift;
+</span><span class=""> 1557: 
+</span><span class=""> 1558: 	my $rc;
+</span><span class=""> 1559: 	foreach my $arg (keys %{$input}) {
+</span><span class=""> 1560: 		my $spec = $input-&gt;{$arg} || {};
+</span><span class=""> 1561: 		if(((ref($spec)) eq &#39;HASH&#39;) &amp;&amp; defined($spec-&gt;{&#39;position&#39;})) {
+</span><span class=""> 1562: 			$rc-&gt;{$arg} = $spec-&gt;{&#39;position&#39;};
+</span><span class=""> 1563: 		} else {
+</span><span class=""> 1564: 			if($rc) {
+</span><span class=""> 1565: 				::diag(&quot;$arg is missing a position parameter in its schema&quot;);
+</span><span class=""> 1566: 			}
+</span><span class=""> 1567: 			return;	# All must be defined
+</span><span class=""> 1568: 		}
+</span><span class=""> 1569: 	}
+</span><span class=""> 1570: 
+</span><span class=""> 1571: 	return $rc;
+</span><span class=""> 1572: }
+</span><span class=""> 1573: 
+</span><span class=""> 1574: sub run_test
+</span><span class=""> 1575: {
+</span><span class=""> 1576: 	my($case, $input, $output, $positions) = @_;
+</span><span class=""> 1577: 
+</span><span class=""> 1578: 	if($ENV{&#39;TEST_VERBOSE&#39;}) {
+</span><span class=""> 1579: 		diag(&#39;input: &#39;, Dumper($input));
+</span><span class=""> 1580: 	}
+</span><span class=""> 1581: 
+</span><span class=""> 1582: 	my $name = delete local $case-&gt;{&#39;_NAME&#39;};
+</span><span class=""> 1583: 	my $properties = delete local $case-&gt;{_PROPERTIES};
+</span><span class=""> 1584: 	my $description = delete local $case-&gt;{_DESCRIPTION};
+</span><span class=""> 1585: 	my $result;
+</span><span class=""> 1586: 	my $mess;
+</span><span class=""> 1587: 	my @alist = ();
+</span><span class=""> 1588: 	if(defined($input) &amp;&amp; !ref($input)) {
+</span><span class=""> 1589: 		if($name) {
+</span><span class=""> 1590: 			$mess = &quot;[% function %]($name = &#39;$input&#39;) %s&quot;;
+</span><span class=""> 1591: 		} else {
+</span><span class=""> 1592: 			$mess = &quot;[% function %](&#39;$input&#39;) %s&quot;;
+</span><span class=""> 1593: 		}
+</span><span class=""> 1594: 	} elsif(defined($input)) {
+</span><span class=""> 1595: 		if($positions) {
+</span><span class=""> 1596: 			# Positional args
+</span><span class=""> 1597: 			foreach my $key (keys %{$input}) {
+</span><span class=""> 1598: 				if(($key ne &#39;_STATUS&#39;) &amp;&amp; ($key ne &#39;_NAME&#39;) &amp;&amp; ($key ne &#39;_LINE&#39;) &amp;&amp; ($key ne &#39;_PROPERTIES&#39;) &amp;&amp; ($key ne &#39;_DESCRIPTION&#39;)) {
+</span><span class=""> 1599: 					if(exists($positions-&gt;{$key})) {
+</span><span class=""> 1600: 						$alist[$positions-&gt;{$key}] = delete $input-&gt;{$key};
+</span><span class=""> 1601: 					} else {
+</span><span class=""> 1602: 						diag(&quot;Lost position number for $key&quot;);
+</span><span class=""> 1603: 					}
+</span><span class=""> 1604: 				}
+</span><span class=""> 1605: 			}
+</span><span class=""> 1606: 			@alist = grep { defined $_ } @alist;	# Undefs will cause not enough args to be sent, which is a nice test
+</span><span class=""> 1607: 			$input = join(&#39;, &#39;, @alist);
+</span><span class=""> 1608: 		} else {
+</span><span class=""> 1609: 			# Named args
+</span><span class=""> 1610: 			if(ref($input) ne &#39;HASH&#39;) {
+</span><span class=""> 1611: 				if($case-&gt;{&#39;_STATUS&#39;} ne &#39;DIES&#39;) {
+</span><span class=""> 1612: 					die(&#39;Input is missing list of arguments (perhaps you only listed types)&#39;);
+</span><span class=""> 1613: 				}
+</span><span class=""> 1614: 				# e.g., we are passing a ref to a scalar to something that only takes a scalar, so it should cause the routine to die
+</span><span class=""> 1615: 				$positions = {};
+</span><span class=""> 1616: 				$alist[0] = $input;
+</span><span class=""> 1617: 			} else {
+</span><span class=""> 1618: 				foreach my $key (sort keys %{$input}) {
+</span><span class=""> 1619: 					if(($key ne &#39;_STATUS&#39;) &amp;&amp; ($key ne &#39;_NAME&#39;) &amp;&amp; ($key ne &#39;_LINE&#39;) &amp;&amp; ($key ne &#39;_PROPERTIES&#39;)) {
+</span><span class=""> 1620: 						if(defined($input-&gt;{$key})) {
+</span><span class=""> 1621: 							push @alist, &quot;&#39;$key&#39; =&gt; &#39;$input-&gt;{$key}&#39;&quot;;
+</span><span class=""> 1622: 						} else {
+</span><span class=""> 1623: 							push @alist, &quot;&#39;$key&#39; =&gt; undef&quot;;
+</span><span class=""> 1624: 						}
+</span><span class=""> 1625: 					}
+</span><span class=""> 1626: 				}
+</span><span class=""> 1627: 			}
+</span><span class=""> 1628: 		}
+</span><span class=""> 1629: 		my $args = join(&#39;, &#39;, @alist);
+</span><span class=""> 1630: 		$args =~ s/%/%%/g;
+</span><span class=""> 1631: 		$mess = &quot;[% function %]($args) %s&quot;;
+</span><span class=""> 1632: 	} else {
+</span><span class=""> 1633: 		$mess = &quot;[% function %] %s&quot;;
+</span><span class=""> 1634: 	}
+</span><span class=""> 1635: 
+</span><span class=""> 1636: 	my $status = delete $case-&gt;{&#39;_STATUS&#39;} || $output-&gt;{&#39;_STATUS&#39;};
+</span><span class=""> 1637: 	my $line = delete $case-&gt;{&#39;_LINE&#39;};
+</span><span class=""> 1638: 	my %ENV_before = %ENV;
+</span><span class=""> 1639: 	my $cwd_before = Cwd::getcwd();
+</span><span class=""> 1640: 
+</span><span class=""> 1641: 	local $SIG{ALRM} = sub { die &#39;__TIMEOUT__&#39; };
+</span><span class=""> 1642: 	if((!defined($config{timeout})) || ($config{timeout} &gt; 0)) {
+</span><span class=""> 1643: 		alarm($config{&#39;timeout&#39;} // 10);
+</span><span class=""> 1644: 	}
+</span><span class=""> 1645: 	my $old_warn = $SIG{__WARN__};
+</span><span class=""> 1646: 	my $old_die = $SIG{__DIE__};
+</span><span class=""> 1647: 	my $ok = eval {
+</span><span class=""> 1648: 		if(defined($status)) {
+</span><span class=""> 1649: 			if($status eq &#39;DIES&#39;) {
+</span><span class=""> 1650: 				my $err;
+</span><span class=""> 1651: 				if($positions) {
+</span><span class=""> 1652: 					[% IF position_code %]
+</span><span class=""> 1653: 						if(defined($name)) {
+</span><span class=""> 1654: 							dies_ok { [% position_code %] } sprintf($mess, &quot;dies (position test) - $name (status = DIES)&quot;);
+</span><span class=""> 1655: 						} else {
+</span><span class=""> 1656: 							dies_ok { [% position_code %] } sprintf($mess, &#39;dies (position test, status = DIES)&#39;);
+</span><span class=""> 1657: 						}
+</span><span class=""> 1658: 						$err = $@;
+</span><span class=""> 1659: 					[% ELSE %]
+</span><span class=""> 1660: 						ok(0, &#39;dies: position_code not defined&#39;);
+</span><span class=""> 1661: 					[% END %]
+</span><span class=""> 1662: 				} else {
+</span><span class=""> 1663: 					dies_ok { [% call_code %] } sprintf($mess, &#39;dies&#39;);
+</span><span class=""> 1664: 					$err = $@;
+</span><span class=""> 1665: 					ok(!defined($result));
+</span><span class=""> 1666: 				}
+</span><span class=""> 1667: 				ok(defined($err));
+</span><span class=""> 1668: 				ok(length($err));
+</span><span class=""> 1669: 				ok(!ref($err));
+</span><span class=""> 1670: 				if(defined($name)) {
+</span><span class=""> 1671: 					unlike($err, qr/unitialized/, &quot;$name doesn&#39;t involve an uninitialized variable&quot;);
+</span><span class=""> 1672: 				} else {
+</span><span class=""> 1673: 					unlike($err, qr/unitialized/, &quot;Test doesn&#39;t involve an uninitialized variable&quot;);
+</span><span class=""> 1674: 				}
+</span><span class=""> 1675: 				return;	# There should be no output to validate
+</span><span class=""> 1676: 			} elsif($status eq &#39;WARNS&#39;) {
+</span><span class=""> 1677: 				warnings_exist { [% call_code %] } qr/./, sprintf($mess, &#39;warns&#39;);
+</span><span class=""> 1678: 			} else {
+</span><span class=""> 1679: 				die &#39;TODO: properties&#39; if(scalar keys %{$properties});
+</span><span class=""> 1680: 				if($positions) {
+</span><span class=""> 1681: 					[% IF position_code %]
+</span><span class=""> 1682: 						if(defined($name)) {
+</span><span class=""> 1683: 							lives_ok { [% position_code %] } sprintf($mess, &quot;survives (position test) - $name (status = LIVES)&quot;);
+</span><span class=""> 1684: 						} else {
+</span><span class=""> 1685: 							lives_ok { [% position_code %] } sprintf($mess, &#39;survives (position test, status = LIVES)&#39;);
+</span><span class=""> 1686: 						}
+</span><span class=""> 1687: 					[% ELSE %]
+</span><span class=""> 1688: 						ok(0, &#39;position_code not defined&#39;);
+</span><span class=""> 1689: 					[% END %]
+</span><span class=""> 1690: 				} elsif(defined($description)) {
+</span><span class=""> 1691: 					lives_ok { [% call_code %] } sprintf($mess, &quot;survives ($description; status = LIVES)&quot;);
+</span><span class=""> 1692: 				} elsif(defined($line)) {
+</span><span class=""> 1693: 					lives_ok { [% call_code %] } sprintf($mess, &quot;survives (line = $line; status = LIVES)&quot;);
+</span><span class=""> 1694: 				} else {
+</span><span class=""> 1695: 					lives_ok { [% call_code %] } sprintf($mess, &#39;survives (status = LIVES)&#39;);
+</span><span class=""> 1696: 				}
+</span><span class=""> 1697: 				if($properties-&gt;{idempotent}) {
+</span><span class=""> 1698: 					[% determinism_code %]
+</span><span class=""> 1699: 				}
+</span><span class=""> 1700: 			}
+</span><span class=""> 1701: 		} elsif($positions) {
+</span><span class=""> 1702: 			if(defined($name)) {
+</span><span class=""> 1703: 				lives_ok { [% position_code %] } sprintf($mess, &quot;survives (position test) - $name&quot;);
+</span><span class=""> 1704: 				if($properties-&gt;{idempotent} &amp;&amp; (scalar(@alist) == 1)) {
+</span><span class=""> 1705: 					[% UNLESS module %]
+</span><span class=""> 1706: 						ok([% function %]($alist[0]) eq [% function %]([% function %]($alist[0])), &#39;function is idempotent&#39;);
+</span><span class=""> 1707: 						ok([% function %]($alist[0]) eq [% function %]($alist[0]), &#39;function is idempotent&#39;);
+</span><span class=""> 1708: 					[% END %]
+</span><span class=""> 1709: 				}
+</span><span class=""> 1710: 			} else {
+</span><span class=""> 1711: 				die &#39;TODO: properties&#39; if(scalar keys %{$properties});
+</span><span class=""> 1712: 				lives_ok { [% position_code %] } sprintf($mess, &#39;survives (position test)&#39;);
+</span><span class=""> 1713: 
+</span><span class=""> 1714: 				# An extra argument should be ignored, except for getsetters, so only test if there&#39;s more than one arg
+</span><span class=""> 1715: 				if(scalar(@alist) &gt; 1) {
+</span><span class=""> 1716: 					push(@alist, &#39;foo&#39;);
+</span><span class=""> 1717: 					lives_ok { [% position_code %] } sprintf($mess, &#39;survives (position test, with extra argument)&#39;);
+</span><span class=""> 1718: 				}
+</span><span class=""> 1719: 			}
+</span><span class=""> 1720: 			if($properties-&gt;{idempotent}) {
+</span><span class=""> 1721: 				[% determinism_code %]
+</span><span class=""> 1722: 			}
+</span><span class=""> 1723: 		} else {
+</span><span class=""> 1724: 			# Status not given, assume set to LIVES
+</span><span class=""> 1725: 			die &#39;TODO: properties&#39; if(scalar keys %{$properties});
+</span><span class=""> 1726: 			if(defined($description)) {
+</span><span class=""> 1727: 				lives_ok { [% call_code %] } sprintf($mess, &quot;survives ($description)&quot;);
+</span><span class=""> 1728: 			} elsif(defined($line)) {
+</span><span class=""> 1729: 				lives_ok { [% call_code %] } sprintf($mess, &quot;survives (line = $line)&quot;);
+</span><span class=""> 1730: 			} else {
+</span><span class=""> 1731: 				lives_ok { [% call_code %] } sprintf($mess, &#39;survives&#39;);
+</span><span class=""> 1732: 			}
+</span><span class=""> 1733: 			if($properties-&gt;{idempotent}) {
+</span><span class=""> 1734: 				[% determinism_code %]
+</span><span class=""> 1735: 			}
+</span><span class=""> 1736: 		}
+</span><span class=""> 1737: 		1;
+</span><span class=""> 1738: 	};
 </span><span class=""> 1739: 
-</span><span class=""> 1740: 	if(scalar keys %{$output}) {
-</span><span class=""> 1741: 		if($ENV{&#39;TEST_VERBOSE&#39;}) {
-</span><span class=""> 1742: 			diag(&#39;result: &#39;, Dumper($result));
-</span><span class=""> 1743: 		}
-</span><span class=""> 1744: 		returns_ok($result, $output, &#39;output validates&#39;);
-</span><span class=""> 1745: 		if(((!defined($status)) || ($status eq &#39;OK&#39;)) &amp;&amp; defined($result)) {
-</span><span class=""> 1746: 			is(
-</span><span class=""> 1747: 				Unicode::Normalize::NFC($result),
-</span><span class=""> 1748: 				Unicode::Normalize::NFC(Unicode::Normalize::NFD($result)),
-</span><span class=""> 1749: 				&#39;Unicode normalization stable&#39;
-</span><span class=""> 1750: 			);
-</span><span class=""> 1751: 		}
-</span><span class=""> 1752: 	}
-</span><span class=""> 1753: }
-</span><span class=""> 1754: 
-</span><span class=""> 1755: # On Windows $PWD etc are not stable
-</span><span class=""> 1756: sub _filtered_env {
-</span><span class=""> 1757: 	my %env = %{ shift() };
-</span><span class=""> 1758: 
-</span><span class=""> 1759: 	if($^O eq &#39;MSWin32&#39;) {
-</span><span class=""> 1760: 		delete @env{
-</span><span class=""> 1761: 			qw(
-</span><span class=""> 1762: 				PWD
-</span><span class=""> 1763: 				OLDPWD
-</span><span class=""> 1764: 				_
-</span><span class=""> 1765: 				SHLVL
-</span><span class=""> 1766: 			)
-</span><span class=""> 1767: 		};
-</span><span class=""> 1768: 	}
-</span><span class=""> 1769: 
-</span><span class=""> 1770: 	return \%env;
-</span><span class=""> 1771: }
+</span><span class=""> 1740: 	alarm 0;
+</span><span class=""> 1741: 
+</span><span class=""> 1742: 	# Check the test did not timeout
+</span><span class=""> 1743: 	diag($@) if($@);
+</span><span class=""> 1744: 	ok((!defined($@)) || (length($@) == 0));
+</span><span class=""> 1745: 
+</span><span class=""> 1746: 	# Global side effect detection
+</span><span class=""> 1747: 	is(Cwd::getcwd(), $cwd_before, &#39;cwd not modified&#39;);
+</span><span class=""> 1748: 	is_deeply(_filtered_env(\%ENV), _filtered_env(\%ENV_before), &#39;ENV not modified&#39;);
+</span><span class=""> 1749: 	is($SIG{__WARN__}, $old_warn, &#39;warn handler is not changed&#39;);
+</span><span class=""> 1750: 	is($SIG{__DIE__}, $old_die, &#39;die handler is not changed&#39;);
+</span><span class=""> 1751: 
+</span><span class=""> 1752: 	delete local $output-&gt;{&#39;_STATUS&#39;};
+</span><span class=""> 1753: 
+</span><span class=""> 1754: 	if(scalar keys %{$output}) {
+</span><span class=""> 1755: 		if($ENV{&#39;TEST_VERBOSE&#39;}) {
+</span><span class=""> 1756: 			diag(&#39;result: &#39;, Dumper($result));
+</span><span class=""> 1757: 		}
+</span><span class=""> 1758: 		returns_ok($result, $output, &#39;output validates&#39;);
+</span><span class=""> 1759: 		if(((!defined($status)) || ($status eq &#39;OK&#39;)) &amp;&amp; defined($result)) {
+</span><span class=""> 1760: 			is(
+</span><span class=""> 1761: 				Unicode::Normalize::NFC($result),
+</span><span class=""> 1762: 				Unicode::Normalize::NFC(Unicode::Normalize::NFD($result)),
+</span><span class=""> 1763: 				&#39;Unicode normalization stable&#39;
+</span><span class=""> 1764: 			);
+</span><span class=""> 1765: 		}
+</span><span class=""> 1766: 	}
+</span><span class=""> 1767: }
+</span><span class=""> 1768: 
+</span><span class=""> 1769: # On Windows $PWD etc are not stable
+</span><span class=""> 1770: sub _filtered_env {
+</span><span class=""> 1771: 	my %env = %{ shift() };
 </span><span class=""> 1772: 
-</span><span class=""> 1773: diag(&#39;Run Fuzz Tests&#39;) if($ENV{&#39;TEST_VERBOSE&#39;});
-</span><span class=""> 1774: 
-</span><span class=""> 1775: foreach my $case (@{fuzz_inputs()}) {
-</span><span class=""> 1776: 	# my %params;
-</span><span class=""> 1777: 	# lives_ok { %params = get_params(\%input, %$case) } &#39;Params::Get input check&#39;;
-</span><span class=""> 1778: 	# lives_ok { validate_strict(\%input, %params) } &#39;Params::Validate::Strict input check&#39;;
-</span><span class=""> 1779: 
-</span><span class=""> 1780: 	my $input;
-</span><span class=""> 1781: 	if((ref($case) eq &#39;HASH&#39;) &amp;&amp; exists($case-&gt;{&#39;_input&#39;})) {
-</span><span class=""> 1782: 		$input = $case-&gt;{&#39;_input&#39;};
-</span><span class=""> 1783: 	} else {
-</span><span class=""> 1784: 		$input = $case;
-</span><span class=""> 1785: 	}
+</span><span class=""> 1773: 	if($^O eq &#39;MSWin32&#39;) {
+</span><span class=""> 1774: 		delete @env{
+</span><span class=""> 1775: 			qw(
+</span><span class=""> 1776: 				PWD
+</span><span class=""> 1777: 				OLDPWD
+</span><span class=""> 1778: 				_
+</span><span class=""> 1779: 				SHLVL
+</span><span class=""> 1780: 			)
+</span><span class=""> 1781: 		};
+</span><span class=""> 1782: 	}
+</span><span class=""> 1783: 
+</span><span class=""> 1784: 	return \%env;
+</span><span class=""> 1785: }
 </span><span class=""> 1786: 
-</span><span class=""> 1787: 	if(my $line = ($case-&gt;{&#39;_LINE&#39;} || $input{&#39;_LINE&#39;})) {
-</span><span class=""> 1788: 		diag(&quot;Test case from line number $line&quot;) if($ENV{&#39;TEST_VERBOSE&#39;});
-</span><span class=""> 1789: 	}
-</span><span class=""> 1790: 	if(my $description = ($case-&gt;{&#39;_DESCRIPTION&#39;} || $input{&#39;_DESCRIPTION&#39;})) {
-</span><span class=""> 1791: 		diag(&quot;Test case $description&quot;) if($ENV{&#39;TEST_VERBOSE&#39;});
-</span><span class=""> 1792: 	}
+</span><span class=""> 1787: diag(&#39;Run Fuzz Tests&#39;) if($ENV{&#39;TEST_VERBOSE&#39;});
+</span><span class=""> 1788: 
+</span><span class=""> 1789: foreach my $case (@{fuzz_inputs()}) {
+</span><span class=""> 1790: 	# my %params;
+</span><span class=""> 1791: 	# lives_ok { %params = get_params(\%input, %$case) } &#39;Params::Get input check&#39;;
+</span><span class=""> 1792: 	# lives_ok { validate_strict(\%input, %params) } &#39;Params::Validate::Strict input check&#39;;
 </span><span class=""> 1793: 
-</span><span class=""> 1794: 	{
-</span><span class=""> 1795: 		# local %ENV;
-</span><span class=""> 1796: 		run_test($case, $input, \%output, $positions);
-</span><span class=""> 1797: 		# delete $ENV{&#39;LANG&#39;};
-</span><span class=""> 1798: 		# delete $ENV{&#39;LC_ALL&#39;};
-</span><span class=""> 1799: 		# run_test($case, $input, \%output, $positions);
-</span><span class=""> 1800: 		# $ENV{&#39;LANG&#39;} = &#39;fr_FR.utf8&#39;;
-</span><span class=""> 1801: 		# $ENV{&#39;LC_ALL&#39;} = &#39;fr_FR.utf8&#39;;
-</span><span class=""> 1802: 		# run_test($case, $input, \%output, $positions);
+</span><span class=""> 1794: 	my $input;
+</span><span class=""> 1795: 	if((ref($case) eq &#39;HASH&#39;) &amp;&amp; exists($case-&gt;{&#39;_input&#39;})) {
+</span><span class=""> 1796: 		$input = $case-&gt;{&#39;_input&#39;};
+</span><span class=""> 1797: 	} else {
+</span><span class=""> 1798: 		$input = $case;
+</span><span class=""> 1799: 	}
+</span><span class=""> 1800: 
+</span><span class=""> 1801: 	if(my $line = ($case-&gt;{&#39;_LINE&#39;} || $input{&#39;_LINE&#39;})) {
+</span><span class=""> 1802: 		diag(&quot;Test case from line number $line&quot;) if($ENV{&#39;TEST_VERBOSE&#39;});
 </span><span class=""> 1803: 	}
-</span><span class=""> 1804: }
-</span><span class=""> 1805: 
-</span><span class=""> 1806: if(scalar(keys %transforms)) {
-</span><span class=""> 1807: 	diag(&#39;Run &#39;, scalar(keys %transforms), &#39; transform tests&#39;);
-</span><span class=""> 1808: }
-</span><span class=""> 1809: # diag(&#39;-&#39; x 60);
-</span><span class=""> 1810: 
-</span><span class=""> 1811: # Build the foundation - which is a basic test with sensible defaults in the field
-</span><span class=""> 1812: foreach my $transform (keys %transforms) {
-</span><span class=""> 1813: 	my $foundation = _fill_foundation();	# basic set of data with every field filled in with a sensible default value
-</span><span class=""> 1814: 
-</span><span class=""> 1815: 	# The foundation should work
-</span><span class=""> 1816: 	my $case = { _NAME =&gt; &quot;basic $transform test&quot;, _LINE =&gt; __LINE__ };
-</span><span class=""> 1817: 	my $positions = populate_positions(\%input);
-</span><span class=""> 1818: 	run_test($case, $foundation, \%output, $positions);
+</span><span class=""> 1804: 	if(my $description = ($case-&gt;{&#39;_DESCRIPTION&#39;} || $input{&#39;_DESCRIPTION&#39;})) {
+</span><span class=""> 1805: 		diag(&quot;Test case $description&quot;) if($ENV{&#39;TEST_VERBOSE&#39;});
+</span><span class=""> 1806: 	}
+</span><span class=""> 1807: 
+</span><span class=""> 1808: 	{
+</span><span class=""> 1809: 		# local %ENV;
+</span><span class=""> 1810: 		run_test($case, $input, \%output, $positions);
+</span><span class=""> 1811: 		# delete $ENV{&#39;LANG&#39;};
+</span><span class=""> 1812: 		# delete $ENV{&#39;LC_ALL&#39;};
+</span><span class=""> 1813: 		# run_test($case, $input, \%output, $positions);
+</span><span class=""> 1814: 		# $ENV{&#39;LANG&#39;} = &#39;fr_FR.utf8&#39;;
+</span><span class=""> 1815: 		# $ENV{&#39;LC_ALL&#39;} = &#39;fr_FR.utf8&#39;;
+</span><span class=""> 1816: 		# run_test($case, $input, \%output, $positions);
+</span><span class=""> 1817: 	}
+</span><span class=""> 1818: }
 </span><span class=""> 1819: 
-</span><span class=""> 1820: 	# Generate transform tests
-</span><span class=""> 1821: 	# Don&#39;t generate invalid data, that&#39;s all already done,
-</span><span class=""> 1822: 	#	this is about verifying the transorms
-</span><span class=""> 1823: 	my @tests;
-</span><span class=""> 1824: 	diag(&quot;tests for transform $transform&quot;) if($ENV{&#39;TEST_VERBOSE&#39;});
-</span><span class=""> 1825: 
-</span><span class=""> 1826: 	# Now modify the foundation with test code
-</span><span class=""> 1827: 
-</span><span class=""> 1828: 	# BUILD CODE TO CALL FUNCTION
-</span><span class=""> 1829: 	# CALL FUNCTION
-</span><span class=""> 1830: 	# CHECK STATUS CORRECT
-</span><span class=""> 1831: 	# IF STATUS EQ LIVES
-</span><span class=""> 1832: 	#	CHECK OUTPUT USING returns_ok
-</span><span class=""> 1833: 	# FI
-</span><span class=""> 1834: 
-</span><span class=""> 1835: 	my $transform_input = $transforms{$transform}{&#39;input&#39;} || {};
-</span><span class=""> 1836: 
-</span><span class=""> 1837: 	foreach my $field (keys %input) {
-</span><span class=""> 1838: 		my $spec = $transform_input-&gt;{$field} || {};
-</span><span class=""> 1839: 		my $type = $spec-&gt;{type} || &#39;string&#39;;
-</span><span class=""> 1840: 
-</span><span class=""> 1841: 		# If there&#39;s a specific value, test that exact value
-</span><span class=""> 1842: 		if (exists $spec-&gt;{value}) {
-</span><span class=""> 1843: 			push @tests, {
-</span><span class=""> 1844: 				%{$foundation},
-</span><span class=""> 1845: 				$field =&gt; $spec-&gt;{value},
-</span><span class=""> 1846: 				_LINE =&gt; __LINE__,
-</span><span class=""> 1847: 				_DESCRIPTION =&gt; &quot;$transform: $field=$spec-&gt;{value}&quot;
-</span><span class=""> 1848: 			};
-</span><span class=""> 1849: 			next;
-</span><span class=""> 1850: 		}
-</span><span class=""> 1851: 
-</span><span class=""> 1852: 		# Generate edge cases based on type and contraints
-</span><span class=""> 1853: 		if($type eq &#39;integer&#39;) {
-</span><span class=""> 1854: 			push @tests, @{_generate_integer_cases($field, $spec, $foundation)};
-</span><span class=""> 1855: 		} elsif(($type eq &#39;number&#39;) || ($type eq &#39;float&#39;)) {
-</span><span class=""> 1856: 			push @tests, @{_generate_float_cases($field, $spec, $foundation, _LINE =&gt; __LINE__)};
-</span><span class=""> 1857: 		} elsif($type eq &#39;string&#39;) {
-</span><span class=""> 1858: 			push @tests, @{_generate_string_cases($field, $spec, $foundation)};
-</span><span class=""> 1859: 		} elsif($type eq &#39;boolean&#39;) {
-</span><span class=""> 1860: 			push @tests, @{_generate_boolean_cases($field, $spec, $foundation)};
-</span><span class=""> 1861: 		} elsif ($type eq &#39;arrayref&#39;) {
-</span><span class=""> 1862: 			if(defined $spec-&gt;{min}) {
-</span><span class=""> 1863: 				push @tests, { %{$foundation}, ( $field =&gt; rand_arrayref($spec-&gt;{min} + 1) ) };	# just inside
-</span><span class=""> 1864: 				push @tests, { %{$foundation}, ( $field =&gt; rand_arrayref($spec-&gt;{min}) ) };	# border
-</span><span class=""> 1865: 			} else {
-</span><span class=""> 1866: 				push @tests, { %{$foundation}, ( $field =&gt; rand_arrayref() ) };
-</span><span class=""> 1867: 			}
-</span><span class=""> 1868: 			if(defined $spec-&gt;{max}) {
-</span><span class=""> 1869: 				push @tests, { %{$foundation}, ( $field =&gt; rand_arrayref($spec-&gt;{max} - 1) ) };	# just inside
-</span><span class=""> 1870: 				if((defined $spec-&gt;{min}) &amp;&amp; ($spec-&gt;{&#39;min&#39;} != $spec-&gt;{&#39;max&#39;})) {
-</span><span class=""> 1871: 					push @tests, { %{$foundation}, ( $field =&gt; rand_arrayref($spec-&gt;{max}) ) };	# border
-</span><span class=""> 1872: 				}
-</span><span class=""> 1873: 			}
-</span><span class=""> 1874: 		} else {
-</span><span class=""> 1875: 			die(&quot;TODO: transform type $type for test case&quot;);
-</span><span class=""> 1876: 		}
-</span><span class=""> 1877: 	}
-</span><span class=""> 1878: 
-</span><span class=""> 1879: 	if($config{dedup}) {
-</span><span class=""> 1880: 		@tests = @{_dedup_cases(\@tests)};
-</span><span class=""> 1881: 	}
-</span><span class=""> 1882: 
-</span><span class=""> 1883: 	{
-</span><span class=""> 1884: 		# local %ENV;
-</span><span class=""> 1885: 		my $transform_output = $transforms{$transform}{&#39;output&#39;} || {};
-</span><span class=""> 1886: 		my $properties_array_ref = $transforms{$transform}{properties};
-</span><span class=""> 1887: 
-</span><span class=""> 1888: 		my $properties = {};
-</span><span class=""> 1889: 		if($properties_array_ref) {
-</span><span class=""> 1890: 			$properties-&gt;{idempotent} = (grep { $_ eq &#39;idempotent&#39;} @{$properties_array_ref}) ? 1 : 0;
-</span><span class=""> 1891: 		}
+</span><span class=""> 1820: if(scalar(keys %transforms)) {
+</span><span class=""> 1821: 	diag(&#39;Run &#39;, scalar(keys %transforms), &#39; transform tests&#39;);
+</span><span class=""> 1822: }
+</span><span class=""> 1823: # diag(&#39;-&#39; x 60);
+</span><span class=""> 1824: 
+</span><span class=""> 1825: # Build the foundation - which is a basic test with sensible defaults in the field
+</span><span class=""> 1826: foreach my $transform (keys %transforms) {
+</span><span class=""> 1827: 	my $foundation = _fill_foundation();	# basic set of data with every field filled in with a sensible default value
+</span><span class=""> 1828: 
+</span><span class=""> 1829: 	# The foundation should work
+</span><span class=""> 1830: 	my $case = { _NAME =&gt; &quot;basic $transform test&quot;, _LINE =&gt; __LINE__ };
+</span><span class=""> 1831: 	my $positions = populate_positions(\%input);
+</span><span class=""> 1832: 	run_test($case, $foundation, \%output, $positions);
+</span><span class=""> 1833: 
+</span><span class=""> 1834: 	# Generate transform tests
+</span><span class=""> 1835: 	# Don&#39;t generate invalid data, that&#39;s all already done,
+</span><span class=""> 1836: 	#	this is about verifying the transorms
+</span><span class=""> 1837: 	my @tests;
+</span><span class=""> 1838: 	diag(&quot;tests for transform $transform&quot;) if($ENV{&#39;TEST_VERBOSE&#39;});
+</span><span class=""> 1839: 
+</span><span class=""> 1840: 	# Now modify the foundation with test code
+</span><span class=""> 1841: 
+</span><span class=""> 1842: 	# BUILD CODE TO CALL FUNCTION
+</span><span class=""> 1843: 	# CALL FUNCTION
+</span><span class=""> 1844: 	# CHECK STATUS CORRECT
+</span><span class=""> 1845: 	# IF STATUS EQ LIVES
+</span><span class=""> 1846: 	#	CHECK OUTPUT USING returns_ok
+</span><span class=""> 1847: 	# FI
+</span><span class=""> 1848: 
+</span><span class=""> 1849: 	my $transform_input = $transforms{$transform}{&#39;input&#39;} || {};
+</span><span class=""> 1850: 
+</span><span class=""> 1851: 	foreach my $field (keys %input) {
+</span><span class=""> 1852: 		my $spec = $transform_input-&gt;{$field} || {};
+</span><span class=""> 1853: 		my $type = $spec-&gt;{type} || &#39;string&#39;;
+</span><span class=""> 1854: 
+</span><span class=""> 1855: 		# If there&#39;s a specific value, test that exact value
+</span><span class=""> 1856: 		if (exists $spec-&gt;{value}) {
+</span><span class=""> 1857: 			push @tests, {
+</span><span class=""> 1858: 				%{$foundation},
+</span><span class=""> 1859: 				$field =&gt; $spec-&gt;{value},
+</span><span class=""> 1860: 				_LINE =&gt; __LINE__,
+</span><span class=""> 1861: 				_DESCRIPTION =&gt; &quot;$transform: $field=$spec-&gt;{value}&quot;
+</span><span class=""> 1862: 			};
+</span><span class=""> 1863: 			next;
+</span><span class=""> 1864: 		}
+</span><span class=""> 1865: 
+</span><span class=""> 1866: 		# Generate edge cases based on type and contraints
+</span><span class=""> 1867: 		if($type eq &#39;integer&#39;) {
+</span><span class=""> 1868: 			push @tests, @{_generate_integer_cases($field, $spec, $foundation)};
+</span><span class=""> 1869: 		} elsif(($type eq &#39;number&#39;) || ($type eq &#39;float&#39;)) {
+</span><span class=""> 1870: 			push @tests, @{_generate_float_cases($field, $spec, $foundation, _LINE =&gt; __LINE__)};
+</span><span class=""> 1871: 		} elsif($type eq &#39;string&#39;) {
+</span><span class=""> 1872: 			push @tests, @{_generate_string_cases($field, $spec, $foundation)};
+</span><span class=""> 1873: 		} elsif($type eq &#39;boolean&#39;) {
+</span><span class=""> 1874: 			push @tests, @{_generate_boolean_cases($field, $spec, $foundation)};
+</span><span class=""> 1875: 		} elsif ($type eq &#39;arrayref&#39;) {
+</span><span class=""> 1876: 			if(defined $spec-&gt;{min}) {
+</span><span class=""> 1877: 				push @tests, { %{$foundation}, ( $field =&gt; rand_arrayref($spec-&gt;{min} + 1) ) };	# just inside
+</span><span class=""> 1878: 				push @tests, { %{$foundation}, ( $field =&gt; rand_arrayref($spec-&gt;{min}) ) };	# border
+</span><span class=""> 1879: 			} else {
+</span><span class=""> 1880: 				push @tests, { %{$foundation}, ( $field =&gt; rand_arrayref() ) };
+</span><span class=""> 1881: 			}
+</span><span class=""> 1882: 			if(defined $spec-&gt;{max}) {
+</span><span class=""> 1883: 				push @tests, { %{$foundation}, ( $field =&gt; rand_arrayref($spec-&gt;{max} - 1) ) };	# just inside
+</span><span class=""> 1884: 				if((defined $spec-&gt;{min}) &amp;&amp; ($spec-&gt;{&#39;min&#39;} != $spec-&gt;{&#39;max&#39;})) {
+</span><span class=""> 1885: 					push @tests, { %{$foundation}, ( $field =&gt; rand_arrayref($spec-&gt;{max}) ) };	# border
+</span><span class=""> 1886: 				}
+</span><span class=""> 1887: 			}
+</span><span class=""> 1888: 		} else {
+</span><span class=""> 1889: 			die(&quot;TODO: transform type $type for test case&quot;);
+</span><span class=""> 1890: 		}
+</span><span class=""> 1891: 	}
 </span><span class=""> 1892: 
-</span><span class=""> 1893: 		foreach my $test(@tests) {
-</span><span class=""> 1894: 			if(my $line = (delete $test-&gt;{&#39;_LINE&#39;} || delete $input{&#39;_LINE&#39;})) {
-</span><span class=""> 1895: 				diag(&quot;Test case from line number $line&quot;) if($ENV{&#39;TEST_VERBOSE&#39;});
-</span><span class=""> 1896: 			}
-</span><span class=""> 1897: 
-</span><span class=""> 1898: 			run_test({ _NAME =&gt; $transform, _PROPERTIES =&gt; $properties }, $test, $transform_output, $positions);
-</span><span class=""> 1899: 			# delete $ENV{&#39;LANG&#39;};
-</span><span class=""> 1900: 			# delete $ENV{&#39;LC_ALL&#39;};
-</span><span class=""> 1901: 			# run_test({ _NAME =&gt; $transform }, $test, \%output, $positions);
-</span><span class=""> 1902: 			# $ENV{&#39;LANG&#39;} = &#39;de_DE.utf8&#39;;
-</span><span class=""> 1903: 			# $ENV{&#39;LC_ALL&#39;} = &#39;de_DE.utf8&#39;;
-</span><span class=""> 1904: 			# run_test({ _NAME =&gt; $transform }, $test, \%output, $positions);
+</span><span class=""> 1893: 	if($config{dedup}) {
+</span><span class=""> 1894: 		@tests = @{_dedup_cases(\@tests)};
+</span><span class=""> 1895: 	}
+</span><span class=""> 1896: 
+</span><span class=""> 1897: 	{
+</span><span class=""> 1898: 		# local %ENV;
+</span><span class=""> 1899: 		my $transform_output = $transforms{$transform}{&#39;output&#39;} || {};
+</span><span class=""> 1900: 		my $properties_array_ref = $transforms{$transform}{properties};
+</span><span class=""> 1901: 
+</span><span class=""> 1902: 		my $properties = {};
+</span><span class=""> 1903: 		if($properties_array_ref) {
+</span><span class=""> 1904: 			$properties-&gt;{idempotent} = (grep { $_ eq &#39;idempotent&#39;} @{$properties_array_ref}) ? 1 : 0;
 </span><span class=""> 1905: 		}
-</span><span class=""> 1906: 	}
-</span><span class=""> 1907: }
-</span><span class=""> 1908: 
-</span><span class=""> 1909: sub _fill_foundation
-</span><span class=""> 1910: {
-</span><span class=""> 1911: 	my $foundation;
-</span><span class=""> 1912: 
-</span><span class=""> 1913: 	foreach my $field (keys %input) {
-</span><span class=""> 1914: 		my $spec = $input{$field} || {};
-</span><span class=""> 1915: 		my $type = $spec-&gt;{type} || &#39;string&#39;;
-</span><span class=""> 1916: 
-</span><span class=""> 1917: 		if(($type eq &#39;number&#39;) || ($type eq &#39;float&#39;)) {
-</span><span class=""> 1918: 			if(defined $spec-&gt;{min}) {
-</span><span class=""> 1919: 				if(defined $spec-&gt;{max}) {
-</span><span class=""> 1920: 					$foundation-&gt;{$field} = $spec-&gt;{max};	# border
-</span><span class=""> 1921: 				} else {
-</span><span class=""> 1922: 					$foundation-&gt;{$field} = rand_num() + $spec-&gt;{&#39;min&#39;};
-</span><span class=""> 1923: 				}
-</span><span class=""> 1924: 			} else {
-</span><span class=""> 1925: 				if(defined $spec-&gt;{max}) {
-</span><span class=""> 1926: 					$foundation-&gt;{$field} = $spec-&gt;{max};	# border
-</span><span class=""> 1927: 				} else {
-</span><span class=""> 1928: 					$foundation-&gt;{$field} = -0.01;	# No min, so -0.01 should be allowable
-</span><span class=""> 1929: 				}
-</span><span class=""> 1930: 			}
-</span><span class=""> 1931: 		} elsif($type eq &#39;string&#39;) {
-</span><span class=""> 1932: 			if(defined $spec-&gt;{min} &amp;&amp; $spec-&gt;{min} &gt; 0) {
-</span><span class=""> 1933: 				$foundation-&gt;{$field} = rand_str($spec-&gt;{min});
-</span><span class=""> 1934: 			} elsif(defined $spec-&gt;{max} &amp;&amp; $spec-&gt;{max} &gt; 0) {
-</span><span class=""> 1935: 				$foundation-&gt;{$field} = rand_str($spec-&gt;{max});
-</span><span class=""> 1936: 			} else {
-</span><span class=""> 1937: 				$foundation-&gt;{$field} = &#39;test_value&#39;;
-</span><span class=""> 1938: 			}
-</span><span class=""> 1939: 		} elsif ($type eq &#39;integer&#39;) {
-</span><span class=""> 1940: 			if (defined $spec-&gt;{min}) {
-</span><span class=""> 1941: 				$foundation-&gt;{$field} = $spec-&gt;{min};
-</span><span class=""> 1942: 			} elsif (defined $spec-&gt;{max}) {
-</span><span class=""> 1943: 				$foundation-&gt;{$field} = rand_int() + $spec-&gt;{max};
-</span><span class=""> 1944: 			} else {
-</span><span class=""> 1945: 				$foundation-&gt;{$field} = rand_int();
-</span><span class=""> 1946: 			}
-</span><span class=""> 1947: 		} elsif ($type eq &#39;boolean&#39;) {
-</span><span class=""> 1948: 			$foundation-&gt;{$field} = 1;
-</span><span class=""> 1949: 		} elsif ($type eq &#39;arrayref&#39;) {
-</span><span class=""> 1950: 			$foundation-&gt;{$field} = rand_arrayref(defined($spec-&gt;{&#39;min&#39;}) ? $spec-&gt;{&#39;min&#39;} : ($spec-&gt;{&#39;max&#39;} // 5));
-</span><span class=""> 1951: 		} elsif ($type eq &#39;hashref&#39;) {
-</span><span class=""> 1952: 			$foundation-&gt;{$field} = { key =&gt; &#39;value&#39; };
-</span><span class=""> 1953: 		} else {
-</span><span class=""> 1954: 			die(&quot;TODO: transform type $type for foundation&quot;);
-</span><span class=""> 1955: 		}
-</span><span class=""> 1956: 	}
-</span><span class=""> 1957: 	return $foundation;
-</span><span class=""> 1958: }
-</span><span class=""> 1959: 
-</span><span class=""> 1960: [% IF use_properties %]
-</span><span class=""> 1961: # ============================================================
-</span><span class=""> 1962: # Property-Based Transform Tests (Test::LectroTest)
-</span><span class=""> 1963: # ============================================================
-</span><span class=""> 1964: 
-</span><span class=""> 1965: use Test::LectroTest::Compat;
-</span><span class=""> 1966: use Test::LectroTest::Generator qw(:common);
-</span><span class=""> 1967: use Scalar::Util qw(looks_like_number);
-</span><span class=""> 1968: 
-</span><span class=""> 1969: diag(&#39;Run property-based transform tests&#39;) if($ENV{&#39;TEST_VERBOSE&#39;});
-</span><span class=""> 1970: 
-</span><span class=""> 1971: [% transform_properties_code %]
-</span><span class=""> 1972: 
-</span><span class=""> 1973: [% END %]
-</span><span class=""> 1974: 
-</span><span class=""> 1975: [% corpus_code %]
-</span><span class=""> 1976: 
-</span><span class=""> 1977: done_testing();
+</span><span class=""> 1906: 
+</span><span class=""> 1907: 		foreach my $test(@tests) {
+</span><span class=""> 1908: 			if(my $line = (delete $test-&gt;{&#39;_LINE&#39;} || delete $input{&#39;_LINE&#39;})) {
+</span><span class=""> 1909: 				diag(&quot;Test case from line number $line&quot;) if($ENV{&#39;TEST_VERBOSE&#39;});
+</span><span class=""> 1910: 			}
+</span><span class=""> 1911: 
+</span><span class=""> 1912: 			run_test({ _NAME =&gt; $transform, _PROPERTIES =&gt; $properties }, $test, $transform_output, $positions);
+</span><span class=""> 1913: 			# delete $ENV{&#39;LANG&#39;};
+</span><span class=""> 1914: 			# delete $ENV{&#39;LC_ALL&#39;};
+</span><span class=""> 1915: 			# run_test({ _NAME =&gt; $transform }, $test, \%output, $positions);
+</span><span class=""> 1916: 			# $ENV{&#39;LANG&#39;} = &#39;de_DE.utf8&#39;;
+</span><span class=""> 1917: 			# $ENV{&#39;LC_ALL&#39;} = &#39;de_DE.utf8&#39;;
+</span><span class=""> 1918: 			# run_test({ _NAME =&gt; $transform }, $test, \%output, $positions);
+</span><span class=""> 1919: 		}
+</span><span class=""> 1920: 	}
+</span><span class=""> 1921: }
+</span><span class=""> 1922: 
+</span><span class=""> 1923: sub _fill_foundation
+</span><span class=""> 1924: {
+</span><span class=""> 1925: 	my $foundation;
+</span><span class=""> 1926: 
+</span><span class=""> 1927: 	foreach my $field (keys %input) {
+</span><span class=""> 1928: 		my $spec = $input{$field} || {};
+</span><span class=""> 1929: 		my $type = $spec-&gt;{type} || &#39;string&#39;;
+</span><span class=""> 1930: 
+</span><span class=""> 1931: 		if(($type eq &#39;number&#39;) || ($type eq &#39;float&#39;)) {
+</span><span class=""> 1932: 			if(defined $spec-&gt;{min}) {
+</span><span class=""> 1933: 				if(defined $spec-&gt;{max}) {
+</span><span class=""> 1934: 					$foundation-&gt;{$field} = $spec-&gt;{max};	# border
+</span><span class=""> 1935: 				} else {
+</span><span class=""> 1936: 					$foundation-&gt;{$field} = rand_num() + $spec-&gt;{&#39;min&#39;};
+</span><span class=""> 1937: 				}
+</span><span class=""> 1938: 			} else {
+</span><span class=""> 1939: 				if(defined $spec-&gt;{max}) {
+</span><span class=""> 1940: 					$foundation-&gt;{$field} = $spec-&gt;{max};	# border
+</span><span class=""> 1941: 				} else {
+</span><span class=""> 1942: 					$foundation-&gt;{$field} = -0.01;	# No min, so -0.01 should be allowable
+</span><span class=""> 1943: 				}
+</span><span class=""> 1944: 			}
+</span><span class=""> 1945: 		} elsif($type eq &#39;string&#39;) {
+</span><span class=""> 1946: 			if(defined $spec-&gt;{min} &amp;&amp; $spec-&gt;{min} &gt; 0) {
+</span><span class=""> 1947: 				$foundation-&gt;{$field} = rand_str($spec-&gt;{min});
+</span><span class=""> 1948: 			} elsif(defined $spec-&gt;{max} &amp;&amp; $spec-&gt;{max} &gt; 0) {
+</span><span class=""> 1949: 				$foundation-&gt;{$field} = rand_str($spec-&gt;{max});
+</span><span class=""> 1950: 			} else {
+</span><span class=""> 1951: 				$foundation-&gt;{$field} = &#39;test_value&#39;;
+</span><span class=""> 1952: 			}
+</span><span class=""> 1953: 		} elsif ($type eq &#39;integer&#39;) {
+</span><span class=""> 1954: 			if (defined $spec-&gt;{min}) {
+</span><span class=""> 1955: 				$foundation-&gt;{$field} = $spec-&gt;{min};
+</span><span class=""> 1956: 			} elsif (defined $spec-&gt;{max}) {
+</span><span class=""> 1957: 				$foundation-&gt;{$field} = rand_int() + $spec-&gt;{max};
+</span><span class=""> 1958: 			} else {
+</span><span class=""> 1959: 				$foundation-&gt;{$field} = rand_int();
+</span><span class=""> 1960: 			}
+</span><span class=""> 1961: 		} elsif ($type eq &#39;boolean&#39;) {
+</span><span class=""> 1962: 			$foundation-&gt;{$field} = 1;
+</span><span class=""> 1963: 		} elsif ($type eq &#39;arrayref&#39;) {
+</span><span class=""> 1964: 			$foundation-&gt;{$field} = rand_arrayref(defined($spec-&gt;{&#39;min&#39;}) ? $spec-&gt;{&#39;min&#39;} : ($spec-&gt;{&#39;max&#39;} // 5));
+</span><span class=""> 1965: 		} elsif ($type eq &#39;hashref&#39;) {
+</span><span class=""> 1966: 			$foundation-&gt;{$field} = { key =&gt; &#39;value&#39; };
+</span><span class=""> 1967: 		} else {
+</span><span class=""> 1968: 			die(&quot;TODO: transform type $type for foundation&quot;);
+</span><span class=""> 1969: 		}
+</span><span class=""> 1970: 	}
+</span><span class=""> 1971: 	return $foundation;
+</span><span class=""> 1972: }
+</span><span class=""> 1973: 
+</span><span class=""> 1974: [% IF use_properties %]
+</span><span class=""> 1975: # ============================================================
+</span><span class=""> 1976: # Property-Based Transform Tests (Test::LectroTest)
+</span><span class=""> 1977: # ============================================================
 </span><span class=""> 1978: 
-</span><span class=""> 1979: 1;
-</span><span class=""> 1980: 
-</span><span class=""> 1981: package MyTestPackage;
+</span><span class=""> 1979: use Test::LectroTest::Compat;
+</span><span class=""> 1980: use Test::LectroTest::Generator qw(:common);
+</span><span class=""> 1981: use Scalar::Util qw(looks_like_number);
 </span><span class=""> 1982: 
-</span><span class=""> 1983: sub new { return bless {}, &#39;MyTestPackage&#39; }
+</span><span class=""> 1983: diag(&#39;Run property-based transform tests&#39;) if($ENV{&#39;TEST_VERBOSE&#39;});
 </span><span class=""> 1984: 
-</span><span class=""> 1985: 1;
-</span><span class=""> 1986: __END__
+</span><span class=""> 1985: [% transform_properties_code %]
+</span><span class=""> 1986: 
+</span><span class=""> 1987: [% END %]
+</span><span class=""> 1988: 
+</span><span class=""> 1989: [% corpus_code %]
+</span><span class=""> 1990: 
+</span><span class=""> 1991: done_testing();
+</span><span class=""> 1992: 
+</span><span class=""> 1993: 1;
+</span><span class=""> 1994: 
+</span><span class=""> 1995: package MyTestPackage;
+</span><span class=""> 1996: 
+</span><span class=""> 1997: sub new { return bless {}, &#39;MyTestPackage&#39; }
+</span><span class=""> 1998: 
+</span><span class=""> 1999: 1;
+</span><span class=""> 2000: __END__
 </span></pre>
 
 <script>
