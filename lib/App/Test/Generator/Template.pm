@@ -136,6 +136,9 @@ my @candidate_bad = (
 	"é",	# E acute
 	'x' x 5000,	# huge string
 	*STDOUT,
+	' ',	# space
+	"\t",	# tab
+	"\r",	# carriage return
 
 	# Added later if the configuration says so
 	# '',	# empty
@@ -655,13 +658,22 @@ sub fuzz_inputs
 				} elsif ($type eq 'boolean') {
 					push @cases, @{_generate_boolean_cases($arg_name, $spec, \%mandatory_args, _LINE => __LINE__)};
 				} elsif ($type eq 'hashref') {
-					push @cases, { $arg_name => { a => 1 } };
-					push @cases, { $arg_name => [], _STATUS => 'DIES' };
-					push @cases, { $arg_name => 'scalar when hashref is needed', _STATUS => 'DIES' };
-					push @cases, { $arg_name => \'scalarref when hashref is needed', _STATUS => 'DIES' };
+					push @cases,
+						{ $arg_name => { a => 1 } },
+						{ $arg_name => [], _STATUS => 'DIES' },
+						{ $arg_name => ( b => 2 ), _STATUS => 'DIES' },
+						{ $arg_name => 66, _STATUS => 'DIES' },
+						{ $arg_name => sub { die 'fail' }, _STATUS => 'DIES' },
+						{ $arg_name => 'scalar when hashref is needed', _STATUS => 'DIES' },
+						{ $arg_name => \'scalarref when hashref is needed', _STATUS => 'DIES' };
 				} elsif ($type eq 'arrayref') {
-					push @cases, { $arg_name => [1,2] };
-					push @cases, { $arg_name => { a => 1 }, _STATUS => 'DIES' };
+					my $circular_ref = [];
+					push @{$circular_ref}, $circular_ref;
+
+					push @cases,
+						{ $arg_name => [1,2] },
+						{ $arg_name => $circular_ref, _STATUS => 'DIES', _DESCRIPTION => 'circular ref is caught' },
+						{ $arg_name => { a => 1 }, _STATUS => 'DIES' };
 				} elsif($type eq 'object') {
 					if($spec->{'isa'}) {
 						push @cases, { $arg_name => { a => 1 }, _STATUS => 'DIES', _LINE => __LINE__ };
@@ -810,7 +822,17 @@ sub fuzz_inputs
 		if (exists $input{memberof} && ref $input{memberof} eq 'ARRAY' && @{$input{memberof}}) {
 			# Generate edge cases for memberof inside values
 			foreach my $val (@{$input{memberof}}) {
-				push @cases, { _input => $val, _LINE => __LINE__ };
+				push @cases,
+					{ _input => $val, _LINE => __LINE__ },
+					{ _input => " $val", _LINE => __LINE__, _STATUS => 'DIES' },
+					{ _input => "$val ", _LINE => __LINE__, _STATUS => 'DIES' },
+					{ _input => substr($val, 0, -1), _LINE => __LINE__, _STATUS => 'DIES' };
+				if($val =~ /[A-Z]/) {
+					push @cases, { _input => lc($val), _LINE => __LINE__, _STATUS => 'DIES' };
+				}
+				if($val =~ /[a-z]/) {
+					push @cases, { _input => uc($val), _LINE => __LINE__, _STATUS => 'DIES' };
+				}
 			}
 			# outside value
 			my $outside;
@@ -908,6 +930,11 @@ sub _generate_integer_cases {
 			{ %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
 	[% END %]
 
+	push @cases,
+		{ %{$mandatory_args}, ( $arg_name => 1e5, _STATUS => 'OK' ) },	# Scientific notation
+		{ %{$mandatory_args}, ( $arg_name => 1_000, _STATUS => 'OK' ) },	# Underscored
+		{ %{$mandatory_args}, ( $arg_name => '   42   ', _STATUS => 'OK' ) };	# Padded integer
+
 	# min/max numeric boundaries
 	if (defined $spec->{min}) {
 		my $min = $spec->{min};
@@ -935,8 +962,11 @@ sub _generate_integer_cases {
 			push @cases, { %{$mandatory_args}, ( $arg_name => 0 ) } if($spec->{'min'} >= 0);
 		} else {
 			push @cases, { %{$mandatory_args}, ( $arg_name => $max - rand_int() ), _DESCRIPTION => 'max is defined but min is not' };
-			if($max == 0) {
-				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_int()) * -1 ), _LINE => __LINE__ };	# Any negative integer
+			if($max >= 0) {
+				push @cases, { %{$mandatory_args}, ( $arg_name => -0.0, _STATUS => 'OK' ) };	# Negative 0
+				if($max == 0) {
+					push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_int()) * -1 ), _LINE => __LINE__ };	# Any negative integer
+				}
 			}
 		}
 	} elsif(!defined $spec->{min}) {
@@ -966,6 +996,7 @@ sub _generate_float_cases {
 			{ %{$mandatory_args}, ( $arg_name => "test string in float field $arg_name", _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => \42.1, _STATUS => 'DIES' ) },	# Scalar ref
+			{ %{$mandatory_args}, ( $arg_name => "NaN", _STATUS => 'DIES' ) },
 			{ %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) };
 	[% END %]
 
@@ -976,6 +1007,10 @@ sub _generate_float_cases {
 			{ %{$mandatory_args}, ( $arg_name => $min - 0.001, _STATUS => 'DIES' ) },
 			{ %{$mandatory_args}, ( $arg_name => $min, _LINE => __LINE__ ) },	# border
 			{ %{$mandatory_args}, ( $arg_name => $min + 0.001 ) };	# just inside
+
+		[% IF module %]
+			push @cases, { %{$mandatory_args}, ( $arg_name => "-inf", _STATUS => 'DIES' ) };
+		[% END %]
 
 		if(!defined $spec->{max}) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => $min + rand_num() ), _DESCRIPTION => 'min is defined but max is not' };
@@ -990,6 +1025,10 @@ sub _generate_float_cases {
 			{ %{$mandatory_args}, ( $arg_name => $max - 0.000001 ) },
 			{ %{$mandatory_args}, ( $arg_name => $max ) },
 			{ %{$mandatory_args}, ( $arg_name => $max + 0.000001, _STATUS => 'DIES' ) };
+
+		[% IF module %]
+			push @cases, { %{$mandatory_args}, ( $arg_name => "inf", _STATUS => 'DIES' ) };
+		[% END %]
 
 		if(defined $spec->{min}) {
 			# Test 0 if it's in range
@@ -1006,6 +1045,7 @@ sub _generate_float_cases {
 			{ %{$mandatory_args}, ( $arg_name => rand_num(), _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => 1.23 ) },
 			{ %{$mandatory_args}, ( $arg_name => -42.1 ) },
+			{ %{$mandatory_args}, ( $arg_name => -0.0 ) },	# -0 is in range
 			{ %{$mandatory_args}, ( $arg_name => 0 ) };	# 0 is in range
 	}
 
@@ -1036,6 +1076,7 @@ sub _generate_boolean_cases {
 			{ %{$mandatory_args}, ( $arg_name => 'xyzzy', _STATUS => 'DIES' ) },	# invalid boolean
 			{ %{$mandatory_args}, ( $arg_name => -1, _STATUS => 'DIES' ) },	# invalid boolean
 			{ %{$mandatory_args}, ( $arg_name => 2, _STATUS => 'DIES' ) },	# invalid boolean
+			{ %{$mandatory_args}, ( $arg_name => bless({}, 'Evil::Class'), _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => [ 1 ], _STATUS => 'DIES' ) }	# invalid boolean
 		);
 	}
@@ -1102,8 +1143,9 @@ sub _generate_string_cases
 				} elsif((!defined($spec->{max})) || ($spec->{max} >= 5)) {
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'OK' ) };
 				} else {
-					push @cases, { %{$mandatory_args}, ( $arg_name => 'plugh', _LINE => __LINE__, _STATUS => 'DIES' ) };
-					push @cases, { %{$mandatory_args}, ( $arg_name => '     ', _LINE => __LINE__, _STATUS => 'DIES' ) };
+					push @cases,
+						{ %{$mandatory_args}, ( $arg_name => 'plugh', _LINE => __LINE__, _STATUS => 'DIES' ) },
+						{ %{$mandatory_args}, ( $arg_name => '     ', _LINE => __LINE__, _STATUS => 'DIES' ) };
 				}
 				# Check that trimmed strings work
 				push @cases, { %{$mandatory_args}, ( $arg_name => ' ' x $len, _LINE => __LINE__, _STATUS => 'OK' ) };
@@ -1111,9 +1153,11 @@ sub _generate_string_cases
 				push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
 			}
 			if(!defined($spec->{'memberof'})) {
-				push @cases, { %{$mandatory_args}, ( $arg_name => "he\nlo", _LINE => __LINE__, _STATUS => 'OK' ) };
-				push @cases, { %{$mandatory_args}, ( $arg_name => ' hell', _LINE => __LINE__, _STATUS => 'OK' ) };
-				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len) . "\n" . rand_str($len), _LINE => __LINE__, _STATUS => 'OK' ) };
+				push @cases, { %{$mandatory_args}, ( $arg_name => "he\nlo", _LINE => __LINE__, _STATUS => 'OK' ) },
+					{ %{$mandatory_args}, ( $arg_name => "\nhell", _LINE => __LINE__, _STATUS => 'OK' ) },
+					{ %{$mandatory_args}, ( $arg_name => "hell\n", _LINE => __LINE__, _STATUS => 'OK' ) },
+					{ %{$mandatory_args}, ( $arg_name => ' hell', _LINE => __LINE__, _STATUS => 'OK' ) },
+					{ %{$mandatory_args}, ( $arg_name => rand_str($len) . "\n" . rand_str($len), _LINE => __LINE__, _STATUS => 'OK' ) };
 			}
 
 			if($len <= 0) {
@@ -1282,6 +1326,19 @@ sub _generate_string_cases
 				{ %{$mandatory_args}, $arg_name => "\0", _STATUS => 'DIES', _LINE => __LINE__ },
 				{ %{$mandatory_args}, $arg_name => "nul\0", _STATUS => 'DIES', _LINE => __LINE__ },
 				{ %{$mandatory_args}, $arg_name => "\0nul", _STATUS => 'DIES', _LINE => __LINE__ };
+			if(defined($spec->{matches})) {
+				my $re = $spec->{matches};
+				foreach my $val (@candidate_good) {
+					$val = "$val\0";
+					if ($val !~ $re) {
+						push @cases, { %{$mandatory_args}, ( $arg_name => $val, _STATUS => 'DIES', _DESCRIPTION => 'Nul byte after regex' ) };
+					}
+					$val = "\0$val";
+					if ($val !~ $re) {
+						push @cases, { %{$mandatory_args}, ( $arg_name => $val, _STATUS => 'DIES', _DESCRIPTION => 'Nul byte before regex' ) };
+					}
+				}
+			}
 		}
 		if($config{'test_empty'}) {
 			push @cases,
@@ -1416,8 +1473,13 @@ sub generate_tests
 						$case_input{$field} = int(abs(rand_int()));
 					}
 				} else {
-					# If it's takes an integer, a float should die
-					push @cases, { _input => rand_int() + 0.2, _STATUS => 'DIES', _LINE => __LINE__ };
+					push @cases,
+						# If it's takes an integer, a float should die
+						{ _input => rand_int() + 0.2, _STATUS => 'DIES', _LINE => __LINE__ },
+						# Integers passed as a string
+						{ _input => "007", _STATUS => 'OK', _LINE => __LINE__ },
+						{ _input => "0x10", _STATUS => 'OK', _LINE => __LINE__ },
+						{ _input => "1_000", _STATUS => 'OK', _LINE => __LINE__ };
 					$case_input{$field} = rand_int();
 				}
 			} elsif ($type eq 'boolean') {
@@ -1450,8 +1512,18 @@ sub generate_tests
 			if (exists $spec->{memberof} && ref $spec->{memberof} eq 'ARRAY' && @{$spec->{memberof}}) {
 				# Generate edge cases for memberof
 				# inside values
-				foreach my $val (@{$spec->{memberof}}) {
-					push @cases, { %mandatory_args, ( $field => $val ) };
+				foreach my $val (@{$input{memberof}}) {
+					push @cases,
+						{ %mandatory_args, ( $field => $val ) },
+						{ %mandatory_args, ( $field => " $val", _LINE => __LINE__, _STATUS => 'DIES' ) },
+						{ %mandatory_args, ( $field => "$val ", _LINE => __LINE__, _STATUS => 'DIES' ) },
+						{ %mandatory_args, ( $field => substr($val, 0, -1), _LINE => __LINE__, _STATUS => 'DIES' ) };
+					if($val =~ /[A-Z]/) {
+						push @cases, { %mandatory_args, ( $field => lc($val), _LINE => __LINE__, _STATUS => 'DIES' ) };
+					}
+					if($val =~ /[a-z]/) {
+						push @cases, { %mandatory_args, ( $field => uc($val), _LINE => __LINE__, _STATUS => 'DIES' ) };
+					}
 				}
 				# outside value
 				my $outside;

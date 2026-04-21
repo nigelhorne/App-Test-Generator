@@ -9,6 +9,7 @@ use File::Spec;
 use File::Temp;
 use Getopt::Long qw(GetOptions);
 use Pod::Usage;
+use YAML::XS qw(LoadFile);
 
 =head1 NAME
 
@@ -152,6 +153,19 @@ if($infile && @ARGV) {
 	pod2usage('Specify input file either as argument or via --input, not both');
 }
 
+if($infile) {
+	my $schema = eval { LoadFile($infile) };
+	if($@) {
+		die "Cannot parse '$infile' as YAML: $@";
+	}
+	unless(ref($schema) eq 'HASH') {
+		die "Input file '$infile' does not contain a YAML hash";
+	}
+	unless($schema->{function}) {
+		die "Input file '$infile' is missing required 'function' key";
+	}
+}
+
 $infile ||= shift @ARGV or pod2usage('No config file given');
 
 if($dry_run && $run) {
@@ -159,7 +173,7 @@ if($dry_run && $run) {
 }
 
 if($dry_run && $outfile) {
-	warn "--dry-run specified; --output will be ignored\n";
+	warn '--dry-run specified; --output will be ignored';
 }
 
 if($verbose) {
@@ -190,7 +204,7 @@ if($dry_run) {
 	print "Dry-run OK: $infile parsed and validated successfully\n";
 	exit 0;
 } elsif($outfile && -e $outfile && !$run) {
-	warn "Overwriting existing file: $outfile\n";
+	warn "Overwriting existing file: $outfile";
 }
 
 App::Test::Generator->generate($infile, $outfile);
