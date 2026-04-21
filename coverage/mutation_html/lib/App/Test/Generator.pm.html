@@ -329,7 +329,7 @@ Approximate LCSAJ segments: 513<br>
 </span><span class="">   37: 
 </span><span class="">   38: our @EXPORT_OK = qw(generate);
 </span><span class="">   39: 
-</span><span class="">   40: our $VERSION = &#39;0.32&#39;;
+</span><span class="">   40: our $VERSION = &#39;0.33&#39;;
 </span><span class="">   41: 
 </span><span class="">   42: use constant {
 </span><span class="">   43: 	DEFAULT_ITERATIONS =&gt; 30,
@@ -448,7 +448,7 @@ Approximate LCSAJ segments: 513<br>
 </span><span class="">  156: 
 </span><span class="">  157: =head1 VERSION
 </span><span class="">  158: 
-</span><span class="">  159: Version 0.32
+</span><span class="">  159: Version 0.33
 </span><span class="">  160: 
 </span><span class="">  161: =head1 SYNOPSIS
 </span><span class="">  162: 
@@ -2315,7 +2315,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </li></ul></details>
 <span class=""> 1878: 				croak(&quot;BUG: $property: getset must take one input argument, incorrectly tagged as getset&quot;);
 </span><span class=""> 1879: 			}
-</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 1880: 			if(scalar(keys %output) == 0) {
+</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 1880: 			if(scalar(keys %output) == 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -3315,8 +3315,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2663: 	# Check once and reuse &acirc;&#128;&#148; avoids evaluating two env vars twice
 </span><span class=""> 2664: 	my $verbose = $ENV{$ENV_TEST_VERBOSE} || $ENV{$ENV_GENERATOR_VERBOSE};
 </span><span class=""> 2665: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 2666: 	if($verbose) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 2667: 		print STDERR &quot;Found module &#39;$module&#39; at: $mod_info-&gt;{&#39;file&#39;}\n&quot;,
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2666: 	if($verbose) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_2666_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 2667: 		print STDERR &quot;Found module &#39;$module&#39; at: $mod_info-&gt;{&#39;file&#39;}\n&quot;,
 </span><span class=""> 2668: 			&#39;  Version: &#39;, ($mod_info-&gt;{&#39;version&#39;} || &#39;unknown&#39;), &quot;\n&quot;;
 </span><span class=""> 2669: 	}
 </span><span class=""> 2670: 
@@ -4666,14 +4672,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3935: 	# --------------------------------------------------
 </span><span class=""> 3936: 	# Integer generator
 </span><span class=""> 3937: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 3938: 	if($type eq &#39;integer&#39;) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_3938_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 3939: 		my $min = $spec-&gt;{&#39;min&#39;};
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3938: 	if($type eq &#39;integer&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3939: 		my $min = $spec-&gt;{&#39;min&#39;};
 </span><span class=""> 3940: 		my $max = $spec-&gt;{&#39;max&#39;};
 </span><span class=""> 3941: 
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 3942: 		if(!defined($min) &amp;&amp; !defined($max)) {
@@ -4717,7 +4717,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3968: 
 </span><span class=""> 3969: 		} elsif(!defined($min)) {
 </span><span class=""> 3970: 			# Only max defined &acirc;&#128;&#148; choose range based on sign of max
-</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3971: 			if($max == $ZERO_BOUNDARY) {
+</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3971: 			if($max == $ZERO_BOUNDARY) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -4894,14 +4894,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </li></ul></details>
 <span class=""> 4018: 			my $pattern = $spec-&gt;{&#39;matches&#39;};
 </span><span class=""> 4019: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4020: 			if(defined($spec-&gt;{&#39;max&#39;})) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_4020_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 4021: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; qr/$pattern/, length =&gt; $spec-&gt;{&#39;max&#39;} }) }&quot;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4020: 			if(defined($spec-&gt;{&#39;max&#39;})) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4021: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; qr/$pattern/, length =&gt; $spec-&gt;{&#39;max&#39;} }) }&quot;;
 </span><span class=""> 4022: 			} elsif(defined($spec-&gt;{&#39;min&#39;})) {
 </span><span class=""> 4023: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; qr/$pattern/, length =&gt; $spec-&gt;{&#39;min&#39;} }) }&quot;;
 </span><span class=""> 4024: 			} else {
@@ -4945,8 +4939,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 4050: 	# LectroTest has no built-in Hash generator so we
 </span><span class=""> 4051: 	# use Elements over a pre-built list of hashrefs
 </span><span class=""> 4052: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4053: 	if($type eq &#39;hashref&#39;) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4054: 		my $min_keys = $spec-&gt;{&#39;min&#39;} // 0;
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4053: 	if($type eq &#39;hashref&#39;) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_4053_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 4054: 		my $min_keys = $spec-&gt;{&#39;min&#39;} // 0;
 </span><span class=""> 4055: 		my $max_keys = $spec-&gt;{&#39;max&#39;} // $DEFAULT_MAX_COLLECTION_SIZE;
 </span><span class=""> 4056: 		return &quot;$field_name &lt;- Elements(map { my \%h; for (1..\$_) { \$h{&#39;key&#39;.\$_} = \$_ }; \\\%h } $min_keys..$max_keys)&quot;;
 </span><span class=""> 4057: 	}
@@ -5234,14 +5234,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<ul>
 				<li><b>COND_INV_4335_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4336: 		if(defined($output_spec-&gt;{&#39;min&#39;})) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_4336_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 4337: 			my $min = $output_spec-&gt;{&#39;min&#39;};
+<span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4336: 		if(defined($output_spec-&gt;{&#39;min&#39;})) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4337: 			my $min = $output_spec-&gt;{&#39;min&#39;};
 </span><span class=""> 4338: 			push @properties, {
 </span><span class=""> 4339: 				name =&gt; &#39;min_constraint&#39;,
 </span><span class=""> 4340: 				code =&gt; &quot;defined(\$result) &amp;&amp; looks_like_number(\$result) &amp;&amp; \$result &gt;= $min&quot;,
@@ -5342,14 +5336,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 4405: 	# --------------------------------------------------
 </span><span class=""> 4406: 	# Property 4: Type preservation
 </span><span class=""> 4407: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4408: 	if(_same_type($input_spec, $output_spec)) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_4408_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 4409: 		my $type = _get_dominant_type($output_spec);
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4408: 	if(_same_type($input_spec, $output_spec)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4409: 		my $type = _get_dominant_type($output_spec);
 </span><span class=""> 4410: 
 </span><span class=""> 4411: 		# Only emit a numeric_type check for numeric types &acirc;&#128;&#148;
 </span><span class=""> 4412: 		# string and other types have no equivalent simple check
