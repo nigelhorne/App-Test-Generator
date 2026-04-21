@@ -125,6 +125,10 @@ my %transforms = (
 [% transforms_code %]
 );
 
+my @relationships = (
+[% relationships_code %]
+);
+
 # Candidates for regex comparisons
 my @candidate_good = ('123', 'abc', 'A1B2', '0');
 my @candidate_bad = (
@@ -150,7 +154,7 @@ my $positions = populate_positions(\%input);
 # --- Fuzzer helpers ---
 sub _pick_from {
 	my $arrayref = $_[0];
-	return undef unless $arrayref && ref $arrayref eq 'ARRAY' && @$arrayref;
+	return undef unless $arrayref && ref $arrayref eq 'ARRAY' && @{$arrayref};
 	return $arrayref->[ int(rand(scalar @$arrayref)) ];
 }
 
@@ -729,13 +733,68 @@ sub fuzz_inputs
 
 				# --- semantic ---
 				if(defined(my $semantic = $spec->{'semantic'})) {
-					if($semantic eq 'unix_timestamp') {
+					if(defined(my $semantic = $spec->{'semantic'})) {
 						push @cases, { %mandatory_args, ( -1, _STATUS => 'DIES' ) },
 							{ %mandatory_args, ( $arg_name => 0 ) },
 							{ %mandatory_args, ( $arg_name => 1 ) },
 							{ %mandatory_args, ( $arg_name => time ) },
 							{ %mandatory_args, ( $arg_name => 2147483647 ) },
+							{ %mandatory_args, ( 45.67, _STATUS => 'DIES', _DESCRIPTION => 'UNIX timestamp should not be a float' ) },
 							{ %mandatory_args, ( $arg_name => 2147483648, _STATUS => 'DIES' ) };
+					} elsif($semantic eq 'email') {
+						push @cases,
+							{ %mandatory_args, ( $arg_name => 'user@example.com' ) },
+							{ %mandatory_args, ( $arg_name => 'user+tag@sub.example.co.uk' ) },
+							{ %mandatory_args, ( $arg_name => '@nodomain', _STATUS => 'DIES' ) },
+							{ %mandatory_args, ( $arg_name => 'noatsign', _STATUS => 'DIES' ) },
+							{ %mandatory_args, ( $arg_name => 'user@', _STATUS => 'DIES' ) },
+							{ %mandatory_args, ( $arg_name => '', _STATUS => 'DIES' ) },
+							{ %mandatory_args, ( $arg_name => 'user@' . ('a' x 256) . '.com', _STATUS => 'DIES' ) };
+					} elsif($semantic eq 'filepath') {
+						push @cases,
+							{ %mandatory_args, ( $arg_name => '/tmp/test.txt' ) },
+							{ %mandatory_args, ( $arg_name => 'relative/path.txt' ) },
+							{ %mandatory_args, ( $arg_name => '.' ) },
+							{ %mandatory_args, ( $arg_name => '..' ) },
+							{ %mandatory_args, ( $arg_name => '../../etc/passwd', _STATUS => 'DIES' ) },
+							{ %mandatory_args, ( $arg_name => '/etc/passwd' . "\0", _STATUS => 'DIES' ) },
+							{ %mandatory_args, ( $arg_name => '', _STATUS => 'DIES' ) },
+							{ %mandatory_args, ( $arg_name => '/' . ('a' x 4096), _STATUS => 'DIES' ) };
+						if($^O eq 'MSWin32') {
+							push @cases,
+								{ %mandatory_args, ( $arg_name => 'C:\\Users\\test\\file.txt' ) },
+								{ %mandatory_args, ( $arg_name => 'D:\\' ) },
+								{ %mandatory_args, ( $arg_name => 'relative\\path.txt' ) },
+								{ %mandatory_args, ( $arg_name => 'C:\\..\\..\\Windows\\System32', _STATUS => 'DIES' ) },
+								{ %mandatory_args, ( $arg_name => 'C:\\path\\' . "\0" . 'file', _STATUS => 'DIES' ) },
+								{ %mandatory_args, ( $arg_name => 'COM1', _STATUS => 'DIES' ) },   # reserved device name
+								{ %mandatory_args, ( $arg_name => 'NUL', _STATUS => 'DIES' ) },    # reserved device name
+								{ %mandatory_args, ( $arg_name => 'C:\\path\\file?.txt', _STATUS => 'DIES' ) },   # wildcard
+								{ %mandatory_args, ( $arg_name => 'C:\\path\\file*.txt', _STATUS => 'DIES' ) },   # wildcard
+								{ %mandatory_args, ( $arg_name => '\\\\server\\share\\file.txt' ) };  # UNC path
+						}
+					} elsif($semantic eq 'date_string') {
+						push @cases,
+							{ %mandatory_args, ( $arg_name => '2024-01-01' ) },
+							{ %mandatory_args, ( $arg_name => '1970-01-01' ) },
+							{ %mandatory_args, ( $arg_name => '2024-02-29' ) },   # leap day
+							{ %mandatory_args, ( $arg_name => '2023-02-29', _STATUS => 'DIES' ) },  # not a leap year
+							{ %mandatory_args, ( $arg_name => '2024-13-01', _STATUS => 'DIES' ) },  # month 13
+							{ %mandatory_args, ( $arg_name => '2024-00-01', _STATUS => 'DIES' ) },  # month 0
+							{ %mandatory_args, ( $arg_name => '01-01-2024', _STATUS => 'DIES' ) },  # wrong order
+							{ %mandatory_args, ( $arg_name => '2024/01/01', _STATUS => 'DIES' ) },  # wrong separator
+							{ %mandatory_args, ( $arg_name => 'not-a-date', _STATUS => 'DIES' ) },
+							{ %mandatory_args, ( $arg_name => '', _STATUS => 'DIES' ) };
+					} elsif($semantic eq 'iso8601_string') {
+						push @cases,
+							{ %mandatory_args, ( $arg_name => '2024-01-01T00:00:00Z' ) },
+							{ %mandatory_args, ( $arg_name => '2024-06-15T12:30:45Z' ) },
+							{ %mandatory_args, ( $arg_name => '2024-01-01T00:00:00+05:30' ) },
+							{ %mandatory_args, ( $arg_name => '2024-01-01' ) },          # date only - check if accepted
+							{ %mandatory_args, ( $arg_name => '2024-01-01T25:00:00Z', _STATUS => 'DIES' ) },  # hour 25
+							{ %mandatory_args, ( $arg_name => '2024-01-01T00:61:00Z', _STATUS => 'DIES' ) },  # minute 61
+							{ %mandatory_args, ( $arg_name => 'not-a-datetime', _STATUS => 'DIES' ) },
+							{ %mandatory_args, ( $arg_name => '', _STATUS => 'DIES' ) };
 					} else {
 						diag("semantic type $semantic is not yet supported");
 					}
@@ -1492,11 +1551,27 @@ sub generate_tests
 				} else {
 					$case_input{$field} = rand_num();
 				}
-			}
-			elsif ($type eq 'arrayref') {
+			} elsif ($type eq 'arrayref') {
+				my $circular_ref = [];
+				push @{$circular_ref}, $circular_ref;
+
+				push @cases, { %mandatory_args, ($field => $circular_ref, _STATUS => 'DIES', _LINE => __LINE__, _DESCRIPTION => "Don't accept array ref with circular references") };
+
+				if(my $element_type = $input{element_type}) {
+					if($element_type eq 'integer') {
+						push @cases,
+							{ %mandatory_args, ($field => '0.3', _STATUS => 'DIES', _LINE => __LINE__, _DESCRIPTION => 'float in list of integers') },
+							{ %mandatory_args, ($field => 'string in array of ints', _STATUS => 'DIES', _LINE => __LINE__, _DESCRIPTION => 'string in list of integers') };
+					} elsif($element_type eq 'boolean') {
+						push @cases,
+							{ %mandatory_args, ($field => 2, _STATUS => 'DIES', _LINE => __LINE__, _DESCRIPTION => '2 list of booleans') },
+							{ %mandatory_args, ($field => '0.3', _STATUS => 'DIES', _LINE => __LINE__, _DESCRIPTION => 'float in list of booleans') },
+							{ %mandatory_args, ($field => 'string in array of bools', _STATUS => 'DIES', _LINE => __LINE__, _DESCRIPTION => 'string in list of booleans') };
+					}
+				}
+
 				$case_input{$field} = rand_arrayref();
-			}
-			elsif ($type eq 'hashref') {
+			} elsif ($type eq 'hashref') {
 				$case_input{$field} = rand_hashref();
 			} elsif($config{'test_undef'}) {
 				$case_input{$field} = undef;
@@ -1613,12 +1688,154 @@ sub generate_tests
 						{ %mandatory_args, ( 1 ) },
 						{ %mandatory_args, ( time ) },
 						{ %mandatory_args, ( 2147483647 ) },
+						{ %mandatory_args, ( 45.67, _STATUS => 'DIES', _DESCRIPTION => 'UNIX timestamp should not be a float' ) },
 						{ %mandatory_args, ( 2147483648, _STATUS => 'DIES' ) };
 				} else {
 					diag("semantic type $semantic is not yet supported");
 				}
 			}
-			# TODO:	How do we generate tests for cross-field validation?
+			if(@relationships) {
+				diag('Run relationship tests') if($ENV{'TEST_VERBOSE'});
+
+				foreach my $rel (@relationships) {
+					my $type = $rel->{type};
+
+					if($type eq 'mutually_exclusive') {
+						my ($p1, $p2) = @{ $rel->{params} };
+						# Both specified — should die
+						run_test(
+							{ _STATUS => 'DIES',
+							  _DESCRIPTION => "mutually exclusive: $p1 and $p2 both given" },
+							{ %mandatory_args, $p1 => 'val1', $p2 => 'val2' },
+							\%output,
+							$positions
+						);
+						# Each alone — should live
+						run_test(
+							{ _DESCRIPTION => "mutually exclusive: only $p1 given" },
+							{ %mandatory_args, $p1 => 'val1' },
+							\%output,
+							$positions
+						);
+						run_test(
+							{ _DESCRIPTION => "mutually exclusive: only $p2 given" },
+							{ %mandatory_args, $p2 => 'val2' },
+							\%output,
+							$positions
+						);
+
+					} elsif($type eq 'required_group') {
+						my @params = @{ $rel->{params} };
+						# None specified — should die
+						my %none = map { $_ => undef } @params;
+						run_test(
+							{ _STATUS => 'DIES',
+							  _DESCRIPTION => 'required_group: none of (' . join(', ', @params) . ') given' },
+							{ %mandatory_args, %none },
+							\%output,
+							$positions
+						);
+						# Each alone — should live
+						foreach my $p (@params) {
+							run_test(
+								{ _DESCRIPTION => "required_group: only $p given" },
+								{ %mandatory_args, $p => 'val' },
+								\%output,
+								$positions
+							);
+						}
+
+					} elsif($type eq 'conditional_requirement') {
+						my ($if_param, $then_param) = ($rel->{if}, $rel->{then_required});
+						# if_param set, then_param missing — should die
+						run_test(
+							{ _STATUS => 'DIES',
+							  _DESCRIPTION => "conditional: $if_param set but $then_param missing" },
+							{ %mandatory_args, $if_param => 'val', $then_param => undef },
+							\%output,
+							$positions
+						);
+						# Both set — should live
+						run_test(
+							{ _DESCRIPTION => "conditional: $if_param and $then_param both set" },
+							{ %mandatory_args, $if_param => 'val', $then_param => 'val' },
+							\%output,
+							$positions
+						);
+						# if_param absent — then_param absence should not matter
+						run_test(
+							{ _DESCRIPTION => "conditional: $if_param absent so $then_param not required" },
+							{ %mandatory_args, $then_param => undef },
+							\%output,
+							$positions
+						);
+
+					} elsif($type eq 'dependency') {
+						my ($param, $requires) = ($rel->{param}, $rel->{requires});
+						# param set, requires missing — should die
+						run_test(
+							{ _STATUS => 'DIES',
+							  _DESCRIPTION => "dependency: $param set but $requires missing" },
+							{ %mandatory_args, $param => 'val', $requires => undef },
+							\%output,
+							$positions
+						);
+						# Both set — should live
+						run_test(
+							{ _DESCRIPTION => "dependency: $param and $requires both set" },
+							{ %mandatory_args, $param => 'val', $requires => 'val' },
+							\%output,
+							$positions
+						);
+
+					} elsif($type eq 'value_constraint') {
+						my ($if_param, $then_param, $op, $val) =
+							($rel->{if}, $rel->{then}, $rel->{operator}, $rel->{value});
+						# if_param set, then_param wrong value — should die
+						my $wrong_val = ($op eq '==') ? $val + 1 : $val - 1;
+						run_test(
+							{ _STATUS => 'DIES',
+							  _DESCRIPTION => "value_constraint: $if_param set, $then_param = $wrong_val (wrong)" },
+							{ %mandatory_args, $if_param => 'val', $then_param => $wrong_val },
+							\%output,
+							$positions
+						);
+						# if_param set, then_param correct value — should live
+						run_test(
+							{ _DESCRIPTION => "value_constraint: $if_param set, $then_param = $val (correct)" },
+							{ %mandatory_args, $if_param => 'val', $then_param => $val },
+							\%output,
+							$positions
+						);
+
+					} elsif($type eq 'value_conditional') {
+						my ($if_param, $equals, $then_param) =
+							($rel->{if}, $rel->{equals}, $rel->{then_required});
+						# if_param equals trigger value, then_param missing — should die
+						run_test(
+							{ _STATUS => 'DIES',
+							  _DESCRIPTION => "value_conditional: $if_param='$equals', $then_param missing" },
+							{ %mandatory_args, $if_param => $equals, $then_param => undef },
+							\%output,
+							$positions
+						);
+						# if_param equals trigger value, then_param present — should live
+						run_test(
+							{ _DESCRIPTION => "value_conditional: $if_param='$equals', $then_param present" },
+							{ %mandatory_args, $if_param => $equals, $then_param => 'val' },
+							\%output,
+							$positions
+						);
+						# if_param different value — then_param absence should not matter
+						run_test(
+							{ _DESCRIPTION => "value_conditional: $if_param != '$equals', $then_param not required" },
+							{ %mandatory_args, $if_param => '__other__', $then_param => undef },
+							\%output,
+							$positions
+						);
+					}
+				}
+			}
 		}
 	}
 
