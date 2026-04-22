@@ -4541,17 +4541,19 @@ sub _infer_type_from_expression {
 		return { type => 'string' };
 	}
 
-	# Check for numbers
-	if ($expr =~ /^-?\d+$/) {
-		return { type => 'integer' };
-	}
-	if ($expr =~ /^-?\d+\.\d+$/) {
-		return { type => 'number' };
+	# Check for booleans first — must come before the integer check
+	# since /^-?\d+$/ would otherwise match 0 and 1 as integers
+	if($expr =~ /^[01]$/) {
+		return { type => 'boolean' };
 	}
 
-	# Check for booleans
-	if ($expr =~ /^[01]$/) {
-		return { type => 'boolean' };
+	# Check for integers
+	if($expr =~ /^-?\d+$/) {
+		return { type => 'integer' };
+	}
+
+	if ($expr =~ /^-?\d+\.\d+$/) {
+		return { type => 'number' };
 	}
 
 	# Check for objects
