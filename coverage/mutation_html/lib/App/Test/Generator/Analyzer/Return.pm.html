@@ -241,11 +241,11 @@ pre details.mutant-details ul {
 <body>
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Analyzer/Return.pm</h1>
-<div class="nav"><a href="Complexity.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
- <a href="ReturnMeta.pm.html">Next ➡</a></div><div class='summary'>
+<div class="nav"><a href="../../Generator.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="../Template.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
-TER1 (Statement): 95.65%<br>
-TER2 (Branch): 75.00%<br>
+TER1 (Statement): 100.00%<br>
+TER2 (Branch): 87.50%<br>
 TER3 (LCSAJ): n/a<br>
 Approximate LCSAJ segments: 9<br>
 </div>
@@ -418,14 +418,8 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">  126: 	# Negative lookahead ensures this does not also match
 </span><span class="">  127: 	# plain return $self (handled separately below)
 </span><span class="">  128: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  129: 	if($source =~ /return\s+\$self-&gt;\{(\w+)\}/) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_129_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  130: 		$method-&gt;add_evidence(
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  129: 	if($source =~ /return\s+\$self-&gt;\{(\w+)\}/) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  130: 		$method-&gt;add_evidence(
 </span><span class="">  131: 			category =&gt; &#39;return&#39;,
 </span><span class="">  132: 			signal   =&gt; &#39;returns_property&#39;,
 </span><span class="">  133: 			value    =&gt; $1,
@@ -438,14 +432,8 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">  140: 	# Use negative lookahead to avoid matching
 </span><span class="">  141: 	# return $self-&gt;{...} which is a property return
 </span><span class="">  142: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  143: 	if($source =~ /return\s+\$self(?!-&gt;)/) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_143_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  144: 		$method-&gt;add_evidence(
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  143: 	if($source =~ /return\s+\$self(?!-&gt;)/) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  144: 		$method-&gt;add_evidence(
 </span><span class="">  145: 			category =&gt; &#39;return&#39;,
 </span><span class="">  146: 			signal   =&gt; &#39;returns_self&#39;,
 </span><span class="">  147: 			weight   =&gt; $WEIGHT_RETURNS_SELF,
@@ -455,16 +443,10 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">  151: 	# --------------------------------------------------
 </span><span class="">  152: 	# Detect: return of a constant literal &acirc;&#128;&#148; quoted string,
 </span><span class="">  153: 	# numeric literal, or undef. All indicate the method
-</span><span class="">  154: 	# returns a fixed value rather than computed state.
+</span><span class="">  154: 	# returns a fixed value rather than a computed state.
 </span><span class="">  155: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  156: 	if($source =~ /return\s+(?:[&#39;&quot;\d]|undef\b)/) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_156_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  157: 		$method-&gt;add_evidence(
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  156: 	if($source =~ /return\s+(?:[&#39;&quot;\d]|undef\b)/) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  157: 		$method-&gt;add_evidence(
 </span><span class="">  158: 			category =&gt; &#39;return&#39;,
 </span><span class="">  159: 			signal   =&gt; &#39;returns_constant&#39;,
 </span><span class="">  160: 			weight   =&gt; $WEIGHT_RETURNS_CONSTANT,
@@ -474,7 +456,17 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">  164: 	return;
 </span><span class="">  165: }
 </span><span class="">  166: 
-</span><span class="">  167: 1;
+</span><span class="">  167: =head1 LICENCE AND COPYRIGHT
+</span><span class="">  168: 
+</span><span class="">  169: Copyright 2025-2026 Nigel Horne.
+</span><span class="">  170: 
+</span><span class="">  171: Usage is subject to GPL2 licence terms.
+</span><span class="">  172: If you use it,
+</span><span class="">  173: please let me know.
+</span><span class="">  174: 
+</span><span class="">  175: =cut
+</span><span class="">  176: 
+</span><span class="">  177: 1;
 </span></pre>
 
 <script>

@@ -242,7 +242,7 @@ pre details.mutant-details ul {
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator.pm</h1>
 <div class="nav"><a href="Generator/Mutation/NumericBoundary.pm.html">⬅ Previous</a> <a href="../../../../index.html">Index</a>
- <a href="Generator/Template.pm.html">Next ➡</a></div><div class='summary'>
+ <a href="Generator/Analyzer/Return.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 76.12%<br>
 TER2 (Branch): 61.33%<br>
@@ -2292,7 +2292,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<ul>
 				<li><b>COND_INV_1876_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 1877: 			if(scalar(keys %input) != 1) {
+<span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 1877: 			if(scalar(keys %input) != 1) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2460,14 +2460,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1940: 				$call_code = &quot;\$result = ${module}\-&gt;$function(\$input);&quot;;
 </span><span class=""> 1941: 			}
 </span><span class=""> 1942: 		} else {
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 1943: 			if($has_positions) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_1943_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 1944: 				$position_code = &quot;\$result = (scalar(\@alist) == 1) ? ${module}::$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}::$function() : ${module}::$function(\@alist);&quot;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1943: 			if($has_positions) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 1944: 				$position_code = &quot;\$result = (scalar(\@alist) == 1) ? ${module}::$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}::$function() : ${module}::$function(\@alist);&quot;;
 </span><span class=""> 1945: 			} else {
 </span><span class=""> 1946: 				$call_code = &quot;\$result = ${module}::$function(\$input);&quot;;
 </span><span class=""> 1947: 			}
@@ -4656,7 +4650,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3968: 
 </span><span class=""> 3969: 		} elsif(!defined($min)) {
 </span><span class=""> 3970: 			# Only max defined &acirc;&#128;&#148; choose range based on sign of max
-</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3971: 			if($max == $ZERO_BOUNDARY) {
+</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3971: 			if($max == $ZERO_BOUNDARY) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -4712,7 +4706,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 3981: 
 </span><span class=""> 3982: 		} elsif(!defined($max)) {
 </span><span class=""> 3983: 			# Only min defined &acirc;&#128;&#148; choose range based on sign of min
-</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 3984: 			if($min == $ZERO_BOUNDARY) {
+</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 3984: 			if($min == $ZERO_BOUNDARY) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -5323,8 +5317,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 4490: 		my $prop_code;
 </span><span class=""> 4491: 		my $prop_desc;
 </span><span class=""> 4492: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4493: 		if(!ref($prop_def)) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4494: 			# Plain string &acirc;&#128;&#148; look up as a named builtin property
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4493: 		if(!ref($prop_def)) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_4493_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 4494: 			# Plain string &acirc;&#128;&#148; look up as a named builtin property
 </span><span class=""> 4495: 			$prop_name = $prop_def;
 </span><span class=""> 4496: 
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4497: 			unless(exists($builtin_properties-&gt;{$prop_name})) {
