@@ -241,11 +241,11 @@ pre details.mutant-details ul {
 <body>
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Analyzer/ReturnMeta.pm</h1>
-<div class="nav"><a href="Complexity.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
- <a href="SideEffect.pm.html">Next ➡</a></div><div class='summary'>
+<div class="nav"><a href="Return.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="../Template.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
-TER1 (Statement): 70.45%<br>
-TER2 (Branch): 59.09%<br>
+TER1 (Statement): 100.00%<br>
+TER2 (Branch): 86.36%<br>
 TER3 (LCSAJ): n/a<br>
 Approximate LCSAJ segments: 23<br>
 </div>
@@ -452,14 +452,8 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  160: 	# in list vs scalar context, making it harder to test
 </span><span class="">  161: 	# predictably
 </span><span class="">  162: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  163: 	if($output-&gt;{_context_aware}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_163_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  164: 		push @risk, &#39;context_sensitive&#39;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  163: 	if($output-&gt;{_context_aware}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  164: 		push @risk, &#39;context_sensitive&#39;;
 </span><span class="">  165: 		$stability   -= $PENALTY_CONTEXT_SENSITIVE_STABILITY;
 </span><span class="">  166: 		$consistency -= $PENALTY_CONTEXT_SENSITIVE_CONSISTENCY;
 </span><span class="">  167: 	}
@@ -469,14 +463,8 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  171: 	# but is not typed as object, suggesting inconsistent
 </span><span class="">  172: 	# return paths
 </span><span class="">  173: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  174: 	if($output-&gt;{_returns_self} &amp;&amp; ($output-&gt;{type} // &#39;&#39;) ne &#39;object&#39;) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_174_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  175: 		push @risk, &#39;mixed_return_types&#39;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  174: 	if($output-&gt;{_returns_self} &amp;&amp; ($output-&gt;{type} // &#39;&#39;) ne &#39;object&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  175: 		push @risk, &#39;mixed_return_types&#39;;
 </span><span class="">  176: 		$consistency -= $PENALTY_MIXED_RETURN_CONSISTENCY;
 </span><span class="">  177: 	}
 </span><span class="">  178: 
@@ -485,14 +473,8 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  181: 	# without an explicit return, making error paths hard
 </span><span class="">  182: 	# to distinguish from successful empty returns
 </span><span class="">  183: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  184: 	if($output-&gt;{_error_handling}{implicit_undef}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_184_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  185: 		push @risk, &#39;implicit_error_return&#39;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  184: 	if($output-&gt;{_error_handling}{implicit_undef}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  185: 		push @risk, &#39;implicit_error_return&#39;;
 </span><span class="">  186: 		$stability -= $PENALTY_IMPLICIT_UNDEF_STABILITY;
 </span><span class="">  187: 	}
 </span><span class="">  188: 
@@ -501,14 +483,8 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  191: 	# undef on failure; lower penalty than implicit since
 </span><span class="">  192: 	# the intent is at least documented in the code
 </span><span class="">  193: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  194: 	if($output-&gt;{_error_return} &amp;&amp; $output-&gt;{_error_return} eq &#39;undef&#39;) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_194_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  195: 		push @risk, &#39;undef_on_error&#39;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  194: 	if($output-&gt;{_error_return} &amp;&amp; $output-&gt;{_error_return} eq &#39;undef&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  195: 		push @risk, &#39;undef_on_error&#39;;
 </span><span class="">  196: 		$stability -= $PENALTY_EXPLICIT_UNDEF_STABILITY;
 </span><span class="">  197: 	}
 </span><span class="">  198: 
@@ -517,14 +493,8 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  201: 	# error, which is indistinguishable from a successful
 </span><span class="">  202: 	# call that found no results
 </span><span class="">  203: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  204: 	if($output-&gt;{_error_handling}{empty_list}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_204_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  205: 		push @risk, &#39;empty_list_error&#39;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  204: 	if($output-&gt;{_error_handling}{empty_list}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  205: 		push @risk, &#39;empty_list_error&#39;;
 </span><span class="">  206: 		$consistency -= $PENALTY_EMPTY_LIST_CONSISTENCY;
 </span><span class="">  207: 	}
 </span><span class="">  208: 
@@ -532,14 +502,8 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  210: 	# Exception swallowing &acirc;&#128;&#148; function catches exceptions
 </span><span class="">  211: 	# without rethrowing, hiding failures from the caller
 </span><span class="">  212: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  213: 	if($output-&gt;{_error_handling}{exception_handling}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_213_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  214: 		push @risk, &#39;exception_swallowing&#39;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  213: 	if($output-&gt;{_error_handling}{exception_handling}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  214: 		push @risk, &#39;exception_swallowing&#39;;
 </span><span class="">  215: 		$stability -= $PENALTY_EXCEPTION_SWALLOW_STABILITY;
 </span><span class="">  216: 	}
 </span><span class="">  217: 
@@ -549,138 +513,16 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  221: 	# is applied. Only has effect if stability was already
 </span><span class="">  222: 	# reduced below 95 by earlier penalties.
 </span><span class="">  223: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  224: 	if($output-&gt;{type} &amp;&amp; $output-&gt;{type} eq &#39;boolean&#39;) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_224_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  225: 		$stability += $BONUS_BOOLEAN_STABILITY;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  224: 	if($output-&gt;{type} &amp;&amp; $output-&gt;{type} eq &#39;boolean&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  225: 		$stability += $BONUS_BOOLEAN_STABILITY;
 </span><span class="">  226: 	}
 </span><span class="">  227: 
 </span><span class="">  228: 	# Clamp both scores to the valid [0, 100] range
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  229: 	$stability   = 0   if $stability   &lt; 0;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
-					<ul>
-				<li><b>NUM_BOUNDARY_229_37_>: Numeric boundary flip < to ></b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_229_37_<=: Numeric boundary flip < to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_229_37_>=: Numeric boundary flip < to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  230: 	$stability   = 100 if $stability   &gt; 100;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
-					<ul>
-				<li><b>NUM_BOUNDARY_230_37_<: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_230_37_>=: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_230_37_<=: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  231: 	$consistency = 0   if $consistency &lt; 0;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
-					<ul>
-				<li><b>NUM_BOUNDARY_231_37_>: Numeric boundary flip < to ></b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_231_37_<=: Numeric boundary flip < to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_231_37_>=: Numeric boundary flip < to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  232: 	$consistency = 100 if $consistency &gt; 100;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
-					<ul>
-				<li><b>NUM_BOUNDARY_232_37_<: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_232_37_>=: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_232_37_<=: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  233: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  229: 	$stability   = 0   if $stability   &lt; 0;
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  230: 	$stability   = 100 if $stability   &gt; 100;
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  231: 	$consistency = 0   if $consistency &lt; 0;
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  232: 	$consistency = 100 if $consistency &gt; 100;
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="">  233: 
 </span><span class="">  234: 	return {
 </span><span class="">  235: 		stability_score   =&gt; $stability,
 </span><span class="">  236: 		consistency_score =&gt; $consistency,
