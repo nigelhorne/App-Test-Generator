@@ -4,12 +4,10 @@ use strict;
 use warnings;
 
 use Test::Most;
-use Test::Mockingbird;
+use Test::Mockingbird 0.08;
 use Readonly;
 
-BEGIN {
-	use_ok('App::Test::Generator::Analyzer::Return');
-}
+BEGIN { use_ok('App::Test::Generator::Analyzer::Return') }
 
 # --------------------------------------------------
 # Constants matching the weights declared in the
