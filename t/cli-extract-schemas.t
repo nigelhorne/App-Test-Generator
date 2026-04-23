@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::DescribeMe qw(extended);
+# use Test::DescribeMe qw(extended);
 use Test::Most;
 use IPC::Run3;
 use Symbol qw(gensym);
