@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 
+use Test::DescribeMe qw(extended);
 use IPC::Run3;
 use IPC::System::Simple qw(system);
 use Test::Most;
