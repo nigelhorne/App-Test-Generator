@@ -579,33 +579,6 @@ for my $file (sort keys %{$cover_db->{summary}}) {
 		$badge_class, $tooltip, $total
 	);
 
-	my $delta_html;
-	if(exists $deltas{$file}) {
-		my $delta = $deltas{$file};
-		my $delta_class = $delta > 0 ? 'positive' : $delta < 0 ? 'negative' : 'neutral';
-		my $delta_icon = $delta > 0 ? '&#9650;' : $delta < 0 ? '&#9660;' : '&#9679;';
-		my $prev_pct = $prev_data->{summary}{$file}{total}{percentage} // 0;
-
-		$delta_html = sprintf(
-			'<td class="%s" title="Previous: %.1f%%">%s %.1f%%</td>',
-			$delta_class, $prev_pct, $delta_icon, abs($delta)
-		);
-	} else {
-		$delta_html = '<td class="neutral" title="No previous data">&#9679;</td>';
-	}
-
-	my $source_url = $github_base . $display_file;
-	my $has_coverage = (
-		defined $info->{statement}{percentage} ||
-		defined $info->{branch}{percentage} ||
-		defined $info->{condition}{percentage} ||
-		defined $info->{subroutine}{percentage}
-	);
-
-	my $source_link = $has_coverage
-		? sprintf('<a href="%s" class="icon-link" title="View source on GitHub">&#128269;</a>', $source_url)
-		: '<span class="disabled-icon" title="No coverage data">&#128269;</span>';
-
 	# Create the sparkline - limit to last N points like the main trend chart
 	my @file_history;
 
@@ -633,6 +606,44 @@ for my $file (sort keys %{$cover_db->{summary}}) {
 	}
 
 	my $points_attr = join(',', @file_history);
+
+	my $delta_html;
+	if(exists $deltas{$file}) {
+		my $delta = $deltas{$file};
+		my $delta_class = $delta > 0 ? 'positive' : $delta < 0 ? 'negative' : 'neutral';
+		my $delta_icon  = $delta > 0 ? '&#9650;'  : $delta < 0 ? '&#9660;' : '&#9679;';
+		my $prev_pct = $prev_data->{summary}{$file}{total}{percentage} // 0;
+
+		$delta_html = sprintf(
+			'<td class="%s" title="Previous: %.1f%%">%s %.1f%%</td>',
+			$delta_class, $prev_pct, $delta_icon, abs($delta)
+		);
+	} elsif(@file_history >= 2) {
+		# No explicit previous-run record for this file, but it has
+		# sparkline history -- derive the delta from the last two points
+		my $delta = sprintf('%.1f', $file_history[-1] - $file_history[-2]);
+		my $delta_class = $delta > 0 ? 'positive' : $delta < 0 ? 'negative' : 'neutral';
+		my $delta_icon  = $delta > 0 ? '&#9650;'  : $delta < 0 ? '&#9660;' : '&#9679;';
+
+		$delta_html = sprintf(
+			'<td class="%s" title="Previous (sparkline): %.1f%%">%s %.1f%%</td>',
+			$delta_class, $file_history[-2], $delta_icon, abs($delta)
+		);
+	} else {
+		$delta_html = '<td class="neutral" title="No previous data">&#9679;</td>';
+	}
+
+	my $source_url = $github_base . $display_file;
+	my $has_coverage = (
+		defined $info->{statement}{percentage} ||
+		defined $info->{branch}{percentage} ||
+		defined $info->{condition}{percentage} ||
+		defined $info->{subroutine}{percentage}
+	);
+
+	my $source_link = $has_coverage
+		? sprintf('<a href="%s" class="icon-link" title="View source on GitHub">&#128269;</a>', $source_url)
+		: '<span class="disabled-icon" title="No coverage data">&#128269;</span>';
 
 	push @html, sprintf(
 		qq{<tr class="%s"><td><a href="%s" title="View coverage line by line" target="_blank">%s</a> %s<canvas class="sparkline" width="80" height="20" data-points="$points_attr"></canvas></td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%.1f</td><td>%s</td>%s</tr>},

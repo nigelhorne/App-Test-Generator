@@ -2,7 +2,6 @@ package App::Test::Generator::Analyzer::Complexity;
 
 use strict;
 use warnings;
-use Carp    qw(croak);
 use Readonly;
 
 # --------------------------------------------------
