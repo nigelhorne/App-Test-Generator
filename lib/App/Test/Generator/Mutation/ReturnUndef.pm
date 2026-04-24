@@ -57,9 +57,14 @@ True if the node is a C<PPI::Statement::Return>, false otherwise.
 sub applies_to {
 	my ($self, $node) = @_;
 
-	# This strategy only targets return statements — other node
-	# types cannot produce return-undef mutants
-	return $node->isa('PPI::Statement::Return');
+	# PPI >= 1.270 classifies return as PPI::Statement::Break
+	# rather than the dedicated PPI::Statement::Return class
+	return 0 unless $node->isa('PPI::Statement::Break');
+
+	# Confirm it is specifically a return statement and not
+	# last, next, or redo which are also PPI::Statement::Break
+	my $first = $node->schild(0) or return 0;
+	return $first->content eq 'return';
 }
 
 =head2 mutate
@@ -143,8 +148,16 @@ C<return;> statements are skipped as they already return undef.
 sub mutate {
 	my ($self, $doc) = @_;
 
-	# Find all return statements in the document
-	my $returns = $doc->find('PPI::Statement::Return') || [];
+	# PPI >= 1.270 classifies return statements as PPI::Statement::Break
+	# rather than PPI::Statement::Return -- use a custom predicate
+	my $returns = $doc->find(sub {
+		my $node = $_[1];
+		# Match Break nodes that are specifically return statements
+		return 0 unless $node->isa('PPI::Statement::Break');
+		my $first = $node->schild(0) or return 0;
+		return $first->content eq 'return';
+	}) || [];
+
 	my @mutants;
 
 	for my $ret (@{$returns}) {
@@ -177,8 +190,29 @@ sub mutate {
 				transform => sub {
 					my $doc  = $_[0];
 
-					# Find all return statements in the fresh document copy
-					my $rets = $doc->find('PPI::Statement::Return') || [];
+					# PPI >= 1.270 uses PPI::Statement::Break for return
+					my $rets = $doc->find(sub {
+						my $node = $_[1];
+						# Match Break nodes that are specifically return statements
+						return 0 unless $node->isa('PPI::Statement::Break');
+						my $first = $node->schild(0) or return 0;
+						return $first->content eq 'return';
+					}) || [];
+
+					for my $ret (@{$rets}) {
+						next unless $ret->line_number   == $line;
+						next unless $ret->column_number == $col;
+
+						my $expr = $ret->schild(1) or last;
+
+						# Skip bare semicolon — PPI may include the statement
+						# terminator as a significant child on bare returns
+						next if $expr->isa('PPI::Token::Structure')
+							&& $expr->content eq ';';
+
+						$expr->set_content('undef');
+						last;
+					}
 
 					for my $ret (@{$rets}) {
 						# Match by line and column to avoid mutating
