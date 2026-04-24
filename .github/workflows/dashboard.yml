@@ -130,6 +130,8 @@ jobs:
           # We use --intent-to-add via 'git add -N' first so that
           # new untracked files are included in 'git diff --stat'.
           git add t/mutant_*.t t/conf/mutant_*.yml 2>/dev/null || true
+          # Force add any untracked files matching the pattern
+          find t -name 'mutant_*.t' -o -name 'mutant_*.yml' | xargs git add 2>/dev/null || true
           # Only commit if there is actually something staged —
           # the '|| true' prevents the step failing on a clean run
           # where no new stubs were generated
