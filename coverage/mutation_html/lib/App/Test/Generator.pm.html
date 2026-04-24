@@ -242,7 +242,7 @@ pre details.mutant-details ul {
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator.pm</h1>
 <div class="nav"><a href="Generator/Mutation/NumericBoundary.pm.html">⬅ Previous</a> <a href="../../../../index.html">Index</a>
- <a href="Generator/Analyzer/Return.pm.html">Next ➡</a></div><div class='summary'>
+ <a href="Generator/SchemaExtractor.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 76.12%<br>
 TER2 (Branch): 61.13%<br>
@@ -2414,7 +2414,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1926: 			} elsif(defined($accessor{type}) &amp;&amp; ($accessor{type} eq &#39;getset&#39;)) {
 </span><span class=""> 1927: 				$call_code .= &quot;ok(\$obj-&gt;$function() eq \$result, &#39;test getset accessor&#39;);&quot;
 </span><span class=""> 1928: 			}
-</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 1929: 			if(scalar(keys %input) == 0) {
+</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 1929: 			if(scalar(keys %input) == 0) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2981,14 +2981,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 2377: 	if($has_positions) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 2378: 		for my $param (keys %{$schema-&gt;{input}}) {
 </span><span class=""> 2379: 			my $spec = $schema-&gt;{input}{$param};
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 2380: 			unless(ref($spec) eq &#39;HASH&#39; &amp;&amp; defined($spec-&gt;{position})) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_2380_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 2381: 				croak &quot;Parameter &#39;$param&#39; missing position &quot; .
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 2380: 			unless(ref($spec) eq &#39;HASH&#39; &amp;&amp; defined($spec-&gt;{position})) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 2381: 				croak &quot;Parameter &#39;$param&#39; missing position &quot; .
 </span><span class=""> 2382: 					&#39;(all params must have positions if any do)&#39;;
 </span><span class=""> 2383: 			}
 </span><span class=""> 2384: 		}
