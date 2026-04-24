@@ -144,6 +144,14 @@ Directory containing test files.
 
 Defaults to C<t>.
 
+=head2 --changed_only
+
+Only mutate files that were changed in the most recent commit, as
+determined by C<git diff --name-only HEAD~1 HEAD>. Files not changed
+in the current commit retain their mutation results from the previous
+dashboard run. This significantly reduces CI runtime while preserving
+accuracy for the files that actually changed.
+
 =head2 --min-score <int>
 
 Minimum acceptable mutation score (percentage).
@@ -369,6 +377,7 @@ Readonly my $MUTATION_LEVEL_FULL => 'full';
 Readonly my $MUTATION_LEVEL_FAST => 'fast';
 
 my %opt = (
+	changed_only   => 0,
 	lib            => 'lib',
 	tests          => 't',
 	min_score      => 0,
@@ -384,6 +393,7 @@ my %opt = (
 
 # Exit code 3 is "invalid command-line options" per the EXIT CODES POD section
 GetOptions(
+	'changed_only'     => \$opt{changed_only},
 	'lib=s'            => \$opt{lib},
 	'file=s'           => \$opt{file},
 	'tests=s'          => \$opt{tests},
@@ -406,10 +416,8 @@ pod2usage(-exitval => 0, -verbose => 2) if $opt{man};
 
 # Warn when reserved-for-future-use options are supplied so the
 # caller knows they have no effect yet rather than silently ignoring
-warn "--fail-fast is reserved for future use and has no effect\n"
-	if $opt{fail_fast};
-warn "--timeout is reserved for future use and has no effect\n"
-	if $opt{timeout};
+warn "--fail-fast is reserved for future use and has no effect" if $opt{fail_fast};
+warn "--timeout is reserved for future use and has no effect" if $opt{timeout};
 
 # -------------------------
 # Collect Files
@@ -419,6 +427,20 @@ my @files;
 
 if($opt{file}) {
 	push @files, $opt{file};
+} elsif($opt{changed_only}) {
+	# Only mutate files changed in the current commit
+	my $diff = `git diff --name-only HEAD~1 HEAD 2>/dev/null`;
+	my @changed = grep { /^lib\/.*\.pm$/ && -f $_ } split /\n/, $diff;
+
+	if(@changed) {
+		print "Changed-only mode: mutating ", scalar(@changed),
+			" file(s)\n" if $opt{verbose};
+		@files = @changed;
+	} else {
+		# No lib/*.pm files changed -- nothing to mutate
+		print "No lib/*.pm files changed in last commit -- skipping mutation\n";
+		exit 0;
+	}
 } else {
 	find(
 		sub {
