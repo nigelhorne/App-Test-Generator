@@ -94,6 +94,18 @@ jobs:
         run: |
           bin/generate-test-dashboard
 
+      - name: Save updated mutation results
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@github.com"
+          git add mutation.json
+          if git diff --cached --quiet; then
+            echo "No mutation.json changes to commit"
+          else
+            git commit -m "Update mutation results (${SNAPSHOT_TIMESTAMP} ${SNAPSHOT_SHA})"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+
       - name: Add new coverage snapshot to archive
         run: |
           mkdir -p coverage_history

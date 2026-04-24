@@ -93,16 +93,16 @@ echo "${LCSAJ_TARGETS:0:500}"
 echo "Running mutation analysis..."
 mkdir -p mutation_html/lib cover_html
 test-generator-mutate \
-    -v \
-    --lib lib \
-    --tests t \
-    --json mutation.json \
-    --mutation_level=fast \
-    --cover_json cover_html/cover.json \
-    --lcsaj_root cover_html/mutation_html/lib \
-    --changed_only \
-    --lcsaj_hits cover_html/lcsaj_hits.json < /dev/null
-    # --min-score 85
+	-v \
+	--lib lib \
+	--tests t \
+	--json mutation.json \
+	--mutation_level=fast \
+	--cover_json cover_html/cover.json \
+	--lcsaj_root cover_html/mutation_html/lib \
+	--changed_only \
+	--lcsaj_hits cover_html/lcsaj_hits.json < /dev/null
+	# --min-score 85
 
 set -e
 
