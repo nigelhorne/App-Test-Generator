@@ -95,7 +95,11 @@ sub mutate {
 
 	for my $stmt (@{$compounds}) {
 		# Only process if and unless statements
-		my $type = $stmt->type || '';
+		# Use the actual first token content rather than ->type() since
+		# PPI >= 1.270 returns 'if' for both if and unless via ->type()
+		my $first_word = $stmt->schild(0);
+		next unless $first_word && $first_word->isa('PPI::Token::Word');
+		my $type = $first_word->content();
 		next unless $type eq 'if' || $type eq 'unless';
 
 		# Verify the statement has a condition block to invert
