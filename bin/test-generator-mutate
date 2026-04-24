@@ -437,8 +437,9 @@ if($opt{file}) {
 			" file(s)\n" if $opt{verbose};
 		@files = @changed;
 	} else {
-		# No lib/*.pm files changed -- nothing to mutate
-		print "No lib/*.pm files changed in last commit -- skipping mutation\n";
+		# No lib/*.pm files changed -- retain previous results unchanged
+		print "No lib/*.pm files changed -- retaining previous mutation results\n";
+		# mutation.json is left as-is from the previous run
 		exit 0;
 	}
 } else {

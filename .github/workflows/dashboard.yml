@@ -52,6 +52,7 @@ jobs:
           cpanm --skip-satisfied --notest --installdeps .
           cpanm -iqn --skip-satisfied \
               Test::Most \
+              Test::Mockingbird \
               'Devel::Cover@1.51' \
               Devel::Cover::Report::Html \
               File::Slurp \
@@ -75,6 +76,15 @@ jobs:
       #   run: |
       #     cpanm Perl::Critic
       #     perlcritic --verbose 5 lib || true
+
+      - name: Cache mutation results
+        uses: actions/cache@v4
+        with:
+          path: mutation.json
+          key: mutation-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            mutation-${{ github.ref }}-
+            mutation-
 
       - name: Generate dashboard
         env:
