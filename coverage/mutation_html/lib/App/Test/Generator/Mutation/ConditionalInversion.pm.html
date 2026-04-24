@@ -241,8 +241,8 @@ pre details.mutant-details ul {
 <body>
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Mutation/ConditionalInversion.pm</h1>
-<div class="nav"><a href="../../../../../../index.html">Index</a>
-</div><div class='summary'>
+<div class="nav"><a href="BooleanNegation.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="ReturnUndef.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 96.00%<br>
 TER2 (Branch): 61.11%<br>
@@ -419,13 +419,39 @@ Approximate LCSAJ segments: 19<br>
 </span><span class="">  127: 				transform   =&gt; sub {
 </span><span class="">  128: 					my ($doc) = @_;
 </span><span class="">  129: 					my $stmts = $doc-&gt;find(&#39;PPI::Statement::Compound&#39;) || [];
-</span><span class="">  130: 
-</span><span class="">  131: 					for my $stmt (@{$stmts}) {
-</span><span class="">  132: 						# Match by line and column to avoid mutating
+</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  130: 
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_130_40_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  131: 					for my $stmt (@{$stmts}) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_131_40_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  132: 						# Match by line and column to avoid mutating
 </span><span class="">  133: 						# the wrong conditional on the same line
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  134: 						next unless $stmt-&gt;location-&gt;[0] == $line;
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  135: 						next unless $stmt-&gt;location-&gt;[1] == $col;
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  136: 
+</span><span class="">  134: 						next unless $stmt-&gt;location-&gt;[0] == $line;
+</span><span class="">  135: 						next unless $stmt-&gt;location-&gt;[1] == $col;
+</span><span class="">  136: 
 </span><span class="">  137: 						# Flip the leading keyword
 </span><span class="">  138: 						my $first = $stmt-&gt;schild(0);
 </span><span class="">  139: 						next unless $first &amp;&amp; $first-&gt;isa(&#39;PPI::Token::Word&#39;);
@@ -433,20 +459,26 @@ Approximate LCSAJ segments: 19<br>
 </span><span class="">  141: 						last;
 </span><span class="">  142: 					}
 </span><span class="">  143: 				},
-</span><span class="">  144: 			);
-</span><span class="">  145: 		};
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  144: 			);
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_144_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  145: 		};
 </span><span class="">  146: 
 </span><span class="">  147: 		# Report construction failures clearly rather than silently dropping
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  148: 		if($@ || !$mutant) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  149: 			warn &quot;Failed to construct mutant COND_INV_${line}_${col}: $@\n&quot; if $@;
+</span><span class="">  148: 		if($@ || !$mutant) {
+</span><span class="">  149: 			warn &quot;Failed to construct mutant COND_INV_${line}_${col}: $@\n&quot; if $@;
 </span><span class="">  150: 			next;
 </span><span class="">  151: 		}
 </span><span class="">  152: 
 </span><span class="">  153: 		push @mutants, $mutant;
 </span><span class="">  154: 	}
 </span><span class="">  155: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  156: 	return @mutants;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  157: }
+</span><span class="">  156: 	return @mutants;
+</span><span class="">  157: }
 </span><span class="">  158: 
 </span><span class="">  159: 1;
 </span></pre>
