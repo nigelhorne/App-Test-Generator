@@ -579,12 +579,27 @@ unless($opt{quiet}) {
 }
 
 if($opt{json}) {
+	if($opt{changed_only} && -f $opt{json}) {
+		my $prev = eval { decode_json(read_file($opt{json})) } // {};
+		# Keep survived/killed entries for files NOT in this run
+		my %mutated_files = map { $_ => 1 } @files;
+		my @prev_survived = grep { !$mutated_files{ $_->{file} // '' } } @{ $prev->{survived} || [] };
+		my @prev_killed = grep { !$mutated_files{ $_->{file} // '' } } @{ $prev->{killed} || [] };
+
+		# Merge previous data with current run
+		unshift @survivors,      @prev_survived;
+		unshift @killed_mutants, @prev_killed;
+
+		# Recalculate totals to include previous data
+		$total  += scalar(@prev_survived) + scalar(@prev_killed);
+		$killed += scalar(@prev_killed);
+		$score   = $total ? sprintf('%.2f', ($killed / $total) * 100) : 100;
+	}
+
 	# Sort survivors worst-first so the most impactful gaps
 	# appear at the top of the generated test stub file
 	@survivors = sort { $b->{priority} <=> $a->{priority} } @survivors;
-
 	open(my $fh, '>', $opt{json}) or die "Cannot write $opt{json}: $!";
-
 	print $fh encode_json({
 		score          => $score,
 		total          => $total,
@@ -593,7 +608,6 @@ if($opt{json}) {
 		killed         => \@killed_mutants,
 		survived       => \@survivors,
 	});
-
 	close $fh;
 }
 
