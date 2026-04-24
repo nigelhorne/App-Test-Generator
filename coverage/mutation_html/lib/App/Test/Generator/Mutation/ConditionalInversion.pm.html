@@ -241,13 +241,13 @@ pre details.mutant-details ul {
 <body>
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Mutation/ConditionalInversion.pm</h1>
-<div class="nav"><a href="BooleanNegation.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
- <a href="ReturnUndef.pm.html">Next ➡</a></div><div class='summary'>
+<div class="nav"><a href="../../../../../../index.html">Index</a>
+</div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
-TER1 (Statement): 75.00%<br>
-TER2 (Branch): 25.00%<br>
+TER1 (Statement): 96.00%<br>
+TER2 (Branch): 61.11%<br>
 TER3 (LCSAJ): n/a<br>
-Approximate LCSAJ segments: 17<br>
+Approximate LCSAJ segments: 19<br>
 </div>
 
     <div class="legend">
@@ -387,96 +387,68 @@ Approximate LCSAJ segments: 17<br>
 </span><span class="">   95: 
 </span><span class="">   96: 	for my $stmt (@{$compounds}) {
 </span><span class="">   97: 		# Only process if and unless statements
-</span><span class="">   98: 		my $type = $stmt-&gt;type || &#39;&#39;;
-</span><span class="">   99: 		next unless $type eq &#39;if&#39; || $type eq &#39;unless&#39;;
-</span><span class="">  100: 
-</span><span class="">  101: 		# Verify the statement has a condition block to invert
-</span><span class="">  102: 		my ($cond) = grep { $_-&gt;isa(&#39;PPI::Structure::Condition&#39;) } $stmt-&gt;children;
-</span><span class="">  103: 		next unless $cond;
+</span><span class="">   98: 		# Use the actual first token content rather than -&gt;type() since
+</span><span class="">   99: 		# PPI &gt;= 1.270 returns &#39;if&#39; for both if and unless via -&gt;type()
+</span><span class="">  100: 		my $first_word = $stmt-&gt;schild(0);
+</span><span class="">  101: 		next unless $first_word &amp;&amp; $first_word-&gt;isa(&#39;PPI::Token::Word&#39;);
+</span><span class="">  102: 		my $type = $first_word-&gt;content();
+</span><span class="">  103: 		next unless $type eq &#39;if&#39; || $type eq &#39;unless&#39;;
 </span><span class="">  104: 
-</span><span class="">  105: 		# Capture location for precise targeting in the transform closure
-</span><span class="">  106: 		my $line = $stmt-&gt;location-&gt;[0];
-</span><span class="">  107: 		my $col  = $stmt-&gt;location-&gt;[1];
+</span><span class="">  105: 		# Verify the statement has a condition block to invert
+</span><span class="">  106: 		my ($cond) = grep { $_-&gt;isa(&#39;PPI::Structure::Condition&#39;) } $stmt-&gt;children;
+</span><span class="">  107: 		next unless $cond;
 </span><span class="">  108: 
-</span><span class="">  109: 		# Determine what the keyword flips to
-</span><span class="">  110: 		my $flipped = $type eq &#39;if&#39; ? &#39;unless&#39; : &#39;if&#39;;
-</span><span class="">  111: 
-</span><span class="">  112: 		my $mutant = eval {
-</span><span class="">  113: 			App::Test::Generator::Mutant-&gt;new(
-</span><span class="">  114: 				id          =&gt; &quot;COND_INV_${line}_${col}&quot;,
-</span><span class="">  115: 				group       =&gt; &quot;COND_INV:$line&quot;,
-</span><span class="">  116: 				description =&gt; &quot;Invert condition $type to $flipped&quot;,
-</span><span class="">  117: 				line        =&gt; $line,
-</span><span class="">  118: 				type        =&gt; &#39;boolean&#39;,
-</span><span class="">  119: 				original    =&gt; $cond-&gt;content(),
-</span><span class="">  120: 
-</span><span class="">  121: 				# Closure captures line, col and flipped so it targets
-</span><span class="">  122: 				# exactly the right statement in the document copy
-</span><span class="">  123: 				transform   =&gt; sub {
-</span><span class="">  124: 					my ($doc) = @_;
-</span><span class="">  125: 					my $stmts = $doc-&gt;find(&#39;PPI::Statement::Compound&#39;) || [];
-</span><span class="">  126: 
-</span><span class="">  127: 					for my $stmt (@{$stmts}) {
-</span><span class="">  128: 						# Match by line and column to avoid mutating
-</span><span class="">  129: 						# the wrong conditional on the same line
-</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  130: 						next unless $stmt-&gt;location-&gt;[0] == $line;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>NUM_BOUNDARY_130_40_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  131: 						next unless $stmt-&gt;location-&gt;[1] == $col;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>NUM_BOUNDARY_131_40_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  132: 
-</span><span class="">  133: 						# Flip the leading keyword
-</span><span class="">  134: 						my $first = $stmt-&gt;schild(0);
-</span><span class="">  135: 						next unless $first &amp;&amp; $first-&gt;isa(&#39;PPI::Token::Word&#39;);
-</span><span class="">  136: 						$first-&gt;set_content($flipped);
-</span><span class="">  137: 						last;
-</span><span class="">  138: 					}
-</span><span class="">  139: 				},
-</span><span class="">  140: 			);
-</span><span class="">  141: 		};
-</span><span class="">  142: 
-</span><span class="">  143: 		# Report construction failures clearly rather than silently dropping
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  144: 		if($@ || !$mutant) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_144_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  145: 			warn &quot;Failed to construct mutant COND_INV_${line}_${col}: $@\n&quot; if $@;
-</span><span class="">  146: 			next;
-</span><span class="">  147: 		}
-</span><span class="">  148: 
-</span><span class="">  149: 		push @mutants, $mutant;
-</span><span class="">  150: 	}
-</span><span class="">  151: 
-</span><span class="">  152: 	return @mutants;
-</span><span class="">  153: }
-</span><span class="">  154: 
-</span><span class="">  155: 1;
+</span><span class="">  109: 		# Capture location for precise targeting in the transform closure
+</span><span class="">  110: 		my $line = $stmt-&gt;location-&gt;[0];
+</span><span class="">  111: 		my $col  = $stmt-&gt;location-&gt;[1];
+</span><span class="">  112: 
+</span><span class="">  113: 		# Determine what the keyword flips to
+</span><span class="">  114: 		my $flipped = $type eq &#39;if&#39; ? &#39;unless&#39; : &#39;if&#39;;
+</span><span class="">  115: 
+</span><span class="">  116: 		my $mutant = eval {
+</span><span class="">  117: 			App::Test::Generator::Mutant-&gt;new(
+</span><span class="">  118: 				id          =&gt; &quot;COND_INV_${line}_${col}&quot;,
+</span><span class="">  119: 				group       =&gt; &quot;COND_INV:$line&quot;,
+</span><span class="">  120: 				description =&gt; &quot;Invert condition $type to $flipped&quot;,
+</span><span class="">  121: 				line        =&gt; $line,
+</span><span class="">  122: 				type        =&gt; &#39;boolean&#39;,
+</span><span class="">  123: 				original    =&gt; $cond-&gt;content(),
+</span><span class="">  124: 
+</span><span class="">  125: 				# Closure captures line, col and flipped so it targets
+</span><span class="">  126: 				# exactly the right statement in the document copy
+</span><span class="">  127: 				transform   =&gt; sub {
+</span><span class="">  128: 					my ($doc) = @_;
+</span><span class="">  129: 					my $stmts = $doc-&gt;find(&#39;PPI::Statement::Compound&#39;) || [];
+</span><span class="">  130: 
+</span><span class="">  131: 					for my $stmt (@{$stmts}) {
+</span><span class="">  132: 						# Match by line and column to avoid mutating
+</span><span class="">  133: 						# the wrong conditional on the same line
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  134: 						next unless $stmt-&gt;location-&gt;[0] == $line;
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  135: 						next unless $stmt-&gt;location-&gt;[1] == $col;
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  136: 
+</span><span class="">  137: 						# Flip the leading keyword
+</span><span class="">  138: 						my $first = $stmt-&gt;schild(0);
+</span><span class="">  139: 						next unless $first &amp;&amp; $first-&gt;isa(&#39;PPI::Token::Word&#39;);
+</span><span class="">  140: 						$first-&gt;set_content($flipped);
+</span><span class="">  141: 						last;
+</span><span class="">  142: 					}
+</span><span class="">  143: 				},
+</span><span class="">  144: 			);
+</span><span class="">  145: 		};
+</span><span class="">  146: 
+</span><span class="">  147: 		# Report construction failures clearly rather than silently dropping
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  148: 		if($@ || !$mutant) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  149: 			warn &quot;Failed to construct mutant COND_INV_${line}_${col}: $@\n&quot; if $@;
+</span><span class="">  150: 			next;
+</span><span class="">  151: 		}
+</span><span class="">  152: 
+</span><span class="">  153: 		push @mutants, $mutant;
+</span><span class="">  154: 	}
+</span><span class="">  155: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  156: 	return @mutants;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  157: }
+</span><span class="">  158: 
+</span><span class="">  159: 1;
 </span></pre>
 
 <script>
