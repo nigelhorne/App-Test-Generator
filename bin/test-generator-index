@@ -3214,6 +3214,12 @@ sub _generate_mutant_tests {
 	my $timestamp = strftime('%Y%m%d_%H%M%S', localtime);
 	my $filename  = File::Spec->catfile($test_dir, "mutant_${timestamp}.t");
 
+	printf "DEBUG: survived=%d stub=%d hint=%d dir=%s\n",
+		scalar(@{ $mutation_db->{survived} || [] }),
+		scalar(@stub_mutants),
+		scalar(@hint_mutants),
+		$test_dir // 'undef';
+
 	if(-e $filename) {
 		warn "Mutant test file $filename already exists, skipping generation\n";
 		return undef;

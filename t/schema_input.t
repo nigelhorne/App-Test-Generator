@@ -3,7 +3,7 @@ use warnings;
 
 use File::Temp qw(tempdir tempfile);
 use File::Spec;
-use Test::DescribeMe qw(extended);
+# use Test::DescribeMe qw(extended);
 use Test::Most;
 use IPC::Run3 qw(run3);
 
