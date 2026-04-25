@@ -344,15 +344,21 @@ sub _cfg_to_lcsaj {
 sub _save_lcsaj {
 	my ($file, $dir, $paths) = @_;
 
+	# Derive the module-relative path (strip leading .../lib/ prefix)
+	my $rel = $file;
+	$rel =~ s{^.*/lib/}{};	# e.g. App/Test/Generator/Mutation/BooleanNegation.pm
+
+	my $base    = basename($rel);
+	# Mirror the directory structure expected by _lcsaj_coverage_for_file:
+	# $dir / $rel.lcsaj / $base.lcsaj.json
+	my $subdir  = File::Spec->catfile($dir, "$rel.lcsaj");
+
 	# Create the output directory if it does not exist
-	make_path($dir) unless -d $dir;
+	make_path($subdir) unless -d $subdir;
 
-	# Derive output filename from the source file basename
-	my $base = basename($file);
-	my $out  = File::Spec->catfile($dir, "$base.lcsaj.json");
+	my $out = File::Spec->catfile($subdir, "$base.lcsaj.json");
 
-	open my $fh, '>', $out
-		or croak "Cannot write LCSAJ output to $out: $!";
+	open my $fh, '>', $out or croak "Cannot write LCSAJ output to $out: $!";
 	print $fh encode_json($paths);
 	close $fh;
 }
