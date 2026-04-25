@@ -20,15 +20,28 @@ https://pjcj.net
 <h1>File Coverage</h1>
 <table>
 <tr><td class="h" align="right">File:</td><td align="left">blib/lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm</td></tr>
-<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">38.9%</td></tr>
+<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">46.5%</td></tr>
 </table>
 <div><br/></div>
 <table>
 <tr><th>line</th><th>stmt</th><th>bran</th><th>cond</th><th>sub</th><th>time</th><th>code</th></tr>
 <tr><td class="h">1</td><td></td><td></td><td></td><td></td><td></td><td class="s">package Devel::App::Test::Generator::LCSAJ::Runtime;</td></tr>
-<tr><td class="h">2</td><td colspan="6"></td></tr><tr><td class="h">3</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L3">1</a></div></td><td><div>1161</div><div>1</div><div>15</div></td><td class="s">use strict;</td></tr>
-<tr><td class="h">4</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L4">1</a></div></td><td><div>2</div><div>1</div><div>35</div></td><td class="s">use warnings;</td></tr>
-<tr><td class="h">5</td><td colspan="6"></td></tr><tr><td class="h">6 - 41</td><td colspan="5"></td><td class="s"><pre>=head1 NAME
+<tr><td class="h">2</td><td colspan="6"></td></tr><tr><td class="h">3</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L3">1</a></div></td><td><div>879</div><div>1</div><div>11</div></td><td class="s">use strict;</td></tr>
+<tr><td class="h">4</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L4">1</a></div></td><td><div>2</div><div>1</div><div>27</div></td><td class="s">use warnings;</td></tr>
+<tr><td class="h">5</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L5">1</a></div></td><td><div>2</div><div>1</div><div>4</div></td><td class="s">use autodie&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;qw(open close);</td></tr>
+<tr><td class="h">6</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L6">1</a></div></td><td><div>218</div><div>1</div><div>25</div></td><td class="s">use Carp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;qw(croak);</td></tr>
+<tr><td class="h">7</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L7">1</a></div></td><td><div>2</div><div>0</div><div>43</div></td><td class="s">use Cwd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;qw(abs_path);</td></tr>
+<tr><td class="h">8</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L8">1</a></div></td><td><div>2</div><div>1</div><div>19</div></td><td class="s">use JSON::MaybeXS;</td></tr>
+<tr><td class="h">9</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L9">1</a></div></td><td><div>2</div><div>1</div><div>13</div></td><td class="s">use File::Path&nbsp;&nbsp;qw(make_path);</td></tr>
+<tr><td class="h">10</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L10">1</a></div></td><td><div>2</div><div>0</div><div>99</div></td><td class="s">use Readonly;</td></tr>
+<tr><td class="h">11</td><td colspan="6"></td></tr><tr><td class="h">12</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">13</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Output directory for per-process hit JSON files.</td></tr>
+<tr><td class="h">14</td><td></td><td></td><td></td><td></td><td></td><td class="s"># One file is written per process (PID) so parallel</td></tr>
+<tr><td class="h">15</td><td></td><td></td><td></td><td></td><td></td><td class="s"># test runs do not overwrite each other&#39;s output.</td></tr>
+<tr><td class="h">16</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">17</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $OUT_DIR =&gt; &#39;cover_html/lcsaj_hits&#39;;</td></tr>
+<tr><td class="h">18</td><td colspan="6"></td></tr><tr><td class="h">19</td><td></td><td></td><td></td><td></td><td></td><td class="s">our $VERSION = &#39;0.33&#39;;</td></tr>
+<tr><td class="h">20</td><td colspan="6"></td></tr><tr><td class="h">21 - 57</td><td colspan="5"></td><td class="s"><pre>=head1 NAME
 
 Devel::App::Test::Generator::LCSAJ::Runtime - Debugger backend for LCSAJ coverage
 
@@ -41,15 +54,16 @@ Devel::App::Test::Generator::LCSAJ::Runtime - Debugger backend for LCSAJ coverag
 This module is loaded as a Perl debugger backend using the C&lt;-d:Module&gt; flag.
 
 When Perl sees C&lt;-d:App::Test::Generator::LCSAJ::Runtime&gt; it prepends C&lt;Devel::&gt;
-and loads C&lt;Devel/App/Test/Generator/LCSAJ/Runtime.pm&gt; from C&lt;@INC&gt;.&nbsp;&nbsp;The file
+and loads C&lt;Devel/App/Test/Generator/LCSAJ/Runtime.pm&gt; from C&lt;@INC&gt;. The file
 must therefore live at that path &acirc;&#128;&#148; typically
 C&lt;lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm&gt;.
 
 Perl automatically calls C&lt;DB::DB&gt; before executing each statement while the
-debugger is active.&nbsp;&nbsp;We record (file, line) pairs to build runtime hit data for
+debugger is active. We record (file, line) pairs to build runtime hit data for
 later LCSAJ analysis.
 
-The results are written to C&lt;cover_html/lcsaj_hits.json&gt; at process exit.
+Results are written to C&lt;cover_html/lcsaj_hits/hits_PID.json&gt; at process exit,
+one file per process so that parallel test runs do not overwrite each other.
 
 =head1 ENVIRONMENT
 
@@ -58,93 +72,143 @@ The results are written to C&lt;cover_html/lcsaj_hits.json&gt; at process exit.
 =item LCSAJ_TARGETS
 
 Optional colon-separated list of B&lt;absolute&gt; paths (as produced by C&lt;realpath&gt;)
-to restrict recording to specific source files.&nbsp;&nbsp;When empty or unset every
+to restrict recording to specific source files. When empty or unset every
 non-internal file is recorded.
 
 =back
 
 =cut</pre></td></tr>
-<tr><td class="h">42</td><td colspan="6"></td></tr><tr><td class="h">43</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L43">1</a></div></td><td><div>2</div><div>0</div><div>30</div></td><td class="s">use Cwd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;qw(abs_path);</td></tr>
-<tr><td class="h">44</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L44">1</a></div></td><td><div>2</div><div>1</div><div>21</div></td><td class="s">use JSON::MaybeXS;</td></tr>
-<tr><td class="h">45</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L45">1</a></div></td><td><div>2</div><div>1</div><div>91</div></td><td class="s">use File::Path qw(make_path);</td></tr>
-<tr><td class="h">46</td><td colspan="6"></td></tr><tr><td class="h">47</td><td></td><td></td><td></td><td></td><td></td><td class="s"># ---------------------------------------------------------------------------</td></tr>
-<tr><td class="h">48</td><td></td><td></td><td></td><td></td><td></td><td class="s"># %HITS&nbsp;&nbsp;- { normalised_path =&gt; { line_number =&gt; hit_count } }</td></tr>
-<tr><td class="h">49</td><td></td><td></td><td></td><td></td><td></td><td class="s"># %TARGET - set of normalised paths we care about (empty == record everything)</td></tr>
-<tr><td class="h">50</td><td></td><td></td><td></td><td></td><td></td><td class="s"># ---------------------------------------------------------------------------</td></tr>
-<tr><td class="h">51</td><td colspan="6"></td></tr><tr><td class="h">52</td><td></td><td></td><td></td><td></td><td></td><td class="s">our %HITS;</td></tr>
-<tr><td class="h">53</td><td></td><td></td><td></td><td></td><td></td><td class="s">our %TARGET;</td></tr>
-<tr><td class="h">54</td><td colspan="6"></td></tr><tr><td class="h">55</td><td></td><td></td><td></td><td></td><td></td><td class="s"># ---------------------------------------------------------------------------</td></tr>
-<tr><td class="h">56</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _normalize($path)</td></tr>
-<tr><td class="h">57</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">58</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Convert an absolute or build-tree path to a canonical lib-relative form so</td></tr>
-<tr><td class="h">59</td><td></td><td></td><td></td><td></td><td></td><td class="s"># that paths recorded at runtime match the targets derived from LCSAJ_TARGETS.</td></tr>
-<tr><td class="h">60</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">61</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Examples:</td></tr>
-<tr><td class="h">62</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;/home/user/proj/blib/lib/Foo/Bar.pm&nbsp;&nbsp;-&gt;&nbsp;&nbsp;lib/Foo/Bar.pm</td></tr>
-<tr><td class="h">63</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;/home/user/proj/lib/Foo/Bar.pm&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&gt;&nbsp;&nbsp;lib/Foo/Bar.pm</td></tr>
-<tr><td class="h">64</td><td></td><td></td><td></td><td></td><td></td><td class="s"># ---------------------------------------------------------------------------</td></tr>
-<tr><td class="h">65</td><td colspan="6"></td></tr><tr><td class="h">66</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _normalize {</td></tr>
-<tr><td class="h">67</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L67">0</a></div></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;my ($f) = @_;</td></tr>
-<tr><td class="h">68</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;# Strip everything up to and including the first blib/lib/ or lib/ segment.</td></tr>
-<tr><td class="h">69</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;$f =~ s{^.*/blib/lib/}{lib/};</td></tr>
-<tr><td class="h">70</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;$f =~ s{^.*/lib/}{lib/};</td></tr>
-<tr><td class="h">71</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;return $f;</td></tr>
-<tr><td class="h">72</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">73</td><td colspan="6"></td></tr><tr><td class="h">74</td><td></td><td></td><td></td><td></td><td></td><td class="s"># ---------------------------------------------------------------------------</td></tr>
-<tr><td class="h">75</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Populate %TARGET from LCSAJ_TARGETS at compile time.</td></tr>
-<tr><td class="h">76</td><td></td><td></td><td></td><td></td><td></td><td class="s"># The env var contains absolute realpath() output separated by colons; any</td></tr>
-<tr><td class="h">77</td><td></td><td></td><td></td><td></td><td></td><td class="s"># embedded newlines (from a broken shell pipeline) are stripped defensively.</td></tr>
-<tr><td class="h">78</td><td></td><td></td><td></td><td></td><td></td><td class="s"># ---------------------------------------------------------------------------</td></tr>
-<tr><td class="h">79</td><td colspan="6"></td></tr><tr><td class="h">80</td><td></td><td></td><td></td><td></td><td></td><td class="s">BEGIN {</td></tr>
-<tr><td class="h">81</td><td><div class="c3">1</div></td><td></td><td><div class="c0"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--condition.html#L81">50</a></div></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L81">1</a></div></td><td><div>4</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;my $targets_env = $ENV{LCSAJ_TARGETS} // &#39;&#39;;</td></tr>
-<tr><td class="h">82</td><td><div class="c3">1</div></td><td></td><td></td><td></td><td><div>1</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;$targets_env =~ s/\n//g;&nbsp;&nbsp;&nbsp;&nbsp;# defensive: strip stray newlines</td></tr>
-<tr><td class="h">83</td><td colspan="6"></td></tr><tr><td class="h">84</td><td><div class="c3">1</div></td><td></td><td></td><td></td><td><div>132</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;for my $t (split /:/, $targets_env) {</td></tr>
-<tr><td class="h">85</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L85">0</a></div></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next unless length $t;</td></tr>
-<tr><td class="h">86</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$TARGET{ _normalize($t) } = 1;</td></tr>
-<tr><td class="h">87</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">88</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">89</td><td colspan="6"></td></tr><tr><td class="h">90</td><td></td><td></td><td></td><td></td><td></td><td class="s"># ---------------------------------------------------------------------------</td></tr>
-<tr><td class="h">91</td><td></td><td></td><td></td><td></td><td></td><td class="s"># DB::DB - called by the Perl debugger before every statement.</td></tr>
-<tr><td class="h">92</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">93</td><td></td><td></td><td></td><td></td><td></td><td class="s"># caller(0) returns (package, filename, line) for the statement about to run.</td></tr>
-<tr><td class="h">94</td><td></td><td></td><td></td><td></td><td></td><td class="s"># We use that rather than trying to pass arguments (the debugger passes none).</td></tr>
-<tr><td class="h">95</td><td></td><td></td><td></td><td></td><td></td><td class="s"># ---------------------------------------------------------------------------</td></tr>
-<tr><td class="h">96</td><td colspan="6"></td></tr><tr><td class="h">97</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub DB::DB {</td></tr>
-<tr><td class="h">98</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L98">0</a></div></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;my (undef, $file, $line) = caller(0);</td></tr>
-<tr><td class="h">99</td><td colspan="6"></td></tr><tr><td class="h">100</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L100">0</a></div></td><td><div class="c0"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--condition.html#L100">0</a></div></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;return unless defined $file &amp;&amp; defined $line;</td></tr>
-<tr><td class="h">101</td><td colspan="6"></td></tr><tr><td class="h">102</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;# Resolve symlinks / relative components to a stable absolute path.</td></tr>
-<tr><td class="h">103</td><td><div class="c0">0</div></td><td></td><td><div class="c0"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--condition.html#L103">0</a></div></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;my $abs&nbsp;&nbsp;= abs_path($file) // $file;</td></tr>
-<tr><td class="h">104</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;my $norm = _normalize($abs);</td></tr>
-<tr><td class="h">105</td><td colspan="6"></td></tr><tr><td class="h">106</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;# Never record hits inside this module itself (suffix match, not exact,</td></tr>
-<tr><td class="h">107</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;# so it works regardless of CWD or install prefix).</td></tr>
-<tr><td class="h">108</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L108">0</a></div></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;return if $norm =~ m{(?:^|/)Devel/App/Test/Generator/LCSAJ/Runtime\.pm$};</td></tr>
-<tr><td class="h">109</td><td colspan="6"></td></tr><tr><td class="h">110</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;# If a target list was provided, skip files not in it.</td></tr>
-<tr><td class="h">111</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L111">0</a></div></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;if (%TARGET) {</td></tr>
-<tr><td class="h">112</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L112">0</a></div></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return unless $TARGET{$norm};</td></tr>
-<tr><td class="h">113</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">114</td><td colspan="6"></td></tr><tr><td class="h">115</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;$HITS{$norm}{$line}++;</td></tr>
-<tr><td class="h">116</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">117</td><td colspan="6"></td></tr><tr><td class="h">118</td><td></td><td></td><td></td><td></td><td></td><td class="s"># ---------------------------------------------------------------------------</td></tr>
-<tr><td class="h">119</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _write_results - serialise %HITS to JSON.</td></tr>
-<tr><td class="h">120</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">121</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Called from END so it runs even when prove exits non-zero (mutation tests</td></tr>
-<tr><td class="h">122</td><td></td><td></td><td></td><td></td><td></td><td class="s"># are expected to fail, hence set -e is disabled around the prove invocation).</td></tr>
-<tr><td class="h">123</td><td></td><td></td><td></td><td></td><td></td><td class="s"># ---------------------------------------------------------------------------</td></tr>
-<tr><td class="h">124</td><td colspan="6"></td></tr><tr><td class="h">125</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _write_results {</td></tr>
-<tr><td class="h">126</td><td><div class="c3">1</div></td><td><div class="c0" title="T/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L126">50</a></div></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L126">1</a></div></td><td><div>9</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return unless %HITS;</td></tr>
-<tr><td class="h">127</td><td colspan="6"></td></tr><tr><td class="h">128</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $out_dir&nbsp;&nbsp;= &#39;cover_html/lcsaj_hits&#39;;</td></tr>
-<tr><td class="h">129</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $out_file = &quot;$out_dir/hits_$$.json&quot;;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Include the PID in the output file</td></tr>
-<tr><td class="h">130</td><td colspan="6"></td></tr><tr><td class="h">131</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L131">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;make_path($out_dir) unless -d $out_dir;</td></tr>
-<tr><td class="h">132</td><td colspan="6"></td></tr><tr><td class="h">133</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L133">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;open my $fh, &#39;&gt;&#39;, $out_file</td></tr>
-<tr><td class="h">134</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;or die &quot;Devel::App::Test::Generator::LCSAJ::Runtime: &quot;,</td></tr>
-<tr><td class="h">135</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;cannot write $out_file: $!&quot;;</td></tr>
-<tr><td class="h">136</td><td colspan="6"></td></tr><tr><td class="h">137</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print $fh encode_json(\%HITS);</td></tr>
-<tr><td class="h">138</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;close $fh;</td></tr>
-<tr><td class="h">139</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">140</td><td colspan="6"></td></tr><tr><td class="h">141</td><td></td><td></td><td></td><td></td><td></td><td class="s">END {</td></tr>
-<tr><td class="h">142</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;_write_results();</td></tr>
-<tr><td class="h">143</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">144</td><td colspan="6"></td></tr><tr><td class="h">145</td><td></td><td></td><td></td><td></td><td></td><td class="s">1;</td></tr>
-<tr><td class="h">146</td><td colspan="6"></td></tr></table>
+<tr><td class="h">58</td><td colspan="6"></td></tr><tr><td class="h">59</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">60</td><td></td><td></td><td></td><td></td><td></td><td class="s"># %HITS&nbsp;&nbsp;&nbsp;- { normalised_path =&gt; { line_number =&gt; hit_count } }</td></tr>
+<tr><td class="h">61</td><td></td><td></td><td></td><td></td><td></td><td class="s"># %TARGET - set of normalised paths to record (empty means record everything)</td></tr>
+<tr><td class="h">62</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">63</td><td></td><td></td><td></td><td></td><td></td><td class="s"># These must be package globals (our) rather than lexicals because DB::DB</td></tr>
+<tr><td class="h">64</td><td></td><td></td><td></td><td></td><td></td><td class="s"># is called by the Perl debugger infrastructure and needs to access them</td></tr>
+<tr><td class="h">65</td><td></td><td></td><td></td><td></td><td></td><td class="s"># without a closure. Lexical vars would not be visible in DB::DB.</td></tr>
+<tr><td class="h">66</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">67</td><td></td><td></td><td></td><td></td><td></td><td class="s">our %HITS;</td></tr>
+<tr><td class="h">68</td><td></td><td></td><td></td><td></td><td></td><td class="s">our %TARGET;</td></tr>
+<tr><td class="h">69</td><td colspan="6"></td></tr><tr><td class="h">70</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">71</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Populate %TARGET from LCSAJ_TARGETS at compile time.</td></tr>
+<tr><td class="h">72</td><td></td><td></td><td></td><td></td><td></td><td class="s"># The env var contains absolute realpath() output</td></tr>
+<tr><td class="h">73</td><td></td><td></td><td></td><td></td><td></td><td class="s"># separated by colons. Stray newlines from broken</td></tr>
+<tr><td class="h">74</td><td></td><td></td><td></td><td></td><td></td><td class="s"># shell pipelines are stripped defensively.</td></tr>
+<tr><td class="h">75</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">76</td><td></td><td></td><td></td><td></td><td></td><td class="s">BEGIN {</td></tr>
+<tr><td class="h">77</td><td><div class="c3">1</div></td><td></td><td><div class="c0"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--condition.html#L77">50</a></div></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L77">1</a></div></td><td><div>4</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $targets_env = $ENV{LCSAJ_TARGETS} // &#39;&#39;;</td></tr>
+<tr><td class="h">78</td><td><div class="c3">1</div></td><td></td><td></td><td></td><td><div>1</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$targets_env =~ s/\n//g;</td></tr>
+<tr><td class="h">79</td><td colspan="6"></td></tr><tr><td class="h">80</td><td><div class="c3">1</div></td><td></td><td></td><td></td><td><div>160</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for my $t (split /:/, $targets_env) {</td></tr>
+<tr><td class="h">81</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L81">0</a></div></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next unless length $t;</td></tr>
+<tr><td class="h">82</td><td colspan="6"></td></tr><tr><td class="h">83</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Inline normalisation &acirc;&#128;&#148; cannot call _normalize here since</td></tr>
+<tr><td class="h">84</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# BEGIN runs before named subs are compiled when BEGIN</td></tr>
+<tr><td class="h">85</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# appears at the top of the file</td></tr>
+<tr><td class="h">86</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $f = $t;</td></tr>
+<tr><td class="h">87</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$f =~ s{^.*/blib/lib/}{lib/};</td></tr>
+<tr><td class="h">88</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$f =~ s{^.*/lib/}{lib/};</td></tr>
+<tr><td class="h">89</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$TARGET{$f} = 1;</td></tr>
+<tr><td class="h">90</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">91</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">92</td><td colspan="6"></td></tr><tr><td class="h">93</td><td></td><td></td><td></td><td></td><td></td><td class="s">END {</td></tr>
+<tr><td class="h">94</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_write_results();</td></tr>
+<tr><td class="h">95</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">96</td><td colspan="6"></td></tr><tr><td class="h">97</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">98</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _normalize</td></tr>
+<tr><td class="h">99</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">100</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Convert an absolute or build-tree path</td></tr>
+<tr><td class="h">101</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;to a canonical lib-relative form so that</td></tr>
+<tr><td class="h">102</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;paths recorded at runtime match the</td></tr>
+<tr><td class="h">103</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;targets derived from LCSAJ_TARGETS.</td></tr>
+<tr><td class="h">104</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">105</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$path - an absolute or relative file path.</td></tr>
+<tr><td class="h">106</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">107</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns a lib-relative path string,</td></tr>
+<tr><td class="h">108</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;e.g. lib/Foo/Bar.pm</td></tr>
+<tr><td class="h">109</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">110</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Side effects: None.</td></tr>
+<tr><td class="h">111</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">112</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Notes:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Must be defined before the BEGIN block</td></tr>
+<tr><td class="h">113</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;that calls it, since BEGIN runs at compile</td></tr>
+<tr><td class="h">114</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;time and later subs may not yet be compiled.</td></tr>
+<tr><td class="h">115</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">116</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Examples:</td></tr>
+<tr><td class="h">117</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;/home/user/proj/blib/lib/Foo/Bar.pm&nbsp;&nbsp;-&gt;&nbsp;&nbsp;lib/Foo/Bar.pm</td></tr>
+<tr><td class="h">118</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;/home/user/proj/lib/Foo/Bar.pm&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&gt;&nbsp;&nbsp;lib/Foo/Bar.pm</td></tr>
+<tr><td class="h">119</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">120</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _normalize {</td></tr>
+<tr><td class="h">121</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L121">0</a></div></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $f = $_[0];</td></tr>
+<tr><td class="h">122</td><td colspan="6"></td></tr><tr><td class="h">123</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Strip everything up to and including blib/lib/ or lib/</td></tr>
+<tr><td class="h">124</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$f =~ s{^.*/blib/lib/}{lib/};</td></tr>
+<tr><td class="h">125</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$f =~ s{^.*/lib/}{lib/};</td></tr>
+<tr><td class="h">126</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return $f;</td></tr>
+<tr><td class="h">127</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">128</td><td colspan="6"></td></tr><tr><td class="h">129</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">130</td><td></td><td></td><td></td><td></td><td></td><td class="s"># DB::DB</td></tr>
+<tr><td class="h">131</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">132</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Called by the Perl debugger before every</td></tr>
+<tr><td class="h">133</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;statement. Records (file, line) hits for</td></tr>
+<tr><td class="h">134</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;later LCSAJ coverage analysis.</td></tr>
+<tr><td class="h">135</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">136</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;No arguments &acirc;&#128;&#148; caller(0) is used to get</td></tr>
+<tr><td class="h">137</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the current file and line number.</td></tr>
+<tr><td class="h">138</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">139</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns nothing. Updates %HITS in place.</td></tr>
+<tr><td class="h">140</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">141</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Side effects: Increments %HITS{$norm}{$line}.</td></tr>
+<tr><td class="h">142</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">143</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Notes:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This sub lives in the DB:: package as</td></tr>
+<tr><td class="h">144</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;required by Perl&#39;s debugger protocol.</td></tr>
+<tr><td class="h">145</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;It is called for every statement executed</td></tr>
+<tr><td class="h">146</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;while the debugger is active, so it must</td></tr>
+<tr><td class="h">147</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;be as fast as possible.</td></tr>
+<tr><td class="h">148</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Internal files and out-of-target files</td></tr>
+<tr><td class="h">149</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;are skipped immediately.</td></tr>
+<tr><td class="h">150</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">151</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub DB::DB {</td></tr>
+<tr><td class="h">152</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L152">0</a></div></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my (undef, $file, $line) = caller(0);</td></tr>
+<tr><td class="h">153</td><td colspan="6"></td></tr><tr><td class="h">154</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L154">0</a></div></td><td><div class="c0"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--condition.html#L154">0</a></div></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return unless defined $file &amp;&amp; defined $line;</td></tr>
+<tr><td class="h">155</td><td colspan="6"></td></tr><tr><td class="h">156</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Resolve symlinks and relative components to a stable absolute path</td></tr>
+<tr><td class="h">157</td><td><div class="c0">0</div></td><td></td><td><div class="c0"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--condition.html#L157">0</a></div></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $abs&nbsp;&nbsp;= abs_path($file) // $file;</td></tr>
+<tr><td class="h">158</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $norm = _normalize($abs);</td></tr>
+<tr><td class="h">159</td><td colspan="6"></td></tr><tr><td class="h">160</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Never record hits inside this module itself &acirc;&#128;&#148; suffix match is used</td></tr>
+<tr><td class="h">161</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# so it works regardless of CWD or install prefix</td></tr>
+<tr><td class="h">162</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L162">0</a></div></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return if $norm =~ m{(?:^|/)Devel/App/Test/Generator/LCSAJ/Runtime\.pm$};</td></tr>
+<tr><td class="h">163</td><td colspan="6"></td></tr><tr><td class="h">164</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# If a target list was provided skip files not in it</td></tr>
+<tr><td class="h">165</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L165">0</a></div></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(%TARGET) {</td></tr>
+<tr><td class="h">166</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L166">0</a></div></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return unless $TARGET{$norm};</td></tr>
+<tr><td class="h">167</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">168</td><td colspan="6"></td></tr><tr><td class="h">169</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td><div>0</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$HITS{$norm}{$line}++;</td></tr>
+<tr><td class="h">170</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">171</td><td colspan="6"></td></tr><tr><td class="h">172</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">173</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _write_results</td></tr>
+<tr><td class="h">174</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">175</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Serialise %HITS to a per-process JSON</td></tr>
+<tr><td class="h">176</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;file in the output directory.</td></tr>
+<tr><td class="h">177</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">178</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;None. Reads %HITS and $OUT_DIR.</td></tr>
+<tr><td class="h">179</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">180</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns nothing. Writes a JSON file.</td></tr>
+<tr><td class="h">181</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns immediately if %HITS is empty.</td></tr>
+<tr><td class="h">182</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">183</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Side effects: Creates $OUT_DIR if absent.</td></tr>
+<tr><td class="h">184</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Writes cover_html/lcsaj_hits/hits_PID.json</td></tr>
+<tr><td class="h">185</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">186</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Notes:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Called from END so it runs even when</td></tr>
+<tr><td class="h">187</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;prove exits non-zero &acirc;&#128;&#148; mutation tests</td></tr>
+<tr><td class="h">188</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;are expected to fail. PID is included</td></tr>
+<tr><td class="h">189</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;in the filename so parallel test runs</td></tr>
+<tr><td class="h">190</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;produce separate files without collision.</td></tr>
+<tr><td class="h">191</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">192</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _write_results {</td></tr>
+<tr><td class="h">193</td><td><div class="c3">1</div></td><td><div class="c0" title="T/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L193">50</a></div></td><td></td><td><div class="c3"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--subroutine.html#L193">1</a></div></td><td><div>11</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return unless %HITS;</td></tr>
+<tr><td class="h">194</td><td colspan="6"></td></tr><tr><td class="h">195</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Include PID in filename to support parallel test runs</td></tr>
+<tr><td class="h">196</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $out_file = &quot;$OUT_DIR/hits_$$.json&quot;;</td></tr>
+<tr><td class="h">197</td><td colspan="6"></td></tr><tr><td class="h">198</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L198">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;make_path($OUT_DIR) unless -d $OUT_DIR;</td></tr>
+<tr><td class="h">199</td><td colspan="6"></td></tr><tr><td class="h">200</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-Devel-App-Test-Generator-LCSAJ-Runtime-pm--branch.html#L200">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;open my $fh, &#39;&gt;&#39;, $out_file</td></tr>
+<tr><td class="h">201</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;or croak &quot;Cannot write $out_file: $!&quot;;</td></tr>
+<tr><td class="h">202</td><td colspan="6"></td></tr><tr><td class="h">203</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print $fh encode_json(\%HITS);</td></tr>
+<tr><td class="h">204</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;close $fh;</td></tr>
+<tr><td class="h">205</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">206</td><td colspan="6"></td></tr><tr><td class="h">207</td><td></td><td></td><td></td><td></td><td></td><td class="s">1;</td></tr>
+<tr><td class="h">208</td><td colspan="6"></td></tr></table>
 </body>
 </html>

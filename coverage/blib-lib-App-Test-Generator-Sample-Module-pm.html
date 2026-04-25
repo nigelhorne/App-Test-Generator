@@ -20,192 +20,417 @@ https://pjcj.net
 <h1>File Coverage</h1>
 <table>
 <tr><td class="h" align="right">File:</td><td align="left">blib/lib/App/Test/Generator/Sample/Module.pm</td></tr>
-<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">10.6%</td></tr>
+<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">13.6%</td></tr>
 </table>
 <div><br/></div>
 <table>
 <tr><th>line</th><th>stmt</th><th>bran</th><th>cond</th><th>sub</th><th>time</th><th>code</th></tr>
 <tr><td class="h">1</td><td></td><td></td><td></td><td></td><td></td><td class="s">package Test::App::Generator::Sample::Module;</td></tr>
-<tr><td class="h">2</td><td colspan="6"></td></tr><tr><td class="h">3</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L3">1</a></div></td><td><div>621</div><div>1</div><div>17</div></td><td class="s">use strict;</td></tr>
-<tr><td class="h">4</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L4">1</a></div></td><td><div>1</div><div>2</div><div>21</div></td><td class="s">use warnings;</td></tr>
-<tr><td class="h">5</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L5">1</a></div></td><td><div>2</div><div>1</div><div>330</div></td><td class="s">use Carp qw(croak);</td></tr>
-<tr><td class="h">6</td><td colspan="6"></td></tr><tr><td class="h">7</td><td></td><td></td><td></td><td></td><td></td><td class="s">our $VERSION = &#39;0.30&#39;;</td></tr>
-<tr><td class="h">8</td><td colspan="6"></td></tr><tr><td class="h">9 - 29</td><td colspan="5"></td><td class="s"><pre>=head1 NAME
+<tr><td class="h">2</td><td colspan="6"></td></tr><tr><td class="h">3</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L3">1</a></div></td><td><div>736</div><div>1</div><div>15</div></td><td class="s">use strict;</td></tr>
+<tr><td class="h">4</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L4">1</a></div></td><td><div>1</div><div>0</div><div>23</div></td><td class="s">use warnings;</td></tr>
+<tr><td class="h">5</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L5">1</a></div></td><td><div>2</div><div>0</div><div>16</div></td><td class="s">use Carp&nbsp;&nbsp;&nbsp;&nbsp;qw(croak);</td></tr>
+<tr><td class="h">6</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L6">1</a></div></td><td><div>2</div><div>1</div><div>350</div></td><td class="s">use Readonly;</td></tr>
+<tr><td class="h">7</td><td colspan="6"></td></tr><tr><td class="h">8</td><td></td><td></td><td></td><td></td><td></td><td class="s">our $VERSION = &#39;0.33&#39;;</td></tr>
+<tr><td class="h">9</td><td colspan="6"></td></tr><tr><td class="h">10</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">11</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Validation constants &acirc;&#128;&#148; centralised so that changes</td></tr>
+<tr><td class="h">12</td><td></td><td></td><td></td><td></td><td></td><td class="s"># to limits only need to be made in one place</td></tr>
+<tr><td class="h">13</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">14</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $MIN_EMAIL_LEN&nbsp;&nbsp;=&gt; 5;</td></tr>
+<tr><td class="h">15</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $MAX_EMAIL_LEN&nbsp;&nbsp;=&gt; 254;</td></tr>
+<tr><td class="h">16</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $MIN_BIRTH_YEAR =&gt; 1900;</td></tr>
+<tr><td class="h">17</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $MIN_NAME_LEN&nbsp;&nbsp;&nbsp;=&gt; 1;</td></tr>
+<tr><td class="h">18</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $MAX_NAME_LEN&nbsp;&nbsp;&nbsp;=&gt; 50;</td></tr>
+<tr><td class="h">19</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $MIN_SCORE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; 0.0;</td></tr>
+<tr><td class="h">20</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $MAX_SCORE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; 100.0;</td></tr>
+<tr><td class="h">21</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $PASS_THRESHOLD =&gt; 60.0;</td></tr>
+<tr><td class="h">22</td><td colspan="6"></td></tr><tr><td class="h">23 - 65</td><td colspan="5"></td><td class="s"><pre>=head1 NAME
 
 Test::App::Generator::Sample::Module - Example module for schema extraction testing
 
 =head1 VERSION
 
-Version 0.30
+Version 0.33
 
 =head1 SYNOPSIS
 
-&nbsp;&nbsp;&nbsp;&nbsp;use Sample::Module;
+&nbsp;&nbsp;&nbsp;&nbsp;use Test::App::Generator::Sample::Module;
 
-&nbsp;&nbsp;&nbsp;&nbsp;my $obj = Sample::Module-&gt;new();
+&nbsp;&nbsp;&nbsp;&nbsp;my $obj = Test::App::Generator::Sample::Module-&gt;new();
 &nbsp;&nbsp;&nbsp;&nbsp;my $result = $obj-&gt;validate_email(&#39;user@example.com&#39;);
 
 =head1 DESCRIPTION
 
-This is a sample module with well-documented methods to test
-the schema extractor.
+A sample module with a variety of well and poorly documented methods,
+used to exercise L&lt;App::Test::Generator::SchemaExtractor&gt;. The methods
+cover common parameter types, validation patterns, and confidence levels
+so that the extractor&#39;s heuristics can be tested against known inputs.
+
+=head2 new
+
+Constructor. Returns a new instance.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $obj = Test::App::Generator::Sample::Module-&gt;new();
+
+=head3 Returns
+
+A blessed hashref.
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ class =&gt; { type =&gt; SCALAR } }
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; OBJECT, isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; }
 
 =cut</pre></td></tr>
-<tr><td class="h">30</td><td colspan="6"></td></tr><tr><td class="h">31 - 37</td><td colspan="5"></td><td class="s"><pre>=head2 new
+<tr><td class="h">66</td><td colspan="6"></td></tr><tr><td class="h">67</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub new {</td></tr>
+<tr><td class="h">68</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L68">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $class = $_[0];</td></tr>
+<tr><td class="h">69</td><td colspan="6"></td></tr><tr><td class="h">70</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Bless an empty hashref into the calling class</td></tr>
+<tr><td class="h">71</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return bless {}, $class;</td></tr>
+<tr><td class="h">72</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">73</td><td colspan="6"></td></tr><tr><td class="h">74 - 107</td><td colspan="5"></td><td class="s"><pre>=head2 validate_email
 
-Constructor.
+Validate an email address against basic structural rules.
 
-Returns a new Sample::Module object.
+&nbsp;&nbsp;&nbsp;&nbsp;my $ok = $obj-&gt;validate_email(&#39;user@example.com&#39;);
 
-=cut</pre></td></tr>
-<tr><td class="h">38</td><td colspan="6"></td></tr><tr><td class="h">39</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub new {</td></tr>
-<tr><td class="h">40</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L40">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $class = $_[0];</td></tr>
-<tr><td class="h">41</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return bless {}, $class;</td></tr>
-<tr><td class="h">42</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">43</td><td colspan="6"></td></tr><tr><td class="h">44 - 54</td><td colspan="5"></td><td class="s"><pre>=head2 validate_email($email)
+=head3 Arguments
 
-Validates an email address.
+=over 4
 
-Parameters:
-&nbsp;&nbsp;$email - string (5-254 chars), email address to validate
+=item * C&lt;$email&gt;
 
-Returns:
-&nbsp;&nbsp;1 if valid, dies otherwise
+String (C&lt;$MIN_EMAIL_LEN&gt;-C&lt;$MAX_EMAIL_LEN&gt; chars). Required.
 
-=cut</pre></td></tr>
-<tr><td class="h">55</td><td colspan="6"></td></tr><tr><td class="h">56</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub validate_email {</td></tr>
-<tr><td class="h">57</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L57">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $email) = @_;</td></tr>
-<tr><td class="h">58</td><td colspan="6"></td></tr><tr><td class="h">59</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L59">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Email is required&#39; unless defined $email;</td></tr>
-<tr><td class="h">60</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L60">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Email too short&quot; unless length($email) &gt;= 5;</td></tr>
-<tr><td class="h">61</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L61">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Email too long&quot; unless length($email) &lt;= 254;</td></tr>
-<tr><td class="h">62</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L62">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Invalid email format&quot; unless $email =~ /^[^@]+@[^@]+\.[^@]+$/;</td></tr>
-<tr><td class="h">63</td><td colspan="6"></td></tr><tr><td class="h">64</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 1;</td></tr>
-<tr><td class="h">65</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">66</td><td colspan="6"></td></tr><tr><td class="h">67 - 77</td><td colspan="5"></td><td class="s"><pre>=head2 calculate_age($birth_year)
+=back
 
-Calculate age from birth year.
+=head3 Returns
 
-Parameters:
-&nbsp;&nbsp;$birth_year - integer (1900-2025), year of birth
+1 if the address is valid. Croaks on any validation failure.
 
-Returns:
-&nbsp;&nbsp;Age in years (integer)
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self&nbsp;&nbsp;=&gt; { type =&gt; OBJECT, isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;email =&gt; { type =&gt; SCALAR, min =&gt; 5, max =&gt; 254 },
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; SCALAR, value =&gt; 1 }
 
 =cut</pre></td></tr>
-<tr><td class="h">78</td><td colspan="6"></td></tr><tr><td class="h">79</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub calculate_age {</td></tr>
-<tr><td class="h">80</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L80">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $birth_year) = @_;</td></tr>
-<tr><td class="h">81</td><td colspan="6"></td></tr><tr><td class="h">82</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L82">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Birth year required&quot; unless defined $birth_year;</td></tr>
-<tr><td class="h">83</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L83">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Birth year must be a number&quot; unless $birth_year =~ /^\d+$/;</td></tr>
-<tr><td class="h">84</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L84">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--condition.html#L84">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Birth year out of range&quot; unless $birth_year &gt;= 1900 &amp;&amp; $birth_year &lt;= 2025;</td></tr>
-<tr><td class="h">85</td><td colspan="6"></td></tr><tr><td class="h">86</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;my $current_year = 2025;</td></tr>
-<tr><td class="h">87</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;return $current_year - $birth_year;</td></tr>
-<tr><td class="h">88</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">89</td><td colspan="6"></td></tr><tr><td class="h">90 - 100</td><td colspan="5"></td><td class="s"><pre>=head2 process_names($names)
+<tr><td class="h">108</td><td colspan="6"></td></tr><tr><td class="h">109</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub validate_email {</td></tr>
+<tr><td class="h">110</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L110">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $email) = @_;</td></tr>
+<tr><td class="h">111</td><td colspan="6"></td></tr><tr><td class="h">112</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Presence check before length checks to give a clear error</td></tr>
+<tr><td class="h">113</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L113">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Email is required&#39; unless defined $email;</td></tr>
+<tr><td class="h">114</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L114">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Email too short&#39;&nbsp;&nbsp;&nbsp;unless length($email) &gt;= $MIN_EMAIL_LEN;</td></tr>
+<tr><td class="h">115</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L115">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Email too long&#39;&nbsp;&nbsp;&nbsp;&nbsp;unless length($email) &lt;= $MAX_EMAIL_LEN;</td></tr>
+<tr><td class="h">116</td><td colspan="6"></td></tr><tr><td class="h">117</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Basic structural check &acirc;&#128;&#148; one @ with non-empty local and domain parts</td></tr>
+<tr><td class="h">118</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L118">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Invalid email format&#39;</td></tr>
+<tr><td class="h">119</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;unless $email =~ /^[^@]+\@[^@]+\.[^@]+$/;</td></tr>
+<tr><td class="h">120</td><td colspan="6"></td></tr><tr><td class="h">121</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 1;</td></tr>
+<tr><td class="h">122</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">123</td><td colspan="6"></td></tr><tr><td class="h">124 - 157</td><td colspan="5"></td><td class="s"><pre>=head2 calculate_age
 
-Process a list of names.
+Calculate age in years from a birth year.
 
-Parameters:
-&nbsp;&nbsp;$names - arrayref, list of name strings
+&nbsp;&nbsp;&nbsp;&nbsp;my $age = $obj-&gt;calculate_age(1985);
 
-Returns:
-&nbsp;&nbsp;Count of names processed
+=head3 Arguments
 
-=cut</pre></td></tr>
-<tr><td class="h">101</td><td colspan="6"></td></tr><tr><td class="h">102</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub process_names {</td></tr>
-<tr><td class="h">103</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L103">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $names) = @_;</td></tr>
-<tr><td class="h">104</td><td colspan="6"></td></tr><tr><td class="h">105</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L105">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Names required&quot; unless defined $names;</td></tr>
-<tr><td class="h">106</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L106">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Names must be an array reference&quot; unless ref($names) eq &#39;ARRAY&#39;;</td></tr>
-<tr><td class="h">107</td><td colspan="6"></td></tr><tr><td class="h">108</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;my $count = 0;</td></tr>
-<tr><td class="h">109</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;foreach my $name (@$names) {</td></tr>
-<tr><td class="h">110</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Process each name</td></tr>
-<tr><td class="h">111</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L111">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--condition.html#L111">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$count++ if defined $name &amp;&amp; length($name) &gt; 0;</td></tr>
-<tr><td class="h">112</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">113</td><td colspan="6"></td></tr><tr><td class="h">114</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;return $count;</td></tr>
-<tr><td class="h">115</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">116</td><td colspan="6"></td></tr><tr><td class="h">117 - 127</td><td colspan="5"></td><td class="s"><pre>=head2 set_config($config)
+=over 4
 
-Set configuration options.
+=item * C&lt;$birth_year&gt;
 
-Parameters:
-&nbsp;&nbsp;$config - hashref, configuration options
+Integer (C&lt;$MIN_BIRTH_YEAR&gt; to current year). Required.
 
-Returns:
-&nbsp;&nbsp;1 on success
+=back
 
-=cut</pre></td></tr>
-<tr><td class="h">128</td><td colspan="6"></td></tr><tr><td class="h">129</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub set_config {</td></tr>
-<tr><td class="h">130</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L130">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $config) = @_;</td></tr>
-<tr><td class="h">131</td><td colspan="6"></td></tr><tr><td class="h">132</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L132">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Config required&quot; unless defined $config;</td></tr>
-<tr><td class="h">133</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L133">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Config must be a hash reference&quot; unless ref($config) eq &#39;HASH&#39;;</td></tr>
-<tr><td class="h">134</td><td colspan="6"></td></tr><tr><td class="h">135</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;$self-&gt;{config} = $config;</td></tr>
-<tr><td class="h">136</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;return 1;</td></tr>
-<tr><td class="h">137</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">138</td><td colspan="6"></td></tr><tr><td class="h">139 - 150</td><td colspan="5"></td><td class="s"><pre>=head2 greet($name, $greeting)
+=head3 Returns
 
-Generate a greeting message.
+Age in years as an integer.
 
-Parameters:
-&nbsp;&nbsp;$name - string (1-50 chars), person&#39;s name
-&nbsp;&nbsp;$greeting - string (optional), custom greeting (default: &quot;Hello&quot;)
+=head3 API specification
 
-Returns:
-&nbsp;&nbsp;Greeting string
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; { type =&gt; OBJECT, isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;birth_year =&gt; { type =&gt; SCALAR, min =&gt; 1900 },
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; SCALAR }
 
 =cut</pre></td></tr>
-<tr><td class="h">151</td><td colspan="6"></td></tr><tr><td class="h">152</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub greet {</td></tr>
-<tr><td class="h">153</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L153">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $name, $greeting) = @_;</td></tr>
-<tr><td class="h">154</td><td colspan="6"></td></tr><tr><td class="h">155</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L155">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Name is required&quot; unless defined $name;</td></tr>
-<tr><td class="h">156</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L156">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Name too short&quot; unless length($name) &gt;= 1;</td></tr>
-<tr><td class="h">157</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L157">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Name too long&quot; unless length($name) &lt;= 50;</td></tr>
-<tr><td class="h">158</td><td colspan="6"></td></tr><tr><td class="h">159</td><td><div class="c0">0</div></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--condition.html#L159">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;$greeting ||= &quot;Hello&quot;;</td></tr>
-<tr><td class="h">160</td><td colspan="6"></td></tr><tr><td class="h">161</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;return &quot;$greeting, $name!&quot;;</td></tr>
-<tr><td class="h">162</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">163</td><td colspan="6"></td></tr><tr><td class="h">164 - 174</td><td colspan="5"></td><td class="s"><pre>=head2 check_flag($enabled)
+<tr><td class="h">158</td><td colspan="6"></td></tr><tr><td class="h">159</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub calculate_age {</td></tr>
+<tr><td class="h">160</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L160">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $birth_year) = @_;</td></tr>
+<tr><td class="h">161</td><td colspan="6"></td></tr><tr><td class="h">162</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Get the current year from the system clock rather than using</td></tr>
+<tr><td class="h">163</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# a hardcoded value that would become stale each year</td></tr>
+<tr><td class="h">164</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $current_year = (localtime)[5] + 1900;</td></tr>
+<tr><td class="h">165</td><td colspan="6"></td></tr><tr><td class="h">166</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L166">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Birth year required&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;unless defined $birth_year;</td></tr>
+<tr><td class="h">167</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L167">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Birth year must be a number&#39;&nbsp;&nbsp;unless $birth_year =~ /^\d+$/;</td></tr>
+<tr><td class="h">168</td><td colspan="6"></td></tr><tr><td class="h">169</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Upper bound is the current year &acirc;&#128;&#148; you cannot be born in the future</td></tr>
+<tr><td class="h">170</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L170">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--condition.html#L170">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Birth year out of range&#39;</td></tr>
+<tr><td class="h">171</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;unless $birth_year &gt;= $MIN_BIRTH_YEAR &amp;&amp; $birth_year &lt;= $current_year;</td></tr>
+<tr><td class="h">172</td><td colspan="6"></td></tr><tr><td class="h">173</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return $current_year - $birth_year;</td></tr>
+<tr><td class="h">174</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">175</td><td colspan="6"></td></tr><tr><td class="h">176 - 209</td><td colspan="5"></td><td class="s"><pre>=head2 process_names
 
-Check a boolean flag.
+Process a list of names and return the count of non-empty entries.
 
-Parameters:
-&nbsp;&nbsp;$enabled - boolean, whether feature is enabled
+&nbsp;&nbsp;&nbsp;&nbsp;my $count = $obj-&gt;process_names([&#39;Alice&#39;, &#39;Bob&#39;, &#39;&#39;]);
 
-Returns:
-&nbsp;&nbsp;1 if enabled, 0 otherwise
+=head3 Arguments
 
-=cut</pre></td></tr>
-<tr><td class="h">175</td><td colspan="6"></td></tr><tr><td class="h">176</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub check_flag {</td></tr>
-<tr><td class="h">177</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L177">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $enabled) = @_;</td></tr>
-<tr><td class="h">178</td><td colspan="6"></td></tr><tr><td class="h">179</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L179">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;return $enabled ? 1 : 0;</td></tr>
-<tr><td class="h">180</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">181</td><td colspan="6"></td></tr><tr><td class="h">182 - 192</td><td colspan="5"></td><td class="s"><pre>=head2 validate_score($score)
+=over 4
 
-Validate a test score.
+=item * C&lt;$names&gt;
 
-Parameters:
-&nbsp;&nbsp;$score - number (0.0-100.0), test score percentage
+Arrayref of name strings. Required.
 
-Returns:
-&nbsp;&nbsp;Pass/Fail status string
+=back
 
-=cut</pre></td></tr>
-<tr><td class="h">193</td><td colspan="6"></td></tr><tr><td class="h">194</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub validate_score {</td></tr>
-<tr><td class="h">195</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L195">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $score) = @_;</td></tr>
-<tr><td class="h">196</td><td colspan="6"></td></tr><tr><td class="h">197</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L197">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Score is required&quot; unless defined $score;</td></tr>
-<tr><td class="h">198</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L198">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Score must be numeric&quot; unless $score =~ /^[\d.]+$/;</td></tr>
-<tr><td class="h">199</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L199">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--condition.html#L199">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;Score out of range&quot; unless $score &gt;= 0.0 &amp;&amp; $score &lt;= 100.0;</td></tr>
-<tr><td class="h">200</td><td colspan="6"></td></tr><tr><td class="h">201</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L201">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;return $score &gt;= 60.0 ? &quot;Pass&quot; : &quot;Fail&quot;;</td></tr>
-<tr><td class="h">202</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">203</td><td colspan="6"></td></tr><tr><td class="h">204 - 210</td><td colspan="5"></td><td class="s"><pre>=head2 mysterious_method($thing)
+=head3 Returns
 
-A method with poor documentation.
+Count of non-empty name strings as an integer.
 
-Does something with a thing.
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self&nbsp;&nbsp;=&gt; { type =&gt; OBJECT,&nbsp;&nbsp;&nbsp;isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;names =&gt; { type =&gt; ARRAYREF },
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; SCALAR, min =&gt; 0 }
 
 =cut</pre></td></tr>
-<tr><td class="h">211</td><td colspan="6"></td></tr><tr><td class="h">212</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub mysterious_method {</td></tr>
-<tr><td class="h">213</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L213">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $thing) = @_;</td></tr>
-<tr><td class="h">214</td><td colspan="6"></td></tr><tr><td class="h">215</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# No validation - extractor should flag this as low confidence</td></tr>
-<tr><td class="h">216</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return $thing * 2;</td></tr>
-<tr><td class="h">217</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">218</td><td colspan="6"></td></tr><tr><td class="h">219</td><td></td><td></td><td></td><td></td><td></td><td class="s">1;</td></tr>
-<tr><td class="h">220</td><td colspan="6"></td></tr></table>
+<tr><td class="h">210</td><td colspan="6"></td></tr><tr><td class="h">211</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub process_names {</td></tr>
+<tr><td class="h">212</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L212">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $names) = @_;</td></tr>
+<tr><td class="h">213</td><td colspan="6"></td></tr><tr><td class="h">214</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L214">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Names required&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;unless defined $names;</td></tr>
+<tr><td class="h">215</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L215">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Names must be an array reference&#39;&nbsp;&nbsp;unless ref($names) eq &#39;ARRAY&#39;;</td></tr>
+<tr><td class="h">216</td><td colspan="6"></td></tr><tr><td class="h">217</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Count only non-empty name strings &acirc;&#128;&#148; undef and &#39;&#39; are skipped</td></tr>
+<tr><td class="h">218</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $count = 0;</td></tr>
+<tr><td class="h">219</td><td><div class="c0">0</div><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for my $name (@{$names}) {</td></tr>
+<tr><td class="h">220</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Increment only for defined, non-empty entries</td></tr>
+<tr><td class="h">221</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L221">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--condition.html#L221">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$count++ if defined($name) &amp;&amp; length($name) &gt; 0;</td></tr>
+<tr><td class="h">222</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">223</td><td colspan="6"></td></tr><tr><td class="h">224</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return $count;</td></tr>
+<tr><td class="h">225</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">226</td><td colspan="6"></td></tr><tr><td class="h">227 - 260</td><td colspan="5"></td><td class="s"><pre>=head2 set_config
+
+Store a configuration hashref on the object.
+
+&nbsp;&nbsp;&nbsp;&nbsp;$obj-&gt;set_config({ timeout =&gt; 30, retries =&gt; 3 });
+
+=head3 Arguments
+
+=over 4
+
+=item * C&lt;$config&gt;
+
+Hashref of configuration options. Required.
+
+=back
+
+=head3 Returns
+
+1 on success. Croaks if C&lt;$config&gt; is absent or not a hashref.
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self&nbsp;&nbsp;&nbsp;=&gt; { type =&gt; OBJECT,&nbsp;&nbsp;isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;config =&gt; { type =&gt; HASHREF },
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; SCALAR, value =&gt; 1 }
+
+=cut</pre></td></tr>
+<tr><td class="h">261</td><td colspan="6"></td></tr><tr><td class="h">262</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub set_config {</td></tr>
+<tr><td class="h">263</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L263">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $config) = @_;</td></tr>
+<tr><td class="h">264</td><td colspan="6"></td></tr><tr><td class="h">265</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L265">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Config required&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;unless defined $config;</td></tr>
+<tr><td class="h">266</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L266">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Config must be a hash reference&#39;&nbsp;&nbsp;unless ref($config) eq &#39;HASH&#39;;</td></tr>
+<tr><td class="h">267</td><td colspan="6"></td></tr><tr><td class="h">268</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Store the config hashref directly &acirc;&#128;&#148; callers own the data</td></tr>
+<tr><td class="h">269</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$self-&gt;{config} = $config;</td></tr>
+<tr><td class="h">270</td><td colspan="6"></td></tr><tr><td class="h">271</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 1;</td></tr>
+<tr><td class="h">272</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">273</td><td colspan="6"></td></tr><tr><td class="h">274 - 313</td><td colspan="5"></td><td class="s"><pre>=head2 greet
+
+Generate a greeting message for a named person.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $msg = $obj-&gt;greet(&#39;Alice&#39;);
+&nbsp;&nbsp;&nbsp;&nbsp;my $msg = $obj-&gt;greet(&#39;Alice&#39;, &#39;Good morning&#39;);
+
+=head3 Arguments
+
+=over 4
+
+=item * C&lt;$name&gt;
+
+String (C&lt;$MIN_NAME_LEN&gt;-C&lt;$MAX_NAME_LEN&gt; chars). Required.
+
+=item * C&lt;$greeting&gt;
+
+String. Optional &acirc;&#128;&#148; defaults to C&lt;&quot;Hello&quot;&gt;.
+
+=back
+
+=head3 Returns
+
+Greeting string of the form C&lt;&quot;$greeting, $name!&quot;&gt;.
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; { type =&gt; OBJECT, isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; { type =&gt; SCALAR, min =&gt; 1, max =&gt; 50 },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;greeting =&gt; { type =&gt; SCALAR, optional =&gt; 1 },
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; SCALAR }
+
+=cut</pre></td></tr>
+<tr><td class="h">314</td><td colspan="6"></td></tr><tr><td class="h">315</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub greet {</td></tr>
+<tr><td class="h">316</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L316">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $name, $greeting) = @_;</td></tr>
+<tr><td class="h">317</td><td colspan="6"></td></tr><tr><td class="h">318</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L318">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Name is required&#39; unless defined $name;</td></tr>
+<tr><td class="h">319</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L319">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Name too short&#39;&nbsp;&nbsp;&nbsp;unless length($name) &gt;= $MIN_NAME_LEN;</td></tr>
+<tr><td class="h">320</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L320">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Name too long&#39;&nbsp;&nbsp;&nbsp;&nbsp;unless length($name) &lt;= $MAX_NAME_LEN;</td></tr>
+<tr><td class="h">321</td><td colspan="6"></td></tr><tr><td class="h">322</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Apply default greeting when caller does not supply one</td></tr>
+<tr><td class="h">323</td><td><div class="c0">0</div></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--condition.html#L323">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$greeting ||= &#39;Hello&#39;;</td></tr>
+<tr><td class="h">324</td><td colspan="6"></td></tr><tr><td class="h">325</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return &quot;$greeting, $name!&quot;;</td></tr>
+<tr><td class="h">326</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">327</td><td colspan="6"></td></tr><tr><td class="h">328 - 362</td><td colspan="5"></td><td class="s"><pre>=head2 check_flag
+
+Return a normalised boolean for a flag value.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $result = $obj-&gt;check_flag(1);&nbsp;&nbsp;&nbsp;# returns 1
+&nbsp;&nbsp;&nbsp;&nbsp;my $result = $obj-&gt;check_flag(0);&nbsp;&nbsp;&nbsp;# returns 0
+
+=head3 Arguments
+
+=over 4
+
+=item * C&lt;$enabled&gt;
+
+Boolean scalar. Required.
+
+=back
+
+=head3 Returns
+
+1 if C&lt;$enabled&gt; is true, 0 otherwise.
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self&nbsp;&nbsp;&nbsp;&nbsp;=&gt; { type =&gt; OBJECT, isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;enabled =&gt; { type =&gt; SCALAR },
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; SCALAR }
+
+=cut</pre></td></tr>
+<tr><td class="h">363</td><td colspan="6"></td></tr><tr><td class="h">364</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub check_flag {</td></tr>
+<tr><td class="h">365</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L365">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $enabled) = @_;</td></tr>
+<tr><td class="h">366</td><td colspan="6"></td></tr><tr><td class="h">367</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Normalise any truthy/falsy value to a strict 1 or 0</td></tr>
+<tr><td class="h">368</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L368">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return $enabled ? 1 : 0;</td></tr>
+<tr><td class="h">369</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">370</td><td colspan="6"></td></tr><tr><td class="h">371 - 406</td><td colspan="5"></td><td class="s"><pre>=head2 validate_score
+
+Validate a numeric test score and return a pass/fail string.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $status = $obj-&gt;validate_score(75.5);&nbsp;&nbsp;# returns &#39;Pass&#39;
+&nbsp;&nbsp;&nbsp;&nbsp;my $status = $obj-&gt;validate_score(45.0);&nbsp;&nbsp;# returns &#39;Fail&#39;
+
+=head3 Arguments
+
+=over 4
+
+=item * C&lt;$score&gt;
+
+Number (C&lt;$MIN_SCORE&gt;-C&lt;$MAX_SCORE&gt;). Required.
+
+=back
+
+=head3 Returns
+
+The string C&lt;&#39;Pass&#39;&gt; if the score meets or exceeds C&lt;$PASS_THRESHOLD&gt;,
+C&lt;&#39;Fail&#39;&gt; otherwise. Croaks on invalid input.
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self&nbsp;&nbsp;=&gt; { type =&gt; OBJECT, isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;score =&gt; { type =&gt; SCALAR, min =&gt; 0.0, max =&gt; 100.0 },
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; SCALAR }
+
+=cut</pre></td></tr>
+<tr><td class="h">407</td><td colspan="6"></td></tr><tr><td class="h">408</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub validate_score {</td></tr>
+<tr><td class="h">409</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L409">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $score) = @_;</td></tr>
+<tr><td class="h">410</td><td colspan="6"></td></tr><tr><td class="h">411</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L411">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Score is required&#39;&nbsp;&nbsp;&nbsp;&nbsp;unless defined $score;</td></tr>
+<tr><td class="h">412</td><td colspan="6"></td></tr><tr><td class="h">413</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Accept integers, decimals, and values like &#39;.5&#39; but not &#39;1.2.3&#39;</td></tr>
+<tr><td class="h">414</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L414">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Score must be numeric&#39;</td></tr>
+<tr><td class="h">415</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;unless $score =~ /^(?:\d+\.?\d*|\.\d+)$/;</td></tr>
+<tr><td class="h">416</td><td colspan="6"></td></tr><tr><td class="h">417</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L417">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--condition.html#L417">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;Score out of range&#39;</td></tr>
+<tr><td class="h">418</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;unless $score &gt;= $MIN_SCORE &amp;&amp; $score &lt;= $MAX_SCORE;</td></tr>
+<tr><td class="h">419</td><td colspan="6"></td></tr><tr><td class="h">420</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Compare against the pass threshold constant</td></tr>
+<tr><td class="h">421</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--branch.html#L421">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return $score &gt;= $PASS_THRESHOLD ? &#39;Pass&#39; : &#39;Fail&#39;;</td></tr>
+<tr><td class="h">422</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">423</td><td colspan="6"></td></tr><tr><td class="h">424 - 430</td><td colspan="5"></td><td class="s"><pre>=head2 mysterious_method
+
+A deliberately under-documented method used to test that
+L&lt;App::Test::Generator::SchemaExtractor&gt; correctly assigns low
+confidence when validation is absent.
+
+=cut</pre></td></tr>
+<tr><td class="h">431</td><td colspan="6"></td></tr><tr><td class="h">432</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub mysterious_method {</td></tr>
+<tr><td class="h">433</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-Sample-Module-pm--subroutine.html#L433">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $thing) = @_;</td></tr>
+<tr><td class="h">434</td><td colspan="6"></td></tr><tr><td class="h">435</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Intentionally unvalidated &acirc;&#128;&#148; used to verify that SchemaExtractor</td></tr>
+<tr><td class="h">436</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# flags low-confidence schemas when no validation logic is present.</td></tr>
+<tr><td class="h">437</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Callers passing non-numeric values will trigger a Perl warning;</td></tr>
+<tr><td class="h">438</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# this is expected behaviour for this test fixture.</td></tr>
+<tr><td class="h">439</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return $thing * 2;</td></tr>
+<tr><td class="h">440</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">441</td><td colspan="6"></td></tr><tr><td class="h">442 - 450</td><td colspan="5"></td><td class="s"><pre>=head1 AUTHOR
+
+Example Author
+
+=head1 LICENSE
+
+This is free software.
+
+=cut</pre></td></tr>
+<tr><td class="h">451</td><td colspan="6"></td></tr><tr><td class="h">452</td><td></td><td></td><td></td><td></td><td></td><td class="s">1;</td></tr>
+</table>
 </body>
 </html>

@@ -20,94 +20,268 @@ https://pjcj.net
 <h1>File Coverage</h1>
 <table>
 <tr><td class="h" align="right">File:</td><td align="left">blib/lib/App/Test/Generator/TestStrategy.pm</td></tr>
-<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">15.0%</td></tr>
+<tr><td class="h" align="right">Coverage:</td><td align="left" class="c0">14.2%</td></tr>
 </table>
 <div><br/></div>
 <table>
 <tr><th>line</th><th>stmt</th><th>bran</th><th>cond</th><th>sub</th><th>time</th><th>code</th></tr>
 <tr><td class="h">1</td><td></td><td></td><td></td><td></td><td></td><td class="s">package App::Test::Generator::TestStrategy;</td></tr>
-<tr><td class="h">2</td><td colspan="6"></td></tr><tr><td class="h">3</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--subroutine.html#L3">1</a></div></td><td><div>3</div><div>1</div><div>14</div></td><td class="s">use strict;</td></tr>
-<tr><td class="h">4</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--subroutine.html#L4">1</a></div></td><td><div>1</div><div>1</div><div>18</div></td><td class="s">use warnings;</td></tr>
-<tr><td class="h">5</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--subroutine.html#L5">1</a></div></td><td><div>2</div><div>0</div><div>256</div></td><td class="s">use Carp;</td></tr>
-<tr><td class="h">6</td><td colspan="6"></td></tr><tr><td class="h">7</td><td></td><td></td><td></td><td></td><td></td><td class="s">our $VERSION = &#39;0.30&#39;;</td></tr>
-<tr><td class="h">8</td><td colspan="6"></td></tr><tr><td class="h">9 - 13</td><td colspan="5"></td><td class="s"><pre>=head1 VERSION
+<tr><td class="h">2</td><td colspan="6"></td></tr><tr><td class="h">3</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--subroutine.html#L3">1</a></div></td><td><div>2</div><div>0</div><div>9</div></td><td class="s">use strict;</td></tr>
+<tr><td class="h">4</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--subroutine.html#L4">1</a></div></td><td><div>2</div><div>1</div><div>12</div></td><td class="s">use warnings;</td></tr>
+<tr><td class="h">5</td><td><div class="c3">1</div><div class="c3">1</div><div class="c3">1</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--subroutine.html#L5">1</a></div></td><td><div>2</div><div>0</div><div>342</div></td><td class="s">use Readonly;</td></tr>
+<tr><td class="h">6</td><td colspan="6"></td></tr><tr><td class="h">7</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">8</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Accessor type strings from the schema</td></tr>
+<tr><td class="h">9</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">10</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $ACCESSOR_GETTER&nbsp;&nbsp;&nbsp;=&gt; &#39;getter&#39;;</td></tr>
+<tr><td class="h">11</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $ACCESSOR_SETTER&nbsp;&nbsp;&nbsp;=&gt; &#39;setter&#39;;</td></tr>
+<tr><td class="h">12</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $ACCESSOR_GETSET&nbsp;&nbsp;&nbsp;=&gt; &#39;getset&#39;;</td></tr>
+<tr><td class="h">13</td><td colspan="6"></td></tr><tr><td class="h">14</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">15</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Output type strings from the schema</td></tr>
+<tr><td class="h">16</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">17</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TYPE_BOOLEAN =&gt; &#39;boolean&#39;;</td></tr>
+<tr><td class="h">18</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TYPE_OBJECT&nbsp;&nbsp;=&gt; &#39;object&#39;;</td></tr>
+<tr><td class="h">19</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TYPE_VOID&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;void&#39;;</td></tr>
+<tr><td class="h">20</td><td colspan="6"></td></tr><tr><td class="h">21</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">22</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Default confidence threshold for plan generation</td></tr>
+<tr><td class="h">23</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">24</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $DEFAULT_CONFIDENCE =&gt; &#39;medium&#39;;</td></tr>
+<tr><td class="h">25</td><td colspan="6"></td></tr><tr><td class="h">26</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">27</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Test plan flag keys written to the method plan</td></tr>
+<tr><td class="h">28</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">29</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TEST_CONTEXT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;context_tests&#39;;</td></tr>
+<tr><td class="h">30</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TEST_PREDICATE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;predicate_test&#39;;</td></tr>
+<tr><td class="h">31</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TEST_GETTER&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;getter_test&#39;;</td></tr>
+<tr><td class="h">32</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TEST_SETTER&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;setter_test&#39;;</td></tr>
+<tr><td class="h">33</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TEST_GETSET&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;getset_test&#39;;</td></tr>
+<tr><td class="h">34</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TEST_OBJECT_INJECT&nbsp;&nbsp;&nbsp;=&gt; &#39;object_injection_test&#39;;</td></tr>
+<tr><td class="h">35</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TEST_BOOLEAN_SET&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;boolean_set_test&#39;;</td></tr>
+<tr><td class="h">36</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TEST_VOID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;void_context_test&#39;;</td></tr>
+<tr><td class="h">37</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TEST_ERROR_HANDLING&nbsp;&nbsp;=&gt; &#39;error_handling_test&#39;;</td></tr>
+<tr><td class="h">38</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TEST_BOUNDARY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;boundary_tests&#39;;</td></tr>
+<tr><td class="h">39</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TEST_CHAINING&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;chaining_test&#39;;</td></tr>
+<tr><td class="h">40</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $TEST_BASIC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; &#39;basic_test&#39;;</td></tr>
+<tr><td class="h">41</td><td colspan="6"></td></tr><tr><td class="h">42</td><td></td><td></td><td></td><td></td><td></td><td class="s">our $VERSION = &#39;0.33&#39;;</td></tr>
+<tr><td class="h">43</td><td colspan="6"></td></tr><tr><td class="h">44 - 99</td><td colspan="5"></td><td class="s"><pre>=head1 VERSION
 
-Version 0.30
+Version 0.33
+
+=head1 DESCRIPTION
+
+Generates a test strategy plan for all methods in a schema, determining
+which test types should be produced for each method based on its
+accessor classification, output type, side effects, and other metadata.
+
+=head2 new
+
+Construct a new TestStrategy.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $strategy = App::Test::Generator::TestStrategy-&gt;new(
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;schema&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; \%schemas,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;thresholds =&gt; { confidence =&gt; &#39;high&#39; },
+&nbsp;&nbsp;&nbsp;&nbsp;);
+
+=head3 Arguments
+
+=over 4
+
+=item * C&lt;schema&gt;
+
+A hashref of method name to schema hashref. Optional &acirc;&#128;&#148; defaults to
+an empty hashref.
+
+=item * C&lt;thresholds&gt;
+
+A hashref of threshold configuration. Optional &acirc;&#128;&#148; defaults to
+C&lt;&lt; { confidence =&gt; &#39;medium&#39; } &gt;&gt;.
+
+=back
+
+=head3 Returns
+
+A blessed hashref.
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;schema&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; { type =&gt; HASHREF, optional =&gt; 1 },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;thresholds =&gt; { type =&gt; HASHREF, optional =&gt; 1 },
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;type =&gt; OBJECT,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;isa&nbsp;&nbsp;=&gt; &#39;App::Test::Generator::TestStrategy&#39;,
+&nbsp;&nbsp;&nbsp;&nbsp;}
 
 =cut</pre></td></tr>
-<tr><td class="h">14</td><td colspan="6"></td></tr><tr><td class="h">15</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Constructor</td></tr>
-<tr><td class="h">16</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub new {</td></tr>
-<tr><td class="h">17</td><td><div class="c3">10</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--subroutine.html#L17">10</a></div></td><td><div>7487</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($class, %args) = @_;</td></tr>
-<tr><td class="h">18</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $self = bless {</td></tr>
-<tr><td class="h">19</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;schema =&gt; $args{schema} || {},</td></tr>
-<tr><td class="h">20</td><td><div class="c3">10</div></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L20">50</a></div><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L20">50</a></div></td><td></td><td><div>38</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;thresholds =&gt; $args{thresholds} || { confidence =&gt; &#39;medium&#39; },</td></tr>
-<tr><td class="h">21</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plans =&gt; {},</td></tr>
-<tr><td class="h">22</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}, $class;</td></tr>
-<tr><td class="h">23</td><td><div class="c3">10</div></td><td></td><td></td><td></td><td><div>11</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return $self;</td></tr>
-<tr><td class="h">24</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">25</td><td colspan="6"></td></tr><tr><td class="h">26</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Main entry: generate a test plan for all methods</td></tr>
-<tr><td class="h">27</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub generate_plan {</td></tr>
-<tr><td class="h">28</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--subroutine.html#L28">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($self) = @_;</td></tr>
-<tr><td class="h">29</td><td colspan="6"></td></tr><tr><td class="h">30</td><td><div class="c0">0</div><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;foreach my $method (keys %{ $self-&gt;{schema} }) {</td></tr>
-<tr><td class="h">31</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $schema = $self-&gt;{schema}{$method};</td></tr>
-<tr><td class="h">32</td><td colspan="6"></td></tr><tr><td class="h">33</td><td><div class="c0">0</div></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L33">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $analysis = $schema-&gt;{$method}{_analysis} || {};</td></tr>
-<tr><td class="h">34</td><td><div class="c0">0</div></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L34">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $effects = $analysis-&gt;{side_effects} || {};</td></tr>
-<tr><td class="h">35</td><td><div class="c0">0</div></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L35">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $deps = $analysis-&gt;{dependencies} || {};</td></tr>
-<tr><td class="h">36</td><td colspan="6"></td></tr><tr><td class="h">37</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# next if (($effects-&gt;{purity_level}||&#39;&#39;) ne &#39;pure&#39;) &amp;&amp; !exists $deps-&gt;{env};</td></tr>
-<tr><td class="h">38</td><td colspan="6"></td></tr><tr><td class="h">39</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$self-&gt;{plans}{$method} = $self-&gt;_plan_for_method($schema);</td></tr>
-<tr><td class="h">40</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">41</td><td colspan="6"></td></tr><tr><td class="h">42</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return $self-&gt;{plans};</td></tr>
-<tr><td class="h">43</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">44</td><td colspan="6"></td></tr><tr><td class="h">45</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _plan_for_method {</td></tr>
-<tr><td class="h">46</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--subroutine.html#L46">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $schema) = @_;</td></tr>
-<tr><td class="h">47</td><td colspan="6"></td></tr><tr><td class="h">48</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my %plan;</td></tr>
-<tr><td class="h">49</td><td colspan="6"></td></tr><tr><td class="h">50</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Context-aware returns</td></tr>
-<tr><td class="h">51</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L51">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if ($schema-&gt;{output}{_context_aware}) {</td></tr>
-<tr><td class="h">52</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{context_tests} = 1;</td></tr>
-<tr><td class="h">53</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">54</td><td colspan="6"></td></tr><tr><td class="h">55</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Getter/setter detection</td></tr>
-<tr><td class="h">56</td><td><div class="c0">0</div><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L56">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L56">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if($schema-&gt;{accessor} &amp;&amp; (scalar keys(%{$schema-&gt;{accessor}}))) {</td></tr>
-<tr><td class="h">57</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L57">0</a></div><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L57">0</a></div><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L57">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if ($schema-&gt;{accessor}{type} eq &#39;getter&#39;) {</td></tr>
-<tr><td class="h">58</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L58">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L58">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(($schema-&gt;{output}{type}||&#39;&#39;) eq &#39;boolean&#39;) {</td></tr>
-<tr><td class="h">59</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{predicate_test} = 1;</td></tr>
-<tr><td class="h">60</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">61</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{getter_test} = 1;</td></tr>
-<tr><td class="h">62</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} elsif ($schema-&gt;{accessor}{type} eq &#39;setter&#39;) {</td></tr>
-<tr><td class="h">63</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{setter_test} = 1;</td></tr>
-<tr><td class="h">64</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} elsif ($schema-&gt;{accessor}{type} eq &#39;getset&#39;) {</td></tr>
-<tr><td class="h">65</td><td><div class="c0">0</div><div class="c0">0</div><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L65">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($param) = grep { $_ !~ /^_/ } keys %{ $schema-&gt;{input} || {} };</td></tr>
-<tr><td class="h">66</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L66">0</a></div><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L66">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L66">0</a></div><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L66">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if ($param &amp;&amp; $schema-&gt;{input} &amp;&amp; ($schema-&gt;{input}{$param}{type} eq &#39;object&#39;)) {</td></tr>
-<tr><td class="h">67</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{object_injection_test} = 1;</td></tr>
-<tr><td class="h">68</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} elsif($param &amp;&amp; $schema-&gt;{input}{$param}{type} eq &#39;boolean&#39;) {</td></tr>
-<tr><td class="h">69</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{boolean_set_test} = 1;</td></tr>
-<tr><td class="h">70</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">71</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{getset_test} = 1;</td></tr>
-<tr><td class="h">72</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">73</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">74</td><td colspan="6"></td></tr><tr><td class="h">75</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Void or mutator detection</td></tr>
-<tr><td class="h">76</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L76">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L76">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if ($schema-&gt;{output}{type} &amp;&amp; $schema-&gt;{output}{type} eq &#39;void&#39;) {</td></tr>
-<tr><td class="h">77</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{void_context_test} = 1;</td></tr>
-<tr><td class="h">78</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">79</td><td colspan="6"></td></tr><tr><td class="h">80</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Error handling / return conventions</td></tr>
-<tr><td class="h">81</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L81">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L81">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if ($schema-&gt;{output}{_error_return} || $schema-&gt;{output}{success_failure_pattern}) {</td></tr>
-<tr><td class="h">82</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{error_handling_test} = 1;</td></tr>
-<tr><td class="h">83</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">84</td><td colspan="6"></td></tr><tr><td class="h">85</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Boundary / equivalence class hints</td></tr>
-<tr><td class="h">86</td><td><div class="c0">0</div><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L86">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L86">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if ($schema-&gt;{_yamltest_hints} &amp;&amp; keys %{ $schema-&gt;{_yamltest_hints} }) {</td></tr>
-<tr><td class="h">87</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{boundary_tests} = 1;</td></tr>
-<tr><td class="h">88</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">89</td><td colspan="6"></td></tr><tr><td class="h">90</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Method chaining / returns self</td></tr>
-<tr><td class="h">91</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L91">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if ($schema-&gt;{output}{_returns_self}) {</td></tr>
-<tr><td class="h">92</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{chaining_test} = 1;</td></tr>
-<tr><td class="h">93</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">94</td><td colspan="6"></td></tr><tr><td class="h">95</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L95">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if ($schema-&gt;{output}{type} eq &#39;boolean&#39;) {</td></tr>
-<tr><td class="h">96</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{predicate_test} = 1;</td></tr>
-<tr><td class="h">97</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">98</td><td colspan="6"></td></tr><tr><td class="h">99</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Default: basic call with typical inputs</td></tr>
-<tr><td class="h">100</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L100">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{basic_test} = 1 unless %plan;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Always at least one test</td></tr>
-<tr><td class="h">101</td><td colspan="6"></td></tr><tr><td class="h">102</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return \%plan;</td></tr>
-<tr><td class="h">103</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">104</td><td colspan="6"></td></tr><tr><td class="h">105</td><td></td><td></td><td></td><td></td><td></td><td class="s">1;</td></tr>
+<tr><td class="h">100</td><td colspan="6"></td></tr><tr><td class="h">101</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub new {</td></tr>
+<tr><td class="h">102</td><td><div class="c3">10</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--subroutine.html#L102">10</a></div></td><td><div>8996</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($class, %args) = @_;</td></tr>
+<tr><td class="h">103</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return bless {</td></tr>
+<tr><td class="h">104</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;schema&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $args{schema}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|| {},</td></tr>
+<tr><td class="h">105</td><td><div class="c3">10</div></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L105">50</a></div><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L105">50</a></div></td><td></td><td><div>48</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;thresholds =&gt; $args{thresholds} || { confidence =&gt; $DEFAULT_CONFIDENCE },</td></tr>
+<tr><td class="h">106</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;plans&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; {},</td></tr>
+<tr><td class="h">107</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}, $class;</td></tr>
+<tr><td class="h">108</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">109</td><td colspan="6"></td></tr><tr><td class="h">110 - 150</td><td colspan="5"></td><td class="s"><pre>=head2 generate_plan
+
+Generate a test plan for all methods in the schema and return it as
+a hashref mapping method names to plan hashrefs.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $strategy = App::Test::Generator::TestStrategy-&gt;new(
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;schema =&gt; \%schemas,
+&nbsp;&nbsp;&nbsp;&nbsp;);
+&nbsp;&nbsp;&nbsp;&nbsp;my $plan = $strategy-&gt;generate_plan;
+
+&nbsp;&nbsp;&nbsp;&nbsp;for my $method (keys %{$plan}) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print &quot;$method: &quot;, join(&#39;, &#39;, keys %{ $plan-&gt;{$method} }), &quot;\n&quot;;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+=head3 Arguments
+
+None beyond C&lt;$self&gt;.
+
+=head3 Returns
+
+A hashref mapping method names to test plan hashrefs, each containing
+boolean flags for the test types that should be generated.
+
+=head3 API specification
+
+=head4 input
+
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::TestStrategy&#39; },
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+=head4 output
+
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;type =&gt; HASHREF,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;keys =&gt; {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#39;*&#39; =&gt; { type =&gt; HASHREF },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+=cut</pre></td></tr>
+<tr><td class="h">151</td><td colspan="6"></td></tr><tr><td class="h">152</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub generate_plan {</td></tr>
+<tr><td class="h">153</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--subroutine.html#L153">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $self = $_[0];</td></tr>
+<tr><td class="h">154</td><td colspan="6"></td></tr><tr><td class="h">155</td><td><div class="c0">0</div><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for my $method (keys %{ $self-&gt;{schema} }) {</td></tr>
+<tr><td class="h">156</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $schema = $self-&gt;{schema}{$method};</td></tr>
+<tr><td class="h">157</td><td colspan="6"></td></tr><tr><td class="h">158</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Extract analysis metadata from the schema &acirc;&#128;&#148; note that</td></tr>
+<tr><td class="h">159</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# $schema is already the per-method hashref so we access</td></tr>
+<tr><td class="h">160</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# _analysis directly, not via the method name key again</td></tr>
+<tr><td class="h">161</td><td><div class="c0">0</div></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L161">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $analysis = $schema-&gt;{_analysis}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|| {};</td></tr>
+<tr><td class="h">162</td><td><div class="c0">0</div></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L162">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $effects&nbsp;&nbsp;= $analysis-&gt;{side_effects}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|| {};</td></tr>
+<tr><td class="h">163</td><td><div class="c0">0</div></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L163">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $deps&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= $analysis-&gt;{dependencies}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|| {};</td></tr>
+<tr><td class="h">164</td><td colspan="6"></td></tr><tr><td class="h">165</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Generate and store the plan for this method</td></tr>
+<tr><td class="h">166</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$self-&gt;{plans}{$method} = $self-&gt;_plan_for_method($schema);</td></tr>
+<tr><td class="h">167</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">168</td><td colspan="6"></td></tr><tr><td class="h">169</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return $self-&gt;{plans};</td></tr>
+<tr><td class="h">170</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">171</td><td colspan="6"></td></tr><tr><td class="h">172</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">173</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _plan_for_method</td></tr>
+<tr><td class="h">174</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">175</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Determine which test types should be</td></tr>
+<tr><td class="h">176</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;generated for a single method based on</td></tr>
+<tr><td class="h">177</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;its schema metadata.</td></tr>
+<tr><td class="h">178</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">179</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$schema - the per-method schema hashref</td></tr>
+<tr><td class="h">180</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">181</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns a hashref of test type flags.</td></tr>
+<tr><td class="h">182</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Always contains at least basic_test =&gt; 1.</td></tr>
+<tr><td class="h">183</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">184</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Side effects: None.</td></tr>
+<tr><td class="h">185</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">186</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Notes:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;All string comparisons use // &#39;&#39; guards</td></tr>
+<tr><td class="h">187</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;to avoid uninitialized value warnings</td></tr>
+<tr><td class="h">188</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;when schema fields are absent.</td></tr>
+<tr><td class="h">189</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">190</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _plan_for_method {</td></tr>
+<tr><td class="h">191</td><td><div class="c0">0</div></td><td></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--subroutine.html#L191">0</a></div></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($self, $schema) = @_;</td></tr>
+<tr><td class="h">192</td><td colspan="6"></td></tr><tr><td class="h">193</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my %plan;</td></tr>
+<tr><td class="h">194</td><td colspan="6"></td></tr><tr><td class="h">195</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">196</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Context-aware returns need both scalar and list</td></tr>
+<tr><td class="h">197</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# context tests to verify correct behaviour in each</td></tr>
+<tr><td class="h">198</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">199</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L199">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if($schema-&gt;{output}{_context_aware}) {</td></tr>
+<tr><td class="h">200</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{$TEST_CONTEXT} = 1;</td></tr>
+<tr><td class="h">201</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">202</td><td colspan="6"></td></tr><tr><td class="h">203</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">204</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Accessor detection &acirc;&#128;&#148; choose test types based on</td></tr>
+<tr><td class="h">205</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# whether the method is a getter, setter, or both</td></tr>
+<tr><td class="h">206</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">207</td><td><div class="c0">0</div><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L207">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L207">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if($schema-&gt;{accessor} &amp;&amp; scalar keys %{ $schema-&gt;{accessor} }) {</td></tr>
+<tr><td class="h">208</td><td><div class="c0">0</div></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L208">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $acc_type = $schema-&gt;{accessor}{type} // &#39;&#39;;</td></tr>
+<tr><td class="h">209</td><td colspan="6"></td></tr><tr><td class="h">210</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L210">0</a></div><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L210">0</a></div><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L210">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if($acc_type eq $ACCESSOR_GETTER) {</td></tr>
+<tr><td class="h">211</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Boolean getters are predicates and need</td></tr>
+<tr><td class="h">212</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# truthy/falsy tests in addition to getter tests</td></tr>
+<tr><td class="h">213</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L213">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L213">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(($schema-&gt;{output}{type} // &#39;&#39;) eq $TYPE_BOOLEAN) {</td></tr>
+<tr><td class="h">214</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{$TEST_PREDICATE} = 1;</td></tr>
+<tr><td class="h">215</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">216</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{$TEST_GETTER} = 1;</td></tr>
+<tr><td class="h">217</td><td colspan="6"></td></tr><tr><td class="h">218</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} elsif($acc_type eq $ACCESSOR_SETTER) {</td></tr>
+<tr><td class="h">219</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{$TEST_SETTER} = 1;</td></tr>
+<tr><td class="h">220</td><td colspan="6"></td></tr><tr><td class="h">221</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} elsif($acc_type eq $ACCESSOR_GETSET) {</td></tr>
+<tr><td class="h">222</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# For getset accessors, check the input parameter</td></tr>
+<tr><td class="h">223</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# type to determine if object injection or boolean</td></tr>
+<tr><td class="h">224</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# set tests are more appropriate</td></tr>
+<tr><td class="h">225</td><td><div class="c0">0</div><div class="c0">0</div><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L225">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($param) = grep { !/^_/ } keys %{ $schema-&gt;{input} || {} };</td></tr>
+<tr><td class="h">226</td><td><div class="c0">0</div></td><td></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L226">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $param_type = ($param &amp;&amp; $schema-&gt;{input}{$param}{type}) // &#39;&#39;;</td></tr>
+<tr><td class="h">227</td><td colspan="6"></td></tr><tr><td class="h">228</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L228">0</a></div><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L228">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if($param_type eq $TYPE_OBJECT) {</td></tr>
+<tr><td class="h">229</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{$TEST_OBJECT_INJECT} = 1;</td></tr>
+<tr><td class="h">230</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} elsif($param_type eq $TYPE_BOOLEAN) {</td></tr>
+<tr><td class="h">231</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{$TEST_BOOLEAN_SET} = 1;</td></tr>
+<tr><td class="h">232</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">233</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{$TEST_GETSET} = 1;</td></tr>
+<tr><td class="h">234</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">235</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">236</td><td colspan="6"></td></tr><tr><td class="h">237</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">238</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Void return type &acirc;&#128;&#148; verify the method returns nothing</td></tr>
+<tr><td class="h">239</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# and does not accidentally return a useful value</td></tr>
+<tr><td class="h">240</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">241</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L241">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L241">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(($schema-&gt;{output}{type} // &#39;&#39;) eq $TYPE_VOID) {</td></tr>
+<tr><td class="h">242</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{$TEST_VOID} = 1;</td></tr>
+<tr><td class="h">243</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">244</td><td colspan="6"></td></tr><tr><td class="h">245</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">246</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Error handling &acirc;&#128;&#148; verify error return conventions</td></tr>
+<tr><td class="h">247</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# are tested explicitly</td></tr>
+<tr><td class="h">248</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">249</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L249">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L249">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if($schema-&gt;{output}{_error_return}</td></tr>
+<tr><td class="h">250</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|| $schema-&gt;{output}{success_failure_pattern}) {</td></tr>
+<tr><td class="h">251</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{$TEST_ERROR_HANDLING} = 1;</td></tr>
+<tr><td class="h">252</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">253</td><td colspan="6"></td></tr><tr><td class="h">254</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">255</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Boundary hints from YAML test configuration &acirc;&#128;&#148;</td></tr>
+<tr><td class="h">256</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# generate boundary/equivalence class tests</td></tr>
+<tr><td class="h">257</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">258</td><td><div class="c0">0</div><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L258">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L258">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if($schema-&gt;{_yamltest_hints} &amp;&amp; keys %{ $schema-&gt;{_yamltest_hints} }) {</td></tr>
+<tr><td class="h">259</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{$TEST_BOUNDARY} = 1;</td></tr>
+<tr><td class="h">260</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">261</td><td colspan="6"></td></tr><tr><td class="h">262</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">263</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Method chaining &acirc;&#128;&#148; verify that $self is returned</td></tr>
+<tr><td class="h">264</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# and that calls can be chained</td></tr>
+<tr><td class="h">265</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">266</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L266">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if($schema-&gt;{output}{_returns_self}) {</td></tr>
+<tr><td class="h">267</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{$TEST_CHAINING} = 1;</td></tr>
+<tr><td class="h">268</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">269</td><td colspan="6"></td></tr><tr><td class="h">270</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">271</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Boolean output &acirc;&#128;&#148; needs predicate tests regardless</td></tr>
+<tr><td class="h">272</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# of whether an accessor was detected</td></tr>
+<tr><td class="h">273</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">274</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L274">0</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--condition.html#L274">0</a></div></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(($schema-&gt;{output}{type} // &#39;&#39;) eq $TYPE_BOOLEAN) {</td></tr>
+<tr><td class="h">275</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{$TEST_PREDICATE} = 1;</td></tr>
+<tr><td class="h">276</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">277</td><td colspan="6"></td></tr><tr><td class="h">278</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">279</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Always generate at least a basic call test even</td></tr>
+<tr><td class="h">280</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# if no other test types were identified</td></tr>
+<tr><td class="h">281</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# --------------------------------------------------</td></tr>
+<tr><td class="h">282</td><td><div class="c0">0</div></td><td><div class="c0" title="-/-"><a href="blib-lib-App-Test-Generator-TestStrategy-pm--branch.html#L282">0</a></div></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$plan{$TEST_BASIC} = 1 unless %plan;</td></tr>
+<tr><td class="h">283</td><td colspan="6"></td></tr><tr><td class="h">284</td><td><div class="c0">0</div></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return \%plan;</td></tr>
+<tr><td class="h">285</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">286</td><td colspan="6"></td></tr><tr><td class="h">287</td><td></td><td></td><td></td><td></td><td></td><td class="s">1;</td></tr>
 </table>
 </body>
 </html>
