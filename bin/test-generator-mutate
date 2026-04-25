@@ -597,6 +597,16 @@ if($opt{json}) {
 		printf "DEBUG merge: keys=%s\n", join(',', sort keys %$prev);
 		my $raw = read_file($opt{json});
 		printf "DEBUG merge: raw_length=%d first_char=%s\n", length($raw), substr($raw, 0, 1);
+		my $raw  = do { local $/; open(my $fh, '<', $opt{json}) or die $!; <$fh> };
+		printf "DEBUG merge: raw_length=%d\n", length($raw // '');
+		my $prev = eval { decode_json($raw) };
+		if($@) {
+			printf "DEBUG merge: PARSE ERROR: %s\n", substr($@, 0, 200);
+			$prev = {};
+		} else {
+			$prev //= {};
+		}
+		printf "DEBUG merge: keys=%s\n", join(',', sort keys %{$prev // {}});
 
 		# Keep survived/killed entries for files NOT in this run
 		my %mutated_files = map { $_ => 1 } @files;
