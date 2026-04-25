@@ -437,10 +437,9 @@ if($opt{file}) {
 			" file(s)\n" if $opt{verbose};
 		@files = @changed;
 	} else {
-		# No lib/*.pm files changed -- retain previous results unchanged
+		# No lib/*.pm files changed -- fall through to merge and write
+		# existing results back to json without running new mutations
 		print "No lib/*.pm files changed -- retaining previous mutation results\n";
-		# mutation.json is left as-is from the previous run
-		exit 0;
 	}
 } else {
 	find(
