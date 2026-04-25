@@ -241,8 +241,8 @@ pre details.mutant-details ul {
 <body>
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Mutation/ReturnUndef.pm</h1>
-<div class="nav"><a href="../../../../../../index.html">Index</a>
-</div><div class='summary'>
+<div class="nav"><a href="ConditionalInversion.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="../Mutator.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 96.49%<br>
 TER2 (Branch): 61.54%<br>
@@ -351,13 +351,13 @@ Approximate LCSAJ segments: 27<br>
 </span><span class="">   59: 
 </span><span class="">   60: 	# PPI &gt;= 1.270 classifies return as PPI::Statement::Break
 </span><span class="">   61: 	# rather than the dedicated PPI::Statement::Return class
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   62: 	return 0 unless $node-&gt;isa(&#39;PPI::Statement::Break&#39;);
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   63: 
+</span><span class="">   62: 	return 0 unless $node-&gt;isa(&#39;PPI::Statement::Break&#39;);
+</span><span class="">   63: 
 </span><span class="">   64: 	# Confirm it is specifically a return statement and not
 </span><span class="">   65: 	# last, next, or redo which are also PPI::Statement::Break
 </span><span class="">   66: 	my $first = $node-&gt;schild(0) or return 0;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   67: 	return $first-&gt;content eq &#39;return&#39;;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   68: }
+</span><span class="">   67: 	return $first-&gt;content eq &#39;return&#39;;
+</span><span class="">   68: }
 </span><span class="">   69: 
 </span><span class="">   70: =head2 mutate
 </span><span class="">   71: 
@@ -445,10 +445,10 @@ Approximate LCSAJ segments: 27<br>
 </span><span class="">  153: 	my $returns = $doc-&gt;find(sub {
 </span><span class="">  154: 		my $node = $_[1];
 </span><span class="">  155: 		# Match Break nodes that are specifically return statements
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  156: 		return 0 unless $node-&gt;isa(&#39;PPI::Statement::Break&#39;);
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  157: 		my $first = $node-&gt;schild(0) or return 0;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  158: 		return $first-&gt;content eq &#39;return&#39;;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  159: 	}) || [];
+</span><span class="">  156: 		return 0 unless $node-&gt;isa(&#39;PPI::Statement::Break&#39;);
+</span><span class="">  157: 		my $first = $node-&gt;schild(0) or return 0;
+</span><span class="">  158: 		return $first-&gt;content eq &#39;return&#39;;
+</span><span class="">  159: 	}) || [];
 </span><span class="">  160: 
 </span><span class="">  161: 	my @mutants;
 </span><span class="">  162: 
@@ -475,9 +475,35 @@ Approximate LCSAJ segments: 27<br>
 </span><span class="">  183: 			App::Test::Generator::Mutant-&gt;new(
 </span><span class="">  184: 				id          =&gt; $id,
 </span><span class="">  185: 				group       =&gt; &quot;RETURN_UNDEF:$line&quot;,
-</span><span class="">  186: 				description =&gt; &#39;Replace return expression with undef&#39;,
-</span><span class="">  187: 				original    =&gt; $ret-&gt;content(),
-</span><span class="">  188: 				line        =&gt; $line,
+</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  186: 				description =&gt; &#39;Replace return expression with undef&#39;,
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_186_39_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  187: 				original    =&gt; $ret-&gt;content(),
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_187_39_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  188: 				line        =&gt; $line,
 </span><span class="">  189: 				type        =&gt; &#39;return&#39;,
 </span><span class="">  190: 
 </span><span class="">  191: 				# The transform closure captures line and col so it
@@ -490,49 +516,21 @@ Approximate LCSAJ segments: 27<br>
 </span><span class="">  198: 					my $rets = $doc-&gt;find(sub {
 </span><span class="">  199: 						my $node = $_[1];
 </span><span class="">  200: 						# Match Break nodes that are specifically return statements
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  201: 						return 0 unless $node-&gt;isa(&#39;PPI::Statement::Break&#39;);
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
-					<ul>
-				<li><b>BOOL_NEGATE_201_7: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boolean branch test suggestion
-ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>RETURN_UNDEF_201_7: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Return value assertion
-is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  202: 						my $first = $node-&gt;schild(0) or return 0;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  203: 						return $first-&gt;content eq &#39;return&#39;;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  204: 					}) || [];
+</span><span class="">  201: 						return 0 unless $node-&gt;isa(&#39;PPI::Statement::Break&#39;);
+</span><span class="">  202: 						my $first = $node-&gt;schild(0) or return 0;
+</span><span class="">  203: 						return $first-&gt;content eq &#39;return&#39;;
+</span><span class="">  204: 					}) || [];
 </span><span class="">  205: 
-</span><span class="">  206: 					for my $ret (@{$rets}) {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  207: 						next unless $ret-&gt;line_number   == $line;
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  208: 						next unless $ret-&gt;column_number == $col;
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  206: 					for my $ret (@{$rets}) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_208_39_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  209: 
+				<li><b>COND_INV_206_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  207: 						next unless $ret-&gt;line_number   == $line;
+</span><span class="">  208: 						next unless $ret-&gt;column_number == $col;
+</span><span class="">  209: 
 </span><span class="">  210: 						my $expr = $ret-&gt;schild(1) or last;
 </span><span class="">  211: 
 </span><span class="">  212: 						# Skip bare semicolon &acirc;&#128;&#148; PPI may include the statement
@@ -547,22 +545,9 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  221: 					for my $ret (@{$rets}) {
 </span><span class="">  222: 						# Match by line and column to avoid mutating
 </span><span class="">  223: 						# the wrong return statement
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  224: 						next unless $ret-&gt;line_number   == $line;
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  225: 						next unless $ret-&gt;column_number == $col;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>NUM_BOUNDARY_225_39_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  226: 
+</span><span class="">  224: 						next unless $ret-&gt;line_number   == $line;
+</span><span class="">  225: 						next unless $ret-&gt;column_number == $col;
+</span><span class="">  226: 
 </span><span class="">  227: 						# Skip bare returns &acirc;&#128;&#148; already return undef,
 </span><span class="">  228: 						# redundant to mutate
 </span><span class="">  229: 						my $expr = $ret-&gt;schild(1) or last;
@@ -580,16 +565,16 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  241: 
 </span><span class="">  242: 		# If Mutant construction fails, report clearly rather than
 </span><span class="">  243: 		# silently dropping the mutant from the results
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  244: 		if($@ || !$mutant) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  245: 			warn &quot;Failed to construct mutant $id: $@\n&quot; if $@;
+</span><span class="">  244: 		if($@ || !$mutant) {
+</span><span class="">  245: 			warn &quot;Failed to construct mutant $id: $@\n&quot; if $@;
 </span><span class="">  246: 			next;
 </span><span class="">  247: 		}
 </span><span class="">  248: 
 </span><span class="">  249: 		push @mutants, $mutant;
 </span><span class="">  250: 	}
 </span><span class="">  251: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  252: 	return @mutants;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  253: }
+</span><span class="">  252: 	return @mutants;
+</span><span class="">  253: }
 </span><span class="">  254: 
 </span><span class="">  255: =head1 AUTHOR
 </span><span class="">  256: 
