@@ -26,7 +26,7 @@ export PERL5OPT='-Ilib'
 # --- Step 2: Run tests under Devel::Cover ---
 echo "Running tests with Devel::Cover..."
 cover -outputdir cover_html -select '^lib/' \
-    -- prove -l $(find t -maxdepth 1 -name '*.t' ! -name 'mutant_*.t' | sort)
+    prove -l $(find t -maxdepth 1 -name '*.t' ! -name 'mutant_*.t' | sort)
 
 # --- Step 3: Generate JSON coverage report ---
 echo "Generating JSON coverage report..."
