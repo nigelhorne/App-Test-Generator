@@ -452,7 +452,12 @@ if($opt{file}) {
 
 # Pass absolute target file paths to the LCSAJ runtime debugger
 # via environment variable so it knows which files to instrument
-$ENV{LCSAJ_TARGETS} = join(':', map { abs_path($_) } @files);
+if(@files) {
+	$ENV{LCSAJ_TARGETS} = join(':', map { abs_path($_) } @files);
+} else {
+	# No files to mutate -- preserve existing LCSAJ hit data
+	delete $ENV{LCSAJ_TARGETS};
+}
 
 # -------------------------
 # Verify baseline tests
@@ -589,6 +594,9 @@ if($opt{json}) {
 		printf "DEBUG merge: prev survived=%d killed=%d\n",
 			scalar(@{ $prev->{survived} || [] }),
 			scalar(@{ $prev->{killed}   || [] });
+		printf "DEBUG merge: keys=%s\n", join(',', sort keys %$prev);
+		my $raw = read_file($opt{json});
+		printf "DEBUG merge: raw_length=%d first_char=%s\n", length($raw), substr($raw, 0, 1);
 
 		# Keep survived/killed entries for files NOT in this run
 		my %mutated_files = map { $_ => 1 } @files;

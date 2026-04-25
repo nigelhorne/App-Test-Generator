@@ -11,6 +11,10 @@ set -e
 
 # --- Step 0: Cleanup old data ---
 echo "Cleaning up old coverage, LCSAJ, and mutation data..."
+# Preserve LCSAJ hits across runs, same as mutation.json
+if [ -f cover_html/lcsaj_hits.json ]; then
+	cp cover_html/lcsaj_hits.json /tmp/lcsaj_hits_prev.json
+fi
 rm -rf cover_db coverage lcsaj mutation_html cover_html t/tmp_*.t
 
 # --- Step 1: Build blib if needed ---
@@ -66,6 +70,18 @@ perl -MJSON::MaybeXS -MFile::Slurp -e '
 
 # --- Step 5c: Verify LCSAJ hits ---
 echo "Checking LCSAJ hits..."
+# Merge previous LCSAJ hits for files not in this run
+if [ -f /tmp/lcsaj_hits_prev.json ]; then
+	perl -MJSON:MaybeXS -MFile::Slurp -e '
+		my $prev = decode_json(read_file("/tmp/lcsaj_hits_prev.json"));
+		my $curr = -f "cover_html/lcsaj_hits.json"
+			? decode_json(read_file("cover_html/lcsaj_hits.json"))
+			: {};
+		# curr entries take priority; prev fills in missing files
+		my %merged = (%{$prev}, %{$curr});
+		write_file("cover_html/lcsaj_hits.json", encode_json(\%merged));
+	'
+fi
 if [ -f cover_html/lcsaj_hits.json ]; then
 	echo "lcsaj_hits.json exists, size $(wc -c < cover_html/lcsaj_hits.json) bytes"
 	perl -MJSON::MaybeXS -MFile::Slurp -e '
