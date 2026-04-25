@@ -581,7 +581,11 @@ unless($opt{quiet}) {
 
 if($opt{json}) {
 	if($opt{changed_only} && -f $opt{json}) {
-		printf "DEBUG merge: found previous %s (%d bytes)\n", $opt{json}, -s $opt{json};
+		printf "DEBUG merge: file=%s size=%d\n", $opt{json}, -s $opt{json};
+		my $prev = eval { decode_json(read_file($opt{json})) } // {};
+		printf "DEBUG merge: prev survived=%d killed=%d\n",
+			scalar(@{ $prev->{survived} || [] }),
+			scalar(@{ $prev->{killed}   || [] });
 
 		my $prev = eval { decode_json(read_file($opt{json})) } // {};
 		# Keep survived/killed entries for files NOT in this run
