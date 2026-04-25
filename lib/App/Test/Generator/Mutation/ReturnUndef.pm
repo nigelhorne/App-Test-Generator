@@ -166,6 +166,10 @@ sub mutate {
 		# can never be killed by any meaningful test
 		my $expr = $ret->schild(1) or next;
 
+		# Skip bare semicolon — PPI may include the statement
+		# terminator as a significant child on bare returns
+		next if $expr->isa('PPI::Token::Structure') && $expr->content eq ';';
+
 		# Capture location so the transform closure targets the
 		# exact statement rather than the first match on that line
 		my $line = $ret->location->[0];
