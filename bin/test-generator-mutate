@@ -590,15 +590,13 @@ printf "DEBUG argv: json=%s changed_only=%s\n",
 if($opt{json}) {
 	if($opt{changed_only} && -f $opt{json}) {
 		printf "DEBUG merge: file=%s size=%d\n", $opt{json}, -s $opt{json};
-		my $prev = eval { decode_json(read_file($opt{json})) } // {};
-		printf "DEBUG merge: prev survived=%d killed=%d\n",
-			scalar(@{ $prev->{survived} || [] }),
-			scalar(@{ $prev->{killed}   || [] });
-		printf "DEBUG merge: keys=%s\n", join(',', sort keys %$prev);
-		my $raw = read_file($opt{json});
-		printf "DEBUG merge: raw_length=%d first_char=%s\n", length($raw), substr($raw, 0, 1);
-		my $raw  = do { local $/; open(my $fh, '<', $opt{json}) or die $!; <$fh> };
-		printf "DEBUG merge: raw_length=%d\n", length($raw // '');
+		my $raw = do {
+			local $/;
+			open(my $fh, '<', $opt{json}) or die "Cannot open $opt{json}: $!";
+			<$fh>
+		};
+		printf "DEBUG merge: raw_length=%d first_char=%s\n",
+			length($raw // ''), substr($raw // '', 0, 1);
 		my $prev = eval { decode_json($raw) };
 		if($@) {
 			printf "DEBUG merge: PARSE ERROR: %s\n", substr($@, 0, 200);
@@ -606,12 +604,15 @@ if($opt{json}) {
 		} else {
 			$prev //= {};
 		}
-		printf "DEBUG merge: keys=%s\n", join(',', sort keys %{$prev // {}});
+		printf "DEBUG merge: keys=%s survived=%d killed=%d\n",
+			join(',', sort keys %{$prev // {}}),
+			scalar(@{ $prev->{survived} || [] }),
+			scalar(@{ $prev->{killed}   || [] });
 
 		# Keep survived/killed entries for files NOT in this run
 		my %mutated_files = map { $_ => 1 } @files;
 		my @prev_survived = grep { !$mutated_files{ $_->{file} // '' } } @{ $prev->{survived} || [] };
-		my @prev_killed = grep { !$mutated_files{ $_->{file} // '' } } @{ $prev->{killed} || [] };
+		my @prev_killed   = grep { !$mutated_files{ $_->{file} // '' } } @{ $prev->{killed}   || [] };
 
 		# Merge previous data with current run
 		unshift @survivors,      @prev_survived;
