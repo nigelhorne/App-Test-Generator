@@ -171,12 +171,12 @@ sub generate {
 #             may not be fully represented.
 # --------------------------------------------------
 sub _build_cfg {
-	my ($sub) = @_;
+	my $sub = $_[0];
 
 	# Return empty graph if the sub has no body block
-	my $block = $sub->block or return [];
+	my $block = $sub->block() or return [];
 
-	my @statements = $block->schildren;
+	my @statements = $block->schildren();
 	my @blocks;
 	my $id      = 1;
 	my $current = _new_block($id);
@@ -346,7 +346,9 @@ sub _save_lcsaj {
 
 	# Derive the module-relative path (strip leading .../lib/ prefix)
 	my $rel = $file;
-	$rel =~ s{^.*/lib/}{};	# e.g. App/Test/Generator/Mutation/BooleanNegation.pm
+	# Strip leading path up to and including 'lib/' — handles both
+	# absolute paths (/home/runner/.../lib/App/...) and relative (lib/App/...)
+	$rel =~ s{^(?:.*/)?lib/}{};
 
 	my $base    = basename($rel);
 	# Mirror the directory structure expected by _lcsaj_coverage_for_file:
