@@ -631,20 +631,26 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  344: sub _save_lcsaj {
 </span><span class="">  345: 	my ($file, $dir, $paths) = @_;
 </span><span class="">  346: 
-</span><span class="">  347: 	# Create the output directory if it does not exist
-</span><span class="">  348: 	make_path($dir) unless -d $dir;
-</span><span class="">  349: 
-</span><span class="">  350: 	# Derive output filename from the source file basename
-</span><span class="">  351: 	my $base = basename($file);
-</span><span class="">  352: 	my $out  = File::Spec-&gt;catfile($dir, &quot;$base.lcsaj.json&quot;);
-</span><span class="">  353: 
-</span><span class="">  354: 	open my $fh, &#39;&gt;&#39;, $out
-</span><span class="">  355: 		or croak &quot;Cannot write LCSAJ output to $out: $!&quot;;
-</span><span class="">  356: 	print $fh encode_json($paths);
-</span><span class="">  357: 	close $fh;
-</span><span class="">  358: }
-</span><span class="">  359: 
-</span><span class="">  360: 1;
+</span><span class="">  347: 	# Derive the module-relative path (strip leading .../lib/ prefix)
+</span><span class="">  348: 	my $rel = $file;
+</span><span class="">  349: 	$rel =~ s{^.*/lib/}{};	# e.g. App/Test/Generator/Mutation/BooleanNegation.pm
+</span><span class="">  350: 
+</span><span class="">  351: 	my $base    = basename($rel);
+</span><span class="">  352: 	# Mirror the directory structure expected by _lcsaj_coverage_for_file:
+</span><span class="">  353: 	# $dir / $rel.lcsaj / $base.lcsaj.json
+</span><span class="">  354: 	my $subdir  = File::Spec-&gt;catfile($dir, &quot;$rel.lcsaj&quot;);
+</span><span class="">  355: 
+</span><span class="">  356: 	# Create the output directory if it does not exist
+</span><span class="">  357: 	make_path($subdir) unless -d $subdir;
+</span><span class="">  358: 
+</span><span class="">  359: 	my $out = File::Spec-&gt;catfile($subdir, &quot;$base.lcsaj.json&quot;);
+</span><span class="">  360: 
+</span><span class="">  361: 	open my $fh, &#39;&gt;&#39;, $out or croak &quot;Cannot write LCSAJ output to $out: $!&quot;;
+</span><span class="">  362: 	print $fh encode_json($paths);
+</span><span class="">  363: 	close $fh;
+</span><span class="">  364: }
+</span><span class="">  365: 
+</span><span class="">  366: 1;
 </span></pre>
 
 <script>
