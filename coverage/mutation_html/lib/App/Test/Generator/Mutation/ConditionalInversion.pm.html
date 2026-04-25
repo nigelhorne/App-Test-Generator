@@ -246,7 +246,7 @@ pre details.mutant-details ul {
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 96.00%<br>
 TER2 (Branch): 61.11%<br>
-TER3 (LCSAJ): n/a<br>
+TER3 (LCSAJ): 80.0% (4/5)<br>
 Approximate LCSAJ segments: 19<br>
 </div>
 
@@ -379,7 +379,7 @@ Approximate LCSAJ segments: 19<br>
 </span><span class="">   87: =cut
 </span><span class="">   88: 
 </span><span class="">   89: sub mutate {
-</span><span class="">   90: 	my ($self, $doc) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">90 → 96 → 156</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">90 → 96 → 0</span></span>   90: 	my ($self, $doc) = @_;
 </span><span class="">   91: 
 </span><span class="">   92: 	# Find all compound statements in the document
 </span><span class="">   93: 	my $compounds = $doc-&gt;find(&#39;PPI::Statement::Compound&#39;) || [];
@@ -477,7 +477,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  153: 		push @mutants, $mutant;
 </span><span class="">  154: 	}
 </span><span class="">  155: 
-</span><span class="">  156: 	return @mutants;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">156 → 156 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">156 → 156 → 0</span></span>  156: 	return @mutants;
 </span><span class="">  157: }
 </span><span class="">  158: 
 </span><span class="">  159: 1;

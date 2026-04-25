@@ -246,7 +246,7 @@ pre details.mutant-details ul {
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
 TER2 (Branch): 87.50%<br>
-TER3 (LCSAJ): n/a<br>
+TER3 (LCSAJ): 80.0% (12/15)<br>
 Approximate LCSAJ segments: 9<br>
 </div>
 
@@ -405,7 +405,7 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">  113: =cut
 </span><span class="">  114: 
 </span><span class="">  115: sub analyze {
-</span><span class="">  116: 	my ($self, $method) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">116 → 129 → 143</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">116 → 129 → 0</span></span>  116: 	my ($self, $method) = @_;
 </span><span class="">  117: 
 </span><span class="">  118: 	# Accept either a Model::Method object or a raw hashref,
 </span><span class="">  119: 	# since callers in SchemaExtractor pass raw hashrefs
@@ -432,7 +432,7 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">  140: 	# Use negative lookahead to avoid matching
 </span><span class="">  141: 	# return $self-&gt;{...} which is a property return
 </span><span class="">  142: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  143: 	if($source =~ /return\s+\$self(?!-&gt;)/) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">143 → 143 → 156</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">143 → 143 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">143 → 143 → 156</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">143 → 143 → 0</span></span>  143: 	if($source =~ /return\s+\$self(?!-&gt;)/) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  144: 		$method-&gt;add_evidence(
 </span><span class="">  145: 			category =&gt; &#39;return&#39;,
 </span><span class="">  146: 			signal   =&gt; &#39;returns_self&#39;,
@@ -445,7 +445,7 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">  153: 	# numeric literal, or undef. All indicate the method
 </span><span class="">  154: 	# returns a fixed value rather than a computed state.
 </span><span class="">  155: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  156: 	if($source =~ /return\s+(?:[&#39;&quot;\d]|undef\b)/) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">156 → 156 → 164</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">156 → 156 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">156 → 156 → 164</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">156 → 156 → 0</span></span>  156: 	if($source =~ /return\s+(?:[&#39;&quot;\d]|undef\b)/) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  157: 		$method-&gt;add_evidence(
 </span><span class="">  158: 			category =&gt; &#39;return&#39;,
 </span><span class="">  159: 			signal   =&gt; &#39;returns_constant&#39;,
@@ -453,7 +453,7 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">  161: 		);
 </span><span class="">  162: 	}
 </span><span class="">  163: 
-</span><span class="">  164: 	return;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">164 → 164 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">164 → 164 → 0</span></span>  164: 	return;
 </span><span class="">  165: }
 </span><span class="">  166: 
 </span><span class="">  167: =head1 LICENCE AND COPYRIGHT

@@ -246,7 +246,7 @@ pre details.mutant-details ul {
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
 TER2 (Branch): 96.55%<br>
-TER3 (LCSAJ): n/a<br>
+TER3 (LCSAJ): 73.3% (22/30)<br>
 Approximate LCSAJ segments: 59<br>
 </div>
 
@@ -389,7 +389,7 @@ Approximate LCSAJ segments: 59<br>
 </span><span class="">   97: }
 </span><span class="">   98: 
 </span><span class="">   99: sub resolve_return_type {
-</span><span class="">  100: 	my $self = $_[0];
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">100 → 103 → 129</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">100 → 103 → 0</span></span>  100: 	my $self = $_[0];
 </span><span class="">  101: 	my %score = (property =&gt; 0, constant =&gt; 0, object =&gt; 0);
 </span><span class="">  102: 
 </span><span class="">  103: 	for my $ev (@{ $self-&gt;{evidence} }) {
@@ -418,7 +418,7 @@ Approximate LCSAJ segments: 59<br>
 </span><span class="">  126: 	}
 </span><span class="">  127: 
 </span><span class="">  128: 	# Tie-break alphabetically &acirc;&#128;&#148; deterministic but arbitrary
-</span><span class="">  129: 	my ($winner) = sort { ($score{$b} || 0) &lt;=&gt; ($score{$a} || 0) || $a cmp $b } keys %score;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">129 → 132 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">129 → 132 → 0</span></span>  129: 	my ($winner) = sort { ($score{$b} || 0) &lt;=&gt; ($score{$a} || 0) || $a cmp $b } keys %score;
 </span><span class="">  130: 
 </span><span class="">  131: 	$self-&gt;{return_type} = $winner || &#39;unknown&#39;;
 </span><span class="">  132: 	return $self-&gt;{return_type};
@@ -438,7 +438,7 @@ Approximate LCSAJ segments: 59<br>
 </span><span class="">  146: }
 </span><span class="">  147: 
 </span><span class="">  148: sub resolve_classification {
-</span><span class="">  149: 	my $self = $_[0];
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">149 → 154 → 164</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">149 → 154 → 0</span></span>  149: 	my $self = $_[0];
 </span><span class="">  150: 
 </span><span class="">  151: 	# Return_type must be resolved before classification can be determined
 </span><span class="">  152: 	$self-&gt;resolve_return_type() unless defined $self-&gt;{return_type};
@@ -453,11 +453,11 @@ Approximate LCSAJ segments: 59<br>
 </span><span class="">  161: 		$self-&gt;{classification} = &#39;unknown&#39;;
 </span><span class="">  162: 	}
 </span><span class="">  163: 
-</span><span class="">  164: 	return $self-&gt;{classification};
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">164 → 164 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">164 → 164 → 0</span></span>  164: 	return $self-&gt;{classification};
 </span><span class="">  165: }
 </span><span class="">  166: 
 </span><span class="">  167: sub absorb_legacy_output {
-</span><span class="">  168: 	my ($self, $output) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">168 → 172 → 181</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">168 → 172 → 0</span></span>  168: 	my ($self, $output) = @_;
 </span><span class="">  169: 
 </span><span class="">  170: 	return unless $output &amp;&amp; ref $output eq &#39;HASH&#39;;
 </span><span class="">  171: 
@@ -470,7 +470,7 @@ Approximate LCSAJ segments: 59<br>
 </span><span class="">  178: 		);
 </span><span class="">  179: 	}
 </span><span class="">  180: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  181: 	if ($output-&gt;{_returns_self}) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">181 → 181 → 189</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">181 → 181 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">181 → 181 → 189</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">181 → 181 → 0</span></span>  181: 	if ($output-&gt;{_returns_self}) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  182: 		$self-&gt;add_evidence(
 </span><span class="">  183: 			category =&gt; &#39;return&#39;,
 </span><span class="">  184: 			signal   =&gt; &#39;returns_self&#39;,
@@ -478,7 +478,7 @@ Approximate LCSAJ segments: 59<br>
 </span><span class="">  186: 		);
 </span><span class="">  187: 	}
 </span><span class="">  188: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  189: 	if ($output-&gt;{_context_aware}) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">189 → 189 → 197</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">189 → 189 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">189 → 189 → 197</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">189 → 189 → 0</span></span>  189: 	if ($output-&gt;{_context_aware}) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  190: 		$self-&gt;add_evidence(
 </span><span class="">  191: 			category =&gt; &#39;return&#39;,
 </span><span class="">  192: 			signal   =&gt; &#39;context_aware&#39;,
@@ -486,7 +486,7 @@ Approximate LCSAJ segments: 59<br>
 </span><span class="">  194: 		);
 </span><span class="">  195: 	}
 </span><span class="">  196: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  197: 	if ($output-&gt;{_error_return}) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">197 → 197 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">197 → 197 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">197 → 197 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">197 → 197 → 0</span></span>  197: 	if ($output-&gt;{_error_return}) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  198: 		$self-&gt;add_evidence(
 </span><span class="">  199: 			category =&gt; &#39;return&#39;,
 </span><span class="">  200: 			signal   =&gt; &#39;error_pattern&#39;,

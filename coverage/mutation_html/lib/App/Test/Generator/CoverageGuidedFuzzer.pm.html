@@ -400,7 +400,7 @@ pre details.mutant-details ul {
 </span><span class="">  148: =cut
 </span><span class="">  149: 
 </span><span class="">  150: sub new {
-</span><span class="">  151: 	my ($class, %args) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 151 → 181 → 185</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 151 → 181 → 0</span></span>  151: 	my ($class, %args) = @_;
 </span><span class="">  152: 
 </span><span class="">  153: 	croak &#39;schema required&#39;     unless $args{schema};
 </span><span class="">  154: 	croak &#39;target_sub required&#39; unless $args{target_sub};
@@ -440,7 +440,7 @@ pre details.mutant-details ul {
 <span class="">  182: 		warn &quot;Devel::Cover not available; fuzzing without coverage guidance.\n&quot;;
 </span><span class="">  183: 	}
 </span><span class="">  184: 
-</span><span class="">  185: 	return $self;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 185 → 185 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 185 → 185 → 0</span></span>  185: 	return $self;
 </span><span class="">  186: }
 </span><span class="">  187: 
 </span><span class="">  188: =head2 run
@@ -485,7 +485,7 @@ pre details.mutant-details ul {
 </span><span class="">  227: =cut
 </span><span class="">  228: 
 </span><span class="">  229: sub run {
-</span><span class="">  230: 	my ($self) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 230 → 236 → 252</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 230 → 236 → 0</span></span>  230: 	my ($self) = @_;
 </span><span class="">  231: 
 </span><span class="">  232: 	# Phase 1: seed the corpus with a small set of random inputs
 </span><span class="">  233: 	$self-&gt;_seed_corpus();
@@ -537,7 +537,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  249: 		$self-&gt;{stats}{total}++;
 </span><span class="">  250: 	}
 </span><span class="">  251: 
-</span><span class="">  252: 	$self-&gt;{stats}{coverage} = scalar keys %{ $self-&gt;{covered} };
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 252 → 253 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 252 → 253 → 0</span></span>  252: 	$self-&gt;{stats}{coverage} = scalar keys %{ $self-&gt;{covered} };
 </span><span class="">  253: 	return $self-&gt;_build_report();
 </span><span class="">  254: }
 </span><span class="">  255: 
@@ -685,7 +685,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  397: =cut
 </span><span class="">  398: 
 </span><span class="">  399: sub load_corpus {
-</span><span class="">  400: 	my ($self, $path) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 400 → 414 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 400 → 414 → 0</span></span>  400: 	my ($self, $path) = @_;
 </span><span class="">  401: 
 </span><span class="">  402: 	croak &#39;path required&#39; unless defined $path;
 </span><span class="">  403: 
@@ -724,13 +724,13 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  436: #             preferred over JSON.
 </span><span class="">  437: # --------------------------------------------------
 </span><span class="">  438: sub _load_json_module {
-</span><span class="">  439: 	for my $mod (@JSON_MODULES) {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 439 → 439 → 445</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 439 → 439 → 0</span></span>  439: 	for my $mod (@JSON_MODULES) {
 </span><span class="">  440: 		# Use block eval with require rather than string eval
 </span><span class="">  441: 		# to avoid security issues with arbitrary module names
 </span><span class="">  442: 		my $ok = eval { require $mod; 1 };	## no critic (ProhibitStringyEval)
 </span><span class="">  443: 		return $mod if $ok;
 </span><span class="">  444: 	}
-</span><span class="">  445: 	croak &#39;No JSON module available; install JSON or JSON::MaybeXS&#39;;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 445 → 445 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 445 → 445 → 0</span></span>  445: 	croak &#39;No JSON module available; install JSON or JSON::MaybeXS&#39;;
 </span><span class="">  446: }
 </span><span class="">  447: 
 </span><span class="">  448: # --------------------------------------------------
@@ -754,7 +754,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  466: #             bugs if they match known warning patterns.
 </span><span class="">  467: # --------------------------------------------------
 </span><span class="">  468: sub _run_one {
-</span><span class="">  469: 	my ($self, $input) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 469 → 473 → 501</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 469 → 473 → 0</span></span>  469: 	my ($self, $input) = @_;
 </span><span class="">  470: 
 </span><span class="">  471: 	my ($result, $error, $coverage);
 </span><span class="">  472: 
@@ -798,7 +798,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  498: 
 </span><span class="">  499: 	# Record bugs &acirc;&#128;&#148; only when the input was valid per the schema.
 </span><span class="">  500: 	# A die on invalid input is correct behaviour, not a bug.
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  501: 	if($error &amp;&amp; $self-&gt;_input_is_valid($input)) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 501 → 501 → 507</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 501 → 501 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 501 → 501 → 507</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 501 → 501 → 0</span></span>  501: 	if($error &amp;&amp; $self-&gt;_input_is_valid($input)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -810,7 +810,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  504: 	}
 </span><span class="">  505: 
 </span><span class="">  506: 	# Keep the input in the corpus if it exercised new branches
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  507: 	if($self-&gt;_is_interesting($coverage)) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 507 → 507 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 507 → 507 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 507 → 507 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 507 → 507 → 0</span></span>  507: 	if($self-&gt;_is_interesting($coverage)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -846,7 +846,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  534: #             as invocant when set.
 </span><span class="">  535: # --------------------------------------------------
 </span><span class="">  536: sub _run_with_cover {
-</span><span class="">  537: 	my ($self, $input, $result_ref, $error_ref) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 537 → 559 → 563</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 537 → 559 → 0</span></span>  537: 	my ($self, $input, $result_ref, $error_ref) = @_;
 </span><span class="">  538: 
 </span><span class="">  539: 	Devel::Cover::start() if Devel::Cover-&gt;can(&#39;start&#39;);
 </span><span class="">  540: 
@@ -872,7 +872,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  560: 		$delta{$key} = 1 unless exists $before{$key};
 </span><span class="">  561: 	}
 </span><span class="">  562: 
-</span><span class="">  563: 	return \%delta;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 563 → 563 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 563 → 563 → 0</span></span>  563: 	return \%delta;
 </span><span class="">  564: }
 </span><span class="">  565: 
 </span><span class="">  566: # --------------------------------------------------
@@ -931,7 +931,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  619: #             grows even without branch feedback.
 </span><span class="">  620: # --------------------------------------------------
 </span><span class="">  621: sub _is_interesting {
-</span><span class="">  622: 	my ($self, $coverage) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 622 → 625 → 630</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 622 → 625 → 0</span></span>  622: 	my ($self, $coverage) = @_;
 </span><span class="">  623: 
 </span><span class="">  624: 	# Check for any newly covered branch
 </span><span class="">  625: 	for my $key (keys %{$coverage}) {
@@ -939,7 +939,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  627: 	}
 </span><span class="">  628: 
 </span><span class="">  629: 	# No coverage data &acirc;&#128;&#148; keep a random sample to grow the corpus
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  630: 	return rand() &lt; $RANDOM_KEEP_RATIO unless %{$coverage};
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 630 → 632 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 630 → 632 → 0</span></span>  630: 	return rand() &lt; $RANDOM_KEEP_RATIO unless %{$coverage};
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
@@ -1023,7 +1023,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  682: #             to bias toward known interesting values.
 </span><span class="">  683: # --------------------------------------------------
 </span><span class="">  684: sub _generate_for_schema {
-</span><span class="">  685: 	my ($self, $spec) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 685 → 693 → 699</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 685 → 693 → 0</span></span>  685: 	my ($self, $spec) = @_;
 </span><span class="">  686: 
 </span><span class="">  687: 	return undef unless defined $spec;
 </span><span class="">  688: 	return undef if $spec eq &#39;undef&#39;;
@@ -1031,7 +1031,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  690: 	my $type = ref($spec) ? ($spec-&gt;{type} // $TYPE_STRING) : $TYPE_STRING;
 </span><span class="">  691: 
 </span><span class="">  692: 	# Bias toward declared edge cases at EDGE_CASE_RATIO frequency
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  693: 	if(ref($spec) &amp;&amp; $spec-&gt;{edge_case_array} &amp;&amp; rand() &lt; $EDGE_CASE_RATIO) {
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch.">  693: 	if(ref($spec) &amp;&amp; $spec-&gt;{edge_case_array} &amp;&amp; rand() &lt; $EDGE_CASE_RATIO) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
@@ -1067,7 +1067,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  696: 	}
 </span><span class="">  697: 
 </span><span class="">  698: 	# Dispatch to type-specific generator
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  699: 	if    ($type eq $TYPE_INTEGER) { return $self-&gt;_rand_int($spec)    }
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 699 → 699 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 699 → 699 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 699 → 699 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 699 → 699 → 0</span></span>  699: 	if    ($type eq $TYPE_INTEGER) { return $self-&gt;_rand_int($spec)    }
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -1093,13 +1093,13 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  716: # Side effects: None.
 </span><span class="">  717: # --------------------------------------------------
 </span><span class="">  718: sub _rand_int {
-</span><span class="">  719: 	my ($self, $spec) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 719 → 725 → 730</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 719 → 725 → 0</span></span>  719: 	my ($self, $spec) = @_;
 </span><span class="">  720: 
 </span><span class="">  721: 	my $min = $spec-&gt;{min} // $INT32_MIN;
 </span><span class="">  722: 	my $max = $spec-&gt;{max} // $INT32_MAX;
 </span><span class="">  723: 
 </span><span class="">  724: 	# Bias toward boundary values to probe edge conditions
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch.">  725: 	if(rand() &lt; $INT_BOUNDARY_RATIO) {
+</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  725: 	if(rand() &lt; $INT_BOUNDARY_RATIO) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
@@ -1134,7 +1134,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  727: 		return $interesting[ int(rand(@interesting)) ];
 </span><span class="">  728: 	}
 </span><span class="">  729: 
-</span><span class="">  730: 	return $min + int(rand($max - $min + 1));
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 730 → 730 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 730 → 730 → 0</span></span>  730: 	return $min + int(rand($max - $min + 1));
 </span><span class="">  731: }
 </span><span class="">  732: 
 </span><span class="">  733: # --------------------------------------------------
@@ -1171,7 +1171,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  764: #             and NUL to probe boundary handling.
 </span><span class="">  765: # --------------------------------------------------
 </span><span class="">  766: sub _rand_string {
-</span><span class="">  767: 	my ($self, $spec) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 767 → 774 → 782</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 767 → 774 → 0</span></span>  767: 	my ($self, $spec) = @_;
 </span><span class="">  768: 
 </span><span class="">  769: 	my $min_len = $spec-&gt;{min} // 0;
 </span><span class="">  770: 	my $max_len = $spec-&gt;{max} // $DEFAULT_MAX_STR_LEN;
@@ -1216,7 +1216,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  779: 	}
 </span><span class="">  780: 
 </span><span class="">  781: 	# Clamp to non-negative
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  782: 	$len = 0 if $len &lt; 0;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 782 → 785 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 782 → 785 → 0</span></span>  782: 	$len = 0 if $len &lt; 0;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
@@ -1282,7 +1282,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  816: # Side effects: None.
 </span><span class="">  817: # --------------------------------------------------
 </span><span class="">  818: sub _rand_hash {
-</span><span class="">  819: 	my ($self, $spec) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 819 → 824 → 828</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 819 → 824 → 0</span></span>  819: 	my ($self, $spec) = @_;
 </span><span class="">  820: 
 </span><span class="">  821: 	my $props = $spec-&gt;{properties} // {};
 </span><span class="">  822: 	my %h;
@@ -1291,7 +1291,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  825: 		$h{$key} = $self-&gt;_generate_for_schema($props-&gt;{$key});
 </span><span class="">  826: 	}
 </span><span class="">  827: 
-</span><span class="">  828: 	return \%h;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 828 → 828 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 828 → 828 → 0</span></span>  828: 	return \%h;
 </span><span class="">  829: }
 </span><span class="">  830: 
 </span><span class="">  831: # --------------------------------------------------
@@ -1309,7 +1309,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  843: # Side effects: None.
 </span><span class="">  844: # --------------------------------------------------
 </span><span class="">  845: sub _input_is_valid {
-</span><span class="">  846: 	my ($self, $input) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 846 → 855 → 859</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 846 → 855 → 0</span></span>  846: 	my ($self, $input) = @_;
 </span><span class="">  847: 
 </span><span class="">  848: 	my $spec = $self-&gt;{schema}{input};
 </span><span class="">  849: 
@@ -1328,7 +1328,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 <span class="">  856: 		return $self-&gt;_validate_hash_input($input, $spec);
 </span><span class="">  857: 	}
 </span><span class="">  858: 
-</span><span class="">  859: 	return $self-&gt;_validate_value($input, $spec);
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 859 → 859 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 859 → 859 → 0</span></span>  859: 	return $self-&gt;_validate_value($input, $spec);
 </span><span class="">  860: }
 </span><span class="">  861: 
 </span><span class="">  862: # --------------------------------------------------
@@ -1343,7 +1343,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  871: # Side effects: None.
 </span><span class="">  872: # --------------------------------------------------
 </span><span class="">  873: sub _validate_hash_input {
-</span><span class="">  874: 	my ($self, $input, $spec) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 874 → 878 → 897</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 874 → 878 → 0</span></span>  874: 	my ($self, $input, $spec) = @_;
 </span><span class="">  875: 
 </span><span class="">  876: 	return 0 unless defined $input;
 </span><span class="">  877: 
@@ -1372,7 +1372,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  894: 		return 0 unless $self-&gt;_validate_value($value, $field_spec);
 </span><span class="">  895: 	}
 </span><span class="">  896: 
-</span><span class="">  897: 	return 1;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 897 → 897 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 897 → 897 → 0</span></span>  897: 	return 1;
 </span><span class="">  898: }
 </span><span class="">  899: 
 </span><span class="">  900: # --------------------------------------------------
@@ -1392,7 +1392,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  914: #             always returns 0.
 </span><span class="">  915: # --------------------------------------------------
 </span><span class="">  916: sub _validate_value {
-</span><span class="">  917: 	my ($self, $value, $spec) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 917 → 924 → 954</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 917 → 924 → 0</span></span>  917: 	my ($self, $value, $spec) = @_;
 </span><span class="">  918: 
 </span><span class="">  919: 	# Undef is never valid unless optional &acirc;&#128;&#148; caller already checked optional
 </span><span class="">  920: 	return 0 unless defined $value;
@@ -1615,7 +1615,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  951: 		return 0 unless ref($value) eq &#39;HASH&#39;;
 </span><span class="">  952: 	}
 </span><span class="">  953: 
-</span><span class="">  954: 	return 1;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 954 → 954 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 954 → 954 → 0</span></span>  954: 	return 1;
 </span><span class="">  955: }
 </span><span class="">  956: 
 </span><span class="">  957: # --------------------------------------------------
@@ -1633,7 +1633,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  969: #             freshly generated random value.
 </span><span class="">  970: # --------------------------------------------------
 </span><span class="">  971: sub _mutate {
-</span><span class="">  972: 	my ($self, $input) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 972 → 976 → 998</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 972 → 976 → 0</span></span>  972: 	my ($self, $input) = @_;
 </span><span class="">  973: 
 </span><span class="">  974: 	my $type = ref($input);
 </span><span class="">  975: 
@@ -1671,7 +1671,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  995: 	}
 </span><span class="">  996: 
 </span><span class="">  997: 	# Blessed refs and other types pass through unchanged
-</span><span class="">  998: 	return $input;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 998 → 998 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 998 → 998 → 0</span></span>  998: 	return $input;
 </span><span class="">  999: }
 </span><span class=""> 1000: 
 </span><span class=""> 1001: # --------------------------------------------------
@@ -1878,7 +1878,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1189: # Side effects: Modifies $self-&gt;{corpus}.
 </span><span class=""> 1190: # --------------------------------------------------
 </span><span class=""> 1191: sub _seed_corpus {
-</span><span class=""> 1192: 	my $self = $_[0];
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1192 → 1194 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 1192 → 1194 → 0</span></span> 1192: 	my $self = $_[0];
 </span><span class=""> 1193: 
 </span><span class=""> 1194: 	for (1 .. $SEED_CORPUS_SIZE) {
 </span><span class=""> 1195: 		push @{ $self-&gt;{corpus} }, {
