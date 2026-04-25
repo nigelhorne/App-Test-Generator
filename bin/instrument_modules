@@ -3,25 +3,34 @@
 use strict;
 use warnings;
 
-use File::Find;
+# Generate LCSAJ path definition files (.lcsaj.json) for all lib/*.pm files.
+# These are consumed by test-generator-index to populate TER3 in the dashboard.
 use App::Test::Generator::LCSAJ;
 
-my @modules;
+# Write .lcsaj.json files alongside the mutation HTML output so that
+# test-generator-index can find them via its standard lcsaj_root path.
+my $out_dir = 'cover_html/mutation_html/lib';
 
-find(
-	sub {
-		return unless /\.pm$/;
+# Accept an explicit file list on the command line, or default to all
+# .pm files found under lib/ via a recursive search.
+my @files;
+if(@ARGV) {
+	@files = @ARGV;
+} else {
+	require File::Find;
+	# Suppress false 'used only once' warning on $File::Find::name
+	no warnings 'once';
+	# Collect every .pm file under lib/ into @files
+	File::Find::find(sub { push @files, $File::Find::name if /\.pm$/ }, 'lib');
+}
 
-		push @modules, $File::Find::name;
-	}, 'lib'
-);
+die 'No modules found' unless @files;
 
-die 'No modules found under lib/' unless @modules;
-
-for my $file (@modules) {
+# Process each file in turn, generating its LCSAJ control-flow paths
+for my $file (@files) {
 	print "Instrumenting $file\n";
-
-	App::Test::Generator::LCSAJ::instrument_file($file);
+	# generate() parses the source, extracts LCSAJ paths, and writes the JSON
+	App::Test::Generator::LCSAJ->generate($file, $out_dir);
 }
 
 print "\nDone.\n";
