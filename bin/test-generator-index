@@ -4104,7 +4104,7 @@ sub _mutation_index {
 		# falling back to a grey n/a badge if unavailable.
 		# --------------------------------------------------
 		my $ter_cell;
-		if($lcsaj_dir) {
+		if($config{lcsaj_root}) {
 			my $ter1_badge = _ter_badge($ter1_pct, 'n/a');
 			my $ter2_badge = _ter_badge($ter2_pct, 'n/a');
 			my $ter3_badge = _ter_badge($ter3_pct, 'n/a');
@@ -5433,76 +5433,75 @@ sub _lcsaj_coverage_for_file {
 	# ----------------------------------------------------------
 	my $lcsaj_file;
 
-    for my $rel (@rel_candidates) {
-	my $base = basename($rel);
-	my $candidate = File::Spec->catfile(
-		$lcsaj_dir,
-		"$rel.lcsaj",
-		"$base.lcsaj.json"
-	);
-	if(-f $candidate) {
-		$lcsaj_file = $candidate;
-		last;
+	for my $rel (@rel_candidates) {
+		my $base = basename($rel);
+		my $candidate = File::Spec->catfile(
+			$lcsaj_dir,
+			"$rel.lcsaj",
+			"$base.lcsaj.json"
+		);
+		if(-f $candidate) {
+			$lcsaj_file = $candidate;
+			last;
+		}
 	}
-    }
 
-    return (undef, undef) unless defined $lcsaj_file;
+	return (undef, undef) unless defined $lcsaj_file;
 
-    # ----------------------------------------------------------
-    # Load the LCSAJ path definitions.
-    # ----------------------------------------------------------
-    open my $fh, '<', $lcsaj_file
-        or do {
-            return (undef, undef);
-        };
-    my $paths = decode_json(do { local $/; <$fh> });
-    close $fh;
+	# ----------------------------------------------------------
+	# Load the LCSAJ path definitions.
+	# ----------------------------------------------------------
+	open my $fh, '<', $lcsaj_file or do {
+		return (undef, undef);
+	};
+	my $paths = decode_json(do { local $/; <$fh> });
+	close $fh;
 
-    my $total = scalar @{ $paths // [] };
-    return (0, 0) unless $total;
+	my $total = scalar @{ $paths // [] };
+	return (0, 0) unless $total;
 
-    # ----------------------------------------------------------
-    # Resolve which hit-map entry belongs to this file.
-    # Runtime.pm writes keys as _normalize(abs_path(file)), which
-    # produces "lib/Foo/Bar.pm".  Try several key forms so we match
-    # regardless of what the caller passed in.
-    # ----------------------------------------------------------
-    my $norm_abs = $abs;
-    $norm_abs =~ s{^.*/blib/lib/}{lib/};
-    $norm_abs =~ s{^.*/lib/}{lib/};
+	# ----------------------------------------------------------
+	# Resolve which hit-map entry belongs to this file.
+	# Runtime.pm writes keys as _normalize(abs_path(file)), which
+	# produces "lib/Foo/Bar.pm".  Try several key forms so we match
+	# regardless of what the caller passed in.
+	# ----------------------------------------------------------
+	my $norm_abs = $abs;
+	$norm_abs =~ s{^.*/blib/lib/}{lib/};
+	$norm_abs =~ s{^.*/lib/}{lib/};
 
-    my $norm_orig = $original;
-    $norm_orig =~ s{^.*/blib/lib/}{lib/};
-    $norm_orig =~ s{^.*/lib/}{lib/};
+	my $norm_orig = $original;
+	$norm_orig =~ s{^.*/blib/lib/}{lib/};
+	$norm_orig =~ s{^.*/lib/}{lib/};
 
-    my $file_hits =
-           $hits->{$norm_abs}           # "lib/Foo/Bar.pm"  (most likely)
-        // $hits->{$norm_orig}          # same, from original arg
-        // $hits->{$abs}               # absolute path (unusual)
-        // $hits->{$original}          # raw arg as-is
-        // {};
+	my $file_hits =
+		   $hits->{$norm_abs}           # "lib/Foo/Bar.pm"  (most likely)
+		// $hits->{$norm_orig}          # same, from original arg
+		// $hits->{$abs}               # absolute path (unusual)
+		// $hits->{$original}          # raw arg as-is
+		// {};
 
-    # ----------------------------------------------------------
-    # Count how many LCSAJ paths had at least one line executed.
-    # A path is considered covered if any line in [start..end]
-    # appears in the hit map.
-    # ----------------------------------------------------------
-    my $covered = 0;
+	# ----------------------------------------------------------
+	# Count how many LCSAJ paths had at least one line executed.
+	# A path is considered covered if any line in [start..end]
+	# appears in the hit map.
+	# ----------------------------------------------------------
+	my $covered = 0;
 
-    for my $p (@{ $paths }) {
-        next unless ref $p eq 'HASH';
+	for my $p (@{ $paths }) {
+		next unless ref $p eq 'HASH';
 
-        my $start = $p->{start};
-        my $end   = $p->{end};
-        next unless defined $start && defined $end;
+		my $start = $p->{start};
+		my $end   = $p->{end};
+		next unless defined $start && defined $end;
 
-        for my $line ($start .. $end) {
-            if($file_hits->{$line}) {
-                $covered++;
-                last;
-            }
-        }
-    }
+		for my $line ($start .. $end) {
+			if($file_hits->{$line}) {
+				$covered++;
+				last;
+			}
+		}
+	}
 
 	return ($covered, $total);
 }
