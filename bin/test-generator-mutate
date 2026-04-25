@@ -579,6 +579,10 @@ unless($opt{quiet}) {
 		'Survived: ', scalar(@survivors), "\n";
 }
 
+printf "DEBUG argv: json=%s changed_only=%s\n",
+    $opt{json}         // 'undef',
+    $opt{changed_only} // 'undef';
+
 if($opt{json}) {
 	if($opt{changed_only} && -f $opt{json}) {
 		printf "DEBUG merge: file=%s size=%d\n", $opt{json}, -s $opt{json};
@@ -587,7 +591,6 @@ if($opt{json}) {
 			scalar(@{ $prev->{survived} || [] }),
 			scalar(@{ $prev->{killed}   || [] });
 
-		my $prev = eval { decode_json(read_file($opt{json})) } // {};
 		# Keep survived/killed entries for files NOT in this run
 		my %mutated_files = map { $_ => 1 } @files;
 		my @prev_survived = grep { !$mutated_files{ $_->{file} // '' } } @{ $prev->{survived} || [] };
