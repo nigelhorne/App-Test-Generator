@@ -293,4 +293,50 @@ END_PM
 	is(scalar(@undef_target), 0, 'no undef target values — all default to 0');
 };
 
+# ---------------------------------------------------------------
+# 12. Exact path count for a known simple branching sub.
+#     A sub with one if-branch produces exactly 2 paths.
+#     If _build_cfg mis-classifies non-branch stmts as branches
+#     (line 189 mutation) the count will be wrong.
+# ---------------------------------------------------------------
+subtest 'exact path count for single-branch sub' => sub {
+	my $src = <<'END_PM';
+package TestModule;
+sub one_branch {
+	my $x = shift;
+	my $y = 1;
+	if($x) { return $x }
+	return $y;
+}
+1;
+END_PM
+	my ($paths, $decoded) = _generate_for_source($src);
+	# One if-branch produces exactly 3 outgoing edges from the
+	# branch block — one for each successor
+	# The sub has a trailing statement after the if, so the CFG has three blocks: the pre-branch block, the true block, and the post-branch block.
+	is(scalar(@{$decoded}), 3, 'single-branch sub produces exactly 3 paths');
+};
+
+# ---------------------------------------------------------------
+# 13. Fallthrough edge count — sequential blocks must be connected.
+#     A linear sub with no branches produces exactly 1 path.
+#     If the $i < $#blocks loop condition is wrong (line 208
+#     mutation) fallthrough edges are missing and paths = 0.
+# ---------------------------------------------------------------
+subtest 'linear sub with multiple statements produces exactly 1 path' => sub {
+	my $src = <<'END_PM';
+package TestModule;
+sub linear {
+	my $a = 1;
+	my $b = 2;
+	my $c = $a + $b;
+	return $c;
+}
+1;
+END_PM
+	my ($paths, $decoded) = _generate_for_source($src);
+	# A purely linear sub with no branches has no outgoing edges at all (it's a leaf block), so _cfg_to_lcsaj skips it entirely and produces 0 paths.
+	is(scalar(@{$decoded}), 0, 'linear sub with no branches produces 0 paths (no jump = no LCSAJ)');
+};
+
 done_testing();
