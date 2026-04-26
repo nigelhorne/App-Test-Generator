@@ -3240,8 +3240,8 @@ sub _generate_mutant_tests {
 # HIGH/MEDIUM difficulty survivors have TODO stubs — these need real tests.
 # LOW difficulty survivors appear as comment hints — worth improving.
 #
-# Note: new() is called with no arguments as a starting point.
-# If a module requires constructor arguments, add them before running.
+# Stubs call new() for modules with a constructor, or show a class method
+# placeholder for modules without one. Add arguments as needed.
 
 use strict;
 use warnings;
@@ -3265,9 +3265,9 @@ HEADER
 	# --------------------------------------------------
 	for my $file (@files) {
 		# Section header for this source file
-		print $fh '#' x $STUB_SEPARATOR_WIDTH . "\n";
+		print $fh '#' x $STUB_SEPARATOR_WIDTH, "\n";
 		print $fh "# FILE: $file\n";
-		print $fh '#' x $STUB_SEPARATOR_WIDTH . "\n";
+		print $fh '#' x $STUB_SEPARATOR_WIDTH, "\n";
 
 		# Read source lines for context in comments (1-indexed)
 		my @source_lines;
@@ -3278,6 +3278,7 @@ HEADER
 			close $sfh;
 		}
 
+		my $has_new = grep { /^\s*sub\s+new\b/ } @source_lines;
 		# --------------------------------------------------
 		# High/Med survivors — one TODO stub per line,
 		# listing all mutation variants for that line.
@@ -3387,9 +3388,19 @@ HEADER
 				print $fh "    local \$TODO = 'Complete: $id $location';\n";
 				print $fh $boundary_hint if $boundary_hint;
 				print $fh $env_hint      if $env_hint;
-				print $fh "    # NOTE: new() called with no arguments as a starting point.\n";
-				print $fh "    # If $mod requires constructor arguments, add them here.\n";
-				print $fh "    my \$obj = new_ok('${mod}');\n";
+				# --------------------------------------------------
+				# Determine whether the module has a constructor —
+				# if not, new_ok() is wrong and we emit a class
+				# method placeholder instead
+				# --------------------------------------------------
+				if($has_new) {
+					print $fh "    # NOTE: new() called with no arguments as a starting point.\n";
+					print $fh "    # If $mod requires constructor arguments, add them here.\n";
+					print $fh "    my \$obj = new_ok('${mod}');\n";
+				} else {
+					print $fh "    # NOTE: $mod has no constructor — call class methods directly.\n";
+					print $fh "    # e.g. my \$result = ${mod}->method(...);\n";
+				}
 				print $fh "    # TODO: exercise $location to detect the mutant\n";
 				print $fh "    fail('$id: replace with real assertion');\n";
 				print $fh "}\n\n";
@@ -3500,10 +3511,20 @@ HEADER
 				}
 
 				print $fh $env_hint if $env_hint;
-				print $fh "# NOTE: new() called with no arguments as a starting point.\n";
-				print $fh "# If $mod requires constructor arguments, add them here.\n";
-				print $fh "# my \$obj = new_ok('${mod}');\n";
-				print $fh "# ok(\$obj->..., '$id: add assertion here');\n\n";
+				# --------------------------------------------------
+				# Emit constructor or class method placeholder
+				# depending on whether the module has a new()
+				# --------------------------------------------------
+				if($has_new) {
+					print $fh "# NOTE: new() called with no arguments as a starting point.\n";
+					print $fh "# If $mod requires constructor arguments, add them here.\n";
+					print $fh "# my \$obj = new_ok('${mod}');\n";
+					print $fh "# ok(\$obj->..., '$id: add assertion here');\n\n";
+				} else {
+					print $fh "# NOTE: $mod has no constructor — call class methods directly.\n";
+					print $fh "# e.g. my \$result = ${mod}->method(...);\n";
+					print $fh "# ok(\$result, '$id: add assertion here');\n\n";
+				}
 			}
 		}
 	}
