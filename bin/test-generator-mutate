@@ -502,6 +502,8 @@ for my $file (@files) {
 		$groups = { map { $_->id => [$_] } @mutants };
 	}
 
+	warn "DEBUG file=$file groups=", scalar(keys %{$groups});
+
 	for my $group (values %{$groups}) {
 		my $mutant = representative_mutant($group);
 
