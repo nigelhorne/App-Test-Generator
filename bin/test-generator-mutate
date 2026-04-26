@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 
+use Config; 
 use Cwd qw(abs_path);
 use File::Find qw(find);
 use File::Spec;
@@ -518,7 +519,8 @@ for my $file (@files) {
 
 		# Point PERL5LIB at the workspace so prove picks up the
 		# mutated module rather than the original in blib/ or lib/
-		local $ENV{PERL5LIB} = File::Spec->catfile($workspace, $opt{lib});
+		local $ENV{PERL5LIB} = File::Spec->catfile($workspace, $opt{lib})
+			. ($ENV{PERL5LIB} ? $Config{path_sep} . $ENV{PERL5LIB} : '');
 
 		my $compile = system($^X, '-c', File::Spec->catfile($workspace, $file));
 		next if $compile != 0;
