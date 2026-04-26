@@ -292,7 +292,7 @@ sub _is_branch {
 #             their target lines default to 0.
 # --------------------------------------------------
 sub _cfg_to_lcsaj {
-	my ($blocks) = @_;
+	my $blocks = $_[0];
 
 	# Build a lookup from block id to its first line number
 	my %id2line = map { $_->{id} => $_->{lines}[0] }
@@ -301,8 +301,8 @@ sub _cfg_to_lcsaj {
 	my @paths;
 
 	for my $b (@{$blocks}) {
-		# Skip blocks with no outgoing edges — they are leaf nodes
-		next unless @{ $b->{edges} };
+		next unless @{ $b->{edges} };	# Skip blocks with no outgoing edges — they are leaf nodes
+		next unless @{ $b->{lines} };   # skip empty blocks — avoids null-bounds paths
 
 		my $start = $b->{lines}[0];
 		my $end   = $b->{lines}[-1];
@@ -346,22 +346,31 @@ sub _save_lcsaj {
 
 	# Derive the module-relative path (strip leading .../lib/ prefix)
 	my $rel = $file;
+
 	# Strip leading path up to and including 'lib/' — handles both
 	# absolute paths (/home/runner/.../lib/App/...) and relative (lib/App/...)
 	$rel =~ s{^(?:.*/)?lib/}{};
-
 	my $base    = basename($rel);
+
 	# Mirror the directory structure expected by _lcsaj_coverage_for_file:
 	# $dir / $rel.lcsaj / $base.lcsaj.json
 	my $subdir  = File::Spec->catfile($dir, "$rel.lcsaj");
 
 	# Create the output directory if it does not exist
 	make_path($subdir) unless -d $subdir;
-
 	my $out = File::Spec->catfile($subdir, "$base.lcsaj.json");
 
+	# Remove degenerate paths (null bounds) and exact duplicates
+	# before serialising — guards against empty CFG blocks producing
+	# null start/end values, and branch splits creating identical records
+	my %seen;
+	my @clean = grep {
+		defined $_->{start} && defined $_->{end}
+		&& !$seen{"$_->{start}:$_->{end}:$_->{target}"}++
+	} @{$paths};
+
 	open my $fh, '>', $out or croak "Cannot write LCSAJ output to $out: $!";
-	print $fh encode_json($paths);
+	print $fh encode_json(\@clean);
 	close $fh;
 }
 
