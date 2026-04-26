@@ -2,7 +2,7 @@ package App::Test::Generator::Mutator;
 
 use strict;
 use warnings;
-use Carp                qw(croak);
+use Carp qw(croak);
 use Config;
 use File::Copy          qw(copy);
 use File::Copy::Recursive qw(dircopy);
@@ -17,16 +17,16 @@ use App::Test::Generator::Mutation::NumericBoundary;
 use App::Test::Generator::Mutation::ReturnUndef;
 
 # --------------------------------------------------
-# Default values for optional constructor arguments
-# --------------------------------------------------
-Readonly my $DEFAULT_LIB_DIR        => 'lib';
-Readonly my $DEFAULT_MUTATION_LEVEL => 'full';
-
-# --------------------------------------------------
 # Valid mutation level values
 # --------------------------------------------------
 Readonly my $LEVEL_FULL => 'full';
 Readonly my $LEVEL_FAST => 'fast';
+
+# --------------------------------------------------
+# Default values for optional constructor arguments
+# --------------------------------------------------
+Readonly my $DEFAULT_LIB_DIR        => 'lib';
+Readonly my $DEFAULT_MUTATION_LEVEL => $LEVEL_FULL;
 
 our $VERSION = '0.33';
 
