@@ -532,7 +532,12 @@ for my $file (@files) {
 		# survive regardless of the mutation applied
 		local $ENV{PERL5OPT} = '';
 
-		my $survived = (system('prove', $opt{tests}) == 0);
+		# my $survived = (system('prove', $opt{tests}) == 0);
+		warn "DEBUG PERL5LIB=$ENV{PERL5LIB}\n";
+		warn "DEBUG workspace=$workspace\n";
+		warn "DEBUG proving: prove $opt{tests}\n";
+		my $survived = (system('prove', '-v', $opt{tests}) == 0);
+		warn "DEBUG survived=$survived\n";
 
 		if($survived) {
 			# Representative survived — mark the entire group as survived
