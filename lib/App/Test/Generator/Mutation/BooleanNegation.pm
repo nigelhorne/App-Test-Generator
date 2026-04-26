@@ -168,6 +168,10 @@ sub mutate {
 		my $expr = $ret->schild(1) or next;
 		next if $expr->isa('PPI::Token::Structure') && $expr->content eq ';';
 
+		# Skip structure nodes (e.g. return ($x, $y) gives a
+		# PPI::Structure::List) — set_content only exists on tokens
+		next unless $expr->isa('PPI::Token');
+
 		# Capture location so the transform closure targets the
 		# exact statement rather than the first match on that line
 		my $line = $ret->location->[0];
@@ -213,10 +217,12 @@ sub mutate {
 						# Skip bare returns with no expression
 						my $expr = $ret->schild(1) or last;
 
-						# Wrap the expression in logical negation.
-						# Operate on the token content directly to
-						# avoid PPI document ownership issues that
-						# arise when replacing entire statement nodes
+						# Skip bare semicolon
+						next if $expr->isa('PPI::Token::Structure') && $expr->content eq ';';
+
+						# Skip structure nodes — set_content only exists on tokens
+						next unless $expr->isa('PPI::Token');
+
 						my $content = $expr->content;
 						$expr->set_content("!($content)");
 						last;
@@ -225,7 +231,7 @@ sub mutate {
 			);
 		};
 
-		# If Mutant construction fails, report clearly rather than
+		# If the Mutant construction fails, report clearly rather than
 		# silently dropping the mutant from the results
 		if($@ || !$mutant) {
 			warn "Failed to construct mutant $id: $@" if $@;

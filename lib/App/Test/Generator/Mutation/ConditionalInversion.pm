@@ -146,7 +146,7 @@ sub mutate {
 
 		# Report construction failures clearly rather than silently dropping
 		if($@ || !$mutant) {
-			warn "Failed to construct mutant COND_INV_${line}_${col}: $@\n" if $@;
+			warn "Failed to construct mutant COND_INV_${line}_${col}: $@" if $@;
 			next;
 		}
 

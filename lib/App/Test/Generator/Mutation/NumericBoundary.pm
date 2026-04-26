@@ -187,10 +187,10 @@ sub mutate {
 				);
 			};
 
-			# If Mutant construction fails, report clearly rather than
+			# If the Mutant construction fails, report clearly rather than
 			# silently dropping the mutant from the results
 			if($@ || !$mutant) {
-				warn "Failed to construct mutant $id: $@\n" if $@;
+				warn "Failed to construct mutant $id: $@" if $@;
 				next;
 			}
 
