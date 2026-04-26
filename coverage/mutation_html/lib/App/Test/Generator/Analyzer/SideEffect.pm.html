@@ -246,7 +246,7 @@ pre details.mutant-details ul {
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
 TER2 (Branch): 100.00%<br>
-TER3 (LCSAJ): 80.0% (16/20)<br>
+TER3 (LCSAJ): 100.0% (9/9)<br>
 Approximate LCSAJ segments: 13<br>
 </div>
 
@@ -480,7 +480,7 @@ Approximate LCSAJ segments: 13<br>
 </span><span class="">  188: 	# @ARGV and common Perl special variables.
 </span><span class="">  189: 	# NOTE: does not catch all possible globals.
 </span><span class="">  190: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">191 → 191 → 199</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">191 → 191 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">191 → 191 → 199</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">191 → 191 → 0</span></span>  191: 	if($body =~ GLOBAL_PATTERN) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">191 → 191 → 199</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">191 → 191 → 0</span></span>  191: 	if($body =~ GLOBAL_PATTERN) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  192: 		$result{mutates_globals} = 1;
 </span><span class="">  193: 	}
 </span><span class="">  194: 
@@ -488,7 +488,7 @@ Approximate LCSAJ segments: 13<br>
 </span><span class="">  196: 	# Detect IO operations &acirc;&#128;&#148; print, say, warn, open etc.
 </span><span class="">  197: 	# Higher-level logging abstractions are not detected.
 </span><span class="">  198: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">199 → 199 → 207</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">199 → 199 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">199 → 199 → 207</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">199 → 199 → 0</span></span>  199: 	if($body =~ IO_PATTERN) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">199 → 199 → 207</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">199 → 199 → 0</span></span>  199: 	if($body =~ IO_PATTERN) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  200: 		$result{performs_io} = 1;
 </span><span class="">  201: 	}
 </span><span class="">  202: 
@@ -496,7 +496,7 @@ Approximate LCSAJ segments: 13<br>
 </span><span class="">  204: 	# Detect external command execution via system(),
 </span><span class="">  205: 	# exec(), qx() or backtick operators
 </span><span class="">  206: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">207 → 207 → 217</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">207 → 207 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">207 → 207 → 217</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">207 → 207 → 0</span></span>  207: 	if($body =~ EXEC_PATTERN) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">207 → 207 → 217</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">207 → 207 → 0</span></span>  207: 	if($body =~ EXEC_PATTERN) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  208: 		$result{calls_external} = 1;
 </span><span class="">  209: 	}
 </span><span class="">  210: 
@@ -506,7 +506,7 @@ Approximate LCSAJ segments: 13<br>
 </span><span class="">  214: 	# self_mutating &acirc;&#128;&#148; only mutates own state, no external effects
 </span><span class="">  215: 	# impure       &acirc;&#128;&#148; any external side effect present
 </span><span class="">  216: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">217 → 226 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">217 → 226 → 0</span></span>  217: 	my $has_external = $result{mutates_globals}
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">217 → 226 → 0</span></span>  217: 	my $has_external = $result{mutates_globals}
 </span><span class="">  218: 		|| $result{performs_io}
 </span><span class="">  219: 		|| $result{calls_external};
 </span><span class="">  220: 

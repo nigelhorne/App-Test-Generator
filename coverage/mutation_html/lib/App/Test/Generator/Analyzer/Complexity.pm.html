@@ -246,7 +246,7 @@ pre details.mutant-details ul {
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
 TER2 (Branch): 92.86%<br>
-TER3 (LCSAJ): 80.0% (12/15)<br>
+TER3 (LCSAJ): 100.0% (7/7)<br>
 Approximate LCSAJ segments: 15<br>
 </div>
 
@@ -477,7 +477,7 @@ Approximate LCSAJ segments: 15<br>
 </span><span class="">  185: 	}
 </span><span class="">  186: 
 </span><span class="">  187: 	# Logical operators also introduce implicit branches
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">188 → 203 → 215</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">188 → 203 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">188 → 203 → 215</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">188 → 203 → 0</span></span>  188: 	my $logic_count = () = $body =~ /&amp;&amp;|\|\||\?/g;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">188 → 203 → 215</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">188 → 203 → 0</span></span>  188: 	my $logic_count = () = $body =~ /&amp;&amp;|\|\||\?/g;
 </span><span class="">  189: 	$result{cyclomatic_score} += $logic_count;
 </span><span class="">  190: 
 </span><span class="">  191: 	# --------------------------------------------------
@@ -504,7 +504,7 @@ Approximate LCSAJ segments: 15<br>
 </span><span class="">  212: 	# appear inside strings or regexes. Acceptable for
 </span><span class="">  213: 	# dashboard display purposes.
 </span><span class="">  214: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">215 → 217 → 225</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">215 → 217 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">215 → 217 → 225</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">215 → 217 → 0</span></span>  215: 	my $depth     = 0;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">215 → 217 → 225</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">215 → 217 → 0</span></span>  215: 	my $depth     = 0;
 </span><span class="">  216: 	my $max_depth = 0;
 </span><span class="">  217: 	for my $char (split //, $body) {
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  218: 		if($char eq &#39;{&#39;) {
@@ -514,7 +514,7 @@ Approximate LCSAJ segments: 15<br>
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  222: 			$depth-- if $depth &gt; 0;
 </span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="">  223: 		}
 </span><span class="">  224: 	}
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">225 → 236 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">225 → 236 → 0</span></span>  225: 	$result{nesting_depth} = $max_depth;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">225 → 236 → 0</span></span>  225: 	$result{nesting_depth} = $max_depth;
 </span><span class="">  226: 
 </span><span class="">  227: 	# --------------------------------------------------
 </span><span class="">  228: 	# Classify complexity level based on cyclomatic score

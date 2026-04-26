@@ -246,7 +246,7 @@ pre details.mutant-details ul {
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
 TER2 (Branch): 86.36%<br>
-TER3 (LCSAJ): 80.0% (28/35)<br>
+TER3 (LCSAJ): 100.0% (15/15)<br>
 Approximate LCSAJ segments: 23<br>
 </div>
 
@@ -463,7 +463,7 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  171: 	# but is not typed as object, suggesting inconsistent
 </span><span class="">  172: 	# return paths
 </span><span class="">  173: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">174 → 174 → 184</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">174 → 174 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">174 → 174 → 184</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">174 → 174 → 0</span></span>  174: 	if($output-&gt;{_returns_self} &amp;&amp; ($output-&gt;{type} // &#39;&#39;) ne &#39;object&#39;) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">174 → 174 → 184</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">174 → 174 → 0</span></span>  174: 	if($output-&gt;{_returns_self} &amp;&amp; ($output-&gt;{type} // &#39;&#39;) ne &#39;object&#39;) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  175: 		push @risk, &#39;mixed_return_types&#39;;
 </span><span class="">  176: 		$consistency -= $PENALTY_MIXED_RETURN_CONSISTENCY;
 </span><span class="">  177: 	}
@@ -473,7 +473,7 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  181: 	# without an explicit return, making error paths hard
 </span><span class="">  182: 	# to distinguish from successful empty returns
 </span><span class="">  183: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">184 → 184 → 194</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">184 → 184 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">184 → 184 → 194</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">184 → 184 → 0</span></span>  184: 	if($output-&gt;{_error_handling}{implicit_undef}) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">184 → 184 → 194</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">184 → 184 → 0</span></span>  184: 	if($output-&gt;{_error_handling}{implicit_undef}) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  185: 		push @risk, &#39;implicit_error_return&#39;;
 </span><span class="">  186: 		$stability -= $PENALTY_IMPLICIT_UNDEF_STABILITY;
 </span><span class="">  187: 	}
@@ -483,7 +483,7 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  191: 	# undef on failure; lower penalty than implicit since
 </span><span class="">  192: 	# the intent is at least documented in the code
 </span><span class="">  193: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">194 → 194 → 204</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">194 → 194 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">194 → 194 → 204</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">194 → 194 → 0</span></span>  194: 	if($output-&gt;{_error_return} &amp;&amp; $output-&gt;{_error_return} eq &#39;undef&#39;) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">194 → 194 → 204</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">194 → 194 → 0</span></span>  194: 	if($output-&gt;{_error_return} &amp;&amp; $output-&gt;{_error_return} eq &#39;undef&#39;) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  195: 		push @risk, &#39;undef_on_error&#39;;
 </span><span class="">  196: 		$stability -= $PENALTY_EXPLICIT_UNDEF_STABILITY;
 </span><span class="">  197: 	}
@@ -493,7 +493,7 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  201: 	# error, which is indistinguishable from a successful
 </span><span class="">  202: 	# call that found no results
 </span><span class="">  203: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">204 → 204 → 213</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">204 → 204 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">204 → 204 → 213</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">204 → 204 → 0</span></span>  204: 	if($output-&gt;{_error_handling}{empty_list}) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">204 → 204 → 213</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">204 → 204 → 0</span></span>  204: 	if($output-&gt;{_error_handling}{empty_list}) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  205: 		push @risk, &#39;empty_list_error&#39;;
 </span><span class="">  206: 		$consistency -= $PENALTY_EMPTY_LIST_CONSISTENCY;
 </span><span class="">  207: 	}
@@ -502,7 +502,7 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  210: 	# Exception swallowing &acirc;&#128;&#148; function catches exceptions
 </span><span class="">  211: 	# without rethrowing, hiding failures from the caller
 </span><span class="">  212: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">213 → 213 → 224</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">213 → 213 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">213 → 213 → 224</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">213 → 213 → 0</span></span>  213: 	if($output-&gt;{_error_handling}{exception_handling}) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">213 → 213 → 224</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">213 → 213 → 0</span></span>  213: 	if($output-&gt;{_error_handling}{exception_handling}) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  214: 		push @risk, &#39;exception_swallowing&#39;;
 </span><span class="">  215: 		$stability -= $PENALTY_EXCEPTION_SWALLOW_STABILITY;
 </span><span class="">  216: 	}
@@ -513,12 +513,12 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  221: 	# is applied. Only has effect if stability was already
 </span><span class="">  222: 	# reduced below 95 by earlier penalties.
 </span><span class="">  223: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">224 → 224 → 229</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">224 → 224 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">224 → 224 → 229</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">224 → 224 → 0</span></span>  224: 	if($output-&gt;{type} &amp;&amp; $output-&gt;{type} eq &#39;boolean&#39;) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">224 → 224 → 229</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">224 → 224 → 0</span></span>  224: 	if($output-&gt;{type} &amp;&amp; $output-&gt;{type} eq &#39;boolean&#39;) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  225: 		$stability += $BONUS_BOOLEAN_STABILITY;
 </span><span class="">  226: 	}
 </span><span class="">  227: 
 </span><span class="">  228: 	# Clamp both scores to the valid [0, 100] range
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">229 → 234 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">229 → 234 → 0</span></span>  229: 	$stability   = 0   if $stability   &lt; 0;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">229 → 234 → 0</span></span>  229: 	$stability   = 0   if $stability   &lt; 0;
 </span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  230: 	$stability   = 100 if $stability   &gt; 100;
 </span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  231: 	$consistency = 0   if $consistency &lt; 0;
 </span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  232: 	$consistency = 100 if $consistency &gt; 100;

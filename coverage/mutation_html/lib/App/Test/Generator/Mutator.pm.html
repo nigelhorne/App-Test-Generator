@@ -246,7 +246,7 @@ pre details.mutant-details ul {
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 58.06%<br>
 TER2 (Branch): 11.76%<br>
-TER3 (LCSAJ): 40.0% (8/20)<br>
+TER3 (LCSAJ): 45.5% (5/11)<br>
 Approximate LCSAJ segments: 35<br>
 </div>
 
@@ -467,7 +467,7 @@ Approximate LCSAJ segments: 35<br>
 </span><span class="">  175: 	}
 </span><span class="">  176: 
 </span><span class="">  177: 	# In fast mode deduplicate and remove redundant mutants
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">178 → 178 → 182</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">178 → 178 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">178 → 178 → 182</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">178 → 178 → 0</span></span>  178: 	if($self-&gt;{mutation_level} eq $LEVEL_FAST) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">178 → 178 → 182</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">178 → 178 → 0</span></span>  178: 	if($self-&gt;{mutation_level} eq $LEVEL_FAST) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -477,7 +477,7 @@ Approximate LCSAJ segments: 35<br>
 <span class="">  179: 		return @{ _dedup_mutants(\@mutants) };
 </span><span class="">  180: 	}
 </span><span class="">  181: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">182 → 182 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">182 → 182 → 0</span></span>  182: 	return @mutants;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">182 → 182 → 0</span></span>  182: 	return @mutants;
 </span><span class="">  183: }
 </span><span class="">  184: 
 </span><span class="">  185: =head2 prepare_workspace
@@ -715,7 +715,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  404: 		push @rc, $m;
 </span><span class="">  405: 	}
 </span><span class="">  406: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 407 → 407 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 407 → 407 → 0</span></span>  407: 	return \@rc;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 407 → 407 → 0</span></span>  407: 	return \@rc;
 </span><span class="">  408: }
 </span><span class="">  409: 
 </span><span class="">  410: # --------------------------------------------------
@@ -760,7 +760,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  443: 	}
 </span><span class="">  444: 
 </span><span class="">  445: 	# Boolean literal flip on a standalone 1 or 0 is trivial
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 446 → 451 → 0</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 446 → 451 → 0</span></span>  446: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 446 → 451 → 0</span></span>  446: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
 </span><span class="">  447: 
 </span><span class="">  448: 	# Mutations inside comments are unreachable code
 </span><span class="">  449: 	return 1 if $m-&gt;{line_content} &amp;&amp; $m-&gt;{line_content} =~ /^\s*#/;
