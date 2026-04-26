@@ -241,8 +241,8 @@ pre details.mutant-details ul {
 <body>
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Mutation/NumericBoundary.pm</h1>
-<div class="nav"><a href="../../../../Devel/App/Test/Generator/LCSAJ/Runtime.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
- <a href="../SchemaExtractor.pm.html">Next ➡</a></div><div class='summary'>
+<div class="nav"><a href="ConditionalInversion.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="../Template.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 94.34%<br>
 TER2 (Branch): 44.44%<br>
@@ -459,49 +459,17 @@ Approximate LCSAJ segments: 19<br>
 </span><span class="">  167: 						my $ops  = $doc-&gt;find(&#39;PPI::Token::Operator&#39;) || [];
 </span><span class="">  168: 
 </span><span class="">  169: 						for my $op (@{$ops}) {
-</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  170: 							next unless $op-&gt;line_number   == $line;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>NUM_BOUNDARY_170_39_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  171: 							next unless $op-&gt;column_number == $col;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>NUM_BOUNDARY_171_39_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  172: 							next unless $op-&gt;content       eq $original;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  170: 							next unless $op-&gt;line_number   == $line;
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  171: 							next unless $op-&gt;column_number == $col;
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  172: 							next unless $op-&gt;content       eq $original;
 </span><span class="">  173: 
 </span><span class="">  174: 							# Safety check &acirc;&#128;&#148; do not mutate if this looks like
 </span><span class="">  175: 							# a readline operator (&lt;$fh&gt;) rather than a numeric
 </span><span class="">  176: 							# comparison. A readline &lt; is immediately followed
 </span><span class="">  177: 							# by a symbol token starting with $
 </span><span class="">  178: 							my $next_sib = $op-&gt;next_sibling;
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  179: 							if($next_sib &amp;&amp; $next_sib-&gt;isa(&#39;PPI::Token::Symbol&#39;)) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_179_8: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  180: 								last;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  179: 							if($next_sib &amp;&amp; $next_sib-&gt;isa(&#39;PPI::Token::Symbol&#39;)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  180: 								last;
 </span><span class="">  181: 							}
 </span><span class="">  182: 
 </span><span class="">  183: 							$op-&gt;set_content($change);
@@ -511,10 +479,10 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  187: 				);
 </span><span class="">  188: 			};
 </span><span class="">  189: 
-</span><span class="">  190: 			# If Mutant construction fails, report clearly rather than
+</span><span class="">  190: 			# If the Mutant construction fails, report clearly rather than
 </span><span class="">  191: 			# silently dropping the mutant from the results
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  192: 			if($@ || !$mutant) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  193: 				warn &quot;Failed to construct mutant $id: $@\n&quot; if $@;
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  193: 				warn &quot;Failed to construct mutant $id: $@&quot; if $@;
 </span><span class="">  194: 				next;
 </span><span class="">  195: 			}
 </span><span class="">  196: 
@@ -522,8 +490,8 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  198: 		}
 </span><span class="">  199: 	}
 </span><span class="">  200: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">201 → 201 → 0</span></span>  201: 	return @mutants;
-</span><span class="">  202: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">201 → 201 → 0</span></span>  201: 	return @mutants;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  202: }
 </span><span class="">  203: 
 </span><span class="">  204: 1;
 </span></pre>
