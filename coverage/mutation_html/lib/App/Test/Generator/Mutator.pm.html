@@ -244,9 +244,9 @@ pre details.mutant-details ul {
 <div class="nav"><a href="Mutation/ReturnUndef.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
  <a href="Planner.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
-TER1 (Statement): 58.06%<br>
-TER2 (Branch): 11.76%<br>
-TER3 (LCSAJ): 45.5% (5/11)<br>
+TER1 (Statement): 94.62%<br>
+TER2 (Branch): 55.88%<br>
+TER3 (LCSAJ): 100.0% (11/11)<br>
 Approximate LCSAJ segments: 35<br>
 </div>
 
@@ -294,7 +294,7 @@ Approximate LCSAJ segments: 35<br>
 </span><span class="">    2: 
 </span><span class="">    3: use strict;
 </span><span class="">    4: use warnings;
-</span><span class="">    5: use Carp                qw(croak);
+</span><span class="">    5: use Carp qw(croak);
 </span><span class="">    6: use Config;
 </span><span class="">    7: use File::Copy          qw(copy);
 </span><span class="">    8: use File::Copy::Recursive qw(dircopy);
@@ -309,16 +309,16 @@ Approximate LCSAJ segments: 35<br>
 </span><span class="">   17: use App::Test::Generator::Mutation::ReturnUndef;
 </span><span class="">   18: 
 </span><span class="">   19: # --------------------------------------------------
-</span><span class="">   20: # Default values for optional constructor arguments
+</span><span class="">   20: # Valid mutation level values
 </span><span class="">   21: # --------------------------------------------------
-</span><span class="">   22: Readonly my $DEFAULT_LIB_DIR        =&gt; &#39;lib&#39;;
-</span><span class="">   23: Readonly my $DEFAULT_MUTATION_LEVEL =&gt; &#39;full&#39;;
+</span><span class="">   22: Readonly my $LEVEL_FULL =&gt; &#39;full&#39;;
+</span><span class="">   23: Readonly my $LEVEL_FAST =&gt; &#39;fast&#39;;
 </span><span class="">   24: 
 </span><span class="">   25: # --------------------------------------------------
-</span><span class="">   26: # Valid mutation level values
+</span><span class="">   26: # Default values for optional constructor arguments
 </span><span class="">   27: # --------------------------------------------------
-</span><span class="">   28: Readonly my $LEVEL_FULL =&gt; &#39;full&#39;;
-</span><span class="">   29: Readonly my $LEVEL_FAST =&gt; &#39;fast&#39;;
+</span><span class="">   28: Readonly my $DEFAULT_LIB_DIR        =&gt; &#39;lib&#39;;
+</span><span class="">   29: Readonly my $DEFAULT_MUTATION_LEVEL =&gt; $LEVEL_FULL;
 </span><span class="">   30: 
 </span><span class="">   31: our $VERSION = &#39;0.33&#39;;
 </span><span class="">   32: 
@@ -698,7 +698,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  387: #             coderef, which is not stable as a string.
 </span><span class="">  388: # --------------------------------------------------
 </span><span class="">  389: sub _dedup_mutants {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 390 → 394 → 407</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 390 → 394 → 0</span></span>  390: 	my ($mutants) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">390 → 394 → 407</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">390 → 394 → 0</span></span>  390: 	my ($mutants) = @_;
 </span><span class="">  391: 	my @rc;
 </span><span class="">  392: 	my %seen;
 </span><span class="">  393: 
@@ -715,7 +715,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  404: 		push @rc, $m;
 </span><span class="">  405: 	}
 </span><span class="">  406: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 407 → 407 → 0</span></span>  407: 	return \@rc;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">407 → 407 → 0</span></span>  407: 	return \@rc;
 </span><span class="">  408: }
 </span><span class="">  409: 
 </span><span class="">  410: # --------------------------------------------------
@@ -739,7 +739,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  428: #             they are not meaningful as strings.
 </span><span class="">  429: # --------------------------------------------------
 </span><span class="">  430: sub _is_redundant_mutation {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 431 → 441 → 446</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 431 → 441 → 0</span></span>  431: 	my ($m) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">431 → 441 → 446</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">431 → 441 → 0</span></span>  431: 	my ($m) = @_;
 </span><span class="">  432: 
 </span><span class="">  433: 	my $orig = $m-&gt;{original} // &#39;&#39;;
 </span><span class="">  434: 
@@ -760,7 +760,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  443: 	}
 </span><span class="">  444: 
 </span><span class="">  445: 	# Boolean literal flip on a standalone 1 or 0 is trivial
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 446 → 451 → 0</span></span>  446: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">446 → 451 → 0</span></span>  446: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
 </span><span class="">  447: 
 </span><span class="">  448: 	# Mutations inside comments are unreachable code
 </span><span class="">  449: 	return 1 if $m-&gt;{line_content} &amp;&amp; $m-&gt;{line_content} =~ /^\s*#/;
