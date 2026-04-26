@@ -406,7 +406,7 @@ Approximate LCSAJ segments: 19<br>
 </span><span class="">  114: =cut
 </span><span class="">  115: 
 </span><span class="">  116: sub mutate {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">117 → 123 → 201</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">117 → 123 → 0</span></span>  117: 	my ($self, $doc) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">117 → 123 → 200</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">117 → 123 → 0</span></span>  117: 	my ($self, $doc) = @_;
 </span><span class="">  118: 
 </span><span class="">  119: 	# Find all operator tokens in the document
 </span><span class="">  120: 	my $ops = $doc-&gt;find(&#39;PPI::Token::Operator&#39;) || [];
@@ -425,7 +425,7 @@ Approximate LCSAJ segments: 19<br>
 </span><span class="">  133: 
 </span><span class="">  134: 		# Only mutate operators that are direct children of
 </span><span class="">  135: 		# a condition or expression, not list arguments
-</span><span class="">  136: 		my $parent = $op-&gt;parent;
+</span><span class="">  136: 		my $parent = $op-&gt;parent();
 </span><span class="">  137: 		next unless $parent-&gt;isa(&#39;PPI::Statement&#39;)
 </span><span class="">  138: 			|| $parent-&gt;isa(&#39;PPI::Structure::Condition&#39;)
 </span><span class="">  139: 			|| $parent-&gt;isa(&#39;PPI::Structure::Block&#39;);
@@ -437,63 +437,62 @@ Approximate LCSAJ segments: 19<br>
 </span><span class="">  145: 
 </span><span class="">  146: 		# Generate one mutant per flip of this operator
 </span><span class="">  147: 		for my $change (@{ $FLIP{$original} }) {
-</span><span class="">  148: 
-</span><span class="">  149: 			# Build a unique id from location and the specific flip
-</span><span class="">  150: 			# so multiple operators on the same line don&#39;t collide
-</span><span class="">  151: 			my $id = &quot;NUM_BOUNDARY_${line}_${col}_${change}&quot;;
-</span><span class="">  152: 
-</span><span class="">  153: 			my $mutant = eval {
-</span><span class="">  154: 				App::Test::Generator::Mutant-&gt;new(
-</span><span class="">  155: 					id          =&gt; $id,
-</span><span class="">  156: 					group       =&gt; &quot;NUM_BOUNDARY:$line&quot;,
-</span><span class="">  157: 					description =&gt; &quot;Numeric boundary flip $original to $change&quot;,
-</span><span class="">  158: 					original    =&gt; $original,
-</span><span class="">  159: 					line        =&gt; $line,
-</span><span class="">  160: 					type        =&gt; &#39;comparison&#39;,
-</span><span class="">  161: 
-</span><span class="">  162: 					# The transform closure captures line, col, original
-</span><span class="">  163: 					# and change so it targets precisely the right operator
-</span><span class="">  164: 					# in the document copy it receives at test time
-</span><span class="">  165: 					transform =&gt; sub {
-</span><span class="">  166: 						my $doc  = $_[0];
-</span><span class="">  167: 						my $ops  = $doc-&gt;find(&#39;PPI::Token::Operator&#39;) || [];
-</span><span class="">  168: 
-</span><span class="">  169: 						for my $op (@{$ops}) {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  170: 							next unless $op-&gt;line_number   == $line;
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  171: 							next unless $op-&gt;column_number == $col;
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  172: 							next unless $op-&gt;content       eq $original;
-</span><span class="">  173: 
-</span><span class="">  174: 							# Safety check &acirc;&#128;&#148; do not mutate if this looks like
-</span><span class="">  175: 							# a readline operator (&lt;$fh&gt;) rather than a numeric
-</span><span class="">  176: 							# comparison. A readline &lt; is immediately followed
-</span><span class="">  177: 							# by a symbol token starting with $
-</span><span class="">  178: 							my $next_sib = $op-&gt;next_sibling;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  179: 							if($next_sib &amp;&amp; $next_sib-&gt;isa(&#39;PPI::Token::Symbol&#39;)) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  180: 								last;
-</span><span class="">  181: 							}
-</span><span class="">  182: 
-</span><span class="">  183: 							$op-&gt;set_content($change);
-</span><span class="">  184: 							last;
-</span><span class="">  185: 						}
-</span><span class="">  186: 					},
-</span><span class="">  187: 				);
-</span><span class="">  188: 			};
-</span><span class="">  189: 
-</span><span class="">  190: 			# If the Mutant construction fails, report clearly rather than
-</span><span class="">  191: 			# silently dropping the mutant from the results
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  192: 			if($@ || !$mutant) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  193: 				warn &quot;Failed to construct mutant $id: $@&quot; if $@;
-</span><span class="">  194: 				next;
-</span><span class="">  195: 			}
-</span><span class="">  196: 
-</span><span class="">  197: 			push @mutants, $mutant;
-</span><span class="">  198: 		}
-</span><span class="">  199: 	}
-</span><span class="">  200: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">201 → 201 → 0</span></span>  201: 	return @mutants;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  202: }
-</span><span class="">  203: 
-</span><span class="">  204: 1;
+</span><span class="">  148: 			# Build a unique id from location and the specific flip
+</span><span class="">  149: 			# so multiple operators on the same line don&#39;t collide
+</span><span class="">  150: 			my $id = &quot;NUM_BOUNDARY_${line}_${col}_${change}&quot;;
+</span><span class="">  151: 
+</span><span class="">  152: 			my $mutant = eval {
+</span><span class="">  153: 				App::Test::Generator::Mutant-&gt;new(
+</span><span class="">  154: 					id          =&gt; $id,
+</span><span class="">  155: 					group       =&gt; &quot;NUM_BOUNDARY:$line&quot;,
+</span><span class="">  156: 					description =&gt; &quot;Numeric boundary flip $original to $change&quot;,
+</span><span class="">  157: 					original    =&gt; $original,
+</span><span class="">  158: 					line        =&gt; $line,
+</span><span class="">  159: 					type        =&gt; &#39;comparison&#39;,
+</span><span class="">  160: 
+</span><span class="">  161: 					# The transform closure captures line, col, original
+</span><span class="">  162: 					# and change so it targets precisely the right operator
+</span><span class="">  163: 					# in the document copy it receives at test time
+</span><span class="">  164: 					transform =&gt; sub {
+</span><span class="">  165: 						my $doc  = $_[0];
+</span><span class="">  166: 						my $ops  = $doc-&gt;find(&#39;PPI::Token::Operator&#39;) || [];
+</span><span class="">  167: 
+</span><span class="">  168: 						for my $op (@{$ops}) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  169: 							next unless $op-&gt;line_number   == $line;
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  170: 							next unless $op-&gt;column_number == $col;
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  171: 							next unless $op-&gt;content       eq $original;
+</span><span class="">  172: 
+</span><span class="">  173: 							# Safety check &acirc;&#128;&#148; do not mutate if this looks like
+</span><span class="">  174: 							# a readline operator (&lt;$fh&gt;) rather than a numeric
+</span><span class="">  175: 							# comparison. A readline &lt; is immediately followed
+</span><span class="">  176: 							# by a symbol token starting with $
+</span><span class="">  177: 							my $next_sib = $op-&gt;next_sibling;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  178: 							if($next_sib &amp;&amp; $next_sib-&gt;isa(&#39;PPI::Token::Symbol&#39;)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  179: 								last;
+</span><span class="">  180: 							}
+</span><span class="">  181: 
+</span><span class="">  182: 							$op-&gt;set_content($change);
+</span><span class="">  183: 							last;
+</span><span class="">  184: 						}
+</span><span class="">  185: 					},
+</span><span class="">  186: 				);
+</span><span class="">  187: 			};
+</span><span class="">  188: 
+</span><span class="">  189: 			# If the Mutant construction fails, report clearly rather than
+</span><span class="">  190: 			# silently dropping the mutant from the results
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  191: 			if($@ || !$mutant) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  192: 				warn &quot;Failed to construct mutant $id: $@&quot; if $@;
+</span><span class="">  193: 				next;
+</span><span class="">  194: 			}
+</span><span class="">  195: 
+</span><span class="">  196: 			push @mutants, $mutant;
+</span><span class="">  197: 		}
+</span><span class="">  198: 	}
+</span><span class="">  199: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">200 → 200 → 0</span></span>  200: 	return @mutants;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  201: }
+</span><span class="">  202: 
+</span><span class="">  203: 1;
 </span></pre>
 
 <script>
