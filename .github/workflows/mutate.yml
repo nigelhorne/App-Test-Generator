@@ -10,12 +10,19 @@ on:
     - cron: '12 23 26 * *'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   mutate:
     runs-on: ubuntu-latest
+    timeout-minutes: 350
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: shogo82148/actions-setup-perl@v1
 
       - run: cpanm --skip-satisfied --installdeps .
@@ -30,5 +37,5 @@ jobs:
       - run: perl -Ilib -Iblib/lib bin/test-generator-mutate \
          --lib lib \
          --json mutation.json \
+         --changed_only \
          --html mutation_html
-#        --min-score 85 \

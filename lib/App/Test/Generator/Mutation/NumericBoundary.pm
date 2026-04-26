@@ -133,7 +133,7 @@ sub mutate {
 
 		# Only mutate operators that are direct children of
 		# a condition or expression, not list arguments
-		my $parent = $op->parent;
+		my $parent = $op->parent();
 		next unless $parent->isa('PPI::Statement')
 			|| $parent->isa('PPI::Structure::Condition')
 			|| $parent->isa('PPI::Structure::Block');
@@ -145,7 +145,6 @@ sub mutate {
 
 		# Generate one mutant per flip of this operator
 		for my $change (@{ $FLIP{$original} }) {
-
 			# Build a unique id from location and the specific flip
 			# so multiple operators on the same line don't collide
 			my $id = "NUM_BOUNDARY_${line}_${col}_${change}";
