@@ -91,8 +91,10 @@ sub run_cmd {
 # --------------------------------------------------------------------
 
 {
+	my $outdir = File::Spec->catdir($tmpdir, 'schemas');
 	my ($exit, $out, $err) = run_cmd(
 		$script,
+		'--output-dir', $outdir,
 		'--verbose',
 		$module
 	);

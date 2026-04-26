@@ -193,45 +193,19 @@ sub mutate {
 				# document copy it receives at test time
 				transform => sub {
 					my $doc  = $_[0];
-
 					# PPI >= 1.270 uses PPI::Statement::Break for return
 					my $rets = $doc->find(sub {
 						my $node = $_[1];
-						# Match Break nodes that are specifically return statements
 						return 0 unless $node->isa('PPI::Statement::Break');
 						my $first = $node->schild(0) or return 0;
 						return $first->content eq 'return';
-					}) || [];
-
+						}) || [];
 					for my $ret (@{$rets}) {
 						next unless $ret->line_number   == $line;
 						next unless $ret->column_number == $col;
-
 						my $expr = $ret->schild(1) or last;
-
-						# Skip bare semicolon — PPI may include the statement
-						# terminator as a significant child on bare returns
-						next if $expr->isa('PPI::Token::Structure')
-							&& $expr->content eq ';';
-
-						$expr->set_content('undef');
-						last;
-					}
-
-					for my $ret (@{$rets}) {
-						# Match by line and column to avoid mutating
-						# the wrong return statement
-						next unless $ret->line_number   == $line;
-						next unless $ret->column_number == $col;
-
-						# Skip bare returns — already return undef,
-						# redundant to mutate
-						my $expr = $ret->schild(1) or last;
-
-						# Replace the expression with the literal undef.
-						# Operate on the token content directly to avoid
-						# PPI document ownership issues that arise when
-						# replacing entire statement nodes
+						# Skip bare semicolon — already returns undef
+						next if $expr->isa('PPI::Token::Structure') && $expr->content eq ';';
 						$expr->set_content('undef');
 						last;
 					}
