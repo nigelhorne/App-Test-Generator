@@ -169,6 +169,9 @@ sub mutate {
 		# Skip bare semicolon — PPI may include the statement
 		# terminator as a significant child on bare returns
 		next if $expr->isa('PPI::Token::Structure') && $expr->content eq ';';
+		# Skip structure nodes (e.g. return ($x, $y) gives a
+		# PPI::Structure::List) — we can only mutate token expressions
+		next unless $expr->isa('PPI::Token');
 
 		# Capture location so the transform closure targets the
 		# exact statement rather than the first match on that line
@@ -204,8 +207,14 @@ sub mutate {
 						next unless $ret->line_number   == $line;
 						next unless $ret->column_number == $col;
 						my $expr = $ret->schild(1) or last;
+
 						# Skip bare semicolon — already returns undef
 						next if $expr->isa('PPI::Token::Structure') && $expr->content eq ';';
+
+						# Skip structure nodes (e.g. PPI::Structure::List from
+						# return ($x, $y)) — set_content only exists on tokens
+						next unless $expr->isa('PPI::Token');
+
 						$expr->set_content('undef');
 						last;
 					}
@@ -213,10 +222,10 @@ sub mutate {
 			);
 		};
 
-		# If Mutant construction fails, report clearly rather than
+		# If the Mutant construction fails, report clearly rather than
 		# silently dropping the mutant from the results
 		if($@ || !$mutant) {
-			warn "Failed to construct mutant $id: $@\n" if $@;
+			warn "Failed to construct mutant $id: $@" if $@;
 			next;
 		}
 
@@ -234,19 +243,9 @@ Nigel Horne, C<< <njh at nigelhorne.com> >>
 
 Copyright 2026 Nigel Horne.
 
-Usage is subject to licence terms.
-
-The licence terms of this software are as follows:
-
-=over 4
-
-=item * Personal single user, single computer use: GPL2
-
-=item * All other users (including Commercial, Charity, Educational,
-Government) must apply in writing for a licence for use from Nigel Horne
-at the above e-mail.
-
-=back
+Usage is subject to the terms of GPL2.
+If you use it,
+please let me know.
 
 =cut
 
