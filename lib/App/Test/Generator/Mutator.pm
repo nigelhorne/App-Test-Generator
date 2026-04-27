@@ -164,8 +164,7 @@ sub generate_mutants {
 	my $self = $_[0];
 
 	# Parse the target file into a PPI document
-	my $doc = PPI::Document->new($self->{file})
-		or croak "Unable to parse $self->{file}";
+	my $doc = PPI::Document->new($self->{file}) or croak "Unable to parse $self->{file}";
 
 	my @mutants;
 

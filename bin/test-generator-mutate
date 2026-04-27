@@ -434,8 +434,7 @@ if($opt{file}) {
 	my @changed = grep { /^lib\/.*\.pm$/ && -f $_ } split /\n/, $diff;
 
 	if(@changed) {
-		print "Changed-only mode: mutating ", scalar(@changed),
-			" file(s)\n" if $opt{verbose};
+		print 'Changed-only mode: mutating ', scalar(@changed), " file(s)\n" if $opt{verbose};
 		@files = @changed;
 	} else {
 		# No lib/*.pm files changed -- fall through to merge and write

@@ -7,7 +7,7 @@ use Test::Needs {
 	'App::Test::Generator' => '0.19',
 	'perl' => 5.036,	# Later A::T::G need this version
 };
-# use Test::DescribeMe qw(extended);
+use Test::DescribeMe qw(extended);
 use FindBin qw($Bin);
 use IPC::Run3;
 use IPC::System::Simple qw(system);
@@ -31,7 +31,7 @@ if((-d $dirname) && opendir(my $dh, $dirname)) {
 			ok($? == 0, 'Generated test script exits successfully');
 
 			if($? == 0) {
-				diag($stderr) if(length($stderr));
+				diag($stderr) if(length($stderr) && !defined($ENV{AUTOMATED_TESTING}));
 				ok($stdout =~ /^Result: PASS/ms);
 				if($stdout =~ /Files=1, Tests=(\d+)/ms) {
 					diag("$filepath: $1 tests run");

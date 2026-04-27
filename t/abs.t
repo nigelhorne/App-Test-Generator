@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 
+use Test::DescribeMe qw(extended);
 use IPC::Run3;
 use IPC::System::Simple qw(system);
 use Test::Most;
@@ -43,7 +44,7 @@ if($@) {
 		diag("STDOUT:\n$stdout");
 	}
 	unlink $outfile;
-	diag($stderr) if(length($stderr));
+	diag($stderr) if(length($stderr) && !defined($ENV{AUTOMATED_TESTING}));
 
 	like($stderr, qr/abs test case created/);
 	like($stdout, qr/^ok \d/sm, 'At least one created test passed');
