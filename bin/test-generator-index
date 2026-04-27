@@ -108,7 +108,7 @@ each CI push via C<.github/workflows/dashboard.yml>.
 =head1 OPTIONS
 
   --generate_mutant_tests=DIR
-      Generate a timestamped test stub file in DIR (typically 't/') for
+      Generate a timestamped test stub file in DIR (typically 'xt/') for
       surviving mutants. The file is named mutant_YYYYMMDD_HHMMSS.t and
       contains:
         - TODO test stubs for High/Medium difficulty survivors, with
@@ -145,7 +145,7 @@ each CI push via C<.github/workflows/dashboard.yml>.
       of them with boundary values extracted from surviving NUM_BOUNDARY
       mutants whose enclosing subroutine matches the schema's function
       field. The original schema is never modified. Augmented copies are
-      written to t/conf/mutant_fuzz_YYYYMMDD_HHMMSS_FUNCTION.yml and
+      written to xt/conf/mutant_fuzz_YYYYMMDD_HHMMSS_FUNCTION.yml and
       are picked up automatically by t/fuzz.t on the next test run.
 
       Schemas whose filename already starts with mutant_fuzz_ are skipped
@@ -2966,7 +2966,7 @@ sub _strip_internal_keys {
 #             t/fuzz.t picks it up on the next test run.
 #
 # Entry:      $schema      - cleaned schema hashref
-#             $test_dir    - base test directory (e.g. 't')
+#             $test_dir    - base test directory (e.g. 'xt')
 #             $module      - Perl module name for filename
 #             $function    - function name for filename
 #             $timestamp   - YYYYMMDD_HHMMSS string
@@ -3137,7 +3137,7 @@ sub _dump_schema_yaml {
 # Arguments:
 #   $mutation_db  - decoded mutation JSON hashref
 #   $cover_db     - decoded Devel::Cover JSON hashref
-#   $test_dir     - directory to write the .t file (default: 't')
+#   $test_dir     - directory to write the .t file (default: 'xt')
 #
 # Returns:
 #   The filename written, or undef if nothing written
@@ -3145,8 +3145,8 @@ sub _dump_schema_yaml {
 sub _generate_mutant_tests {
 	my ($mutation_db, $cover_db, $test_dir, $generate_test) = @_;
 
-	# Default output directory is the project's t/ directory
-	$test_dir //= 't';
+	# Default output directory is the project's xt/ directory
+	$test_dir //= 'xt';
 
 	# --------------------------------------------------
 	# Separate survivors into high/med (need TODO stubs)
@@ -3555,7 +3555,7 @@ HEADER
 # Entry:      $mutation_db - decoded mutation JSON
 #                            hashref
 #             $test_dir    - base test directory
-#                            (default: 't')
+#                            (default: 'xt')
 #
 # Exit:       Returns the number of augmented schema
 #             files written. Returns 0 if no matching
@@ -3579,8 +3579,8 @@ HEADER
 sub _generate_fuzz_schemas {
 	my ($mutation_db, $test_dir) = @_;
 
-	# Default test directory is the project's t/ directory
-	$test_dir //= 't';
+	# Default test directory is the project's xt/ directory
+	$test_dir //= 'xt';
 
 	my $conf_dir  = "$test_dir/conf";
 	my $written   = 0;

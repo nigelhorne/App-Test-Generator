@@ -125,7 +125,7 @@ test-generator-mutate \
 set -e
 
 # --- Step 7: Create the test dashboard ---
-# --generate_mutant_tests=t writes TODO stubs for surviving mutants.
+# --generate_mutant_tests=xt writes TODO stubs for surviving mutants.
 # --generate_test=mutant attempts runnable YAML schemas for NUM_BOUNDARY
 # survivors via SchemaExtractor where confidence is sufficient.
 # --generate_fuzz augments existing t/conf/ schemas with boundary values
@@ -134,7 +134,7 @@ echo "Creating the LCSAJ files..."
 perl -Ilib $(which instrument-modules)
 echo "Creating the dashboard..."
 test-generator-index \
-	--generate_mutant_tests=t \
+	--generate_mutant_tests=xt \
 	--generate_test=mutant \
 	--generate_fuzz
 
