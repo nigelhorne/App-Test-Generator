@@ -2,9 +2,9 @@ package App::Test::Generator::LCSAJ;
 
 use strict;
 use warnings;
-use Carp            qw(croak);
+use Carp qw(croak);
 use File::Basename  qw(basename);
-use File::Path      qw(make_path);
+use File::Path qw(make_path);
 use File::Spec;
 use JSON::MaybeXS;
 use PPI;
@@ -178,7 +178,7 @@ sub _build_cfg {
 
 	my @statements = $block->schildren();
 	my @blocks;
-	my $id      = 1;
+	my $id = 1;
 	my $current = _new_block($id);
 
 	for my $stmt (@statements) {
@@ -225,7 +225,8 @@ sub _build_cfg {
 # Side effects: None.
 # --------------------------------------------------
 sub _new_block {
-	my ($id) = @_;
+	my $id = $_[0];
+
 	return { id => $id, lines => [], edges => [] };
 }
 
@@ -261,7 +262,7 @@ sub _connect_blocks {
 #             considered — simple expressions are not.
 # --------------------------------------------------
 sub _is_branch {
-	my ($stmt) = @_;
+	my $stmt = $_[0];
 
 	# Only compound statements can be branch points
 	return 0 unless $stmt->isa('PPI::Statement::Compound');
