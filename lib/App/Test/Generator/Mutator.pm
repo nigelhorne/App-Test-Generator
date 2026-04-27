@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp qw(croak);
 use Config;
-use File::Copy          qw(copy);
+use File::Copy qw(copy);
 use File::Copy::Recursive qw(dircopy);
 use File::Spec;
 use File::Temp          qw(tempdir);
@@ -109,7 +109,7 @@ sub new {
 	my ($class, %args) = @_;
 
 	# file is required and must exist on disk
-	croak 'file required'           unless defined $args{file};
+	croak 'file required' unless defined $args{file};
 	croak "file not found: $args{file}" unless -f $args{file};
 
 	return bless {

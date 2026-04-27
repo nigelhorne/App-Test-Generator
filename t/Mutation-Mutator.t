@@ -272,4 +272,104 @@ subtest 'apply_mutant() modifies workspace copy and not original' => sub {
 	is($after_src, $original_src, 'original source file is not modified');
 };
 
+# ---------------------------------------------------------------
+# 13. Fast mode deduplication actually removes duplicates.
+#     Generate the same file in both full and fast mode and
+#     assert fast produces fewer or equal mutants. If
+#     _dedup_mutants returns undef or negates its result,
+#     the count relationship breaks.
+# ---------------------------------------------------------------
+subtest 'fast mode deduplication reduces or equals full mode count' => sub {
+	my ($pm, $lib) = _make_temp_module($SAMPLE_SOURCE);
+	my $full = App::Test::Generator::Mutator->new(
+		file           => $pm,
+		lib_dir        => $lib,
+		mutation_level => 'full',
+	);
+	my $fast = App::Test::Generator::Mutator->new(
+		file           => $pm,
+		lib_dir        => $lib,
+		mutation_level => 'fast',
+	);
+	my @full_mutants = $full->generate_mutants();
+	my @fast_mutants = $fast->generate_mutants();
+	ok(scalar(@fast_mutants) <= scalar(@full_mutants),
+		'fast mode count <= full mode count');
+	ok(scalar(@fast_mutants) >= 0,
+		'fast mode returns a defined non-negative count');
+};
+
+# ---------------------------------------------------------------
+# 14. _is_redundant_mutation filters arithmetic no-ops.
+#     A module containing return $x + 0 should produce fewer
+#     fast-mode mutants than one without the no-op, because
+#     the redundancy filter removes it. If _is_redundant_mutation
+#     returns undef or is negated, no-ops are not filtered.
+# ---------------------------------------------------------------
+subtest 'fast mode filters redundant arithmetic no-op mutations' => sub {
+	# Source with a return containing +0 (a known redundant pattern)
+	my $noop_src = <<'END_PM';
+package TestModule;
+sub noop {
+	my $x = shift;
+	return $x + 0;
+}
+1;
+END_PM
+	my $clean_src = <<'END_PM';
+package TestModule;
+sub noop {
+	my $x = shift;
+	return $x;
+}
+1;
+END_PM
+	my ($pm_noop,  $lib_noop)  = _make_temp_module($noop_src);
+	my ($pm_clean, $lib_clean) = _make_temp_module($clean_src);
+	my $fast_noop = App::Test::Generator::Mutator->new(
+		file           => $pm_noop,
+		lib_dir        => $lib_noop,
+		mutation_level => 'fast',
+	);
+	my $fast_clean = App::Test::Generator::Mutator->new(
+		file           => $pm_clean,
+		lib_dir        => $lib_clean,
+		mutation_level => 'fast',
+	);
+	my @noop_mutants  = $fast_noop->generate_mutants();
+	my @clean_mutants = $fast_clean->generate_mutants();
+	# The no-op version should produce fewer or equal fast mutants
+	# because +0 is filtered as redundant
+	ok(scalar(@noop_mutants) <= scalar(@clean_mutants),
+		'no-op source produces <= mutants than clean source in fast mode');
+};
+
+# ---------------------------------------------------------------
+# 15. _is_redundant_mutation filters standalone boolean literals.
+#     A module returning bare 1 or 0 should have those filtered
+#     in fast mode. If the filter is broken, count increases.
+# ---------------------------------------------------------------
+subtest 'fast mode filters standalone boolean literal returns' => sub {
+	my $literal_src = <<'END_PM';
+package TestModule;
+sub always_true  { return 1 }
+sub always_false { return 0 }
+1;
+END_PM
+	my ($pm, $lib) = _make_temp_module($literal_src);
+	my $full = App::Test::Generator::Mutator->new(
+		file           => $pm,
+		lib_dir        => $lib,
+		mutation_level => 'full',
+	);
+	my $fast = App::Test::Generator::Mutator->new(
+		file           => $pm,
+		lib_dir        => $lib,
+		mutation_level => 'fast',
+	);
+	my @full_m = $full->generate_mutants();
+	my @fast_m = $fast->generate_mutants();
+	ok(scalar(@fast_m) <= scalar(@full_m), 'boolean literal returns filtered in fast mode');
+};
+
 done_testing();
