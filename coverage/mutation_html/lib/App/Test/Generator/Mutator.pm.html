@@ -296,7 +296,7 @@ Approximate LCSAJ segments: 35<br>
 </span><span class="">    4: use warnings;
 </span><span class="">    5: use Carp qw(croak);
 </span><span class="">    6: use Config;
-</span><span class="">    7: use File::Copy          qw(copy);
+</span><span class="">    7: use File::Copy qw(copy);
 </span><span class="">    8: use File::Copy::Recursive qw(dircopy);
 </span><span class="">    9: use File::Spec;
 </span><span class="">   10: use File::Temp          qw(tempdir);
@@ -401,7 +401,7 @@ Approximate LCSAJ segments: 35<br>
 </span><span class="">  109: 	my ($class, %args) = @_;
 </span><span class="">  110: 
 </span><span class="">  111: 	# file is required and must exist on disk
-</span><span class="">  112: 	croak &#39;file required&#39;           unless defined $args{file};
+</span><span class="">  112: 	croak &#39;file required&#39; unless defined $args{file};
 </span><span class="">  113: 	croak &quot;file not found: $args{file}&quot; unless -f $args{file};
 </span><span class="">  114: 
 </span><span class="">  115: 	return bless {
@@ -846,7 +846,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 							</li></ul></details>
 <span class="">  446: 
 </span><span class="">  447: 	# Mutations inside comments are unreachable code
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  448: 	return 1 if $m-&gt;{line_content} &amp;&amp; $m-&gt;{line_content} =~ /^\s*#/;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  448: 	return 1 if $m-&gt;{line_content} &amp;&amp; $m-&gt;{line_content} =~ /^\s*#/;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
