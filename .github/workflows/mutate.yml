@@ -34,6 +34,12 @@ jobs:
           perl Makefile.PL
           make install
 
+      - run: |
+          echo "=== git diff HEAD~1 HEAD ==="
+          git diff --name-only HEAD~1 HEAD
+          echo "=== git log -5 ==="
+          git log --oneline -5
+
       - name: Genenate the mutants
         env:
           AUTOMATED_TESTING: 1

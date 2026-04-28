@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
+use Test::DescribeMe qw(extended);
 use Test::Most;
 use File::Temp qw(tempdir tempfile);
 use File::Spec;
