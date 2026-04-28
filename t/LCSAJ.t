@@ -26,7 +26,6 @@ BEGIN { use_ok('App::Test::Generator::LCSAJ') }
 # ---------------------------------------------------------------
 sub _generate_for_source {
 	my ($source, $out_dir) = @_;
-	# Write source to a temporary file under a fake lib/ directory
 	my $tmpdir = tempdir(CLEANUP => 1);
 	my $lib    = File::Spec->catdir($tmpdir, 'lib');
 	mkdir $lib or die "Cannot mkdir $lib: $!";
@@ -34,15 +33,15 @@ sub _generate_for_source {
 	open my $fh, '>', $pm or die "Cannot write $pm: $!";
 	print $fh $source;
 	close $fh;
-	# Use a caller-supplied output dir, or create a default one
-	unless($out_dir) {
-		$out_dir = File::Spec->catdir($tmpdir, 'out');
-		mkdir $out_dir or die "Cannot mkdir $out_dir: $!";
-	}
-	# Run the generator
-	my $paths = App::Test::Generator::LCSAJ->generate($pm, $out_dir);
-	# Decode the written JSON file so we can test the serialised form
-	my $json_dir  = File::Spec->catdir($out_dir, 'TestModule.pm.lcsaj');
+	require Cwd;
+	my $orig = Cwd::cwd();
+	chdir $tmpdir or die "Cannot chdir $tmpdir: $!";
+	# Use relative paths so LCSAJ output paths are portable
+	my $rel_pm  = File::Spec->catfile('lib', 'TestModule.pm');
+	my $rel_out = $out_dir // 'out';
+	mkdir $rel_out unless -d $rel_out;
+	my $paths = App::Test::Generator::LCSAJ->generate($rel_pm, $rel_out);
+	my $json_dir  = File::Spec->catdir($rel_out, 'TestModule.pm.lcsaj');
 	my $json_file = File::Spec->catfile($json_dir, 'TestModule.pm.lcsaj.json');
 	my $decoded;
 	if(-f $json_file) {
@@ -50,7 +49,8 @@ sub _generate_for_source {
 		$decoded = decode_json(do { local $/; <$jfh> });
 		close $jfh;
 	}
-	return ($paths, $decoded, $json_file, $pm, $out_dir);
+	chdir $orig;
+	return ($paths, $decoded, File::Spec->catfile($tmpdir, $json_file), $pm, $rel_out);
 }
 
 # ---------------------------------------------------------------

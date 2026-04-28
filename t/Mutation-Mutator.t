@@ -18,16 +18,20 @@ BEGIN { use_ok('App::Test::Generator::Mutator') }
 # return the path to the file and the lib dir.
 # ---------------------------------------------------------------
 sub _make_temp_module {
-	my ($source) = @_;
+	my $source = $_[0];
 	my $tmpdir = tempdir(CLEANUP => 1);
 	my $lib    = File::Spec->catdir($tmpdir, 'lib');
+
 	mkdir $lib or die "Cannot mkdir $lib: $!";
 	my $pm = File::Spec->catfile($lib, 'TestModule.pm');
 	open my $fh, '>', $pm or die "Cannot write $pm: $!";
 	print $fh $source;
 	close $fh;
-	# Return the file path and the lib dir separately
-	return ($pm, $lib, $tmpdir);
+	# rel_pm is the path relative to $tmpdir — used when chdir'd
+	# into $tmpdir so that prepare_workspace sees a relative path
+	# and does not embed the absolute path into workspace filenames
+	my $rel_pm = File::Spec->catfile('lib', 'TestModule.pm');
+	return ($pm, $lib, $tmpdir, $rel_pm);
 }
 
 # Minimal module source with a variety of mutation targets:
@@ -201,19 +205,24 @@ END_PM
 #     and populates self->{workspace} and self->{relative}
 # ---------------------------------------------------------------
 subtest 'prepare_workspace() creates workspace and sets relative path' => sub {
-	my ($pm, $lib, $tmpdir) = _make_temp_module($SAMPLE_SOURCE);
+	my ($pm, $lib, $tmpdir, $rel_pm) = _make_temp_module($SAMPLE_SOURCE);
+	require Cwd;
+	my $orig = Cwd::cwd();
+	chdir $tmpdir or die "Cannot chdir $tmpdir: $!";
 	my $mutator = App::Test::Generator::Mutator->new(
-		file    => $pm,
-		lib_dir => $lib,
+		file    => $rel_pm,
+		lib_dir => 'lib',
 	);
-	my $workspace = $mutator->prepare_workspace();
-	ok(-d $workspace,              'workspace directory exists');
+	my $workspace;
+	eval { $workspace = $mutator->prepare_workspace() };
+	my $err = $@;
+	chdir $orig;
+	is($err, '',              'prepare_workspace() does not croak');
+	ok(-d $workspace,         'workspace directory exists');
 	ok(defined $mutator->{workspace}, 'self->{workspace} set');
 	ok(defined $mutator->{relative},  'self->{relative} set');
-	# The lib dir must have been copied into the workspace
-	my $copied = File::Spec->catdir($workspace, $lib);
-	ok(-d $copied, 'lib tree copied into workspace')
-		or diag("Expected $copied to exist");
+	my $copied = File::Spec->catdir($workspace, 'lib');
+	ok(-d $copied, 'lib tree copied into workspace');
 };
 
 # ---------------------------------------------------------------

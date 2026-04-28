@@ -350,8 +350,10 @@ sub _save_lcsaj {
 
 	# Strip leading path up to and including 'lib/' — handles both
 	# absolute paths (/home/runner/.../lib/App/...) and relative (lib/App/...)
-	$rel =~ s{^(?:.*/)?lib/}{};
-	my $base    = basename($rel);
+	# Handle both Unix / and Windows \ separators
+	$rel =~ s{^(?:.*[/\\])?lib[/\\]}{};
+
+	my $base = basename($rel);
 
 	# Mirror the directory structure expected by _lcsaj_coverage_for_file:
 	# $dir / $rel.lcsaj / $base.lcsaj.json
