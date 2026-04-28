@@ -217,14 +217,20 @@ subtest 'prepare_workspace() creates workspace and sets relative path' => sub {
 };
 
 # ---------------------------------------------------------------
-# 11. apply_mutant() — croaks when workspace not prepared
+# 11. apply_mutant() — croaks when workspace not prepared.
+#     Uses a relative lib_dir via chdir for Windows compatibility —
+#     dircopy fails when lib_dir is an absolute path on Windows.
 # ---------------------------------------------------------------
 subtest 'apply_mutant() croaks when workspace not prepared' => sub {
-	my ($pm, $lib) = _make_temp_module($SAMPLE_SOURCE);
+	my ($pm, $lib, $tmpdir) = _make_temp_module($SAMPLE_SOURCE);
+	require Cwd;
+	my $orig = Cwd::cwd();
+	chdir $tmpdir or die "Cannot chdir $tmpdir: $!";
 	my $mutator = App::Test::Generator::Mutator->new(
 		file    => $pm,
-		lib_dir => $lib,
+		lib_dir => 'lib',
 	);
+	chdir $orig;
 	# Manufacture a minimal mutant stub to pass in
 	my $stub = {
 		description => 'test stub',
@@ -239,36 +245,42 @@ subtest 'apply_mutant() croaks when workspace not prepared' => sub {
 
 # ---------------------------------------------------------------
 # 12. apply_mutant() — modifies the workspace copy without
-#     touching the original source file
+#     touching the original source file.
+#     Uses a relative lib_dir via chdir for Windows compatibility.
 # ---------------------------------------------------------------
 subtest 'apply_mutant() modifies workspace copy and not original' => sub {
-	my ($pm, $lib) = _make_temp_module($SAMPLE_SOURCE);
+	my ($pm, $lib, $tmpdir) = _make_temp_module($SAMPLE_SOURCE);
+	require Cwd;
+	my $orig = Cwd::cwd();
+	chdir $tmpdir or die "Cannot chdir $tmpdir: $!";
+	# Use a relative path so prepare_workspace builds correct workspace paths
+	my $rel_pm = File::Spec->catfile('lib', 'TestModule.pm');
 	my $mutator = App::Test::Generator::Mutator->new(
-		file    => $pm,
-		lib_dir => $lib,
+		file    => $rel_pm,
+		lib_dir => 'lib',
 	);
-	$mutator->prepare_workspace();
+	eval { $mutator->prepare_workspace() };
+	my $err = $@;
+	is($err, '', 'prepare_workspace() does not croak');
 	# Read original source for comparison afterwards
-	open my $orig_fh, '<', $pm or die $!;
+	open my $orig_fh, '<', $rel_pm or die $!;
 	my $original_src = do { local $/; <$orig_fh> };
 	close $orig_fh;
-	# Build a mutant that appends a comment to every document
 	my $marker = '# MUTATED';
 	my $mutant = {
 		description => 'append comment marker',
 		transform   => sub {
 			my ($doc) = @_;
-			# Append a comment token to the end of the document
 			$doc->add_element(
 				PPI::Token::Comment->new("$marker\n")
 			);
 		},
 	};
 	lives_ok(sub { $mutator->apply_mutant($mutant) }, 'apply_mutant lives');
-	# Re-read original — must be unchanged
-	open my $check_fh, '<', $pm or die $!;
+	open my $check_fh, '<', $rel_pm or die $!;
 	my $after_src = do { local $/; <$check_fh> };
 	close $check_fh;
+	chdir $orig;
 	is($after_src, $original_src, 'original source file is not modified');
 };
 
@@ -280,17 +292,21 @@ subtest 'apply_mutant() modifies workspace copy and not original' => sub {
 #     the count relationship breaks.
 # ---------------------------------------------------------------
 subtest 'fast mode deduplication reduces or equals full mode count' => sub {
-	my ($pm, $lib) = _make_temp_module($SAMPLE_SOURCE);
+	my ($pm, $lib, $tmpdir) = _make_temp_module($SAMPLE_SOURCE);
+	require Cwd;
+	my $orig = Cwd::cwd();
+	chdir $tmpdir or die "Cannot chdir $tmpdir: $!";
 	my $full = App::Test::Generator::Mutator->new(
 		file           => $pm,
-		lib_dir        => $lib,
+		lib_dir        => 'lib',
 		mutation_level => 'full',
 	);
 	my $fast = App::Test::Generator::Mutator->new(
 		file           => $pm,
-		lib_dir        => $lib,
+		lib_dir        => 'lib',
 		mutation_level => 'fast',
 	);
+	chdir $orig;
 	my @full_mutants = $full->generate_mutants();
 	my @fast_mutants = $fast->generate_mutants();
 	ok(scalar(@fast_mutants) <= scalar(@full_mutants),
@@ -307,7 +323,6 @@ subtest 'fast mode deduplication reduces or equals full mode count' => sub {
 #     returns undef or is negated, no-ops are not filtered.
 # ---------------------------------------------------------------
 subtest 'fast mode filters redundant arithmetic no-op mutations' => sub {
-	# Source with a return containing +0 (a known redundant pattern)
 	my $noop_src = <<'END_PM';
 package TestModule;
 sub noop {
@@ -324,18 +339,24 @@ sub noop {
 }
 1;
 END_PM
-	my ($pm_noop,  $lib_noop)  = _make_temp_module($noop_src);
-	my ($pm_clean, $lib_clean) = _make_temp_module($clean_src);
+	my ($pm_noop,  $lib_noop,  $tmpdir_noop)  = _make_temp_module($noop_src);
+	my ($pm_clean, $lib_clean, $tmpdir_clean) = _make_temp_module($clean_src);
+	require Cwd;
+	my $orig = Cwd::cwd();
+	chdir $tmpdir_noop or die "Cannot chdir $tmpdir_noop: $!";
 	my $fast_noop = App::Test::Generator::Mutator->new(
 		file           => $pm_noop,
-		lib_dir        => $lib_noop,
+		lib_dir        => 'lib',
 		mutation_level => 'fast',
 	);
+	chdir $orig;
+	chdir $tmpdir_clean or die "Cannot chdir $tmpdir_clean: $!";
 	my $fast_clean = App::Test::Generator::Mutator->new(
 		file           => $pm_clean,
-		lib_dir        => $lib_clean,
+		lib_dir        => 'lib',
 		mutation_level => 'fast',
 	);
+	chdir $orig;
 	my @noop_mutants  = $fast_noop->generate_mutants();
 	my @clean_mutants = $fast_clean->generate_mutants();
 	# The no-op version should produce fewer or equal fast mutants
@@ -356,20 +377,25 @@ sub always_true  { return 1 }
 sub always_false { return 0 }
 1;
 END_PM
-	my ($pm, $lib) = _make_temp_module($literal_src);
+	my ($pm, $lib, $tmpdir) = _make_temp_module($literal_src);
+	require Cwd;
+	my $orig = Cwd::cwd();
+	chdir $tmpdir or die "Cannot chdir $tmpdir: $!";
 	my $full = App::Test::Generator::Mutator->new(
 		file           => $pm,
-		lib_dir        => $lib,
+		lib_dir        => 'lib',
 		mutation_level => 'full',
 	);
 	my $fast = App::Test::Generator::Mutator->new(
 		file           => $pm,
-		lib_dir        => $lib,
+		lib_dir        => 'lib',
 		mutation_level => 'fast',
 	);
+	chdir $orig;
 	my @full_m = $full->generate_mutants();
 	my @fast_m = $fast->generate_mutants();
-	ok(scalar(@fast_m) <= scalar(@full_m), 'boolean literal returns filtered in fast mode');
+	ok(scalar(@fast_m) <= scalar(@full_m),
+		'boolean literal returns filtered in fast mode');
 };
 
 done_testing();
