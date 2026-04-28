@@ -34,13 +34,14 @@ jobs:
           perl Makefile.PL
           make install
 
-      - run: |
-          echo "=== git diff HEAD~1 HEAD ==="
-          git diff --name-only HEAD~1 HEAD
-          echo "=== git log -5 ==="
-          git log --oneline -5
+      - name: Find last code commit
+        run: |
+          BASE=$(git log --oneline | grep -v "^.\{8\} \(Add generated mutant\|Add coverage snapshot\|Update mutation results\)" | head -1 | awk '{print $1}')
+          echo "MUTATION_BASE_SHA=$BASE" >> $GITHUB_ENV
+          echo "Base commit for mutation diff: $BASE"
+          git diff --name-only $BASE HEAD
 
-      - name: Genenate the mutants
+      - name: Generate the mutants
         env:
           AUTOMATED_TESTING: 1
           NO_NETWORK_TESTING: 1
@@ -49,5 +50,6 @@ jobs:
          --lib lib \
          --json mutation.json \
          --changed_only \
+         --base_sha $MUTATION_BASE_SHA \
          --mutation_level fast \
          --html mutation_html
