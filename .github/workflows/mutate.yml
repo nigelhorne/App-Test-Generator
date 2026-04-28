@@ -34,8 +34,14 @@ jobs:
           perl Makefile.PL
           make install
 
-      - run: perl -Ilib -Iblib/lib bin/test-generator-mutate \
+      - name: Genenate the mutants
+        env:
+          AUTOMATED_TESTING: 1
+          NO_NETWORK_TESTING: 1
+          NONINTERACTIVE_TESTING: 1
+        run: perl -Ilib -Iblib/lib bin/test-generator-mutate \
          --lib lib \
          --json mutation.json \
          --changed_only \
+         --mutation_level fast \
          --html mutation_html

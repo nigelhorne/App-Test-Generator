@@ -126,7 +126,7 @@ unlike($stdout, qr/^not ok \d/sm, 'No created test failed');
 if($stdout =~ /^(not ok \d[^\n]*)/ms) {
 	diag("First failing test: $1");
 }
-if($stderr && length($stderr)) {
+if($stderr && length($stderr) && !defined($ENV{AUTOMATED_TESTING})) {
 	diag("STDERR: $stderr");
 }
 

@@ -38,7 +38,7 @@ if((-d $dirname) && opendir(my $dh, $dirname)) {
 				}
 			} else {
 				diag("$filepath: STDOUT:\n$stdout");
-				diag($stderr) if(length($stderr));
+				diag($stderr) if(length($stderr) && !defined($ENV{AUTOMATED_TESTING}));
 				diag("$filepath Failed");
 				last;
 			}
