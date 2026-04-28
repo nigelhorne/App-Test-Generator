@@ -111,8 +111,10 @@ is($?, 0, 'Generated test script compiles');
 my ($stdout, $stderr);
 run3 [ $^X, "-I$dir", $tempfile ], undef, \$stdout, \$stderr;
 
-ok($? == 0, 'Generated test script exits successfully')
-	or diag("STDOUT:\n$stdout\nSTDERR:\n$stderr");
+ok($? == 0, 'Generated test script exits successfully');
+if($? != 0) {
+	diag("$tempfile: STDOUT:\n$stdout") if(!$ENV{AUTOMATED_TESTING});
+}
 
 like($stderr, qr/test case created/, 'Test creation message present');
 like($stdout, qr/^ok \d/sm, 'At least one created test passed');
@@ -126,7 +128,7 @@ unlike($stdout, qr/^not ok \d/sm, 'No created test failed');
 if($stdout =~ /^(not ok \d[^\n]*)/ms) {
 	diag("First failing test: $1");
 }
-if($stderr && length($stderr) && !defined($ENV{AUTOMATED_TESTING})) {
+if($stderr && length($stderr)) {
 	diag("STDERR: $stderr");
 }
 

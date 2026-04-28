@@ -41,10 +41,10 @@ if($@) {
 	ok($? == 0, 'Generated test script exits successfully');
 
 	if($? != 0) {
-		diag("STDOUT:\n$stdout");
+		diag("STDOUT:\n$stdout") if(!defined($ENV{AUTOMATED_TESTING}));
 	}
 	unlink $outfile;
-	diag($stderr) if(length($stderr) && !defined($ENV{AUTOMATED_TESTING}));
+	diag($stderr) if(length($stderr));
 
 	like($stderr, qr/abs test case created/);
 	like($stdout, qr/^ok \d/sm, 'At least one created test passed');
