@@ -642,32 +642,34 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  350: 
 </span><span class="">  351: 	# Strip leading path up to and including &#39;lib/&#39; &acirc;&#128;&#148; handles both
 </span><span class="">  352: 	# absolute paths (/home/runner/.../lib/App/...) and relative (lib/App/...)
-</span><span class="">  353: 	$rel =~ s{^(?:.*/)?lib/}{};
-</span><span class="">  354: 	my $base    = basename($rel);
+</span><span class="">  353: 	# Handle both Unix / and Windows \ separators
+</span><span class="">  354: 	$rel =~ s{^(?:.*[/\\])?lib[/\\]}{};
 </span><span class="">  355: 
-</span><span class="">  356: 	# Mirror the directory structure expected by _lcsaj_coverage_for_file:
-</span><span class="">  357: 	# $dir / $rel.lcsaj / $base.lcsaj.json
-</span><span class="">  358: 	my $subdir  = File::Spec-&gt;catfile($dir, &quot;$rel.lcsaj&quot;);
-</span><span class="">  359: 
-</span><span class="">  360: 	# Create the output directory if it does not exist
-</span><span class="">  361: 	make_path($subdir) unless -d $subdir;
-</span><span class="">  362: 	my $out = File::Spec-&gt;catfile($subdir, &quot;$base.lcsaj.json&quot;);
-</span><span class="">  363: 
-</span><span class="">  364: 	# Remove degenerate paths (null bounds) and exact duplicates
-</span><span class="">  365: 	# before serialising &acirc;&#128;&#148; guards against empty CFG blocks producing
-</span><span class="">  366: 	# null start/end values, and branch splits creating identical records
-</span><span class="">  367: 	my %seen;
-</span><span class="">  368: 	my @clean = grep {
-</span><span class="">  369: 		defined $_-&gt;{start} &amp;&amp; defined $_-&gt;{end}
-</span><span class="">  370: 		&amp;&amp; !$seen{&quot;$_-&gt;{start}:$_-&gt;{end}:$_-&gt;{target}&quot;}++
-</span><span class="">  371: 	} @{$paths};
-</span><span class="">  372: 
-</span><span class="">  373: 	open my $fh, &#39;&gt;&#39;, $out or croak &quot;Cannot write LCSAJ output to $out: $!&quot;;
-</span><span class="">  374: 	print $fh encode_json(\@clean);
-</span><span class="">  375: 	close $fh;
-</span><span class="">  376: }
-</span><span class="">  377: 
-</span><span class="">  378: 1;
+</span><span class="">  356: 	my $base = basename($rel);
+</span><span class="">  357: 
+</span><span class="">  358: 	# Mirror the directory structure expected by _lcsaj_coverage_for_file:
+</span><span class="">  359: 	# $dir / $rel.lcsaj / $base.lcsaj.json
+</span><span class="">  360: 	my $subdir  = File::Spec-&gt;catfile($dir, &quot;$rel.lcsaj&quot;);
+</span><span class="">  361: 
+</span><span class="">  362: 	# Create the output directory if it does not exist
+</span><span class="">  363: 	make_path($subdir) unless -d $subdir;
+</span><span class="">  364: 	my $out = File::Spec-&gt;catfile($subdir, &quot;$base.lcsaj.json&quot;);
+</span><span class="">  365: 
+</span><span class="">  366: 	# Remove degenerate paths (null bounds) and exact duplicates
+</span><span class="">  367: 	# before serialising &acirc;&#128;&#148; guards against empty CFG blocks producing
+</span><span class="">  368: 	# null start/end values, and branch splits creating identical records
+</span><span class="">  369: 	my %seen;
+</span><span class="">  370: 	my @clean = grep {
+</span><span class="">  371: 		defined $_-&gt;{start} &amp;&amp; defined $_-&gt;{end}
+</span><span class="">  372: 		&amp;&amp; !$seen{&quot;$_-&gt;{start}:$_-&gt;{end}:$_-&gt;{target}&quot;}++
+</span><span class="">  373: 	} @{$paths};
+</span><span class="">  374: 
+</span><span class="">  375: 	open my $fh, &#39;&gt;&#39;, $out or croak &quot;Cannot write LCSAJ output to $out: $!&quot;;
+</span><span class="">  376: 	print $fh encode_json(\@clean);
+</span><span class="">  377: 	close $fh;
+</span><span class="">  378: }
+</span><span class="">  379: 
+</span><span class="">  380: 1;
 </span></pre>
 
 <script>
