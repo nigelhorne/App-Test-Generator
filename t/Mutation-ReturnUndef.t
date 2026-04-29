@@ -23,7 +23,7 @@ sub _doc {
 # Helper: build a fresh ReturnUndef instance
 # --------------------------------------------------
 sub _mutation {
-	return App::Test::Generator::Mutation::ReturnUndef->new();
+	return new_ok('App::Test::Generator::Mutation::ReturnUndef');
 }
 
 # --------------------------------------------------
@@ -330,6 +330,34 @@ subtest 'mutate: returns a list' => sub {
 
 	# TODO: API should return arrayref for efficiency -- same change
 	# needed across all Mutation::* subclasses simultaneously
+
+	done_testing();
+};
+
+# ==================================================================
+# mutate -- postfix conditional returns produce no mutant
+# return unless ..., return if ... etc are not valid mutation targets
+# because wrapping the keyword in !() or replacing with undef
+# produces a syntax error
+# ==================================================================
+subtest 'mutate: postfix conditional returns produce no mutant' => sub {
+	my $m = _mutation();
+
+	# return unless condition
+	my @mutants = $m->mutate(_doc('sub foo { return unless $x; }'));
+	is(scalar @mutants, 0, 'return unless produces no mutant');
+
+	# return if condition
+	@mutants = $m->mutate(_doc('sub foo { return if $x; }'));
+	is(scalar @mutants, 0, 'return if produces no mutant');
+
+	# return while condition
+	@mutants = $m->mutate(_doc('sub foo { return while $x; }'));
+	is(scalar @mutants, 0, 'return while produces no mutant');
+
+	# return until condition
+	@mutants = $m->mutate(_doc('sub foo { return until $x; }'));
+	is(scalar @mutants, 0, 'return until produces no mutant');
 
 	done_testing();
 };

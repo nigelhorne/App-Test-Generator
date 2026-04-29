@@ -161,7 +161,7 @@ sub DB::DB {
 	# so it works regardless of CWD or install prefix
 	return if $norm =~ m{(?:^|/)Devel/App/Test/Generator/LCSAJ/Runtime\.pm$};
 
-	# If a target list was provided skip files not in it
+	# If a target list was provided, skip files not in it
 	if(%TARGET) {
 		return unless $TARGET{$norm};
 	}

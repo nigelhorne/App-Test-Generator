@@ -173,6 +173,9 @@ sub mutate {
 		# PPI::Structure::List) — we can only mutate token expressions
 		next unless $expr->isa('PPI::Token');
 
+		# Skip postfix conditionals — replacing 'unless ...' with undef is invalid syntax
+		next if $expr->isa('PPI::Token::Word') && $expr->content =~ /^(?:if|unless|while|until|for|foreach)$/;
+
 		# Capture location so the transform closure targets the
 		# exact statement rather than the first match on that line
 		my $line = $ret->location->[0];
@@ -214,6 +217,9 @@ sub mutate {
 						# Skip structure nodes (e.g. PPI::Structure::List from
 						# return ($x, $y)) — set_content only exists on tokens
 						next unless $expr->isa('PPI::Token');
+
+						# Skip postfix conditionals — replacing 'unless ...' with undef is invalid syntax
+						next if $expr->isa('PPI::Token::Word') && $expr->content =~ /^(?:if|unless|while|until|for|foreach)$/;
 
 						$expr->set_content('undef');
 						last;

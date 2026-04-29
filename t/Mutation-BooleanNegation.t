@@ -23,7 +23,7 @@ sub _doc {
 # Helper: build a fresh BooleanNegation instance
 # --------------------------------------------------
 sub _mutation {
-	return App::Test::Generator::Mutation::BooleanNegation->new();
+	return new_ok('App::Test::Generator::Mutation::BooleanNegation');
 }
 
 # ==================================================================
@@ -352,6 +352,33 @@ subtest 'mutate: various expression types' => sub {
 	# Undef return
 	@mutants = $m->mutate(_doc('sub foo { return undef; }'));
 	is(scalar @mutants, 1, 'undef return produces mutant');
+
+	done_testing();
+};
+
+# ==================================================================
+# mutate -- postfix conditional returns produce no mutant
+# return unless ..., return if ... etc are not valid mutation targets
+# because wrapping the keyword in !() produces a syntax error
+# ==================================================================
+subtest 'mutate: postfix conditional returns produce no mutant' => sub {
+	my $m = _mutation();
+
+	# return unless condition
+	my @mutants = $m->mutate(_doc('sub foo { return unless $x; }'));
+	is(scalar @mutants, 0, 'return unless produces no mutant');
+
+	# return if condition
+	@mutants = $m->mutate(_doc('sub foo { return if $x; }'));
+	is(scalar @mutants, 0, 'return if produces no mutant');
+
+	# return while condition
+	@mutants = $m->mutate(_doc('sub foo { return while $x; }'));
+	is(scalar @mutants, 0, 'return while produces no mutant');
+
+	# return until condition
+	@mutants = $m->mutate(_doc('sub foo { return until $x; }'));
+	is(scalar @mutants, 0, 'return until produces no mutant');
 
 	done_testing();
 };
