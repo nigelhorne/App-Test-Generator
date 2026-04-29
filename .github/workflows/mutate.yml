@@ -49,11 +49,12 @@ jobs:
           AUTOMATED_TESTING: 1
           NO_NETWORK_TESTING: 1
           NONINTERACTIVE_TESTING: 1
-        run: perl -Ilib -Iblib/lib bin/test-generator-mutate \
-         --lib lib \
-         --json mutation.json \
-         --changed_only \
-         --base_sha ${{ env.MUTATION_BASE_SHA }} \
-         --mutation_level fast \
-         --exclude lib/Devel \
-         --html mutation_html
+        run: |
+          perl -Ilib -Iblib/lib bin/test-generator-mutate \
+            --lib lib \
+            --json mutation.json \
+            --changed_only \
+            --base_sha "$MUTATION_BASE_SHA" \
+            --mutation_level fast \
+            --exclude lib/Devel \
+            --html mutation_html
