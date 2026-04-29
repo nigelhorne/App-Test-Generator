@@ -437,6 +437,8 @@ GetOptions(
 pod2usage(-exitval => 0, -verbose => 1) if $opt{help};
 pod2usage(-exitval => 0, -verbose => 2) if $opt{man};
 
+warn "DEBUG options: changed_only=$opt{changed_only} base_sha=", $opt{base_sha} // 'undef';
+
 # Warn when reserved-for-future-use options are supplied so the
 # caller knows they have no effect yet rather than silently ignoring
 warn "--fail-fast is reserved for future use and has no effect" if $opt{fail_fast};

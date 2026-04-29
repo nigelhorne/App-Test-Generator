@@ -48,8 +48,7 @@ subtest 'new and inheritance' => sub {
 	my $m = _mutation();
 	ok(defined $m, 'new() returns defined value');
 	isa_ok($m, 'App::Test::Generator::Mutation::ReturnUndef');
-	isa_ok($m, 'App::Test::Generator::Mutation::Base',
-		'inherits from Base');
+	isa_ok($m, 'App::Test::Generator::Mutation::Base', 'inherits from Base');
 
 	done_testing();
 };
