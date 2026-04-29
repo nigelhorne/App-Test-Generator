@@ -242,7 +242,47 @@ pre details.mutant-details ul {
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Emitter/Perl.pm</h1>
 <div class="nav"><a href="../CoverageGuidedFuzzer.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
- <a href="../LCSAJ/Coverage.pm.html">Next ➡</a></div>
+ <a href="../LCSAJ/Coverage.pm.html">Next ➡</a></div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 66.67%<br>
+TER2 (Branch): 59.38%<br>
+TER3 (LCSAJ): 37.5% (3/8)<br>
+Approximate LCSAJ segments: 33<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
 		<div class="legend">
 			<h3>Mutant Testing Legend</h3>
 			<span class="legend-box survived-1"></span> Survived (tests missed this)
@@ -399,7 +439,7 @@ pre details.mutant-details ul {
 </span><span class="">  147: =cut
 </span><span class="">  148: 
 </span><span class="">  149: sub emit {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 150 → 156 → 161</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 150 → 156 → 0</span></span>  150: 	my $self = $_[0];
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">150 → 156 → 161</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">150 → 156 → 0</span></span>  150: 	my $self = $_[0];
 </span><span class="">  151: 
 </span><span class="">  152: 	# Start with the file header then append per-method test blocks
 </span><span class="">  153: 	my $code = $self-&gt;_emit_header();
@@ -410,7 +450,7 @@ pre details.mutant-details ul {
 </span><span class="">  158: 	}
 </span><span class="">  159: 
 </span><span class="">  160: 	# TAP footer required by Test::More / Test::Most
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 161 → 163 → 0</span></span>  161: 	$code .= &quot;\ndone_testing();\n&quot;;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">161 → 163 → 0</span></span>  161: 	$code .= &quot;\ndone_testing();\n&quot;;
 </span><span class="">  162: 
 </span><span class="">  163: 	return $code;
 </span><span class="">  164: }
