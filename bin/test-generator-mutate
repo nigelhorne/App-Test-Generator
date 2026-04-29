@@ -153,6 +153,13 @@ in the current commit retain their mutation results from the previous
 dashboard run. This significantly reduces CI runtime while preserving
 accuracy for the files that actually changed.
 
+=head2 --exclude <path>
+
+Exclude files matching the given path fragment from mutation testing.
+May be specified multiple times. For example:
+
+    --exclude lib/Devel --exclude lib/App/Test/Generator/Sample
+
 =head2 --base_sha <sha>
 
 The git commit SHA to use as the base when computing which files have
@@ -388,6 +395,8 @@ Readonly my $STATUS_KILLED   => 'Killed';
 Readonly my $MUTATION_LEVEL_FULL => 'full';
 Readonly my $MUTATION_LEVEL_FAST => 'fast';
 
+my @excludes;
+
 my %opt = (
 	changed_only   => 0,
 	lib            => 'lib',
@@ -412,6 +421,7 @@ GetOptions(
 	'tests=s'          => \$opt{tests},
 	'min-score=i'      => \$opt{min_score},
 	'cover_json=s'     => \$opt{cover_json},
+	'exclude=s' => \@excludes,
 	'json=s'           => \$opt{json},
 	'fail-fast'        => \$opt{fail_fast},
 	'timeout=i'        => \$opt{timeout},
@@ -435,28 +445,33 @@ warn "--timeout is reserved for future use and has no effect" if $opt{timeout};
 # -------------------------
 # Collect Files
 # -------------------------
-
 my @files;
 
 if($opt{file}) {
 	push @files, $opt{file};
 } elsif($opt{changed_only}) {
-	# Only mutate files changed in the current commit
+	# Only mutate files changed since the base commit
 	my $base = $opt{base_sha} // 'HEAD~1';
 	my $diff = `git diff --name-only $base HEAD 2>/dev/null`;
-	my @changed = grep { /^lib\/.*\.pm$/ && -f $_ } split /\n/, $diff;
+	my @changed = grep {
+		# Must be a lib .pm file, must exist, and must not match any exclusion
+		my $f = $_;
+		/^lib\/.*\.pm$/ && -f $f && !grep { $f =~ m{\Q$_\E} } @excludes
+	} split /\n/, $diff;
 
 	if(@changed) {
 		print 'Changed-only mode: mutating ', scalar(@changed), " file(s)\n" if $opt{verbose};
 		@files = @changed;
 	} else {
 		# No lib/*.pm files changed -- fall through to merge and write
-		# existing results back to json without running new mutations
+		# existing results back to JSON without running new mutations
 		print "No lib/*.pm files changed -- retaining previous mutation results\n";
 	}
 } else {
 	find(
 		sub {
+			# Skip files matching any exclusion pattern
+			return if grep { $File::Find::name =~ m{\Q$_\E} } @excludes;
 			push @files, $File::Find::name if /\.pm$/;
 		},
 		$opt{lib}

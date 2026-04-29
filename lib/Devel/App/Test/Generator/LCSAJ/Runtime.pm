@@ -197,8 +197,7 @@ sub _write_results {
 
 	make_path($OUT_DIR) unless -d $OUT_DIR;
 
-	open my $fh, '>', $out_file
-		or croak "Cannot write $out_file: $!";
+	open my $fh, '>', $out_file or croak "Cannot write $out_file: $!";
 
 	print $fh encode_json(\%HITS);
 	close $fh;

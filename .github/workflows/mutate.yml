@@ -50,6 +50,7 @@ jobs:
          --lib lib \
          --json mutation.json \
          --changed_only \
-         --base_sha $MUTATION_BASE_SHA \
+         --base_sha ${{ env.MUTATION_BASE_SHA }} \
          --mutation_level fast \
+         --exclude lib/Devel \
          --html mutation_html
