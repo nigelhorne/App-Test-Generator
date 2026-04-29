@@ -375,8 +375,29 @@ pre details.mutant-details ul {
 </span><span class="">  123: 	# Strip everything up to and including blib/lib/ or lib/
 </span><span class="">  124: 	$f =~ s{^.*/blib/lib/}{lib/};
 </span><span class="">  125: 	$f =~ s{^.*/lib/}{lib/};
-</span><span class="">  126: 	return $f;
-</span><span class="">  127: }
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  126: 	return $f;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
+					<ul>
+				<li><b>BOOL_NEGATE_126_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boolean branch test suggestion
+ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>RETURN_UNDEF_126_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Return value assertion
+is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  127: }
 </span><span class="">  128: 
 </span><span class="">  129: # --------------------------------------------------
 </span><span class="">  130: # DB::DB
@@ -455,48 +476,47 @@ pre details.mutant-details ul {
 </span><span class="">  197: 
 </span><span class="">  198: 	make_path($OUT_DIR) unless -d $OUT_DIR;
 </span><span class="">  199: 
-</span><span class="">  200: 	open my $fh, &#39;&gt;&#39;, $out_file
-</span><span class="">  201: 		or croak &quot;Cannot write $out_file: $!&quot;;
-</span><span class="">  202: 
-</span><span class="">  203: 	print $fh encode_json(\%HITS);
-</span><span class="">  204: 	close $fh;
-</span><span class="">  205: }
-</span><span class="">  206: 
-</span><span class="">  207: 1;
-</span><span class="">  208: 
-</span><span class="">  209: __END__
-</span><span class="">  210: 
-</span><span class="">  211: =head1 OUTPUT FORMAT
-</span><span class="">  212: 
-</span><span class="">  213: C&lt;cover_html/lcsaj_hits/hits_PID.json&gt; is a JSON object of the form:
-</span><span class="">  214: 
-</span><span class="">  215:   {
-</span><span class="">  216:     &quot;lib/Foo/Bar.pm&quot;: { &quot;12&quot;: 3, &quot;15&quot;: 1, ... },
-</span><span class="">  217:     ...
-</span><span class="">  218:   }
-</span><span class="">  219: 
-</span><span class="">  220: Keys are lib-relative paths (C&lt;lib/...&gt;); values are objects mapping line
-</span><span class="">  221: numbers (as strings) to hit counts. One file is written per process so
-</span><span class="">  222: parallel test runs produce separate files.
-</span><span class="">  223: 
-</span><span class="">  224: =head1 NOTES ON FILE PLACEMENT
-</span><span class="">  225: 
-</span><span class="">  226: The C&lt;-d:App::Test::Generator::LCSAJ::Runtime&gt; flag causes Perl to load
-</span><span class="">  227: C&lt;Devel::App::Test::Generator::LCSAJ::Runtime&gt;, which it finds at:
-</span><span class="">  228: 
-</span><span class="">  229:   lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm
-</span><span class="">  230: 
-</span><span class="">  231: Ensure this path is on C&lt;@INC&gt; (C&lt;-Mblib&gt; or C&lt;-Ilib&gt; in PERL5OPT).
-</span><span class="">  232: 
-</span><span class="">  233: =head1 SEE ALSO
-</span><span class="">  234: 
-</span><span class="">  235: L&lt;Devel::Cover&gt;, L&lt;App::Test::Generator&gt;
-</span><span class="">  236: 
-</span><span class="">  237: =head1 AUTHOR
-</span><span class="">  238: 
-</span><span class="">  239: Nigel Horne
-</span><span class="">  240: 
-</span><span class="">  241: =cut
+</span><span class="">  200: 	open my $fh, &#39;&gt;&#39;, $out_file or croak &quot;Cannot write $out_file: $!&quot;;
+</span><span class="">  201: 
+</span><span class="">  202: 	print $fh encode_json(\%HITS);
+</span><span class="">  203: 	close $fh;
+</span><span class="">  204: }
+</span><span class="">  205: 
+</span><span class="">  206: 1;
+</span><span class="">  207: 
+</span><span class="">  208: __END__
+</span><span class="">  209: 
+</span><span class="">  210: =head1 OUTPUT FORMAT
+</span><span class="">  211: 
+</span><span class="">  212: C&lt;cover_html/lcsaj_hits/hits_PID.json&gt; is a JSON object of the form:
+</span><span class="">  213: 
+</span><span class="">  214:   {
+</span><span class="">  215:     &quot;lib/Foo/Bar.pm&quot;: { &quot;12&quot;: 3, &quot;15&quot;: 1, ... },
+</span><span class="">  216:     ...
+</span><span class="">  217:   }
+</span><span class="">  218: 
+</span><span class="">  219: Keys are lib-relative paths (C&lt;lib/...&gt;); values are objects mapping line
+</span><span class="">  220: numbers (as strings) to hit counts. One file is written per process so
+</span><span class="">  221: parallel test runs produce separate files.
+</span><span class="">  222: 
+</span><span class="">  223: =head1 NOTES ON FILE PLACEMENT
+</span><span class="">  224: 
+</span><span class="">  225: The C&lt;-d:App::Test::Generator::LCSAJ::Runtime&gt; flag causes Perl to load
+</span><span class="">  226: C&lt;Devel::App::Test::Generator::LCSAJ::Runtime&gt;, which it finds at:
+</span><span class="">  227: 
+</span><span class="">  228:   lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm
+</span><span class="">  229: 
+</span><span class="">  230: Ensure this path is on C&lt;@INC&gt; (C&lt;-Mblib&gt; or C&lt;-Ilib&gt; in PERL5OPT).
+</span><span class="">  231: 
+</span><span class="">  232: =head1 SEE ALSO
+</span><span class="">  233: 
+</span><span class="">  234: L&lt;Devel::Cover&gt;, L&lt;App::Test::Generator&gt;
+</span><span class="">  235: 
+</span><span class="">  236: =head1 AUTHOR
+</span><span class="">  237: 
+</span><span class="">  238: Nigel Horne
+</span><span class="">  239: 
+</span><span class="">  240: =cut
 </span></pre>
 
 <script>
