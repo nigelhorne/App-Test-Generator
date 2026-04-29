@@ -214,35 +214,25 @@ sub _emit_method_tests {
 	my $code   = "\n# --- Tests for $method ---\n";
 
 	# Emit each test type in a consistent fixed order
-	$code .= $self->_emit_basic_test($method)
-		if $plan->{$TEST_BASIC};
+	$code .= $self->_emit_basic_test($method) if $plan->{$TEST_BASIC};
 
-	$code .= $self->_emit_getter_test($method)
-		if $plan->{$TEST_GETTER};
+	$code .= $self->_emit_getter_test($method) if $plan->{$TEST_GETTER};
 
-	$code .= $self->_emit_setter_test($method)
-		if $plan->{$TEST_SETTER};
+	$code .= $self->_emit_setter_test($method) if $plan->{$TEST_SETTER};
 
-	$code .= $self->_emit_getset_test($method)
-		if $plan->{$TEST_GETSET};
+	$code .= $self->_emit_getset_test($method) if $plan->{$TEST_GETSET};
 
-	$code .= $self->_emit_chaining_test($method)
-		if $plan->{$TEST_CHAINING};
+	$code .= $self->_emit_chaining_test($method) if $plan->{$TEST_CHAINING};
 
-	$code .= $self->_emit_error_test($method)
-		if $plan->{$TEST_ERROR_HANDLING};
+	$code .= $self->_emit_error_test($method) if $plan->{$TEST_ERROR_HANDLING};
 
-	$code .= $self->_emit_context_test($method)
-		if $plan->{$TEST_CONTEXT};
+	$code .= $self->_emit_context_test($method) if $plan->{$TEST_CONTEXT};
 
-	$code .= $self->_emit_object_injection_test($method)
-		if $plan->{$TEST_OBJECT_INJECT};
+	$code .= $self->_emit_object_injection_test($method) if $plan->{$TEST_OBJECT_INJECT};
 
-	$code .= $self->_emit_boolean_test($method)
-		if $plan->{$TEST_PREDICATE} || $plan->{$TEST_BOOLEAN};
+	$code .= $self->_emit_boolean_test($method) if $plan->{$TEST_PREDICATE} || $plan->{$TEST_BOOLEAN};
 
-	$code .= $self->_emit_void_test($method)
-		if $plan->{$TEST_VOID};
+	$code .= $self->_emit_void_test($method) if $plan->{$TEST_VOID};
 
 	return $code;
 }
