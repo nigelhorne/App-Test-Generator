@@ -131,8 +131,7 @@ sub plan {
 	my ($self, $schema, $strategy) = @_;
 
 	# Validate that strategy is a hashref before iterating its keys
-	croak 'strategy must be a hashref'
-		unless ref($strategy) eq 'HASH';
+	croak 'strategy must be a hashref' unless ref($strategy) eq 'HASH';
 
 	my %isolation;
 
