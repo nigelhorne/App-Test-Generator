@@ -27,8 +27,6 @@ subtest 'new' => sub {
 
 	# Object is an empty hashref
 	is(scalar keys %{$b}, 0, 'object is an empty hashref');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -43,8 +41,6 @@ subtest 'applies_to: croaks on base class' => sub {
 		$b->applies_to($doc)
 	} qr/App::Test::Generator::Mutation::Base::applies_to\(\) must be implemented by subclass/,
 		'applies_to croaks with correct message on base class';
-
-	done_testing();
 };
 
 # ==================================================================
@@ -59,8 +55,6 @@ subtest 'mutate: croaks on base class' => sub {
 		$b->mutate($doc)
 	} qr/App::Test::Generator::Mutation::Base::mutate\(\) must be implemented by subclass/,
 		'mutate croaks with correct message on base class';
-
-	done_testing();
 };
 
 # ==================================================================
@@ -90,8 +84,6 @@ subtest 'croak messages name the calling class' => sub {
 		$m->mutate($doc)
 	} qr/My::Incomplete::Mutation::mutate\(\) must be implemented by subclass/,
 		'mutate croak names the subclass';
-
-	done_testing();
 };
 
 # ==================================================================
@@ -128,8 +120,6 @@ subtest 'complete subclass overrides both methods' => sub {
 		'mutate lives on complete subclass';
 	my @mutants = $m->mutate($doc);
 	is(scalar @mutants, 0, 'mutate returns empty list');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -150,8 +140,6 @@ subtest 'concrete subclasses inherit from Base' => sub {
 		isa_ok($obj, 'App::Test::Generator::Mutation::Base',
 			"$subclass isa Base");
 	}
-
-	done_testing();
 };
 
 done_testing();

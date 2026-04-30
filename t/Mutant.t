@@ -45,8 +45,6 @@ subtest 'new: required attribute validation' => sub {
 		} qr/Missing required attribute: $attr/,
 			"missing $attr croaks with correct message";
 	}
-
-	done_testing();
 };
 
 # ==================================================================
@@ -88,8 +86,6 @@ subtest 'new: transform must be a CODE reference' => sub {
 		)
 	} qr/transform must be a CODE reference/,
 		'arrayref transform croaks';
-
-	done_testing();
 };
 
 # ==================================================================
@@ -104,8 +100,6 @@ subtest 'new: valid construction' => sub {
 	# Each call produces a distinct object
 	my $m2 = _mutant();
 	isnt($m, $m2, 'each call produces a distinct object');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -123,8 +117,6 @@ subtest 'new: optional attributes default to undef' => sub {
 
 	is($m->type,  undef, 'type defaults to undef when not provided');
 	is($m->group, undef, 'group defaults to undef when not provided');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -134,12 +126,11 @@ subtest 'id accessor' => sub {
 	my $m = _mutant(id => 'NUM_BOUNDARY_42_7_!=');
 	is($m->id, 'NUM_BOUNDARY_42_7_!=', 'id returns correct value');
 
-	# Read-only -- passing an argument has no effect
-	my $orig = $m->id;
-	$m->id('other');
-	is($m->id, $orig, 'id is read-only');
-
-	done_testing();
+	# Read-only — passing an argument should either be silently ignored
+	# or croak; it must not change the value
+	my $orig = $m->id();
+	eval { $m->id('other') };
+	is($m->id(), $orig, 'id value unchanged after attempted write');
 };
 
 # ==================================================================
@@ -148,8 +139,6 @@ subtest 'id accessor' => sub {
 subtest 'description accessor' => sub {
 	my $m = _mutant(description => 'Flip > to <');
 	is($m->description, 'Flip > to <', 'description returns correct value');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -162,8 +151,6 @@ subtest 'original accessor' => sub {
 	# Can hold arbitrary strings including Perl code snippets
 	$m = _mutant(original => 'return $self->{name}');
 	is($m->original, 'return $self->{name}', 'original can hold code snippet');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -176,8 +163,6 @@ subtest 'line accessor' => sub {
 	# Line 1 is valid
 	$m = _mutant(line => 1);
 	is($m->line, 1, 'line 1 is valid');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -199,8 +184,6 @@ subtest 'transform accessor' => sub {
 	# Calling again increments the counter
 	$m->transform->();
 	is($called, 2, 'transform coderef can be called multiple times');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -227,8 +210,6 @@ subtest 'type accessor' => sub {
 		transform   => sub { 1 },
 	);
 	is($m->type, undef, 'type returns undef when not set');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -255,8 +236,6 @@ subtest 'group accessor' => sub {
 		transform   => sub { 1 },
 	);
 	is($m->group, undef, 'group returns undef when not set');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -273,8 +252,6 @@ subtest 'transform receives document argument correctly' => sub {
 
 	$m->transform->($sentinel);
 	is($received, $sentinel, 'transform receives its argument correctly');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -302,8 +279,6 @@ subtest 'multiple mutants are independent' => sub {
 	$b->transform->();
 	is($count_b, 1, 'b transform called once');
 	is($count_a, 2, 'a transform count unchanged after calling b');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -327,8 +302,6 @@ subtest 'extra attributes passed to new are stored' => sub {
 	is($m->{difficulty}, 'HIGH',              'difficulty stored in hashref');
 	is($m->{hint},       'Add boundary test', 'hint stored in hashref');
 	is($m->{priority},   3,                   'priority stored in hashref');
-
-	done_testing();
 };
 
 done_testing();
