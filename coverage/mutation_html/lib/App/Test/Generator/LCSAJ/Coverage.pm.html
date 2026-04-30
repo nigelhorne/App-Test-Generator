@@ -242,7 +242,47 @@ pre details.mutant-details ul {
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/LCSAJ/Coverage.pm</h1>
 <div class="nav"><a href="../CoverageGuidedFuzzer.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
- <a href="../Planner/Mock.pm.html">Next ➡</a></div>
+ <a href="../Planner/Mock.pm.html">Next ➡</a></div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 100.00%<br>
+TER2 (Branch): 83.33%<br>
+TER3 (LCSAJ): 100.0% (3/3)<br>
+Approximate LCSAJ segments: 13<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
 		<div class="legend">
 			<h3>Mutant Testing Legend</h3>
 			<span class="legend-box survived-1"></span> Survived (tests missed this)
@@ -342,7 +382,7 @@ pre details.mutant-details ul {
 </span><span class="">   90: =cut
 </span><span class="">   91: 
 </span><span class="">   92: sub merge {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 93 → 108 → 122</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 93 → 108 → 0</span></span>   93: 	my ($lcsaj_file, $hits_file, $out_file) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">93 → 108 → 122</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">93 → 108 → 0</span></span>   93: 	my ($lcsaj_file, $hits_file, $out_file) = @_;
 </span><span class="">   94: 
 </span><span class="">   95: 	# Validate all three file arguments before attempting any IO
 </span><span class="">   96: 	croak &#39;lcsaj_file required&#39; unless defined $lcsaj_file;
@@ -377,7 +417,7 @@ pre details.mutant-details ul {
 </span><span class="">  119: 	}
 </span><span class="">  120: 
 </span><span class="">  121: 	# Write the annotated paths to the output file
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 122 → 124 → 0</span></span>  122: 	open my $fh, &#39;&gt;&#39;, $out_file or croak &quot;Cannot write coverage output to $out_file: $!&quot;;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">122 → 124 → 0</span></span>  122: 	open my $fh, &#39;&gt;&#39;, $out_file or croak &quot;Cannot write coverage output to $out_file: $!&quot;;
 </span><span class="">  123: 	print $fh encode_json($paths);
 </span><span class="">  124: 	close $fh;
 </span><span class="">  125: }
