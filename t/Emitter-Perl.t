@@ -18,7 +18,7 @@ BEGIN { use_ok('App::Test::Generator::Emitter::Perl') }
 sub _emitter {
 	my (%plan_flags) = @_;
 	return App::Test::Generator::Emitter::Perl->new(
-		schema  => { test_method => { input => {}, output => {} } },
+		schema => { test_method => { input => {}, output => {} } },
 		plans   => { test_method => \%plan_flags },
 		package => 'Test::Package',
 	);
@@ -153,7 +153,7 @@ subtest 'multiple plan flags produce multiple test blocks' => sub {
 	my $code = $e->emit();
 	like($code, qr/returns a value/, 'getter block present');
 	like($code, qr/accepts input/,   'setter block present');
-	like($code, qr/does not die/,    'basic block present');
+	like($code, qr/does not die/,  'basic block present');
 };
 
 # ---------------------------------------------------------------
@@ -162,6 +162,76 @@ subtest 'multiple plan flags produce multiple test blocks' => sub {
 subtest 'emit() produces deterministic output' => sub {
 	my $e = _emitter(getter_test => 1, setter_test => 1);
 	is($e->emit(), $e->emit(), 'emit() returns same string on repeated calls');
+};
+
+# ---------------------------------------------------------------
+# 12. getset test emitted only when getset_test flag is set
+# ---------------------------------------------------------------
+subtest 'getset test emitted only when getset_test flag is set' => sub {
+	my $with    = _emitter(getset_test => 1);
+	my $without = _emitter();
+	like($with->emit(),    qr/get\/set works/, 'getset test present when flag set');
+	unlike($without->emit(), qr/get\/set works/, 'getset test absent when flag not set');
+};
+
+# ---------------------------------------------------------------
+# 13. chaining test emitted only when chaining_test flag is set
+# ---------------------------------------------------------------
+subtest 'chaining test emitted only when chaining_test flag is set' => sub {
+	my $with    = _emitter(chaining_test => 1);
+	my $without = _emitter();
+	like($with->emit(),    qr/returns self for chaining/, 'chaining test present when flag set');
+	unlike($without->emit(), qr/returns self for chaining/, 'chaining test absent when flag not set');
+};
+
+# ---------------------------------------------------------------
+# 14. error test emitted only when error_handling_test flag is set
+# ---------------------------------------------------------------
+subtest 'error test emitted only when error_handling_test flag is set' => sub {
+	my $with    = _emitter(error_handling_test => 1);
+	my $without = _emitter();
+	like($with->emit(),    qr/handles invalid input/, 'error test present when flag set');
+	unlike($without->emit(), qr/handles invalid input/, 'error test absent when flag not set');
+};
+
+# ---------------------------------------------------------------
+# 15. context test emitted only when context_tests flag is set
+# ---------------------------------------------------------------
+subtest 'context test emitted only when context_tests flag is set' => sub {
+	my $with    = _emitter(context_tests => 1);
+	my $without = _emitter();
+	like($with->emit(),    qr/survives in scalar context/, 'context test present when flag set');
+	unlike($without->emit(), qr/survives in scalar context/, 'context test absent when flag not set');
+};
+
+# ---------------------------------------------------------------
+# 16. object injection test emitted only when object_injection_test flag is set
+# ---------------------------------------------------------------
+subtest 'object injection test emitted only when object_injection_test flag is set' => sub {
+	my $with    = _emitter(object_injection_test => 1);
+	my $without = _emitter();
+	like($with->emit(),    qr/stores injected object/, 'object injection test present when flag set');
+	unlike($without->emit(), qr/stores injected object/, 'object injection test absent when flag not set');
+};
+
+# ---------------------------------------------------------------
+# 17. boolean test emitted when boolean_test flag is set
+# ---------------------------------------------------------------
+subtest 'boolean test emitted only when boolean_test flag is set' => sub {
+	my $with    = _emitter(boolean_test => 1);
+	my $without = _emitter();
+	like($with->emit(),    qr/returns a boolean-like value/, 'boolean test present when flag set');
+	unlike($without->emit(), qr/returns a boolean-like value/, 'boolean test absent when flag not set');
+};
+
+# ---------------------------------------------------------------
+# 18. void test emitted only when void_context_test flag is set
+# ---------------------------------------------------------------
+subtest 'void test emitted only when void_context_test flag is set' => sub {
+	my $with    = _emitter(void_context_test => 1);
+	my $without = _emitter();
+	like($with->emit(),    qr/void return noted/, 'void test present when flag set');
+	unlike($without->emit(), qr/void return noted/, 'void test absent when flag not set');
 };
 
 done_testing();
