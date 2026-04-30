@@ -453,7 +453,7 @@ if($opt{file}) {
 	push @files, $opt{file};
 } elsif($opt{changed_only}) {
 	# Only mutate files changed since the base commit
-	my $base = $opt{base_sha} // 'HEAD~1';
+	my $base = $opt{base_sha} ? "$opt{base_sha}^" : 'HEAD~1';
 	my $diff = `git diff --name-only $base HEAD 2>/dev/null`;
 	my @changed = grep {
 		# Must be a lib .pm file, must exist, and must not match any exclusion

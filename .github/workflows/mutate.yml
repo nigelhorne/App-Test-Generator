@@ -39,7 +39,7 @@ jobs:
           BASE=$(git log --oneline | grep -v "^.\{8\} \(Add generated mutant\|Add coverage snapshot\|Update mutation results\)" | head -1 | awk '{print $1}')
           echo "MUTATION_BASE_SHA=$BASE" >> $GITHUB_ENV
           echo "Base commit for mutation diff: $BASE"
-          git diff --name-only $BASE HEAD
+          git diff --name-only "${BASE}^" HEAD
 
       - name: Generate the mutants
         env:
