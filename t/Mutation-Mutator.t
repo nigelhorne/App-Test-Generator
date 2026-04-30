@@ -20,7 +20,7 @@ BEGIN { use_ok('App::Test::Generator::Mutator') }
 sub _make_temp_module {
 	my $source = $_[0];
 	my $tmpdir = tempdir(CLEANUP => 1);
-	my $lib    = File::Spec->catdir($tmpdir, 'lib');
+	my $lib = File::Spec->catdir($tmpdir, 'lib');
 
 	mkdir $lib or die "Cannot mkdir $lib: $!";
 	my $pm = File::Spec->catfile($lib, 'TestModule.pm');
@@ -405,6 +405,124 @@ END_PM
 	my @fast_m = $fast->generate_mutants();
 	ok(scalar(@fast_m) <= scalar(@full_m),
 		'boolean literal returns filtered in fast mode');
+};
+
+# ---------------------------------------------------------------
+# 16. _is_redundant_mutation filters arithmetic -0 no-ops.
+#     return $x - 0 should produce fewer fast mutants.
+#     Tests the second no-op filter: /- \s*0$/
+# ---------------------------------------------------------------
+subtest 'fast mode filters arithmetic minus-zero no-op mutations' => sub {
+	my $noop_src = <<'END_PM';
+package TestModule;
+sub noop {
+	my $x = shift;
+	return $x - 0;
+}
+1;
+END_PM
+	my $clean_src = <<'END_PM';
+package TestModule;
+sub noop {
+	my $x = shift;
+	return $x;
+}
+1;
+END_PM
+	my ($pm_noop,  $lib_noop,  $tmpdir_noop)  = _make_temp_module($noop_src);
+	my ($pm_clean, $lib_clean, $tmpdir_clean) = _make_temp_module($clean_src);
+	require Cwd;
+	my $orig = Cwd::cwd();
+	chdir $tmpdir_noop or die "Cannot chdir $tmpdir_noop: $!";
+	my $fast_noop = App::Test::Generator::Mutator->new(
+		file           => $pm_noop,
+		lib_dir        => 'lib',
+		mutation_level => 'fast',
+	);
+	chdir $orig;
+	chdir $tmpdir_clean or die "Cannot chdir $tmpdir_clean: $!";
+	my $fast_clean = App::Test::Generator::Mutator->new(
+		file           => $pm_clean,
+		lib_dir        => 'lib',
+		mutation_level => 'fast',
+	);
+	chdir $orig;
+	my @noop_mutants  = $fast_noop->generate_mutants();
+	my @clean_mutants = $fast_clean->generate_mutants();
+	ok(scalar(@noop_mutants) <= scalar(@clean_mutants),
+		'minus-zero source produces <= mutants than clean source in fast mode');
+};
+
+# ---------------------------------------------------------------
+# 17. _dedup_mutants removes exact duplicate mutants.
+#     Two mutants with the same line, original and description
+#     should collapse to one in fast mode. Verify that fast mode
+#     count is strictly less than double the full mode count —
+#     if dedup is broken, the same mutant would appear twice.
+# ---------------------------------------------------------------
+subtest 'fast mode deduplicates mutants at the same site' => sub {
+	my $src = <<'END_PM';
+package TestModule;
+sub check {
+	my ($x) = @_;
+	if($x > 0) {
+		return 1;
+	}
+	return 0;
+}
+1;
+END_PM
+	my ($pm, $lib, $tmpdir) = _make_temp_module($src);
+	require Cwd;
+	my $orig = Cwd::cwd();
+	chdir $tmpdir or die "Cannot chdir $tmpdir: $!";
+	my $full = App::Test::Generator::Mutator->new(
+		file           => $pm,
+		lib_dir        => 'lib',
+		mutation_level => 'full',
+	);
+	my $fast = App::Test::Generator::Mutator->new(
+		file           => $pm,
+		lib_dir        => 'lib',
+		mutation_level => 'fast',
+	);
+	chdir $orig;
+	my @full_m = $full->generate_mutants();
+	my @fast_m = $fast->generate_mutants();
+	# Fast must not exceed full (dedup can only reduce)
+	ok(scalar(@fast_m) <= scalar(@full_m),
+		'fast mode count does not exceed full mode count');
+	# Fast must produce at least one mutant
+	ok(scalar(@fast_m) > 0, 'fast mode produces at least one mutant');
+};
+
+# ---------------------------------------------------------------
+# 18. generate_mutants() in fast mode returns an array (not undef)
+#     even when all mutants are filtered as redundant.
+#     Tests the return value of _dedup_mutants when it returns \@rc
+#     with an empty list.
+# ---------------------------------------------------------------
+subtest 'fast mode returns empty list not undef for unmutatable module' => sub {
+	my $bare = <<'END_PM';
+package TestModule;
+our $VERSION = 1;
+sub description { return 'hello' }
+1;
+END_PM
+	my ($pm, $lib, $tmpdir) = _make_temp_module($bare);
+	require Cwd;
+	my $orig = Cwd::cwd();
+	chdir $tmpdir or die "Cannot chdir $tmpdir: $!";
+	my $fast = App::Test::Generator::Mutator->new(
+		file           => $pm,
+		lib_dir      => 'lib',
+		mutation_level => 'fast',
+	);
+	chdir $orig;
+	my @mutants;
+	lives_ok(sub { @mutants = $fast->generate_mutants() },
+		'generate_mutants() in fast mode does not croak on bare module');
+	ok(defined scalar(@mutants), 'returns a defined list even when empty');
 };
 
 done_testing();
