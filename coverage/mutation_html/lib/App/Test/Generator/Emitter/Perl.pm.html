@@ -244,9 +244,9 @@ pre details.mutant-details ul {
 <div class="nav"><a href="../Mutator.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
  <a href="../SchemaExtractor.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
-TER1 (Statement): 66.67%<br>
-TER2 (Branch): 59.38%<br>
-TER3 (LCSAJ): 37.5% (3/8)<br>
+TER1 (Statement): 95.65%<br>
+TER2 (Branch): 90.62%<br>
+TER3 (LCSAJ): 100.0% (8/8)<br>
 Approximate LCSAJ segments: 33<br>
 </div>
 
@@ -608,7 +608,7 @@ Approximate LCSAJ segments: 33<br>
 </span><span class="">  316: #             parameter type is unrecognised.
 </span><span class="">  317: # --------------------------------------------------
 </span><span class="">  318: sub _emit_getset_test {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 319 → 328 → 339</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 319 → 328 → 0</span></span>  319: 	my ($self, $method) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">319 → 328 → 339</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">319 → 328 → 0</span></span>  319: 	my ($self, $method) = @_;
 </span><span class="">  320: 
 </span><span class="">  321: 	my $schema  = $self-&gt;{schema}{$method};
 </span><span class="">  322: 
@@ -655,14 +655,14 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  336: 	}
 </span><span class="">  337: 
 </span><span class="">  338: 	# Boolean round-trip
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 339 → 339 → 351</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 339 → 339 → 0</span></span>  339: 	if($type eq $TYPE_BOOLEAN) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">339 → 339 → 351</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">339 → 339 → 0</span></span>  339: 	if($type eq $TYPE_BOOLEAN) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
 				<li><b>COND_INV_339_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  340: 		return &lt;&lt;&quot;END_TEST&quot;;
+<span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  340: 		return &lt;&lt;&quot;END_TEST&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -694,7 +694,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  348: 	}
 </span><span class="">  349: 
 </span><span class="">  350: 	# Default string round-trip
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 351 → 351 → 0</span></span>  351: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">351 → 351 → 0</span></span>  351: 	return &lt;&lt;&quot;END_TEST&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -779,7 +779,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  391: sub _emit_error_test {
 </span><span class="">  392: 	my ($self, $method) = @_;
 </span><span class="">  393: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  394: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  394: 	return &lt;&lt;&quot;END_TEST&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -964,7 +964,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  492: sub _emit_void_test {
 </span><span class="">  493: 	my ($self, $method) = @_;
 </span><span class="">  494: 
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  495: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  495: 	return &lt;&lt;&quot;END_TEST&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
