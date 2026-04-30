@@ -525,4 +525,160 @@ END_PM
 	ok(defined scalar(@mutants), 'returns a defined list even when empty');
 };
 
+# ------------------------------------------------------------------
+# Import private functions for direct white-box testing
+# ------------------------------------------------------------------
+{
+	no warnings 'once';
+	*_dedup_mutants        = \&App::Test::Generator::Mutator::_dedup_mutants;
+	*_is_redundant_mutation = \&App::Test::Generator::Mutator::_is_redundant_mutation;
+}
+
+# ==================================================================
+# _is_redundant_mutation — direct white-box tests
+# ==================================================================
+
+subtest '_is_redundant_mutation() returns 0 for a normal mutation' => sub {
+	my $m = { original => '$x > 0', description => 'flip >' };
+	is(_is_redundant_mutation($m), 0, 'normal mutation is not redundant');
+};
+
+subtest '_is_redundant_mutation() returns 1 for +0 arithmetic no-op' => sub {
+	my $m = { original => '$x + 0', description => 'add zero' };
+	is(_is_redundant_mutation($m), 1, '+0 no-op is redundant');
+};
+
+subtest '_is_redundant_mutation() returns 1 for -0 arithmetic no-op' => sub {
+	my $m = { original => '$x - 0', description => 'subtract zero' };
+	is(_is_redundant_mutation($m), 1, '-0 no-op is redundant');
+};
+
+subtest '_is_redundant_mutation() returns 1 for standalone 1' => sub {
+	my $m = { original => '1', description => 'flip true' };
+	is(_is_redundant_mutation($m), 1, 'standalone 1 is redundant');
+};
+
+subtest '_is_redundant_mutation() returns 1 for standalone 0' => sub {
+	my $m = { original => '0', description => 'flip false' };
+	is(_is_redundant_mutation($m), 1, 'standalone 0 is redundant');
+};
+
+subtest '_is_redundant_mutation() returns 1 for whitespace-padded 1' => sub {
+	my $m = { original => '  1  ', description => 'padded true' };
+	is(_is_redundant_mutation($m), 1, 'whitespace-padded 1 is redundant');
+};
+
+subtest '_is_redundant_mutation() returns 1 for double negation in conditional' => sub {
+	my $m = {
+		original    => '!!$flag',
+		description => 'double negate',
+		context     => 'conditional',
+	};
+	is(_is_redundant_mutation($m), 1, '!! in conditional context is redundant');
+};
+
+subtest '_is_redundant_mutation() does NOT filter double negation outside conditional' => sub {
+	my $m = {
+		original    => '!!$flag',
+		description => 'double negate',
+		# no context key
+	};
+	is(_is_redundant_mutation($m), 0, '!! outside conditional is not redundant');
+};
+
+subtest '_is_redundant_mutation() returns 1 for mutation inside a comment line' => sub {
+	my $m = {
+		original     => '$x > 0',
+		line_content => '# return $x > 0;',
+		description  => 'comment line',
+	};
+	is(_is_redundant_mutation($m), 1, 'mutation inside comment is redundant');
+};
+
+subtest '_is_redundant_mutation() returns 0 for mutation on non-comment line' => sub {
+	my $m = {
+		original     => '$x > 0',
+		line_content => '	if($x > 0) {',
+		description  => 'real code',
+	};
+	is(_is_redundant_mutation($m), 0, 'mutation on real code line is not redundant');
+};
+
+subtest '_is_redundant_mutation() handles undef original gracefully' => sub {
+	my $m = { original => undef, description => 'undef original' };
+	lives_ok(sub { _is_redundant_mutation($m) },
+		'undef original does not crash');
+};
+
+# ==================================================================
+# _dedup_mutants — direct white-box tests
+# ==================================================================
+
+subtest '_dedup_mutants() returns arrayref' => sub {
+	my $result = _dedup_mutants([]);
+	is(ref($result), 'ARRAY', 'returns arrayref for empty input');
+};
+
+subtest '_dedup_mutants() returns all mutants when none are duplicates' => sub {
+	my $mutants = [
+		{ line => 10, original => '>', description => 'flip >',  transform => sub {} },
+		{ line => 20, original => '<', description => 'flip <',  transform => sub {} },
+		{ line => 30, original => '!', description => 'negate',  transform => sub {} },
+	];
+	my $result = _dedup_mutants($mutants);
+	is(scalar @{$result}, 3, 'all three distinct mutants preserved');
+};
+
+subtest '_dedup_mutants() removes exact duplicate based on line+original+description' => sub {
+	my $mutants = [
+		{ line => 10, original => '>', description => 'flip >', transform => sub {} },
+		{ line => 10, original => '>', description => 'flip >', transform => sub {} },	# exact dup
+		{ line => 20, original => '<', description => 'flip <', transform => sub {} },
+	];
+	my $result = _dedup_mutants($mutants);
+	is(scalar @{$result}, 2, 'duplicate removed, two distinct mutants remain');
+};
+
+subtest '_dedup_mutants() removes redundant +0 mutation' => sub {
+	my $mutants = [
+		{ line => 5, original => '$x + 0', description => 'add zero', transform => sub {} },
+		{ line => 10, original => '$x > 0', description => 'flip >',  transform => sub {} },
+	];
+	my $result = _dedup_mutants($mutants);
+	is(scalar @{$result}, 1, 'redundant +0 mutation removed');
+	is($result->[0]{description}, 'flip >', 'non-redundant mutation kept');
+};
+
+subtest '_dedup_mutants() removes redundant standalone-1 mutation' => sub {
+	my $mutants = [
+		{ line => 5, original => '1', description => 'flip true', transform => sub {} },
+		{ line => 10, original => '$x > 0', description => 'flip >', transform => sub {} },
+	];
+	my $result = _dedup_mutants($mutants);
+	is(scalar @{$result}, 1, 'standalone-1 mutation removed');
+};
+
+subtest '_dedup_mutants() handles undef fields in key construction' => sub {
+	my $mutants = [
+		{ line => undef, original => undef, description => undef, transform => sub {} },
+		{ line => undef, original => undef, description => undef, transform => sub {} },
+	];
+	my $result = _dedup_mutants($mutants);
+	# Both have the same key (all-undef) and first is not redundant so one survives
+	ok(scalar @{$result} <= 1, 'all-undef duplicates collapsed to at most one');
+};
+
+subtest '_dedup_mutants() preserves order of first occurrences' => sub {
+	my $mutants = [
+		{ line => 30, original => 'c', description => 'C', transform => sub {} },
+		{ line => 10, original => 'a', description => 'A', transform => sub {} },
+		{ line => 20, original => 'b', description => 'B', transform => sub {} },
+		{ line => 10, original => 'a', description => 'A', transform => sub {} },	# dup of second
+	];
+	my $result = _dedup_mutants($mutants);
+	is(scalar @{$result}, 3, 'three unique mutants');
+	is($result->[0]{original}, 'c', 'first mutant order preserved');
+	is($result->[1]{original}, 'a', 'second mutant order preserved');
+};
+
 done_testing();

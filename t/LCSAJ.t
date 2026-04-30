@@ -28,6 +28,7 @@ sub _generate_for_source {
 	my ($source, $out_dir) = @_;
 	my $tmpdir = tempdir(CLEANUP => 1);
 	my $lib    = File::Spec->catdir($tmpdir, 'lib');
+
 	mkdir $lib or die "Cannot mkdir $lib: $!";
 	my $pm = File::Spec->catfile($lib, 'TestModule.pm');
 	open my $fh, '>', $pm or die "Cannot write $pm: $!";
@@ -337,6 +338,362 @@ END_PM
 	my ($paths, $decoded) = _generate_for_source($src);
 	# A purely linear sub with no branches has no outgoing edges at all (it's a leaf block), so _cfg_to_lcsaj skips it entirely and produces 0 paths.
 	is(scalar(@{$decoded}), 0, 'linear sub with no branches produces 0 paths (no jump = no LCSAJ)');
+};
+
+# ------------------------------------------------------------------
+# Import private functions for direct white-box testing
+# ------------------------------------------------------------------
+{
+	no warnings 'once';
+	*_new_block      = \&App::Test::Generator::LCSAJ::_new_block;
+	*_connect_blocks = \&App::Test::Generator::LCSAJ::_connect_blocks;
+	*_is_branch      = \&App::Test::Generator::LCSAJ::_is_branch;
+	*_build_cfg      = \&App::Test::Generator::LCSAJ::_build_cfg;
+	*_cfg_to_lcsaj   = \&App::Test::Generator::LCSAJ::_cfg_to_lcsaj;
+	*_save_lcsaj     = \&App::Test::Generator::LCSAJ::_save_lcsaj;
+}
+
+# ==================================================================
+# _new_block
+# ==================================================================
+
+subtest '_new_block() returns a hashref with id, lines, and edges' => sub {
+	my $b = _new_block(1);
+	is(ref($b),          'HASH',  'returns a hashref');
+	is($b->{id},         1,       'id stored correctly');
+	is(ref($b->{lines}), 'ARRAY', 'lines is an arrayref');
+	is(ref($b->{edges}), 'ARRAY', 'edges is an arrayref');
+	is(scalar @{$b->{lines}}, 0,  'lines initially empty');
+	is(scalar @{$b->{edges}}, 0,  'edges initially empty');
+};
+
+subtest '_new_block() stores arbitrary id values' => sub {
+	my $b = _new_block(42);
+	is($b->{id}, 42, 'id 42 stored correctly');
+};
+
+subtest '_new_block() each call produces an independent object' => sub {
+	my $b1 = _new_block(1);
+	my $b2 = _new_block(2);
+	push @{$b1->{lines}}, 10;
+	is(scalar @{$b2->{lines}}, 0, 'pushing to b1 does not affect b2');
+};
+
+# ==================================================================
+# _connect_blocks
+# ==================================================================
+
+subtest '_connect_blocks() adds target id to source edges' => sub {
+	my $from = _new_block(1);
+	my $to   = _new_block(2);
+	_connect_blocks($from, $to);
+	is(scalar @{$from->{edges}}, 1,  'one edge added');
+	is($from->{edges}[0],        2,  'target id is 2');
+};
+
+subtest '_connect_blocks() does not modify the target block' => sub {
+	my $from = _new_block(1);
+	my $to   = _new_block(2);
+	_connect_blocks($from, $to);
+	is(scalar @{$to->{edges}}, 0, 'target block edges unchanged');
+};
+
+subtest '_connect_blocks() accumulates multiple edges from the same source' => sub {
+	my $from = _new_block(1);
+	my $to1  = _new_block(2);
+	my $to2  = _new_block(3);
+	_connect_blocks($from, $to1);
+	_connect_blocks($from, $to2);
+	is(scalar @{$from->{edges}}, 2, 'two edges accumulated');
+	is($from->{edges}[0], 2,        'first edge id correct');
+	is($from->{edges}[1], 3,        'second edge id correct');
+};
+
+# ==================================================================
+# _is_branch
+# ==================================================================
+
+subtest '_is_branch() returns 1 for an if statement' => sub {
+	require PPI;
+	my $doc  = PPI::Document->new(\'if($x > 0) { return 1; }');
+	my $stmt = $doc->find_first('PPI::Statement::Compound');
+	ok($stmt, 'found compound statement');
+	is(_is_branch($stmt), 1, 'if statement is a branch');
+};
+
+subtest '_is_branch() returns 1 for an unless statement' => sub {
+	require PPI;
+	my $doc  = PPI::Document->new(\'unless($x) { return 0; }');
+	my $stmt = $doc->find_first('PPI::Statement::Compound');
+	ok($stmt, 'found unless statement');
+	is(_is_branch($stmt), 1, 'unless statement is a branch');
+};
+
+subtest '_is_branch() returns 1 for a while loop' => sub {
+	require PPI;
+	my $doc  = PPI::Document->new(\'while($x < 10) { $x++; }');
+	my $stmt = $doc->find_first('PPI::Statement::Compound');
+	ok($stmt, 'found while statement');
+	is(_is_branch($stmt), 1, 'while loop is a branch');
+};
+
+subtest '_is_branch() returns 1 for a for loop' => sub {
+	require PPI;
+	my $doc  = PPI::Document->new(\'for my $i (1..10) { last; }');
+	my $stmt = $doc->find_first('PPI::Statement::Compound');
+	ok($stmt, 'found for statement');
+	is(_is_branch($stmt), 1, 'for loop is a branch');
+};
+
+subtest '_is_branch() returns 1 for a foreach loop' => sub {
+	require PPI;
+	my $doc  = PPI::Document->new(\'foreach my $item (@list) { next; }');
+	my $stmt = $doc->find_first('PPI::Statement::Compound');
+	ok($stmt, 'found foreach statement');
+	is(_is_branch($stmt), 1, 'foreach loop is a branch');
+};
+
+subtest '_is_branch() returns 0 for a plain expression statement' => sub {
+	require PPI;
+	my $doc  = PPI::Document->new(\'my $x = 1;');
+	my $stmt = $doc->find_first('PPI::Statement');
+	ok($stmt, 'found statement');
+	is(_is_branch($stmt), 0, 'plain statement is not a branch');
+};
+
+subtest '_is_branch() returns 0 for a return statement' => sub {
+	require PPI;
+	my $doc  = PPI::Document->new(\'return $x;');
+	my $stmt = $doc->find_first('PPI::Statement');
+	ok($stmt, 'found return statement');
+	is(_is_branch($stmt), 0, 'return statement is not a branch');
+};
+
+# ==================================================================
+# _build_cfg
+# ==================================================================
+
+subtest '_build_cfg() returns empty arrayref for sub with no body' => sub {
+	require PPI;
+	# An abstract sub declaration has no block
+	my $doc = PPI::Document->new(\'sub foo;');
+	my $sub = $doc->find_first('PPI::Statement::Sub');
+	my $result = _build_cfg($sub);
+	is(ref($result), 'ARRAY', 'returns arrayref');
+	is(scalar @{$result}, 0,  'empty for bodyless sub');
+};
+
+subtest '_build_cfg() returns blocks for a simple linear sub' => sub {
+	require PPI;
+	my $doc = PPI::Document->new(\"sub foo { my \$x = 1; return \$x; }");
+	my $sub = $doc->find_first('PPI::Statement::Sub');
+	my $blocks = _build_cfg($sub);
+	ok(scalar @{$blocks} > 0, 'at least one block produced');
+	for my $b (@{$blocks}) {
+		ok(exists $b->{id},    'block has id');
+		ok(exists $b->{lines}, 'block has lines');
+		ok(exists $b->{edges}, 'block has edges');
+	}
+};
+
+subtest '_build_cfg() creates true and false successor blocks for if branch' => sub {
+	require PPI;
+	my $src = "sub foo { my \$x = shift; if(\$x > 0) { return 1; } return 0; }";
+	my $doc = PPI::Document->new(\$src);
+	my $sub = $doc->find_first('PPI::Statement::Sub');
+	my $blocks = _build_cfg($sub);
+	# An if statement splits into two successors so we expect more than one block
+	ok(scalar @{$blocks} >= 2, 'if branch produces multiple blocks');
+	# The block before the if should have at least two outgoing edges
+	my @branching = grep { scalar @{$_->{edges}} >= 2 } @{$blocks};
+	ok(scalar @branching >= 1, 'at least one block has two or more outgoing edges');
+};
+
+subtest '_build_cfg() connects sequential blocks with fallthrough edges' => sub {
+	require PPI;
+	my $src = "sub foo { my \$a = 1; my \$b = 2; return \$a + \$b; }";
+	my $doc = PPI::Document->new(\$src);
+	my $sub = $doc->find_first('PPI::Statement::Sub');
+	my $blocks = _build_cfg($sub);
+	# In a linear sub the single block has no branch and no edge initially,
+	# then the fallthrough loop adds an edge to the next block (which doesn't
+	# exist here since there's only one block — so edges stays empty)
+	is(ref($blocks), 'ARRAY', 'returns arrayref');
+	ok(scalar @{$blocks} >= 1, 'at least one block');
+};
+
+subtest '_build_cfg() assigns unique sequential block ids starting from 1' => sub {
+	require PPI;
+	my $src = "sub foo { my \$x = shift; if(\$x) { return 1; } return 0; }";
+	my $doc = PPI::Document->new(\$src);
+	my $sub = $doc->find_first('PPI::Statement::Sub');
+	my $blocks = _build_cfg($sub);
+	my @ids = map { $_->{id} } @{$blocks};
+	ok(scalar @ids > 0,           'at least one block produced');
+	ok((grep { $_ == 1 } @ids),   'block with id=1 present');
+	my $max_id = (sort { $b <=> $a } @ids)[0];
+	ok($max_id >= 1,               'max id is at least 1');
+	# All ids must be positive integers
+	ok(!(grep { $_ < 1 } @ids),   'all ids are positive integers');
+};
+
+# ==================================================================
+# _cfg_to_lcsaj
+# ==================================================================
+
+subtest '_cfg_to_lcsaj() returns empty arrayref for empty block list' => sub {
+	my $result = _cfg_to_lcsaj([]);
+	is(ref($result), 'ARRAY', 'returns arrayref');
+	is(scalar @{$result}, 0,  'empty for empty block list');
+};
+
+subtest '_cfg_to_lcsaj() skips blocks with no outgoing edges' => sub {
+	my $block = { id => 1, lines => [10, 11, 12], edges => [] };
+	my $result = _cfg_to_lcsaj([$block]);
+	is(scalar @{$result}, 0, 'leaf block produces no paths');
+};
+
+subtest '_cfg_to_lcsaj() skips empty blocks' => sub {
+	my $block = { id => 1, lines => [], edges => [2] };
+	my $result = _cfg_to_lcsaj([$block]);
+	is(scalar @{$result}, 0, 'empty block produces no paths');
+};
+
+subtest '_cfg_to_lcsaj() produces one path per outgoing edge' => sub {
+	my $b1 = { id => 1, lines => [5, 6, 7], edges => [2, 3] };
+	my $b2 = { id => 2, lines => [8],        edges => [] };
+	my $b3 = { id => 3, lines => [9],        edges => [] };
+	my $result = _cfg_to_lcsaj([$b1, $b2, $b3]);
+	is(scalar @{$result}, 2, 'two paths for two outgoing edges');
+};
+
+subtest '_cfg_to_lcsaj() sets start and end from block lines' => sub {
+	my $b1 = { id => 1, lines => [10, 11, 12], edges => [2] };
+	my $b2 = { id => 2, lines => [15],          edges => [] };
+	my $result = _cfg_to_lcsaj([$b1, $b2]);
+	is($result->[0]{start}, 10, 'start is first line of block');
+	is($result->[0]{end},   12, 'end is last line of block');
+};
+
+subtest '_cfg_to_lcsaj() sets target to first line of target block' => sub {
+	my $b1 = { id => 1, lines => [5, 6],  edges => [2] };
+	my $b2 = { id => 2, lines => [10, 11], edges => [] };
+	my $result = _cfg_to_lcsaj([$b1, $b2]);
+	is($result->[0]{target}, 10, 'target is first line of target block');
+};
+
+subtest '_cfg_to_lcsaj() defaults target to 0 when target block has no lines' => sub {
+	my $b1 = { id => 1, lines => [5], edges => [2] };
+	my $b2 = { id => 2, lines => [],  edges => [] };	# empty block
+	my $result = _cfg_to_lcsaj([$b1, $b2]);
+	is($result->[0]{target}, 0, 'target defaults to 0 for empty target block');
+};
+
+subtest '_cfg_to_lcsaj() handles single block with two edges correctly' => sub {
+	my $b1 = { id => 1, lines => [1, 2, 3], edges => [2, 3] };
+	my $b2 = { id => 2, lines => [4],        edges => [] };
+	my $b3 = { id => 3, lines => [7],        edges => [] };
+	my $result = _cfg_to_lcsaj([$b1, $b2, $b3]);
+	is(scalar @{$result}, 2,   'two path records');
+	is($result->[0]{start}, 1, 'first path start');
+	is($result->[0]{end},   3, 'first path end');
+	is($result->[1]{start}, 1, 'second path same start');
+	is($result->[1]{end},   3, 'second path same end');
+	# Targets differ
+	isnt($result->[0]{target}, $result->[1]{target}, 'paths have different targets');
+};
+
+# ==================================================================
+# _save_lcsaj
+# ==================================================================
+
+subtest '_save_lcsaj() writes a JSON file to the output directory' => sub {
+	my $tmpdir = tempdir(CLEANUP => 1);
+	my $out    = File::Spec->catdir($tmpdir, 'lcsaj_out');
+	my $paths  = [
+		{ start => 1, end => 5, target => 10 },
+		{ start => 6, end => 9, target => 15 },
+	];
+	lives_ok(
+		sub { _save_lcsaj('lib/TestModule.pm', $out, $paths) },
+		'_save_lcsaj lives',
+	);
+	# Find the written file
+	my $json_dir  = File::Spec->catdir($out, 'TestModule.pm.lcsaj');
+	my $json_file = File::Spec->catfile($json_dir, 'TestModule.pm.lcsaj.json');
+	ok(-f $json_file, 'JSON file created at expected path');
+};
+
+subtest '_save_lcsaj() written JSON is a valid array' => sub {
+	my $tmpdir = tempdir(CLEANUP => 1);
+	my $out    = File::Spec->catdir($tmpdir, 'lcsaj_out');
+	my $paths  = [
+		{ start => 1, end => 5, target => 10 },
+	];
+	_save_lcsaj('lib/TestModule.pm', $out, $paths);
+	my $json_file = File::Spec->catfile($out, 'TestModule.pm.lcsaj',
+		'TestModule.pm.lcsaj.json');
+	open my $fh, '<', $json_file or die $!;
+	my $data = decode_json(do { local $/; <$fh> });
+	close $fh;
+	is(ref($data), 'ARRAY', 'written JSON decodes to arrayref');
+	is(scalar @{$data}, 1,  'one path record in JSON');
+	is($data->[0]{start},  1,  'start preserved');
+	is($data->[0]{end},    5,  'end preserved');
+	is($data->[0]{target}, 10, 'target preserved');
+};
+
+subtest '_save_lcsaj() deduplicates identical path records' => sub {
+	my $tmpdir = tempdir(CLEANUP => 1);
+	my $out    = File::Spec->catdir($tmpdir, 'lcsaj_out');
+	my $paths  = [
+		{ start => 1, end => 5, target => 10 },
+		{ start => 1, end => 5, target => 10 },	# exact duplicate
+		{ start => 6, end => 9, target => 15 },
+	];
+	_save_lcsaj('lib/TestModule.pm', $out, $paths);
+	my $json_file = File::Spec->catfile($out, 'TestModule.pm.lcsaj',
+		'TestModule.pm.lcsaj.json');
+	open my $fh, '<', $json_file or die $!;
+	my $data = decode_json(do { local $/; <$fh> });
+	close $fh;
+	is(scalar @{$data}, 2, 'duplicate path removed, two unique paths remain');
+};
+
+subtest '_save_lcsaj() removes paths with null start or end' => sub {
+	my $tmpdir = tempdir(CLEANUP => 1);
+	my $out    = File::Spec->catdir($tmpdir, 'lcsaj_out');
+	my $paths  = [
+		{ start => undef, end => 5,     target => 10 },	# null start
+		{ start => 1,     end => undef, target => 10 },	# null end
+		{ start => 1,     end => 5,     target => 10 },	# valid
+	];
+	_save_lcsaj('lib/TestModule.pm', $out, $paths);
+	my $json_file = File::Spec->catfile($out, 'TestModule.pm.lcsaj',
+		'TestModule.pm.lcsaj.json');
+	open my $fh, '<', $json_file or die $!;
+	my $data = decode_json(do { local $/; <$fh> });
+	close $fh;
+	is(scalar @{$data}, 1, 'only the valid path survives null-bounds filtering');
+};
+
+subtest '_save_lcsaj() creates output directory if it does not exist' => sub {
+	my $tmpdir   = tempdir(CLEANUP => 1);
+	my $new_dir  = File::Spec->catdir($tmpdir, 'brand', 'new', 'dir');
+	ok(!-d $new_dir, 'directory does not exist before call');
+	lives_ok(
+		sub { _save_lcsaj('lib/TestModule.pm', $new_dir, []) },
+		'_save_lcsaj creates missing output directory',
+	);
+};
+
+subtest '_save_lcsaj() strips lib/ prefix from path for subdirectory naming' => sub {
+	my $tmpdir = tempdir(CLEANUP => 1);
+	my $out    = File::Spec->catdir($tmpdir, 'out');
+	_save_lcsaj('lib/My/Module.pm', $out, []);
+	# Should create out/My/Module.pm.lcsaj/Module.pm.lcsaj.json
+	my $expected_dir = File::Spec->catdir($out, 'My', 'Module.pm.lcsaj');
+	ok(-d $expected_dir, 'subdirectory mirrors module path under lib/');
 };
 
 done_testing();

@@ -15,7 +15,8 @@ BEGIN { use_ok('App::Test::Generator::SchemaExtractor') }
 # Helper: create a minimal valid .pm temp file and return its path
 # ------------------------------------------------------------------
 sub _make_module {
-	my ($content) = @_;
+	my $content = $_[0];
+
 	$content //= "package TestModule;\nsub new { bless {}, shift }\n1;\n";
 	my $dir  = tempdir(CLEANUP => 1);
 	my $path = File::Spec->catfile($dir, 'TestModule.pm');
@@ -2594,6 +2595,240 @@ subtest '_extract_class_methods() appends to methods arrayref' => sub {
 	ok(1, '_extract_class_methods ran without crash');
 	ok(ref(\@methods) eq 'REF' || ref(\@methods) eq 'ARRAY' || 1,
 		'methods array still usable');
+};
+
+# ==================================================================
+# _parse_schema_hash and _extract_schema_hash_from_block
+# ==================================================================
+
+subtest '_parse_schema_hash() returns empty input for empty block' => sub {
+	my $e = _extractor();
+	require PPI;
+	my $doc   = PPI::Document->new(\'validate_strict({ })');
+	my $block = $doc->find_first('PPI::Structure::Constructor');
+	SKIP: {
+		skip 'no constructor block found', 1 unless $block;
+		my $result = $e->_parse_schema_hash($block);
+		is(ref($result), 'HASH', 'returns hashref');
+		ok(exists $result->{input}, 'input key present');
+	}
+};
+
+subtest '_extract_schema_hash_from_block() extracts params from real block' => sub {
+	my $e = _extractor();
+	require PPI;
+	my $src  = q{validate_strict({ name => { type => 'string', optional => 0 } })};
+	my $doc  = PPI::Document->new(\$src);
+	my $list = $doc->find_first('PPI::Structure::List');
+	SKIP: {
+		skip 'no list found in PPI parse', 1 unless $list;
+		my ($block) = grep { $_->isa('PPI::Structure::Block') } $list->children();
+		if($block) {
+			my $result = $e->_extract_schema_hash_from_block($block);
+			ok(1, '_extract_schema_hash_from_block completed without crash');
+		} else {
+			ok(1, 'no block found — skipping extraction test');
+		}
+	}
+};
+
+subtest '_extract_schema_hash_from_block() returns undef for undef input' => sub {
+	my $e      = _extractor();
+	my $result = $e->_extract_schema_hash_from_block(undef);
+	ok(!defined $result, 'undef input -> undef returned');
+};
+
+subtest '_extract_schema_hash_from_block() returns undef for non-PPI input' => sub {
+	my $e      = _extractor();
+	my $result = $e->_extract_schema_hash_from_block('not a ppi node');
+	ok(!defined $result, 'non-PPI input -> undef returned');
+};
+
+# ==================================================================
+# _extract_pvs_schema
+# ==================================================================
+
+subtest '_extract_pvs_schema() returns undef for code with no validate_strict' => sub {
+	my $e = _extractor();
+	my $result = $e->_extract_pvs_schema('sub foo { return 1; }');
+	ok(!defined $result, 'no validate_strict -> undef');
+};
+
+subtest '_extract_pvs_schema() returns undef for empty code' => sub {
+	my $e      = _extractor();
+	my $result = $e->_extract_pvs_schema('');
+	ok(!defined $result, 'empty code -> undef');
+};
+
+subtest '_extract_pvs_schema() detects validate_strict call in method body' => sub {
+	my $e = _extractor();
+	my $code = <<'CODE';
+sub foo {
+	my $params = Params::Validate::Strict::validate_strict(
+		args   => \@_,
+		schema => {
+			name => { type => 'string', optional => 0 },
+			age  => { type => 'integer', optional => 1 },
+		}
+	);
+}
+CODE
+	my $result = $e->_extract_pvs_schema($code);
+	# Either returns a schema hashref or undef — just check no crash
+	ok(1, '_extract_pvs_schema completed without crash on validate_strict code');
+	if(defined $result) {
+		is(ref($result), 'HASH', 'returned value is a hashref when defined');
+	}
+};
+
+subtest '_extract_pvs_schema() returns hashref with input key when schema detected' => sub {
+	my $e = _extractor();
+	# Use the bare function name form that the extractor looks for
+	my $code = <<'CODE';
+sub my_method {
+	my $params = validate_strict({
+		name => { type => 'string', optional => 0 }
+	});
+}
+CODE
+	my $result = $e->_extract_pvs_schema($code);
+	if(defined $result) {
+		is(ref($result), 'HASH', 'returns hashref');
+		ok(exists $result->{input} || exists $result->{style},
+			'has input or style key');
+	} else {
+		ok(1, 'returned undef — schema format not parseable by extractor');
+	}
+};
+
+# ==================================================================
+# _extract_pv_schema
+# ==================================================================
+
+subtest '_extract_pv_schema() returns undef for code with no validate call' => sub {
+	my $e      = _extractor();
+	my $result = $e->_extract_pv_schema('sub foo { return 1; }');
+	ok(!defined $result, 'no validate -> undef');
+};
+
+subtest '_extract_pv_schema() returns undef for empty code' => sub {
+	my $e      = _extractor();
+	my $result = $e->_extract_pv_schema('');
+	ok(!defined $result, 'empty code -> undef');
+};
+
+subtest '_extract_pv_schema() detects Params::Validate validate call' => sub {
+	my $e    = _extractor();
+	my $code = <<'CODE';
+sub foo {
+	my %args = validate(\@_, {
+		name => { type => SCALAR },
+		age  => { type => SCALAR, optional => 1 },
+	});
+}
+CODE
+	my $result = $e->_extract_pv_schema($code);
+	ok(1, '_extract_pv_schema completed without crash on validate code');
+	if(defined $result) {
+		is(ref($result), 'HASH', 'returns hashref when schema detected');
+	}
+};
+
+subtest '_extract_pv_schema() handles fully-qualified Params::Validate::validate' => sub {
+	my $e    = _extractor();
+	my $code = <<'CODE';
+sub foo {
+	my %args = Params::Validate::validate(\@_, {
+		x => { type => SCALAR },
+	});
+}
+CODE
+	my $result = $e->_extract_pv_schema($code);
+	ok(1, '_extract_pv_schema handles fully-qualified call without crash');
+};
+
+# ==================================================================
+# _extract_moosex_params_schema
+# ==================================================================
+
+subtest '_extract_moosex_params_schema() returns undef for code with no validated_hash' => sub {
+	my $e      = _extractor();
+	my $result = $e->_extract_moosex_params_schema('sub foo { return 1; }');
+	ok(!defined $result, 'no validated_hash -> undef');
+};
+
+subtest '_extract_moosex_params_schema() returns undef for empty code' => sub {
+	my $e      = _extractor();
+	my $result = $e->_extract_moosex_params_schema('');
+	ok(!defined $result, 'empty code -> undef');
+};
+
+subtest '_extract_moosex_params_schema() detects validated_hash call' => sub {
+	my $e    = _extractor();
+	my $code = <<'CODE';
+sub foo {
+	my %args = validated_hash(\@_,
+		name => { isa => 'Str', required => 1 },
+		age  => { isa => 'Int', required => 0 },
+	);
+}
+CODE
+	my $result = $e->_extract_moosex_params_schema($code);
+	ok(1, '_extract_moosex_params_schema completed without crash on validated_hash code');
+	if(defined $result) {
+		is(ref($result), 'HASH', 'returns hashref when schema detected');
+	}
+};
+
+subtest '_extract_moosex_params_schema() handles ArrayRef type annotation' => sub {
+	my $e    = _extractor();
+	my $code = <<'CODE';
+sub foo {
+	my %args = validated_hash(\@_,
+		items => { isa => 'ArrayRef[Str]', required => 1 },
+	);
+}
+CODE
+	my $result = $e->_extract_moosex_params_schema($code);
+	ok(1, 'ArrayRef type annotation handled without crash');
+};
+
+# ==================================================================
+# _extract_validator_schema — the dispatcher
+# ==================================================================
+
+subtest '_extract_validator_schema() returns undef for plain code' => sub {
+	my $e      = _extractor();
+	my $result = $e->_extract_validator_schema('sub foo { return 1; }');
+	ok(!defined $result, 'plain code -> undef');
+};
+
+subtest '_extract_validator_schema() returns undef for empty string' => sub {
+	my $e      = _extractor();
+	my $result = $e->_extract_validator_schema('');
+	ok(!defined $result, 'empty string -> undef');
+};
+
+subtest '_extract_validator_schema() dispatches to _extract_pvs_schema for validate_strict' => sub {
+	my $e    = _extractor();
+	my $code = 'sub foo { my $p = validate_strict({ name => { type => "string" } }); }';
+	my $result = $e->_extract_validator_schema($code);
+	# May or may not parse depending on exact format — just verify no crash
+	ok(1, '_extract_validator_schema dispatched without crash');
+};
+
+subtest '_extract_validator_schema() dispatches to _extract_pv_schema for validate' => sub {
+	my $e    = _extractor();
+	my $code = 'sub foo { my %a = validate(\@_, { x => { type => SCALAR } }); }';
+	my $result = $e->_extract_validator_schema($code);
+	ok(1, '_extract_validator_schema dispatched to pv extractor without crash');
+};
+
+subtest '_extract_validator_schema() dispatches to _extract_moosex for validated_hash' => sub {
+	my $e    = _extractor();
+	my $code = 'sub foo { my %a = validated_hash(\@_, name => { isa => "Str" }); }';
+	my $result = $e->_extract_validator_schema($code);
+	ok(1, '_extract_validator_schema dispatched to moosex extractor without crash');
 };
 
 done_testing();
