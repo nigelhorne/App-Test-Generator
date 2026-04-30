@@ -241,12 +241,12 @@ pre details.mutant-details ul {
 <body>
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/TestStrategy.pm</h1>
-<div class="nav"><a href="Sample/Module.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
- <a href="../../../Devel/App/Test/Generator/LCSAJ/Runtime.pm.html">Next ➡</a></div><div class='summary'>
+<div class="nav"><a href="Mutation/ReturnUndef.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
+ <a href="Analyzer/Complexity.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
-TER1 (Statement): 16.98%<br>
-TER2 (Branch): 0.00%<br>
-TER3 (LCSAJ): 0.0% (0/18)<br>
+TER1 (Statement): 98.11%<br>
+TER2 (Branch): 83.33%<br>
+TER3 (LCSAJ): 100.0% (18/18)<br>
 Approximate LCSAJ segments: 31<br>
 </div>
 
@@ -442,7 +442,7 @@ Approximate LCSAJ segments: 31<br>
 </span><span class="">  150: =cut
 </span><span class="">  151: 
 </span><span class="">  152: sub generate_plan {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 153 → 155 → 169</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 153 → 155 → 0</span></span>  153: 	my $self = $_[0];
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">153 → 155 → 169</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">153 → 155 → 0</span></span>  153: 	my $self = $_[0];
 </span><span class="">  154: 
 </span><span class="">  155: 	for my $method (keys %{ $self-&gt;{schema} }) {
 </span><span class="">  156: 		my $schema = $self-&gt;{schema}{$method};
@@ -458,15 +458,15 @@ Approximate LCSAJ segments: 31<br>
 </span><span class="">  166: 		$self-&gt;{plans}{$method} = $self-&gt;_plan_for_method($schema);
 </span><span class="">  167: 	}
 </span><span class="">  168: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 169 → 169 → 0</span></span>  169: 	return $self-&gt;{plans};
-</span><span class="">  170: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">169 → 169 → 0</span></span>  169: 	return $self-&gt;{plans};
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  170: }
 </span><span class="">  171: 
 </span><span class="">  172: # --------------------------------------------------
 </span><span class="">  173: # _plan_for_method
 </span><span class="">  174: #
-</span><span class="">  175: # Purpose:    Determine which test types should be
-</span><span class="">  176: #             generated for a single method based on
-</span><span class="">  177: #             its schema metadata.
+</span><span class="">  175: # Determine which test types should be
+</span><span class="">  176: #     generated for a single method based on
+</span><span class="">  177: #     its schema metadata.
 </span><span class="">  178: #
 </span><span class="">  179: # Entry:      $schema - the per-method schema hashref
 </span><span class="">  180: #
@@ -480,7 +480,7 @@ Approximate LCSAJ segments: 31<br>
 </span><span class="">  188: #             when schema fields are absent.
 </span><span class="">  189: # --------------------------------------------------
 </span><span class="">  190: sub _plan_for_method {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 191 → 199 → 207</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 191 → 199 → 0</span></span>  191: 	my ($self, $schema) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">191 → 199 → 207</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">191 → 199 → 0</span></span>  191: 	my ($self, $schema) = @_;
 </span><span class="">  192: 
 </span><span class="">  193: 	my %plan;
 </span><span class="">  194: 
@@ -488,37 +488,19 @@ Approximate LCSAJ segments: 31<br>
 </span><span class="">  196: 	# Context-aware returns need both scalar and list
 </span><span class="">  197: 	# context tests to verify correct behaviour in each
 </span><span class="">  198: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  199: 	if($schema-&gt;{output}{_context_aware}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_199_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  200: 		$plan{$TEST_CONTEXT} = 1;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  199: 	if($schema-&gt;{output}{_context_aware}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  200: 		$plan{$TEST_CONTEXT} = 1;
 </span><span class="">  201: 	}
 </span><span class="">  202: 
 </span><span class="">  203: 	# --------------------------------------------------
 </span><span class="">  204: 	# Accessor detection &acirc;&#128;&#148; choose test types based on
 </span><span class="">  205: 	# whether the method is a getter, setter, or both
 </span><span class="">  206: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 207 → 207 → 241</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 207 → 207 → 0</span></span>  207: 	if($schema-&gt;{accessor} &amp;&amp; scalar keys %{ $schema-&gt;{accessor} }) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_207_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  208: 		my $acc_type = $schema-&gt;{accessor}{type} // &#39;&#39;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">207 → 207 → 241</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">207 → 207 → 0</span></span>  207: 	if($schema-&gt;{accessor} &amp;&amp; scalar keys %{ $schema-&gt;{accessor} }) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  208: 		my $acc_type = $schema-&gt;{accessor}{type} // &#39;&#39;;
 </span><span class="">  209: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  210: 		if($acc_type eq $ACCESSOR_GETTER) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_210_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  211: 			# Boolean getters are predicates and need
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  210: 		if($acc_type eq $ACCESSOR_GETTER) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  211: 			# Boolean getters are predicates and need
 </span><span class="">  212: 			# truthy/falsy tests in addition to getter tests
 </span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  213: 			if(($schema-&gt;{output}{type} // &#39;&#39;) eq $TYPE_BOOLEAN) {
 </span>
@@ -541,14 +523,8 @@ Approximate LCSAJ segments: 31<br>
 </span><span class="">  225: 			my ($param) = grep { !/^_/ } keys %{ $schema-&gt;{input} || {} };
 </span><span class="">  226: 			my $param_type = ($param &amp;&amp; $schema-&gt;{input}{$param}{type}) // &#39;&#39;;
 </span><span class="">  227: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  228: 			if($param_type eq $TYPE_OBJECT) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_228_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  229: 				$plan{$TEST_OBJECT_INJECT} = 1;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  228: 			if($param_type eq $TYPE_OBJECT) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  229: 				$plan{$TEST_OBJECT_INJECT} = 1;
 </span><span class="">  230: 			} elsif($param_type eq $TYPE_BOOLEAN) {
 </span><span class="">  231: 				$plan{$TEST_BOOLEAN_SET} = 1;
 </span><span class="">  232: 			}
@@ -560,28 +536,16 @@ Approximate LCSAJ segments: 31<br>
 </span><span class="">  238: 	# Void return type &acirc;&#128;&#148; verify the method returns nothing
 </span><span class="">  239: 	# and does not accidentally return a useful value
 </span><span class="">  240: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 241 → 241 → 249</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 241 → 241 → 0</span></span>  241: 	if(($schema-&gt;{output}{type} // &#39;&#39;) eq $TYPE_VOID) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_241_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  242: 		$plan{$TEST_VOID} = 1;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">241 → 241 → 249</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">241 → 241 → 0</span></span>  241: 	if(($schema-&gt;{output}{type} // &#39;&#39;) eq $TYPE_VOID) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  242: 		$plan{$TEST_VOID} = 1;
 </span><span class="">  243: 	}
 </span><span class="">  244: 
 </span><span class="">  245: 	# --------------------------------------------------
 </span><span class="">  246: 	# Error handling &acirc;&#128;&#148; verify error return conventions
 </span><span class="">  247: 	# are tested explicitly
 </span><span class="">  248: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 249 → 249 → 258</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 249 → 249 → 0</span></span>  249: 	if($schema-&gt;{output}{_error_return}
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_249_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  250: 	|| $schema-&gt;{output}{success_failure_pattern}) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">249 → 249 → 258</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">249 → 249 → 0</span></span>  249: 	if($schema-&gt;{output}{_error_return}
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  250: 	|| $schema-&gt;{output}{success_failure_pattern}) {
 </span><span class="">  251: 		$plan{$TEST_ERROR_HANDLING} = 1;
 </span><span class="">  252: 	}
 </span><span class="">  253: 
@@ -589,49 +553,31 @@ Approximate LCSAJ segments: 31<br>
 </span><span class="">  255: 	# Boundary hints from YAML test configuration &acirc;&#128;&#148;
 </span><span class="">  256: 	# generate boundary/equivalence class tests
 </span><span class="">  257: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 258 → 258 → 266</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 258 → 258 → 0</span></span>  258: 	if($schema-&gt;{_yamltest_hints} &amp;&amp; keys %{ $schema-&gt;{_yamltest_hints} }) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_258_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  259: 		$plan{$TEST_BOUNDARY} = 1;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">258 → 258 → 266</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">258 → 258 → 0</span></span>  258: 	if($schema-&gt;{_yamltest_hints} &amp;&amp; keys %{ $schema-&gt;{_yamltest_hints} }) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  259: 		$plan{$TEST_BOUNDARY} = 1;
 </span><span class="">  260: 	}
 </span><span class="">  261: 
 </span><span class="">  262: 	# --------------------------------------------------
 </span><span class="">  263: 	# Method chaining &acirc;&#128;&#148; verify that $self is returned
 </span><span class="">  264: 	# and that calls can be chained
 </span><span class="">  265: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 266 → 266 → 274</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 266 → 266 → 0</span></span>  266: 	if($schema-&gt;{output}{_returns_self}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_266_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  267: 		$plan{$TEST_CHAINING} = 1;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">266 → 266 → 274</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">266 → 266 → 0</span></span>  266: 	if($schema-&gt;{output}{_returns_self}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  267: 		$plan{$TEST_CHAINING} = 1;
 </span><span class="">  268: 	}
 </span><span class="">  269: 
 </span><span class="">  270: 	# --------------------------------------------------
 </span><span class="">  271: 	# Boolean output &acirc;&#128;&#148; needs predicate tests regardless
 </span><span class="">  272: 	# of whether an accessor was detected
 </span><span class="">  273: 	# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 274 → 274 → 282</span></span><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 274 → 274 → 0</span></span>  274: 	if(($schema-&gt;{output}{type} // &#39;&#39;) eq $TYPE_BOOLEAN) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_274_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  275: 		$plan{$TEST_PREDICATE} = 1;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">274 → 274 → 282</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">274 → 274 → 0</span></span>  274: 	if(($schema-&gt;{output}{type} // &#39;&#39;) eq $TYPE_BOOLEAN) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  275: 		$plan{$TEST_PREDICATE} = 1;
 </span><span class="">  276: 	}
 </span><span class="">  277: 
 </span><span class="">  278: 	# --------------------------------------------------
 </span><span class="">  279: 	# Always generate at least a basic call test even
 </span><span class="">  280: 	# if no other test types were identified
 </span><span class="">  281: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 282 → 284 → 0</span></span>  282: 	$plan{$TEST_BASIC} = 1 unless %plan;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">282 → 284 → 0</span></span>  282: 	$plan{$TEST_BASIC} = 1 unless %plan;
 </span><span class="">  283: 
 </span><span class="">  284: 	return \%plan;
 </span><span class="">  285: }
