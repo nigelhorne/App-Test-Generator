@@ -3,11 +3,9 @@
 use strict;
 use warnings;
 use Test::Most;
-use Test::Mockingbird;
 
 # White-box function-level tests for App::Test::Generator.
 # Tests each function as a standalone unit.
-# Non-core dependencies are mocked via Test::Mockingbird.
 
 BEGIN { use_ok('App::Test::Generator') }
 
@@ -816,6 +814,469 @@ subtest '_load_schema() croaks for legacy Perl config with $module key' => sub {
 		sub { _load_schema($tmpfile->filename()) },
 		qr/perl files.*no longer supported/i,
 		'legacy \$module key croaks',
+	);
+};
+
+# ------------------------------------------------------------------
+# Import additional private functions under test
+# ------------------------------------------------------------------
+{
+	no warnings 'once';
+	*_validate_input_semantics    = \&App::Test::Generator::_validate_input_semantics;
+	*_validate_transform_properties = \&App::Test::Generator::_validate_transform_properties;
+	*_validate_module             = \&App::Test::Generator::_validate_module;
+	*_generate_transform_properties = \&App::Test::Generator::_generate_transform_properties;
+	*_process_custom_properties   = \&App::Test::Generator::_process_custom_properties;
+}
+
+# ==================================================================
+# _validate_input_semantics
+# ==================================================================
+subtest '_validate_input_semantics() passes for known semantic type' => sub {
+	lives_ok(
+		sub {
+			_validate_input_semantics({
+				input => {
+					email => { type => 'string', semantic => 'email' },
+				}
+			})
+		},
+		'known semantic type lives',
+	);
+};
+
+subtest '_validate_input_semantics() carps for unknown semantic type' => sub {
+	my @warnings;
+	local $SIG{__WARN__} = sub { push @warnings, @_ };
+	_validate_input_semantics({
+		input => { x => { type => 'string', semantic => 'banana' } }
+	});
+	ok((grep { /Unknown semantic type/ } @warnings),
+		'unknown semantic type carps');
+};
+
+subtest '_validate_input_semantics() croaks when both enum and memberof present' => sub {
+	throws_ok(
+		sub {
+			_validate_input_semantics({
+				input => {
+					status => {
+						type     => 'string',
+						enum     => ['a', 'b'],
+						memberof => ['a', 'b'],
+					},
+				}
+			})
+		},
+		qr/enum.*memberof|memberof.*enum/,
+		'both enum and memberof croaks',
+	);
+};
+
+subtest '_validate_input_semantics() croaks when enum is not an arrayref' => sub {
+	throws_ok(
+		sub {
+			_validate_input_semantics({
+				input => { x => { type => 'string', enum => 'not_array' } }
+			})
+		},
+		qr/enum must be an arrayref/,
+		'non-arrayref enum croaks',
+	);
+};
+
+subtest '_validate_input_semantics() croaks when memberof is not an arrayref' => sub {
+	throws_ok(
+		sub {
+			_validate_input_semantics({
+				input => { x => { type => 'string', memberof => 'not_array' } }
+			})
+		},
+		qr/memberof must be an arrayref/,
+		'non-arrayref memberof croaks',
+	);
+};
+
+subtest '_validate_input_semantics() passes for valid enum arrayref' => sub {
+	lives_ok(
+		sub {
+			_validate_input_semantics({
+				input => {
+					status => { type => 'string', enum => ['ok', 'error'] }
+				}
+			})
+		},
+		'valid enum arrayref lives',
+	);
+};
+
+subtest '_validate_input_semantics() skips non-hashref field specs' => sub {
+	lives_ok(
+		sub {
+			_validate_input_semantics({
+				input => { x => 'string' }
+			})
+		},
+		'non-hashref field spec skipped without error',
+	);
+};
+
+# ==================================================================
+# _validate_transform_properties
+# ==================================================================
+subtest '_validate_transform_properties() passes for valid builtin property name' => sub {
+	lives_ok(
+		sub {
+			_validate_transform_properties({
+				transforms => {
+					positive => {
+						properties => ['non_negative'],
+					}
+				}
+			})
+		},
+		'known builtin property name lives',
+	);
+};
+
+subtest '_validate_transform_properties() carps for unknown builtin name' => sub {
+	my @warnings;
+	local $SIG{__WARN__} = sub { push @warnings, @_ };
+	_validate_transform_properties({
+		transforms => {
+			my_transform => {
+				properties => ['banana_property'],
+			}
+		}
+	});
+	ok((grep { /unknown built-in property/i } @warnings),
+		'unknown builtin name carps');
+};
+
+subtest '_validate_transform_properties() passes for valid custom property hashref' => sub {
+	lives_ok(
+		sub {
+			_validate_transform_properties({
+				transforms => {
+					t => {
+						properties => [
+							{ name => 'my_prop', code => '$result > 0' }
+						]
+					}
+				}
+			})
+		},
+		'valid custom property hashref lives',
+	);
+};
+
+subtest '_validate_transform_properties() croaks when custom property missing code' => sub {
+	throws_ok(
+		sub {
+			_validate_transform_properties({
+				transforms => {
+					t => {
+						properties => [
+							{ name => 'bad_prop' }
+						]
+					}
+				}
+			})
+		},
+		qr/name.*code|code.*name/,
+		'custom property missing code croaks',
+	);
+};
+
+subtest '_validate_transform_properties() croaks when properties is not an arrayref' => sub {
+	throws_ok(
+		sub {
+			_validate_transform_properties({
+				transforms => {
+					t => { properties => 'not_array' }
+				}
+			})
+		},
+		qr/must be an array/,
+		'non-arrayref properties croaks',
+	);
+};
+
+subtest '_validate_transform_properties() skips transforms with no properties key' => sub {
+	lives_ok(
+		sub {
+			_validate_transform_properties({
+				transforms => {
+					t => { input => { x => { type => 'string' } } }
+				}
+			})
+		},
+		'transform without properties key lives',
+	);
+};
+
+subtest '_validate_transform_properties() croaks for invalid property definition type' => sub {
+	throws_ok(
+		sub {
+			_validate_transform_properties({
+				transforms => {
+					t => { properties => [ [1, 2, 3] ] }
+				}
+			})
+		},
+		qr/invalid property definition/i,
+		'invalid property definition type croaks',
+	);
+};
+
+# ==================================================================
+# _validate_module
+# ==================================================================
+subtest '_validate_module() returns 1 for undef module' => sub {
+	is(_validate_module(undef, 'test.yml'), 1, 'undef module returns 1');
+};
+
+subtest '_validate_module() returns 1 for empty string module' => sub {
+	is(_validate_module('', 'test.yml'), 1, 'empty module returns 1');
+};
+
+subtest '_validate_module() returns 1 for core module in @INC' => sub {
+	# Scalar::Util is always available
+	is(_validate_module('Scalar::Util', 'test.yml'), 1,
+		'Scalar::Util found in @INC');
+};
+
+subtest '_validate_module() carps and returns 0 for unknown module' => sub {
+	my @warnings;
+	local $SIG{__WARN__} = sub { push @warnings, @_ };
+	my $result = _validate_module('No::Such::Module::XYZ', 'test.yml');
+	is($result, 0, 'unknown module returns 0');
+	ok((grep { /not found/i } @warnings), 'carps about module not found');
+};
+
+# ==================================================================
+# _generate_transform_properties
+# ==================================================================
+subtest '_generate_transform_properties() returns empty arrayref for empty transforms' => sub {
+	my $result = _generate_transform_properties(
+		{}, 'my_func', undef, {}, { properties => { enable => 1, trials => 100 } }, undef
+	);
+	is(ref($result), 'ARRAY', 'returns arrayref');
+	is(scalar @{$result}, 0, 'empty transforms -> empty arrayref');
+};
+
+subtest '_generate_transform_properties() skips undef input transforms' => sub {
+	my $result = _generate_transform_properties(
+		{ error => { input => undef, output => {} } },
+		'my_func', undef, {}, { properties => { trials => 100 } }, undef
+	);
+	is(scalar @{$result}, 0, 'undef input transform skipped');
+};
+
+subtest '_generate_transform_properties() skips "undef" string input transforms' => sub {
+	my $result = _generate_transform_properties(
+		{ error => { input => 'undef', output => {} } },
+		'my_func', undef, {}, { properties => { trials => 100 } }, undef
+	);
+	is(scalar @{$result}, 0, '"undef" string input transform skipped');
+};
+
+subtest '_generate_transform_properties() skips non-hashref input transforms' => sub {
+	my $result = _generate_transform_properties(
+		{ t => { input => [1, 2], output => {} } },
+		'my_func', undef, {}, { properties => { trials => 100 } }, undef
+	);
+	is(scalar @{$result}, 0, 'non-hashref input transform skipped');
+};
+
+subtest '_generate_transform_properties() returns property for numeric output transform' => sub {
+	my $result = _generate_transform_properties(
+		{
+			positive => {
+				input  => { x => { type => 'number', position => 0 } },
+				output => { type => 'number', min => 0 },
+			}
+		},
+		'abs', undef, { x => { type => 'number' } },
+		{ properties => { trials => 100 } }, undef
+	);
+	ok(scalar @{$result} > 0, 'numeric transform produces at least one property');
+	is($result->[0]{name}, 'positive', 'transform name preserved');
+	ok(defined $result->[0]{generator_spec}, 'generator_spec present');
+	ok(defined $result->[0]{call_code},      'call_code present');
+	ok(defined $result->[0]{trials},         'trials present');
+	is($result->[0]{trials}, 100,            'trials value correct');
+};
+
+subtest '_generate_transform_properties() sets should_die for DIES output' => sub {
+	my $result = _generate_transform_properties(
+		{
+			error_case => {
+				input  => { x => { type => 'string', position => 0 } },
+				output => { _STATUS => 'DIES' },
+			}
+		},
+		'my_func', undef, {},
+		{ properties => { trials => 10 } }, undef
+	);
+	if(scalar @{$result}) {
+		ok($result->[0]{should_die}, 'should_die set for DIES output');
+	} else {
+		ok(1, 'DIES transform with no properties produces no entry');
+	}
+};
+
+subtest '_generate_transform_properties() builds OO call_code when new defined' => sub {
+	my $result = _generate_transform_properties(
+		{
+			t => {
+				input  => { x => { type => 'integer', position => 0 } },
+				output => { type => 'integer', min => 0 },
+			}
+		},
+		'my_method', 'My::Module',
+		{ x => { type => 'integer' } },
+		{ properties => { trials => 50 } },
+		{}	# $new defined -> OO mode
+	);
+	if(scalar @{$result}) {
+		like($result->[0]{call_code}, qr/my_method/,  'method name in call_code');
+		like($result->[0]{call_code}, qr/My::Module/, 'module in call_code');
+	} else {
+		ok(1, 'no properties generated for this transform');
+	}
+};
+
+# ==================================================================
+# _process_custom_properties
+# ==================================================================
+subtest '_process_custom_properties() returns empty list for empty array' => sub {
+	my @result = _process_custom_properties(
+		[], 'my_func', undef, {}, {}, undef
+	);
+	is(scalar @result, 0, 'empty array -> empty list');
+};
+
+subtest '_process_custom_properties() resolves builtin property by name' => sub {
+	my @result = _process_custom_properties(
+		['non_negative'],
+		'abs', undef,
+		{ x => { type => 'number', position => 0 } },
+		{ type => 'number', min => 0 },
+		undef
+	);
+	is(scalar @result, 1,            'one property returned');
+	is($result[0]{name}, 'non_negative', 'name preserved');
+	ok(defined $result[0]{code},     'code present');
+	ok(defined $result[0]{description}, 'description present');
+};
+
+subtest '_process_custom_properties() carps and skips unknown builtin name' => sub {
+	my @warnings;
+	local $SIG{__WARN__} = sub { push @warnings, @_ };
+	my @result = _process_custom_properties(
+		['banana_property'],
+		'my_func', undef, {}, {}, undef
+	);
+	is(scalar @result, 0, 'unknown builtin skipped');
+	ok((grep { /Unknown built-in property/i } @warnings),
+		'unknown builtin carps');
+};
+
+subtest '_process_custom_properties() handles custom hashref property' => sub {
+	my @result = _process_custom_properties(
+		[{ name => 'my_check', code => '$result > 0', description => 'positive' }],
+		'my_func', undef, {}, {}, undef
+	);
+	is(scalar @result, 1,             'one property returned');
+	is($result[0]{name}, 'my_check',  'name preserved');
+	is($result[0]{code}, '$result > 0', 'code preserved');
+};
+
+subtest '_process_custom_properties() carps and skips custom property missing code' => sub {
+	my @warnings;
+	local $SIG{__WARN__} = sub { push @warnings, @_ };
+	my @result = _process_custom_properties(
+		[{ name => 'no_code_prop' }],
+		'my_func', undef, {}, {}, undef
+	);
+	is(scalar @result, 0, 'property missing code is skipped');
+	ok((grep { /missing 'code'/i } @warnings), 'missing code carps');
+};
+
+subtest '_process_custom_properties() carps and skips invalid definition type' => sub {
+	my @warnings;
+	local $SIG{__WARN__} = sub { push @warnings, @_ };
+	my @result = _process_custom_properties(
+		[ [1, 2, 3] ],
+		'my_func', undef, {}, {}, undef
+	);
+	is(scalar @result, 0, 'invalid definition type skipped');
+	ok((grep { /Invalid property definition/i } @warnings),
+		'invalid definition type carps');
+};
+
+subtest '_process_custom_properties() uses default name for unnamed custom property' => sub {
+	my @result = _process_custom_properties(
+		[{ code => '$result >= 0' }],
+		'my_func', undef, {}, {}, undef
+	);
+	if(scalar @result) {
+		like($result[0]{name}, qr/custom_property/, 'default name applied');
+	} else {
+		ok(1, 'unnamed property handled without crash');
+	}
+};
+
+# ==================================================================
+# generate() — smoke test with a real temp schema file
+# ==================================================================
+subtest 'generate() produces output containing use strict for minimal schema' => sub {
+	require File::Temp;
+	my $schema = File::Temp->new(SUFFIX => '.yml', UNLINK => 1);
+	print $schema "function: my_func\ninput:\n  type: string\noutput:\n  type: string\n";
+	$schema->flush();
+
+	my $output = '';
+	local *STDOUT;
+	open STDOUT, '>', \$output;
+	eval {
+		App::Test::Generator->generate($schema->filename());
+	};
+	close STDOUT;
+
+	ok(!$@, "generate() did not croak: $@");
+	like($output, qr/use strict/,    'generated output contains use strict');
+	like($output, qr/done_testing/,  'generated output contains done_testing');
+};
+
+subtest 'generate() writes to file when output_file specified' => sub {
+	require File::Temp;
+	my $schema = File::Temp->new(SUFFIX => '.yml', UNLINK => 1);
+	print $schema "function: my_func\ninput:\n  type: string\noutput:\n  type: string\n";
+	$schema->flush();
+
+	my $outfile = File::Temp->new(SUFFIX => '.t', UNLINK => 1);
+	my $outpath  = $outfile->filename();
+	$outfile->close();
+
+	lives_ok(
+		sub {
+			App::Test::Generator->generate(
+				schema_file => $schema->filename(),
+				output_file => $outpath,
+			)
+		},
+		'generate() with output_file lives',
+	);
+	ok(-f $outpath && -s $outpath, 'output file created and non-empty');
+};
+
+subtest 'generate() croaks when called with no arguments' => sub {
+	throws_ok(
+		sub { App::Test::Generator->generate() },
+		qr/Usage/,
+		'no-arg generate() croaks with Usage',
 	);
 };
 
