@@ -172,9 +172,9 @@ sub generate_plan {
 # --------------------------------------------------
 # _plan_for_method
 #
-# Purpose:    Determine which test types should be
-#             generated for a single method based on
-#             its schema metadata.
+# Determine which test types should be
+#     generated for a single method based on
+#     its schema metadata.
 #
 # Entry:      $schema - the per-method schema hashref
 #
