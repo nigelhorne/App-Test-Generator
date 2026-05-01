@@ -421,8 +421,8 @@ sub load_corpus {
 # --------------------------------------------------
 # _load_json_module
 #
-# Purpose:    Find and load the first available JSON
-#             module from the preference list.
+# Find and load the first available JSON
+#     module from the preference list.
 #
 # Entry:      None.
 # Exit:       Returns the name of the loaded module.
@@ -436,9 +436,11 @@ sub load_corpus {
 # --------------------------------------------------
 sub _load_json_module {
 	for my $mod (@JSON_MODULES) {
-		# Use block eval with require rather than string eval
-		# to avoid security issues with arbitrary module names
-		my $ok = eval { require $mod; 1 };	## no critic (ProhibitStringyEval)
+		# Convert package name to file path — require $var does not
+		# do the :: -> / conversion that bareword require does
+		(my $file = $mod) =~ s{::}{/}g;
+		$file .= '.pm';
+		my $ok = eval { require $file; 1 };
 		return $mod if $ok;
 	}
 	croak 'No JSON module available; install JSON or JSON::MaybeXS';
@@ -447,9 +449,9 @@ sub _load_json_module {
 # --------------------------------------------------
 # _run_one
 #
-# Purpose:    Run the target sub with a single input,
-#             record coverage, detect bugs, and update
-#             the corpus if the input is interesting.
+# Run the target sub with a single input,
+#     record coverage, detect bugs, and update
+#     the corpus if the input is interesting.
 #
 # Entry:      $input - the value to pass to target_sub.
 #
