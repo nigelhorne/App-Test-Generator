@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 use Test::Most;
+use Capture::Tiny qw(capture);
 
 # White-box function-level tests for App::Test::Generator.
 # Tests each function as a standalone unit.
@@ -1234,18 +1235,14 @@ subtest '_process_custom_properties() uses default name for unnamed custom prope
 subtest 'generate() produces output containing use strict for minimal schema' => sub {
 	require File::Temp;
 	my $schema = File::Temp->new(SUFFIX => '.yml', UNLINK => 1);
-	print $schema "function: my_func\ninput:\n  type: string\noutput:\n  type: string\n";
+	print $schema "module: builtin\nfunction: my_func\ninput:\n  type: string\noutput:\n  type: string\n";
 	$schema->flush();
 
-	my $output = '';
-	local *STDOUT;
-	open STDOUT, '>', \$output;
-	eval {
-		App::Test::Generator->generate($schema->filename());
-	};
-	close STDOUT;
+	my ($output, $stderr) = capture(sub {
+		eval { App::Test::Generator->generate($schema->filename()) };
+	});
 
-	ok(!$@, "generate() did not croak: $@");
+	ok(!$@,                          "generate() did not croak: $@");
 	like($output, qr/use strict/,    'generated output contains use strict');
 	like($output, qr/done_testing/,  'generated output contains done_testing');
 };
@@ -1253,22 +1250,20 @@ subtest 'generate() produces output containing use strict for minimal schema' =>
 subtest 'generate() writes to file when output_file specified' => sub {
 	require File::Temp;
 	my $schema = File::Temp->new(SUFFIX => '.yml', UNLINK => 1);
-	print $schema "function: my_func\ninput:\n  type: string\noutput:\n  type: string\n";
+	print $schema "module: builtin\nfunction: my_func\ninput:\n  type: string\noutput:\n  type: string\n";
 	$schema->flush();
 
 	my $outfile = File::Temp->new(SUFFIX => '.t', UNLINK => 1);
 	my $outpath  = $outfile->filename();
 	$outfile->close();
 
-	lives_ok(
-		sub {
-			App::Test::Generator->generate(
-				schema_file => $schema->filename(),
-				output_file => $outpath,
-			)
-		},
-		'generate() with output_file lives',
-	);
+	my (undef, $stderr) = capture(sub {
+		App::Test::Generator->generate(
+			schema_file => $schema->filename(),
+			output_file => $outpath,
+		)
+	});
+
 	ok(-f $outpath && -s $outpath, 'output file created and non-empty');
 };
 
