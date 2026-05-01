@@ -13,6 +13,25 @@ our $VERSION = '0.33';
 
 Version 0.33
 
+=head2 applies_to
+
+Returns true if the document contains any C<if> or C<unless> compound
+statements that this mutator can target.
+
+=cut
+
+sub applies_to {
+	my ($self, $doc) = @_;
+	my $compounds = $doc->find('PPI::Statement::Compound') || [];
+	for my $stmt (@{$compounds}) {
+		my $first = $stmt->schild(0);
+		next unless $first && $first->isa('PPI::Token::Word');
+		my $type = $first->content();
+		return 1 if $type eq 'if' || $type eq 'unless';
+	}
+	return 0;
+}
+
 =head2 mutate
 
 Walk a PPI document and generate one mutant for each C<if> or C<unless>

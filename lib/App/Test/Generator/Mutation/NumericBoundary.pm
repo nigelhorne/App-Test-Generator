@@ -30,6 +30,30 @@ my %FLIP = (
 	'!=' => [ '==' ],
 );
 
+=head2 applies_to
+
+Returns true if the document contains any comparison operators that this
+mutator can target (C<E<gt>>, C<E<lt>>, C<E<gt>=>, C<E<lt>=>, C<==>,
+C<!=>).
+
+=cut
+
+sub applies_to {
+	my ($self, $doc) = @_;
+	my $ops = $doc->find('PPI::Token::Operator') || [];
+	for my $op (@{$ops}) {
+		next unless exists $FLIP{$op->content()};
+		my $next_sib = $op->next_sibling();
+		next if $next_sib && $next_sib->isa('PPI::Token::Symbol');
+		my $parent = $op->parent();
+		next unless $parent->isa('PPI::Statement')
+			|| $parent->isa('PPI::Structure::Condition')
+			|| $parent->isa('PPI::Structure::Block');
+		return 1;
+	}
+	return 0;
+}
+
 =head2 mutate
 
 Walk a PPI document and generate one mutant for each comparison operator

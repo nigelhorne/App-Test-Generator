@@ -50,8 +50,6 @@ subtest 'new and inheritance' => sub {
 	ok(defined $m, 'new() returns defined value');
 	isa_ok($m, 'App::Test::Generator::Mutation::NumericBoundary');
 	isa_ok($m, 'App::Test::Generator::Mutation::Base', 'inherits from Base');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -63,8 +61,6 @@ subtest 'mutate: empty document' => sub {
 
 	my @mutants = $m->mutate($doc);
 	is(scalar @mutants, 0, 'no mutants for document with no operators');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -99,8 +95,6 @@ subtest 'mutate: correct flip count per operator' => sub {
 	# != produces 1 flip: ==
 	@mutants = $m->mutate(_doc('sub foo { if($x != 0) { 1; } }'));
 	is(scalar @mutants, 1, '!= produces 1 mutant');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -127,8 +121,6 @@ subtest 'mutate: flip targets are correct' => sub {
 			ok($got_set{$t}, "$op flip to $t is present");
 		}
 	}
-
-	done_testing();
 };
 
 # ==================================================================
@@ -168,8 +160,6 @@ subtest 'mutate: mutant metadata is correct' => sub {
 		like($mut->group, qr/^NUM_BOUNDARY:\d+$/,
 			'group has correct format');
 	}
-
-	done_testing();
 };
 
 # ==================================================================
@@ -191,8 +181,6 @@ CODE
 
 	my %ids = map { $_->id => 1 } @mutants;
 	is(scalar keys %ids, scalar @mutants, 'all mutant IDs are unique');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -211,8 +199,6 @@ subtest 'mutate: readline operator is skipped' => sub {
 	# Regular < comparison still works
 	@mutants = $m->mutate(_doc('sub foo { if($x < 10) { 1; } }'));
 	is(scalar @mutants, 3, 'regular < comparison still produces mutants');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -250,8 +236,6 @@ subtest 'mutate: transform applies flip correctly' => sub {
 
 	# All three flip targets must have been seen
 	is(scalar keys %seen_flips, 3, 'all three flip targets were applied');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -275,8 +259,6 @@ CODE
 	# The mutants must have two distinct line numbers
 	my %lines = map { $_->line => 1 } @mutants;
 	is(scalar keys %lines, 2, 'mutants span two distinct lines');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -299,8 +281,6 @@ subtest 'mutate: transform does not modify original document' => sub {
 	# Original must be unchanged
 	is($doc->serialize, $before,
 		'original document not modified by any transform');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -318,8 +298,6 @@ subtest 'mutate: multiple operators on same line have unique IDs' => sub {
 
 	my %ids = map { $_->id => 1 } @mutants;
 	is(scalar keys %ids, 6, 'all IDs are unique despite same line');
-
-	done_testing();
 };
 
 # ==================================================================
@@ -339,8 +317,6 @@ subtest 'mutate: group line matches ID line' => sub {
 		is($mut->line, $id_line,
 			"line() matches ID line for mutant ${\$mut->id}");
 	}
-
-	done_testing();
 };
 
 # ==================================================================
@@ -360,8 +336,6 @@ subtest 'flip table has correct entries' => sub {
 		is_deeply(\@targets, \@expected,
 			"flip targets for $op are correct");
 	}
-
-	done_testing();
 };
 
 # ==================================================================
@@ -377,8 +351,53 @@ subtest 'mutate: returns a list' => sub {
 
 	# TODO: API should return arrayref for efficiency -- same change
 	# needed across all Mutation::* subclasses simultaneously
+};
 
-	done_testing();
+# ==================================================================
+# applies_to() — new function
+# ==================================================================
+
+subtest 'applies_to() returns 1 for document containing > operator' => sub {
+	require PPI;
+	my $m   = App::Test::Generator::Mutation::NumericBoundary->new();
+	my $doc = PPI::Document->new(\'sub foo { if($x > 0) { return 1; } }');
+	is($m->applies_to($doc), 1, '> operator -> applies_to returns 1');
+};
+
+subtest 'applies_to() returns 1 for document containing == operator' => sub {
+	require PPI;
+	my $m   = App::Test::Generator::Mutation::NumericBoundary->new();
+	my $doc = PPI::Document->new(\'sub foo { return 1 if $x == 0; }');
+	is($m->applies_to($doc), 1, '== operator -> applies_to returns 1');
+};
+
+subtest 'applies_to() returns 1 for document containing >= operator' => sub {
+	require PPI;
+	my $m   = App::Test::Generator::Mutation::NumericBoundary->new();
+	my $doc = PPI::Document->new(\'sub foo { die unless $n >= 1; }');
+	is($m->applies_to($doc), 1, '>= operator -> applies_to returns 1');
+};
+
+subtest 'applies_to() returns 0 for document with no comparison operators' => sub {
+	require PPI;
+	my $m   = App::Test::Generator::Mutation::NumericBoundary->new();
+	my $doc = PPI::Document->new(\'sub foo { return $x + $y; }');
+	is($m->applies_to($doc), 0, 'no comparison operators -> applies_to returns 0');
+};
+
+subtest 'applies_to() returns 0 for empty document' => sub {
+	require PPI;
+	my $m   = App::Test::Generator::Mutation::NumericBoundary->new();
+	my $doc = PPI::Document->new(\' ');
+	is($m->applies_to($doc), 0, 'empty document -> applies_to returns 0');
+};
+
+subtest 'applies_to() returns 0 for readline < operator' => sub {
+	require PPI;
+	my $m   = App::Test::Generator::Mutation::NumericBoundary->new();
+	# <$fh> is a readline, not a comparison — should be ignored
+	my $doc = PPI::Document->new(\'sub foo { my $line = <$fh>; }');
+	is($m->applies_to($doc), 0, 'readline < not treated as comparison operator');
 };
 
 done_testing();
