@@ -481,9 +481,9 @@ END_TEST
 # --------------------------------------------------
 # _emit_void_test
 #
-# Purpose:    Emit a test that verifies the method
-#             does not return a meaningful value,
-#             consistent with a void return type.
+# Emit a test that verifies the method
+#     does not return a meaningful value,
+#     consistent with a void return type.
 #
 # Entry:      $method - method name string.
 # Exit:       Returns a string of Perl test code.
@@ -495,8 +495,8 @@ sub _emit_void_test {
 	return <<"END_TEST";
 {
 	my \$result = eval { \$obj->$method() };
-	ok(!\$@,         '$method does not die');
-	ok(!defined \$result || 1, '$method void return noted');
+	ok(!\$@,          '$method does not die');
+	ok(!defined \$result, '$method returns nothing (void)');
 }
 END_TEST
 }

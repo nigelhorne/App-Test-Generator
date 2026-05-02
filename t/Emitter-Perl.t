@@ -230,8 +230,8 @@ subtest 'boolean test emitted only when boolean_test flag is set' => sub {
 subtest 'void test emitted only when void_context_test flag is set' => sub {
 	my $with    = _emitter(void_context_test => 1);
 	my $without = _emitter();
-	like($with->emit(),    qr/void return noted/, 'void test present when flag set');
-	unlike($without->emit(), qr/void return noted/, 'void test absent when flag not set');
+	like($with->emit(), qr/returns nothing \(void\)/, 'void test present when flag set');
+	unlike($without->emit(), qr/returns nothing \(void\)/, 'void test absent when flag not set');
 };
 
 # ------------------------------------------------------------------
@@ -524,11 +524,14 @@ subtest '_emit_method_tests() boolean block absent when flag not set' => sub {
 		'boolean block absent when flag not set');
 };
 
-subtest '_emit_method_tests() void block absent when flag not set' => sub {
-	my $e      = _emitter();
-	my $result = $e->_emit_method_tests('my_method', {}, $SCHEMA);
-	unlike($result, qr/void_test|does not return/i,
-		'void block absent when flag not set');
+subtest '_emit_method_tests() includes void block for void_test flag' => sub {
+	my $e = App::Test::Generator::Emitter::Perl->new(
+		schema  => { my_method => $SCHEMA },
+		plans   => { my_method => { void_context_test => 1 } },
+		package => 'Test::Package',
+	);
+	my $result = $e->_emit_method_tests('my_method');
+	like($result, qr/returns nothing \(void\)/, 'void block present');
 };
 
 subtest '_emit_method_tests() all flags together produce all known blocks' => sub {
@@ -736,9 +739,11 @@ subtest '_emit_boolean_test() returns defined non-empty string' => sub {
 subtest '_emit_void_test() returns defined non-empty string' => sub {
 	my $e = _e();
 	my $result = $e->_emit_void_test('do_thing');
-	ok(defined $result,     '_emit_void_test: defined');
-	ok(length($result) > 0, '_emit_void_test: non-empty');
-	like($result, qr/do_thing does not die/, '_emit_void_test: contains expected text');
+	ok(defined $result,                         '_emit_void_test: defined');
+	ok(length($result) > 0,                     '_emit_void_test: non-empty');
+	like($result, qr/do_thing does not die/,    '_emit_void_test: does-not-die check present');
+	like($result, qr/returns nothing \(void\)/, '_emit_void_test: void return check present');
+	unlike($result, qr/\|\| 1/,                '_emit_void_test: no tautology');
 };
 
 # -- _emit_method_tests dispatch --
