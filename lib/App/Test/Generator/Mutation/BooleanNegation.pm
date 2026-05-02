@@ -18,6 +18,8 @@ expressions to expose missing assertion coverage
 
 Version 0.33
 
+=head1 METHODS
+
 =head2 applies_to
 
 Return true if this mutation strategy applies to the given PPI node.

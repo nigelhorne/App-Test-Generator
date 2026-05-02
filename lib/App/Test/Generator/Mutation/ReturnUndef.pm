@@ -17,6 +17,8 @@ with undef to expose missing undef-return checks in the test suite
 
 Version 0.33
 
+=head1 METHODS
+
 =head2 applies_to
 
 Return true if this mutation strategy applies to the given PPI node.
