@@ -81,6 +81,8 @@ generation it:
 This is the Perl equivalent of what AFL/libFuzzer do at the byte level,
 but operating on typed, schema-validated Perl data structures.
 
+=head1 METHODS
+
 =head2 new
 
 Construct a new coverage-guided fuzzer.
