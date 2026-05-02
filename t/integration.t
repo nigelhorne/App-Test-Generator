@@ -657,7 +657,7 @@ subtest 'BooleanNegation + ReturnUndef: transforms produce correct mutations' =>
 	my $src = "sub foo { return \$ok; }\n";
 
 	# BooleanNegation
-	my $bn  = App::Test::Generator::Mutation::BooleanNegation->new();
+	my $bn  = new_ok('App::Test::Generator::Mutation::BooleanNegation');
 	my $doc = PPI::Document->new(\$src);
 	my @bn_mutants = $bn->mutate($doc);
 	if(@bn_mutants) {
@@ -769,6 +769,47 @@ subtest 'Emitter::Perl: multiple methods emitted in sorted order' => sub {
 	my $pos_gamma = index($code, 'gamma');
 	ok($pos_alpha < $pos_beta,  'alpha before beta in emitted output');
 	ok($pos_beta  < $pos_gamma, 'beta before gamma in emitted output');
+};
+
+subtest 'test-generator-index: _is_class_method detects class vs instance methods' => sub {
+	# Test the logic directly by duplicating the detection pattern
+	# used in _is_class_method — we cannot require the script since
+	# it has top-level executable code that needs GITHUB_REPOSITORY
+
+	my $class_src = [
+		"sub generate {\n",
+		"\tmy \$class = shift;\n",
+		"\treturn 1;\n",
+		"}\n",
+	];
+	my $instance_src = [
+		"sub run {\n",
+		"\tmy \$self = shift;\n",
+		"\treturn 1;\n",
+		"}\n",
+	];
+
+	# Replicate the detection logic from _is_class_method
+	my $detect = sub {
+		my ($lines, $name) = @_;
+		my $in_sub = 0;
+		for my $line (@{$lines}) {
+			if(!$in_sub && $line =~ /^\s*sub\s+\Q$name\E\b/) {
+				$in_sub = 1; next;
+			}
+			next unless $in_sub;
+			return 1 if $line =~ /my\s+\$class\s*=/;
+			return 1 if $line =~ /my\s*\(\s*\$class\b/;
+			return 0 if $line =~ /my\s+\$self\s*=/;
+			return 0 if $line =~ /my\s*\(\s*\$self\b/;
+			last if $line =~ /^\s*\}\s*$/;
+		}
+		return 0;
+	};
+
+	is($detect->($class_src,    'generate'), 1, 'generate($class) -> class method');
+	is($detect->($instance_src, 'run'),      0, 'run($self) -> instance method');
+	is($detect->([],            'foo'),      0, 'empty source -> 0');
 };
 
 done_testing();

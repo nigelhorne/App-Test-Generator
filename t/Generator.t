@@ -33,6 +33,7 @@ BEGIN { use_ok('App::Test::Generator') }
 	*_schema_to_lectrotest_generator = \&App::Test::Generator::_schema_to_lectrotest_generator;
 	*_get_semantic_generators = \&App::Test::Generator::_get_semantic_generators;
 	*_get_builtin_properties  = \&App::Test::Generator::_get_builtin_properties;
+	*_is_perl_builtin = \&App::Test::Generator::_is_perl_builtin;
 }
 
 # ------------------------------------------------------------------
@@ -1273,6 +1274,37 @@ subtest 'generate() croaks when called with no arguments' => sub {
 		qr/Usage/,
 		'no-arg generate() croaks with Usage',
 	);
+};
+
+# ==================================================================
+# _is_perl_builtin
+# ==================================================================
+
+subtest '_is_perl_builtin() returns 1 for known builtins' => sub {
+	for my $builtin (qw(abs chomp length push pop shift unshift
+	                    print printf die warn open close)) {
+		is(_is_perl_builtin($builtin), 1, "'$builtin' recognised as builtin");
+	}
+};
+
+subtest '_is_perl_builtin() returns 0 for module names' => sub {
+	for my $mod (qw(Scalar::Util List::Util File::Spec POSIX Carp)) {
+		is(_is_perl_builtin($mod), 0, "'$mod' not a builtin");
+	}
+};
+
+subtest '_is_perl_builtin() is case-insensitive' => sub {
+	is(_is_perl_builtin('ABS'), 1, 'ABS -> 1');
+	is(_is_perl_builtin('Abs'), 1, 'Abs -> 1');
+	is(_is_perl_builtin('abs'), 1, 'abs -> 1');
+};
+
+subtest '_is_perl_builtin() returns 0 for undef' => sub {
+	is(_is_perl_builtin(undef), 0, 'undef -> 0');
+};
+
+subtest '_is_perl_builtin() returns 0 for empty string' => sub {
+	is(_is_perl_builtin(''), 0, 'empty string -> 0');
 };
 
 done_testing();

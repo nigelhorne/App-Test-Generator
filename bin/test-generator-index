@@ -3393,7 +3393,14 @@ HEADER
 				# if not, new_ok() is wrong and we emit a class
 				# method placeholder instead
 				# --------------------------------------------------
-				if($has_new) {
+				# Determine correct calling convention for the stub
+				my $is_class_method = _is_class_method(\@source_lines, $sub_name);
+
+				if($is_class_method) {
+					print $fh "    # NOTE: $sub_name is a class method — call directly.\n";
+					print $fh "    my \$result = ${mod}->${sub_name}(...);\n";
+					print $fh "    # ok(\$result, '$id: add assertion here');\n";
+				} elsif($has_new) {
 					print $fh "    # NOTE: new() called with no arguments as a starting point.\n";
 					print $fh "    # If $mod requires constructor arguments, add them here.\n";
 					print $fh "    my \$obj = new_ok('${mod}');\n";
@@ -3515,7 +3522,13 @@ HEADER
 				# Emit constructor or class method placeholder
 				# depending on whether the module has a new()
 				# --------------------------------------------------
-				if($has_new) {
+				my $is_class_method = _is_class_method(\@source_lines, $sub_name);
+
+				if($is_class_method) {
+					print $fh "# NOTE: $sub_name is a class method — call directly.\n";
+					print $fh "# e.g. my \$result = ${mod}->${sub_name}(...);\n";
+					print $fh "# ok(\$result, '$id: add assertion here');\n\n";
+				} elsif($has_new) {
 					print $fh "# NOTE: new() called with no arguments as a starting point.\n";
 					print $fh "# If $mod requires constructor arguments, add them here.\n";
 					print $fh "# my \$obj = new_ok('${mod}');\n";
@@ -3537,6 +3550,47 @@ HEADER
 	print "Generated mutant test stubs: $filename\n" if $config{verbose};
 
 	return $filename;
+}
+
+# --------------------------------------------------
+# _is_class_method
+#
+# Purpose:    Determine whether a named subroutine
+#             in a source file is a class method
+#             (receives $class as first arg) rather
+#             than an instance method ($self).
+#
+# Entry:      $source_lines - arrayref of source lines
+#             $sub_name     - name of the sub to check
+#
+# Exit:       Returns 1 if class method, 0 otherwise.
+# --------------------------------------------------
+sub _is_class_method {
+	my ($source_lines, $sub_name) = @_;
+
+	# Find the start of the named sub
+	my $in_sub = 0;
+	for my $line (@{$source_lines}) {
+		if(!$in_sub && $line =~ /^\s*sub\s+\Q$sub_name\E\b/) {
+			$in_sub = 1;
+			next;
+		}
+		next unless $in_sub;
+
+		# Look for first argument extraction in the sub body
+		# Class method: my $class = shift  /  my ($class, ...
+		return 1 if $line =~ /my\s+\$class\s*=/;
+		return 1 if $line =~ /my\s*\(\s*\$class\b/;
+
+		# Instance method: my $self = shift  /  my ($self, ...
+		return 0 if $line =~ /my\s+\$self\s*=/;
+		return 0 if $line =~ /my\s*\(\s*\$self\b/;
+
+		# Stop scanning at end of sub
+		last if $line =~ /^\s*\}\s*$/;
+	}
+
+	return 0;
 }
 
 # --------------------------------------------------
