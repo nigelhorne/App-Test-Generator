@@ -549,4 +549,210 @@ subtest '_emit_method_tests() all flags together produce all known blocks' => su
 	like($result, qr/does not die/,    'basic block present');
 };
 
+# ==================================================================
+# Direct _emit_* helper tests — kill BOOL_NEGATE and RETURN_UNDEF
+# survivors on every heredoc return line
+# ==================================================================
+
+{
+	no warnings 'once';
+	*_emit_header           = \&App::Test::Generator::Emitter::Perl::_emit_header;
+	*_emit_method_tests     = \&App::Test::Generator::Emitter::Perl::_emit_method_tests;
+	*_emit_basic_test       = \&App::Test::Generator::Emitter::Perl::_emit_basic_test;
+	*_emit_getter_test      = \&App::Test::Generator::Emitter::Perl::_emit_getter_test;
+	*_emit_setter_test      = \&App::Test::Generator::Emitter::Perl::_emit_setter_test;
+	*_emit_getset_test      = \&App::Test::Generator::Emitter::Perl::_emit_getset_test;
+	*_emit_chaining_test    = \&App::Test::Generator::Emitter::Perl::_emit_chaining_test;
+	*_emit_error_test       = \&App::Test::Generator::Emitter::Perl::_emit_error_test;
+	*_emit_context_test     = \&App::Test::Generator::Emitter::Perl::_emit_context_test;
+	*_emit_object_injection_test = \&App::Test::Generator::Emitter::Perl::_emit_object_injection_test;
+	*_emit_boolean_test     = \&App::Test::Generator::Emitter::Perl::_emit_boolean_test;
+	*_emit_void_test        = \&App::Test::Generator::Emitter::Perl::_emit_void_test;
+}
+
+# Helper to build a minimal emitter
+sub _e {
+	my (%schema_input) = @_;
+	return App::Test::Generator::Emitter::Perl->new(
+		schema  => { m => { input => \%schema_input } },
+		plans   => { m => {} },
+		package => 'My::Module',
+	);
+}
+
+# -- _emit_header --
+
+subtest '_emit_header() returns defined non-empty string' => sub {
+	my $e = _e();
+	my $result = $e->_emit_header();
+	ok(defined $result,       '_emit_header: defined');
+	ok(length($result) > 0,   '_emit_header: non-empty');
+	like($result, qr/use strict/, '_emit_header: contains use strict');
+};
+
+# -- _emit_basic_test --
+
+subtest '_emit_basic_test() returns defined non-empty string' => sub {
+	my $e = _e();
+	my $result = $e->_emit_basic_test('foo');
+	ok(defined $result,      '_emit_basic_test: defined');
+	ok(length($result) > 0,  '_emit_basic_test: non-empty');
+	like($result, qr/foo does not die/, '_emit_basic_test: contains expected text');
+};
+
+# -- _emit_getter_test --
+
+subtest '_emit_getter_test() returns defined non-empty string' => sub {
+	my $e = _e();
+	my $result = $e->_emit_getter_test('bar');
+	ok(defined $result,     '_emit_getter_test: defined');
+	ok(length($result) > 0, '_emit_getter_test: non-empty');
+	like($result, qr/bar returns a value/, '_emit_getter_test: contains expected text');
+};
+
+# -- _emit_setter_test --
+
+subtest '_emit_setter_test() returns defined non-empty string' => sub {
+	my $e = _e();
+	my $result = $e->_emit_setter_test('baz');
+	ok(defined $result,     '_emit_setter_test: defined');
+	ok(length($result) > 0, '_emit_setter_test: non-empty');
+	like($result, qr/baz accepts input/, '_emit_setter_test: contains expected text');
+};
+
+# -- _emit_getset_test -- COND_INV killers (lines 328 and 339)
+
+subtest '_emit_getset_test() object type: returns defined non-empty string with isa_ok' => sub {
+	my $e = App::Test::Generator::Emitter::Perl->new(
+		schema  => { m => { input => { obj => { type => 'object' } } } },
+		plans   => { m => {} },
+		package => 'My::Module',
+	);
+	my $result = $e->_emit_getset_test('m');
+	ok(defined $result,     'object: defined');
+	ok(length($result) > 0, 'object: non-empty');
+	like($result, qr/isa_ok/, 'object: contains isa_ok');
+};
+
+subtest '_emit_getset_test() non-object type: returns defined non-empty string without isa_ok' => sub {
+	my $e = App::Test::Generator::Emitter::Perl->new(
+		schema  => { m => { input => { x => { type => 'string' } } } },
+		plans   => { m => {} },
+		package => 'My::Module',
+	);
+	my $result = $e->_emit_getset_test('m');
+	ok(defined $result,       'non-object: defined');
+	ok(length($result) > 0,   'non-object: non-empty');
+	unlike($result, qr/isa_ok/, 'non-object: does not contain isa_ok');
+};
+
+subtest '_emit_getset_test() boolean type: returns defined non-empty string with boolean text' => sub {
+	my $e = App::Test::Generator::Emitter::Perl->new(
+		schema  => { m => { input => { flag => { type => 'boolean' } } } },
+		plans   => { m => {} },
+		package => 'My::Module',
+	);
+	my $result = $e->_emit_getset_test('m');
+	ok(defined $result,        'boolean: defined');
+	ok(length($result) > 0,    'boolean: non-empty');
+	like($result, qr/boolean/, 'boolean: contains boolean text');
+};
+
+subtest '_emit_getset_test() non-boolean type: returns defined non-empty string with get/set' => sub {
+	my $e = App::Test::Generator::Emitter::Perl->new(
+		schema  => { m => { input => { x => { type => 'integer' } } } },
+		plans   => { m => {} },
+		package => 'My::Module',
+	);
+	my $result = $e->_emit_getset_test('m');
+	ok(defined $result,           'non-boolean: defined');
+	ok(length($result) > 0,       'non-boolean: non-empty');
+	like($result, qr/get\/set works/, 'non-boolean: contains get/set works');
+};
+
+subtest '_emit_getset_test() no input type: falls through to string round-trip' => sub {
+	my $e = App::Test::Generator::Emitter::Perl->new(
+		schema  => { m => { input => {} } },
+		plans   => { m => {} },
+		package => 'My::Module',
+	);
+	my $result = $e->_emit_getset_test('m');
+	ok(defined $result,     'no type: defined');
+	ok(length($result) > 0, 'no type: non-empty');
+};
+
+# -- _emit_chaining_test --
+
+subtest '_emit_chaining_test() returns defined non-empty string' => sub {
+	my $e = _e();
+	my $result = $e->_emit_chaining_test('chain_me');
+	ok(defined $result,     '_emit_chaining_test: defined');
+	ok(length($result) > 0, '_emit_chaining_test: non-empty');
+	like($result, qr/chain_me returns self/, '_emit_chaining_test: contains expected text');
+};
+
+# -- _emit_error_test --
+
+subtest '_emit_error_test() returns defined non-empty string' => sub {
+	my $e = _e();
+	my $result = $e->_emit_error_test('validate');
+	ok(defined $result,     '_emit_error_test: defined');
+	ok(length($result) > 0, '_emit_error_test: non-empty');
+	like($result, qr/validate handles invalid/, '_emit_error_test: contains expected text');
+};
+
+# -- _emit_context_test --
+
+subtest '_emit_context_test() returns defined non-empty string' => sub {
+	my $e = _e();
+	my $result = $e->_emit_context_test('ctx');
+	ok(defined $result,     '_emit_context_test: defined');
+	ok(length($result) > 0, '_emit_context_test: non-empty');
+	like($result, qr/ctx survives in scalar context/, '_emit_context_test: contains expected text');
+};
+
+# -- _emit_object_injection_test --
+
+subtest '_emit_object_injection_test() returns defined non-empty string' => sub {
+	my $e = _e();
+	my $result = $e->_emit_object_injection_test('inject');
+	ok(defined $result,     '_emit_object_injection_test: defined');
+	ok(length($result) > 0, '_emit_object_injection_test: non-empty');
+	like($result, qr/inject stores injected object/, '_emit_object_injection_test: contains expected text');
+};
+
+# -- _emit_boolean_test --
+
+subtest '_emit_boolean_test() returns defined non-empty string' => sub {
+	my $e = _e();
+	my $result = $e->_emit_boolean_test('is_ok');
+	ok(defined $result,     '_emit_boolean_test: defined');
+	ok(length($result) > 0, '_emit_boolean_test: non-empty');
+	like($result, qr/is_ok returns a defined value/, '_emit_boolean_test: contains expected text');
+};
+
+# -- _emit_void_test --
+
+subtest '_emit_void_test() returns defined non-empty string' => sub {
+	my $e = _e();
+	my $result = $e->_emit_void_test('do_thing');
+	ok(defined $result,     '_emit_void_test: defined');
+	ok(length($result) > 0, '_emit_void_test: non-empty');
+	like($result, qr/do_thing does not die/, '_emit_void_test: contains expected text');
+};
+
+# -- _emit_method_tests dispatch --
+
+subtest '_emit_method_tests() with no flags returns only section header' => sub {
+	my $e = App::Test::Generator::Emitter::Perl->new(
+		schema  => { m => { input => {} } },
+		plans   => { m => {} },
+		package => 'My::Module',
+	);
+	my $result = $e->_emit_method_tests('m');
+	ok(defined $result,        '_emit_method_tests empty plan: defined');
+	ok(length($result) > 0,    '_emit_method_tests empty plan: non-empty');
+	like($result, qr/Tests for m/, 'section header present');
+};
+
 done_testing();
