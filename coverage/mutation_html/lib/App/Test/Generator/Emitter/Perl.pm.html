@@ -241,8 +241,8 @@ pre details.mutant-details ul {
 <body>
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Emitter/Perl.pm</h1>
-<div class="nav"><a href="../Mutator.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
- <a href="../SchemaExtractor.pm.html">Next ➡</a></div><div class='summary'>
+<div class="nav"><a href="../Analyzer/SideEffect.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="../LCSAJ.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
 TER2 (Branch): 100.00%<br>
@@ -617,36 +617,9 @@ Approximate LCSAJ segments: 33<br>
 </span><span class="">  325: 	my $type    = ($param &amp;&amp; $schema-&gt;{input}{$param}{type}) // &#39;&#39;;
 </span><span class="">  326: 
 </span><span class="">  327: 	# Object injection round-trip
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  328: 	if($type eq $TYPE_OBJECT) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_328_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  329: 		return &lt;&lt;&quot;END_TEST&quot;;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
-					<ul>
-				<li><b>BOOL_NEGATE_329_3: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boolean branch test suggestion
-ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>RETURN_UNDEF_329_3: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Return value assertion
-is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  330: {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  328: 	if($type eq $TYPE_OBJECT) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  329: 		return &lt;&lt;&quot;END_TEST&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  330: {
 </span><span class="">  331: 	my \$mock = bless {}, &#39;Test::MockObject&#39;;
 </span><span class="">  332: 	\$obj-&gt;$method(\$mock);
 </span><span class="">  333: 	isa_ok(\$obj-&gt;$method(), ref(\$mock), &#39;$method get/set works&#39;);
@@ -655,36 +628,9 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  336: 	}
 </span><span class="">  337: 
 </span><span class="">  338: 	# Boolean round-trip
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">339 → 339 → 351</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">339 → 339 → 0</span></span>  339: 	if($type eq $TYPE_BOOLEAN) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_339_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  340: 		return &lt;&lt;&quot;END_TEST&quot;;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
-					<ul>
-				<li><b>BOOL_NEGATE_340_3: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boolean branch test suggestion
-ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>RETURN_UNDEF_340_3: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Return value assertion
-is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  341: {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">339 → 339 → 351</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">339 → 339 → 0</span></span>  339: 	if($type eq $TYPE_BOOLEAN) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  340: 		return &lt;&lt;&quot;END_TEST&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  341: {
 </span><span class="">  342: 	\$obj-&gt;$method(1);
 </span><span class="">  343: 	ok(\$obj-&gt;$method(), &#39;$method get/set boolean true works&#39;);
 </span><span class="">  344: 	\$obj-&gt;$method(0);
@@ -694,29 +640,8 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  348: 	}
 </span><span class="">  349: 
 </span><span class="">  350: 	# Default string round-trip
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">351 → 351 → 0</span></span>  351: 	return &lt;&lt;&quot;END_TEST&quot;;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
-					<ul>
-				<li><b>BOOL_NEGATE_351_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boolean branch test suggestion
-ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>RETURN_UNDEF_351_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Return value assertion
-is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  352: {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">351 → 351 → 0</span></span>  351: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  352: {
 </span><span class="">  353: 	\$obj-&gt;$method(&#39;value&#39;);
 </span><span class="">  354: 	is(\$obj-&gt;$method(), &#39;value&#39;, &#39;$method get/set works&#39;);
 </span><span class="">  355: }
@@ -736,29 +661,8 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  369: sub _emit_chaining_test {
 </span><span class="">  370: 	my ($self, $method) = @_;
 </span><span class="">  371: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  372: 	return &lt;&lt;&quot;END_TEST&quot;;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
-					<ul>
-				<li><b>BOOL_NEGATE_372_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boolean branch test suggestion
-ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>RETURN_UNDEF_372_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Return value assertion
-is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  373: {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  372: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  373: {
 </span><span class="">  374: 	my \$ret = \$obj-&gt;$method();
 </span><span class="">  375: 	isa_ok(\$ret, ref(\$obj), &#39;$method returns self for chaining&#39;);
 </span><span class="">  376: }
@@ -779,29 +683,8 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  391: sub _emit_error_test {
 </span><span class="">  392: 	my ($self, $method) = @_;
 </span><span class="">  393: 
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  394: 	return &lt;&lt;&quot;END_TEST&quot;;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
-					<ul>
-				<li><b>BOOL_NEGATE_394_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boolean branch test suggestion
-ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>RETURN_UNDEF_394_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Return value assertion
-is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  395: {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  394: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  395: {
 </span><span class="">  396: 	my \$result = eval { \$obj-&gt;$method(undef) };
 </span><span class="">  397: 	ok(!\$result || \$@, &#39;$method handles invalid input&#39;);
 </span><span class="">  398: }
@@ -825,29 +708,8 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  416: sub _emit_context_test {
 </span><span class="">  417: 	my ($self, $method) = @_;
 </span><span class="">  418: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  419: 	return &lt;&lt;&quot;END_TEST&quot;;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
-					<ul>
-				<li><b>BOOL_NEGATE_419_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boolean branch test suggestion
-ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>RETURN_UNDEF_419_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Return value assertion
-is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  420: {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  419: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  420: {
 </span><span class="">  421: 	my \$scalar = eval { \$obj-&gt;$method() };
 </span><span class="">  422: 	ok(!\$@, &#39;$method survives in scalar context&#39;);
 </span><span class="">  423: 
@@ -871,29 +733,8 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  441: sub _emit_object_injection_test {
 </span><span class="">  442: 	my ($self, $method) = @_;
 </span><span class="">  443: 
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  444: 	return &lt;&lt;&quot;END_TEST&quot;;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
-					<ul>
-				<li><b>BOOL_NEGATE_444_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boolean branch test suggestion
-ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>RETURN_UNDEF_444_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Return value assertion
-is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  445: {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  444: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  445: {
 </span><span class="">  446: 	my \$mock = bless {}, &#39;Mock::Object&#39;;
 </span><span class="">  447: 	\$obj-&gt;$method(\$mock);
 </span><span class="">  448: 	isa_ok(\$obj-&gt;$method(), &#39;Mock::Object&#39;,
@@ -919,29 +760,8 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  468: sub _emit_boolean_test {
 </span><span class="">  469: 	my ($self, $method) = @_;
 </span><span class="">  470: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  471: 	return &lt;&lt;&quot;END_TEST&quot;;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
-					<ul>
-				<li><b>BOOL_NEGATE_471_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boolean branch test suggestion
-ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>RETURN_UNDEF_471_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Return value assertion
-is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  472: {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  471: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  472: {
 </span><span class="">  473: 	my \$result = \$obj-&gt;$method();
 </span><span class="">  474: 	ok(defined \$result,  &#39;$method returns a defined value&#39;);
 </span><span class="">  475: 	ok(!ref \$result,     &#39;$method returns a scalar&#39;);
@@ -953,9 +773,9 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  481: # --------------------------------------------------
 </span><span class="">  482: # _emit_void_test
 </span><span class="">  483: #
-</span><span class="">  484: # Purpose:    Emit a test that verifies the method
-</span><span class="">  485: #             does not return a meaningful value,
-</span><span class="">  486: #             consistent with a void return type.
+</span><span class="">  484: # Emit a test that verifies the method
+</span><span class="">  485: #     does not return a meaningful value,
+</span><span class="">  486: #     consistent with a void return type.
 </span><span class="">  487: #
 </span><span class="">  488: # Entry:      $method - method name string.
 </span><span class="">  489: # Exit:       Returns a string of Perl test code.
@@ -964,32 +784,11 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  492: sub _emit_void_test {
 </span><span class="">  493: 	my ($self, $method) = @_;
 </span><span class="">  494: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  495: 	return &lt;&lt;&quot;END_TEST&quot;;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
-					<ul>
-				<li><b>BOOL_NEGATE_495_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boolean branch test suggestion
-ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>RETURN_UNDEF_495_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Return value assertion
-is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  496: {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  495: 	return &lt;&lt;&quot;END_TEST&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  496: {
 </span><span class="">  497: 	my \$result = eval { \$obj-&gt;$method() };
-</span><span class="">  498: 	ok(!\$@,         &#39;$method does not die&#39;);
-</span><span class="">  499: 	ok(!defined \$result || 1, &#39;$method void return noted&#39;);
+</span><span class="">  498: 	ok(!\$@,          &#39;$method does not die&#39;);
+</span><span class="">  499: 	ok(!defined \$result, &#39;$method returns nothing (void)&#39;);
 </span><span class="">  500: }
 </span><span class="">  501: END_TEST
 </span><span class="">  502: }
