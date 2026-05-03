@@ -1,5 +1,5 @@
 ---
-# Create https://nigelhorne.github.io/App-Test-Generator/coverage/
+# Create test dashboard on GitHub Pages, e.g. https://nigelhorne.github.io/$module_name/coverage/
 name: Test Dashboard
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
         perl: ["5.40"]
     steps:
       # Checkout repository
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -87,13 +87,16 @@ jobs:
           echo "SNAPSHOT_TIMESTAMP=$(date +%Y-%m-%d)" >> $GITHUB_ENV
           echo "SNAPSHOT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
+      - name: Install App::Test::Generator
+        run: cpanm -iqn App::Test::Generator
+
       - name: Generate dashboard
         env:
           AUTOMATED_TESTING: 1
           NO_NETWORK_TESTING: 1
           NONINTERACTIVE_TESTING: 1
         run: |
-          bin/generate-test-dashboard
+          generate-test-dashboard
 
       - name: Save updated mutation results
         run: |
