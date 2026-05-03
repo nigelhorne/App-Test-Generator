@@ -241,8 +241,8 @@ pre details.mutant-details ul {
 <body>
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Planner/Mock.pm</h1>
-<div class="nav"><a href="../LCSAJ/Coverage.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
- <a href="../Sample/Module.pm.html">Next ➡</a></div><div class='summary'>
+<div class="nav"><a href="../Planner.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="../Template.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
 TER2 (Branch): 100.00%<br>
@@ -307,11 +307,11 @@ Approximate LCSAJ segments: 7<br>
 </span><span class="">   15: Readonly my $MOCK_SYSTEM     =&gt; &#39;mock_system&#39;;
 </span><span class="">   16: Readonly my $MOCK_CAPTURE_IO =&gt; &#39;capture_io&#39;;
 </span><span class="">   17: 
-</span><span class="">   18: our $VERSION = &#39;0.33&#39;;
+</span><span class="">   18: our $VERSION = &#39;0.34&#39;;
 </span><span class="">   19: 
 </span><span class="">   20: =head1 VERSION
 </span><span class="">   21: 
-</span><span class="">   22: Version 0.33
+</span><span class="">   22: Version 0.34
 </span><span class="">   23: 
 </span><span class="">   24: =head1 DESCRIPTION
 </span><span class="">   25: 
@@ -428,14 +428,8 @@ Approximate LCSAJ segments: 7<br>
 </span><span class="">  136: 		# TODO: consider supporting multiple strategies per
 </span><span class="">  137: 		# method as an arrayref in a future version.
 </span><span class="">  138: 		# --------------------------------------------------
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  139: 		if($effects-&gt;{calls_external}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_139_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  140: 			$mock_plan{$method} = $MOCK_SYSTEM;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  139: 		if($effects-&gt;{calls_external}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  140: 			$mock_plan{$method} = $MOCK_SYSTEM;
 </span><span class="">  141: 		} elsif($effects-&gt;{performs_io}) {
 </span><span class="">  142: 			$mock_plan{$method} = $MOCK_CAPTURE_IO;
 </span><span class="">  143: 		}

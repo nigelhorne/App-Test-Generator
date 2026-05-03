@@ -241,7 +241,7 @@ pre details.mutant-details ul {
 <body>
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Sample/Module.pm</h1>
-<div class="nav"><a href="../Planner/Mock.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+<div class="nav"><a href="../../../../../../index.html">Index</a>
  <a href="../../../../Devel/App/Test/Generator/LCSAJ/Runtime.pm.html">Next ➡</a></div>
 		<div class="legend">
 			<h3>Mutant Testing Legend</h3>
@@ -257,7 +257,7 @@ pre details.mutant-details ul {
 </span><span class="">    5: use Carp    qw(croak);
 </span><span class="">    6: use Readonly;
 </span><span class="">    7: 
-</span><span class="">    8: our $VERSION = &#39;0.33&#39;;
+</span><span class="">    8: our $VERSION = &#39;0.34&#39;;
 </span><span class="">    9: 
 </span><span class="">   10: # --------------------------------------------------
 </span><span class="">   11: # Validation constants &acirc;&#128;&#148; centralised so that changes
@@ -278,7 +278,7 @@ pre details.mutant-details ul {
 </span><span class="">   26: 
 </span><span class="">   27: =head1 VERSION
 </span><span class="">   28: 
-</span><span class="">   29: Version 0.33
+</span><span class="">   29: Version 0.34
 </span><span class="">   30: 
 </span><span class="">   31: =head1 SYNOPSIS
 </span><span class="">   32: 
@@ -428,8 +428,29 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  118: 	croak &#39;Invalid email format&#39;
 </span><span class="">  119: 		unless $email =~ /^[^@]+\@[^@]+\.[^@]+$/;
 </span><span class="">  120: 
-</span><span class="">  121: 	return 1;
-</span><span class="">  122: }
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  121: 	return 1;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
+					<ul>
+				<li><b>BOOL_NEGATE_121_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boolean branch test suggestion
+ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>RETURN_UNDEF_121_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Return value assertion
+is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  122: }
 </span><span class="">  123: 
 </span><span class="">  124: =head2 calculate_age
 </span><span class="">  125: 
@@ -533,8 +554,29 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 								</div>
 							</li></ul></details>
 <span class="">  172: 
-</span><span class="">  173: 	return $current_year - $birth_year;
-</span><span class="">  174: }
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  173: 	return $current_year - $birth_year;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
+					<ul>
+				<li><b>BOOL_NEGATE_173_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boolean branch test suggestion
+ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>RETURN_UNDEF_173_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Return value assertion
+is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  174: }
 </span><span class="">  175: 
 </span><span class="">  176: =head2 process_names
 </span><span class="">  177: 
@@ -613,8 +655,29 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 							</li></ul></details>
 <span class="">  222: 	}
 </span><span class="">  223: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 224 → 224 → 0</span></span>  224: 	return $count;
-</span><span class="">  225: }
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 224 → 224 → 0</span></span>  224: 	return $count;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
+					<ul>
+				<li><b>BOOL_NEGATE_224_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boolean branch test suggestion
+ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>RETURN_UNDEF_224_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Return value assertion
+is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  225: }
 </span><span class="">  226: 
 </span><span class="">  227: =head2 set_config
 </span><span class="">  228: 
@@ -660,8 +723,29 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  268: 	# Store the config hashref directly &acirc;&#128;&#148; callers own the data
 </span><span class="">  269: 	$self-&gt;{config} = $config;
 </span><span class="">  270: 
-</span><span class="">  271: 	return 1;
-</span><span class="">  272: }
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  271: 	return 1;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
+					<ul>
+				<li><b>BOOL_NEGATE_271_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boolean branch test suggestion
+ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>RETURN_UNDEF_271_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Return value assertion
+is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  272: }
 </span><span class="">  273: 
 </span><span class="">  274: =head2 greet
 </span><span class="">  275: 
@@ -772,8 +856,29 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  322: 	# Apply default greeting when caller does not supply one
 </span><span class="">  323: 	$greeting ||= &#39;Hello&#39;;
 </span><span class="">  324: 
-</span><span class="">  325: 	return &quot;$greeting, $name!&quot;;
-</span><span class="">  326: }
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  325: 	return &quot;$greeting, $name!&quot;;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
+					<ul>
+				<li><b>BOOL_NEGATE_325_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boolean branch test suggestion
+ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>RETURN_UNDEF_325_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Return value assertion
+is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  326: }
 </span><span class="">  327: 
 </span><span class="">  328: =head2 check_flag
 </span><span class="">  329: 
@@ -815,8 +920,29 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  365: 	my ($self, $enabled) = @_;
 </span><span class="">  366: 
 </span><span class="">  367: 	# Normalise any truthy/falsy value to a strict 1 or 0
-</span><span class="">  368: 	return $enabled ? 1 : 0;
-</span><span class="">  369: }
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  368: 	return $enabled ? 1 : 0;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
+					<ul>
+				<li><b>BOOL_NEGATE_368_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boolean branch test suggestion
+ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>RETURN_UNDEF_368_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Return value assertion
+is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  369: }
 </span><span class="">  370: 
 </span><span class="">  371: =head2 validate_score
 </span><span class="">  372: 
@@ -870,31 +996,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 6, Killed: 0, Survived: 6)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_418_17_>: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_418_17_<: Numeric boundary flip >= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_418_17_<=: Numeric boundary flip >= to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_418_41_<: Numeric boundary flip <= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_418_41_<: Numeric boundary flip <= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -918,13 +1020,37 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
+							</li><li><b>NUM_BOUNDARY_418_17_>: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_418_17_<: Numeric boundary flip >= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_418_17_<=: Numeric boundary flip >= to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
 							</li></ul></details>
 <span class="">  419: 
 </span><span class="">  420: 	# Compare against the pass threshold constant
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  421: 	return $score &gt;= $PASS_THRESHOLD ? &#39;Pass&#39; : &#39;Fail&#39;;
+</span><span class="survived-3 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  421: 	return $score &gt;= $PASS_THRESHOLD ? &#39;Pass&#39; : &#39;Fail&#39;;
 </span>
 					<details class="mutant-details">
-					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
+					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
 					<ul>
 				<li><b>NUM_BOUNDARY_421_16_>: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
 
@@ -950,6 +1076,22 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
+							</li><li><b>BOOL_NEGATE_421_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boolean branch test suggestion
+ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>RETURN_UNDEF_421_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Return value assertion
+is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
+</pre>
+								</div>
 							</li></ul></details>
 <span class="">  422: }
 </span><span class="">  423: 
@@ -968,8 +1110,29 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  436: 	# flags low-confidence schemas when no validation logic is present.
 </span><span class="">  437: 	# Callers passing non-numeric values will trigger a Perl warning;
 </span><span class="">  438: 	# this is expected behaviour for this test fixture.
-</span><span class="">  439: 	return $thing * 2;
-</span><span class="">  440: }
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  439: 	return $thing * 2;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
+					<ul>
+				<li><b>BOOL_NEGATE_439_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boolean branch test suggestion
+ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>RETURN_UNDEF_439_2: Replace return expression with undef</b><br>LOW: Mutation survived but impact may be minor
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Return value assertion
+is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  440: }
 </span><span class="">  441: 
 </span><span class="">  442: =head1 AUTHOR
 </span><span class="">  443: 

@@ -241,8 +241,8 @@ pre details.mutant-details ul {
 <body>
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/LCSAJ/Coverage.pm</h1>
-<div class="nav"><a href="../../../../../../index.html">Index</a>
- <a href="../Planner/Mock.pm.html">Next ➡</a></div><div class='summary'>
+<div class="nav"><a href="../LCSAJ.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="../Model/Method.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
 TER2 (Branch): 83.33%<br>
@@ -299,7 +299,7 @@ Approximate LCSAJ segments: 13<br>
 </span><span class="">    7: use Carp qw(croak);
 </span><span class="">    8: use JSON::MaybeXS;
 </span><span class="">    9: 
-</span><span class="">   10: our $VERSION = &#39;0.33&#39;;
+</span><span class="">   10: our $VERSION = &#39;0.34&#39;;
 </span><span class="">   11: 
 </span><span class="">   12: =head1 NAME
 </span><span class="">   13: 
@@ -307,7 +307,7 @@ Approximate LCSAJ segments: 13<br>
 </span><span class="">   15: 
 </span><span class="">   16: =head1 VERSION
 </span><span class="">   17: 
-</span><span class="">   18: Version 0.33
+</span><span class="">   18: Version 0.34
 </span><span class="">   19: 
 </span><span class="">   20: =head1 DESCRIPTION
 </span><span class="">   21: 
@@ -401,14 +401,8 @@ Approximate LCSAJ segments: 13<br>
 </span><span class="">  109: 		my $covered = 0;
 </span><span class="">  110: 
 </span><span class="">  111: 		for my $line ($path-&gt;{start} .. $path-&gt;{end}) {
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  112: 			if($hits-&gt;{$line}) {
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_112_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  113: 				$covered = 1;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  112: 			if($hits-&gt;{$line}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  113: 				$covered = 1;
 </span><span class="">  114: 				last;
 </span><span class="">  115: 			}
 </span><span class="">  116: 		}
