@@ -87,8 +87,17 @@ jobs:
           echo "SNAPSHOT_TIMESTAMP=$(date +%Y-%m-%d)" >> $GITHUB_ENV
           echo "SNAPSHOT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
+      - name: Add local bin to PATH
+        run: echo "$(pwd)/local/bin" >> $GITHUB_PATH
+
       - name: Install App::Test::Generator
-        run: cpanm -iqn App::Test::Generator
+        run: |
+          if [ "${{ github.repository }}" = "nigelhorne/App-Test-Generator" ]; then
+            echo "Running on ATG itself — using repo version"
+            perl Makefile.PL && make install
+          else
+            cpanm -iqn App::Test::Generator
+          fi
 
       - name: Generate dashboard
         env:
@@ -96,7 +105,11 @@ jobs:
           NO_NETWORK_TESTING: 1
           NONINTERACTIVE_TESTING: 1
         run: |
-          generate-test-dashboard
+          if [ "${{ github.repository }}" = "nigelhorne/App-Test-Generator" ]; then
+            bin/generate-test-dashboard
+          else
+            generate-test-dashboard
+          fi
 
       - name: Save updated mutation results
         run: |
