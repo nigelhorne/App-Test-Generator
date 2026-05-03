@@ -2,17 +2,21 @@
 
 use strict;
 use warnings;
+
 use Test::Most;
-use File::Temp qw(tempdir);
+use File::Temp qw(tempdir tempfile);
 use File::Spec;
-use JSON::MaybeXS qw(decode_json);
+use JSON::MaybeXS qw(encode_json decode_json);
 
 # Test the LCSAJ path-generation and serialisation logic in
 # App::Test::Generator::LCSAJ.  These are white-box unit tests
 # that exercise generate() with synthetic source modules written
 # to temporary files.
 
-BEGIN { use_ok('App::Test::Generator::LCSAJ') }
+BEGIN {
+	use_ok('App::Test::Generator::LCSAJ');
+	use_ok('App::Test::Generator::LCSAJ::Coverage');
+}
 
 # ---------------------------------------------------------------
 # Helper: write a temporary .pm file containing the given source,
@@ -694,6 +698,90 @@ subtest '_save_lcsaj() strips lib/ prefix from path for subdirectory naming' => 
 	# Should create out/My/Module.pm.lcsaj/Module.pm.lcsaj.json
 	my $expected_dir = File::Spec->catdir($out, 'My', 'Module.pm.lcsaj');
 	ok(-d $expected_dir, 'subdirectory mirrors module path under lib/');
+};
+
+subtest 'Coverage::merge() marks covered path when hit line in range' => sub {
+	my $tmpdir = tempdir(CLEANUP => 1);
+
+	# LCSAJ path covering lines 10-15
+	my $lcsaj_file = File::Spec->catfile($tmpdir, 'test.lcsaj.json');
+	open my $fh1, '>', $lcsaj_file or die $!;
+	print $fh1 encode_json([{ start => 10, end => 15, target => 20 }]);
+	close $fh1;
+
+	# Runtime hit on line 12 — within range
+	my $hits_file = File::Spec->catfile($tmpdir, 'test.hits.json');
+	open my $fh2, '>', $hits_file or die $!;
+	print $fh2 encode_json({ '12' => 3 });
+	close $fh2;
+
+	my $out_file = File::Spec->catfile($tmpdir, 'test.covered.json');
+	lives_ok(
+		sub {
+			App::Test::Generator::LCSAJ::Coverage::merge(
+				$lcsaj_file, $hits_file, $out_file
+			)
+		},
+		'merge() lives',
+	);
+	ok(-f $out_file, 'output file created');
+	open my $fh3, '<', $out_file or die $!;
+	my $result = decode_json(do { local $/; <$fh3> });
+	close $fh3;
+	is($result->[0]{covered}, 1, 'covered=1 when hit line in range');
+};
+
+subtest 'Coverage::merge() marks uncovered path when no hit in range' => sub {
+	my $tmpdir = tempdir(CLEANUP => 1);
+
+	my $lcsaj_file = File::Spec->catfile($tmpdir, 'test.lcsaj.json');
+	open my $fh1, '>', $lcsaj_file or die $!;
+	print $fh1 encode_json([{ start => 10, end => 15, target => 20 }]);
+	close $fh1;
+
+	# Hit on line 99 — outside range
+	my $hits_file = File::Spec->catfile($tmpdir, 'test.hits.json');
+	open my $fh2, '>', $hits_file or die $!;
+	print $fh2 encode_json({ '99' => 1 });
+	close $fh2;
+
+	my $out_file = File::Spec->catfile($tmpdir, 'test.covered.json');
+	App::Test::Generator::LCSAJ::Coverage::merge(
+		$lcsaj_file, $hits_file, $out_file
+	);
+	open my $fh3, '<', $out_file or die $!;
+	my $result = decode_json(do { local $/; <$fh3> });
+	close $fh3;
+	is($result->[0]{covered}, 0, 'covered=0 when no hit in range');
+};
+
+subtest 'Coverage::merge() covered is exactly 0 or 1, not undef' => sub {
+	my $tmpdir = tempdir(CLEANUP => 1);
+
+	my $lcsaj_file = File::Spec->catfile($tmpdir, 'test.lcsaj.json');
+	open my $fh1, '>', $lcsaj_file or die $!;
+	print $fh1 encode_json([
+		{ start => 5, end => 8,  target => 10 },
+		{ start => 9, end => 12, target => 15 },
+	]);
+	close $fh1;
+
+	my $hits_file = File::Spec->catfile($tmpdir, 'test.hits.json');
+	open my $fh2, '>', $hits_file or die $!;
+	print $fh2 encode_json({ '6' => 1 });	# only first path hit
+	close $fh2;
+
+	my $out_file = File::Spec->catfile($tmpdir, 'test.covered.json');
+	App::Test::Generator::LCSAJ::Coverage::merge(
+		$lcsaj_file, $hits_file, $out_file
+	);
+	open my $fh3, '<', $out_file or die $!;
+	my $result = decode_json(do { local $/; <$fh3> });
+	close $fh3;
+	ok(defined $result->[0]{covered}, 'covered key defined for hit path');
+	ok(defined $result->[1]{covered}, 'covered key defined for unhit path');
+	is($result->[0]{covered}, 1, 'hit path: covered is exactly 1');
+	is($result->[1]{covered}, 0, 'unhit path: covered is exactly 0');
 };
 
 done_testing();

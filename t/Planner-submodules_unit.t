@@ -14,6 +14,7 @@ BEGIN {
 	use_ok('App::Test::Generator::Planner::Fixture');
 	use_ok('App::Test::Generator::Planner::Grouping');
 	use_ok('App::Test::Generator::Planner::Isolation');
+	use_ok('App::Test::Generator::Planner::Mock');
 }
 
 # ==================================================================
@@ -344,6 +345,58 @@ subtest 'Isolation::plan() only plans methods present in strategy' => sub {
 	my $result = $p->plan($schema, { in_strategy => 1 });
 	ok( exists $result->{in_strategy},  'in_strategy present');
 	ok(!exists $result->{not_strategy}, 'not_strategy absent');
+};
+
+subtest 'Mock::plan() returns a hashref' => sub {
+	my $p = App::Test::Generator::Planner::Mock->new;
+	my $result = $p->plan({});
+	is(ref($result), 'HASH', 'plan() returns a hashref not undef');
+};
+
+subtest 'Mock::plan() assigns mock_system for calls_external' => sub {
+	my $p = App::Test::Generator::Planner::Mock->new;
+	my $result = $p->plan({
+		my_method => { _analysis => { side_effects => { calls_external => 1 } } }
+	});
+	is($result->{my_method}, 'mock_system',
+		'calls_external -> exactly mock_system');
+};
+
+subtest 'Mock::plan() assigns capture_io for performs_io' => sub {
+	my $p = App::Test::Generator::Planner::Mock->new;
+	my $result = $p->plan({
+		my_method => { _analysis => { side_effects => { performs_io => 1 } } }
+	});
+	is($result->{my_method}, 'capture_io', 'performs_io -> exactly capture_io');
+};
+
+subtest 'Mock::plan() mock_system takes precedence over capture_io' => sub {
+	my $p = App::Test::Generator::Planner::Mock->new;
+	my $result = $p->plan({
+		my_method => { _analysis => { side_effects => {
+			calls_external => 1,
+			performs_io    => 1,
+		} } }
+	});
+	is($result->{my_method}, 'mock_system',
+		'mock_system takes precedence when both present');
+};
+
+subtest 'Mock::plan() omits pure methods from result' => sub {
+	my $p = App::Test::Generator::Planner::Mock->new;
+	my $result = $p->plan({
+		pure_method => { _analysis => { side_effects => {} } }
+	});
+	ok(!exists $result->{pure_method}, 'pure method omitted from plan');
+};
+
+subtest 'Mock::plan() return value is defined for non-empty schema' => sub {
+	my $p = App::Test::Generator::Planner::Mock->new;
+	my $result = $p->plan({
+		m => { _analysis => { side_effects => { calls_external => 1 } } }
+	});
+	ok(defined $result, 'return value is defined');
+	is(ref($result), 'HASH', 'return value is a hashref not undef');
 };
 
 done_testing();
