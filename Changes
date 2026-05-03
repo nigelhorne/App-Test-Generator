@@ -1,5 +1,49 @@
 Revision history for App-Test-Generator
 
+0.34
+
+    [Bug fixes]
+    - Emitter::Perl: _emit_void_test() generated ok(!defined $result || 1, ...)
+      which is a tautology and always passes regardless of return value.
+      Fixed to ok(!defined $result, '$method returns nothing (void)').
+    - Generator: schema files named after Perl builtins (e.g. abs.yml) caused
+      generated tests to emit "use abs" which fails to compile.  Added
+      _is_perl_builtin() guard to prevent builtin names being used as module
+      names in use_ok() calls.
+    - bin/test-generator-index: mutant stub generator incorrectly called
+      new_ok() for class methods such as App::Test::Generator::generate().
+      Added _is_class_method() helper to detect $class vs $self and emit
+      the correct calling convention in generated stubs.
+    - bin/test-generator-index: CPAN Testers failure table showed all
+      expected NA rows for Perl < 5.036 as noise.  Rows below the detected
+      Perl version cliff are now omitted with a count notice, leaving only
+      unexpected failures visible.
+    - CoverageGuidedFuzzer: _load_json_module() used require $mod where $mod
+      contained '::' which Perl does not convert to path separators for
+      variable require.  Fixed with s{::}{/}g conversion before require.
+
+    [Enhancements]
+    - Comprehensive test suite added across all modules:
+      - Function tests (white-box) for all private helpers
+      - Black-box unit tests for every public method against POD API spec
+      - Integration tests covering 10 end-to-end pipelines
+      - Edge case / destructive / boundary-condition tests
+      - Extended tests targeting surviving mutants and coverage gaps
+    - mutate.yml and dashboard.yml are now portable to any CPAN module.
+      Copying both files to another module's .github/workflows/ directory
+      will produce a working mutation test run and coverage dashboard
+      without modification.  ATG-specific behaviour is gated on
+      github.repository = nigelhorne/App-Test-Generator.
+    - dashboard.yml: added missing local/bin PATH setup so installed
+      ATG scripts are found correctly on non-ATG modules.
+    - mutate.yml: Sample/Module.pm excluded from mutation scoring to
+      remove 30 artificial survivors from the overall score.
+    - Emitter::Perl mutation score improved from 37.5% to 100% through
+      targeted direct assertions on all _emit_*() helper return values.
+    - t/test-generator-index.t: 33 new tests for detect_perl_version_cliff(),
+      parse_version(), extract_perl_versions(), make_key(),
+      confidence_score(), and perldelta_url().
+
 0.33	Tue Apr 21 16:09:24 EDT 2026
 
     - Fixed NumericBoundary mutator incorrectly identifying the '<' in
