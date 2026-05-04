@@ -4,9 +4,10 @@ use strict;
 use warnings;
 
 use Test::Needs {
-	'App::Test::Generator' => '0.19',
+	'App::Test::Generator' => '0.33',
 	'perl' => 5.036,	# Later A::T::G need this version
 };
+
 use Test::DescribeMe qw(extended);
 use FindBin qw($Bin);
 use IPC::Run3;
