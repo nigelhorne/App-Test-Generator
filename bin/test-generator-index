@@ -4255,7 +4255,28 @@ sub _mutation_index {
 		# --------------------------------------------------
 		push @html, '<h2>Executive Summary</h2>';
 		push @html, "<div class='summary'>";
-		push @html, "Tests execute $stmt_pct% of the code, but detect only $data->{score}% of injected faults.";
+
+		my $exec_summary;
+		if(!$data->{total}) {
+			# No mutants yet — mutation workflow not yet run
+			$exec_summary = "Tests execute $stmt_pct% of the code. "
+				. 'No mutation data available yet — trigger the mutation workflow for fault detection analysis.';
+		} elsif($data->{score} >= $config{med_threshold}) {
+			# High score — drop the 'only' and 'but'
+			$exec_summary = "Tests execute $stmt_pct% of the code "
+				. "and detect $data->{score}% of injected faults.";
+		} elsif($data->{score} >= $config{low_threshold}) {
+			# Moderate score — neutral wording
+			$exec_summary = "Tests execute $stmt_pct% of the code "
+				. "but detect only $data->{score}% of injected faults.";
+		} else {
+			# Low score — add actionable note
+			$exec_summary = "Tests execute $stmt_pct% of the code "
+				. "but detect only $data->{score}% of injected faults — "
+				. 'consider adding targeted tests to kill surviving mutants.';
+		}
+
+		push @html, $exec_summary;
 		push @html, '</div>';
 	}
 
