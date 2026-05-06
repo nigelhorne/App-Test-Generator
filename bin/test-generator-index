@@ -1771,8 +1771,17 @@ if(my $stat = stat($config{cover_db})) {
 	$timestamp = strftime('%Y-%m-%d %H:%M:%S', localtime($stat->mtime));
 }
 
-# Get ATG version for dashboard footer
-my $atg_version = $App::Test::Generator::VERSION // 'unknown';
+# Get ATG version for dashboard footer — read from source directly so this
+# works on GitHub Actions where the module may not be installed in @INC.
+my $atg_version = 'unknown';
+if(open my $fh, '<', __FILE__) {
+	while(<$fh>) {
+		if(/our\s+\$VERSION\s*=\s*['"]([^'"]+)['"]/) {
+			$atg_version = $1;
+			last;
+		}
+	}
+}
 
 push @html, '<footer>',
 	"\t<p>Project: <a href=\"https://github.com/$config{github_user}/$config{github_repo}\">$config{github_repo}</a></p>",
