@@ -1771,15 +1771,16 @@ if(my $stat = stat($config{cover_db})) {
 	$timestamp = strftime('%Y-%m-%d %H:%M:%S', localtime($stat->mtime));
 }
 
-push @html, <<"HTML";
-<footer>
-	<p>Project: <a href="https://github.com/$config{github_user}/$config{github_repo}">$config{github_repo}</a></p>
-	<p><em>Last updated: $timestamp - <a href="$commit_url">commit <code>$short_sha</code></a></em></p>
-</footer>
+# Get ATG version for dashboard footer
+my $atg_version = $App::Test::Generator::VERSION // 'unknown';
 
-</body>
-</html>
-HTML
+push @html, '<footer>',
+	"\t<p>Project: <a href=\"https://github.com/$config{github_user}/$config{github_repo}\">$config{github_repo}</a></p>",
+	"\t<p><em>Last updated: $timestamp - <a href=\"$commit_url\">commit <code>$short_sha</code></a></em></p>",
+	"\t<p style=\"float: right; font-size: 0.85em; color: #999;\">Powered by <a href=\"https://metacpan.org/dist/App-Test-Generator\">App::Test::Generator $atg_version</a></p>",
+	'</footer>';
+
+push @html, '</body>', '</html>';
 
 # Write to index.html
 print "Writing output to $config{output}\n" if($config{verbose});
