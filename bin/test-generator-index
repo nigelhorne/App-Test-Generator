@@ -212,6 +212,7 @@ Readonly my %config => (
 	output => 'cover_html/index.html',	# published to gh-pages
 	max_retry => 5,
 	min_locale_samples => 3,
+	module_file => 'lib/App/Test/Generator.pm',
 	verbose => 1,
 );
 
@@ -1774,7 +1775,7 @@ if(my $stat = stat($config{cover_db})) {
 # Get ATG version for dashboard footer — read from source directly so this
 # works on GitHub Actions where the module may not be installed in @INC.
 my $atg_version = 'unknown';
-if(open my $fh, '<', __FILE__) {
+if(open my $fh, '<', $config{module_file}) {
 	while(<$fh>) {
 		if(/our\s+\$VERSION\s*=\s*['"]([^'"]+)['"]/) {
 			$atg_version = $1;
