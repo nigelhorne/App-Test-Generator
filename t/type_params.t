@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-# use Test::DescribeMe qw(extended);
+use Test::DescribeMe qw(extended);	# Fixes https://www.cpantesters.org/cpan/report/04c7279a-476f-11f1-bf55-cb595875c975
 use BSD::Resource;
 use Test::Most;
 use Test::Needs 'Type::Params';
