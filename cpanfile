@@ -32,6 +32,7 @@ requires 'autodie';
 requires 're';
 
 on 'test' => sub {
+	requires 'BSD::Resource';
 	requires 'Cwd';
 	requires 'Data::Random';
 	requires 'Data::Random::String';
@@ -41,7 +42,6 @@ on 'test' => sub {
 	requires 'FindBin';
 	requires 'IPC::Run3';
 	requires 'IPC::System::Simple';
-	requires 'JSON::MaybeXS';
 	requires 'JSON::PP';
 	requires 'Symbol';
 	requires 'Test::DescribeMe';
