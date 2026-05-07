@@ -3,6 +3,7 @@ use strict;
 use warnings;
 
 # use Test::DescribeMe qw(extended);
+use BSD::Resource;
 use Test::Most;
 use Test::Needs 'Type::Params';
 use File::Temp qw(tempdir);
@@ -11,6 +12,12 @@ use File::Spec;
 # Load the module
 BEGIN {
 	use_ok('App::Test::Generator::SchemaExtractor');
+}
+
+my ($soft, $hard) = getrlimit(RLIMIT_AS);
+# Skip if less than 512MB available
+if(($soft != RLIM_INFINITY) && ($soft < 512 * 1024 * 1024)) {
+	plan(skip_all => 'Insufficient memory for type_params tests');
 }
 
 TODO: {
@@ -94,8 +101,6 @@ END_MODULE
 				'element_type' => 'Str'
 			}
 		});
-
-		done_testing();
 	};
 
 	subtest 'Extact schema from Type::Params - using signature_for' => sub {
@@ -141,8 +146,6 @@ END_MODULE
 		});
 
 		cmp_ok($schema->{output}->{type}, 'eq', 'number', 'add_numbers returns a number');
-
-		done_testing();
 	};
 
 	subtest 'Extact schema from Type::Params - using documented example' => sub {
@@ -194,7 +197,6 @@ END_MODULE
 				'position' => 0,
 			}
 		});
-		done_testing();
 	};
 }
 

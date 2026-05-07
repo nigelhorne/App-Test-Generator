@@ -180,7 +180,7 @@ sub new {
 	# Warn once per process if coverage guidance is unavailable
 	state $cover_warned = 0;
 	if(!$self->{_cover_available} && !$cover_warned++) {
-		warn "Devel::Cover not available; fuzzing without coverage guidance.\n";
+		warn 'Devel::Cover not available; fuzzing without coverage guidance.';
 	}
 
 	return $self;
