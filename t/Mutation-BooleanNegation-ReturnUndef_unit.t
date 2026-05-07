@@ -199,12 +199,21 @@ subtest 'BooleanNegation::mutate() mutant IDs are unique' => sub {
 };
 
 subtest 'BooleanNegation::mutate() does not modify the original document' => sub {
-	my $m    = App::Test::Generator::Mutation::BooleanNegation->new();
+	my $m	= App::Test::Generator::Mutation::BooleanNegation->new();
 	my $src  = "sub foo { return \$ok; }\n";
 	my $doc  = _doc($src);
 	my $before = $doc->serialize;
 	$m->mutate($doc);
 	is($doc->serialize, $before, 'original document unchanged after mutate()');
+};
+
+subtest 'BooleanNegation::mutate() returns exactly 0 not undef for non-Break node' => sub {
+	require PPI;
+	my $m    = App::Test::Generator::Mutation::BooleanNegation->new();
+	my $doc  = PPI::Document->new(\'sub foo { my $x = 1; }');
+	my $stmt = $doc->find_first('PPI::Statement::Variable');
+	my $result = $m->applies_to($stmt);
+	is($result, 0, 'non-Break node returns exactly 0 not undef');
 };
 
 # ==================================================================
@@ -354,7 +363,7 @@ subtest 'ReturnUndef::mutate() mutant IDs are unique' => sub {
 };
 
 subtest 'ReturnUndef::mutate() does not modify the original document' => sub {
-	my $m    = App::Test::Generator::Mutation::ReturnUndef->new();
+	my $m	= App::Test::Generator::Mutation::ReturnUndef->new();
 	my $src  = "sub foo { return \$result; }\n";
 	my $doc  = _doc($src);
 	my $before = $doc->serialize;

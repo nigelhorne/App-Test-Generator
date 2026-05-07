@@ -2,8 +2,10 @@
 
 use strict;
 use warnings;
-use Test::Most;
+
 use Capture::Tiny qw(capture);
+use File::Temp qw(tempfile);
+use Test::Most;
 
 # White-box function-level tests for App::Test::Generator.
 # Tests each function as a standalone unit.
@@ -15,21 +17,21 @@ BEGIN { use_ok('App::Test::Generator') }
 # ------------------------------------------------------------------
 {
 	no warnings 'once';
-	*_load_schema          = \&App::Test::Generator::_load_schema;
+	*_load_schema		  = \&App::Test::Generator::_load_schema;
 	*_load_schema_section  = \&App::Test::Generator::_load_schema_section;
-	*_validate_config      = \&App::Test::Generator::_validate_config;
-	*_validate_input_params    = \&App::Test::Generator::_validate_input_params;
+	*_validate_config	  = \&App::Test::Generator::_validate_config;
+	*_validate_input_params	= \&App::Test::Generator::_validate_input_params;
 	*_validate_input_positions = \&App::Test::Generator::_validate_input_positions;
 	*_validate_input_semantics = \&App::Test::Generator::_validate_input_semantics;
-	*_normalize_config     = \&App::Test::Generator::_normalize_config;
-	*_valid_type           = \&App::Test::Generator::_valid_type;
-	*_has_positions        = \&App::Test::Generator::_has_positions;
+	*_normalize_config	 = \&App::Test::Generator::_normalize_config;
+	*_valid_type		   = \&App::Test::Generator::_valid_type;
+	*_has_positions		= \&App::Test::Generator::_has_positions;
 	*_is_numeric_transform = \&App::Test::Generator::_is_numeric_transform;
 	*_is_string_transform  = \&App::Test::Generator::_is_string_transform;
-	*_same_type            = \&App::Test::Generator::_same_type;
-	*_get_dominant_type    = \&App::Test::Generator::_get_dominant_type;
+	*_same_type			= \&App::Test::Generator::_same_type;
+	*_get_dominant_type	= \&App::Test::Generator::_get_dominant_type;
 	*_detect_transform_properties = \&App::Test::Generator::_detect_transform_properties;
-	*_render_properties    = \&App::Test::Generator::_render_properties;
+	*_render_properties	= \&App::Test::Generator::_render_properties;
 	*_schema_to_lectrotest_generator = \&App::Test::Generator::_schema_to_lectrotest_generator;
 	*_get_semantic_generators = \&App::Test::Generator::_get_semantic_generators;
 	*_get_builtin_properties  = \&App::Test::Generator::_get_builtin_properties;
@@ -79,15 +81,15 @@ subtest 'perl_quote() converts true/false string booleans' => sub {
 };
 
 subtest 'perl_quote() leaves numbers unquoted' => sub {
-	is(App::Test::Generator::perl_quote(42),    '42',   'integer unquoted');
+	is(App::Test::Generator::perl_quote(42),	'42',   'integer unquoted');
 	is(App::Test::Generator::perl_quote(3.14),  '3.14', 'float unquoted');
-	is(App::Test::Generator::perl_quote(-1),    '-1',   'negative unquoted');
-	is(App::Test::Generator::perl_quote(0),     '0',    'zero unquoted');
+	is(App::Test::Generator::perl_quote(-1),	'-1',   'negative unquoted');
+	is(App::Test::Generator::perl_quote(0),	 '0',	'zero unquoted');
 };
 
 subtest 'perl_quote() single-quotes strings' => sub {
 	is(App::Test::Generator::perl_quote('hello'), "'hello'", 'plain string quoted');
-	is(App::Test::Generator::perl_quote(''),      "''",      'empty string quoted');
+	is(App::Test::Generator::perl_quote(''),	  "''",	  'empty string quoted');
 };
 
 subtest 'perl_quote() recursively quotes arrayrefs' => sub {
@@ -103,7 +105,7 @@ subtest 'perl_quote() renders Regexp objects as qr{}' => sub {
 	my $result = App::Test::Generator::perl_quote($re);
 	like($result, qr/^qr\{/, 'starts with qr{');
 	like($result, qr/foo/,   'contains pattern');
-	like($result, qr/i/,     'contains modifier');
+	like($result, qr/i/,	 'contains modifier');
 };
 
 # ------------------------------------------------------------------
@@ -246,7 +248,7 @@ subtest '_valid_type() returns 1 for recognised types' => sub {
 
 subtest '_valid_type() returns 0 for unknown types' => sub {
 	ok(!_valid_type('banana'), 'unknown type rejected');
-	ok(!_valid_type(''),       'empty string rejected');
+	ok(!_valid_type(''),	   'empty string rejected');
 };
 
 subtest '_valid_type() returns 0 for undef' => sub {
@@ -291,8 +293,8 @@ subtest '_is_numeric_transform() returns 1 for numeric output types' => sub {
 
 subtest '_is_numeric_transform() returns 0 for non-numeric output' => sub {
 	ok(!_is_numeric_transform({}, { type => 'string' }), 'string is not numeric');
-	ok(!_is_numeric_transform({}, {}),                   'no type is not numeric');
-	ok(!_is_numeric_transform({}, undef),                'undef output is not numeric');
+	ok(!_is_numeric_transform({}, {}),				   'no type is not numeric');
+	ok(!_is_numeric_transform({}, undef),				'undef output is not numeric');
 };
 
 # ------------------------------------------------------------------
@@ -304,7 +306,7 @@ subtest '_is_string_transform() returns 1 for string output' => sub {
 
 subtest '_is_string_transform() returns 0 for non-string output' => sub {
 	ok(!_is_string_transform({}, { type => 'integer' }), 'integer output -> 0');
-	ok(!_is_string_transform({}, {}),                    'no type -> 0');
+	ok(!_is_string_transform({}, {}),					'no type -> 0');
 };
 
 # ------------------------------------------------------------------
@@ -404,7 +406,7 @@ subtest '_validate_config() croaks on unknown config key' => sub {
 		sub {
 			_validate_config({
 				function => 'foo',
-				input    => { x => { type => 'string' } },
+				input	=> { x => { type => 'string' } },
 				config   => { unknown_key => 1 },
 			})
 		},
@@ -418,7 +420,7 @@ subtest '_validate_config() passes valid minimal schema' => sub {
 		sub {
 			_validate_config({
 				function => 'foo',
-				input    => { x => { type => 'string' } },
+				input	=> { x => { type => 'string' } },
 				output   => { type => 'string' },
 			})
 		},
@@ -649,30 +651,30 @@ subtest '_render_properties() returns empty string for empty arrayref' => sub {
 
 subtest '_render_properties() renders a property block' => sub {
 	my $props = [{
-		name            => 'test_prop',
+		name			=> 'test_prop',
 		generator_spec  => '$x <- Int',
-		call_code       => 'abs($x)',
+		call_code	   => 'abs($x)',
 		property_checks => 'defined($result)',
-		should_die      => 0,
-		should_warn     => 0,
-		trials          => 100,
+		should_die	  => 0,
+		should_warn	 => 0,
+		trials		  => 100,
 	}];
 	my $code = _render_properties($props);
 	like($code, qr/test_prop/,  'property name in output');
 	like($code, qr/\$x <- Int/, 'generator spec in output');
 	like($code, qr/abs\(\$x\)/, 'call code in output');
-	like($code, qr/100/,        'trials in output');
+	like($code, qr/100/,		'trials in output');
 };
 
 subtest '_render_properties() uses die-path for should_die property' => sub {
 	my $props = [{
-		name            => 'dies_prop',
+		name			=> 'dies_prop',
 		generator_spec  => '$x <- Int',
-		call_code       => 'die_fn($x)',
+		call_code	   => 'die_fn($x)',
 		property_checks => '',
-		should_die      => 1,
-		should_warn     => 0,
-		trials          => 10,
+		should_die	  => 1,
+		should_warn	 => 0,
+		trials		  => 10,
 	}];
 	my $code = _render_properties($props);
 	like($code, qr/died/, 'die-path code emitted for should_die');
@@ -693,7 +695,7 @@ subtest '_schema_to_lectrotest_generator() returns Int for integer type' => sub 
 subtest '_schema_to_lectrotest_generator() returns constrained Int for integer with bounds' => sub {
 	my $gen = _schema_to_lectrotest_generator('n', { type => 'integer', min => 0, max => 10 });
 	like($gen, qr/n <-/, 'integer with bounds generates constrained generator');
-	like($gen, qr/0/,    'min present in generator');
+	like($gen, qr/0/,	'min present in generator');
 };
 
 subtest '_schema_to_lectrotest_generator() returns Float for number type' => sub {
@@ -747,7 +749,7 @@ subtest '_get_semantic_generators() returns hashref with expected keys' => sub {
 subtest '_get_semantic_generators() each entry has code and description' => sub {
 	my $gens = _get_semantic_generators();
 	for my $name (keys %{$gens}) {
-		ok(exists $gens->{$name}{code},        "$name has code");
+		ok(exists $gens->{$name}{code},		"$name has code");
 		ok(exists $gens->{$name}{description}, "$name has description");
 	}
 };
@@ -824,9 +826,9 @@ subtest '_load_schema() croaks for legacy Perl config with $module key' => sub {
 # ------------------------------------------------------------------
 {
 	no warnings 'once';
-	*_validate_input_semantics    = \&App::Test::Generator::_validate_input_semantics;
+	*_validate_input_semantics	= \&App::Test::Generator::_validate_input_semantics;
 	*_validate_transform_properties = \&App::Test::Generator::_validate_transform_properties;
-	*_validate_module             = \&App::Test::Generator::_validate_module;
+	*_validate_module			 = \&App::Test::Generator::_validate_module;
 	*_generate_transform_properties = \&App::Test::Generator::_generate_transform_properties;
 	*_process_custom_properties   = \&App::Test::Generator::_process_custom_properties;
 }
@@ -863,8 +865,8 @@ subtest '_validate_input_semantics() croaks when both enum and memberof present'
 			_validate_input_semantics({
 				input => {
 					status => {
-						type     => 'string',
-						enum     => ['a', 'b'],
+						type	 => 'string',
+						enum	 => ['a', 'b'],
 						memberof => ['a', 'b'],
 					},
 				}
@@ -1105,9 +1107,9 @@ subtest '_generate_transform_properties() returns property for numeric output tr
 	ok(scalar @{$result} > 0, 'numeric transform produces at least one property');
 	is($result->[0]{name}, 'positive', 'transform name preserved');
 	ok(defined $result->[0]{generator_spec}, 'generator_spec present');
-	ok(defined $result->[0]{call_code},      'call_code present');
-	ok(defined $result->[0]{trials},         'trials present');
-	is($result->[0]{trials}, 100,            'trials value correct');
+	ok(defined $result->[0]{call_code},	  'call_code present');
+	ok(defined $result->[0]{trials},		 'trials present');
+	is($result->[0]{trials}, 100,			'trials value correct');
 };
 
 subtest '_generate_transform_properties() sets should_die for DIES output' => sub {
@@ -1167,9 +1169,9 @@ subtest '_process_custom_properties() resolves builtin property by name' => sub 
 		{ type => 'number', min => 0 },
 		undef
 	);
-	is(scalar @result, 1,            'one property returned');
+	is(scalar @result, 1,			'one property returned');
 	is($result[0]{name}, 'non_negative', 'name preserved');
-	ok(defined $result[0]{code},     'code present');
+	ok(defined $result[0]{code},	 'code present');
 	ok(defined $result[0]{description}, 'description present');
 };
 
@@ -1190,7 +1192,7 @@ subtest '_process_custom_properties() handles custom hashref property' => sub {
 		[{ name => 'my_check', code => '$result > 0', description => 'positive' }],
 		'my_func', undef, {}, {}, undef
 	);
-	is(scalar @result, 1,             'one property returned');
+	is(scalar @result, 1,			 'one property returned');
 	is($result[0]{name}, 'my_check',  'name preserved');
 	is($result[0]{code}, '$result > 0', 'code preserved');
 };
@@ -1243,8 +1245,8 @@ subtest 'generate() produces output containing use strict for minimal schema' =>
 		eval { App::Test::Generator->generate($schema->filename()) };
 	});
 
-	ok(!$@,                          "generate() did not croak: $@");
-	like($output, qr/use strict/,    'generated output contains use strict');
+	ok(!$@,						  "generate() did not croak: $@");
+	like($output, qr/use strict/,	'generated output contains use strict');
 	like($output, qr/done_testing/,  'generated output contains done_testing');
 };
 
@@ -1282,7 +1284,7 @@ subtest 'generate() croaks when called with no arguments' => sub {
 
 subtest '_is_perl_builtin() returns 1 for known builtins' => sub {
 	for my $builtin (qw(abs chomp length push pop shift unshift
-	                    print printf die warn open close)) {
+						print printf die warn open close)) {
 		is(_is_perl_builtin($builtin), 1, "'$builtin' recognised as builtin");
 	}
 };
@@ -1305,6 +1307,39 @@ subtest '_is_perl_builtin() returns 0 for undef' => sub {
 
 subtest '_is_perl_builtin() returns 0 for empty string' => sub {
 	is(_is_perl_builtin(''), 0, 'empty string -> 0');
+};
+
+subtest 'Generator: generate() sort handles undef values correctly' => sub {
+	# The comparator at lines 1752-1761 handles undef $a and $b
+	# Test by generating output from two schemas and verifying order is stable
+	my ($fh1, $p1) = tempfile(SUFFIX => '.yml', UNLINK => 1);
+	print $fh1 "module: builtin\nfunction: beta\ninput:\n  type: string\noutput:\n  type: string\n";
+	close $fh1;
+	my ($fh2, $p2) = tempfile(SUFFIX => '.yml', UNLINK => 1);
+	print $fh2 "module: builtin\nfunction: alpha\ninput:\n  type: string\noutput:\n  type: string\n";
+	close $fh2;
+	my ($out1) = capture(sub { App::Test::Generator->generate($p1) });
+	my ($out2) = capture(sub { App::Test::Generator->generate($p2) });
+	isnt($out1, $out2, 'different function names produce different output');
+};
+
+subtest 'Generator: generate() with exactly one arg (class only) croaks' => sub {
+	throws_ok(
+		sub { App::Test::Generator->generate() },
+		qr/Usage/,
+		'zero args after class croaks'
+	);
+};
+
+subtest 'Generator: generate() with two args (class + schema) lives' => sub {
+	my ($fh, $schema) = tempfile(SUFFIX => '.yml', UNLINK => 1);
+	print $fh "module: builtin\nfunction: abs\ninput:\n  type: number\noutput:\n  type: number\n";
+	close $fh;
+	my ($out) = capture(sub {
+		eval { App::Test::Generator->generate($schema) };
+	});
+	is($@, '', 'two args (class + schema) lives');
+	like($out, qr/use strict/, 'output contains use strict');
 };
 
 done_testing();

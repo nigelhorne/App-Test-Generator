@@ -361,4 +361,13 @@ subtest 'mutate: postfix conditional returns produce no mutant' => sub {
 	done_testing();
 };
 
+subtest 'ReturnUndef::mutate() returns exactly 0 not undef for non-Break node' => sub {
+	require PPI;
+	my $m    = App::Test::Generator::Mutation::ReturnUndef->new();
+	my $doc  = PPI::Document->new(\'sub foo { my $x = 1; }');
+	my $stmt = $doc->find_first('PPI::Statement::Variable');
+	my $result = $m->applies_to($stmt);
+	is($result, 0, 'non-Break node returns exactly 0 not undef');
+};
+
 done_testing();
