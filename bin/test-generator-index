@@ -2306,7 +2306,7 @@ sub fetch_open_rt_ticket_count {
 	return undef unless @rc >= 3;
 	return undef unless $rc[0] == 200 && $rc[1] eq 'OK';
 
-	my $tickets = $rc[2] && ref $rc[2] eq 'ARRAY' ? $rc[2] : [];
+	my $tickets = ($rc[2] && (ref($rc[2]) eq 'ARRAY')) ? $rc[2] : [];
 
 	return scalar @$tickets;
 }
