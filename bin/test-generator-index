@@ -3256,7 +3256,9 @@ sub _generate_mutant_tests {
 	# --------------------------------------------------
 	# Open the output file for writing
 	# --------------------------------------------------
-	mkdir($test_dir) if(!-d $test_dir);
+	mkdir($test_dir) or die "Cannot create mutant test directory $test_dir: $!"
+		unless -d $test_dir;
+
 	open my $fh, '>', $filename
 		or die "Cannot write mutant test file $filename: $!";
 
