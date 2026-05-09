@@ -59,7 +59,6 @@ WriteMakefile(
 		'UUID::Tiny' => 0,
 		'YAML::XS' => 0
 	}, TEST_REQUIRES => {
-		'BSD::Resource' => 0,
 		'Cwd' => 0,
 		'Data::Random' => 0,
 		'Data::Random::String' => 0,

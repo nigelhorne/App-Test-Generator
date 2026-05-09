@@ -32,7 +32,6 @@ requires 'autodie';
 requires 're';
 
 on 'test' => sub {
-	requires 'BSD::Resource';
 	requires 'Cwd';
 	requires 'Data::Random';
 	requires 'Data::Random::String';

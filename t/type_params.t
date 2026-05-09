@@ -3,9 +3,8 @@ use strict;
 use warnings;
 
 use Test::DescribeMe qw(extended);	# Fixes https://www.cpantesters.org/cpan/report/04c7279a-476f-11f1-bf55-cb595875c975
-use BSD::Resource;
 use Test::Most;
-use Test::Needs 'Type::Params';
+use Test::Needs 'Type::Params', 'BSD::Resource';
 use File::Temp qw(tempdir);
 use File::Spec;
 
@@ -14,10 +13,15 @@ BEGIN {
 	use_ok('App::Test::Generator::SchemaExtractor');
 }
 
-my ($soft, $hard) = getrlimit(RLIMIT_AS);
-# Skip if less than 512MB available
-if(($soft != RLIM_INFINITY) && ($soft < 512 * 1024 * 1024)) {
-	plan(skip_all => 'Insufficient memory for type_params tests');
+if($^O ne 'MSWin32') {
+	require BSD::Resource;
+	BSD::Resource->import();
+
+	my ($soft, $hard) = getrlimit(BSD::Resource::RLIMIT_AS());
+	# Skip if less than 512MB available
+	if(($soft != BSD::Resource::RLIM_INFINITY()) && ($soft < 512 * 1024 * 1024)) {
+		plan(skip_all => 'Insufficient memory for type_params tests');
+	}
 }
 
 TODO: {
