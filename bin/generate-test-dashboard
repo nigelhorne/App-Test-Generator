@@ -32,9 +32,9 @@ PERL5OPT="-MDevel::Cover=-db,cover_db,-select,$MODULE_PATH" \
 	prove -Ilib $(find t -maxdepth 1 -name '*.t' | sort)
 cover -report html -outputdir cover_html -select "$MODULE_PATH"
 
-# Debug: show what Devel::Cover actually generated
-echo "=== cover_html HTML files ==="
-ls cover_html/*.html 2>/dev/null | head -30
+# --- Step 3: Generate JSON coverage report ---
+echo "Generating JSON coverage report..."
+cover -report json -outputdir cover_html
 
 # Rename blib- prefixed HTML files to lib- so dashboard links work
 for f in cover_html/blib-lib-*.html; do
@@ -42,10 +42,6 @@ for f in cover_html/blib-lib-*.html; do
 	newname="${f/blib-lib-/lib-}"
 	mv "$f" "$newname"
 done
-
-# --- Step 3: Generate JSON coverage report ---
-echo "Generating JSON coverage report..."
-cover -report json -outputdir cover_html
 
 # --- Step 4: Export LCSAJ targets (absolute paths) ---
 echo "Finding LCSAJ targets..."
