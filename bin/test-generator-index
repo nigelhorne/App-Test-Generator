@@ -542,17 +542,16 @@ for my $file (sort keys %{$cover_db->{summary}}) {
 	# Normalise blib/lib/ paths to lib/ for display.
 	# Devel::Cover instruments blib/ during testing but we
 	# want to show lib/ paths to match the source tree.
+
 	my $display_file = $file;
 	if($file =~ /^blib\/lib\/(.+)$/) {
 		my $lib_path = "lib/$1";
-		# If a native lib/ version exists, skip this blib/ entry
-		# to avoid duplicate rows
 		next if exists $cover_db->{summary}{$lib_path};
 		$display_file = $lib_path;
 	}
 
 	my $info = $cover_db->{summary}{$file};
-	my $html_file = $display_file;
+	my $html_file = $file;          # Use original path (with blib/) for the link
 	$html_file =~ s|/|-|g;
 	$html_file =~ s|\.pm$|-pm|;
 	$html_file =~ s|\.pl$|-pl|;
