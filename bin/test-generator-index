@@ -3678,7 +3678,7 @@ sub _generate_fuzz_schemas {
 
 	# Nothing to do if t/conf/ does not exist yet
 	unless(-d $conf_dir) {
-		print "No $conf_dir directory found, skipping fuzz schema generation\n" if $config{verbose};
+		warn "No $conf_dir directory found, skipping fuzz schema generation" if $config{verbose};
 		return 0;
 	}
 
