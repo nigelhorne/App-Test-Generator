@@ -1804,7 +1804,7 @@ if($mutation_db && $mutant_test_dir) {
 # Generate fuzz schema augmentations from surviving mutants
 # if --generate_fuzz was passed on the command line
 if($mutation_db && $generate_fuzz) {
-	_generate_fuzz_schemas($mutation_db);
+	_generate_fuzz_schemas($mutation_db, 't');
 }
 
 # --------------------------------------------------
@@ -2894,7 +2894,7 @@ sub _extract_schema_for_mutant {
 
 	# If SchemaExtractor fails to instantiate, fall back gracefully
 	if($@ || !$extractor) {
-		warn "SchemaExtractor failed for $file: $@\n" if $@;
+		warn "SchemaExtractor failed for $file: $@" if $@;
 		return;
 	}
 
@@ -2902,7 +2902,7 @@ sub _extract_schema_for_mutant {
 	my $schemas = eval { $extractor->extract_all(no_write => 1) };
 
 	if($@ || !$schemas) {
-		warn "extract_all failed for $file: $@\n" if $@;
+		warn "extract_all failed for $file: $@" if $@;
 		return;
 	}
 
@@ -3038,13 +3038,13 @@ sub _write_mutant_schema {
 	# Serialise the schema to a normalised YAML string
 	my $yaml = _dump_schema_yaml($schema);
 	if(!defined $yaml) {
-		warn "YAML serialisation failed for $path\n";
+		warn "YAML serialisation failed for $path";
 		return;
 	}
 
 	# Write the YAML file and report success or failure
 	open(my $fh, '>:encoding(UTF-8)', $path)
-		or do { warn "Cannot write $path: $!\n"; return };
+		or do { warn "Cannot write $path: $!"; return };
 	print $fh $yaml;
 	close $fh;
 
@@ -3632,15 +3632,15 @@ sub _is_class_method {
 # --------------------------------------------------
 # _generate_fuzz_schemas
 #
-# Purpose:    Scan t/conf/ for existing YAML schema
-#             files and augment copies of them with
-#             boundary values extracted from surviving
-#             NUM_BOUNDARY mutants whose enclosing sub
-#             matches the schema's function field.
-#             The original schema is never modified.
-#             Augmented copies are written with a
-#             timestamped mutant_fuzz_ prefix so they
-#             are picked up by t/fuzz.t automatically.
+# Scan t/conf/ for existing YAML schema
+#     files and augment copies of them with
+#     boundary values extracted from surviving
+#     NUM_BOUNDARY mutants whose enclosing sub
+#     matches the schema's function field.
+#     The original schema is never modified.
+#     Augmented copies are written with a
+#     timestamped mutant_fuzz_ prefix so they
+#     are picked up by t/fuzz.t automatically.
 #
 # Entry:      $mutation_db - decoded mutation JSON
 #                            hashref
