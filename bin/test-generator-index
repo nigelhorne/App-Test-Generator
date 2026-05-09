@@ -3806,7 +3806,7 @@ sub _generate_fuzz_schemas {
 	# Scan t/conf/ for existing YAML schema files
 	# --------------------------------------------------
 	opendir(my $dh, $conf_dir)
-		or do { warn "Cannot read $conf_dir: $!\n"; return 0 };
+		or do { warn "Cannot read $conf_dir: $!"; return 0 };
 
 	my @schema_files = grep {
 		# Include only .yml files that are not already
@@ -3817,8 +3817,7 @@ sub _generate_fuzz_schemas {
 	closedir $dh;
 
 	if($config{verbose}) {
-		printf "Found %d candidate schema file(s) in %s\n",
-			scalar(@schema_files), $conf_dir;
+		printf "Found %d candidate schema file(s) in %s\n", scalar(@schema_files), $conf_dir;
 	}
 
 	# --------------------------------------------------

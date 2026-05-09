@@ -16,7 +16,7 @@ use Readonly;
 # --------------------------------------------------
 Readonly my $OUT_DIR => 'cover_html/lcsaj_hits';
 
-our $VERSION = '0.34';
+our $VERSION = '0.35';
 
 =head1 NAME
 
@@ -235,6 +235,17 @@ L<Devel::Cover>, L<App::Test::Generator>
 
 =head1 AUTHOR
 
-Nigel Horne
+Nigel Horne, C<< <njh at nigelhorne.com> >>
+
+Portions of this module's initial design and documentation were created
+with the assistance of AI.
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright 2025-2026 Nigel Horne.
+
+Usage is subject to the terms of GPL2.
+If you use it,
+please let me know.
 
 =cut

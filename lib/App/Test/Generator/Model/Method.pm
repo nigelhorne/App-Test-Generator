@@ -9,11 +9,11 @@ use Readonly;
 Readonly my $HIGH_CONFIDENCE_THRESHOLD   => 40;
 Readonly my $MEDIUM_CONFIDENCE_THRESHOLD => 20;
 
-our $VERSION = '0.34';
+our $VERSION = '0.35';
 
 =head1 VERSION
 
-Version 0.34
+Version 0.35
 
 =cut
 
