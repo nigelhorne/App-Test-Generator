@@ -1726,8 +1726,11 @@ HTML
 		# @fail_reports is empty
 		push @html, "<p>No <A HREF=\"https://fast2-matrix.cpantesters.org/?dist=$dist_name+$version\">CPAN Testers</A> failures reported for $dist_name $version</p>";
 	}
-} elsif($res->{status} == 404) {	# 404 means no fail reports
 	push @html, "<p>No CPAN Testers failures reported for $dist_name $version.</p>";
+} elsif($res->{status} == 404) {	# 404 means no fail reports
+	# $version may be undef if the CPAN API did not return release data
+	my $version_str = $version // 'unknown';
+	push @html, "<p>No CPAN Testers failures reported for $dist_name $version_str.</p>";
 } else {
 	my $reason = $res->{status} == $HTTP_CONNECTION_FAILED
 		? 'CPAN Testers API temporarily unreachable'
@@ -1774,13 +1777,15 @@ if(my $stat = stat($config{cover_db})) {
 # Get ATG version for dashboard footer — read from source directly so this
 # works on GitHub Actions where the module may not be installed in @INC.
 my $atg_version = 'unknown';
-if(open my $fh, '<', $config{module_file}) {
+my $module_file = $INC{'App/Test/Generator.pm'} // $config{module_file};
+if($module_file && open(my $fh, '<', $module_file)) {
 	while(<$fh>) {
 		if(/our\s+\$VERSION\s*=\s*['"]([^'"]+)['"]/) {
 			$atg_version = $1;
 			last;
 		}
 	}
+	close $fh;
 }
 
 push @html, '<footer>',
