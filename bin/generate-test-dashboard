@@ -25,10 +25,7 @@ perl Makefile.PL && make
 echo "Running tests with Devel::Cover..."
 # Derive lib/ select pattern from repo name (e.g. CGI-Info -> CGI/Info)
 MODULE_PATH=$(echo "${GITHUB_REPOSITORY#*/}" | sed 's|-|/|g')
-
-PERL5OPT="-MDevel::Cover=-db,cover_db,-select,$MODULE_PATH" \
-	prove -Ilib $(find t -maxdepth 1 -name '*.t' | sort)
-cover -report html -outputdir cover_html -select "$MODULE_PATH"
+cover -test -outputdir cover_html -select "$MODULE_PATH"
 
 # --- Step 3: Generate JSON coverage report ---
 echo "Generating JSON coverage report..."
