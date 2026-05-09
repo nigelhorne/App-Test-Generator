@@ -7,7 +7,7 @@ use autodie qw(:all);
 use Carp qw(croak);
 use JSON::MaybeXS;
 
-our $VERSION = '0.35';
+our $VERSION = '0.36';
 
 =head1 NAME
 
@@ -15,7 +15,7 @@ App::Test::Generator::LCSAJ::Coverage - Merge LCSAJ path data with runtime hits
 
 =head1 VERSION
 
-Version 0.35
+Version 0.36
 
 =head1 DESCRIPTION
 
