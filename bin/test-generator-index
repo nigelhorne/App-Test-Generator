@@ -1774,10 +1774,22 @@ if(my $stat = stat($config{cover_db})) {
 	$timestamp = strftime('%Y-%m-%d %H:%M:%S', localtime($stat->mtime));
 }
 
-# Get ATG version for dashboard footer — read from source directly so this
-# works on GitHub Actions where the module may not be installed in @INC.
+# Get ATG version for dashboard footer — search @INC for the installed module
 my $atg_version = 'unknown';
-my $module_file = $INC{'App/Test/Generator.pm'} // $config{module_file};
+my $module_file = $INC{'App/Test/Generator.pm'};
+unless($module_file) {
+	# Module not yet loaded; search @INC directly
+	for my $dir (@INC) {
+		my $candidate = "$dir/App/Test/Generator.pm";
+		if(-f $candidate) {
+			$module_file = $candidate;
+			last;
+		}
+	}
+}
+
+# Fall back to the source tree path for ATG's own development environment
+$module_file //= $config{module_file};
 if($module_file && open(my $fh, '<', $module_file)) {
 	while(<$fh>) {
 		if(/our\s+\$VERSION\s*=\s*['"]([^'"]+)['"]/) {
