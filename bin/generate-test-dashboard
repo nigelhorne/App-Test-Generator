@@ -32,6 +32,10 @@ PERL5OPT="-MDevel::Cover=-db,cover_db,-select,$MODULE_PATH" \
 	prove -Ilib $(find t -maxdepth 1 -name '*.t' | sort)
 cover -outputdir cover_html -select "$MODULE_PATH"
 
+# Debug: show what Devel::Cover actually generated
+echo "=== cover_html HTML files ==="
+ls cover_html/*.html 2>/dev/null | head -30
+
 # Rename blib- prefixed HTML files to lib- so dashboard links work
 for f in cover_html/blib-lib-*.html; do
 	[ -f "$f" ] || continue
