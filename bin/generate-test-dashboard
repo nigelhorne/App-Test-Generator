@@ -25,9 +25,12 @@ export PERL5OPT='-Ilib'
 
 # --- Step 2: Run tests under Devel::Cover ---
 echo "Running tests with Devel::Cover..."
-PERL5OPT="-MDevel::Cover=-db,cover_db,-select,^lib/" \
-	prove -Ilib $(find t -maxdepth 1 -name '*.t' ! -name 'mutant_*.t' | sort)
-cover -outputdir cover_html -select '^lib/'
+# Derive lib/ select pattern from repo name (e.g. CGI-Info -> CGI/Info)
+MODULE_PATH=$(echo "${GITHUB_REPOSITORY#*/}" | sed 's|-|/|g')
+
+PERL5OPT="-MDevel::Cover=-db,cover_db,-select,$MODULE_PATH" \
+	prove -Ilib $(find t -maxdepth 1 -name '*.t' | sort)
+cover -outputdir cover_html -select "$MODULE_PATH"
 
 # Rename blib- prefixed HTML files to lib- so dashboard links work
 for f in cover_html/blib-lib-*.html; do
@@ -81,7 +84,7 @@ perl -MJSON::MaybeXS -MFile::Slurp -e '
 echo "Checking LCSAJ hits..."
 # Merge previous LCSAJ hits for files not in this run
 if [ -f /tmp/lcsaj_hits_prev.json ]; then
-	perl -MJSON:MaybeXS -MFile::Slurp -e '
+	perl -MJSON::MaybeXS -MFile::Slurp -e '
 		my $prev = decode_json(read_file("/tmp/lcsaj_hits_prev.json"));
 		my $curr = -f "cover_html/lcsaj_hits.json"
 			? decode_json(read_file("cover_html/lcsaj_hits.json"))
