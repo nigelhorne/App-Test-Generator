@@ -2,7 +2,7 @@
 
 name: Mutation Testing
 permissions:
-  contents: read
+  contents: write
 
 # on: [push, pull_request]
 on:
@@ -67,3 +67,15 @@ jobs:
             --mutation_level fast \
             --exclude lib/Devel \
             --exclude lib/App/Test/Generator/Sample
+
+      - name: Commit mutation results
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@github.com"
+          git add mutation.json
+          if git diff --cached --quiet; then
+            echo "No mutation.json changes to commit"
+          else
+            git commit -m "Update mutation results ($(date +%Y-%m-%d) $(git rev-parse --short HEAD))"
+            git push
+          fi
