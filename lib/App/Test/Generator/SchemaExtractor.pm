@@ -9412,6 +9412,13 @@ This is pre-pre-alpha proof of concept code.
 Nevertheless,
 it is useful for creating a template which you can modify to create a working schema to pass into L<App::Test::Generator>.
 
+=head1 TODO
+
+Parse =head4 Input / =head4 Output POD blocks
+(in L<Params::Validate::Strict> schema format)
+as a high-confidence input source,
+falling back to runtime introspection only when POD is absent.
+
 =head1 SEE ALSO
 
 =over 4
@@ -9429,8 +9436,13 @@ So with well-documented code, you can automatically create your tests.
 
 Nigel Horne, C<< <njh at nigelhorne.com> >>
 
-Portions of this module's initial design and documentation were created with the
-assistance of AI.
+=head1 LICENCE AND COPYRIGHT
+
+Copyright 2025-2026 Nigel Horne.
+
+Usage is subject to GPL2 licence terms.
+If you use it,
+please let me know.
 
 =cut
 
