@@ -1726,7 +1726,6 @@ HTML
 		# @fail_reports is empty
 		push @html, "<p>No <A HREF=\"https://fast2-matrix.cpantesters.org/?dist=$dist_name+$version\">CPAN Testers</A> failures reported for $dist_name $version</p>";
 	}
-	push @html, "<p>No CPAN Testers failures reported for $dist_name $version.</p>";
 } elsif($res->{status} == 404) {	# 404 means no fail reports
 	# $version may be undef if the CPAN API did not return release data
 	my $version_str = $version // 'unknown';
