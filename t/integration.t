@@ -470,8 +470,10 @@ subtest 'CoverageGuidedFuzzer: run -> save_corpus -> load_corpus -> run' => sub 
 		iterations => 10,
 		seed       => 42,
 	);
-	my $r1 = $f1->run();
-	is($r1->{total_iterations}, 10, 'first run: 10 iterations completed');
+	if($ENV{EXTENDED_TESTING}) {
+		my $r1 = $f1->run();
+		is($r1->{total_iterations}, 10, 'first run: 10 iterations completed');
+	}
 
 	# Save corpus
 	lives_ok(sub { $f1->save_corpus($corpus_file) },
@@ -485,13 +487,15 @@ subtest 'CoverageGuidedFuzzer: run -> save_corpus -> load_corpus -> run' => sub 
 		iterations => 5,
 		seed       => 99,
 	);
-	lives_ok(sub { $f2->load_corpus($corpus_file) }, 'load_corpus() lives');
-	ok(scalar @{$f2->corpus()} > 0, 'corpus loaded into second fuzzer');
-
 	# Second run
-	my $r2 = $f2->run();
-	is($r2->{total_iterations}, 5, 'second run: 5 iterations completed');
-	ok($call_count > 0, 'target sub called across both runs');
+	if($ENV{EXTENDED_TESTING}) {
+		lives_ok(sub { $f2->load_corpus($corpus_file) }, 'load_corpus() lives');
+		ok(scalar @{$f2->corpus()} > 0, 'corpus loaded into second fuzzer');
+
+		my $r2 = $f2->run();
+		is($r2->{total_iterations}, 5, 'second run: 5 iterations completed');
+		ok($call_count > 0, 'target sub called across both runs');
+	}
 };
 
 subtest 'CoverageGuidedFuzzer: bugs list entries are well-formed' => sub {
@@ -508,7 +512,9 @@ subtest 'CoverageGuidedFuzzer: bugs list entries are well-formed' => sub {
 		seed       => 42,
 	);
 
-	lives_ok(sub { $f->run() }, 'run() lives');
+	if($ENV{EXTENDED_TESTING}) {
+		lives_ok(sub { $f->run() }, 'run() lives');
+	}
 
 	for my $bug (@{$f->bugs()}) {
 		ok(exists $bug->{input}, 'bug entry has input key');

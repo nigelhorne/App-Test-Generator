@@ -12,6 +12,8 @@ use Scalar::Util qw(looks_like_number);
 # Allow access to private helpers via the package namespace
 BEGIN {
 	use_ok('App::Test::Generator');
+	use_ok('App::Test::Generator::Mutator');
+	use_ok('App::Test::Generator::Mutant');
 }
 
 # --------------------------------------------------
@@ -1061,6 +1063,343 @@ subtest 'generate with schema hashref' => sub {
 	} 'generate() with schema hashref lives';
 
 	ok(-s $outfile, 'output file non-empty for hashref schema');
+
+	done_testing();
+};
+
+# ==================================================================
+# App::Test::Generator::Mutator
+# ==================================================================
+
+# --------------------------------------------------
+# Shared temp file containing minimal valid Perl
+# used across multiple Mutator subtests
+# --------------------------------------------------
+my ($mutator_fh, $mutator_file) = tempfile(SUFFIX => '.pm', UNLINK => 1);
+print {$mutator_fh} <<'PERL';
+package Foo;
+sub bar {
+	my $x = shift;
+	if($x > 0) {
+		return 1;
+	}
+	return 0;
+}
+1;
+PERL
+close $mutator_fh;
+
+# ==================================================================
+# new()
+# ==================================================================
+subtest 'Mutator::new - file required' => sub {
+	# Omitting file must croak immediately
+	throws_ok {
+		App::Test::Generator::Mutator->new()
+	} qr/file required/, 'croaks when file omitted';
+
+	done_testing();
+};
+
+subtest 'Mutator::new - missing file croaks' => sub {
+	throws_ok {
+		App::Test::Generator::Mutator->new(file => '/no/such/file.pm')
+	} qr/file not found/, 'croaks for non-existent file';
+
+	done_testing();
+};
+
+subtest 'Mutator::new - valid file returns object' => sub {
+	my $m = App::Test::Generator::Mutator->new(file => $mutator_file);
+	isa_ok($m, 'App::Test::Generator::Mutator');
+	is($m->{file}, $mutator_file, 'file stored correctly');
+	is($m->{lib_dir}, 'lib', 'lib_dir defaults to lib');
+	is($m->{mutation_level}, 'full', 'mutation_level defaults to full');
+	is(ref($m->{mutations}), 'ARRAY', 'mutations is an arrayref');
+	ok(scalar(@{$m->{mutations}}) > 0, 'at least one mutation strategy registered');
+
+	done_testing();
+};
+
+subtest 'Mutator::new - custom lib_dir and mutation_level accepted' => sub {
+	my $m = App::Test::Generator::Mutator->new(
+		file           => $mutator_file,
+		lib_dir        => 'src',
+		mutation_level => 'fast',
+	);
+	is($m->{lib_dir},        'src',  'custom lib_dir stored');
+	is($m->{mutation_level}, 'fast', 'custom mutation_level stored');
+
+	done_testing();
+};
+
+# ==================================================================
+# generate_mutants() - skip annotation logic
+# ==================================================================
+subtest 'Mutator::generate_mutants - no skip annotations generates mutants' => sub {
+	my $m = App::Test::Generator::Mutator->new(file => $mutator_file);
+	my @mutants = $m->generate_mutants();
+
+	# A file with conditionals and return values must produce at least
+	# one mutant from the registered strategies
+	ok(scalar(@mutants) > 0, 'mutants generated for file with conditionals');
+	is(ref($m->{skip_lines}), 'HASH', 'skip_lines hashref populated after call');
+	is(scalar(keys %{$m->{skip_lines}}), 0, 'no lines skipped when no annotations');
+
+	done_testing();
+};
+
+subtest 'Mutator::generate_mutants - MUTANT_SKIP_BEGIN/END excludes lines' => sub {
+	my ($fh, $file) = tempfile(SUFFIX => '.pm', UNLINK => 1);
+	print {$fh} <<'PERL';
+package Bar;
+sub safe {
+	return 1;
+}
+sub risky {
+	## MUTANT_SKIP_BEGIN
+	kill 'HUP', $$;
+	waitpid $$, 0;
+	## MUTANT_SKIP_END
+	return 1;
+}
+1;
+PERL
+	close $fh;
+
+	my $m = App::Test::Generator::Mutator->new(file => $file);
+	$m->generate_mutants();
+
+	# Lines 7 and 8 (kill and waitpid) must be in skip_lines
+	ok($m->{skip_lines}{7}, 'kill line excluded by skip annotation');
+	ok($m->{skip_lines}{8}, 'waitpid line excluded by skip annotation');
+
+	# The MUTANT_SKIP_BEGIN line itself is also excluded
+	ok($m->{skip_lines}{6}, 'MUTANT_SKIP_BEGIN line itself excluded');
+
+	# Lines outside the block are not excluded
+	ok(!$m->{skip_lines}{3}, 'line outside skip block not excluded');
+
+	done_testing();
+};
+
+subtest 'Mutator::generate_mutants - unclosed MUTANT_SKIP_BEGIN is fatal' => sub {
+	my ($fh, $file) = tempfile(SUFFIX => '.pm', UNLINK => 1);
+	print {$fh} <<'PERL';
+package Baz;
+sub x {
+	## MUTANT_SKIP_BEGIN
+	return 1;
+}
+1;
+PERL
+	close $fh;
+
+	my $m = App::Test::Generator::Mutator->new(file => $file);
+	throws_ok {
+		$m->generate_mutants()
+	} qr/MUTANT_SKIP_BEGIN.*no matching MUTANT_SKIP_END/i,
+		'unclosed MUTANT_SKIP_BEGIN croaks';
+
+	done_testing();
+};
+
+subtest 'Mutator::generate_mutants - unmatched MUTANT_SKIP_END is fatal' => sub {
+	my ($fh, $file) = tempfile(SUFFIX => '.pm', UNLINK => 1);
+	print {$fh} <<'PERL';
+package Qux;
+sub x {
+	return 1;
+	## MUTANT_SKIP_END
+}
+1;
+PERL
+	close $fh;
+
+	my $m = App::Test::Generator::Mutator->new(file => $file);
+	throws_ok {
+		$m->generate_mutants()
+	} qr/MUTANT_SKIP_END.*no matching MUTANT_SKIP_BEGIN/i,
+		'unmatched MUTANT_SKIP_END croaks';
+
+	done_testing();
+};
+
+subtest 'Mutator::generate_mutants - nested MUTANT_SKIP_BEGIN is fatal' => sub {
+	my ($fh, $file) = tempfile(SUFFIX => '.pm', UNLINK => 1);
+	print {$fh} <<'PERL';
+package Nested;
+sub x {
+	## MUTANT_SKIP_BEGIN
+	## MUTANT_SKIP_BEGIN
+	return 1;
+	## MUTANT_SKIP_END
+}
+1;
+PERL
+	close $fh;
+
+	my $m = App::Test::Generator::Mutator->new(file => $file);
+	throws_ok {
+		$m->generate_mutants()
+	} qr/MUTANT_SKIP_BEGIN.*no prior MUTANT_SKIP_END/i,
+		'nested MUTANT_SKIP_BEGIN croaks';
+
+	done_testing();
+};
+
+subtest 'Mutator::generate_mutants - fast mode deduplicates' => sub {
+	my $m = App::Test::Generator::Mutator->new(
+		file           => $mutator_file,
+		mutation_level => 'fast',
+	);
+	my @mutants = $m->generate_mutants();
+
+	# Fast mode must return fewer or equal mutants than full mode
+	my $m_full = App::Test::Generator::Mutator->new(file => $mutator_file);
+	my @full_mutants = $m_full->generate_mutants();
+
+	ok(scalar(@mutants) <= scalar(@full_mutants),
+		'fast mode returns no more mutants than full mode');
+
+	done_testing();
+};
+
+# ==================================================================
+# apply_mutant() - workspace not prepared
+# ==================================================================
+subtest 'Mutator::apply_mutant - croaks without workspace' => sub {
+	my $m = App::Test::Generator::Mutator->new(file => $mutator_file);
+
+	# A minimal stub mutant with a no-op transform
+	my $mutant = App::Test::Generator::Mutant->new(
+		id          => 'TEST_1',
+		file        => $mutator_file,
+		line        => 1,
+		description => 'stub',
+		original    => '',
+		transform   => sub {},
+	);
+
+	throws_ok {
+		$m->apply_mutant($mutant)
+	} qr/Workspace not prepared/, 'apply_mutant croaks without workspace';
+
+	done_testing();
+};
+
+# ==================================================================
+# _dedup_mutants()
+# ==================================================================
+subtest 'Mutator::_dedup_mutants - removes exact duplicates' => sub {
+	my $fn = \&App::Test::Generator::Mutator::_dedup_mutants;
+
+	my $make = sub {
+		my %args = @_;
+		return {
+			line        => $args{line}        // 1,
+			original    => $args{original}    // 'x',
+			description => $args{description} // 'test',
+			context     => $args{context}     // '',
+			line_content => $args{line_content} // '',
+		};
+	};
+
+	# Two identical mutants must collapse to one
+	my $m1 = $make->(line => 5, original => 'foo', description => 'bar');
+	my $m2 = $make->(line => 5, original => 'foo', description => 'bar');
+	my $result = $fn->([$m1, $m2]);
+	is(scalar(@{$result}), 1, 'duplicate mutants collapsed to one');
+
+	# Two different mutants are both kept
+	my $m3 = $make->(line => 6, original => 'baz', description => 'qux');
+	$result = $fn->([$m1, $m3]);
+	is(scalar(@{$result}), 2, 'distinct mutants both kept');
+
+	# Empty input returns empty arrayref
+	$result = $fn->([]);
+	is(scalar(@{$result}), 0, 'empty input returns empty arrayref');
+
+	done_testing();
+};
+
+subtest 'Mutator::_dedup_mutants - removes redundant arithmetic no-ops' => sub {
+	my $fn = \&App::Test::Generator::Mutator::_dedup_mutants;
+
+	# +0 arithmetic no-op must be filtered as redundant
+	my $noop = {
+		line        => 1,
+		original    => 'x + 0',
+		description => 'add zero',
+		context     => '',
+		line_content => '',
+	};
+	my $result = $fn->([$noop]);
+	is(scalar(@{$result}), 0, '+0 no-op removed as redundant');
+
+	# -0 arithmetic no-op must also be filtered
+	my $noop2 = {
+		line        => 1,
+		original    => 'x - 0',
+		description => 'sub zero',
+		context     => '',
+		line_content => '',
+	};
+	$result = $fn->([$noop2]);
+	is(scalar(@{$result}), 0, '-0 no-op removed as redundant');
+
+	done_testing();
+};
+
+# ==================================================================
+# _is_redundant_mutation()
+# ==================================================================
+subtest 'Mutator::_is_redundant_mutation - arithmetic no-ops are redundant' => sub {
+	my $fn = \&App::Test::Generator::Mutator::_is_redundant_mutation;
+
+	ok($fn->({ original => 'x + 0' }), '+0 is redundant');
+	ok($fn->({ original => 'x - 0' }), '-0 is redundant');
+	ok(!$fn->({ original => 'x + 1' }), '+1 is not redundant');
+
+	done_testing();
+};
+
+subtest 'Mutator::_is_redundant_mutation - double negation in conditional' => sub {
+	my $fn = \&App::Test::Generator::Mutator::_is_redundant_mutation;
+
+	ok(
+		$fn->({ original => '!!$x', context => 'conditional' }),
+		'double negation in conditional is redundant'
+	);
+	ok(
+		!$fn->({ original => '!!$x', context => '' }),
+		'double negation outside conditional is not redundant'
+	);
+
+	done_testing();
+};
+
+subtest 'Mutator::_is_redundant_mutation - boolean literal flip is redundant' => sub {
+	my $fn = \&App::Test::Generator::Mutator::_is_redundant_mutation;
+
+	ok($fn->({ original => '1' }), 'standalone 1 is redundant');
+	ok($fn->({ original => '0' }), 'standalone 0 is redundant');
+	ok(!$fn->({ original => '42' }), 'non-boolean integer is not redundant');
+
+	done_testing();
+};
+
+subtest 'Mutator::_is_redundant_mutation - comment lines are redundant' => sub {
+	my $fn = \&App::Test::Generator::Mutator::_is_redundant_mutation;
+
+	ok(
+		$fn->({ original => 'x', line_content => '# a comment' }),
+		'mutation on comment line is redundant'
+	);
+	ok(
+		!$fn->({ original => 'x', line_content => 'my $x = 1;' }),
+		'mutation on code line is not redundant'
+	);
 
 	done_testing();
 };

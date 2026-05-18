@@ -7,7 +7,7 @@ use Config;
 use File::Copy qw(copy);
 use File::Copy::Recursive qw(dircopy);
 use File::Spec;
-use File::Temp          qw(tempdir);
+use File::Temp qw(tempdir);
 use PPI;
 use Readonly;
 
@@ -25,7 +25,7 @@ Readonly my $LEVEL_FAST => 'fast';
 # --------------------------------------------------
 # Default values for optional constructor arguments
 # --------------------------------------------------
-Readonly my $DEFAULT_LIB_DIR        => 'lib';
+Readonly my $DEFAULT_LIB_DIR => 'lib';
 Readonly my $DEFAULT_MUTATION_LEVEL => $LEVEL_FULL;
 
 our $VERSION = '0.36';
@@ -443,15 +443,13 @@ sub _dedup_mutants {
 # --------------------------------------------------
 # _is_redundant_mutation
 #
-# Purpose:    Return true if a mutant is considered
-#             redundant and should be skipped in fast
-#             mutation mode.
+# Return true if a mutant is considered
+#     redundant and should be skipped in fast
+#     mutation mode.
 #
 # Entry:      $m - a Mutant hashref.
 #
 # Exit:       Returns 1 if redundant, 0 otherwise.
-#
-# Side effects: None.
 #
 # Notes:      Checks for arithmetic no-ops, double
 #             negation inside conditionals, boolean
@@ -497,9 +495,6 @@ sub _is_redundant_mutation {
 =head1 AUTHOR
 
 Nigel Horne, C<< <njh at nigelhorne.com> >>
-
-Portions of this module's initial design and documentation were created
-with the assistance of AI.
 
 =head1 LICENCE AND COPYRIGHT
 
