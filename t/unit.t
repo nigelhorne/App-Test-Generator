@@ -361,14 +361,13 @@ subtest 'Mutator::apply_mutant - applies transform to workspace file' => sub {
 	my $guard = mock_scoped(
 		'App::Test::Generator::Mutator::dircopy' => sub { 1 }
 	);
-
 	my $m = App::Test::Generator::Mutator->new(file => $ws_src, lib_dir => $ws_lib);
 	$m->prepare_workspace();
 
 	# Write the source file into the workspace at the expected path
-	my $ws_lib = File::Spec->catfile($m->{workspace}, $m->{lib_dir});
-	File::Path::make_path($ws_lib);
-	my $ws_file = File::Spec->catfile($ws_lib, $m->{relative});
+	my $ws_lib_dir = File::Spec->catfile($m->{workspace}, 'lib');
+	File::Path::make_path($ws_lib_dir);
+	my $ws_file = File::Spec->catfile($ws_lib_dir, $m->{relative});
 	File::Copy::copy($src_file, $ws_file);
 
 	# Transform that marks the file with a known string
@@ -376,13 +375,10 @@ subtest 'Mutator::apply_mutant - applies transform to workspace file' => sub {
 	my $mutant = _stub_mutant(
 		transform => sub { $transform_called = 1 },
 	);
-
 	lives_ok {
 		$m->apply_mutant($mutant)
 	} 'apply_mutant lives with prepared workspace';
-
 	ok($transform_called, 'transform coderef was called');
-
 	done_testing();
 };
 

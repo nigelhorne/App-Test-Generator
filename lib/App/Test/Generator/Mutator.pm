@@ -272,16 +272,20 @@ sub prepare_workspace {
 	# Create a self-cleaning temporary directory
 	my $tmp = tempdir(CLEANUP => 1);
 
+	# Normalise lib_dir to its final component so workspace paths
+	# are relative regardless of whether an absolute path was passed in
+	my $lib_basename = (File::Spec->splitdir($self->{lib_dir}))[-1];
+
 	# Derive the file's path relative to lib_dir for use by apply_mutant
 	my $relative = $self->{file};
 	$relative =~ s/^\Q$self->{lib_dir}\E\/?//;
 
 	# Copy the entire lib tree so all dependencies resolve in the workspace
-	dircopy($self->{lib_dir}, File::Spec->catfile($tmp, $self->{lib_dir}))
-		or croak "dircopy failed: $!";
+	dircopy($self->{lib_dir}, File::Spec->catfile($tmp, $lib_basename)) or croak "dircopy failed: $!";
 
 	$self->{workspace} = $tmp;
 	$self->{relative}  = $relative;
+	$self->{lib_dir}   = $lib_basename;	# normalise for apply_mutant
 
 	return $tmp;
 }
@@ -344,8 +348,7 @@ sub apply_mutant {
 	);
 
 	# Parse the workspace copy and apply the mutation transform
-	my $doc = PPI::Document->new($target)
-		or croak "Failed to parse $target";
+	my $doc = PPI::Document->new($target) or croak "Failed to parse $target";
 
 	$mutant->{transform}->($doc);
 
