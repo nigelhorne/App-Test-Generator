@@ -4182,17 +4182,6 @@ sub _mutation_index {
 			$complexity_class, $complexity_tooltip, $complexity
 		);
 
-		# Try each candidate directory in turn, most-specific first.
-		# _lcsaj_coverage_for_file returns (undef, undef) when the
-		# .lcsaj.json file cannot be found, so we keep trying until
-		# we get a defined result or exhaust all candidates.
-		my ($lcsaj_cov, $lcsaj_total);
-		for my $dir ($config{lcsaj_root}, $config{mutation_dir} . '/lib', $config{mutation_dir}) {
-			next unless $dir;
-			($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $dir, $lcsaj_hits, \@html);
-			last if defined $lcsaj_cov;
-		}
-
 		# --------------------------------------------------
 		# Compute TER1/TER2/TER3 triple for this file.
 		# TER1 = statement coverage  (Devel::Cover)
@@ -4215,7 +4204,12 @@ sub _mutation_index {
 		}
 
 		# TER3 — LCSAJ path coverage (existing logic, unchanged)
-		($lcsaj_cov, $lcsaj_total) = (undef, undef);
+		# Try each candidate directory in turn, most-specific first.
+		# _lcsaj_coverage_for_file returns (undef, undef) when the
+		# .lcsaj.json file cannot be found, so we keep trying until
+		# we get a defined result or exhaust all candidates.
+
+		my ($lcsaj_cov, $lcsaj_total);
 		for my $dir ($config{lcsaj_root}, $config{mutation_dir} . '/lib', $config{mutation_dir}) {
 			next unless $dir;
 			($lcsaj_cov, $lcsaj_total) = _lcsaj_coverage_for_file($file, $dir, $lcsaj_hits, \@html);
