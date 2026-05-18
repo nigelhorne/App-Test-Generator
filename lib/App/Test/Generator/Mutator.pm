@@ -72,13 +72,13 @@ Path to the Perl source file to mutate. Required. Must exist on disk.
 
 =item * C<lib_dir>
 
-Root library directory. Optional — defaults to C<lib>.
+Root library directory. Optional - defaults to C<lib>.
 
 =item * C<mutation_level>
 
 Controls the breadth of mutation. C<full> applies all mutations;
 C<fast> deduplicates and removes redundant mutants first.
-Optional — defaults to C<full>.
+Optional - defaults to C<full>.
 
 =back
 
@@ -140,8 +140,15 @@ None beyond C<$self>.
 
 =head3 Returns
 
+=head3 Returns
+
 A list of L<App::Test::Generator::Mutant> objects. In C<fast> mode,
 redundant and duplicate mutants are removed before returning.
+Lines within C<## MUTANT_SKIP_BEGIN> / C<## MUTANT_SKIP_END> annotation
+blocks are excluded from the candidate list entirely.
+After this method returns,
+C<$self-E<gt>{skip_lines}> contains a hashref mapping excluded
+line numbers to 1.
 
 =head3 API specification
 
@@ -166,16 +173,43 @@ sub generate_mutants {
 	# Parse the target file into a PPI document
 	my $doc = PPI::Document->new($self->{file}) or croak "Unable to parse $self->{file}";
 
+	# Build set of lines excluded by ## MUTANT_SKIP_BEGIN / ## MUTANT_SKIP_END
+	my %skip_lines;
+	my $in_skip  = 0;
+	my $skip_start = 0;
+	my $line_num = 0;
+	for my $line (split /\n/, $doc->serialize()) {
+		$line_num++;
+		if($line =~ /##\s*MUTANT_SKIP_BEGIN/) {
+			croak "$self->{file}: MUTANT_SKIP_BEGIN at line $line_num with no prior MUTANT_SKIP_END"
+				if $in_skip;
+			$in_skip    = 1;
+			$skip_start = $line_num;
+		}
+		$skip_lines{$line_num} = 1 if $in_skip;
+		if($line =~ /##\s*MUTANT_SKIP_END/) {
+			croak "$self->{file}: MUTANT_SKIP_END at line $line_num with no matching MUTANT_SKIP_BEGIN"
+				unless $in_skip;
+			$in_skip = 0;
+		}
+	}
+	# Unclosed MUTANT_SKIP_BEGIN is fatal
+	croak "$self->{file}: MUTANT_SKIP_BEGIN at line $skip_start has no matching MUTANT_SKIP_END" if $in_skip;
+
+	# Store skip lines for use by the report generator
+	$self->{skip_lines} = \%skip_lines;
+
 	my @mutants;
 
-	# Run each registered mutation strategy against the document
-	for my $mutation (@{ $self->{mutations} }) {
-		push @mutants, $mutation->mutate($doc);
+	# Run each registered mutation strategy against the document,
+	# excluding any candidates on skip-annotated lines
+	for my $mutation (@{$self->{mutations}}) {
+		push @mutants, grep { !$skip_lines{$_->line} } $mutation->mutate($doc);
 	}
 
 	# In fast mode deduplicate and remove redundant mutants
 	if($self->{mutation_level} eq $LEVEL_FAST) {
-		return @{ _dedup_mutants(\@mutants) };
+		return @{_dedup_mutants(\@mutants)};
 	}
 
 	return @mutants;

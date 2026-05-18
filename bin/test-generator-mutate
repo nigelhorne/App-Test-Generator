@@ -34,6 +34,31 @@ test-generator-mutate - Run mutation testing against a Perl test suite
 
     test-generator-mutate --lib lib --min-score 85 --json mutation.json
 
+=head2 Skipping Lines from Mutation
+
+Some routines involve process-management side-effects (forking,
+signalling, C<waitpid>) that are inherently difficult to assert against
+in a unit test.  A mutant that corrupts a PID or signal value may cause
+the test suite to hang or emit warnings from an C<END> block rather than
+producing a clean pass/fail result.
+
+To exclude a block of lines from mutation testing entirely, wrap it with
+C<## MUTANT_SKIP_BEGIN> and C<## MUTANT_SKIP_END> annotations:
+
+    sub disable_hot_reload {
+        ## MUTANT_SKIP_BEGIN
+        kill 'HUP', $pid if $pid;
+        waitpid $pid, 0;
+        ## MUTANT_SKIP_END
+    }
+
+Skipped lines are silently excluded from the mutation candidate list and
+do not appear in the killed or survived counts.  The number of skipped
+lines is shown in the per-file mutation report.
+
+Mismatched markers (a C<## MUTANT_SKIP_BEGIN> with no matching
+C<## MUTANT_SKIP_END>, or vice versa) are fatal errors.
+
 =head2 Numeric Boundary Mutants
 
 Kill Numeric Boundary Mutants first,
@@ -510,6 +535,7 @@ my $total   = 0;
 my $killed  = 0;
 my @survivors;
 my @killed_mutants;
+my %skipped_by_file;	# lines excluded by MUTANT_SKIP annotations, keyed by filename
 
 for my $file (@files) {
 	my $mutator = App::Test::Generator::Mutator->new(
@@ -519,6 +545,12 @@ for my $file (@files) {
 	);
 
 	my @mutants = $mutator->generate_mutants();
+
+	# Collect skip count from mutator
+	my $skipped = scalar keys %{$mutator->{skip_lines} // {}};
+
+	# Add to per-file tracking (needs a new %skipped_by_file hash)
+	$skipped_by_file{$file} = $skipped if $skipped;
 
 	my $groups;
 
@@ -668,6 +700,7 @@ if($opt{json}) {
 		survived_count => scalar(@survivors),
 		killed         => \@killed_mutants,
 		survived       => \@survivors,
+		skipped        => \%skipped_by_file,
 	});
 	close $fh;
 }

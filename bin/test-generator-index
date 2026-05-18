@@ -4127,9 +4127,9 @@ sub _mutation_index {
 	# TER3 = Third level Test Effectiveness Ratio (LCSAJ path coverage).
 	# Only shown when lcsaj_root is configured.
 	if($config{lcsaj_root}) {
-		push @html, "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th><th>Complexity</th><th title=\"TER1=Statement, TER2=Branch, TER3=LCSAJ Path\">TER1 / TER2 / TER3</th></tr>\n";
+		push @html, "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Skipped</th><th>Score%</th><th>Complexity</th><th title=\"TER1=Statement, TER2=Branch, TER3=LCSAJ Path\">TER1 / TER2 / TER3</th></tr>\n";
 	} else {
-		push @html, "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Score%</th><th>Complexity</th></tr>\n";
+		push @html, "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Skipped</th><th>Score%</th><th>Complexity</th></tr>\n";
 	}
 
 	for my $file (
@@ -4251,6 +4251,7 @@ sub _mutation_index {
 			$total,
 			$killed,
 			$survived,
+			$files->{$file}{skipped},
 			$badge_html,
 			$complexity_html,
 			$ter_cell,
@@ -4382,7 +4383,6 @@ sub _ter_badge {
 #             Mutants missing a 'file' field are
 #             silently skipped.
 #
-# Side effects: None.
 # --------------------------------------------------
 sub _group_by_file {
 	my $data = $_[0];
@@ -4392,11 +4392,18 @@ sub _group_by_file {
 	for my $status (qw(survived killed)) {
 		next unless $data->{$status};
 
-		for my $m (@{ $data->{$status} }) {
+		for my $m (@{$data->{$status}}) {
 			next unless ref $m;
 			next unless defined $m->{file};
 
-			push @{ $files{ $m->{file} }{$status} }, $m;
+			push @{$files{$m->{file}}{$status}}, $m;
+		}
+	}
+
+	# Propagate per-file skipped line counts from MUTANT_SKIP annotations
+	if($data->{skipped}) {
+		for my $file (keys %{$data->{skipped}}) {
+			$files{$file}{skipped} = $data->{skipped}{$file};
 		}
 	}
 
@@ -4802,6 +4809,9 @@ sub _mutant_file_report {
 		}
 
 		print $out "</span>$details";
+	}
+	if(my $skipped = $mutants->{skipped}) {
+		print $out "<p><em>$skipped line(s) excluded by MUTANT_SKIP annotations.</em></p>\n";
 	}
 
 	print $out "</pre>\n",
