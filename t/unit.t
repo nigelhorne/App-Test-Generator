@@ -359,7 +359,7 @@ subtest 'Mutator::apply_mutant - croaks without prepare_workspace' => sub {
 
 subtest 'Mutator::apply_mutant - applies transform to workspace file' => sub {
 	my $guard = mock_scoped(
-		'File::Copy::Recursive::dircopy' => sub { 1 }
+		'App::Test::Generator::Mutator::dircopy' => sub { 1 }
 	);
 
 	my $m = App::Test::Generator::Mutator->new(file => $ws_src, lib_dir => $ws_lib);
