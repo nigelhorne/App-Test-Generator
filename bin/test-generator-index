@@ -4118,6 +4118,7 @@ sub _mutation_index {
 	push @html, "<li><b>Total</b>: $data->{total}</li>";
 	push @html, '<li><b>Killed</b>: ', scalar(@{$data->{killed} || []}), '</li>';
 	push @html, '<li><b>Survived</b>: ', scalar(@{$data->{survived} || []}), '</li>';
+
 	push @html, '</ul>';
 
 	push @html, "<h3>Mutation Files</h3>\n";
@@ -4243,7 +4244,7 @@ sub _mutation_index {
 		}
 
 		push @html, sprintf(
-			qq{<tr class="%s"><td><a href="%s" title="View mutation line by line" target="_blank">%s</a> %s</td><td>%d</td><td>%d</td><td>%d</td><td>%s</td><td>%s</td><td>%s</td></tr>},
+			qq{<tr class="%s"><td><a href="%s" title="View mutation line by line" target="_blank">%s</a> %s</td><td>%d</td><td>%d</td><td>%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>},
 			$row_class,
 			$html_file,
 			$file,
@@ -4251,7 +4252,7 @@ sub _mutation_index {
 			$total,
 			$killed,
 			$survived,
-			$files->{$file}{skipped},
+			$files->{$file}{skipped} // 0,
 			$badge_html,
 			$complexity_html,
 			$ter_cell,
@@ -4552,6 +4553,9 @@ sub _mutant_file_report {
 			print $out "TER2 (Branch): $branch_pct%<br>\n";
 			print $out "TER3 (LCSAJ): $ter3_str<br>\n";
 			print $out "Approximate LCSAJ segments: $approx_lcsaj<br>\n";
+			if(my $skipped = $mutants->{skipped}) {
+				print $out "<p><em>$skipped line(s) excluded by MUTANT_SKIP annotations.</em></p>\n";
+			}
 			print $out "</div>\n";
 
 			print $out qq{
@@ -4809,9 +4813,6 @@ sub _mutant_file_report {
 		}
 
 		print $out "</span>$details";
-	}
-	if(my $skipped = $mutants->{skipped}) {
-		print $out "<p><em>$skipped line(s) excluded by MUTANT_SKIP annotations.</em></p>\n";
 	}
 
 	print $out "</pre>\n",
