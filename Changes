@@ -1,6 +1,6 @@
 Revision history for App-Test-Generator
 
-0.36	Sat May  9 18:54:04 EDT 2026
+0.37	Mon May 18 14:58:48 EDT 2026
 
 	[Enhancements]
 	- Add MUTANT_SKIP_BEGIN / MUTANT_SKIP_END source annotations to exclude
@@ -8,16 +8,20 @@ Revision history for App-Test-Generator
 	  line counts appear in the per-file mutation report and summary table.
 
 	[Bug fixes]
-	- Fix uninitialized $version warning in CPAN Testers "no failures"
-	  message when the CPAN API returns a 404 (no release data available).
-	- Fix "Can't open lib/App/Test/Generator.pm" error when test-generator-index
-	  is run from a repository other than ATG itself; ATG version is now
-	  found by searching @INC with fallback to the configured module_file path.
 	- Fix fuzz schema generation looking in xt/conf instead of t/conf.
 	- Fix mutate.yml for external repos: add commit step so mutation.json
 	  is persisted after each run, enabling the dashboard workflow_run
 	  trigger to pick up fresh results.
 	- Fix BSD::Resource dependency failing on Windows; guard with OS check.
+
+0.36	Sat May  9 18:54:04 EDT 2026
+
+	[Bug fixes]
+	- Fix uninitialized $version warning in CPAN Testers "no failures"
+	  message when the CPAN API returns a 404 (no release data available).
+	- Fix "Can't open lib/App/Test/Generator.pm" error when test-generator-index
+	  is run from a repository other than ATG itself; ATG version is now
+	  found by searching @INC with fallback to the configured module_file path.
 
 0.35	Sat May  9 09:40:08 EDT 2026
 
