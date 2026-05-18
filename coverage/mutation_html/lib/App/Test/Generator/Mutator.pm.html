@@ -244,8 +244,8 @@ pre details.mutant-details ul {
 <div class="nav"><a href="Mutation/ReturnUndef.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
  <a href="TestStrategy.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
-TER1 (Statement): 91.82%<br>
-TER2 (Branch): 67.39%<br>
+TER1 (Statement): 96.36%<br>
+TER2 (Branch): 86.96%<br>
 TER3 (LCSAJ): 100.0% (13/13)<br>
 Approximate LCSAJ segments: 47<br>
 </div>
@@ -299,7 +299,7 @@ Approximate LCSAJ segments: 47<br>
 </span><span class="">    7: use File::Copy qw(copy);
 </span><span class="">    8: use File::Copy::Recursive qw(dircopy);
 </span><span class="">    9: use File::Spec;
-</span><span class="">   10: use File::Temp          qw(tempdir);
+</span><span class="">   10: use File::Temp qw(tempdir);
 </span><span class="">   11: use PPI;
 </span><span class="">   12: use Readonly;
 </span><span class="">   13: 
@@ -317,7 +317,7 @@ Approximate LCSAJ segments: 47<br>
 </span><span class="">   25: # --------------------------------------------------
 </span><span class="">   26: # Default values for optional constructor arguments
 </span><span class="">   27: # --------------------------------------------------
-</span><span class="">   28: Readonly my $DEFAULT_LIB_DIR        =&gt; &#39;lib&#39;;
+</span><span class="">   28: Readonly my $DEFAULT_LIB_DIR =&gt; &#39;lib&#39;;
 </span><span class="">   29: Readonly my $DEFAULT_MUTATION_LEVEL =&gt; $LEVEL_FULL;
 </span><span class="">   30: 
 </span><span class="">   31: our $VERSION = &#39;0.36&#39;;
@@ -466,27 +466,21 @@ Approximate LCSAJ segments: 47<br>
 </span><span class="">  174: 	my $doc = PPI::Document-&gt;new($self-&gt;{file}) or croak &quot;Unable to parse $self-&gt;{file}&quot;;
 </span><span class="">  175: 
 </span><span class="">  176: 	# Build set of lines excluded by ## MUTANT_SKIP_BEGIN / ## MUTANT_SKIP_END
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  177: 	my %skip_lines;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_177_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class="">  178: 	my $in_skip  = 0;
+</span><span class="">  177: 	my %skip_lines;
+</span><span class="">  178: 	my $in_skip  = 0;
 </span><span class="">  179: 	my $skip_start = 0;
 </span><span class="">  180: 	my $line_num = 0;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  181: 	for my $line (split /\n/, $doc-&gt;serialize()) {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  182: 		$line_num++;
-</span><span class="">  183: 		if($line =~ /##\s*MUTANT_SKIP_BEGIN/) {
-</span><span class="">  184: 			croak &quot;$self-&gt;{file}: MUTANT_SKIP_BEGIN at line $line_num with no prior MUTANT_SKIP_END&quot;
+</span><span class="">  181: 	for my $line (split /\n/, $doc-&gt;serialize()) {
+</span><span class="">  182: 		$line_num++;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  183: 		if($line =~ /##\s*MUTANT_SKIP_BEGIN/) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  184: 			croak &quot;$self-&gt;{file}: MUTANT_SKIP_BEGIN at line $line_num with no prior MUTANT_SKIP_END&quot;
 </span><span class="">  185: 				if $in_skip;
 </span><span class="">  186: 			$in_skip    = 1;
 </span><span class="">  187: 			$skip_start = $line_num;
 </span><span class="">  188: 		}
 </span><span class="">  189: 		$skip_lines{$line_num} = 1 if $in_skip;
-</span><span class="">  190: 		if($line =~ /##\s*MUTANT_SKIP_END/) {
-</span><span class="">  191: 			croak &quot;$self-&gt;{file}: MUTANT_SKIP_END at line $line_num with no matching MUTANT_SKIP_BEGIN&quot;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  190: 		if($line =~ /##\s*MUTANT_SKIP_END/) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  191: 			croak &quot;$self-&gt;{file}: MUTANT_SKIP_END at line $line_num with no matching MUTANT_SKIP_BEGIN&quot;
 </span><span class="">  192: 				unless $in_skip;
 </span><span class="">  193: 			$in_skip = 0;
 </span><span class="">  194: 		}
@@ -506,12 +500,18 @@ Approximate LCSAJ segments: 47<br>
 </span><span class="">  208: 	}
 </span><span class="">  209: 
 </span><span class="">  210: 	# In fast mode deduplicate and remove redundant mutants
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">211 → 211 → 215</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">211 → 211 → 0</span></span>  211: 	if($self-&gt;{mutation_level} eq $LEVEL_FAST) {
-</span><span class="">  212: 		return @{_dedup_mutants(\@mutants)};
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">211 → 211 → 215</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">211 → 211 → 0</span></span>  211: 	if($self-&gt;{mutation_level} eq $LEVEL_FAST) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_211_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class="">  212: 		return @{_dedup_mutants(\@mutants)};
 </span><span class="">  213: 	}
 </span><span class="">  214: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">215 → 215 → 0</span></span>  215: 	return @mutants;
-</span><span class="">  216: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">215 → 215 → 0</span></span>  215: 	return @mutants;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  216: }
 </span><span class="">  217: 
 </span><span class="">  218: =head2 prepare_workspace
 </span><span class="">  219: 
@@ -547,8 +547,8 @@ Approximate LCSAJ segments: 47<br>
 </span><span class="">  249: Call C&lt;prepare_workspace&gt; once per file, then C&lt;apply_mutant&gt; once per
 </span><span class="">  250: mutant within that file. Do not store the returned path beyond the
 </span><span class="">  251: lifetime of the enclosing scope.
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  252: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  253: =head3 API specification
+</span><span class="">  252: 
+</span><span class="">  253: =head3 API specification
 </span><span class="">  254: 
 </span><span class="">  255: =head4 input
 </span><span class="">  256: 
@@ -581,8 +581,8 @@ Approximate LCSAJ segments: 47<br>
 </span><span class="">  283: 	$self-&gt;{workspace} = $tmp;
 </span><span class="">  284: 	$self-&gt;{relative}  = $relative;
 </span><span class="">  285: 
-</span><span class="">  286: 	return $tmp;
-</span><span class="">  287: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  286: 	return $tmp;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  287: }
 </span><span class="">  288: 
 </span><span class="">  289: =head2 apply_mutant
 </span><span class="">  290: 
@@ -662,21 +662,8 @@ Approximate LCSAJ segments: 47<br>
 </span><span class="">  364: None beyond C&lt;$self&gt;.
 </span><span class="">  365: 
 </span><span class="">  366: =head3 Returns
-</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  367: 
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>NUM_BOUNDARY_367_35_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class="">  368: 1 if all tests passed (mutant survived), 0 if any test failed (mutant
+</span><span class="">  367: 
+</span><span class="">  368: 1 if all tests passed (mutant survived), 0 if any test failed (mutant
 </span><span class="">  369: killed).
 </span><span class="">  370: 
 </span><span class="">  371: =head3 Side effects
@@ -709,8 +696,21 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  398: 	my $prove = File::Spec-&gt;catfile($Config{bin}, &#39;prove&#39;);
 </span><span class="">  399: 	$prove = &#39;prove&#39; unless -x $prove;
 </span><span class="">  400: 
-</span><span class="">  401: 	return system($prove, &#39;-l&#39;, &#39;t&#39;) == 0;
-</span><span class="">  402: }
+</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  401: 	return system($prove, &#39;-l&#39;, &#39;t&#39;) == 0;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>NUM_BOUNDARY_401_35_!=: Numeric boundary flip == to !=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class="">  402: }
 </span><span class="">  403: 
 </span><span class="">  404: # --------------------------------------------------
 </span><span class="">  405: # _dedup_mutants
@@ -743,87 +743,83 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  432: 			$m-&gt;{description} // &#39;&#39;;
 </span><span class="">  433: 
 </span><span class="">  434: 		next if $seen{$key}++;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  435: 		next if _is_redundant_mutation($m);
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  436: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  437: 		push @rc, $m;
+</span><span class="">  435: 		next if _is_redundant_mutation($m);
+</span><span class="">  436: 
+</span><span class="">  437: 		push @rc, $m;
 </span><span class="">  438: 	}
 </span><span class="">  439: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">440 → 440 → 0</span></span>  440: 	return \@rc;
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  441: }
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  442: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">440 → 440 → 0</span></span>  440: 	return \@rc;
+</span><span class="">  441: }
+</span><span class="">  442: 
 </span><span class="">  443: # --------------------------------------------------
 </span><span class="">  444: # _is_redundant_mutation
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  445: #
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  446: # Purpose:    Return true if a mutant is considered
-</span><span class="">  447: #             redundant and should be skipped in fast
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  448: #             mutation mode.
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  449: #
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  450: # Entry:      $m - a Mutant hashref.
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  451: #
+</span><span class="">  445: #
+</span><span class="">  446: # Return true if a mutant is considered
+</span><span class="">  447: #     redundant and should be skipped in fast
+</span><span class="">  448: #     mutation mode.
+</span><span class="">  449: #
+</span><span class="">  450: # Entry:      $m - a Mutant hashref.
+</span><span class="">  451: #
 </span><span class="">  452: # Exit:       Returns 1 if redundant, 0 otherwise.
 </span><span class="">  453: #
-</span><span class="">  454: # Side effects: None.
-</span><span class="">  455: #
-</span><span class="">  456: # Notes:      Checks for arithmetic no-ops, double
-</span><span class="">  457: #             negation inside conditionals, boolean
-</span><span class="">  458: #             literal flips, mutations inside comments,
-</span><span class="">  459: #             and equivalent numeric comparisons.
-</span><span class="">  460: #             Does not compare transform coderefs &acirc;&#128;&#148;
-</span><span class="">  461: #             they are not meaningful as strings.
-</span><span class="">  462: # --------------------------------------------------
-</span><span class="">  463: sub _is_redundant_mutation {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">464 → 474 → 479</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">464 → 474 → 0</span></span>  464: 	my ($m) = @_;
+</span><span class="">  454: # Notes:      Checks for arithmetic no-ops, double
+</span><span class="">  455: #             negation inside conditionals, boolean
+</span><span class="">  456: #             literal flips, mutations inside comments,
+</span><span class="">  457: #             and equivalent numeric comparisons.
+</span><span class="">  458: #             Does not compare transform coderefs &acirc;&#128;&#148;
+</span><span class="">  459: #             they are not meaningful as strings.
+</span><span class="">  460: # --------------------------------------------------
+</span><span class="">  461: sub _is_redundant_mutation {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">462 → 472 → 477</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">462 → 472 → 0</span></span>  462: 	my ($m) = @_;
+</span><span class="">  463: 
+</span><span class="">  464: 	my $orig = $m-&gt;{original} // &#39;&#39;;
 </span><span class="">  465: 
-</span><span class="">  466: 	my $orig = $m-&gt;{original} // &#39;&#39;;
-</span><span class="">  467: 
-</span><span class="">  468: 	# Arithmetic no-ops add nothing to mutation coverage
-</span><span class="">  469: 	return 1 if $orig =~ /\+\s*0$/;
-</span><span class="">  470: 	return 1 if $orig =~ /-\s*0$/;
-</span><span class="">  471: 
-</span><span class="">  472: 	# Double negation inside conditionals forces boolean context
-</span><span class="">  473: 	# in Perl and is not a meaningful mutation
-</span><span class="">  474: 	if($m-&gt;{context} &amp;&amp; $m-&gt;{context} eq &#39;conditional&#39;) {
-</span><span class="">  475: 		return 1 if $orig =~ /^\!\!/;
-</span><span class="">  476: 	}
-</span><span class="">  477: 
-</span><span class="">  478: 	# Boolean literal flip on a standalone 1 or 0 is trivial
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">479 → 484 → 0</span></span>  479: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
-</span><span class="">  480: 
-</span><span class="">  481: 	# Mutations inside comments are unreachable code
-</span><span class="">  482: 	return 1 if $m-&gt;{line_content} &amp;&amp; $m-&gt;{line_content} =~ /^\s*#/;
-</span><span class="">  483: 
-</span><span class="">  484: 	return 0;
-</span><span class="">  485: }
+</span><span class="">  466: 	# Arithmetic no-ops add nothing to mutation coverage
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  467: 	return 1 if $orig =~ /\+\s*0$/;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  468: 	return 1 if $orig =~ /-\s*0$/;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  469: 
+</span><span class="">  470: 	# Double negation inside conditionals forces boolean context
+</span><span class="">  471: 	# in Perl and is not a meaningful mutation
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  472: 	if($m-&gt;{context} &amp;&amp; $m-&gt;{context} eq &#39;conditional&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  473: 		return 1 if $orig =~ /^\!\!/;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  474: 	}
+</span><span class="">  475: 
+</span><span class="">  476: 	# Boolean literal flip on a standalone 1 or 0 is trivial
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">477 → 482 → 0</span></span>  477: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  478: 
+</span><span class="">  479: 	# Mutations inside comments are unreachable code
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  480: 	return 1 if $m-&gt;{line_content} &amp;&amp; $m-&gt;{line_content} =~ /^\s*#/;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  481: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  482: 	return 0;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  483: }
+</span><span class="">  484: 
+</span><span class="">  485: =head1 SEE ALSO
 </span><span class="">  486: 
-</span><span class="">  487: =head1 SEE ALSO
+</span><span class="">  487: =over 4
 </span><span class="">  488: 
-</span><span class="">  489: =over 4
+</span><span class="">  489: =item C&lt;bin/test-generator-mutate&gt;
 </span><span class="">  490: 
-</span><span class="">  491: =item C&lt;bin/test-generator-mutate&gt;
+</span><span class="">  491: =item L&lt;Devel::Mutator&gt;
 </span><span class="">  492: 
-</span><span class="">  493: =item L&lt;Devel::Mutator&gt;
+</span><span class="">  493: =back
 </span><span class="">  494: 
-</span><span class="">  495: =back
+</span><span class="">  495: =head1 AUTHOR
 </span><span class="">  496: 
-</span><span class="">  497: =head1 AUTHOR
+</span><span class="">  497: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
 </span><span class="">  498: 
-</span><span class="">  499: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  499: =head1 LICENCE AND COPYRIGHT
 </span><span class="">  500: 
-</span><span class="">  501: Portions of this module&#39;s initial design and documentation were created
-</span><span class="">  502: with the assistance of AI.
-</span><span class="">  503: 
-</span><span class="">  504: =head1 LICENCE AND COPYRIGHT
-</span><span class="">  505: 
-</span><span class="">  506: Copyright 2026 Nigel Horne.
-</span><span class="">  507: 
-</span><span class="">  508: Usage is subject to the terms of GPL2.
-</span><span class="">  509: If you use it,
-</span><span class="">  510: please let me know.
-</span><span class="">  511: 
-</span><span class="">  512: =cut
-</span><span class="">  513: 
-</span><span class="">  514: 1;
-</span></pre>
+</span><span class="">  501: Copyright 2026 Nigel Horne.
+</span><span class="">  502: 
+</span><span class="">  503: Usage is subject to the terms of GPL2.
+</span><span class="">  504: If you use it,
+</span><span class="">  505: please let me know.
+</span><span class="">  506: 
+</span><span class="">  507: =cut
+</span><span class="">  508: 
+</span><span class="">  509: 1;
+</span><p><em>2 line(s) excluded by MUTANT_SKIP annotations.</em></p>
+</pre>
 
 <script>
 function toggleTheme() {
