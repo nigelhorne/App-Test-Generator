@@ -245,7 +245,7 @@ pre details.mutant-details ul {
  <a href="Generator/Mutation/BooleanNegation.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 84.48%<br>
-TER2 (Branch): 72.29%<br>
+TER2 (Branch): 72.48%<br>
 TER3 (LCSAJ): 98.4% (126/128)<br>
 Approximate LCSAJ segments: 517<br>
 </div>
@@ -2112,7 +2112,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 1749: 
 </span><span class=""> 1750: 	# Sort the edge cases to keep it consistent across runs
 </span><span class=""> 1751: 	@edge_case_array = sort {
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1752: 		return -1 if !defined $a;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1752: 		return -1 if !defined $a;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2205,7 +2205,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1761: 		return $a cmp $b;
+<span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1761: 		return $a cmp $b;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2257,7 +2257,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 1789: 
 </span><span class=""> 1790: 	# Render input/output
 </span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1791 → 1792 → 1801</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1791 → 1792 → 0</span></span> 1791: 	my $input_code = &#39;&#39;;
-</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 1792: 	if(((scalar keys %input) == 1) &amp;&amp; exists($input{&#39;type&#39;}) &amp;&amp; !ref($input{&#39;type&#39;})) {
+</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 1792: 	if(((scalar keys %input) == 1) &amp;&amp; exists($input{&#39;type&#39;}) &amp;&amp; !ref($input{&#39;type&#39;})) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -3926,7 +3926,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3177: 
 </span><span class=""> 3178: 	# Last resort &acirc;&#128;&#148; single-quoted string with escaped apostrophes
 </span><span class=""> 3179: 	(my $esc = $s) =~ s/&#39;/\\&#39;/g;
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 3180: 	return &quot;&#39;$esc&#39;&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 3180: 	return &quot;&#39;$esc&#39;&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -4697,7 +4697,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3888: 			description   =&gt; &#39;Array is sorted in descending order&#39;,
 </span><span class=""> 3889: 			code_template =&gt; sub {
 </span><span class=""> 3890: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 3891: 				return &#39;do { my @arr = @$result; my $sorted = 1; &#39; .
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 3891: 				return &#39;do { my @arr = @$result; my $sorted = 1; &#39; .
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -5021,7 +5021,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 							</li><li><b>COND_INV_4044_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class=""> 4045: 				# min=0: positive numbers only
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4046: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { rand($DEFAULT_GENERATOR_RANGE) })&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4046: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { rand($DEFAULT_GENERATOR_RANGE) })&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -5204,7 +5204,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 					<ul>
 				<li><b>COND_INV_4080_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4081: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; qr/$pattern/, length =&gt; $spec-&gt;{&#39;max&#39;} }) }&quot;;
+<span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4081: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; qr/$pattern/, length =&gt; $spec-&gt;{&#39;max&#39;} }) }&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -5227,7 +5227,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 								</div>
 							</li></ul></details>
 <span class=""> 4082: 			} elsif(defined($spec-&gt;{&#39;min&#39;})) {
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4083: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; qr/$pattern/, length =&gt; $spec-&gt;{&#39;min&#39;} }) }&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4083: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; qr/$pattern/, length =&gt; $spec-&gt;{&#39;min&#39;} }) }&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
