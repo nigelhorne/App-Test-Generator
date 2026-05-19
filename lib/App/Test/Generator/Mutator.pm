@@ -178,16 +178,23 @@ sub generate_mutants {
 	my $in_skip  = 0;
 	my $skip_start = 0;
 	my $line_num = 0;
+
 	for my $line (split /\n/, $doc->serialize()) {
 		$line_num++;
-		if($line =~ /##\s*MUTANT_SKIP_BEGIN/) {
+
+		# Match only lines where the annotation is the entire content —
+		# prevents false positives in comments or POD that mention the tag
+		if($line =~ /^\s*##\s*MUTANT_SKIP_BEGIN\s*$/) {
 			croak "$self->{file}: MUTANT_SKIP_BEGIN at line $line_num with no prior MUTANT_SKIP_END"
 				if $in_skip;
 			$in_skip    = 1;
 			$skip_start = $line_num;
 		}
 		$skip_lines{$line_num} = 1 if $in_skip;
-		if($line =~ /##\s*MUTANT_SKIP_END/) {
+
+		# Match only lines where the annotation is the entire content —
+		# prevents false positives in comments or POD that mention the tag
+		if($line =~ /^\s*##\s*MUTANT_SKIP_END\s*$/) {
 			croak "$self->{file}: MUTANT_SKIP_END at line $line_num with no matching MUTANT_SKIP_BEGIN"
 				unless $in_skip;
 			$in_skip = 0;
