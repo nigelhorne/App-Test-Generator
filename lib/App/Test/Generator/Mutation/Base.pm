@@ -4,11 +4,11 @@ use strict;
 use warnings;
 use Carp qw(croak);
 
-our $VERSION = '0.37';
+our $VERSION = '0.38';
 
 =head1 VERSION
 
-Version 0.37
+Version 0.38
 
 =head1 DESCRIPTION
 

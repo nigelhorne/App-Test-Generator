@@ -15,7 +15,7 @@ use Readonly;
 # --------------------------------------------------
 Readonly my $DEFAULT_OUT_DIR => 'lcsaj';
 
-our $VERSION = '0.37';
+our $VERSION = '0.38';
 
 =head1 NAME
 
@@ -45,7 +45,7 @@ calculation.
 
 =head1 VERSION
 
-Version 0.37
+Version 0.38
 
 =head2 generate
 

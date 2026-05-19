@@ -16,11 +16,17 @@ use Readonly;
 # --------------------------------------------------
 Readonly my $OUT_DIR => 'cover_html/lcsaj_hits';
 
-our $VERSION = '0.37';
-
 =head1 NAME
 
 Devel::App::Test::Generator::LCSAJ::Runtime - Debugger backend for LCSAJ coverage
+
+=head1 VERSION
+
+Version 0.38
+
+=cut
+
+our $VERSION = '0.38';
 
 =head1 SYNOPSIS
 
@@ -31,9 +37,8 @@ Devel::App::Test::Generator::LCSAJ::Runtime - Debugger backend for LCSAJ coverag
 This module is loaded as a Perl debugger backend using the C<-d:Module> flag.
 
 When Perl sees C<-d:App::Test::Generator::LCSAJ::Runtime> it prepends C<Devel::>
-and loads C<Devel/App/Test/Generator/LCSAJ/Runtime.pm> from C<@INC>. The file
-must therefore live at that path — typically
-C<lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm>.
+and loads C<Devel/App/Test/Generator/LCSAJ/Runtime.pm> from C<@INC>.
+The file must therefore live at that path - typically C<lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm>.
 
 Perl automatically calls C<DB::DB> before executing each statement while the
 debugger is active. We record (file, line) pairs to build runtime hit data for
