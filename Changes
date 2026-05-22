@@ -12,6 +12,12 @@ Revision history for App-Test-Generator
 	- Fix _extract_defaults_from_code incorrectly marking a parameter as
 	  optional when its only assignment is a dereference or method call
 	  (e.g. my $x = $params->{x}); such expressions are not default values.
+	- Fix --strict-pod false positive for methods using the my $self = $_[0]
+	  calling style: add direct-index style recognition to
+	  _extract_parameters_from_signature and guard the fallback extractor in
+	  _extract_defaults_from_code so that inner closure parameters
+	  (my ($x, $y) = @_ inside a sub ref) are not mistaken for the outer
+	  method's parameters.
 
 0.38	Mon May 18 21:19:40 EDT 2026
 

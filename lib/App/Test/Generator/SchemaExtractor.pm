@@ -5519,6 +5519,20 @@ sub _extract_parameters_from_signature {
 		}
 	}
 
+	# Direct-index style: my $self = $_[0];  my $arg = $_[1]; ...
+	# Must be checked before Style 1 to avoid matching @_ inside closures
+	# defined in the body of a method that uses this style.
+	if($code =~ /my\s+\$(?:self|class)\s*=\s*\$_\[0\]/) {
+		my $pos = 0;
+		while($code =~ /my\s+\$(\w+)\s*=\s*\$_\[(\d+)\]/g) {
+			my $name = $1;
+			next if $name =~ /^(self|class)$/i;
+			$params->{$name} //= { _source => 'code', optional => 1, position => $pos++ };
+			$self->_log("  CODE: Found direct-index parameter '\$$name' at \$_[$2]");
+		}
+		return;
+	}
+
 	# Traditional Style 1: my ($self, $arg1, $arg2) = @_;
 	if ($code =~ /my\s*\(\s*([^)]+)\)\s*=\s*\@_/s) {
 		my $sig = $1;
@@ -6220,9 +6234,12 @@ sub _extract_defaults_from_code {
 	}
 
 	# Fallback: extract parameters from classic Perl body styles
-	# Only run if signature extraction found nothing
+	# Only run if signature extraction found nothing AND the code does not use
+	# the direct-index ($_[0]) style — that style is used for no-param methods
+	# whose empty %params would otherwise trigger this fallback and pick up
+	# my (...) = @_ from inner closures as if they were method params.
 	# TODO:  On constructors, use $class to help to determine the output type
-	if (!keys %{$params}) {
+	if (!keys %{$params} && $code !~ /my\s+\$(?:self|class)\s*=\s*\$_\[0\]/) {
 		my $position = 0;
 
 		# Style 1: my ($a, $b) = @_;
