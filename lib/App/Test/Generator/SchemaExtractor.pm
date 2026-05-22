@@ -3656,15 +3656,36 @@ sub _analyze_output_from_pod {
 
 	if ($pod) {
 		# Pattern 0: =head4 Output formal spec (highest priority — explicit over heuristic)
+		# The outer container shape determines the return type:
+		#   (...)  — list/array of items
+		#   [...]  — arrayref  (bare [] = empty/void, skip)
+		#   {...}  — hashref spec; look for type => inside, or isa => for object
 		if($pod =~ /=head4\s+Output\b(.*?)(?==head|\z)/si) {
 			my $block = $1;
-			if($block =~ /type\s*=>\s*['"]?(\w[\w:]*?)['"]?\s*[,}]/i) {
-				my $type = lc($1);
-				$type = 'hashref'  if $type eq 'hash';
-				$type = 'arrayref' if $type eq 'array';
-				if($VALID_OUTPUT_TYPES{$type}) {
-					$output->{type} = $type;
-					$self->_log("  OUTPUT: type '$type' from =head4 Output formal spec");
+			$block =~ s/^\s+//;
+			if($block =~ /^\(/) {
+				$output->{type} = 'array';
+				$self->_log("  OUTPUT: type 'array' from =head4 Output list notation");
+			} elsif($block =~ /^\[/) {
+				unless($block =~ /^\[\s*\]/) {
+					$output->{type} = 'arrayref';
+					$self->_log("  OUTPUT: type 'arrayref' from =head4 Output arrayref notation");
+				}
+			} elsif($block =~ /^\{/) {
+				if($block =~ /type\s*=>\s*['"]?(\w[\w:]*?)['"]?\s*[,}]/i) {
+					my $type = lc($1);
+					$type = 'hashref'  if $type eq 'hash';
+					$type = 'arrayref' if $type eq 'array';
+					if($VALID_OUTPUT_TYPES{$type}) {
+						$output->{type} = $type;
+						$self->_log("  OUTPUT: type '$type' from =head4 Output formal spec");
+					} elsif($block =~ /\bisa\s*=>/) {
+						$output->{type} = 'object';
+						$self->_log("  OUTPUT: type 'object' from =head4 Output isa spec");
+					}
+				} elsif($block =~ /\bisa\s*=>/) {
+					$output->{type} = 'object';
+					$self->_log("  OUTPUT: type 'object' from =head4 Output isa spec");
 				}
 			}
 		}
@@ -4675,7 +4696,7 @@ sub _validate_output {
 	if ($output->{value} && defined $output->{type} && $output->{type} ne 'boolean') {
 		$self->_log("  WARNING Value set but type is not boolean: $output->{type}");
 	}
-	my %valid_types = map { $_ => 1 } qw(string integer number boolean arrayref hashref object void);
+	my %valid_types = map { $_ => 1 } qw(string integer number boolean array arrayref hashref object void);
 	if(exists $output->{type}) {
 		if(!$valid_types{$output->{type}}) {
 			$self->_log("  WARNING Output value type is unknown: '$output->{type}', setting to string");

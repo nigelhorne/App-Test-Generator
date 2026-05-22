@@ -495,4 +495,56 @@ END_MODULE
 	done_testing();
 };
 
+# =head4 Output with list notation (...)  →  array
+subtest '=head4 Output list notation gives array type' => sub {
+	my $module = <<'END_MODULE';
+package Test::ListOutput;
+use strict;
+use warnings;
+
+=head2 abuse_contacts()
+
+Returns a list of contact hashrefs.
+
+=head3 Returns
+
+A list of hashrefs.
+
+=head3 API Specification
+
+=head4 Output
+
+    (
+        {
+            type => 'hashref',
+            keys => {
+                address => { type => 'scalar' },
+            },
+        },
+        ...
+    )
+
+=cut
+
+sub abuse_contacts {
+	my $self = $_[0];
+	return ({ address => 'abuse@example.com' });
+}
+
+END_MODULE
+
+	my $module_file = create_test_module($module);
+	my $extractor = App::Test::Generator::SchemaExtractor->new(
+		input_file => $module_file,
+		output_dir => tempdir(CLEANUP => 1),
+		verbose    => 0,
+	);
+	my $schemas = $extractor->extract_all();
+
+	is($schemas->{abuse_contacts}{output}{type}, 'array',
+		'=head4 Output (...) notation correctly yields array type, not inner hashref type');
+
+	done_testing();
+};
+
 done_testing();

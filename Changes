@@ -16,6 +16,10 @@ Revision history for App-Test-Generator
 	  when a method has a =head4 Output formal spec; the spec type now takes
 	  precedence over heuristic code analysis (the string came from scalar
 	  being mapped to string when it wasn't in the valid-types list).
+	- Fix extract-schemas inferring output type as string instead of array when
+	  a =head4 Output block uses list notation (...); the output-type validator
+	  did not include 'array' in its allowed-types set and silently fell back
+	  to string.
 	- Fix --strict-pod false positive for methods using the my $self = $_[0]
 	  calling style: add direct-index style recognition to
 	  _extract_parameters_from_signature and guard the fallback extractor in
