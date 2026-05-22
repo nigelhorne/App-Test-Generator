@@ -3624,6 +3624,20 @@ sub _analyze_output_from_pod {
 		qw(string integer number float boolean arrayref hashref object coderef void undef);
 
 	if ($pod) {
+		# Pattern 0: =head4 Output formal spec (highest priority — explicit over heuristic)
+		if($pod =~ /=head4\s+Output\b(.*?)(?==head|\z)/si) {
+			my $block = $1;
+			if($block =~ /type\s*=>\s*['"]?(\w[\w:]*?)['"]?\s*[,}]/i) {
+				my $type = lc($1);
+				$type = 'hashref'  if $type eq 'hash';
+				$type = 'arrayref' if $type eq 'array';
+				if($VALID_OUTPUT_TYPES{$type}) {
+					$output->{type} = $type;
+					$self->_log("  OUTPUT: type '$type' from =head4 Output formal spec");
+				}
+			}
+		}
+
 		# Pattern 1: Returns: section
 		# Up to 3 lines
 		if ($pod =~ /Returns?:\s+([^\n]+(?:\n[^\n]+){0,2})/si) {
@@ -3632,22 +3646,22 @@ sub _analyze_output_from_pod {
 
 			$self->_log("  OUTPUT: Found Returns section: $returns_desc");
 
-			# Try to infer type from description
-			if ($returns_desc =~ /\b(string|text)\b/i) {
+			# Try to infer type from description (skip if Pattern 0 already set type)
+			if (!$output->{type} && $returns_desc =~ /\b(string|text)\b/i) {
 				$output->{type} = 'string';
-			} elsif ($returns_desc =~ /\b(integer|int|count)\b/i) {
+			} elsif (!$output->{type} && $returns_desc =~ /\b(integer|int|count)\b/i) {
 				$output->{type} = 'integer';
-			} elsif ($returns_desc =~ /\b(float|decimal|number)\b/i) {
+			} elsif (!$output->{type} && $returns_desc =~ /\b(float|decimal|number)\b/i) {
 				$output->{type} = 'number';
-			} elsif ($returns_desc =~ /\b(boolean|true|false)\b/i) {
+			} elsif (!$output->{type} && $returns_desc =~ /\b(boolean|true|false)\b/i) {
 				$output->{type} = 'boolean';
-			} elsif ($returns_desc =~ /\b(array|list)\b/i) {
+			} elsif (!$output->{type} && $returns_desc =~ /\b(array|list)\b/i) {
 				$output->{type} = 'arrayref';
-			} elsif ($returns_desc =~ /\b(hash|hashref|dictionary)\b/i) {
+			} elsif (!$output->{type} && $returns_desc =~ /\b(hash|hashref|dictionary)\b/i) {
 				$output->{type} = 'hashref';
-			} elsif ($returns_desc =~ /\b(object|instance)\b/i) {
+			} elsif (!$output->{type} && $returns_desc =~ /\b(object|instance)\b/i) {
 				$output->{type} = 'object';
-			} elsif ($returns_desc =~ /\bundef\b/i) {
+			} elsif (!$output->{type} && $returns_desc =~ /\bundef\b/i) {
 				$output->{type} = 'undef';
 			}
 

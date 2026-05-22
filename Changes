@@ -12,6 +12,10 @@ Revision history for App-Test-Generator
 	- Fix _extract_defaults_from_code incorrectly marking a parameter as
 	  optional when its only assignment is a dereference or method call
 	  (e.g. my $x = $params->{x}); such expressions are not default values.
+	- Fix extract-schemas inferring output type as string instead of hashref
+	  when a method has a =head4 Output formal spec; the spec type now takes
+	  precedence over heuristic code analysis (the string came from scalar
+	  being mapped to string when it wasn't in the valid-types list).
 	- Fix --strict-pod false positive for methods using the my $self = $_[0]
 	  calling style: add direct-index style recognition to
 	  _extract_parameters_from_signature and guard the fallback extractor in

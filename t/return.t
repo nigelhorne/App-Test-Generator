@@ -436,4 +436,63 @@ END_MODULE
 	done_testing();
 };
 
+# =head4 Output formal spec overrides heuristic code analysis
+subtest '=head4 Output type takes precedence over code inference' => sub {
+	my $module = <<'END_MODULE';
+package Test::FormalOutput;
+use strict;
+use warnings;
+
+=head2 risk_assessment()
+
+Evaluates risk and returns a structured result.
+
+=head3 Returns
+
+A hashref with keys C<level>, C<score>, and C<flags>.
+
+=head3 API Specification
+
+=head4 Output
+
+    {
+        type => 'hashref',
+    }
+
+=cut
+
+sub risk_assessment {
+	my $self = $_[0];
+
+	return $self->{_risk} if $self->{_risk};
+
+	my $score = 0;
+	my @flags;
+
+	my $add_flag = sub {
+		my ($name, $severity, $detail) = @_;
+		push @flags, { name => $name, severity => $severity, detail => $detail };
+	};
+
+	$add_flag->('test', 'LOW', 'example');
+
+	return $self->{_risk} = { score => $score, flags => \@flags };
+}
+
+END_MODULE
+
+	my $module_file = create_test_module($module);
+	my $extractor = App::Test::Generator::SchemaExtractor->new(
+		input_file => $module_file,
+		output_dir => tempdir(CLEANUP => 1),
+		verbose    => 0,
+	);
+	my $schemas = $extractor->extract_all();
+
+	is($schemas->{risk_assessment}{output}{type}, 'hashref',
+		'=head4 Output type => hashref overrides scalar/string inference from code');
+
+	done_testing();
+};
+
 done_testing();
