@@ -4752,6 +4752,19 @@ sub _analyze_code {
 	# Extract parameter names from various signature styles
 	$self->_extract_parameters_from_signature(\%params, $code);
 
+	# Params::Get: get_params('key', \@_) passes the param name as a string,
+	# not as a $var in the signature, so run this unconditionally as a second
+	# pass after the early-returning signature parsers have finished.
+	if($code =~ /Params::Get/) {
+		my $pos = scalar keys %params;
+		while($code =~ /get_params\s*\(\s*['"](\w+)['"]/g) {
+			my $name = $1;
+			next if $name =~ /^(self|class)$/i;
+			$params{$name} //= { _source => 'code', position => $pos++ };
+			$self->_log("  CODE: Found Params::Get parameter '$name'");
+		}
+	}
+
 	$self->_extract_defaults_from_code(\%params, $code, $method);
 
 	# Infer types from defaults
@@ -5551,19 +5564,6 @@ sub _extract_parameters_from_signature {
 		}
 	}
 
-	# Params::Get style: get_params('key', \@_) or get_params('key', @_)
-	# Named params from a Params::Validate::Strict schema are handled separately
-	# by _extract_validator_schema; we only capture the default-key form here.
-	if($code =~ /Params::Get/) {
-		my $pos = scalar keys %$params;
-		while($code =~ /get_params\s*\(\s*['"](\w+)['"]/g) {
-			my $name = $1;
-			next if $name =~ /^(self|class)$/i;
-			$params->{$name} //= { _source => 'code', optional => 1, position => $pos++ };
-			$self->_log("  CODE: Found Params::Get parameter '$name'");
-		}
-	}
-
 	# De-duplicate
 	my %seen;
 	foreach my $param (keys %$params) {
@@ -6126,6 +6126,7 @@ sub _extract_defaults_from_code {
 	while ($code =~ /my\s+\$(\w+)\s*=\s*([^;]+);/g) {
 		my ($param, $value) = ($1, $2);
 		next unless exists $params->{$param};
+		next if $value =~ /->/;	# deref/method call, not a default value
 
 		$params->{$param}{_default} = $self->_clean_default_value($value, 1);
 		$params->{$param}{optional} = 1;

@@ -788,4 +788,59 @@ END_MODULE
 	done_testing();
 };
 
+# Test: Params::Get parameter extraction
+# _extract_parameters_from_signature must recognise get_params('key', \@_)
+# so that strict-pod does not raise a false positive when the POD documents
+# $key but the signature has no explicit $key variable.
+subtest 'Params::Get parameter recognised in strict-pod check' => sub {
+	my $module = <<'END_MODULE';
+package Test::ParamsGet;
+use strict;
+use warnings;
+use Params::Get;
+
+=head2 parse_email( $text )
+
+Feeds a raw RFC 2822 email message to the analyser.
+
+=head3 Arguments
+
+=over 4
+
+=item C<$text> (scalar or scalar reference, required)
+
+Complete raw RFC 2822 email message.
+
+=back
+
+=head3 Returns
+
+The object itself.
+
+=cut
+
+sub parse_email {
+	my $self = shift;
+	my $params = Params::Get::get_params('text', \@_);
+	my $text = $params->{text};
+	return $self;
+}
+
+END_MODULE
+
+	# strict_pod=2 (fatal): should NOT croak because 'text' is found via
+	# get_params('text', ...) and the POD also documents $text.
+	my $extractor = create_extractor($module, 2);
+	my $schemas;
+
+	lives_ok {
+		$schemas = $extractor->extract_all();
+	} 'No croak with strict_pod=2 when parameter extracted via Params::Get';
+
+	ok(!exists $schemas->{parse_email}{_pod_validation_errors},
+		'No POD validation errors for Params::Get method');
+
+	done_testing();
+};
+
 done_testing();

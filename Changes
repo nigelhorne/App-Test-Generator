@@ -9,6 +9,9 @@ Revision history for App-Test-Generator
 	- Fix extract-schemas --strict-pod false positive when a method uses
 	  Params::Get::get_params('key', \@_) to extract arguments; the key name
 	  is now recognised as a code parameter, resolving POD/code disagreement.
+	- Fix _extract_defaults_from_code incorrectly marking a parameter as
+	  optional when its only assignment is a dereference or method call
+	  (e.g. my $x = $params->{x}); such expressions are not default values.
 
 0.38	Mon May 18 21:19:40 EDT 2026
 
