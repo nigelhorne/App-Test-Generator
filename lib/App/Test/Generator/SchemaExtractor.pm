@@ -172,6 +172,22 @@ Automatically identifies getter, setter, and combined accessor methods
 by analyzing common patterns like C<return $self-E<gt>{property}> and
 C<$self-E<gt>{property} = $value>.
 
+=item * B<Params::Get Integration>
+
+Recognises parameters extracted via C<Params::Get::get_params('key', \@_)>,
+treating the quoted key as a named parameter equivalent to a traditional
+C<my ($self, $key) = @_> signature.  This prevents false positives from
+C<--strict-pod> when the method body never declares an explicit C<$key>
+variable.
+
+=item * B<Direct-Index Self Style>
+
+Recognises C<my $self = $_[0]> as a valid method-invocant pattern.  Parameters
+at C<$_[1]>, C<$_[2]>, etc. are extracted as positional parameters.  Without
+this, the signature fallback would incorrectly pick up C<my (...) = @_> from
+inner closures defined in the method body and treat those variables as the
+outer method's parameters.
+
 =item * B<Boolean Return Inference>
 
 Detects boolean-returning methods through multiple signals:
@@ -580,6 +596,21 @@ the type is automatically inferred from the default:
 
 The extractor provides comprehensive analysis of method return behavior,
 including context sensitivity, error handling conventions, and method chaining patterns.
+
+When a method's POD contains a C<=head4 Output> block in
+L<Params::Validate::Strict> schema format, the C<type> declared there is
+used as the authoritative output type and takes precedence over all
+heuristic code analysis:
+
+    =head4 Output
+
+        {
+            type => 'hashref',
+        }
+
+This is the recommended way to document methods whose return type would
+otherwise be misidentified (e.g. a method that returns C<$self-E<gt>{cache}>
+where the cache happens to hold a hashref).
 
 =head3 List vs Scalar Context Detection
 
@@ -9459,10 +9490,8 @@ it is useful for creating a template which you can modify to create a working sc
 
 =head1 TODO
 
-Parse =head4 Input / =head4 Output POD blocks
-(in L<Params::Validate::Strict> schema format)
-as a high-confidence input source,
-falling back to runtime introspection only when POD is absent.
+Extend C<=head4 Input> parsing to cover union types (e.g. C<scalar | scalarref>)
+and the C<enum>/C<memberof> constraint synonym.
 
 =head1 SEE ALSO
 
