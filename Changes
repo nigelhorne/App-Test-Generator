@@ -6,6 +6,9 @@ Revision history for App-Test-Generator
 	- Fix mutation dashboard Total column excluding skipped mutants; Total now
 	  equals Killed + Survivors + Skipped. Score remains based on Killed / (Killed
 	  + Survivors) so skipped mutants do not penalise the mutation score.
+	- Fix extract-schemas --strict-pod false positive when a method uses
+	  Params::Get::get_params('key', \@_) to extract arguments; the key name
+	  is now recognised as a code parameter, resolving POD/code disagreement.
 
 0.38	Mon May 18 21:19:40 EDT 2026
 

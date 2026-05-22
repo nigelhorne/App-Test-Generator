@@ -5551,6 +5551,19 @@ sub _extract_parameters_from_signature {
 		}
 	}
 
+	# Params::Get style: get_params('key', \@_) or get_params('key', @_)
+	# Named params from a Params::Validate::Strict schema are handled separately
+	# by _extract_validator_schema; we only capture the default-key form here.
+	if($code =~ /Params::Get/) {
+		my $pos = scalar keys %$params;
+		while($code =~ /get_params\s*\(\s*['"](\w+)['"]/g) {
+			my $name = $1;
+			next if $name =~ /^(self|class)$/i;
+			$params->{$name} //= { _source => 'code', optional => 1, position => $pos++ };
+			$self->_log("  CODE: Found Params::Get parameter '$name'");
+		}
+	}
+
 	# De-duplicate
 	my %seen;
 	foreach my $param (keys %$params) {
