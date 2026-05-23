@@ -1821,8 +1821,10 @@ sub _analyze_method {
 	my $pod_params = $self->_analyze_pod($pod);
 	my $code_params = $self->_analyze_code($code, $method);
 
-	# Validate POD/code agreement if strict mode is enabled
-	if ($self->{strict_pod}) {
+	# Validate POD/code agreement if strict mode is enabled.
+	# Skip when there is no POD at all — strict_pod checks accuracy of
+	# existing documentation, not whether every method is documented.
+	if ($self->{strict_pod} && $pod) {
 		my @validation_errors = $self->_validate_pod_code_agreement(
 			$pod_params,
 			$code_params,
