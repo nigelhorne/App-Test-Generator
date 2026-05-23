@@ -593,6 +593,8 @@ sub fuzz_inputs
 					die __PACKAGE__, ': TODO: add size support to hashref';
 				}
 				$mandatory_objects{$field} = { 'line' => __LINE__ };
+			} elsif(($spec->{type} eq 'arrayref') || ($spec->{type} eq 'array')) {
+				$mandatory_objects{$field} = [];
 			} else {
 				die __PACKAGE__, ': TODO: type = ', $spec->{'type'};
 			}
