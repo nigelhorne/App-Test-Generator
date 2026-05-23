@@ -21,6 +21,11 @@ Revision history for App-Test-Generator
 	  did not include 'array' in its allowed-types set and silently fell back
 	  to string.
 	[Enhancements]
+	- Add t/app.t: ATG self-test that runs every lib/**/*.pm through
+	  SchemaExtractor (strict_pod=fatal), generates a fuzz harness for each
+	  extracted schema via App::Test::Generator, and runs it through prove.
+	  Temp dirs containing the intermediate schema YAML and generated .t files
+	  are kept on failure for diagnosis. Runs as an extended test.
 	- Support array-returning methods end-to-end, enabled by Test::Returns 0.03
 	  which accepts type => 'array' as a synonym for type => 'arrayref':
 	  extract-schemas now emits output.type: array for list-returning methods,
