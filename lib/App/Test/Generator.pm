@@ -1530,13 +1530,38 @@ The generated test:
 
 =back
 
+=cut
+
 =head1 METHODS
 
 =head2 generate
 
-  generate($schema_file, $test_file)
-
 Takes a schema file and produces a test file (or STDOUT).
+
+  # Modern named API
+  App::Test::Generator->generate(
+      schema_file => 'schemas/foo.yml',
+      output_file => 'test/foo.t',
+  );
+
+  # Legacy positional API
+  App::Test::Generator->generate($schema_file, $test_file);
+
+=head3 API Specification
+
+=head4 Input
+
+    {
+        schema_file => { type => 'string', optional => 1 },
+        input_file  => { type => 'string', optional => 1 },
+        output_file => { type => 'string', optional => 1 },
+        schema      => { type => 'hashref', optional => 1 },
+        quiet       => { type => 'boolean', optional => 1 },
+    }
+
+=head4 Output
+
+    { type => 'string' }
 
 =cut
 
@@ -1545,14 +1570,12 @@ sub generate
 	croak 'Usage: generate(schema_file [, outfile])' if(scalar(@_) <= 1);
 
 	my $class = shift;
-	my $args = $_[0];
-
 	my ($schema_file, $test_file, $schema);
 	# Globals loaded from the user's conf (all optional except function maybe)
 	my ($module, $function, $new, $yaml_cases);
 	my ($seed, $iterations);
 
-	if((ref($args) eq 'HASH') || defined($_[2])) {
+	if((ref($_[0]) eq 'HASH') || defined($_[2])) {
 		# Modern API
 		my $params = Params::Validate::Strict::validate_strict({
 			args => Params::Get::get_params(undef, \@_),

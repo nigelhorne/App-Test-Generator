@@ -1725,10 +1725,13 @@ sub _extract_pod_before {
 	my $seen_code = 0;
 	my $steps = 0;
 
-	# Walk backwards collecting POD
+	# Walk backwards collecting POD.
+	# Stop after the first pod token so that a =cut before =head1 METHODS
+	# prevents class-level POD from being mistaken for method-specific POD.
 	while($current && $steps++ < $POD_WALK_LIMIT) {
 		if ($current->isa('PPI::Token::Pod')) {
 			$pod = $current->content() . $pod;
+			last;	# Only take the immediately adjacent pod block
 		} elsif ($current->isa('PPI::Token::Comment')) {
 			# Include comments that might contain parameter info
 			my $comment = $current->content();
@@ -9315,12 +9318,12 @@ sub _validate_pod_code_agreement {
 		}
 
 		if(!exists $pod_params->{$param} && exists $code_params->{$param}) {
-			if(($method_name eq 'new') && ($param eq 'class')) {
-				# $class is usually not documented in new()
+			if($param eq 'class') {
+				# $class is the class invocant, not a user-facing parameter
 				next;
 			}
-			if(($method_name ne 'new') && ($param eq 'self')) {
-				# $self is usually not documented in a method
+			if($param eq 'self') {
+				# $self is the instance invocant, not a user-facing parameter
 				next;
 			}
 			push @errors, "Parameter '\$$param' found in code but not documented in POD";
