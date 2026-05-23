@@ -1531,6 +1531,7 @@ sub _find_methods {
 		my $name = $sub->name();
 
 		next unless defined $name;	# Skip anonymous routines
+		next if $name =~ /^(BEGIN|END|DESTROY|AUTOLOAD|CHECK|INIT|UNITCHECK)$/;
 
 		# Skip private methods unless explicitly included, or they're special
 		if ($name =~ /^_/ && $name !~ /^_(new|init|build)/) {
@@ -8105,7 +8106,9 @@ sub _needs_object_instantiation {
 	if ($is_instance_method &&
 	    ($is_instance_method->{explicit_self} ||
 	     $is_instance_method->{shift_self} ||
-	     $is_instance_method->{accesses_object_data})) {
+	     $is_instance_method->{accesses_object_data} ||
+	     ($is_instance_method->{calls_instance_methods} &&
+	      scalar @{$is_instance_method->{calls_instance_methods}}))) {
 
 		# Instance-only methods override factory detection
 		if ($is_factory) {
@@ -8374,6 +8377,12 @@ sub _detect_instance_method {
 
 	# Pattern 1: my ($self, ...) = @_;
 	if ($method_body =~ /my\s*\(\s*\$self\s*[,)]/) {
+		$instance_info{explicit_self} = 1;
+		$instance_info{confidence} = 'high';
+	}
+
+	# Pattern 1b: my $self = $_[0];  (direct-index style)
+	elsif ($method_body =~ /my\s+\$self\s*=\s*\$_\[0\]/) {
 		$instance_info{explicit_self} = 1;
 		$instance_info{confidence} = 'high';
 	}

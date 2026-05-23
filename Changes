@@ -27,6 +27,16 @@ Revision history for App-Test-Generator
 	  the output-type validator accepts 'array' as a valid type, and generated
 	  tests capture the result in list context (my @_r = CALL; $result = \@_r)
 	  so that returns_ok can validate it as an arrayref.
+	- Fix extract-schemas creating spurious schema files for Perl special blocks
+	  (BEGIN, END, DESTROY, AUTOLOAD, CHECK, INIT, UNITCHECK); these are now
+	  skipped in _find_methods.
+	- Fix extract-schemas failing to emit new: ~ for instance methods that use
+	  the my $self = $_[0] direct-index invocant style and call other instance
+	  methods via $self->method() but do not dereference $self directly;
+	  _detect_instance_method now recognises $_[0] as explicit_self (high
+	  confidence), and _needs_object_instantiation now promotes methods that
+	  call instance methods on $self even when no hash/array dereference is
+	  present.
 	- Fix --strict-pod false positive for methods using the my $self = $_[0]
 	  calling style: add direct-index style recognition to
 	  _extract_parameters_from_signature and guard the fallback extractor in

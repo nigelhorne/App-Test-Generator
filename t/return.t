@@ -547,4 +547,86 @@ END_MODULE
 	done_testing();
 };
 
+# my $self = $_[0] style + calls instance methods → new: ~ must appear in schema
+subtest 'Direct-index $self calling instance methods gets new field' => sub {
+	my $module = <<'END_MODULE';
+package Test::DirectIndexInstanceMethod;
+use strict;
+use warnings;
+
+=head2 all_domains()
+
+Returns a list of domain strings.
+
+=head3 API Specification
+
+=head4 Input
+
+    []
+
+=head4 Output
+
+    (
+        { type => 'scalar' },
+        ...
+    )
+
+=cut
+
+sub all_domains {
+	my $self = $_[0];
+	my @out;
+	for my $u ($self->embedded_urls()) {
+		push @out, $u->{host};
+	}
+	return @out;
+}
+
+END_MODULE
+
+	my $extractor = create_extractor($module);
+	my $schemas = $extractor->extract_all();
+
+	my $s = $schemas->{all_domains};
+	ok(exists $s->{new}, 'new field present for direct-index instance method');
+	is($s->{output}{type}, 'array', 'output type is array');
+
+	done_testing();
+};
+
+# Perl special blocks (BEGIN, END, DESTROY, etc.) must not produce schema files
+subtest 'Perl special blocks are not extracted as methods' => sub {
+	my $module = <<'END_MODULE';
+package Test::SpecialBlocks;
+use strict;
+use warnings;
+
+our ($HAS_NET_DNS, $HAS_LWP);
+
+BEGIN {
+	$HAS_NET_DNS = eval { require Net::DNS;       1 };
+	$HAS_LWP     = eval { require LWP::UserAgent; 1 };
+}
+
+END {
+	# cleanup
+}
+
+sub real_method {
+	my $self = $_[0];
+	return $self->{value};
+}
+
+END_MODULE
+
+	my $extractor = create_extractor($module);
+	my $schemas = $extractor->extract_all();
+
+	ok(!exists $schemas->{BEGIN},  'BEGIN block not extracted');
+	ok(!exists $schemas->{END},    'END block not extracted');
+	ok(exists $schemas->{real_method}, 'real method still extracted');
+
+	done_testing();
+};
+
 done_testing();
