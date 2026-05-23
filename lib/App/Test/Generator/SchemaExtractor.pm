@@ -612,6 +612,19 @@ This is the recommended way to document methods whose return type would
 otherwise be misidentified (e.g. a method that returns C<$self-E<gt>{cache}>
 where the cache happens to hold a hashref).
 
+Using parentheses as the outer container emits C<type: array>, indicating a
+list-returning method.  L<App::Test::Generator> 0.39+ (with L<Test::Returns>
+0.03+) captures these results in list context automatically:
+
+    =head4 Output
+
+        (
+            {
+                type => 'hashref',
+            },
+            ...
+        )
+
 =head3 List vs Scalar Context Detection
 
 Automatically detects methods that return different values based on calling context:

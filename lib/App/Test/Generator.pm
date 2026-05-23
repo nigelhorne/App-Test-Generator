@@ -495,6 +495,13 @@ The output can be set to the string 'undef' if the routine should return the und
 
 The keyword C<undef> is used to indicate that the C<function> returns nothing.
 
+For methods that return a list (rather than a reference), use C<type: array>.
+The generated test captures the result in list context and validates it as an
+arrayref, which requires L<Test::Returns> 0.03 or later:
+
+  output:
+    type: array
+
 =head3 C<%config> - optional hash of configuration.
 
 The current supported variables are
@@ -1956,6 +1963,17 @@ sub generate
 			$position_code = "\$result = $function(\@alist);";
 		} else {
 			$call_code = "\$result = $function(\$input);";
+		}
+	}
+
+	# List-context capture: $result = func() in scalar context returns a count, not the list.
+	# When the schema says output type is 'array', capture into @_r then take a ref.
+	if(($output{type} // '') eq 'array') {
+		if(defined($call_code)) {
+			$call_code =~ s/^\$result = (.*?);/my \@_r = ($1); \$result = \\\@_r;/s;
+		}
+		if(defined($position_code)) {
+			$position_code =~ s/^\$result = (.*?);/my \@_r = ($1); \$result = \\\@_r;/s;
 		}
 	}
 

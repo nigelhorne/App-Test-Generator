@@ -295,6 +295,13 @@ The output can be set to the string 'undef' if the routine should return the und
 
 The keyword `undef` is used to indicate that the `function` returns nothing.
 
+For methods that return a list (rather than a reference), use `type: array`.
+The generated test captures the result in list context and validates it as an
+arrayref, which requires [Test::Returns](https://metacpan.org/pod/Test%3A%3AReturns) 0.03 or later:
+
+    output:
+      type: array
+
 ### `%config` - optional hash of configuration.
 
 The current supported variables are

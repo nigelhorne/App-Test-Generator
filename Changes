@@ -20,6 +20,13 @@ Revision history for App-Test-Generator
 	  a =head4 Output block uses list notation (...); the output-type validator
 	  did not include 'array' in its allowed-types set and silently fell back
 	  to string.
+	[Enhancements]
+	- Support array-returning methods end-to-end, enabled by Test::Returns 0.03
+	  which accepts type => 'array' as a synonym for type => 'arrayref':
+	  extract-schemas now emits output.type: array for list-returning methods,
+	  the output-type validator accepts 'array' as a valid type, and generated
+	  tests capture the result in list context (my @_r = CALL; $result = \@_r)
+	  so that returns_ok can validate it as an arrayref.
 	- Fix --strict-pod false positive for methods using the my $self = $_[0]
 	  calling style: add direct-index style recognition to
 	  _extract_parameters_from_signature and guard the fallback extractor in
