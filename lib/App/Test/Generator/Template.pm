@@ -667,7 +667,6 @@ sub fuzz_inputs
 					push @cases,
 						{ $arg_name => { a => 1 } },
 						{ $arg_name => [], _STATUS => 'DIES' },
-						{ $arg_name => ( b => 2 ), _STATUS => 'DIES' },
 						{ $arg_name => 66, _STATUS => 'DIES' },
 						{ $arg_name => sub { die 'fail' }, _STATUS => 'DIES' },
 						{ $arg_name => 'scalar when hashref is needed', _STATUS => 'DIES' },

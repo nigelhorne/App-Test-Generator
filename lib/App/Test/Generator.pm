@@ -44,7 +44,7 @@ use constant {
 	DEFAULT_PROPERTY_TRIALS => 1000
 };
 
-use constant CONFIG_TYPES => ('test_nuls', 'test_undef', 'test_empty', 'test_non_ascii', 'dedup', 'properties', 'close_stdin', 'test_security');
+use constant CONFIG_TYPES => ('test_nuls', 'test_undef', 'test_empty', 'test_non_ascii', 'dedup', 'properties', 'close_stdin', 'test_security', 'timeout');
 
 # --------------------------------------------------
 # Delimiter pairs tried in order when wrapping a
@@ -2627,9 +2627,9 @@ sub _normalize_config {
 	my $config = $_[0];
 
 	for my $field (CONFIG_TYPES) {
-		# The properties field is a hashref not a boolean —
-		# it is handled at the end of this function separately
+		# Non-boolean fields are handled separately
 		next if $field eq $CONFIG_PROPERTIES_KEY;
+		next if $field eq 'timeout';	# numeric, not boolean; absence means use generated-test default
 
 		if(exists($config->{$field}) && defined($config->{$field})) {
 			# Convert string boolean representations to integers
@@ -3304,7 +3304,9 @@ sub perl_sq {
 #             correctly into generated tests.
 # --------------------------------------------------
 sub perl_quote {
-	my $v = $_[0];
+	my ($v, $depth) = @_;
+	$depth //= 0;
+	croak('perl_quote: structure too deeply nested (circular reference?)') if $depth > 100;
 
 	# Undef produces the Perl literal 'undef'
 	return 'undef' unless defined $v;
@@ -3317,7 +3319,7 @@ sub perl_quote {
 	if(ref($v)) {
 		# Recursively quote each element of an arrayref
 		if(ref($v) eq 'ARRAY') {
-			my @quoted_v = map { perl_quote($_) } @{$v};
+			my @quoted_v = map { perl_quote($_, $depth + 1) } @{$v};
 			return '[ ' . join(', ', @quoted_v) . ' ]';
 		}
 

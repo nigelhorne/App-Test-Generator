@@ -32,6 +32,18 @@ Revision history for App-Test-Generator
 	  the output-type validator accepts 'array' as a valid type, and generated
 	  tests capture the result in list context (my @_r = CALL; $result = \@_r)
 	  so that returns_ok can validate it as an arrayref.
+	- Fix strict_pod=fatal incorrectly flagging methods with no POD at all;
+	  the check now only runs when POD is present (validates accuracy of
+	  existing documentation, not completeness).
+	- Fix strict_pod=fatal false positive: $class and $self are always treated
+	  as invocants and never reported as undocumented code parameters,
+	  regardless of method name.
+	- Fix _extract_pod_before accumulating multiple adjacent POD blocks; it
+	  now stops after the first pod token so class-level POD separated by
+	  =cut does not bleed into a method's specific POD context.
+	- Fix generated tests dying without done_testing() when an input parameter
+	  has type arrayref or array; both types are now handled in the mandatory-
+	  argument setup block in Template.pm.
 	- Fix extract-schemas creating spurious schema files for Perl special blocks
 	  (BEGIN, END, DESTROY, AUTOLOAD, CHECK, INIT, UNITCHECK); these are now
 	  skipped in _find_methods.
