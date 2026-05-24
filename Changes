@@ -20,6 +20,12 @@ Revision history for App-Test-Generator
 	  a =head4 Output block uses list notation (...); the output-type validator
 	  did not include 'array' in its allowed-types set and silently fell back
 	  to string.
+	- Fix SchemaExtractor emitting both 'enum' and 'memberof' for the same
+	  parameter when a regex-based enum is detected; the two fields are mutually
+	  exclusive and Generator.pm now rejects schemas that contain both.
+	  SchemaExtractor now only sets memberof when enum is not already being
+	  output in the cleaned schema.
+
 	[Enhancements]
 	- Add t/app.t: ATG self-test that runs every lib/**/*.pm through
 	  SchemaExtractor (strict_pod=fatal), generates a fuzz harness for each

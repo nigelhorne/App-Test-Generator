@@ -595,6 +595,8 @@ sub fuzz_inputs
 				$mandatory_objects{$field} = { 'line' => __LINE__ };
 			} elsif(($spec->{type} eq 'arrayref') || ($spec->{type} eq 'array')) {
 				$mandatory_objects{$field} = [];
+			} elsif($spec->{type} eq 'any') {
+				$mandatory_strings{$field} = rand_ascii_str(8);
 			} else {
 				die __PACKAGE__, ': TODO: type = ', $spec->{'type'};
 			}
@@ -692,6 +694,14 @@ sub fuzz_inputs
 					} elsif(!$spec->{can}) {
 						Carp::carp("neither 'isa' nor 'can' is defined - what type of object should be sent?");
 					}
+				} elsif($type eq 'any') {
+					push @cases,
+						{ %mandatory_args, $arg_name => 'string_value' },
+						{ %mandatory_args, $arg_name => 42 },
+						{ %mandatory_args, $arg_name => 3.14 },
+						{ %mandatory_args, $arg_name => [] },
+						{ %mandatory_args, $arg_name => {} },
+						{ %mandatory_args, $arg_name => undef };
 				}
 
 				# --- matches (regex) ---

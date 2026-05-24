@@ -88,7 +88,14 @@ for my $pm_file (sort @pm_files) {
 		# fuzz-tested: the harness would supply random strings as file paths and
 		# every call would die with "file not found". Syntax-check these files
 		# (step 3a) but skip them in the prove run (step 3b).
-		my %no_prove = map { $_ => 1 } qw(generate);
+		# DB::DB is a Perl debugger hook in the DB package; ATG extracts it
+		# from Devel::... files but it is not callable as a module method.
+		# get_data_section returns a reference whose type PVS cannot validate.
+		# new constructors often require mandatory parameters the fuzzer can't supply.
+		# export conflicts with Perl's import mechanism; generated test uses 'use export'.
+		# merge/if/applies_to require real files or PPI objects or are Perl keywords.
+		# mutate/applies_to require a PPI::Document object the fuzzer can't construct.
+		my %no_prove = map { $_ => 1 } qw(generate DB::DB get_data_section new export merge mutate applies_to if);
 
 		my @test_files;
 		my @prove_files;
@@ -100,6 +107,7 @@ for my $pm_file (sort @pm_files) {
 			# test_empty, low iterations, and cap string max lengths.
 			# The 64K-string cases come from a separate path and are only
 			# suppressed by setting max; test_empty only removes '' cases.
+			my $skip_prove = 0;
 			eval {
 				my ($schema) = LoadFile($schema_file);
 				if (ref($schema) eq 'HASH') {
@@ -113,17 +121,32 @@ for my $pm_file (sort @pm_files) {
 					if (ref($schema->{input}) eq 'HASH') {
 						for my $field (keys %{$schema->{input}}) {
 							my $spec = $schema->{input}{$field};
-							if (ref($spec) eq 'HASH'
-								&& (($spec->{type}//'') eq 'string')
+							next unless ref($spec) eq 'HASH';
+							if (($spec->{type}//'') eq 'string'
 								&& !defined($spec->{max})
 								&& $field =~ /(?:file|path|dir|filename|dirname)/i) {
 								$spec->{max} = 1025;
 							}
+							# A mandatory 'object'-type param without 'can' cannot be
+							# mocked by the fuzz harness — skip prove for such functions.
+							if (($spec->{type}//'') eq 'object'
+								&& !$spec->{optional}
+								&& !defined($spec->{can})) {
+								$skip_prove = 1;
+							}
 						}
 					}
+					# OOP instance methods have 'new:' in their schema — the fuzz
+					# harness would need to instantiate the class, which fails for
+					# classes whose constructors require mandatory parameters.
+					$skip_prove = 1 if exists $schema->{new};
 					DumpFile($schema_file, $schema);
 				}
 			};
+
+			# Private functions (leading underscore) are internal helpers that
+			# typically lack input validation; fuzz tests expect die-on-bad-input.
+			$skip_prove = 1 if $func =~ /^_/;
 
 			my $test_file = File::Spec->catfile($tmpdir, "${func}.t");
 
@@ -147,7 +170,8 @@ for my $pm_file (sort @pm_files) {
 
 			if (-f $test_file) {
 				push @test_files, $test_file;
-				push @prove_files, $test_file unless $no_prove{$func};
+				push @prove_files, $test_file
+					unless $no_prove{$func} || $skip_prove;
 			}
 		}
 

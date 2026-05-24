@@ -7966,8 +7966,10 @@ sub _serialize_parameter_for_yaml {
 		}
 	}
 
-	# Handle memberof even if not marked with semantic
-	if($param->{enum} && ref($param->{enum}) eq 'ARRAY') {
+	# Handle memberof even if not marked with semantic.
+	# enum and memberof are mutually exclusive — only set memberof when enum
+	# is not already being output (avoids the "has both" validation error).
+	if($param->{enum} && ref($param->{enum}) eq 'ARRAY' && !$cleaned{enum}) {
 		$cleaned{memberof} = $param->{enum};
 	}
 	if($param->{memberof} && ref($param->{memberof}) eq 'ARRAY') {
