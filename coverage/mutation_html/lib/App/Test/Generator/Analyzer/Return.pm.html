@@ -245,9 +245,9 @@ pre details.mutant-details ul {
  <a href="ReturnMeta.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
-TER2 (Branch): 87.50%<br>
+TER2 (Branch): 80.00%<br>
 TER3 (LCSAJ): 100.0% (7/7)<br>
-Approximate LCSAJ segments: 9<br>
+Approximate LCSAJ segments: 11<br>
 </div>
 
     <div class="legend">
@@ -294,179 +294,184 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">    2: 
 </span><span class="">    3: use strict;
 </span><span class="">    4: use warnings;
-</span><span class="">    5: use Carp    qw(croak);
+</span><span class="">    5: use Carp         qw(croak);
 </span><span class="">    6: use Readonly;
-</span><span class="">    7: 
-</span><span class="">    8: # --------------------------------------------------
-</span><span class="">    9: # Evidence weights for each detected return pattern.
-</span><span class="">   10: # Higher weights indicate stronger signals that the
-</span><span class="">   11: # detected pattern is the primary return behaviour.
-</span><span class="">   12: # --------------------------------------------------
-</span><span class="">   13: Readonly my $WEIGHT_RETURNS_PROPERTY =&gt; 20;
-</span><span class="">   14: Readonly my $WEIGHT_RETURNS_SELF     =&gt; 15;
-</span><span class="">   15: Readonly my $WEIGHT_RETURNS_CONSTANT =&gt; 10;
-</span><span class="">   16: 
-</span><span class="">   17: our $VERSION = &#39;0.38&#39;;
-</span><span class="">   18: 
-</span><span class="">   19: =head1 VERSION
-</span><span class="">   20: 
-</span><span class="">   21: Version 0.38
-</span><span class="">   22: 
-</span><span class="">   23: =head1 DESCRIPTION
-</span><span class="">   24: 
-</span><span class="">   25: Analyses the source code of a method and adds evidence to a
-</span><span class="">   26: L&lt;App::Test::Generator::Model::Method&gt; object describing what kind of
-</span><span class="">   27: value the method returns. Evidence is used downstream by
-</span><span class="">   28: L&lt;App::Test::Generator::Model::Method/resolve_return_type&gt; to determine
-</span><span class="">   29: the most likely return type.
-</span><span class="">   30: 
-</span><span class="">   31: =head2 new
-</span><span class="">   32: 
-</span><span class="">   33: Construct a new Return analyser.
-</span><span class="">   34: 
-</span><span class="">   35:     my $analyser = App::Test::Generator::Analyzer::Return-&gt;new;
-</span><span class="">   36: 
-</span><span class="">   37: =head3 Arguments
-</span><span class="">   38: 
-</span><span class="">   39: None.
-</span><span class="">   40: 
-</span><span class="">   41: =head3 Returns
-</span><span class="">   42: 
-</span><span class="">   43: A blessed hashref.
-</span><span class="">   44: 
-</span><span class="">   45: =head3 API specification
-</span><span class="">   46: 
-</span><span class="">   47: =head4 input
-</span><span class="">   48: 
-</span><span class="">   49:     {}
-</span><span class="">   50: 
-</span><span class="">   51: =head4 output
-</span><span class="">   52: 
-</span><span class="">   53:     {
-</span><span class="">   54:         type =&gt; OBJECT,
-</span><span class="">   55:         isa  =&gt; &#39;App::Test::Generator::Analyzer::Return&#39;,
-</span><span class="">   56:     }
-</span><span class="">   57: 
-</span><span class="">   58: =cut
-</span><span class="">   59: 
-</span><span class="">   60: sub new {
-</span><span class="">   61: 	my $class = $_[0];
-</span><span class="">   62: 	return bless {}, $class;
-</span><span class="">   63: }
-</span><span class="">   64: 
-</span><span class="">   65: =head2 analyze
-</span><span class="">   66: 
-</span><span class="">   67: Scan the source code of a method for return patterns and add weighted
-</span><span class="">   68: evidence to the method object. Detects three patterns: returning a
-</span><span class="">   69: property from C&lt;$self&gt;, returning C&lt;$self&gt; itself, and returning a
-</span><span class="">   70: constant literal value.
-</span><span class="">   71: 
-</span><span class="">   72:     my $analyser = App::Test::Generator::Analyzer::Return-&gt;new;
-</span><span class="">   73:     $analyser-&gt;analyze($method);
-</span><span class="">   74: 
-</span><span class="">   75:     my $type = $method-&gt;resolve_return_type;
-</span><span class="">   76: 
-</span><span class="">   77: =head3 Arguments
-</span><span class="">   78: 
-</span><span class="">   79: =over 4
-</span><span class="">   80: 
-</span><span class="">   81: =item * C&lt;$method&gt;
-</span><span class="">   82: 
-</span><span class="">   83: An L&lt;App::Test::Generator::Model::Method&gt; object. Evidence is added
-</span><span class="">   84: to this object in place via C&lt;add_evidence&gt;.
-</span><span class="">   85: 
-</span><span class="">   86: =back
-</span><span class="">   87: 
-</span><span class="">   88: =head3 Returns
-</span><span class="">   89: 
-</span><span class="">   90: Nothing (undef). All results are communicated via side effects on the
-</span><span class="">   91: C&lt;$method&gt; object.
-</span><span class="">   92: 
-</span><span class="">   93: =head3 Notes
-</span><span class="">   94: 
-</span><span class="">   95: The interface of this analyser differs from
-</span><span class="">   96: L&lt;App::Test::Generator::Analyzer::ReturnMeta&gt;, which operates on a raw
-</span><span class="">   97: schema hashref. This analyser operates on a C&lt;Model::Method&gt; object
-</span><span class="">   98: directly.
-</span><span class="">   99: 
-</span><span class="">  100: =head3 API specification
-</span><span class="">  101: 
-</span><span class="">  102: =head4 input
-</span><span class="">  103: 
-</span><span class="">  104:     {
-</span><span class="">  105:         self   =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Analyzer::Return&#39; },
-</span><span class="">  106:         method =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; },
-</span><span class="">  107:     }
-</span><span class="">  108: 
-</span><span class="">  109: =head4 output
-</span><span class="">  110: 
-</span><span class="">  111:     { type =&gt; UNDEF }
-</span><span class="">  112: 
-</span><span class="">  113: =cut
-</span><span class="">  114: 
-</span><span class="">  115: sub analyze {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">116 → 129 → 143</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">116 → 129 → 0</span></span>  116: 	my ($self, $method) = @_;
-</span><span class="">  117: 
-</span><span class="">  118: 	# Accept either a Model::Method object or a raw hashref,
-</span><span class="">  119: 	# since callers in SchemaExtractor pass raw hashrefs
-</span><span class="">  120: 	my $source = ref($method) &amp;&amp; $method-&gt;can(&#39;source&#39;)
-</span><span class="">  121: 		? $method-&gt;source()
-</span><span class="">  122: 		: ($method-&gt;{source} // $method-&gt;{body} // &#39;&#39;);
-</span><span class="">  123: 
-</span><span class="">  124: 	# --------------------------------------------------
-</span><span class="">  125: 	# Detect: return $self-&gt;{property}
-</span><span class="">  126: 	# Negative lookahead ensures this does not also match
-</span><span class="">  127: 	# plain return $self (handled separately below)
-</span><span class="">  128: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  129: 	if($source =~ /return\s+\$self-&gt;\{(\w+)\}/) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  130: 		$method-&gt;add_evidence(
-</span><span class="">  131: 			category =&gt; &#39;return&#39;,
-</span><span class="">  132: 			signal   =&gt; &#39;returns_property&#39;,
-</span><span class="">  133: 			value    =&gt; $1,
-</span><span class="">  134: 			weight   =&gt; $WEIGHT_RETURNS_PROPERTY,
-</span><span class="">  135: 		);
-</span><span class="">  136: 	}
-</span><span class="">  137: 
-</span><span class="">  138: 	# --------------------------------------------------
-</span><span class="">  139: 	# Detect: return $self
-</span><span class="">  140: 	# Use negative lookahead to avoid matching
-</span><span class="">  141: 	# return $self-&gt;{...} which is a property return
-</span><span class="">  142: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">143 → 143 → 156</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">143 → 143 → 0</span></span>  143: 	if($source =~ /return\s+\$self(?!-&gt;)/) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  144: 		$method-&gt;add_evidence(
-</span><span class="">  145: 			category =&gt; &#39;return&#39;,
-</span><span class="">  146: 			signal   =&gt; &#39;returns_self&#39;,
-</span><span class="">  147: 			weight   =&gt; $WEIGHT_RETURNS_SELF,
-</span><span class="">  148: 		);
-</span><span class="">  149: 	}
-</span><span class="">  150: 
-</span><span class="">  151: 	# --------------------------------------------------
-</span><span class="">  152: 	# Detect: return of a constant literal &acirc;&#128;&#148; quoted string,
-</span><span class="">  153: 	# numeric literal, or undef. All indicate the method
-</span><span class="">  154: 	# returns a fixed value rather than a computed state.
-</span><span class="">  155: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">156 → 156 → 164</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">156 → 156 → 0</span></span>  156: 	if($source =~ /return\s+(?:[&#39;&quot;\d]|undef\b)/) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  157: 		$method-&gt;add_evidence(
-</span><span class="">  158: 			category =&gt; &#39;return&#39;,
-</span><span class="">  159: 			signal   =&gt; &#39;returns_constant&#39;,
-</span><span class="">  160: 			weight   =&gt; $WEIGHT_RETURNS_CONSTANT,
-</span><span class="">  161: 		);
-</span><span class="">  162: 	}
-</span><span class="">  163: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">164 → 164 → 0</span></span>  164: 	return;
-</span><span class="">  165: }
-</span><span class="">  166: 
-</span><span class="">  167: =head1 LICENCE AND COPYRIGHT
+</span><span class="">    7: use Scalar::Util qw(blessed);
+</span><span class="">    8: 
+</span><span class="">    9: # --------------------------------------------------
+</span><span class="">   10: # Evidence weights for each detected return pattern.
+</span><span class="">   11: # Higher weights indicate stronger signals that the
+</span><span class="">   12: # detected pattern is the primary return behaviour.
+</span><span class="">   13: # --------------------------------------------------
+</span><span class="">   14: Readonly my $WEIGHT_RETURNS_PROPERTY =&gt; 20;
+</span><span class="">   15: Readonly my $WEIGHT_RETURNS_SELF     =&gt; 15;
+</span><span class="">   16: Readonly my $WEIGHT_RETURNS_CONSTANT =&gt; 10;
+</span><span class="">   17: 
+</span><span class="">   18: our $VERSION = &#39;0.38&#39;;
+</span><span class="">   19: 
+</span><span class="">   20: =head1 VERSION
+</span><span class="">   21: 
+</span><span class="">   22: Version 0.38
+</span><span class="">   23: 
+</span><span class="">   24: =head1 DESCRIPTION
+</span><span class="">   25: 
+</span><span class="">   26: Analyses the source code of a method and adds evidence to a
+</span><span class="">   27: L&lt;App::Test::Generator::Model::Method&gt; object describing what kind of
+</span><span class="">   28: value the method returns. Evidence is used downstream by
+</span><span class="">   29: L&lt;App::Test::Generator::Model::Method/resolve_return_type&gt; to determine
+</span><span class="">   30: the most likely return type.
+</span><span class="">   31: 
+</span><span class="">   32: =head2 new
+</span><span class="">   33: 
+</span><span class="">   34: Construct a new Return analyser.
+</span><span class="">   35: 
+</span><span class="">   36:     my $analyser = App::Test::Generator::Analyzer::Return-&gt;new;
+</span><span class="">   37: 
+</span><span class="">   38: =head3 Arguments
+</span><span class="">   39: 
+</span><span class="">   40: None.
+</span><span class="">   41: 
+</span><span class="">   42: =head3 Returns
+</span><span class="">   43: 
+</span><span class="">   44: A blessed hashref.
+</span><span class="">   45: 
+</span><span class="">   46: =head3 API specification
+</span><span class="">   47: 
+</span><span class="">   48: =head4 input
+</span><span class="">   49: 
+</span><span class="">   50:     {}
+</span><span class="">   51: 
+</span><span class="">   52: =head4 output
+</span><span class="">   53: 
+</span><span class="">   54:     {
+</span><span class="">   55:         type =&gt; OBJECT,
+</span><span class="">   56:         isa  =&gt; &#39;App::Test::Generator::Analyzer::Return&#39;,
+</span><span class="">   57:     }
+</span><span class="">   58: 
+</span><span class="">   59: =cut
+</span><span class="">   60: 
+</span><span class="">   61: sub new {
+</span><span class="">   62: 	my $class = $_[0];
+</span><span class="">   63: 	return bless {}, $class;
+</span><span class="">   64: }
+</span><span class="">   65: 
+</span><span class="">   66: =head2 analyze
+</span><span class="">   67: 
+</span><span class="">   68: Scan the source code of a method for return patterns and add weighted
+</span><span class="">   69: evidence to the method object. Detects three patterns: returning a
+</span><span class="">   70: property from C&lt;$self&gt;, returning C&lt;$self&gt; itself, and returning a
+</span><span class="">   71: constant literal value.
+</span><span class="">   72: 
+</span><span class="">   73:     my $analyser = App::Test::Generator::Analyzer::Return-&gt;new;
+</span><span class="">   74:     $analyser-&gt;analyze($method);
+</span><span class="">   75: 
+</span><span class="">   76:     my $type = $method-&gt;resolve_return_type;
+</span><span class="">   77: 
+</span><span class="">   78: =head3 Arguments
+</span><span class="">   79: 
+</span><span class="">   80: =over 4
+</span><span class="">   81: 
+</span><span class="">   82: =item * C&lt;$method&gt;
+</span><span class="">   83: 
+</span><span class="">   84: An L&lt;App::Test::Generator::Model::Method&gt; object. Evidence is added
+</span><span class="">   85: to this object in place via C&lt;add_evidence&gt;.
+</span><span class="">   86: 
+</span><span class="">   87: =back
+</span><span class="">   88: 
+</span><span class="">   89: =head3 Returns
+</span><span class="">   90: 
+</span><span class="">   91: Nothing (undef). All results are communicated via side effects on the
+</span><span class="">   92: C&lt;$method&gt; object.
+</span><span class="">   93: 
+</span><span class="">   94: =head3 Notes
+</span><span class="">   95: 
+</span><span class="">   96: The interface of this analyser differs from
+</span><span class="">   97: L&lt;App::Test::Generator::Analyzer::ReturnMeta&gt;, which operates on a raw
+</span><span class="">   98: schema hashref. This analyser operates on a C&lt;Model::Method&gt; object
+</span><span class="">   99: directly.
+</span><span class="">  100: 
+</span><span class="">  101: =head3 API specification
+</span><span class="">  102: 
+</span><span class="">  103: =head4 input
+</span><span class="">  104: 
+</span><span class="">  105:     {
+</span><span class="">  106:         self   =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Analyzer::Return&#39; },
+</span><span class="">  107:         method =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; },
+</span><span class="">  108:     }
+</span><span class="">  109: 
+</span><span class="">  110: =head4 output
+</span><span class="">  111: 
+</span><span class="">  112:     { type =&gt; UNDEF }
+</span><span class="">  113: 
+</span><span class="">  114: =cut
+</span><span class="">  115: 
+</span><span class="">  116: sub analyze {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">117 → 134 → 148</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">117 → 134 → 0</span></span>  117: 	my ($self, $method) = @_;
+</span><span class="">  118: 
+</span><span class="">  119: 	# Accept either a Model::Method object or a raw hashref,
+</span><span class="">  120: 	# since callers in SchemaExtractor pass raw hashrefs
+</span><span class="">  121: 	my $source = blessed($method) &amp;&amp; $method-&gt;can(&#39;source&#39;)
+</span><span class="">  122: 		? $method-&gt;source()
+</span><span class="">  123: 		: ($method-&gt;{source} // $method-&gt;{body} // &#39;&#39;);
+</span><span class="">  124: 
+</span><span class="">  125: 	my $add = blessed($method) &amp;&amp; $method-&gt;can(&#39;add_evidence&#39;)
+</span><span class="">  126: 		? sub { $method-&gt;add_evidence(@_) }
+</span><span class="">  127: 		: sub {};
+</span><span class="">  128: 
+</span><span class="">  129: 	# --------------------------------------------------
+</span><span class="">  130: 	# Detect: return $self-&gt;{property}
+</span><span class="">  131: 	# Negative lookahead ensures this does not also match
+</span><span class="">  132: 	# plain return $self (handled separately below)
+</span><span class="">  133: 	# --------------------------------------------------
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  134: 	if($source =~ /return\s+\$self-&gt;\{(\w+)\}/) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  135: 		$add-&gt;(
+</span><span class="">  136: 			category =&gt; &#39;return&#39;,
+</span><span class="">  137: 			signal   =&gt; &#39;returns_property&#39;,
+</span><span class="">  138: 			value    =&gt; $1,
+</span><span class="">  139: 			weight   =&gt; $WEIGHT_RETURNS_PROPERTY,
+</span><span class="">  140: 		);
+</span><span class="">  141: 	}
+</span><span class="">  142: 
+</span><span class="">  143: 	# --------------------------------------------------
+</span><span class="">  144: 	# Detect: return $self
+</span><span class="">  145: 	# Use negative lookahead to avoid matching
+</span><span class="">  146: 	# return $self-&gt;{...} which is a property return
+</span><span class="">  147: 	# --------------------------------------------------
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">148 → 148 → 161</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">148 → 148 → 0</span></span>  148: 	if($source =~ /return\s+\$self(?!-&gt;)/) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  149: 		$add-&gt;(
+</span><span class="">  150: 			category =&gt; &#39;return&#39;,
+</span><span class="">  151: 			signal   =&gt; &#39;returns_self&#39;,
+</span><span class="">  152: 			weight   =&gt; $WEIGHT_RETURNS_SELF,
+</span><span class="">  153: 		);
+</span><span class="">  154: 	}
+</span><span class="">  155: 
+</span><span class="">  156: 	# --------------------------------------------------
+</span><span class="">  157: 	# Detect: return of a constant literal &acirc;&#128;&#148; quoted string,
+</span><span class="">  158: 	# numeric literal, or undef. All indicate the method
+</span><span class="">  159: 	# returns a fixed value rather than a computed state.
+</span><span class="">  160: 	# --------------------------------------------------
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">161 → 161 → 169</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">161 → 161 → 0</span></span>  161: 	if($source =~ /return\s+(?:[&#39;&quot;\d]|undef\b)/) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  162: 		$add-&gt;(
+</span><span class="">  163: 			category =&gt; &#39;return&#39;,
+</span><span class="">  164: 			signal   =&gt; &#39;returns_constant&#39;,
+</span><span class="">  165: 			weight   =&gt; $WEIGHT_RETURNS_CONSTANT,
+</span><span class="">  166: 		);
+</span><span class="">  167: 	}
 </span><span class="">  168: 
-</span><span class="">  169: Copyright 2025-2026 Nigel Horne.
-</span><span class="">  170: 
-</span><span class="">  171: Usage is subject to GPL2 licence terms.
-</span><span class="">  172: If you use it,
-</span><span class="">  173: please let me know.
-</span><span class="">  174: 
-</span><span class="">  175: =cut
-</span><span class="">  176: 
-</span><span class="">  177: 1;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">169 → 169 → 0</span></span>  169: 	return;
+</span><span class="">  170: }
+</span><span class="">  171: 
+</span><span class="">  172: =head1 LICENCE AND COPYRIGHT
+</span><span class="">  173: 
+</span><span class="">  174: Copyright 2025-2026 Nigel Horne.
+</span><span class="">  175: 
+</span><span class="">  176: Usage is subject to GPL2 licence terms.
+</span><span class="">  177: If you use it,
+</span><span class="">  178: please let me know.
+</span><span class="">  179: 
+</span><span class="">  180: =cut
+</span><span class="">  181: 
+</span><span class="">  182: 1;
 </span></pre>
 
 <script>

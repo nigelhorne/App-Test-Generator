@@ -428,7 +428,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  118: 	croak &#39;Invalid email format&#39;
 </span><span class="">  119: 		unless $email =~ /^[^@]+\@[^@]+\.[^@]+$/;
 </span><span class="">  120: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  121: 	return 1;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  121: 	return 1;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -464,7 +464,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  133: 
 </span><span class="">  134: =item * C&lt;$birth_year&gt;
 </span><span class="">  135: 
-</span><span class="">  136: Integer (C&lt;$MIN_BIRTH_YEAR&gt; to current year). Required.
+</span><span class="">  136: A birth year value (C&lt;$MIN_BIRTH_YEAR&gt; to current year). Required.
 </span><span class="">  137: 
 </span><span class="">  138: =back
 </span><span class="">  139: 
@@ -554,7 +554,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 								</div>
 							</li></ul></details>
 <span class="">  172: 
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  173: 	return $current_year - $birth_year;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  173: 	return $current_year - $birth_year;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -655,7 +655,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 							</li></ul></details>
 <span class="">  222: 	}
 </span><span class="">  223: 
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 224 → 224 → 0</span></span>  224: 	return $count;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 224 → 224 → 0</span></span>  224: 	return $count;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -856,7 +856,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  322: 	# Apply default greeting when caller does not supply one
 </span><span class="">  323: 	$greeting ||= &#39;Hello&#39;;
 </span><span class="">  324: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  325: 	return &quot;$greeting, $name!&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  325: 	return &quot;$greeting, $name!&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -893,7 +893,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  338: 
 </span><span class="">  339: =item * C&lt;$enabled&gt;
 </span><span class="">  340: 
-</span><span class="">  341: Boolean scalar. Required.
+</span><span class="">  341: Boolean scalar.
 </span><span class="">  342: 
 </span><span class="">  343: =back
 </span><span class="">  344: 
@@ -920,7 +920,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  365: 	my ($self, $enabled) = @_;
 </span><span class="">  366: 
 </span><span class="">  367: 	# Normalise any truthy/falsy value to a strict 1 or 0
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  368: 	return $enabled ? 1 : 0;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  368: 	return $enabled ? 1 : 0;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -996,31 +996,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 					<details class="mutant-details">
 					<summary>Mutants (Total: 6, Killed: 0, Survived: 6)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_418_41_<: Numeric boundary flip <= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_418_41_>: Numeric boundary flip <= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_418_41_>=: Numeric boundary flip <= to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boundary test suggestion
-is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>NUM_BOUNDARY_418_17_>: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_418_17_>: Numeric boundary flip >= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -1044,10 +1020,34 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
+							</li><li><b>NUM_BOUNDARY_418_41_<: Numeric boundary flip <= to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_418_41_>: Numeric boundary flip <= to ></b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>NUM_BOUNDARY_418_41_>=: Numeric boundary flip <= to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boundary test suggestion
+is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
+</pre>
+								</div>
 							</li></ul></details>
 <span class="">  419: 
 </span><span class="">  420: 	# Compare against the pass threshold constant
-</span><span class="survived-3 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Return value mutation survived. Add tests asserting exact return values.">  421: 	return $score &gt;= $PASS_THRESHOLD ? &#39;Pass&#39; : &#39;Fail&#39;;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  421: 	return $score &gt;= $PASS_THRESHOLD ? &#39;Pass&#39; : &#39;Fail&#39;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -1097,25 +1097,52 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  423: 
 </span><span class="">  424: =head2 mysterious_method
 </span><span class="">  425: 
-</span><span class="">  426: A deliberately under-documented method used to test that
+</span><span class="">  426: A deliberately under-validated method used to test that
 </span><span class="">  427: L&lt;App::Test::Generator::SchemaExtractor&gt; correctly assigns low
 </span><span class="">  428: confidence when validation is absent.
 </span><span class="">  429: 
-</span><span class="">  430: =cut
+</span><span class="">  430: =head3 Arguments
 </span><span class="">  431: 
-</span><span class="">  432: sub mysterious_method {
-</span><span class="">  433: 	my ($self, $thing) = @_;
-</span><span class="">  434: 
-</span><span class="">  435: 	# Intentionally unvalidated &acirc;&#128;&#148; used to verify that SchemaExtractor
-</span><span class="">  436: 	# flags low-confidence schemas when no validation logic is present.
-</span><span class="">  437: 	# Callers passing non-numeric values will trigger a Perl warning;
-</span><span class="">  438: 	# this is expected behaviour for this test fixture.
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  439: 	return $thing * 2;
+</span><span class="">  432: =over 4
+</span><span class="">  433: 
+</span><span class="">  434: =item * C&lt;$thing&gt;
+</span><span class="">  435: 
+</span><span class="">  436: A value to double. No type validation is performed intentionally.
+</span><span class="">  437: 
+</span><span class="">  438: =back
+</span><span class="">  439: 
+</span><span class="">  440: =head3 Returns
+</span><span class="">  441: 
+</span><span class="">  442: C&lt;$thing * 2&gt;.
+</span><span class="">  443: 
+</span><span class="">  444: =head3 API specification
+</span><span class="">  445: 
+</span><span class="">  446: =head4 input
+</span><span class="">  447: 
+</span><span class="">  448:     {
+</span><span class="">  449:         self  =&gt; { type =&gt; OBJECT },
+</span><span class="">  450:         thing =&gt; { type =&gt; &#39;any&#39; },
+</span><span class="">  451:     }
+</span><span class="">  452: 
+</span><span class="">  453: =head4 output
+</span><span class="">  454: 
+</span><span class="">  455:     { type =&gt; &#39;number&#39; }
+</span><span class="">  456: 
+</span><span class="">  457: =cut
+</span><span class="">  458: 
+</span><span class="">  459: sub mysterious_method {
+</span><span class="">  460: 	my ($self, $thing) = @_;
+</span><span class="">  461: 
+</span><span class="">  462: 	# Intentionally unvalidated &acirc;&#128;&#148; used to verify that SchemaExtractor
+</span><span class="">  463: 	# flags low-confidence schemas when no validation logic is present.
+</span><span class="">  464: 	# Callers passing non-numeric values will trigger a Perl warning;
+</span><span class="">  465: 	# this is expected behaviour for this test fixture.
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  466: 	return $thing * 2;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
 					<ul>
-				<li><b>BOOL_NEGATE_439_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>BOOL_NEGATE_466_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -1123,7 +1150,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>RETURN_UNDEF_439_2: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
+							</li><li><b>RETURN_UNDEF_466_2: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -1132,19 +1159,19 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  440: }
-</span><span class="">  441: 
-</span><span class="">  442: =head1 AUTHOR
-</span><span class="">  443: 
-</span><span class="">  444: Example Author
-</span><span class="">  445: 
-</span><span class="">  446: =head1 LICENSE
-</span><span class="">  447: 
-</span><span class="">  448: This is free software.
-</span><span class="">  449: 
-</span><span class="">  450: =cut
-</span><span class="">  451: 
-</span><span class="">  452: 1;
+<span class="">  467: }
+</span><span class="">  468: 
+</span><span class="">  469: =head1 AUTHOR
+</span><span class="">  470: 
+</span><span class="">  471: Example Author
+</span><span class="">  472: 
+</span><span class="">  473: =head1 LICENSE
+</span><span class="">  474: 
+</span><span class="">  475: This is free software.
+</span><span class="">  476: 
+</span><span class="">  477: =cut
+</span><span class="">  478: 
+</span><span class="">  479: 1;
 </span></pre>
 
 <script>
