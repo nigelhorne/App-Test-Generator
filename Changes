@@ -25,8 +25,21 @@ Revision history for App-Test-Generator
 	  exclusive and Generator.pm now rejects schemas that contain both.
 	  SchemaExtractor now only sets memberof when enum is not already being
 	  output in the cleaned schema.
+	- Fix SchemaExtractor falsely inferring type 'number' for parameters whose
+	  code uses the defined-or operator (//) — e.g. $text // '' was mistaken
+	  for division because the numeric-operator pattern included bare / without
+	  excluding //. Both heuristic-inference sites now use \/(?!\/) to require
+	  that the / is not followed by a second /.
 
 	[Enhancements]
+	- SchemaExtractor now parses =head3 Input and =head4 Input formal spec
+	  blocks, mirroring the existing =head4 Output support. Positional array
+	  format ([ {type=>'...'}, ... ]) and named hash format
+	  ({ name => {type=>'...'}, ... }) are both supported. The spec takes
+	  highest priority, overriding all heuristic type inference. Union types
+	  such as 'scalar | scalarref' are resolved to the canonical ATG type
+	  (both scalar and scalarref map to string).
+
 	- Add t/app.t: ATG self-test that runs every lib/**/*.pm through
 	  SchemaExtractor (strict_pod=fatal), generates a fuzz harness for each
 	  extracted schema via App::Test::Generator, and runs it through prove.

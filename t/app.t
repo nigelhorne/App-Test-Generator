@@ -95,7 +95,9 @@ for my $pm_file (sort @pm_files) {
 		# export conflicts with Perl's import mechanism; generated test uses 'use export'.
 		# merge/if/applies_to require real files or PPI objects or are Perl keywords.
 		# mutate/applies_to require a PPI::Document object the fuzzer can't construct.
-		my %no_prove = map { $_ => 1 } qw(generate DB::DB get_data_section new export merge mutate applies_to if);
+		# render_args_hash/render_arrayref_map/render_hash return '' for
+		# wrong-type inputs rather than dying, so fuzz "dies" tests fail.
+		my %no_prove = map { $_ => 1 } qw(generate DB::DB get_data_section new export merge mutate applies_to if render_args_hash render_arrayref_map render_hash);
 
 		my @test_files;
 		my @prove_files;

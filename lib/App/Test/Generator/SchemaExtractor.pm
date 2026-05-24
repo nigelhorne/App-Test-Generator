@@ -3600,7 +3600,107 @@ sub _analyze_pod {
 		# }
 	}
 
+	# Pattern 0: =head3|4 Input formal spec — highest-priority type source.
+	# Runs last so positional matching can use positions set by earlier patterns.
+	# Accepts positional array format: [ {type=>'...'}, ... ]
+	# and named hash format:           { name => {type=>'...'}, ... }
+	if ($pod =~ /=head[34]\s+Input\b(.*?)(?==head|\z)/si) {
+		my $block = $1;
+		$block =~ s/\A\s+//;
+
+		if ($block =~ /\A\[/) {
+			# Positional format: each {…} maps to the param at that array index.
+			my $idx = 0;
+			while ($block =~ /\{([^}]*)\}/g) {
+				my $spec = $1;
+				my ($name) = grep { ($params{$_}{position} // -1) == $idx }
+				             keys %params;
+				if (defined $name) {
+					$params{$name}{_from_input_spec} = 1;
+					if (my $t = $self->_map_formal_input_type($spec)) {
+						$params{$name}{type} = $t;
+						$self->_log("  POD: $name type '$t' from =head Input (positional $idx)");
+					}
+					if ($spec =~ /\boptional\s*=>\s*(0|1)/i) {
+						$params{$name}{optional} = $1 + 0;
+					}
+				}
+				$idx++;
+			}
+		} elsif ($block =~ /\A\{/) {
+			# Named format: each 'name => {…}' entry maps directly by name.
+			while ($block =~ /\b(\w+)\s*=>\s*\{([^}]*)\}/g) {
+				my ($name, $spec) = ($1, $2);
+				next if $name =~ /^(self|class)$/i;
+				$params{$name} //= { _source => 'pod' };
+				$params{$name}{_from_input_spec} = 1;
+				if (my $t = $self->_map_formal_input_type($spec)) {
+					$params{$name}{type} = $t;
+					$self->_log("  POD: $name type '$t' from =head Input (named)");
+				}
+				if ($spec =~ /\boptional\s*=>\s*(0|1)/i) {
+					$params{$name}{optional} = $1 + 0;
+				}
+			}
+			# A named-format Input spec signals a hash/named API.  Positional
+			# info from signature analysis is not meaningful here and causes
+			# "param X missing position" errors when params are mixed.
+			delete $params{$_}{position} for keys %params;
+		}
+	}
+
 	return \%params;
+}
+
+# --------------------------------------------------
+# _map_formal_input_type
+#
+# Purpose:    Extract and normalise the type string
+#             from a parameter spec fragment such as
+#             "type => 'scalar | scalarref'".
+#             Handles union types by returning the
+#             canonical ATG type for the first
+#             recognised alternative.
+#
+# Entry:      $spec - text content of a { } block
+#                     from a =head3|4 Input spec.
+#
+# Exit:       Canonical type string, or undef when
+#             no 'type' key is present or the value
+#             is not a recognised type name.
+# --------------------------------------------------
+sub _map_formal_input_type {
+	my ($self, $spec) = @_;
+	return undef unless $spec =~ /\btype\s*=>\s*['"]([^'"]+)['"]/i;
+	my $raw = lc($1);
+	$raw =~ s/\s+//g;
+
+	my %map = (
+		scalar    => 'string',
+		scalarref => 'string',
+		str       => 'string',
+		string    => 'string',
+		int       => 'integer',
+		integer   => 'integer',
+		num       => 'number',
+		number    => 'number',
+		float     => 'number',
+		bool      => 'boolean',
+		boolean   => 'boolean',
+		array     => 'arrayref',
+		arrayref  => 'arrayref',
+		hash      => 'hashref',
+		hashref   => 'hashref',
+		object    => 'object',
+		any       => 'any',
+		undef     => 'undef',
+		coderef   => 'coderef',
+	);
+
+	for my $t (split /\|/, $raw) {
+		return $map{$t} if exists $map{$t};
+	}
+	return undef;
 }
 
 # --------------------------------------------------
@@ -4908,7 +5008,7 @@ sub _analyze_code {
 			# e.g. $var //= 5; or $var ||= 5;
 			$$p->{optional} = 1;
 			$self->_log("  CODE: $param is optional (default value assigned in code)");
-		} elsif ($code =~ /\s*\$$param\s*(?:[\+\-\*\/%]|(?:\+\+)|(?:--)|(?:[\+\-\*\/%]=)|\+\$|\$[+-])/ ) {
+		} elsif ($code =~ /\s*\$$param\s*(?:[\+\-\*\%]|\/(?!\/)|(?:\+\+)|(?:--)|(?:[\+\-\*\%]=|\/(?!\/)=)|\+\$|\$[+-])/ ) {
 			# Covers arithmetic usage:
 			# $x + $param, $param++, $param--, $x += $param, $x -= $param, etc.
 			$$p->{optional} = 0;
@@ -5026,9 +5126,10 @@ sub _analyze_parameter_type {
 	# ------------------------------------------------------------
 	if (!$p->{type}) {
 		# Numeric operators: + - * / % **
+		# Use \/(?!\/) to exclude // (defined-or) from matching as division.
 		if (
-			$code =~ /\$$param\s*[\+\-\*\/%]/ ||
-			$code =~ /[\+\-\*\/%]\s*\$$param/ ||
+			$code =~ /\$$param\s*(?:[\+\-\*\%]|\/(?!\/))/ ||
+			$code =~ /(?:[\+\-\*\%]|\/(?!\/))\s*\$$param/ ||
 			$code =~ /\bint\s*\(\s*\$$param\s*\)/ ||
 			$code =~ /\babs\s*\(\s*\$$param\s*\)/
 		) {
@@ -7685,6 +7786,17 @@ sub _write_schema {
 				my $cleaned_param = $self->_serialize_parameter_for_yaml($param);
 				$output->{'input'}{$param_name} = $cleaned_param;
 			}
+
+			# If some params have positions and others don't, treat the whole
+			# input as a named (hash) API and strip all positions.  Mixed
+			# position state arises when a named-API method also happens to
+			# have a Params::Get positional-key call alongside =head4 Input
+			# named-block params that carry no position.
+			my @with_pos    = grep { defined $output->{input}{$_}{position} } keys %{$output->{input}};
+			my @without_pos = grep { !defined $output->{input}{$_}{position} } keys %{$output->{input}};
+			if (@with_pos && @without_pos) {
+				delete $output->{input}{$_}{position} for @with_pos;
+			}
 		} else {
 			delete $output->{input};
 		}
@@ -7988,6 +8100,7 @@ sub _serialize_parameter_for_yaml {
 
 	# Remove internal fields
 	delete $cleaned{_source};
+	delete $cleaned{_from_input_spec};
 	delete $cleaned{semantic};
 
 	return \%cleaned;
@@ -9317,6 +9430,11 @@ sub _validate_pod_code_agreement {
 	foreach my $param (sort keys %all_params) {
 		my $pod = $pod_params->{$param} || {};
 		my $code = $code_params->{$param} || {};
+
+		# Params from a =head3|4 Input formal spec are the authoritative API
+		# definition — they are exempt from POD/code disagreement checks since
+		# the spec takes precedence over heuristic code analysis.
+		next if $pod->{_from_input_spec};
 
 		# Check if parameter exists in both
 		if (exists $pod_params->{$param} && !exists $code_params->{$param}) {
