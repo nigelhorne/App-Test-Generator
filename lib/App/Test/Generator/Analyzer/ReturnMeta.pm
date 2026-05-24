@@ -81,7 +81,7 @@ report covering stability, consistency, and risk flags.
 
 =item * C<$schema>
 
-A hashref with an optional C<output> key containing return metadata.
+A hashref that may include an C<output> key containing return metadata.
 The C<output> hashref may include any of the following keys:
 
 =over 4

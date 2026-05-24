@@ -65,7 +65,7 @@ write the results to a JSON file.
 
 =item * C<$file>
 
-Path to the Perl source file to analyse. Required.
+Path to the Perl source file to analyse.
 
 =item * C<$out_dir>
 

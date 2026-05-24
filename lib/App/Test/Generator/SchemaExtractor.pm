@@ -1245,7 +1245,7 @@ Construct a new SchemaExtractor for a given Perl source file.
 
 =over 4
 
-=item * C<input_file>
+=item * C<$input_file>
 
 Path to the Perl source file to analyse. Required. Must exist on disk.
 
@@ -3433,9 +3433,10 @@ sub _analyze_pod {
 					$self->_parse_constraints($params{$name}, $constraint);
 				}
 
-				# Check for optional/required in description OR constraint
+				# Check for optional/required in description OR constraint.
+				# Use word boundaries to avoid matching "optionally" as "optional".
 				my $full_text = ($constraint || '') . ' ' . ($desc || '');
-				if ($full_text =~ /optional/i) {
+				if ($full_text =~ /\boptional\b/i) {
 					$params{$name}{optional} = 1;
 					$self->_log("  POD: $name marked as optional");
 				} elsif ($full_text =~ /required|mandatory/i) {
@@ -3463,7 +3464,7 @@ sub _analyze_pod {
 	}
 
 	# Pattern 2: Also try the inline format in case Parameters: section wasn't found
-	while ($pod =~ /\$(\w+)\s*-\s*(string|integer|int|number|num|float|boolean|bool|arrayref|array|hashref|hash|object)(?:\s*\(([^)]+)\))?\s*,?\s*(.*)$/gim) {
+	while ($pod =~ /\$(\w+)\s*-\s*(string|integer|int|number|num|float|boolean|bool|arrayref|array|hashref|hash|object|any)(?:\s*\(([^)]+)\))?\s*,?\s*(.*)$/gim) {
 		my ($name, $type, $constraint, $desc) = ($1, lc($2), $3, $4);
 
 		# Only process if we haven't already found this param in the Parameters section
@@ -3491,9 +3492,10 @@ sub _analyze_pod {
 			$self->_parse_constraints($params{$name}, $constraint);
 		}
 
-		# Check for optional/required in description
+		# Check for optional/required in description.
+		# Use word boundaries to avoid matching "optionally" as "optional".
 		if ($desc) {
-			if ($desc =~ /optional/i) {
+			if ($desc =~ /\boptional\b/i) {
 				$params{$name}{optional} = 1;
 			} elsif ($desc =~ /required|mandatory/i) {
 				$params{$name}{optional} = 0;
@@ -3526,7 +3528,7 @@ sub _analyze_pod {
 
 		# Explicit typed form only:
 		#	$param - type (constraints)
-		if ($desc =~ /^\s*(string|integer|int|number|num|float|boolean|bool|array|arrayref|hash|hashref)\b(?:\s*\(([^)]+)\))?/i) {
+		if ($desc =~ /^\s*(string|integer|int|number|num|float|boolean|bool|array|arrayref|hash|hashref|any)\b(?:\s*\(([^)]+)\))?/i) {
 			my $type = lc($1);
 			my $constraint = $2;
 
@@ -3557,8 +3559,9 @@ sub _analyze_pod {
 			}
 		}
 
-		# Check for optional/required in description
-		if ($desc =~ /optional/i) {
+		# Check for optional/required in description.
+		# Use word boundaries to avoid matching "optionally" as "optional".
+		if ($desc =~ /\boptional\b/i) {
 			$params{$name}{optional} = 1;
 		} elsif ($desc =~ /required|mandatory/i) {
 			$params{$name}{optional} = 0;

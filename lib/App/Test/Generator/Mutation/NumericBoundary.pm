@@ -36,6 +36,33 @@ Returns true if the document contains any comparison operators that this
 mutator can target (C<E<gt>>, C<E<lt>>, C<E<gt>=>, C<E<lt>=>, C<==>,
 C<!=>).
 
+=head3 Arguments
+
+=over 4
+
+=item * C<$doc>
+
+A L<PPI::Document> object to inspect.
+
+=back
+
+=head3 Returns
+
+A boolean.
+
+=head3 API specification
+
+=head4 input
+
+    {
+        self => { type => OBJECT, isa => 'App::Test::Generator::Mutation::NumericBoundary' },
+        doc  => { type => OBJECT, isa => 'PPI::Document' },
+    }
+
+=head4 output
+
+    { type => SCALAR }
+
 =cut
 
 sub applies_to {

@@ -84,7 +84,14 @@ for my $pm_file (sort @pm_files) {
 		diag("step 2: generating fuzz harnesses") if $VERBOSE;
 		$t0 = time;
 
+		# Functions that require real file-system inputs can't be meaningfully
+		# fuzz-tested: the harness would supply random strings as file paths and
+		# every call would die with "file not found". Syntax-check these files
+		# (step 3a) but skip them in the prove run (step 3b).
+		my %no_prove = map { $_ => 1 } qw(generate);
+
 		my @test_files;
+		my @prove_files;
 		for my $func (sort keys %$schemas) {
 			my $schema_file = File::Spec->catfile($tmpdir, "${func}.yml");
 			next unless -f $schema_file;
@@ -100,10 +107,16 @@ for my $pm_file (sort @pm_files) {
 					$schema->{config}{timeout}        = 3;
 					$schema->{config}{test_empty}     = 0;
 					$schema->{config}{close_stdin}    = 1;
-					# Cap unconstrained string fields to prevent 64K-char test cases
+					# Cap unconstrained file-path string fields to prevent 64K-char test cases.
+					# Only applied to fields whose name suggests a file path — not general
+					# string arguments like 's', 'v', etc., which don't enforce length.
 					if (ref($schema->{input}) eq 'HASH') {
-						for my $spec (values %{$schema->{input}}) {
-							if (ref($spec) eq 'HASH' && (($spec->{type}//'') eq 'string') && !defined($spec->{max})) {
+						for my $field (keys %{$schema->{input}}) {
+							my $spec = $schema->{input}{$field};
+							if (ref($spec) eq 'HASH'
+								&& (($spec->{type}//'') eq 'string')
+								&& !defined($spec->{max})
+								&& $field =~ /(?:file|path|dir|filename|dirname)/i) {
 								$spec->{max} = 1025;
 							}
 						}
@@ -132,11 +145,14 @@ for my $pm_file (sort @pm_files) {
 				next;
 			}
 
-			push @test_files, $test_file if -f $test_file;
+			if (-f $test_file) {
+				push @test_files, $test_file;
+				push @prove_files, $test_file unless $no_prove{$func};
+			}
 		}
 
-		diag(sprintf('step 2 done in %ds: %d test files generated',
-			time - $t0, scalar @test_files)) if $VERBOSE;
+		diag(sprintf('step 2 done in %ds: %d test files generated (%d for prove)',
+			time - $t0, scalar @test_files, scalar @prove_files)) if $VERBOSE;
 
 		pass('fuzz harnesses generated without error') unless $failed;
 
@@ -164,11 +180,13 @@ for my $pm_file (sort @pm_files) {
 
 			# Optionally: run the fuzz harnesses through prove.
 			# Set TEST_JOBS=1 (or any value) to enable; parallelism via TEST_JOBS > 1.
-			if (defined $ENV{TEST_JOBS}) {
+			if (defined $ENV{TEST_JOBS} && @prove_files) {
 				my $jobs     = int($ENV{TEST_JOBS}) || 1;
 				my $limit_str = PROVE_TIMEOUT ? PROVE_TIMEOUT . 's limit' : 'no limit';
-				diag(sprintf('step 3b: running prove on %d file(s) (jobs=%d, %s)',
-					scalar @test_files, $jobs, $limit_str)) if $VERBOSE;
+				my $skipped  = @test_files - @prove_files;
+				diag(sprintf('step 3b: running prove on %d file(s) (jobs=%d, %s%s)',
+					scalar @prove_files, $jobs, $limit_str,
+					$skipped ? ", $skipped skipped (require real files)" : '')) if $VERBOSE;
 				$t0 = time;
 
 				my $out_file = File::Spec->catfile($tmpdir, '_prove_stdout.txt');
@@ -176,7 +194,7 @@ for my $pm_file (sort @pm_files) {
 
 				my @prove_cmd = ('prove', '-Ilib', '--nocolor');
 				push @prove_cmd, "-j$jobs" if $jobs > 1;
-				push @prove_cmd, @test_files;
+				push @prove_cmd, @prove_files;
 
 				# Fork prove with stdin=/dev/null and stdout/stderr to temp files
 				# to avoid pipe-buffer deadlocks from fuzz-induced TAP floods.

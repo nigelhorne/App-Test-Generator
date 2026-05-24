@@ -1567,9 +1567,13 @@ Takes a schema file and produces a test file (or STDOUT).
 
 sub generate
 {
-	croak 'Usage: generate(schema_file [, outfile])' if(scalar(@_) <= 1);
+	croak 'Usage: generate(schema_file [, outfile])' if(scalar(@_) == 0);
 
-	my $class = shift;
+	# Accept both class-method call (App::Test::Generator->generate(...))
+	# and plain-function call with a hashref (generate({...})).
+	# In the method form the first arg is the class name (a plain string);
+	# in the function form with a hashref the first arg IS the hashref.
+	my $class = (ref($_[0]) ne 'HASH') ? shift : undef;
 	my ($schema_file, $test_file, $schema);
 	# Globals loaded from the user's conf (all optional except function maybe)
 	my ($module, $function, $new, $yaml_cases);
@@ -2423,6 +2427,8 @@ sub _validate_input_params {
 		if(ref($spec)) {
 			croak("Missing type for parameter '$param'")
 				unless defined $spec->{type};
+			# 'coderef' is a SchemaExtractor-specific type; treat as 'any'
+			$spec->{type} = 'any' if $spec->{type} eq 'coderef';
 			croak("Invalid type '$spec->{type}' for parameter '$param'")
 				unless _valid_type($spec->{type});
 		} else {
@@ -2687,7 +2693,7 @@ sub _valid_type {
 	# the lifetime of the process via 'state'
 	state %VALID = map { $_ => 1 } qw(
 		string boolean integer number float
-		hashref arrayref object int bool
+		hashref arrayref object int bool any
 	);
 
 	return($VALID{$type} // 0);
@@ -2833,11 +2839,11 @@ correctness.
 
 =head4 input
 
-    { v => { type => SCALAR|REF, optional => 1 } }
+    { v => { type => 'any', optional => 1 } }
 
 =head4 output
 
-    { type => SCALAR }
+    { type => 'string' }
 
 =cut
 
@@ -3190,6 +3196,8 @@ sub _has_positions {
 sub q_wrap {
 	my $s = $_[0];
 
+	croak('q_wrap: argument must be a plain string, not a reference') if ref($s);
+
 	# Return empty string for undef — this function is a low-level
 	# string quoter only. Callers that need the Perl literal 'undef'
 	# for undefined values should use perl_quote() instead, which
@@ -3250,6 +3258,8 @@ sub q_wrap {
 sub perl_sq {
 	my $s = $_[0];
 
+	croak('perl_sq: argument must be a plain string, not a reference') if ref($s);
+
 	# Return empty string for undef — callers that need
 	# 'undef' literal should use perl_quote instead
 	return '' unless defined $s;
@@ -3276,36 +3286,43 @@ sub perl_sq {
 	return $s;
 }
 
-# --------------------------------------------------
-# perl_quote
-#
-# Purpose:    Convert a Perl value into a source-code
-#             fragment that reproduces that value when
-#             evaluated in a generated test file.
-#
-# Entry:      $v - the value to quote. May be undef,
-#             a scalar, an arrayref, a Regexp, or any
-#             other reference type.
-#
-# Exit:       Returns a string of Perl source code.
-#             Undef produces the literal 'undef'.
-#             Numbers are returned unquoted.
-#             Strings are returned single-quoted via
-#             perl_sq(). Arrays are recursively quoted.
-#             Regexps are rendered as qr{...}.
-#             Other refs fall through to render_fallback.
-#
-# Side effects: None.
-#
-# Notes:      The boolean string literals 'true' and
-#             'false' are converted to Perl boolean
-#             constants !!1 and !!0 respectively so
-#             that YAML boolean values round-trip
-#             correctly into generated tests.
-# --------------------------------------------------
+=head2 perl_quote
+
+Convert any Perl value into a source-code fragment that reproduces that value
+when evaluated in a generated test file.
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$v>
+
+Any Perl value. May be undef, a scalar, an arrayref, a Regexp, or a blessed
+object. All types are handled — undef becomes C<'undef'>, numbers are
+unquoted, strings are single-quoted, arrayrefs recurse, Regexps become
+C<qr{...}>, and anything else falls through to C<render_fallback>.
+
+=back
+
+=head3 API specification
+
+=head4 input
+
+    { v => { type => 'any', optional => 1 } }
+
+=head4 output
+
+    { type => 'string' }
+
+=cut
+
 sub perl_quote {
+	my ($v) = @_;
+	return _perl_quote($v, 0);
+}
+
+sub _perl_quote {
 	my ($v, $depth) = @_;
-	$depth //= 0;
 	croak('perl_quote: structure too deeply nested (circular reference?)') if $depth > 100;
 
 	# Undef produces the Perl literal 'undef'
@@ -3319,7 +3336,7 @@ sub perl_quote {
 	if(ref($v)) {
 		# Recursively quote each element of an arrayref
 		if(ref($v) eq 'ARRAY') {
-			my @quoted_v = map { perl_quote($_, $depth + 1) } @{$v};
+			my @quoted_v = map { _perl_quote($_, $depth + 1) } @{$v};
 			return '[ ' . join(', ', @quoted_v) . ' ]';
 		}
 

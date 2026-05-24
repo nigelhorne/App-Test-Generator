@@ -20,6 +20,33 @@ Version 0.38
 Returns true if the document contains any C<if> or C<unless> compound
 statements that this mutator can target.
 
+=head3 Arguments
+
+=over 4
+
+=item * C<$doc>
+
+A L<PPI::Document> object to inspect.
+
+=back
+
+=head3 Returns
+
+A boolean.
+
+=head3 API specification
+
+=head4 input
+
+    {
+        self => { type => OBJECT, isa => 'App::Test::Generator::Mutation::ConditionalInversion' },
+        doc  => { type => OBJECT, isa => 'PPI::Document' },
+    }
+
+=head4 output
+
+    { type => SCALAR }
+
 =cut
 
 sub applies_to {
