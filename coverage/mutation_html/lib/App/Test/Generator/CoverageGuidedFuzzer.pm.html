@@ -328,7 +328,7 @@ Approximate LCSAJ segments: 163<br>
 </span><span class="">   36: # --------------------------------------------------
 </span><span class="">   37: Readonly my @JSON_MODULES =&gt; qw(JSON::MaybeXS JSON);
 </span><span class="">   38: 
-</span><span class="">   39: our $VERSION = &#39;0.38&#39;;
+</span><span class="">   39: our $VERSION = &#39;0.39&#39;;
 </span><span class="">   40: 
 </span><span class="">   41: =head1 NAME
 </span><span class="">   42: 
@@ -336,7 +336,7 @@ Approximate LCSAJ segments: 163<br>
 </span><span class="">   44: 
 </span><span class="">   45: =head1 VERSION
 </span><span class="">   46: 
-</span><span class="">   47: Version 0.38
+</span><span class="">   47: Version 0.39
 </span><span class="">   48: 
 </span><span class="">   49: =head1 SYNOPSIS
 </span><span class="">   50: 
@@ -535,7 +535,7 @@ Approximate LCSAJ segments: 163<br>
 </span><span class="">  237: 	for my $i (1 .. $self-&gt;{iterations}) {
 </span><span class="">  238: 		my $input;
 </span><span class="">  239: 
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  240: 		if(@{ $self-&gt;{corpus} } &amp;&amp; rand() &lt; $CORPUS_MUTATE_RATIO) {
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch.">  240: 		if(@{ $self-&gt;{corpus} } &amp;&amp; rand() &lt; $CORPUS_MUTATE_RATIO) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
@@ -1064,7 +1064,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  662: # --------------------------------------------------
 </span><span class="">  663: sub _generate_random {
 </span><span class="">  664: 	my ($self) = @_;
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  665: 	return $self-&gt;_generate_for_schema($self-&gt;{schema}{input});
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  665: 	return $self-&gt;_generate_for_schema($self-&gt;{schema}{input});
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1219,7 +1219,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  725: 	my $max = $spec-&gt;{max} // $INT32_MAX;
 </span><span class="">  726: 
 </span><span class="">  727: 	# Bias toward boundary values to probe edge conditions
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch.">  728: 	if(rand() &lt; $INT_BOUNDARY_RATIO) {
+</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  728: 	if(rand() &lt; $INT_BOUNDARY_RATIO) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
@@ -1254,7 +1254,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  730: 		return $interesting[ int(rand(@interesting)) ];
 </span><span class="">  731: 	}
 </span><span class="">  732: 
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">733 → 733 → 0</span></span>  733: 	return $min + int(rand($max - $min + 1));
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">733 → 733 → 0</span></span>  733: 	return $min + int(rand($max - $min + 1));
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1536,7 +1536,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  932: 	elsif($type eq $TYPE_NUMBER) {
 </span><span class="">  933: 		# Accept integers, decimals, and scientific notation
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  934: 		return 0 unless $value =~ /^-?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="survived-3 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  935: 		return 0 if defined($spec-&gt;{min}) &amp;&amp; $value &lt; $spec-&gt;{min};
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="survived-3 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Return value mutation survived. Add tests asserting exact return values.">  935: 		return 0 if defined($spec-&gt;{min}) &amp;&amp; $value &lt; $spec-&gt;{min};
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -1582,7 +1582,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  936: 		return 0 if defined($spec-&gt;{max}) &amp;&amp; $value &gt; $spec-&gt;{max};
+<span class="survived-3 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Boolean logic mutation survived. Add tests covering both true and false paths.">  936: 		return 0 if defined($spec-&gt;{max}) &amp;&amp; $value &gt; $spec-&gt;{max};
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -1704,7 +1704,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 					<ul>
 				<li><b>COND_INV_985_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  986: 			return $self-&gt;_mutate_int($input);
+<span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  986: 			return $self-&gt;_mutate_int($input);
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>

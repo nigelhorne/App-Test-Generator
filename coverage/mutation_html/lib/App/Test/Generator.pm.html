@@ -245,7 +245,7 @@ pre details.mutant-details ul {
  <a href="Generator/Mutation/BooleanNegation.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 84.56%<br>
-TER2 (Branch): 71.91%<br>
+TER2 (Branch): 72.10%<br>
 TER3 (LCSAJ): 98.5% (128/130)<br>
 Approximate LCSAJ segments: 535<br>
 </div>
@@ -329,7 +329,7 @@ Approximate LCSAJ segments: 535<br>
 </span><span class="">   37: 
 </span><span class="">   38: our @EXPORT_OK = qw(generate);
 </span><span class="">   39: 
-</span><span class="">   40: our $VERSION = &#39;0.38&#39;;
+</span><span class="">   40: our $VERSION = &#39;0.39&#39;;
 </span><span class="">   41: 
 </span><span class="">   42: use constant {
 </span><span class="">   43: 	DEFAULT_ITERATIONS =&gt; 30,
@@ -448,7 +448,7 @@ Approximate LCSAJ segments: 535<br>
 </span><span class="">  156: 
 </span><span class="">  157: =head1 VERSION
 </span><span class="">  158: 
-</span><span class="">  159: Version 0.38
+</span><span class="">  159: Version 0.39
 </span><span class="">  160: 
 </span><span class="">  161: =head1 SYNOPSIS
 </span><span class="">  162: 
@@ -1299,10 +1299,10 @@ Approximate LCSAJ segments: 535<br>
 </span><span class=""> 1007:       name: Fuzz testing with perl ${{ matrix.perl }} on ${{ matrix.os }}
 </span><span class=""> 1008: 
 </span><span class=""> 1009:       steps:
-</span><span class=""> 1010:         - uses: actions/checkout@v5
+</span><span class=""> 1010:         - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 </span><span class=""> 1011: 
 </span><span class=""> 1012:         - name: Set up Perl
-</span><span class=""> 1013:           uses: shogo82148/actions-setup-perl@v1
+</span><span class=""> 1013:           uses: shogo82148/actions-setup-perl@a198315ec4e9244f206879ea7b63078003aec8a6 # v1.41.1
 </span><span class=""> 1014:           with:
 </span><span class=""> 1015:             perl-version: ${{ matrix.perl }}
 </span><span class=""> 1016: 
@@ -2210,7 +2210,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1795: 		return $a cmp $b;
+<span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1795: 		return $a cmp $b;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2262,7 +2262,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 1823: 
 </span><span class=""> 1824: 	# Render input/output
 </span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1825 → 1826 → 1835</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1825 → 1826 → 0</span></span> 1825: 	my $input_code = &#39;&#39;;
-</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 1826: 	if(((scalar keys %input) == 1) &amp;&amp; exists($input{&#39;type&#39;}) &amp;&amp; !ref($input{&#39;type&#39;})) {
+</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 1826: 	if(((scalar keys %input) == 1) &amp;&amp; exists($input{&#39;type&#39;}) &amp;&amp; !ref($input{&#39;type&#39;})) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -4734,7 +4734,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3948: 			description   =&gt; &#39;Array is sorted in descending order&#39;,
 </span><span class=""> 3949: 			code_template =&gt; sub {
 </span><span class=""> 3950: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 3951: 				return &#39;do { my @arr = @$result; my $sorted = 1; &#39; .
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 3951: 				return &#39;do { my @arr = @$result; my $sorted = 1; &#39; .
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -4892,7 +4892,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4064: 			return &quot;$field_name &lt;- Int&quot;;
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4065: 		} elsif(!defined($min)) {
 </span><span class=""> 4066: 			# Only max defined &acirc;&#128;&#148; generate 0 to max
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4067: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { int(rand($max + 1)) })&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4067: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { int(rand($max + 1)) })&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -4916,7 +4916,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 							</li></ul></details>
 <span class=""> 4068: 		} elsif(!defined($max)) {
 </span><span class=""> 4069: 			# Only min defined &acirc;&#128;&#148; generate min to min + range
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4070: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { $min + int(rand($DEFAULT_GENERATOR_RANGE)) })&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4070: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { $min + int(rand($DEFAULT_GENERATOR_RANGE)) })&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -5042,7 +5042,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 4101: 
 </span><span class=""> 4102: 		} elsif(!defined($max)) {
 </span><span class=""> 4103: 			# Only min defined &acirc;&#128;&#148; choose range based on sign of min
-</span><span class="survived-2 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch."> 4104: 			if($min == $ZERO_BOUNDARY) {
+</span><span class="survived-2 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 4104: 			if($min == $ZERO_BOUNDARY) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -5058,7 +5058,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 							</li><li><b>COND_INV_4104_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
 <span class=""> 4105: 				# min=0: positive numbers only
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4106: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { rand($DEFAULT_GENERATOR_RANGE) })&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4106: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { rand($DEFAULT_GENERATOR_RANGE) })&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -5111,7 +5111,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 								</div>
 							</li></ul></details>
 <span class=""> 4108: 				# Positive min: generate min to min + range
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4109: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand($DEFAULT_GENERATOR_RANGE) })&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4109: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand($DEFAULT_GENERATOR_RANGE) })&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -5135,7 +5135,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 							</li></ul></details>
 <span class=""> 4110: 			} else {
 </span><span class=""> 4111: 				# Negative min: generate from min to min + range
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4112: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand(-$min + $DEFAULT_GENERATOR_RANGE) })&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4112: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand(-$min + $DEFAULT_GENERATOR_RANGE) })&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -5912,7 +5912,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 4695: 
 </span><span class=""> 4696: =over 4
 </span><span class=""> 4697: 
-</span><span class=""> 4698: =item * L&lt;Test Coverage Report|https://nigelhorne.github.io/App-Test-Generator/coverage/&gt;
+</span><span class=""> 4698: =item * L&lt;Test Dashboard|https://nigelhorne.github.io/App-Test-Generator/coverage/&gt;
 </span><span class=""> 4699: 
 </span><span class=""> 4700: =item * L&lt;App::Test::Generator::Template&gt; - Template of the file of tests created by C&lt;App::Test::Generator&gt;
 </span><span class=""> 4701: 
