@@ -1443,7 +1443,7 @@ when evaluated in a generated test file.
 
 # SEE ALSO
 
-- [Test Coverage Report](https://nigelhorne.github.io/App-Test-Generator/coverage/)
+- [Test Dashboard](https://nigelhorne.github.io/App-Test-Generator/coverage/)
 - [App::Test::Generator::Template](https://metacpan.org/pod/App%3A%3ATest%3A%3AGenerator%3A%3ATemplate) - Template of the file of tests created by `App::Test::Generator`
 - [App::Test::Generator::SchemaExtractor](https://metacpan.org/pod/App%3A%3ATest%3A%3AGenerator%3A%3ASchemaExtractor) - Create schemas from Perl programs
 - [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict): Schema Definition

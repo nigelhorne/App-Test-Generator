@@ -1007,10 +1007,10 @@ This example takes you through testing the online_render method of L<HTML::Genea
       name: Fuzz testing with perl ${{ matrix.perl }} on ${{ matrix.os }}
 
       steps:
-        - uses: actions/checkout@v5
+        - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
         - name: Set up Perl
-          uses: shogo82148/actions-setup-perl@v1
+          uses: shogo82148/actions-setup-perl@a198315ec4e9244f206879ea7b63078003aec8a6 # v1.41.1
           with:
             perl-version: ${{ matrix.perl }}
 
@@ -4695,7 +4695,7 @@ C<seed> and C<iterations> really should be within C<config>.
 
 =over 4
 
-=item * L<Test Coverage Report|https://nigelhorne.github.io/App-Test-Generator/coverage/>
+=item * L<Test Dashboard|https://nigelhorne.github.io/App-Test-Generator/coverage/>
 
 =item * L<App::Test::Generator::Template> - Template of the file of tests created by C<App::Test::Generator>
 

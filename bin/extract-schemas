@@ -134,15 +134,15 @@ my $fuzz_iters = 100;
 my $corpus_dir;   # default set after output_dir is known
 
 GetOptions(
-    'output-dir|o=s'  => \$extractor_opts{output_dir},
-    'strict-pod|s=s'  => \$extractor_opts{strict_pod},
-    'verbose|v'       => \$extractor_opts{verbose},
-    'fuzz|f'          => \$fuzz,
-    'fuzz-all'        => \$fuzz_all,
-    'fuzz-iters=i'    => \$fuzz_iters,
-    'corpus-dir|c=s'  => \$corpus_dir,
-    'help|h'          => \$cli_opts{help},
-    'man|m'           => \$cli_opts{man},
+	'output-dir|o=s'  => \$extractor_opts{output_dir},
+	'strict-pod|s=s'  => \$extractor_opts{strict_pod},
+	'verbose|v'       => \$extractor_opts{verbose},
+	'fuzz|f'          => \$fuzz,
+	'fuzz-all'        => \$fuzz_all,
+	'fuzz-iters=i'    => \$fuzz_iters,
+	'corpus-dir|c=s'  => \$corpus_dir,
+	'help|h'          => \$cli_opts{help},
+	'man|m'           => \$cli_opts{man},
 ) or pod2usage(2);
 
 pod2usage(-exitval => 0, -verbose => 1) if $cli_opts{help};
@@ -181,8 +181,8 @@ my $schemas = $extractor->extract_all();
 my %fuzz_results;   # method_name => report hashref
 
 if ($fuzz) {
-    require App::Test::Generator::CoverageGuidedFuzzer;
-    make_path($corpus_dir) unless -d $corpus_dir;
+	require App::Test::Generator::CoverageGuidedFuzzer;
+	make_path($corpus_dir) unless -d $corpus_dir;
 
     # Load the target module once so all methods are callable
     my $package = _load_target_module($input_file, $schemas);
