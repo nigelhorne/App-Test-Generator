@@ -23,23 +23,25 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: shogo82148/actions-setup-perl@a198315ec4e9244f206879ea7b63078003aec8a6 # v1.41.1
+      - uses: shogo82148/actions-setup-perl@a198315ec4e9244f206879ea7b63078003aec8a6  # v1.41.1
 
       - run: cpanm --skip-satisfied --installdeps .
       - run: prove -l t/
 
       - run: echo "$(pwd)/local/bin" >> $GITHUB_PATH
 
-      - run: |
-          perl Makefile.PL
-          make install
+      - run: perl Makefile.PL && make install
 
       - name: Find last code commit
         run: |
           BASE=$(git log --oneline | grep -v "^.\{8\} \(Add generated mutant\|Add coverage snapshot\|Update mutation results\)" | head -1 | awk '{print $1}')
           echo "MUTATION_BASE_SHA=$BASE" >> $GITHUB_ENV
           echo "Base commit for mutation diff: $BASE"
-          git diff --name-only "${BASE}^" HEAD
+          if git rev-parse "${BASE}^" >/dev/null 2>&1; then
+            git diff --name-only "${BASE}^" HEAD
+          else
+            echo "Base commit is the root commit, no parent to diff against"
+          fi
 
       - name: Install App::Test::Generator
         run: |
