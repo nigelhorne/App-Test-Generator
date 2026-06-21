@@ -31,16 +31,20 @@ Revision history for App-Test-Generator
 	  HEAD~1 when no base commit could be parsed from git log, narrowing
 	  the mutation diff without any visible indication; now emits an
 	  ::warning:: annotation when BASE is empty.
+	- Fix dashboard.yml and mutate.yml commit steps calling a shared
+	  .github/scripts/commit-if-changed.sh helper; dependent repos only
+	  receive the two workflow YAML files when copying them in (see
+	  "now portable to any CPAN module" below), so the script was missing
+	  on every consumer and CI failed with "No such file or directory".
+	  Commit/push logic is now inlined directly in each step.
 
 	[Enhancements]
 	- Pin shogo82148/actions-setup-perl to immutable commit SHA
 	  (a198315 / v1.41.1) in dashboard.yml, mutate.yml, and the
 	  POD-embedded CI template; actions/checkout similarly pinned to
 	  df4cb1c (v6) in the POD template.
-	- Add .github/scripts/commit-if-changed.sh, a shared script for the
-	  "git add already-staged; commit if non-empty; push" pattern that was
-	  duplicated across four steps in dashboard.yml and mutate.yml; it also
-	  does a git pull --rebase before pushing to reduce non-fast-forward
+	- dashboard.yml and mutate.yml commit/push steps now do a
+	  git pull --rebase before pushing, reducing non-fast-forward
 	  rejections when mutate.yml's commit and dashboard.yml's
 	  workflow_run-triggered commit land close together.
 

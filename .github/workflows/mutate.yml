@@ -77,4 +77,12 @@ jobs:
       - name: Commit mutation results
         run: |
           git add mutation.json
-          .github/scripts/commit-if-changed.sh "Update mutation results ($(date +%Y-%m-%d) $(git rev-parse --short HEAD))"
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@github.com"
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update mutation results ($(date +%Y-%m-%d) $(git rev-parse --short HEAD))"
+            git pull --rebase --quiet origin "${GITHUB_REF_NAME}" || true
+            git push origin HEAD:"${GITHUB_REF_NAME}"
+          fi

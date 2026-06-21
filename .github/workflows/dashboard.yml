@@ -120,7 +120,15 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           git add mutation.json
-          .github/scripts/commit-if-changed.sh "Update mutation results (${SNAPSHOT_TIMESTAMP} ${SNAPSHOT_SHA})"
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@github.com"
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update mutation results (${SNAPSHOT_TIMESTAMP} ${SNAPSHOT_SHA})"
+            git pull --rebase --quiet origin "${GITHUB_REF_NAME}" || true
+            git push origin HEAD:"${GITHUB_REF_NAME}"
+          fi
 
       - name: Add new coverage snapshot to archive
         if: github.event_name != 'pull_request'
@@ -144,7 +152,15 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           git add coverage_history/
-          .github/scripts/commit-if-changed.sh "Add coverage snapshot for ${SNAPSHOT_TIMESTAMP} (${SNAPSHOT_SHA})"
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@github.com"
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Add coverage snapshot for ${SNAPSHOT_TIMESTAMP} (${SNAPSHOT_SHA})"
+            git pull --rebase --quiet origin "${GITHUB_REF_NAME}" || true
+            git push origin HEAD:"${GITHUB_REF_NAME}"
+          fi
 
       - name: Save generated mutant test stubs
         if: github.event_name != 'pull_request'
@@ -156,7 +172,15 @@ jobs:
           # Force add any untracked files matching the pattern
           find xt -name 'mutant_*.t' -o -name 'mutant_*.yml' | xargs git add 2>/dev/null || true
           git diff --cached --stat
-          .github/scripts/commit-if-changed.sh "Add generated mutant test stubs (${SNAPSHOT_TIMESTAMP} ${SNAPSHOT_SHA})"
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@github.com"
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Add generated mutant test stubs (${SNAPSHOT_TIMESTAMP} ${SNAPSHOT_SHA})"
+            git pull --rebase --quiet origin "${GITHUB_REF_NAME}" || true
+            git push origin HEAD:"${GITHUB_REF_NAME}"
+          fi
 
       # Deploy HTML report to GitHub Pages
       - name: Publish test dashboard
