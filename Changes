@@ -13,12 +13,36 @@ Revision history for App-Test-Generator
 	  dashboard.yml was updated; template now matches dashboard.yml.
 	- Fix README.md SEE ALSO link label still saying "Test Coverage Report"
 	  after the POD was updated to "Test Dashboard".
+	- Fix dashboard.yml "Publish test dashboard" step running unguarded on
+	  pull_request events, publishing PR-derived coverage output to the
+	  public gh-pages site; now skipped on pull_request like the other
+	  commit steps.
+	- Fix dashboard.yml "Save updated mutation results" guard
+	  (if: github.event_name == 'workflow_run') discarding the freshly
+	  regenerated mutation.json on plain push runs; generate-test-dashboard
+	  regenerates mutation.json on every run regardless of trigger, so the
+	  guard now matches its siblings (if: github.event_name !=
+	  'pull_request').
+	- Fix dashboard.yml silently skipping the coverage snapshot when
+	  cover_html/cover.json is missing, masking real dashboard-generation
+	  failures; the step now emits an ::error:: annotation, dumps
+	  cover_db/cover_html/coverage for diagnosis, and fails the job.
+	- Fix mutate.yml "Find last code commit" silently falling back to
+	  HEAD~1 when no base commit could be parsed from git log, narrowing
+	  the mutation diff without any visible indication; now emits an
+	  ::warning:: annotation when BASE is empty.
 
 	[Enhancements]
 	- Pin shogo82148/actions-setup-perl to immutable commit SHA
 	  (a198315 / v1.41.1) in dashboard.yml, mutate.yml, and the
 	  POD-embedded CI template; actions/checkout similarly pinned to
 	  df4cb1c (v6) in the POD template.
+	- Add .github/scripts/commit-if-changed.sh, a shared script for the
+	  "git add already-staged; commit if non-empty; push" pattern that was
+	  duplicated across four steps in dashboard.yml and mutate.yml; it also
+	  does a git pull --rebase before pushing to reduce non-fast-forward
+	  rejections when mutate.yml's commit and dashboard.yml's
+	  workflow_run-triggered commit land close together.
 
 0.39	Sun May 24 17:43:17 EDT 2026
 
