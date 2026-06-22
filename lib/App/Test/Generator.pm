@@ -1659,8 +1659,14 @@ sub generate
 		_validate_module($module, $schema_file);
 	}
 
+	# $module/$function are spliced unescaped into generated test
+	# source below (use_ok, new_ok, ->$function, $module::$function)
+	# — reject anything that isn't identifier-shaped before that happens.
+	_assert_identifier($module, 'module', package => 1) if defined($module) && length($module);
+
 	# sensible defaults
 	$function ||= 'run';
+	_assert_identifier($function, 'function');
 	$iterations ||= DEFAULT_ITERATIONS;		 # default fuzz runs if not specified
 	$seed = undef if defined $seed && $seed eq '';	# treat empty as undef
 
@@ -2700,6 +2706,50 @@ sub _valid_type {
 }
 
 # --------------------------------------------------
+# _assert_identifier
+#
+# Purpose:    Validate that a string is shaped like a
+#             plain Perl identifier (or, with
+#             package => 1, a "::"-separated package
+#             name) before it is spliced into generated
+#             test source as a bareword, package name,
+#             method name, or variable name rather than
+#             a quoted string literal. Schema-derived
+#             names (module, function, transform names)
+#             are spliced unescaped at the call sites
+#             that use this guard, so an unvalidated
+#             name could otherwise break out of the
+#             generated source and inject arbitrary
+#             Perl into a file that L<prove> will run.
+#
+# Entry:      $name - the string to validate.
+#             $what - short label for the value, used
+#                     only in the croak message.
+#             %opts - package => 1 allows "::"
+#                     separators in $name.
+#
+# Exit:       Returns $name unchanged on success.
+#             Croaks if $name is not identifier-shaped.
+#
+# Side effects: None.
+# --------------------------------------------------
+sub _assert_identifier {
+	my ($name, $what, %opts) = @_;
+
+	croak(__PACKAGE__, ": $what is missing or empty")
+		unless defined($name) && length($name);
+
+	my $re = $opts{package}
+		? qr/^[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*\z/
+		: qr/^[A-Za-z_]\w*\z/;
+
+	croak(__PACKAGE__, ": $what '$name' is not a valid Perl identifier")
+		unless $name =~ $re;
+
+	return $name;
+}
+
+# --------------------------------------------------
 # _validate_module
 #
 # Purpose:    Check whether the module named in a
@@ -3417,6 +3467,12 @@ sub _generate_transform_properties {
 	my @properties;
 
 	for my $transform_name (sort keys %{$transforms}) {
+		# $transform_name is spliced by _render_properties as a Perl
+		# *variable name* (my $$transform_name = Property {...}), not
+		# just inside a string literal — reject anything that isn't
+		# identifier-shaped before it reaches that point.
+		_assert_identifier($transform_name, 'transform name');
+
 		my $transform   = $transforms->{$transform_name};
 
 		my $input_spec  = $transform->{input};
@@ -3479,6 +3535,12 @@ sub _generate_transform_properties {
 			# Skip non-hashref field specs — scalar types
 			# like 'string' have no generator sub-structure
 			next unless ref($spec) eq 'HASH';
+
+			# $field is spliced unescaped into the generated
+			# LectroTest generator spec by
+			# _schema_to_lectrotest_generator() — reject anything
+			# that isn't identifier-shaped first.
+			_assert_identifier($field, 'input field name');
 
 			my $gen = _schema_to_lectrotest_generator($field, $spec);
 			if(defined($gen) && length($gen)) {
@@ -4137,12 +4199,27 @@ sub _schema_to_lectrotest_generator {
 		if(defined($spec->{'matches'})) {
 			my $pattern = $spec->{'matches'};
 
+			# Compile the pattern safely rather than splicing the raw
+			# string into qr/$pattern/ — the raw form lets a pattern
+			# containing an unescaped '/' break out of the qr//
+			# delimiter and inject arbitrary Perl into the generated
+			# test. regexp_pattern() decomposes the already-compiled
+			# Regexp object back into pattern text that is guaranteed
+			# to be a self-contained regex body, safe to re-embed.
+			my $compiled = ref($pattern) eq 'Regexp' ? $pattern : eval { qr/$pattern/ };
+			if($@ || !defined($compiled)) {
+				carp "Invalid matches pattern '$pattern' for field '$field_name': $@";
+				return "$field_name <- String(length => [$min_len, $max_len])";
+			}
+			my ($pat, $mods) = regexp_pattern($compiled);
+			my $safe_re = "qr{$pat}" . ($mods // '');
+
 			if(defined($spec->{'max'})) {
-				return "$field_name <- Gen { Data::Random::String::Matches->create_random_string({ regex => qr/$pattern/, length => $spec->{'max'} }) }";
+				return "$field_name <- Gen { Data::Random::String::Matches->create_random_string({ regex => $safe_re, length => $spec->{'max'} }) }";
 			} elsif(defined($spec->{'min'})) {
-				return "$field_name <- Gen { Data::Random::String::Matches->create_random_string({ regex => qr/$pattern/, length => $spec->{'min'} }) }";
+				return "$field_name <- Gen { Data::Random::String::Matches->create_random_string({ regex => $safe_re, length => $spec->{'min'} }) }";
 			} else {
-				return "$field_name <- Gen { Data::Random::String::Matches->create_random_string({ regex => qr/$pattern/ }) }";
+				return "$field_name <- Gen { Data::Random::String::Matches->create_random_string({ regex => $safe_re }) }";
 			}
 		}
 
@@ -4515,10 +4592,22 @@ sub _detect_transform_properties {
 
 		if(defined($output_spec->{'matches'})) {
 			my $pattern = $output_spec->{'matches'};
-			push @properties, {
-				name => 'pattern_match',
-				code => "\$result =~ qr/$pattern/",
-			};
+
+			# See the matching comment in _schema_to_lectrotest_generator —
+			# compile first and re-embed via regexp_pattern() rather than
+			# splicing the raw string into qr/$pattern/, which would let
+			# an unescaped '/' break out of the delimiter.
+			my $compiled = ref($pattern) eq 'Regexp' ? $pattern : eval { qr/$pattern/ };
+			if($@ || !defined($compiled)) {
+				carp "Invalid matches pattern '$pattern' for transform '$transform_name': $@";
+			} else {
+				my ($pat, $mods) = regexp_pattern($compiled);
+				my $safe_re = "qr{$pat}" . ($mods // '');
+				push @properties, {
+					name => 'pattern_match',
+					code => "\$result =~ $safe_re",
+				};
+			}
 		}
 	}
 

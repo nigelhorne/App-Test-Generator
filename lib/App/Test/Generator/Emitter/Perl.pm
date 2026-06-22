@@ -103,6 +103,12 @@ sub new {
 	croak 'plans required'   unless defined $args{plans};
 	croak 'package required' unless defined $args{package};
 
+	# $args{package} is spliced unescaped into use_ok()/new_ok() calls
+	# in _emit_header() — reject anything that isn't a valid Perl
+	# package name now, rather than generating broken or injected code.
+	croak "package '$args{package}' is not a valid Perl package name"
+		unless $args{package} =~ /^[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*\z/;
+
 	return bless {
 		schema  => $args{schema},
 		plans   => $args{plans},
@@ -209,6 +215,12 @@ END_HEADER
 # --------------------------------------------------
 sub _emit_method_tests {
 	my ($self, $method) = @_;
+
+	# $method is spliced unescaped as a bareword method name
+	# (->$method(...)) by every _emit_*_test sub below — reject
+	# anything that isn't a valid Perl identifier before any of them run.
+	croak "method '$method' is not a valid Perl identifier"
+		unless $method =~ /^[A-Za-z_]\w*\z/;
 
 	my $plan   = $self->{plans}{$method};
 	my $code   = "\n# --- Tests for $method ---\n";

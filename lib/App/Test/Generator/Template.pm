@@ -1892,10 +1892,16 @@ sub run_test
 	my $mess;
 	my @alist = ();
 	if(defined($input) && !ref($input)) {
+		# $mess is later used as a sprintf() format string further
+		# below — a literal '%' in $name/$input must be escaped to
+		# '%%' first, the same as the aggregate branch does for
+		# $args, or a value like '%s' / '%n' corrupts the sprintf call.
+		(my $safe_input = $input) =~ s/%/%%/g;
 		if($name) {
-			$mess = "[% function %]($name = '$input') %s";
+			(my $safe_name = $name) =~ s/%/%%/g;
+			$mess = "[% function %]($safe_name = '$safe_input') %s";
 		} else {
-			$mess = "[% function %]('$input') %s";
+			$mess = "[% function %]('$safe_input') %s";
 		}
 	} elsif(defined($input)) {
 		if($positions) {

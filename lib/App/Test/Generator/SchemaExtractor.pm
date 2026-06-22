@@ -1239,6 +1239,7 @@ Construct a new SchemaExtractor for a given Perl source file.
         max_parameters       => 50,                 # Default: 20
         confidence_threshold => 0.7,               # Default: 0.5
         strict_pod           => 0|1|2,              # Default: 0 (off)
+        allow_signature_exec => 1,                  # Default: 0 (off)
     );
 
 =head3 Arguments
@@ -1281,6 +1282,20 @@ Controls POD/code agreement validation. C<0> disables validation,
 C<1> emits warnings, C<2> croaks on first disagreement. Also accepts
 the strings C<off>, C<warn>, and C<fatal>. Optional, default 0.
 
+=item * C<allow_signature_exec>
+
+Opt-in flag allowing extraction of parameter types from a
+L<Type::Params> C<signature_for()> declaration. This requires actually
+running the C<signature_for> expression (sliced from the target
+module's own source) in a forked C<perl -T> process, since
+L<Type::Params> types are runtime objects that cannot be introspected
+statically. Every other extraction path in this module is static
+(L<PPI>-only) analysis that never executes any of the target module's
+code; this is the one exception. Optional, default 0 (the
+C<signature_for> path is silently skipped, with a warning under
+C<verbose>, when off). Only enable this for modules whose code you
+already trust enough to execute.
+
 =back
 
 =head3 Returns
@@ -1304,6 +1319,7 @@ Reads and parses the input file using L<PPI> at construction time.
         max_parameters       => { type => SCALAR,  optional => 1 },
         confidence_threshold => { type => SCALAR,  optional => 1 },
         strict_pod           => { type => SCALAR,  optional => 1 },
+        allow_signature_exec => { type => SCALAR,  optional => 1 },
     }
 
 =head4 output
@@ -1333,6 +1349,7 @@ sub new {
 		confidence_threshold => $params->{confidence_threshold} // $DEFAULT_CONFIDENCE_THRESH,
 		max_parameters       => $params->{max_parameters}       // $DEFAULT_MAX_PARAMETERS,	# safety limit
 		strict_pod => _validate_strictness_level($params->{strict_pod}),	# Enable strict POD checking
+		allow_signature_exec => $params->{allow_signature_exec} // 0,	# opt-in: execute Type::Params signature_for() exprs from the target module
 	};
 
 	# Validate input file exists
@@ -3090,9 +3107,37 @@ sub _extract_signature_expression {
 #
 # Purpose:    Compile and evaluate a Type::Params
 #             signature expression in an isolated
-#             environment to extract parameter
-#             metadata without polluting the
-#             current process.
+#             process to extract parameter metadata
+#             without polluting the current process.
+#
+#             Only runs when the caller passed
+#             allow_signature_exec => 1 to new().
+#             Extracting parameter types from a
+#             Type::Params signature_for() declaration
+#             requires actually building the type
+#             objects at runtime -- there is no purely
+#             static way to do it -- so this is real
+#             execution of an excerpt of the target
+#             module's own source. Every other code
+#             path in this module is static (PPI-only)
+#             analysis that never runs the target's
+#             code, so this one feature must be opted
+#             into explicitly rather than triggered
+#             implicitly by extract_all().
+#
+#             A Safe compartment was previously tried
+#             first as a "fast path" before falling
+#             back to this subprocess unconditionally.
+#             It was removed: Type::Params and
+#             Types::Common pull in XS modules (e.g.
+#             B.pm via Type::Params), and Safe cannot
+#             host XS/dynamic loading at all, so the
+#             compartment never succeeded for any real
+#             signature_for() declaration -- it was
+#             dead code that gave a false impression of
+#             sandboxing while every real call fell
+#             through to the unconditional subprocess
+#             below.
 #
 # Entry:      $function        - function name string.
 #             $signature_expr  - Type::Params
@@ -3102,6 +3147,8 @@ sub _extract_signature_expression {
 # Exit:       Returns a decoded JSON hashref
 #             containing parameters and returns
 #             metadata on success.
+#             Returns undef without running anything if
+#             allow_signature_exec was not enabled.
 #             Croaks on unsafe expressions, timeout,
 #             or compile errors.
 #
@@ -3115,10 +3162,23 @@ sub _extract_signature_expression {
 sub _compile_signature_isolated {
 	my ($self, $function, $signature_expr) = @_;
 
+	unless ($self->{allow_signature_exec}) {
+		carp "Skipping Type::Params signature_for($function) extraction: ",
+			'allow_signature_exec => 1 was not passed to new() ',
+			'(this would execute code from the target module)'
+			if $self->{verbose};
+		return;
+	}
+
 	# Remove comments
 	$signature_expr =~ s/#.*$//mg;
 
-	# Reject obviously dangerous constructs
+	# Reject obviously dangerous constructs. This is defense in depth
+	# only, not a real security boundary -- it is a denylist of literal
+	# tokens and cannot catch e.g. a symbolic-ref call built by string
+	# concatenation. The actual control here is the allow_signature_exec
+	# opt-in above: this code must never run against a module the caller
+	# has not already decided to trust enough to execute.
 	if ($signature_expr =~ /\b(?:system|exec|open|fork|require|do|eval|qx)\b/) {
 		die 'Unsafe signature expression';
 	}
@@ -3187,12 +3247,6 @@ PERL
 	# Substitute function name and signature expression
 	$payload =~ s/FUNCTION_NAME/$function/g;
 	$payload =~ s/SIGNATURE_EXPR/$signature_expr/;
-
-	my $compartment = Safe->new();
-	$compartment->permit_only(qw(:base_core :base_mem :base_orig :load));
-	if(my $sig = $compartment->reval($payload)) {
-		return $sig;
-	}
 
 	# Run in an isolated Perl process
 	my ($wtr, $rdr, $err) = (undef, undef, gensym);
