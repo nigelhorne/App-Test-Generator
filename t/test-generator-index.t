@@ -401,13 +401,23 @@ subtest '_resolve_report_path() accepts a normal lib/ path, preserving structure
 };
 
 subtest '_resolve_report_path() rejects a file containing a ".." segment' => sub {
-	my $dir = tempdir(CLEANUP => 1);
+	my $container = tempdir(CLEANUP => 1);
+	my $dir = File::Spec->catdir($container, 'reportdir');
+	mkdir $dir or die $!;
+
 	throws_ok(
 		sub { _resolve_report_path($dir, '../../etc/cron.d/evil') },
 		qr/Refusing to report on suspicious file path/,
 		'.. segment is rejected before any path is built'
 	);
-	ok(!-e File::Spec->catdir($dir, '..', '..', 'etc'), 'no directory created outside $dir');
+
+	# Nothing besides the pre-existing reportdir/ should have been
+	# created in $container — confirms the guard fires before any
+	# make_path/open touches the filesystem.
+	opendir(my $dh, $container) or die $!;
+	my @entries = grep { $_ ne '.' && $_ ne '..' } readdir $dh;
+	closedir $dh;
+	is_deeply(\@entries, ['reportdir'], 'no sibling directory created outside $dir');
 };
 
 subtest '_resolve_report_path() rejects a ".." segment buried mid-path' => sub {
