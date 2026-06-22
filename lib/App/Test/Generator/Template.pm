@@ -1444,10 +1444,19 @@ sub _dedup_cases
 	require JSON::PP;
 	JSON::PP->import();
 
-	eval {
+	# return inside eval{} returns from the eval block, not from
+	# _dedup_cases — the deduped result must be captured here, or
+	# this always falls through to the unduplicated $cases below.
+	#
+	# encode_json() does not sort hash keys, so two structurally
+	# identical case hashrefs can serialize with different key order
+	# (Perl's per-hash iteration order randomisation) and dodge the
+	# %seen check below — use ->canonical to make the dump order-stable.
+	my $rc = eval {
+		my $json = JSON::PP->new->canonical;
 		my %seen;
 		my @rc = grep {
-			my $dump = encode_json($_);
+			my $dump = $json->encode($_);
 			!$seen{$dump}++
 		} @{$cases};
 
@@ -1455,7 +1464,7 @@ sub _dedup_cases
 	};
 	# Carp::carp(__PACKAGE__, ": disabling deduping: $@");
 
-	return $cases;
+	return $@ ? $cases : $rc;
 }
 
 sub generate_tests

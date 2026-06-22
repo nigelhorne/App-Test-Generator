@@ -10,6 +10,7 @@ use Readonly;
 # Fuzzing loop parameters
 # --------------------------------------------------
 Readonly my $DEFAULT_ITERATIONS   => 100;
+Readonly my $DEFAULT_TIMEOUT_SECS => 5;     # per-call alarm() timeout; 0 disables
 Readonly my $CORPUS_MUTATE_RATIO  => 0.70;  # 70% mutate, 30% explore
 Readonly my $RANDOM_KEEP_RATIO    => 0.20;  # keep 20% random when no coverage
 Readonly my $EDGE_CASE_RATIO      => 0.40;  # 40% chance to use declared edge case
@@ -121,6 +122,12 @@ Random seed for reproducible runs. Optional - defaults to C<time()>.
 An optional pre-built object to use as the invocant when calling the
 target sub as a method.
 
+=item * C<timeout>
+
+Seconds to allow each C<target_sub> call before it is aborted via
+C<alarm()> and recorded as a bug. Optional - defaults to 5. Set to 0
+to disable the timeout (e.g. for target subs that legitimately block).
+
 =back
 
 =head3 Returns
@@ -137,6 +144,7 @@ A blessed hashref. Croaks if C<schema> or C<target_sub> is missing.
         iterations => { type => SCALAR,  optional => 1 },
         seed       => { type => SCALAR,  optional => 1 },
         instance   => { type => OBJECT,  optional => 1 },
+        timeout    => { type => SCALAR,  optional => 1 },
     }
 
 =head4 output
@@ -160,6 +168,7 @@ sub new {
 		instance   => $args{instance},
 		iterations => $args{iterations} // $DEFAULT_ITERATIONS,
 		seed       => $args{seed}       // time(),
+		timeout    => $args{timeout}    // $DEFAULT_TIMEOUT_SECS,
 		corpus     => [],   # [{input => ..., coverage => {...}}]
 		covered    => {},   # "file:line:branch" => 1
 		bugs       => [],   # [{input => ..., error => ...}]
@@ -487,8 +496,14 @@ sub _run_one {
 		eval {
 			local $SIG{__WARN__} = sub { push @warnings, @_ };
 			local $SIG{__DIE__};
+			# A hanging target_sub call would otherwise hang the
+			# whole fuzzing run — alarm() bounds it and surfaces
+			# the timeout as a recorded bug instead.
+			local $SIG{ALRM} = sub { die "target_sub timed out after $self->{timeout}s\n" };
+			alarm($self->{timeout}) if $self->{timeout};
 			$result = $self->{target_sub}->(@call_args);
 		};
+		alarm(0) if $self->{timeout};
 		$error = $@ if $@;
 
 		# Treat unexpected warnings matching known bad patterns as soft bugs
@@ -550,8 +565,13 @@ sub _run_with_cover {
 
 	eval {
 		local $SIG{__DIE__};
+		# See _run_one() — bound the call so a hanging target_sub
+		# cannot hang the whole fuzzing run.
+		local $SIG{ALRM} = sub { die "target_sub timed out after $self->{timeout}s\n" };
+		alarm($self->{timeout}) if $self->{timeout};
 		$$result_ref = $self->{target_sub}->(@call_args);
 	};
+	alarm(0) if $self->{timeout};
 	$$error_ref = $@ if $@;
 
 	my %after = $self->_snapshot_cover();

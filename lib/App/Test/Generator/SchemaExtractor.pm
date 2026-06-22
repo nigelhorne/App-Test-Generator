@@ -2002,9 +2002,6 @@ $schema->{output} = $self->_analyze_output(
 			@{ $schema->{_yamltest_hints}{boundary_values} };
 
 		foreach my $v (@{ $self->_numeric_boundary_values }) {
-			push @{ $schema->{_yamltest_hints}{boundary_values} }, $v
-			unless $seen{$v}++;
-
 			my $key = defined $v ? $v : '__undef__';
 			push @{ $schema->{_yamltest_hints}{boundary_values} }, $v unless $seen{$key}++;
 		}
@@ -7684,7 +7681,7 @@ sub _detect_dependencies {
 			# Pattern 1: Error message mentions "X requires Y" AND code checks $x && !$y
 			# Split into two checks to be more flexible
 			if (($code =~ /(?:die|croak|confess)\s+['"]\w*$param1[^'"]*requires[^'"]*$param2/i) &&
-			    ($code =~ /if\s+\$param1\s+&&\s+!\$param2/)) {
+			    ($code =~ /if\s+\$$param1\s+&&\s+!\$$param2/)) {
 
 				push @relationships, {
 					type => 'dependency',
@@ -8873,8 +8870,12 @@ sub _detect_external_object_dependency {
 	}
 
 	# Pattern 2: Calls methods on objects from other classes
-	if ($method_body =~ /\$(\w+)->\w+\(/g) {
+	if ($method_body =~ /\$(\w+)->\w+\(/) {
 		my %object_vars;
+		# Reset pos for global match — the if check above used a
+		# non-/g match so it cannot have advanced pos, but the while
+		# loop's own /g matches still need to start from the beginning.
+		pos($method_body) = 0;
 		while ($method_body =~ /\$(\w+)->\w+\(/g) {
 			$object_vars{$1}++;
 		}
