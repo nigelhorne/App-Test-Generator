@@ -179,35 +179,32 @@ sub _build_cfg {
 	my @statements = $block->schildren();
 	my @blocks;
 	my $id = 1;
-	my $current = _new_block($id);
+
+	# The frontier holds every block currently accumulating statement
+	# lines. A branch forks the whole frontier into a true and a false
+	# successor — every frontier member gets an edge to both, so
+	# subsequent statements (appended to the new frontier) are recorded
+	# against both arms, not just the true one. This keeps the false
+	# arm of every branch populated with real lines/edges instead of
+	# being silently dropped as an empty leaf.
+	my $first = _new_block($id);
+	push @blocks, $first;
+	my @frontier = ($first);
 
 	for my $stmt (@statements) {
 		my $line = $stmt->line_number;
-		push @{ $current->{lines} }, $line;
+		push @{ $_->{lines} }, $line for @frontier;
 
-		# Branch points split the current block and start two new ones
+		# Branch points fork the frontier into true/false successors
 		if(_is_branch($stmt)) {
-			push @blocks, $current;
-
-			# Create true and false successor blocks
 			my $true_block  = _new_block(++$id);
 			my $false_block = _new_block(++$id);
-			_connect_blocks($current, $true_block);
-			_connect_blocks($current, $false_block);
+			_connect_blocks($_, $true_block)  for @frontier;
+			_connect_blocks($_, $false_block) for @frontier;
 
 			push @blocks, $true_block, $false_block;
-			$current = $true_block;
+			@frontier = ($true_block, $false_block);
 		}
-	}
-
-	# Append the final block after all statements are processed
-	push @blocks, $current;
-
-	# Connect sequential fallthrough edges between adjacent blocks
-	# that have no outgoing edges yet
-	for(my $i = 0; $i < $#blocks; $i++) {
-		next if @{ $blocks[$i]{edges} };
-		_connect_blocks($blocks[$i], $blocks[$i + 1]);
 	}
 
 	return \@blocks;
