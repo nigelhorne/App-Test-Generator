@@ -37,6 +37,20 @@ Revision history for App-Test-Generator
 	  "now portable to any CPAN module" below), so the script was missing
 	  on every consumer and CI failed with "No such file or directory".
 	  Commit/push logic is now inlined directly in each step.
+	- Fix extract-schemas _load_target_module() loading the target module
+	  via eval "require $package" (string eval); the package name is now
+	  validated against Perl's package-name grammar and the module is
+	  loaded by converting it to a file path and calling require on that,
+	  so it is never compiled as arbitrary Perl source.
+	- Fix test-generator-mutate --changed_only interpolating --base_sha
+	  into a backtick-executed git diff command; --base_sha is now
+	  validated against a restrictive character class and git diff is
+	  invoked via list-form open() instead of the shell.
+	- Fix test-generator-index _mutant_file_report() computing a
+	  slash-sanitised $filename that was never used, leaving the report
+	  path built from the raw, unsanitised $file; it now rejects any '..'
+	  path segment in $file and verifies the resolved output path stays
+	  under the report directory before writing.
 
 	[Enhancements]
 	- Pin shogo82148/actions-setup-perl to immutable commit SHA
