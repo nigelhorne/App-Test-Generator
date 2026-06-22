@@ -358,10 +358,15 @@ sub _load_target_module {
     # Add the module's containing lib dir to @INC
     # Walks up from the file looking for a 'lib' directory
     my $abs = File::Spec->rel2abs($input_file);
-    my @dirs = File::Spec->splitdir( (File::Spec->splitpath($abs))[1] );
+    my ($volume, $directory) = File::Spec->splitpath($abs);
+    my @dirs = File::Spec->splitdir($directory);
 
     while (@dirs) {
-        my $candidate = File::Spec->catdir(@dirs, 'lib');
+        # catpath() (not catdir()) keeps $volume attached, so this still
+        # resolves on Windows when the temp dir and the checkout live on
+        # different drive letters (a bare catdir() result is interpreted
+        # as relative to the *current* drive, not $volume's).
+        my $candidate = File::Spec->catpath($volume, File::Spec->catdir(@dirs, 'lib'), '');
         if (-d $candidate) {
             lib->import($candidate);
             last;

@@ -51,6 +51,11 @@ Revision history for App-Test-Generator
 	  path built from the raw, unsanitised $file; it now rejects any '..'
 	  path segment in $file and verifies the resolved output path stays
 	  under the report directory before writing.
+	- Fix extract-schemas _load_target_module() losing the drive letter
+	  when reconstructing the lib-dir candidate with File::Spec->catdir(),
+	  so the @INC-walking loop never found a 'lib' directory on Windows
+	  when the input file and the cwd were on different drives; now uses
+	  catpath() to keep the volume attached.
 
 	[Enhancements]
 	- Pin shogo82148/actions-setup-perl to immutable commit SHA
