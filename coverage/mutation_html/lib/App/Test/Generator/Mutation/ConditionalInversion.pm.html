@@ -246,7 +246,7 @@ pre details.mutant-details ul {
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 96.61%<br>
 TER2 (Branch): 59.09%<br>
-TER3 (LCSAJ): 100.0% (6/6)<br>
+TER3 (LCSAJ): 100.0% (2/2)<br>
 Approximate LCSAJ segments: 23<br>
 </div>
 
@@ -342,7 +342,7 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">   50: =cut
 </span><span class="">   51: 
 </span><span class="">   52: sub applies_to {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">53 → 55 → 61</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">53 → 55 → 0</span></span>   53: 	my ($self, $doc) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">53 → 55 → 61</span></span>   53: 	my ($self, $doc) = @_;
 </span><span class="">   54: 	my $compounds = $doc-&gt;find(&#39;PPI::Statement::Compound&#39;) || [];
 </span><span class="">   55: 	for my $stmt (@{$compounds}) {
 </span><span class="">   56: 		my $first = $stmt-&gt;schild(0);
@@ -350,7 +350,7 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">   58: 		my $type = $first-&gt;content();
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   59: 		return 1 if $type eq &#39;if&#39; || $type eq &#39;unless&#39;;
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   60: 	}
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">61 → 61 → 0</span></span>   61: 	return 0;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   61: 	return 0;
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   62: }
 </span><span class="">   63: 
 </span><span class="">   64: =head2 mutate
@@ -427,7 +427,7 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  135: =cut
 </span><span class="">  136: 
 </span><span class="">  137: sub mutate {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">138 → 144 → 204</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">138 → 144 → 0</span></span>  138: 	my ($self, $doc) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">138 → 144 → 204</span></span>  138: 	my ($self, $doc) = @_;
 </span><span class="">  139: 
 </span><span class="">  140: 	# Find all compound statements in the document
 </span><span class="">  141: 	my $compounds = $doc-&gt;find(&#39;PPI::Statement::Compound&#39;) || [];
@@ -493,7 +493,7 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  201: 		push @mutants, $mutant;
 </span><span class="">  202: 	}
 </span><span class="">  203: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">204 → 204 → 0</span></span>  204: 	return @mutants;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  204: 	return @mutants;
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  205: }
 </span><span class="">  206: 
 </span><span class="">  207: 1;

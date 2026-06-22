@@ -246,7 +246,7 @@ pre details.mutant-details ul {
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 95.31%<br>
 TER2 (Branch): 45.83%<br>
-TER3 (LCSAJ): 100.0% (6/6)<br>
+TER3 (LCSAJ): 100.0% (2/2)<br>
 Approximate LCSAJ segments: 25<br>
 </div>
 
@@ -358,7 +358,7 @@ Approximate LCSAJ segments: 25<br>
 </span><span class="">   66: =cut
 </span><span class="">   67: 
 </span><span class="">   68: sub applies_to {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">69 → 71 → 81</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">69 → 71 → 0</span></span>   69: 	my ($self, $doc) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">69 → 71 → 81</span></span>   69: 	my ($self, $doc) = @_;
 </span><span class="">   70: 	my $ops = $doc-&gt;find(&#39;PPI::Token::Operator&#39;) || [];
 </span><span class="">   71: 	for my $op (@{$ops}) {
 </span><span class="">   72: 		next unless exists $FLIP{$op-&gt;content()};
@@ -370,7 +370,7 @@ Approximate LCSAJ segments: 25<br>
 </span><span class="">   78: 			|| $parent-&gt;isa(&#39;PPI::Structure::Block&#39;);
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   79: 		return 1;
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   80: 	}
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">81 → 81 → 0</span></span>   81: 	return 0;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   81: 	return 0;
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   82: }
 </span><span class="">   83: 
 </span><span class="">   84: =head2 mutate
@@ -457,7 +457,7 @@ Approximate LCSAJ segments: 25<br>
 </span><span class="">  165: =cut
 </span><span class="">  166: 
 </span><span class="">  167: sub mutate {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">168 → 174 → 251</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">168 → 174 → 0</span></span>  168: 	my ($self, $doc) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">168 → 174 → 251</span></span>  168: 	my ($self, $doc) = @_;
 </span><span class="">  169: 
 </span><span class="">  170: 	# Find all operator tokens in the document
 </span><span class="">  171: 	my $ops = $doc-&gt;find(&#39;PPI::Token::Operator&#39;) || [];
@@ -540,7 +540,7 @@ Approximate LCSAJ segments: 25<br>
 </span><span class="">  248: 		}
 </span><span class="">  249: 	}
 </span><span class="">  250: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">251 → 251 → 0</span></span>  251: 	return @mutants;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  251: 	return @mutants;
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  252: }
 </span><span class="">  253: 
 </span><span class="">  254: 1;

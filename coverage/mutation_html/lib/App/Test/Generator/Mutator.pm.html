@@ -246,7 +246,7 @@ pre details.mutant-details ul {
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 96.43%<br>
 TER2 (Branch): 86.96%<br>
-TER3 (LCSAJ): 100.0% (13/13)<br>
+TER3 (LCSAJ): 100.0% (5/5)<br>
 Approximate LCSAJ segments: 47<br>
 </div>
 
@@ -460,7 +460,7 @@ Approximate LCSAJ segments: 47<br>
 </span><span class="">  168: =cut
 </span><span class="">  169: 
 </span><span class="">  170: sub generate_mutants {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">171 → 182 → 204</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">171 → 182 → 0</span></span>  171: 	my $self = $_[0];
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">171 → 182 → 204</span></span>  171: 	my $self = $_[0];
 </span><span class="">  172: 
 </span><span class="">  173: 	# Parse the target file into a PPI document
 </span><span class="">  174: 	my $doc = PPI::Document-&gt;new($self-&gt;{file}) or croak &quot;Unable to parse $self-&gt;{file}&quot;;
@@ -493,7 +493,7 @@ Approximate LCSAJ segments: 47<br>
 </span><span class="">  201: 		}
 </span><span class="">  202: 	}
 </span><span class="">  203: 	# Unclosed MUTANT_SKIP_BEGIN is fatal
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">204 → 213 → 218</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">204 → 213 → 0</span></span>  204: 	croak &quot;$self-&gt;{file}: MUTANT_SKIP_BEGIN at line $skip_start has no matching MUTANT_SKIP_END&quot; if $in_skip;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">204 → 213 → 218</span></span>  204: 	croak &quot;$self-&gt;{file}: MUTANT_SKIP_BEGIN at line $skip_start has no matching MUTANT_SKIP_END&quot; if $in_skip;
 </span><span class="">  205: 
 </span><span class="">  206: 	# Store skip lines for use by the report generator
 </span><span class="">  207: 	$self-&gt;{skip_lines} = \%skip_lines;
@@ -507,7 +507,7 @@ Approximate LCSAJ segments: 47<br>
 </span><span class="">  215: 	}
 </span><span class="">  216: 
 </span><span class="">  217: 	# In fast mode deduplicate and remove redundant mutants
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">218 → 218 → 222</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">218 → 218 → 0</span></span>  218: 	if($self-&gt;{mutation_level} eq $LEVEL_FAST) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">218 → 218 → 222</span></span>  218: 	if($self-&gt;{mutation_level} eq $LEVEL_FAST) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -517,7 +517,7 @@ Approximate LCSAJ segments: 47<br>
 <span class="">  219: 		return @{_dedup_mutants(\@mutants)};
 </span><span class="">  220: 	}
 </span><span class="">  221: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">222 → 222 → 0</span></span>  222: 	return @mutants;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  222: 	return @mutants;
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  223: }
 </span><span class="">  224: 
 </span><span class="">  225: =head2 prepare_workspace
@@ -741,7 +741,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  430: #             coderef, which is not stable as a string.
 </span><span class="">  431: # --------------------------------------------------
 </span><span class="">  432: sub _dedup_mutants {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">433 → 437 → 450</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">433 → 437 → 0</span></span>  433: 	my ($mutants) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">433 → 437 → 450</span></span>  433: 	my ($mutants) = @_;
 </span><span class="">  434: 	my @rc;
 </span><span class="">  435: 	my %seen;
 </span><span class="">  436: 
@@ -758,7 +758,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  447: 		push @rc, $m;
 </span><span class="">  448: 	}
 </span><span class="">  449: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">450 → 450 → 0</span></span>  450: 	return \@rc;
+</span><span class="">  450: 	return \@rc;
 </span><span class="">  451: }
 </span><span class="">  452: 
 </span><span class="">  453: # --------------------------------------------------
@@ -780,7 +780,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  469: #             they are not meaningful as strings.
 </span><span class="">  470: # --------------------------------------------------
 </span><span class="">  471: sub _is_redundant_mutation {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">472 → 482 → 487</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">472 → 482 → 0</span></span>  472: 	my ($m) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">472 → 482 → 487</span></span>  472: 	my ($m) = @_;
 </span><span class="">  473: 
 </span><span class="">  474: 	my $orig = $m-&gt;{original} // &#39;&#39;;
 </span><span class="">  475: 
@@ -795,7 +795,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  484: 	}
 </span><span class="">  485: 
 </span><span class="">  486: 	# Boolean literal flip on a standalone 1 or 0 is trivial
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">487 → 492 → 0</span></span>  487: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  487: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  488: 
 </span><span class="">  489: 	# Mutations inside comments are unreachable code
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  490: 	return 1 if $m-&gt;{line_content} &amp;&amp; $m-&gt;{line_content} =~ /^\s*#/;

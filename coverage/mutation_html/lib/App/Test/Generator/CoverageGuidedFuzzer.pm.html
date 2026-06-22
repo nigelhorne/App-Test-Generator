@@ -244,10 +244,10 @@ pre details.mutant-details ul {
 <div class="nav"><a href="../../../Devel/App/Test/Generator/LCSAJ/Runtime.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
  <a href="SchemaExtractor.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
-TER1 (Statement): 91.91%<br>
-TER2 (Branch): 80.25%<br>
-TER3 (LCSAJ): 97.8% (45/46)<br>
-Approximate LCSAJ segments: 163<br>
+TER1 (Statement): 90.85%<br>
+TER2 (Branch): 78.82%<br>
+TER3 (LCSAJ): 100.0% (19/19)<br>
+Approximate LCSAJ segments: 171<br>
 </div>
 
     <div class="legend">
@@ -302,240 +302,240 @@ Approximate LCSAJ segments: 163<br>
 </span><span class="">   10: # Fuzzing loop parameters
 </span><span class="">   11: # --------------------------------------------------
 </span><span class="">   12: Readonly my $DEFAULT_ITERATIONS   =&gt; 100;
-</span><span class="">   13: Readonly my $CORPUS_MUTATE_RATIO  =&gt; 0.70;  # 70% mutate, 30% explore
-</span><span class="">   14: Readonly my $RANDOM_KEEP_RATIO    =&gt; 0.20;  # keep 20% random when no coverage
-</span><span class="">   15: Readonly my $EDGE_CASE_RATIO      =&gt; 0.40;  # 40% chance to use declared edge case
-</span><span class="">   16: Readonly my $INT_BOUNDARY_RATIO   =&gt; 0.30;  # 30% chance to use boundary int
-</span><span class="">   17: Readonly my $STR_BOUNDARY_RATIO   =&gt; 0.30;  # 30% chance to use boundary length
-</span><span class="">   18: Readonly my $SEED_CORPUS_SIZE     =&gt; 5;     # initial random inputs to seed corpus
-</span><span class="">   19: Readonly my $DEFAULT_MAX_STR_LEN  =&gt; 64;
-</span><span class="">   20: Readonly my $DEFAULT_MAX_ARRAY    =&gt; 4;     # max elements in random array (0..N)
-</span><span class="">   21: Readonly my $INT32_MAX            =&gt; 2**31 - 1;
-</span><span class="">   22: Readonly my $INT32_MIN            =&gt; -(2**31);
-</span><span class="">   23: 
-</span><span class="">   24: # --------------------------------------------------
-</span><span class="">   25: # Type name constants &acirc;&#128;&#148; used in schema dispatch
-</span><span class="">   26: # --------------------------------------------------
-</span><span class="">   27: Readonly my $TYPE_INTEGER =&gt; &#39;integer&#39;;
-</span><span class="">   28: Readonly my $TYPE_NUMBER  =&gt; &#39;number&#39;;
-</span><span class="">   29: Readonly my $TYPE_BOOLEAN =&gt; &#39;boolean&#39;;
-</span><span class="">   30: Readonly my $TYPE_ARRAY   =&gt; &#39;arrayref&#39;;
-</span><span class="">   31: Readonly my $TYPE_HASH    =&gt; &#39;hashref&#39;;
-</span><span class="">   32: Readonly my $TYPE_STRING  =&gt; &#39;string&#39;;
-</span><span class="">   33: 
-</span><span class="">   34: # --------------------------------------------------
-</span><span class="">   35: # JSON module preference order
-</span><span class="">   36: # --------------------------------------------------
-</span><span class="">   37: Readonly my @JSON_MODULES =&gt; qw(JSON::MaybeXS JSON);
-</span><span class="">   38: 
-</span><span class="">   39: our $VERSION = &#39;0.39&#39;;
-</span><span class="">   40: 
-</span><span class="">   41: =head1 NAME
-</span><span class="">   42: 
-</span><span class="">   43: App::Test::Generator::CoverageGuidedFuzzer - AFL-style coverage-guided fuzzing for App::Test::Generator
-</span><span class="">   44: 
-</span><span class="">   45: =head1 VERSION
-</span><span class="">   46: 
-</span><span class="">   47: Version 0.39
-</span><span class="">   48: 
-</span><span class="">   49: =head1 SYNOPSIS
-</span><span class="">   50: 
-</span><span class="">   51:     use App::Test::Generator::CoverageGuidedFuzzer;
-</span><span class="">   52: 
-</span><span class="">   53:     my $fuzzer = App::Test::Generator::CoverageGuidedFuzzer-&gt;new(
-</span><span class="">   54:         schema     =&gt; $yaml_schema,
-</span><span class="">   55:         target_sub =&gt; \&amp;My::Module::validate,
-</span><span class="">   56:         iterations =&gt; 200,
-</span><span class="">   57:         seed       =&gt; 42,
-</span><span class="">   58:     );
-</span><span class="">   59: 
-</span><span class="">   60:     my $report = $fuzzer-&gt;run();
-</span><span class="">   61:     $fuzzer-&gt;save_corpus(&#39;t/corpus/validate.json&#39;);
-</span><span class="">   62: 
-</span><span class="">   63: =head1 DESCRIPTION
-</span><span class="">   64: 
-</span><span class="">   65: Implements coverage-guided fuzzing on top of App::Test::Generator&#39;s
-</span><span class="">   66: existing schema-driven input generation. Instead of purely random
-</span><span class="">   67: generation it:
-</span><span class="">   68: 
-</span><span class="">   69: =over 4
-</span><span class="">   70: 
-</span><span class="">   71: =item 1. Generates or mutates a structured input
-</span><span class="">   72: 
-</span><span class="">   73: =item 2. Runs the target sub under Devel::Cover to capture branch hits
-</span><span class="">   74: 
-</span><span class="">   75: =item 3. Keeps inputs that discover new branches in a corpus
-</span><span class="">   76: 
-</span><span class="">   77: =item 4. Preferentially mutates corpus entries in future iterations
-</span><span class="">   78: 
-</span><span class="">   79: =back
-</span><span class="">   80: 
-</span><span class="">   81: This is the Perl equivalent of what AFL/libFuzzer do at the byte level,
-</span><span class="">   82: but operating on typed, schema-validated Perl data structures.
-</span><span class="">   83: 
-</span><span class="">   84: =head1 METHODS
-</span><span class="">   85: 
-</span><span class="">   86: =head2 new
-</span><span class="">   87: 
-</span><span class="">   88: Construct a new coverage-guided fuzzer.
-</span><span class="">   89: 
-</span><span class="">   90:     my $fuzzer = App::Test::Generator::CoverageGuidedFuzzer-&gt;new(
-</span><span class="">   91:         schema     =&gt; $yaml_schema,
-</span><span class="">   92:         target_sub =&gt; \&amp;My::Module::validate,
-</span><span class="">   93:         iterations =&gt; 200,
-</span><span class="">   94:         seed       =&gt; 42,
-</span><span class="">   95:         instance   =&gt; $obj,   # optional pre-built object for method calls
-</span><span class="">   96:     );
-</span><span class="">   97: 
-</span><span class="">   98: =head3 Arguments
-</span><span class="">   99: 
-</span><span class="">  100: =over 4
-</span><span class="">  101: 
-</span><span class="">  102: =item * C&lt;schema&gt;
-</span><span class="">  103: 
-</span><span class="">  104: A hashref representing the parsed YAML schema for the target function.
-</span><span class="">  105: Required.
-</span><span class="">  106: 
-</span><span class="">  107: =item * C&lt;target_sub&gt;
-</span><span class="">  108: 
-</span><span class="">  109: A CODE reference to the function under test. Required.
-</span><span class="">  110: 
-</span><span class="">  111: =item * C&lt;iterations&gt;
-</span><span class="">  112: 
-</span><span class="">  113: Number of fuzzing iterations to run. Optional - defaults to 100.
-</span><span class="">  114: 
-</span><span class="">  115: =item * C&lt;seed&gt;
-</span><span class="">  116: 
-</span><span class="">  117: Random seed for reproducible runs. Optional - defaults to C&lt;time()&gt;.
-</span><span class="">  118: 
-</span><span class="">  119: =item * C&lt;instance&gt;
-</span><span class="">  120: 
-</span><span class="">  121: An optional pre-built object to use as the invocant when calling the
-</span><span class="">  122: target sub as a method.
-</span><span class="">  123: 
-</span><span class="">  124: =back
-</span><span class="">  125: 
-</span><span class="">  126: =head3 Returns
-</span><span class="">  127: 
-</span><span class="">  128: A blessed hashref. Croaks if C&lt;schema&gt; or C&lt;target_sub&gt; is missing.
-</span><span class="">  129: 
-</span><span class="">  130: =head3 API specification
-</span><span class="">  131: 
-</span><span class="">  132: =head4 input
-</span><span class="">  133: 
-</span><span class="">  134:     {
-</span><span class="">  135:         schema     =&gt; { type =&gt; HASHREF },
-</span><span class="">  136:         target_sub =&gt; { type =&gt; CODEREF },
-</span><span class="">  137:         iterations =&gt; { type =&gt; SCALAR,  optional =&gt; 1 },
-</span><span class="">  138:         seed       =&gt; { type =&gt; SCALAR,  optional =&gt; 1 },
-</span><span class="">  139:         instance   =&gt; { type =&gt; OBJECT,  optional =&gt; 1 },
-</span><span class="">  140:     }
-</span><span class="">  141: 
-</span><span class="">  142: =head4 output
-</span><span class="">  143: 
-</span><span class="">  144:     {
-</span><span class="">  145:         type =&gt; OBJECT,
-</span><span class="">  146:         isa  =&gt; &#39;App::Test::Generator::CoverageGuidedFuzzer&#39;,
-</span><span class="">  147:     }
-</span><span class="">  148: 
-</span><span class="">  149: =cut
-</span><span class="">  150: 
-</span><span class="">  151: sub new {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">152 → 182 → 186</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">152 → 182 → 0</span></span>  152: 	my ($class, %args) = @_;
-</span><span class="">  153: 
-</span><span class="">  154: 	croak &#39;schema required&#39;     unless $args{schema};
-</span><span class="">  155: 	croak &#39;target_sub required&#39; unless $args{target_sub};
+</span><span class="">   13: Readonly my $DEFAULT_TIMEOUT_SECS =&gt; 5;     # per-call alarm() timeout; 0 disables
+</span><span class="">   14: Readonly my $CORPUS_MUTATE_RATIO  =&gt; 0.70;  # 70% mutate, 30% explore
+</span><span class="">   15: Readonly my $RANDOM_KEEP_RATIO    =&gt; 0.20;  # keep 20% random when no coverage
+</span><span class="">   16: Readonly my $EDGE_CASE_RATIO      =&gt; 0.40;  # 40% chance to use declared edge case
+</span><span class="">   17: Readonly my $INT_BOUNDARY_RATIO   =&gt; 0.30;  # 30% chance to use boundary int
+</span><span class="">   18: Readonly my $STR_BOUNDARY_RATIO   =&gt; 0.30;  # 30% chance to use boundary length
+</span><span class="">   19: Readonly my $SEED_CORPUS_SIZE     =&gt; 5;     # initial random inputs to seed corpus
+</span><span class="">   20: Readonly my $DEFAULT_MAX_STR_LEN  =&gt; 64;
+</span><span class="">   21: Readonly my $DEFAULT_MAX_ARRAY    =&gt; 4;     # max elements in random array (0..N)
+</span><span class="">   22: Readonly my $INT32_MAX            =&gt; 2**31 - 1;
+</span><span class="">   23: Readonly my $INT32_MIN            =&gt; -(2**31);
+</span><span class="">   24: 
+</span><span class="">   25: # --------------------------------------------------
+</span><span class="">   26: # Type name constants &acirc;&#128;&#148; used in schema dispatch
+</span><span class="">   27: # --------------------------------------------------
+</span><span class="">   28: Readonly my $TYPE_INTEGER =&gt; &#39;integer&#39;;
+</span><span class="">   29: Readonly my $TYPE_NUMBER  =&gt; &#39;number&#39;;
+</span><span class="">   30: Readonly my $TYPE_BOOLEAN =&gt; &#39;boolean&#39;;
+</span><span class="">   31: Readonly my $TYPE_ARRAY   =&gt; &#39;arrayref&#39;;
+</span><span class="">   32: Readonly my $TYPE_HASH    =&gt; &#39;hashref&#39;;
+</span><span class="">   33: Readonly my $TYPE_STRING  =&gt; &#39;string&#39;;
+</span><span class="">   34: 
+</span><span class="">   35: # --------------------------------------------------
+</span><span class="">   36: # JSON module preference order
+</span><span class="">   37: # --------------------------------------------------
+</span><span class="">   38: Readonly my @JSON_MODULES =&gt; qw(JSON::MaybeXS JSON);
+</span><span class="">   39: 
+</span><span class="">   40: our $VERSION = &#39;0.39&#39;;
+</span><span class="">   41: 
+</span><span class="">   42: =head1 NAME
+</span><span class="">   43: 
+</span><span class="">   44: App::Test::Generator::CoverageGuidedFuzzer - AFL-style coverage-guided fuzzing for App::Test::Generator
+</span><span class="">   45: 
+</span><span class="">   46: =head1 VERSION
+</span><span class="">   47: 
+</span><span class="">   48: Version 0.39
+</span><span class="">   49: 
+</span><span class="">   50: =head1 SYNOPSIS
+</span><span class="">   51: 
+</span><span class="">   52:     use App::Test::Generator::CoverageGuidedFuzzer;
+</span><span class="">   53: 
+</span><span class="">   54:     my $fuzzer = App::Test::Generator::CoverageGuidedFuzzer-&gt;new(
+</span><span class="">   55:         schema     =&gt; $yaml_schema,
+</span><span class="">   56:         target_sub =&gt; \&amp;My::Module::validate,
+</span><span class="">   57:         iterations =&gt; 200,
+</span><span class="">   58:         seed       =&gt; 42,
+</span><span class="">   59:     );
+</span><span class="">   60: 
+</span><span class="">   61:     my $report = $fuzzer-&gt;run();
+</span><span class="">   62:     $fuzzer-&gt;save_corpus(&#39;t/corpus/validate.json&#39;);
+</span><span class="">   63: 
+</span><span class="">   64: =head1 DESCRIPTION
+</span><span class="">   65: 
+</span><span class="">   66: Implements coverage-guided fuzzing on top of App::Test::Generator&#39;s
+</span><span class="">   67: existing schema-driven input generation. Instead of purely random
+</span><span class="">   68: generation it:
+</span><span class="">   69: 
+</span><span class="">   70: =over 4
+</span><span class="">   71: 
+</span><span class="">   72: =item 1. Generates or mutates a structured input
+</span><span class="">   73: 
+</span><span class="">   74: =item 2. Runs the target sub under Devel::Cover to capture branch hits
+</span><span class="">   75: 
+</span><span class="">   76: =item 3. Keeps inputs that discover new branches in a corpus
+</span><span class="">   77: 
+</span><span class="">   78: =item 4. Preferentially mutates corpus entries in future iterations
+</span><span class="">   79: 
+</span><span class="">   80: =back
+</span><span class="">   81: 
+</span><span class="">   82: This is the Perl equivalent of what AFL/libFuzzer do at the byte level,
+</span><span class="">   83: but operating on typed, schema-validated Perl data structures.
+</span><span class="">   84: 
+</span><span class="">   85: =head1 METHODS
+</span><span class="">   86: 
+</span><span class="">   87: =head2 new
+</span><span class="">   88: 
+</span><span class="">   89: Construct a new coverage-guided fuzzer.
+</span><span class="">   90: 
+</span><span class="">   91:     my $fuzzer = App::Test::Generator::CoverageGuidedFuzzer-&gt;new(
+</span><span class="">   92:         schema     =&gt; $yaml_schema,
+</span><span class="">   93:         target_sub =&gt; \&amp;My::Module::validate,
+</span><span class="">   94:         iterations =&gt; 200,
+</span><span class="">   95:         seed       =&gt; 42,
+</span><span class="">   96:         instance   =&gt; $obj,   # optional pre-built object for method calls
+</span><span class="">   97:     );
+</span><span class="">   98: 
+</span><span class="">   99: =head3 Arguments
+</span><span class="">  100: 
+</span><span class="">  101: =over 4
+</span><span class="">  102: 
+</span><span class="">  103: =item * C&lt;schema&gt;
+</span><span class="">  104: 
+</span><span class="">  105: A hashref representing the parsed YAML schema for the target function.
+</span><span class="">  106: Required.
+</span><span class="">  107: 
+</span><span class="">  108: =item * C&lt;target_sub&gt;
+</span><span class="">  109: 
+</span><span class="">  110: A CODE reference to the function under test. Required.
+</span><span class="">  111: 
+</span><span class="">  112: =item * C&lt;iterations&gt;
+</span><span class="">  113: 
+</span><span class="">  114: Number of fuzzing iterations to run. Optional - defaults to 100.
+</span><span class="">  115: 
+</span><span class="">  116: =item * C&lt;seed&gt;
+</span><span class="">  117: 
+</span><span class="">  118: Random seed for reproducible runs. Optional - defaults to C&lt;time()&gt;.
+</span><span class="">  119: 
+</span><span class="">  120: =item * C&lt;instance&gt;
+</span><span class="">  121: 
+</span><span class="">  122: An optional pre-built object to use as the invocant when calling the
+</span><span class="">  123: target sub as a method.
+</span><span class="">  124: 
+</span><span class="">  125: =item * C&lt;timeout&gt;
+</span><span class="">  126: 
+</span><span class="">  127: Seconds to allow each C&lt;target_sub&gt; call before it is aborted via
+</span><span class="">  128: C&lt;alarm()&gt; and recorded as a bug. Optional - defaults to 5. Set to 0
+</span><span class="">  129: to disable the timeout (e.g. for target subs that legitimately block).
+</span><span class="">  130: 
+</span><span class="">  131: =back
+</span><span class="">  132: 
+</span><span class="">  133: =head3 Returns
+</span><span class="">  134: 
+</span><span class="">  135: A blessed hashref. Croaks if C&lt;schema&gt; or C&lt;target_sub&gt; is missing.
+</span><span class="">  136: 
+</span><span class="">  137: =head3 API specification
+</span><span class="">  138: 
+</span><span class="">  139: =head4 input
+</span><span class="">  140: 
+</span><span class="">  141:     {
+</span><span class="">  142:         schema     =&gt; { type =&gt; HASHREF },
+</span><span class="">  143:         target_sub =&gt; { type =&gt; CODEREF },
+</span><span class="">  144:         iterations =&gt; { type =&gt; SCALAR,  optional =&gt; 1 },
+</span><span class="">  145:         seed       =&gt; { type =&gt; SCALAR,  optional =&gt; 1 },
+</span><span class="">  146:         instance   =&gt; { type =&gt; OBJECT,  optional =&gt; 1 },
+</span><span class="">  147:         timeout    =&gt; { type =&gt; SCALAR,  optional =&gt; 1 },
+</span><span class="">  148:     }
+</span><span class="">  149: 
+</span><span class="">  150: =head4 output
+</span><span class="">  151: 
+</span><span class="">  152:     {
+</span><span class="">  153:         type =&gt; OBJECT,
+</span><span class="">  154:         isa  =&gt; &#39;App::Test::Generator::CoverageGuidedFuzzer&#39;,
+</span><span class="">  155:     }
 </span><span class="">  156: 
-</span><span class="">  157: 	my $self = bless {
-</span><span class="">  158: 		schema     =&gt; $args{schema},
-</span><span class="">  159: 		target_sub =&gt; $args{target_sub},
-</span><span class="">  160: 		instance   =&gt; $args{instance},
-</span><span class="">  161: 		iterations =&gt; $args{iterations} // $DEFAULT_ITERATIONS,
-</span><span class="">  162: 		seed       =&gt; $args{seed}       // time(),
-</span><span class="">  163: 		corpus     =&gt; [],   # [{input =&gt; ..., coverage =&gt; {...}}]
-</span><span class="">  164: 		covered    =&gt; {},   # &quot;file:line:branch&quot; =&gt; 1
-</span><span class="">  165: 		bugs       =&gt; [],   # [{input =&gt; ..., error =&gt; ...}]
-</span><span class="">  166: 		stats      =&gt; {
-</span><span class="">  167: 			total       =&gt; 0,
-</span><span class="">  168: 			interesting =&gt; 0,
-</span><span class="">  169: 			bugs        =&gt; 0,
-</span><span class="">  170: 			coverage    =&gt; 0,
-</span><span class="">  171: 		},
-</span><span class="">  172: 		_cover_available =&gt; undef,
-</span><span class="">  173: 	}, $class;
-</span><span class="">  174: 
-</span><span class="">  175: 	srand($self-&gt;{seed});
-</span><span class="">  176: 
-</span><span class="">  177: 	# Probe for Devel::Cover availability once at construction time
-</span><span class="">  178: 	$self-&gt;{_cover_available} = eval { require Devel::Cover; 1 } ? 1 : 0;
-</span><span class="">  179: 
-</span><span class="">  180: 	# Warn once per process if coverage guidance is unavailable
-</span><span class="">  181: 	state $cover_warned = 0;
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  182: 	if(!$self-&gt;{_cover_available} &amp;&amp; !$cover_warned++) {
+</span><span class="">  157: =cut
+</span><span class="">  158: 
+</span><span class="">  159: sub new {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">160 → 191 → 195</span></span>  160: 	my ($class, %args) = @_;
+</span><span class="">  161: 
+</span><span class="">  162: 	croak &#39;schema required&#39;     unless $args{schema};
+</span><span class="">  163: 	croak &#39;target_sub required&#39; unless $args{target_sub};
+</span><span class="">  164: 
+</span><span class="">  165: 	my $self = bless {
+</span><span class="">  166: 		schema     =&gt; $args{schema},
+</span><span class="">  167: 		target_sub =&gt; $args{target_sub},
+</span><span class="">  168: 		instance   =&gt; $args{instance},
+</span><span class="">  169: 		iterations =&gt; $args{iterations} // $DEFAULT_ITERATIONS,
+</span><span class="">  170: 		seed       =&gt; $args{seed}       // time(),
+</span><span class="">  171: 		timeout    =&gt; $args{timeout}    // $DEFAULT_TIMEOUT_SECS,
+</span><span class="">  172: 		corpus     =&gt; [],   # [{input =&gt; ..., coverage =&gt; {...}}]
+</span><span class="">  173: 		covered    =&gt; {},   # &quot;file:line:branch&quot; =&gt; 1
+</span><span class="">  174: 		bugs       =&gt; [],   # [{input =&gt; ..., error =&gt; ...}]
+</span><span class="">  175: 		stats      =&gt; {
+</span><span class="">  176: 			total       =&gt; 0,
+</span><span class="">  177: 			interesting =&gt; 0,
+</span><span class="">  178: 			bugs        =&gt; 0,
+</span><span class="">  179: 			coverage    =&gt; 0,
+</span><span class="">  180: 		},
+</span><span class="">  181: 		_cover_available =&gt; undef,
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  182: 	}, $class;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
 				<li><b>COND_INV_182_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">  183: 		warn &#39;Devel::Cover not available; fuzzing without coverage guidance.&#39;;
-</span><span class="">  184: 	}
+<span class="">  183: 
+</span><span class="">  184: 	srand($self-&gt;{seed});
 </span><span class="">  185: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">186 → 186 → 0</span></span>  186: 	return $self;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  187: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  186: 	# Probe for Devel::Cover availability once at construction time
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  187: 	$self-&gt;{_cover_available} = eval { require Devel::Cover; 1 } ? 1 : 0;
 </span><span class="">  188: 
-</span><span class="">  189: =head2 run
-</span><span class="">  190: 
-</span><span class="">  191: Run the coverage-guided fuzzing loop and return a summary report.
-</span><span class="">  192: 
-</span><span class="">  193:     my $report = $fuzzer-&gt;run();
-</span><span class="">  194:     printf &quot;Branches covered: %d\n&quot;, $report-&gt;{branches_covered};
-</span><span class="">  195:     printf &quot;Bugs found:       %d\n&quot;, $report-&gt;{bugs_found};
-</span><span class="">  196: 
-</span><span class="">  197: =head3 Arguments
-</span><span class="">  198: 
-</span><span class="">  199: None beyond C&lt;$self&gt;.
-</span><span class="">  200: 
-</span><span class="">  201: =head3 Returns
-</span><span class="">  202: 
-</span><span class="">  203: A hashref with keys C&lt;total_iterations&gt;, C&lt;interesting_inputs&gt;,
-</span><span class="">  204: C&lt;corpus_size&gt;, C&lt;branches_covered&gt;, C&lt;bugs_found&gt;, and C&lt;bugs&gt;.
+</span><span class="">  189: 	# Warn once per process if coverage guidance is unavailable
+</span><span class="">  190: 	state $cover_warned = 0;
+</span><span class="">  191: 	if(!$self-&gt;{_cover_available} &amp;&amp; !$cover_warned++) {
+</span><span class="">  192: 		warn &#39;Devel::Cover not available; fuzzing without coverage guidance.&#39;;
+</span><span class="">  193: 	}
+</span><span class="">  194: 
+</span><span class="">  195: 	return $self;
+</span><span class="">  196: }
+</span><span class="">  197: 
+</span><span class="">  198: =head2 run
+</span><span class="">  199: 
+</span><span class="">  200: Run the coverage-guided fuzzing loop and return a summary report.
+</span><span class="">  201: 
+</span><span class="">  202:     my $report = $fuzzer-&gt;run();
+</span><span class="">  203:     printf &quot;Branches covered: %d\n&quot;, $report-&gt;{branches_covered};
+</span><span class="">  204:     printf &quot;Bugs found:       %d\n&quot;, $report-&gt;{bugs_found};
 </span><span class="">  205: 
-</span><span class="">  206: =head3 API specification
+</span><span class="">  206: =head3 Arguments
 </span><span class="">  207: 
-</span><span class="">  208: =head4 input
+</span><span class="">  208: None beyond C&lt;$self&gt;.
 </span><span class="">  209: 
-</span><span class="">  210:     {
-</span><span class="">  211:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::CoverageGuidedFuzzer&#39; },
-</span><span class="">  212:     }
-</span><span class="">  213: 
-</span><span class="">  214: =head4 output
-</span><span class="">  215: 
-</span><span class="">  216:     {
-</span><span class="">  217:         type =&gt; HASHREF,
-</span><span class="">  218:         keys =&gt; {
-</span><span class="">  219:             total_iterations   =&gt; { type =&gt; SCALAR  },
-</span><span class="">  220:             interesting_inputs =&gt; { type =&gt; SCALAR  },
-</span><span class="">  221:             corpus_size        =&gt; { type =&gt; SCALAR  },
-</span><span class="">  222:             branches_covered   =&gt; { type =&gt; SCALAR  },
-</span><span class="">  223:             bugs_found         =&gt; { type =&gt; SCALAR  },
-</span><span class="">  224:             bugs               =&gt; { type =&gt; ARRAYREF },
-</span><span class="">  225:         },
-</span><span class="">  226:     }
-</span><span class="">  227: 
-</span><span class="">  228: =cut
-</span><span class="">  229: 
-</span><span class="">  230: sub run {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">231 → 237 → 253</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">231 → 237 → 0</span></span>  231: 	my ($self) = @_;
-</span><span class="">  232: 
-</span><span class="">  233: 	# Phase 1: seed the corpus with a small set of random inputs
-</span><span class="">  234: 	$self-&gt;_seed_corpus();
-</span><span class="">  235: 
-</span><span class="">  236: 	# Phase 2: main fuzzing loop &acirc;&#128;&#148; alternate between mutation and exploration
-</span><span class="">  237: 	for my $i (1 .. $self-&gt;{iterations}) {
-</span><span class="">  238: 		my $input;
-</span><span class="">  239: 
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch.">  240: 		if(@{ $self-&gt;{corpus} } &amp;&amp; rand() &lt; $CORPUS_MUTATE_RATIO) {
+</span><span class="">  210: =head3 Returns
+</span><span class="">  211: 
+</span><span class="">  212: A hashref with keys C&lt;total_iterations&gt;, C&lt;interesting_inputs&gt;,
+</span><span class="">  213: C&lt;corpus_size&gt;, C&lt;branches_covered&gt;, C&lt;bugs_found&gt;, and C&lt;bugs&gt;.
+</span><span class="">  214: 
+</span><span class="">  215: =head3 API specification
+</span><span class="">  216: 
+</span><span class="">  217: =head4 input
+</span><span class="">  218: 
+</span><span class="">  219:     {
+</span><span class="">  220:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::CoverageGuidedFuzzer&#39; },
+</span><span class="">  221:     }
+</span><span class="">  222: 
+</span><span class="">  223: =head4 output
+</span><span class="">  224: 
+</span><span class="">  225:     {
+</span><span class="">  226:         type =&gt; HASHREF,
+</span><span class="">  227:         keys =&gt; {
+</span><span class="">  228:             total_iterations   =&gt; { type =&gt; SCALAR  },
+</span><span class="">  229:             interesting_inputs =&gt; { type =&gt; SCALAR  },
+</span><span class="">  230:             corpus_size        =&gt; { type =&gt; SCALAR  },
+</span><span class="">  231:             branches_covered   =&gt; { type =&gt; SCALAR  },
+</span><span class="">  232:             bugs_found         =&gt; { type =&gt; SCALAR  },
+</span><span class="">  233:             bugs               =&gt; { type =&gt; ARRAYREF },
+</span><span class="">  234:         },
+</span><span class="">  235:     }
+</span><span class="">  236: 
+</span><span class="">  237: =cut
+</span><span class="">  238: 
+</span><span class="">  239: sub run {
+</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">240 → 246 → 262</span></span>  240: 	my ($self) = @_;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
@@ -566,394 +566,394 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 								</div>
 							</li><li><b>COND_INV_240_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">  241: 			# Mutate a randomly chosen corpus entry
-</span><span class="">  242: 			my $parent = $self-&gt;{corpus}[ int(rand(@{ $self-&gt;{corpus} })) ];
-</span><span class="">  243: 			$input = $self-&gt;_mutate($parent-&gt;{input});
-</span><span class="">  244: 		} else {
-</span><span class="">  245: 			# Fresh random generation for exploration
-</span><span class="">  246: 			$input = $self-&gt;_generate_random();
-</span><span class="">  247: 		}
+<span class="">  241: 
+</span><span class="">  242: 	# Phase 1: seed the corpus with a small set of random inputs
+</span><span class="">  243: 	$self-&gt;_seed_corpus();
+</span><span class="">  244: 
+</span><span class="">  245: 	# Phase 2: main fuzzing loop &acirc;&#128;&#148; alternate between mutation and exploration
+</span><span class="">  246: 	for my $i (1 .. $self-&gt;{iterations}) {
+</span><span class="">  247: 		my $input;
 </span><span class="">  248: 
-</span><span class="">  249: 		$self-&gt;_run_one($input);
-</span><span class="">  250: 		$self-&gt;{stats}{total}++;
-</span><span class="">  251: 	}
-</span><span class="">  252: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">253 → 254 → 0</span></span>  253: 	$self-&gt;{stats}{coverage} = scalar keys %{ $self-&gt;{covered} };
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  254: 	return $self-&gt;_build_report();
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  255: }
-</span><span class="">  256: 
-</span><span class="">  257: =head2 corpus
-</span><span class="">  258: 
-</span><span class="">  259: Return the accumulated corpus as an arrayref of hashrefs with keys
-</span><span class="">  260: C&lt;input&gt; and C&lt;coverage&gt;.
+</span><span class="">  249: 		if(@{ $self-&gt;{corpus} } &amp;&amp; rand() &lt; $CORPUS_MUTATE_RATIO) {
+</span><span class="">  250: 			# Mutate a randomly chosen corpus entry
+</span><span class="">  251: 			my $parent = $self-&gt;{corpus}[ int(rand(@{ $self-&gt;{corpus} })) ];
+</span><span class="">  252: 			$input = $self-&gt;_mutate($parent-&gt;{input});
+</span><span class="">  253: 		} else {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  254: 			# Fresh random generation for exploration
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  255: 			$input = $self-&gt;_generate_random();
+</span><span class="">  256: 		}
+</span><span class="">  257: 
+</span><span class="">  258: 		$self-&gt;_run_one($input);
+</span><span class="">  259: 		$self-&gt;{stats}{total}++;
+</span><span class="">  260: 	}
 </span><span class="">  261: 
-</span><span class="">  262:     my $corpus = $fuzzer-&gt;corpus();
-</span><span class="">  263: 
-</span><span class="">  264: =head3 API specification
+</span><span class="">  262: 	$self-&gt;{stats}{coverage} = scalar keys %{ $self-&gt;{covered} };
+</span><span class="">  263: 	return $self-&gt;_build_report();
+</span><span class="">  264: }
 </span><span class="">  265: 
-</span><span class="">  266: =head4 input
+</span><span class="">  266: =head2 corpus
 </span><span class="">  267: 
-</span><span class="">  268:     { self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::CoverageGuidedFuzzer&#39; } }
-</span><span class="">  269: 
-</span><span class="">  270: =head4 output
-</span><span class="">  271: 
-</span><span class="">  272:     { type =&gt; ARRAYREF }
-</span><span class="">  273: 
-</span><span class="">  274: =cut
-</span><span class="">  275: 
-</span><span class="">  276: sub corpus { $_[0]-&gt;{corpus} }
-</span><span class="">  277: 
-</span><span class="">  278: =head2 bugs
-</span><span class="">  279: 
-</span><span class="">  280: Return bugs found as an arrayref of hashrefs with keys C&lt;input&gt; and
-</span><span class="">  281: C&lt;error&gt;.
+</span><span class="">  268: Return the accumulated corpus as an arrayref of hashrefs with keys
+</span><span class="">  269: C&lt;input&gt; and C&lt;coverage&gt;.
+</span><span class="">  270: 
+</span><span class="">  271:     my $corpus = $fuzzer-&gt;corpus();
+</span><span class="">  272: 
+</span><span class="">  273: =head3 API specification
+</span><span class="">  274: 
+</span><span class="">  275: =head4 input
+</span><span class="">  276: 
+</span><span class="">  277:     { self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::CoverageGuidedFuzzer&#39; } }
+</span><span class="">  278: 
+</span><span class="">  279: =head4 output
+</span><span class="">  280: 
+</span><span class="">  281:     { type =&gt; ARRAYREF }
 </span><span class="">  282: 
-</span><span class="">  283:     my $bugs = $fuzzer-&gt;bugs();
+</span><span class="">  283: =cut
 </span><span class="">  284: 
-</span><span class="">  285: =head3 API specification
+</span><span class="">  285: sub corpus { $_[0]-&gt;{corpus} }
 </span><span class="">  286: 
-</span><span class="">  287: =head4 input
+</span><span class="">  287: =head2 bugs
 </span><span class="">  288: 
-</span><span class="">  289:     { self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::CoverageGuidedFuzzer&#39; } }
-</span><span class="">  290: 
-</span><span class="">  291: =head4 output
-</span><span class="">  292: 
-</span><span class="">  293:     { type =&gt; ARRAYREF }
-</span><span class="">  294: 
-</span><span class="">  295: =cut
-</span><span class="">  296: 
-</span><span class="">  297: sub bugs { $_[0]-&gt;{bugs} }
-</span><span class="">  298: 
-</span><span class="">  299: =head2 save_corpus
-</span><span class="">  300: 
-</span><span class="">  301: Serialise the corpus to a JSON file for replay or extension on future
-</span><span class="">  302: runs.
+</span><span class="">  289: Return bugs found as an arrayref of hashrefs with keys C&lt;input&gt; and
+</span><span class="">  290: C&lt;error&gt;.
+</span><span class="">  291: 
+</span><span class="">  292:     my $bugs = $fuzzer-&gt;bugs();
+</span><span class="">  293: 
+</span><span class="">  294: =head3 API specification
+</span><span class="">  295: 
+</span><span class="">  296: =head4 input
+</span><span class="">  297: 
+</span><span class="">  298:     { self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::CoverageGuidedFuzzer&#39; } }
+</span><span class="">  299: 
+</span><span class="">  300: =head4 output
+</span><span class="">  301: 
+</span><span class="">  302:     { type =&gt; ARRAYREF }
 </span><span class="">  303: 
-</span><span class="">  304:     $fuzzer-&gt;save_corpus(&#39;t/corpus/validate.json&#39;);
+</span><span class="">  304: =cut
 </span><span class="">  305: 
-</span><span class="">  306: =head3 Arguments
+</span><span class="">  306: sub bugs { $_[0]-&gt;{bugs} }
 </span><span class="">  307: 
-</span><span class="">  308: =over 4
+</span><span class="">  308: =head2 save_corpus
 </span><span class="">  309: 
-</span><span class="">  310: =item * C&lt;$path&gt;
-</span><span class="">  311: 
-</span><span class="">  312: Path to write the JSON corpus file. Required.
-</span><span class="">  313: 
-</span><span class="">  314: =back
-</span><span class="">  315: 
-</span><span class="">  316: =head3 Returns
-</span><span class="">  317: 
-</span><span class="">  318: Nothing. Croaks if the file cannot be written or no JSON module is
-</span><span class="">  319: available.
+</span><span class="">  310: Serialise the corpus to a JSON file for replay or extension on future
+</span><span class="">  311: runs.
+</span><span class="">  312: 
+</span><span class="">  313:     $fuzzer-&gt;save_corpus(&#39;t/corpus/validate.json&#39;);
+</span><span class="">  314: 
+</span><span class="">  315: =head3 Arguments
+</span><span class="">  316: 
+</span><span class="">  317: =over 4
+</span><span class="">  318: 
+</span><span class="">  319: =item * C&lt;$path&gt;
 </span><span class="">  320: 
-</span><span class="">  321: =head3 Side effects
+</span><span class="">  321: Path to write the JSON corpus file. Required.
 </span><span class="">  322: 
-</span><span class="">  323: Writes a JSON file to C&lt;$path&gt;.
+</span><span class="">  323: =back
 </span><span class="">  324: 
-</span><span class="">  325: =head3 API specification
+</span><span class="">  325: =head3 Returns
 </span><span class="">  326: 
-</span><span class="">  327: =head4 input
-</span><span class="">  328: 
-</span><span class="">  329:     {
-</span><span class="">  330:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::CoverageGuidedFuzzer&#39; },
-</span><span class="">  331:         path =&gt; { type =&gt; SCALAR },
-</span><span class="">  332:     }
+</span><span class="">  327: Nothing. Croaks if the file cannot be written or no JSON module is
+</span><span class="">  328: available.
+</span><span class="">  329: 
+</span><span class="">  330: =head3 Side effects
+</span><span class="">  331: 
+</span><span class="">  332: Writes a JSON file to C&lt;$path&gt;.
 </span><span class="">  333: 
-</span><span class="">  334: =head4 output
+</span><span class="">  334: =head3 API specification
 </span><span class="">  335: 
-</span><span class="">  336:     { type =&gt; UNDEF }
+</span><span class="">  336: =head4 input
 </span><span class="">  337: 
-</span><span class="">  338: =cut
-</span><span class="">  339: 
-</span><span class="">  340: sub save_corpus {
-</span><span class="">  341: 	my ($self, $path) = @_;
+</span><span class="">  338:     {
+</span><span class="">  339:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::CoverageGuidedFuzzer&#39; },
+</span><span class="">  340:         path =&gt; { type =&gt; SCALAR },
+</span><span class="">  341:     }
 </span><span class="">  342: 
-</span><span class="">  343: 	croak &#39;path required&#39; unless defined $path;
+</span><span class="">  343: =head4 output
 </span><span class="">  344: 
-</span><span class="">  345: 	my $json = _load_json_module();
+</span><span class="">  345:     { type =&gt; UNDEF }
 </span><span class="">  346: 
-</span><span class="">  347: 	open my $fh, &#39;&gt;&#39;, $path
-</span><span class="">  348: 		or croak &quot;Cannot write corpus to $path: $!&quot;;
-</span><span class="">  349: 
-</span><span class="">  350: 	print $fh $json-&gt;new-&gt;pretty-&gt;encode({
-</span><span class="">  351: 		seed   =&gt; $self-&gt;{seed},
-</span><span class="">  352: 		corpus =&gt; [ map { { input =&gt; $_-&gt;{input} } } @{ $self-&gt;{corpus} } ],
-</span><span class="">  353: 		bugs   =&gt; $self-&gt;{bugs},
-</span><span class="">  354: 	});
+</span><span class="">  347: =cut
+</span><span class="">  348: 
+</span><span class="">  349: sub save_corpus {
+</span><span class="">  350: 	my ($self, $path) = @_;
+</span><span class="">  351: 
+</span><span class="">  352: 	croak &#39;path required&#39; unless defined $path;
+</span><span class="">  353: 
+</span><span class="">  354: 	my $json = _load_json_module();
 </span><span class="">  355: 
-</span><span class="">  356: 	close $fh;
-</span><span class="">  357: }
+</span><span class="">  356: 	open my $fh, &#39;&gt;&#39;, $path
+</span><span class="">  357: 		or croak &quot;Cannot write corpus to $path: $!&quot;;
 </span><span class="">  358: 
-</span><span class="">  359: =head2 load_corpus
-</span><span class="">  360: 
-</span><span class="">  361: Load a previously saved corpus JSON file, pre-seeding the fuzzer so
-</span><span class="">  362: it continues from where it left off.
-</span><span class="">  363: 
-</span><span class="">  364:     $fuzzer-&gt;load_corpus(&#39;t/corpus/validate.json&#39;);
-</span><span class="">  365: 
-</span><span class="">  366: =head3 Arguments
+</span><span class="">  359: 	print $fh $json-&gt;new-&gt;pretty-&gt;encode({
+</span><span class="">  360: 		seed   =&gt; $self-&gt;{seed},
+</span><span class="">  361: 		corpus =&gt; [ map { { input =&gt; $_-&gt;{input} } } @{ $self-&gt;{corpus} } ],
+</span><span class="">  362: 		bugs   =&gt; $self-&gt;{bugs},
+</span><span class="">  363: 	});
+</span><span class="">  364: 
+</span><span class="">  365: 	close $fh;
+</span><span class="">  366: }
 </span><span class="">  367: 
-</span><span class="">  368: =over 4
+</span><span class="">  368: =head2 load_corpus
 </span><span class="">  369: 
-</span><span class="">  370: =item * C&lt;$path&gt;
-</span><span class="">  371: 
-</span><span class="">  372: Path to the JSON corpus file to load. Required.
-</span><span class="">  373: 
-</span><span class="">  374: =back
-</span><span class="">  375: 
-</span><span class="">  376: =head3 Returns
-</span><span class="">  377: 
-</span><span class="">  378: Nothing. Croaks if the file cannot be read or no JSON module is
-</span><span class="">  379: available.
+</span><span class="">  370: Load a previously saved corpus JSON file, pre-seeding the fuzzer so
+</span><span class="">  371: it continues from where it left off.
+</span><span class="">  372: 
+</span><span class="">  373:     $fuzzer-&gt;load_corpus(&#39;t/corpus/validate.json&#39;);
+</span><span class="">  374: 
+</span><span class="">  375: =head3 Arguments
+</span><span class="">  376: 
+</span><span class="">  377: =over 4
+</span><span class="">  378: 
+</span><span class="">  379: =item * C&lt;$path&gt;
 </span><span class="">  380: 
-</span><span class="">  381: =head3 Side effects
+</span><span class="">  381: Path to the JSON corpus file to load. Required.
 </span><span class="">  382: 
-</span><span class="">  383: Appends loaded entries to C&lt;&lt; $self-&gt;{corpus} &gt;&gt;.
+</span><span class="">  383: =back
 </span><span class="">  384: 
-</span><span class="">  385: =head3 API specification
+</span><span class="">  385: =head3 Returns
 </span><span class="">  386: 
-</span><span class="">  387: =head4 input
-</span><span class="">  388: 
-</span><span class="">  389:     {
-</span><span class="">  390:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::CoverageGuidedFuzzer&#39; },
-</span><span class="">  391:         path =&gt; { type =&gt; SCALAR },
-</span><span class="">  392:     }
+</span><span class="">  387: Nothing. Croaks if the file cannot be read or no JSON module is
+</span><span class="">  388: available.
+</span><span class="">  389: 
+</span><span class="">  390: =head3 Side effects
+</span><span class="">  391: 
+</span><span class="">  392: Appends loaded entries to C&lt;&lt; $self-&gt;{corpus} &gt;&gt;.
 </span><span class="">  393: 
-</span><span class="">  394: =head4 output
+</span><span class="">  394: =head3 API specification
 </span><span class="">  395: 
-</span><span class="">  396:     { type =&gt; UNDEF }
+</span><span class="">  396: =head4 input
 </span><span class="">  397: 
-</span><span class="">  398: =cut
-</span><span class="">  399: 
-</span><span class="">  400: sub load_corpus {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">401 → 415 → 0</span></span>  401: 	my ($self, $path) = @_;
+</span><span class="">  398:     {
+</span><span class="">  399:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::CoverageGuidedFuzzer&#39; },
+</span><span class="">  400:         path =&gt; { type =&gt; SCALAR },
+</span><span class="">  401:     }
 </span><span class="">  402: 
-</span><span class="">  403: 	croak &#39;path required&#39; unless defined $path;
+</span><span class="">  403: =head4 output
 </span><span class="">  404: 
-</span><span class="">  405: 	my $json = _load_json_module();
+</span><span class="">  405:     { type =&gt; UNDEF }
 </span><span class="">  406: 
-</span><span class="">  407: 	open my $fh, &#39;&lt;&#39;, $path
-</span><span class="">  408: 		or croak &quot;Cannot read corpus from $path: $!&quot;;
-</span><span class="">  409: 
-</span><span class="">  410: 	my $data = $json-&gt;new-&gt;decode(do { local $/; &lt;$fh&gt; });
-</span><span class="">  411: 	close $fh;
-</span><span class="">  412: 
-</span><span class="">  413: 	# Load corpus entries with empty coverage &acirc;&#128;&#148; coverage state from a
-</span><span class="">  414: 	# previous process cannot be restored, only the inputs themselves
-</span><span class="">  415: 	for my $entry (@{ $data-&gt;{corpus} // [] }) {
-</span><span class="">  416: 		push @{ $self-&gt;{corpus} }, {
-</span><span class="">  417: 			input    =&gt; $entry-&gt;{input},
-</span><span class="">  418: 			coverage =&gt; {},
-</span><span class="">  419: 		};
-</span><span class="">  420: 	}
-</span><span class="">  421: }
-</span><span class="">  422: 
-</span><span class="">  423: # --------------------------------------------------
-</span><span class="">  424: # _load_json_module
-</span><span class="">  425: #
-</span><span class="">  426: # Find and load the first available JSON
-</span><span class="">  427: #     module from the preference list.
-</span><span class="">  428: #
-</span><span class="">  429: # Entry:      None.
-</span><span class="">  430: # Exit:       Returns the name of the loaded module.
-</span><span class="">  431: #             Croaks if none are available.
-</span><span class="">  432: #
-</span><span class="">  433: # Side effects: Loads a JSON module into the process.
+</span><span class="">  407: =cut
+</span><span class="">  408: 
+</span><span class="">  409: sub load_corpus {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">410 → 424 → 0</span></span>  410: 	my ($self, $path) = @_;
+</span><span class="">  411: 
+</span><span class="">  412: 	croak &#39;path required&#39; unless defined $path;
+</span><span class="">  413: 
+</span><span class="">  414: 	my $json = _load_json_module();
+</span><span class="">  415: 
+</span><span class="">  416: 	open my $fh, &#39;&lt;&#39;, $path
+</span><span class="">  417: 		or croak &quot;Cannot read corpus from $path: $!&quot;;
+</span><span class="">  418: 
+</span><span class="">  419: 	my $data = $json-&gt;new-&gt;decode(do { local $/; &lt;$fh&gt; });
+</span><span class="">  420: 	close $fh;
+</span><span class="">  421: 
+</span><span class="">  422: 	# Load corpus entries with empty coverage &acirc;&#128;&#148; coverage state from a
+</span><span class="">  423: 	# previous process cannot be restored, only the inputs themselves
+</span><span class="">  424: 	for my $entry (@{ $data-&gt;{corpus} // [] }) {
+</span><span class="">  425: 		push @{ $self-&gt;{corpus} }, {
+</span><span class="">  426: 			input    =&gt; $entry-&gt;{input},
+</span><span class="">  427: 			coverage =&gt; {},
+</span><span class="">  428: 		};
+</span><span class="">  429: 	}
+</span><span class="">  430: }
+</span><span class="">  431: 
+</span><span class="">  432: # --------------------------------------------------
+</span><span class="">  433: # _load_json_module
 </span><span class="">  434: #
-</span><span class="">  435: # Notes:      Uses explicit require rather than string
-</span><span class="">  436: #             eval for safety. JSON::MaybeXS is
-</span><span class="">  437: #             preferred over JSON.
-</span><span class="">  438: # --------------------------------------------------
-</span><span class="">  439: sub _load_json_module {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">440 → 440 → 448</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">440 → 440 → 0</span></span>  440: 	for my $mod (@JSON_MODULES) {
-</span><span class="">  441: 		# Convert package name to file path &acirc;&#128;&#148; require $var does not
-</span><span class="">  442: 		# do the :: -&gt; / conversion that bareword require does
-</span><span class="">  443: 		(my $file = $mod) =~ s{::}{/}g;
-</span><span class="">  444: 		$file .= &#39;.pm&#39;;
-</span><span class="">  445: 		my $ok = eval { require $file; 1 };
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  446: 		return $mod if $ok;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  447: 	}
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 448 → 448 → 0</span></span>  448: 	croak &#39;No JSON module available; install JSON or JSON::MaybeXS&#39;;
-</span><span class="">  449: }
-</span><span class="">  450: 
-</span><span class="">  451: # --------------------------------------------------
-</span><span class="">  452: # _run_one
-</span><span class="">  453: #
-</span><span class="">  454: # Run the target sub with a single input,
-</span><span class="">  455: #     record coverage, detect bugs, and update
-</span><span class="">  456: #     the corpus if the input is interesting.
-</span><span class="">  457: #
-</span><span class="">  458: # Entry:      $input - the value to pass to target_sub.
-</span><span class="">  459: #
-</span><span class="">  460: # Exit:       Returns nothing. Updates $self-&gt;{corpus},
-</span><span class="">  461: #             $self-&gt;{bugs}, and $self-&gt;{covered}.
+</span><span class="">  435: # Find and load the first available JSON
+</span><span class="">  436: #     module from the preference list.
+</span><span class="">  437: #
+</span><span class="">  438: # Entry:      None.
+</span><span class="">  439: # Exit:       Returns the name of the loaded module.
+</span><span class="">  440: #             Croaks if none are available.
+</span><span class="">  441: #
+</span><span class="">  442: # Side effects: Loads a JSON module into the process.
+</span><span class="">  443: #
+</span><span class="">  444: # Notes:      Uses explicit require rather than string
+</span><span class="">  445: #             eval for safety. JSON::MaybeXS is
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  446: #             preferred over JSON.
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  447: # --------------------------------------------------
+</span><span class="">  448: sub _load_json_module {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">449 → 449 → 457</span></span>  449: 	for my $mod (@JSON_MODULES) {
+</span><span class="">  450: 		# Convert package name to file path &acirc;&#128;&#148; require $var does not
+</span><span class="">  451: 		# do the :: -&gt; / conversion that bareword require does
+</span><span class="">  452: 		(my $file = $mod) =~ s{::}{/}g;
+</span><span class="">  453: 		$file .= &#39;.pm&#39;;
+</span><span class="">  454: 		my $ok = eval { require $file; 1 };
+</span><span class="">  455: 		return $mod if $ok;
+</span><span class="">  456: 	}
+</span><span class="">  457: 	croak &#39;No JSON module available; install JSON or JSON::MaybeXS&#39;;
+</span><span class="">  458: }
+</span><span class="">  459: 
+</span><span class="">  460: # --------------------------------------------------
+</span><span class="">  461: # _run_one
 </span><span class="">  462: #
-</span><span class="">  463: # Side effects: Calls target_sub. May update corpus
-</span><span class="">  464: #               and covered hashes.
-</span><span class="">  465: #
-</span><span class="">  466: # Notes:      When Devel::Cover is available, coverage
-</span><span class="">  467: #             is captured via _run_with_cover.
-</span><span class="">  468: #             Unexpected warnings are treated as soft
-</span><span class="">  469: #             bugs if they match known warning patterns.
-</span><span class="">  470: # --------------------------------------------------
-</span><span class="">  471: sub _run_one {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">472 → 476 → 504</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">472 → 476 → 0</span></span>  472: 	my ($self, $input) = @_;
-</span><span class="">  473: 
-</span><span class="">  474: 	my ($result, $error, $coverage);
-</span><span class="">  475: 
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  476: 	if($self-&gt;{_cover_available}) {
+</span><span class="">  463: # Run the target sub with a single input,
+</span><span class="">  464: #     record coverage, detect bugs, and update
+</span><span class="">  465: #     the corpus if the input is interesting.
+</span><span class="">  466: #
+</span><span class="">  467: # Entry:      $input - the value to pass to target_sub.
+</span><span class="">  468: #
+</span><span class="">  469: # Exit:       Returns nothing. Updates $self-&gt;{corpus},
+</span><span class="">  470: #             $self-&gt;{bugs}, and $self-&gt;{covered}.
+</span><span class="">  471: #
+</span><span class="">  472: # Side effects: Calls target_sub. May update corpus
+</span><span class="">  473: #               and covered hashes.
+</span><span class="">  474: #
+</span><span class="">  475: # Notes:      When Devel::Cover is available, coverage
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  476: #             is captured via _run_with_cover.
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
 				<li><b>COND_INV_476_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">  477: 		$coverage = $self-&gt;_run_with_cover($input, \$result, \$error);
-</span><span class="">  478: 	} else {
-</span><span class="">  479: 		$coverage = {};
-</span><span class="">  480: 
-</span><span class="">  481: 		# Include instance as invocant for method calls
-</span><span class="">  482: 		my @call_args = defined($self-&gt;{instance})
-</span><span class="">  483: 			? ($self-&gt;{instance}, $input)
-</span><span class="">  484: 			: ($input);
-</span><span class="">  485: 
-</span><span class="">  486: 		my @warnings;
-</span><span class="">  487: 		eval {
-</span><span class="">  488: 			local $SIG{__WARN__} = sub { push @warnings, @_ };
-</span><span class="">  489: 			local $SIG{__DIE__};
-</span><span class="">  490: 			$result = $self-&gt;{target_sub}-&gt;(@call_args);
-</span><span class="">  491: 		};
-</span><span class="">  492: 		$error = $@ if $@;
-</span><span class="">  493: 
-</span><span class="">  494: 		# Treat unexpected warnings matching known bad patterns as soft bugs
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  495: 		if(!defined($error) &amp;&amp; @warnings) {
+<span class="">  477: #             Unexpected warnings are treated as soft
+</span><span class="">  478: #             bugs if they match known warning patterns.
+</span><span class="">  479: # --------------------------------------------------
+</span><span class="">  480: sub _run_one {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">481 → 485 → 519</span></span>  481: 	my ($self, $input) = @_;
+</span><span class="">  482: 
+</span><span class="">  483: 	my ($result, $error, $coverage);
+</span><span class="">  484: 
+</span><span class="">  485: 	if($self-&gt;{_cover_available}) {
+</span><span class="">  486: 		$coverage = $self-&gt;_run_with_cover($input, \$result, \$error);
+</span><span class="">  487: 	} else {
+</span><span class="">  488: 		$coverage = {};
+</span><span class="">  489: 
+</span><span class="">  490: 		# Include instance as invocant for method calls
+</span><span class="">  491: 		my @call_args = defined($self-&gt;{instance})
+</span><span class="">  492: 			? ($self-&gt;{instance}, $input)
+</span><span class="">  493: 			: ($input);
+</span><span class="">  494: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  495: 		my @warnings;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
 				<li><b>COND_INV_495_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">  496: 			my $w = join &#39;&#39;, @warnings;
-</span><span class="">  497: 			$error = &quot;warning: $w&quot;
-</span><span class="">  498: 				if $w =~ /uninitialized|undefined|blessed|invalid/i;
-</span><span class="">  499: 		}
-</span><span class="">  500: 	}
-</span><span class="">  501: 
-</span><span class="">  502: 	# Record bugs &acirc;&#128;&#148; only when the input was valid per the schema.
-</span><span class="">  503: 	# A die on invalid input is correct behaviour, not a bug.
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">504 → 504 → 510</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">504 → 504 → 0</span></span>  504: 	if($error &amp;&amp; $self-&gt;_input_is_valid($input)) {
+<span class="">  496: 		eval {
+</span><span class="">  497: 			local $SIG{__WARN__} = sub { push @warnings, @_ };
+</span><span class="">  498: 			local $SIG{__DIE__};
+</span><span class="">  499: 			# A hanging target_sub call would otherwise hang the
+</span><span class="">  500: 			# whole fuzzing run &acirc;&#128;&#148; alarm() bounds it and surfaces
+</span><span class="">  501: 			# the timeout as a recorded bug instead.
+</span><span class="">  502: 			local $SIG{ALRM} = sub { die &quot;target_sub timed out after $self-&gt;{timeout}s\n&quot; };
+</span><span class="">  503: 			alarm($self-&gt;{timeout}) if $self-&gt;{timeout};
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  504: 			$result = $self-&gt;{target_sub}-&gt;(@call_args);
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
 				<li><b>COND_INV_504_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">  505: 		push @{ $self-&gt;{bugs} }, { input =&gt; $input, error =&gt; &quot;$error&quot; };
-</span><span class="">  506: 		$self-&gt;{stats}{bugs}++;
-</span><span class="">  507: 	}
+<span class="">  505: 		};
+</span><span class="">  506: 		alarm(0) if $self-&gt;{timeout};
+</span><span class="">  507: 		$error = $@ if $@;
 </span><span class="">  508: 
-</span><span class="">  509: 	# Keep the input in the corpus if it exercised new branches
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">510 → 510 → 0</span></span>  510: 	if($self-&gt;_is_interesting($coverage)) {
+</span><span class="">  509: 		# Treat unexpected warnings matching known bad patterns as soft bugs
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  510: 		if(!defined($error) &amp;&amp; @warnings) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
 				<li><b>COND_INV_510_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">  511: 		push @{ $self-&gt;{corpus} }, { input =&gt; $input, coverage =&gt; $coverage };
-</span><span class="">  512: 		$self-&gt;_update_covered($coverage);
-</span><span class="">  513: 		$self-&gt;{stats}{interesting}++;
-</span><span class="">  514: 	}
-</span><span class="">  515: }
+<span class="">  511: 			my $w = join &#39;&#39;, @warnings;
+</span><span class="">  512: 			$error = &quot;warning: $w&quot;
+</span><span class="">  513: 				if $w =~ /uninitialized|undefined|blessed|invalid/i;
+</span><span class="">  514: 		}
+</span><span class="">  515: 	}
 </span><span class="">  516: 
-</span><span class="">  517: # --------------------------------------------------
-</span><span class="">  518: # _run_with_cover
-</span><span class="">  519: #
-</span><span class="">  520: # Purpose:    Run the target sub with Devel::Cover
-</span><span class="">  521: #             active and return the set of newly hit
-</span><span class="">  522: #             branches as a hashref.
-</span><span class="">  523: #
-</span><span class="">  524: # Entry:      $input      - value to pass to target_sub.
-</span><span class="">  525: #             $result_ref - scalar ref to store result.
-</span><span class="">  526: #             $error_ref  - scalar ref to store error.
-</span><span class="">  527: #
-</span><span class="">  528: # Exit:       Returns a hashref of newly hit branch
-</span><span class="">  529: #             keys (&quot;file:line:branch&quot;).
-</span><span class="">  530: #
-</span><span class="">  531: # Side effects: Calls Devel::Cover::start/stop.
-</span><span class="">  532: #               Sets $$result_ref and $$error_ref.
-</span><span class="">  533: #
-</span><span class="">  534: # Notes:      Snapshot comparison is imprecise for
-</span><span class="">  535: #             concurrent use but correct for single-
-</span><span class="">  536: #             threaded fuzzing. Instance is passed
-</span><span class="">  537: #             as invocant when set.
-</span><span class="">  538: # --------------------------------------------------
-</span><span class="">  539: sub _run_with_cover {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">540 → 562 → 566</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">540 → 562 → 0</span></span>  540: 	my ($self, $input, $result_ref, $error_ref) = @_;
-</span><span class="">  541: 
-</span><span class="">  542: 	Devel::Cover::start() if Devel::Cover-&gt;can(&#39;start&#39;);
-</span><span class="">  543: 
-</span><span class="">  544: 	my %before = $self-&gt;_snapshot_cover();
-</span><span class="">  545: 
-</span><span class="">  546: 	# Include instance as invocant for method calls
-</span><span class="">  547: 	my @call_args = defined($self-&gt;{instance})
-</span><span class="">  548: 		? ($self-&gt;{instance}, $input)
-</span><span class="">  549: 		: ($input);
-</span><span class="">  550: 
-</span><span class="">  551: 	eval {
-</span><span class="">  552: 		local $SIG{__DIE__};
-</span><span class="">  553: 		$$result_ref = $self-&gt;{target_sub}-&gt;(@call_args);
-</span><span class="">  554: 	};
-</span><span class="">  555: 	$$error_ref = $@ if $@;
+</span><span class="">  517: 	# Record bugs &acirc;&#128;&#148; only when the input was valid per the schema.
+</span><span class="">  518: 	# A die on invalid input is correct behaviour, not a bug.
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">519 → 519 → 525</span></span>  519: 	if($error &amp;&amp; $self-&gt;_input_is_valid($input)) {
+</span><span class="">  520: 		push @{ $self-&gt;{bugs} }, { input =&gt; $input, error =&gt; &quot;$error&quot; };
+</span><span class="">  521: 		$self-&gt;{stats}{bugs}++;
+</span><span class="">  522: 	}
+</span><span class="">  523: 
+</span><span class="">  524: 	# Keep the input in the corpus if it exercised new branches
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">525 → 525 → 0</span></span>  525: 	if($self-&gt;_is_interesting($coverage)) {
+</span><span class="">  526: 		push @{ $self-&gt;{corpus} }, { input =&gt; $input, coverage =&gt; $coverage };
+</span><span class="">  527: 		$self-&gt;_update_covered($coverage);
+</span><span class="">  528: 		$self-&gt;{stats}{interesting}++;
+</span><span class="">  529: 	}
+</span><span class="">  530: }
+</span><span class="">  531: 
+</span><span class="">  532: # --------------------------------------------------
+</span><span class="">  533: # _run_with_cover
+</span><span class="">  534: #
+</span><span class="">  535: # Purpose:    Run the target sub with Devel::Cover
+</span><span class="">  536: #             active and return the set of newly hit
+</span><span class="">  537: #             branches as a hashref.
+</span><span class="">  538: #
+</span><span class="">  539: # Entry:      $input      - value to pass to target_sub.
+</span><span class="">  540: #             $result_ref - scalar ref to store result.
+</span><span class="">  541: #             $error_ref  - scalar ref to store error.
+</span><span class="">  542: #
+</span><span class="">  543: # Exit:       Returns a hashref of newly hit branch
+</span><span class="">  544: #             keys (&quot;file:line:branch&quot;).
+</span><span class="">  545: #
+</span><span class="">  546: # Side effects: Calls Devel::Cover::start/stop.
+</span><span class="">  547: #               Sets $$result_ref and $$error_ref.
+</span><span class="">  548: #
+</span><span class="">  549: # Notes:      Snapshot comparison is imprecise for
+</span><span class="">  550: #             concurrent use but correct for single-
+</span><span class="">  551: #             threaded fuzzing. Instance is passed
+</span><span class="">  552: #             as invocant when set.
+</span><span class="">  553: # --------------------------------------------------
+</span><span class="">  554: sub _run_with_cover {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">555 → 582 → 586</span></span>  555: 	my ($self, $input, $result_ref, $error_ref) = @_;
 </span><span class="">  556: 
-</span><span class="">  557: 	my %after = $self-&gt;_snapshot_cover();
-</span><span class="">  558: 	Devel::Cover::stop() if Devel::Cover-&gt;can(&#39;stop&#39;);
-</span><span class="">  559: 
-</span><span class="">  560: 	# Return only branches newly hit in this call
-</span><span class="">  561: 	my %delta;
-</span><span class="">  562: 	for my $key (keys %after) {
-</span><span class="">  563: 		$delta{$key} = 1 unless exists $before{$key};
-</span><span class="">  564: 	}
+</span><span class="">  557: 	Devel::Cover::start() if Devel::Cover-&gt;can(&#39;start&#39;);
+</span><span class="">  558: 
+</span><span class="">  559: 	my %before = $self-&gt;_snapshot_cover();
+</span><span class="">  560: 
+</span><span class="">  561: 	# Include instance as invocant for method calls
+</span><span class="">  562: 	my @call_args = defined($self-&gt;{instance})
+</span><span class="">  563: 		? ($self-&gt;{instance}, $input)
+</span><span class="">  564: 		: ($input);
 </span><span class="">  565: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">566 → 566 → 0</span></span>  566: 	return \%delta;
-</span><span class="">  567: }
-</span><span class="">  568: 
-</span><span class="">  569: # --------------------------------------------------
-</span><span class="">  570: # _snapshot_cover
-</span><span class="">  571: #
-</span><span class="">  572: # Purpose:    Take a lightweight snapshot of the
-</span><span class="">  573: #             currently hit branches from Devel::Cover.
-</span><span class="">  574: #
-</span><span class="">  575: # Entry:      None beyond $self.
-</span><span class="">  576: # Exit:       Returns a hash of &quot;file:line:branch&quot; keys.
-</span><span class="">  577: #
-</span><span class="">  578: # Side effects: Reads Devel::Cover internal state.
-</span><span class="">  579: #
-</span><span class="">  580: # Notes:      Falls back to empty hash if the
-</span><span class="">  581: #             Devel::Cover API is not accessible.
-</span><span class="">  582: #             All errors are silently swallowed since
-</span><span class="">  583: #             coverage is best-effort.
-</span><span class="">  584: # --------------------------------------------------
-</span><span class="">  585: sub _snapshot_cover {
-</span><span class="">  586: 	my ($self) = @_;
-</span><span class="">  587: 	my %snap;
+</span><span class="">  566: 	eval {
+</span><span class="">  567: 		local $SIG{__DIE__};
+</span><span class="">  568: 		# See _run_one() &acirc;&#128;&#148; bound the call so a hanging target_sub
+</span><span class="">  569: 		# cannot hang the whole fuzzing run.
+</span><span class="">  570: 		local $SIG{ALRM} = sub { die &quot;target_sub timed out after $self-&gt;{timeout}s\n&quot; };
+</span><span class="">  571: 		alarm($self-&gt;{timeout}) if $self-&gt;{timeout};
+</span><span class="">  572: 		$$result_ref = $self-&gt;{target_sub}-&gt;(@call_args);
+</span><span class="">  573: 	};
+</span><span class="">  574: 	alarm(0) if $self-&gt;{timeout};
+</span><span class="">  575: 	$$error_ref = $@ if $@;
+</span><span class="">  576: 
+</span><span class="">  577: 	my %after = $self-&gt;_snapshot_cover();
+</span><span class="">  578: 	Devel::Cover::stop() if Devel::Cover-&gt;can(&#39;stop&#39;);
+</span><span class="">  579: 
+</span><span class="">  580: 	# Return only branches newly hit in this call
+</span><span class="">  581: 	my %delta;
+</span><span class="">  582: 	for my $key (keys %after) {
+</span><span class="">  583: 		$delta{$key} = 1 unless exists $before{$key};
+</span><span class="">  584: 	}
+</span><span class="">  585: 
+</span><span class="">  586: 	return \%delta;
+</span><span class="">  587: }
 </span><span class="">  588: 
-</span><span class="">  589: 	eval {
-</span><span class="">  590: 		my $cover = Devel::Cover::get_coverage();
-</span><span class="">  591: 		return unless $cover;
-</span><span class="">  592: 
-</span><span class="">  593: 		for my $file (keys %{$cover}) {
-</span><span class="">  594: 			my $branch = $cover-&gt;{$file}{branch} or next;
-</span><span class="">  595: 			for my $line (keys %{$branch}) {
-</span><span class="">  596: 				for my $b (0 .. $#{ $branch-&gt;{$line} }) {
-</span><span class="">  597: 					$snap{&quot;$file:$line:$b&quot;} = 1
-</span><span class="">  598: 						if $branch-&gt;{$line}[$b];
-</span><span class="">  599: 				}
-</span><span class="">  600: 			}
-</span><span class="">  601: 		}
-</span><span class="">  602: 	};
-</span><span class="">  603: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  604: 	return %snap;
+</span><span class="">  589: # --------------------------------------------------
+</span><span class="">  590: # _snapshot_cover
+</span><span class="">  591: #
+</span><span class="">  592: # Purpose:    Take a lightweight snapshot of the
+</span><span class="">  593: #             currently hit branches from Devel::Cover.
+</span><span class="">  594: #
+</span><span class="">  595: # Entry:      None beyond $self.
+</span><span class="">  596: # Exit:       Returns a hash of &quot;file:line:branch&quot; keys.
+</span><span class="">  597: #
+</span><span class="">  598: # Side effects: Reads Devel::Cover internal state.
+</span><span class="">  599: #
+</span><span class="">  600: # Notes:      Falls back to empty hash if the
+</span><span class="">  601: #             Devel::Cover API is not accessible.
+</span><span class="">  602: #             All errors are silently swallowed since
+</span><span class="">  603: #             coverage is best-effort.
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  604: # --------------------------------------------------
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -975,35 +975,35 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  605: }
-</span><span class="">  606: 
-</span><span class="">  607: # --------------------------------------------------
-</span><span class="">  608: # _is_interesting
-</span><span class="">  609: #
-</span><span class="">  610: # Purpose:    Return true if the coverage hashref
-</span><span class="">  611: #             contains any branch not yet in the
-</span><span class="">  612: #             global covered set.
-</span><span class="">  613: #
-</span><span class="">  614: # Entry:      $coverage - hashref of branch keys.
-</span><span class="">  615: # Exit:       Returns 1 if interesting, 0 otherwise.
-</span><span class="">  616: #
-</span><span class="">  617: # Side effects: None.
-</span><span class="">  618: #
-</span><span class="">  619: # Notes:      When no coverage data is available,
-</span><span class="">  620: #             keeps a random sample of inputs at
-</span><span class="">  621: #             RANDOM_KEEP_RATIO so the corpus still
-</span><span class="">  622: #             grows even without branch feedback.
-</span><span class="">  623: # --------------------------------------------------
-</span><span class="">  624: sub _is_interesting {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">625 → 628 → 633</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">625 → 628 → 0</span></span>  625: 	my ($self, $coverage) = @_;
+<span class="">  605: sub _snapshot_cover {
+</span><span class="">  606: 	my ($self) = @_;
+</span><span class="">  607: 	my %snap;
+</span><span class="">  608: 
+</span><span class="">  609: 	eval {
+</span><span class="">  610: 		my $cover = Devel::Cover::get_coverage();
+</span><span class="">  611: 		return unless $cover;
+</span><span class="">  612: 
+</span><span class="">  613: 		for my $file (keys %{$cover}) {
+</span><span class="">  614: 			my $branch = $cover-&gt;{$file}{branch} or next;
+</span><span class="">  615: 			for my $line (keys %{$branch}) {
+</span><span class="">  616: 				for my $b (0 .. $#{ $branch-&gt;{$line} }) {
+</span><span class="">  617: 					$snap{&quot;$file:$line:$b&quot;} = 1
+</span><span class="">  618: 						if $branch-&gt;{$line}[$b];
+</span><span class="">  619: 				}
+</span><span class="">  620: 			}
+</span><span class="">  621: 		}
+</span><span class="">  622: 	};
+</span><span class="">  623: 
+</span><span class="">  624: 	return %snap;
+</span><span class="">  625: }
 </span><span class="">  626: 
-</span><span class="">  627: 	# Check for any newly covered branch
-</span><span class="">  628: 	for my $key (keys %{$coverage}) {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  629: 		return 1 unless $self-&gt;{covered}{$key};
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  630: 	}
-</span><span class="">  631: 
-</span><span class="">  632: 	# No coverage data &acirc;&#128;&#148; keep a random sample to grow the corpus
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">633 → 635 → 0</span></span>  633: 	return rand() &lt; $RANDOM_KEEP_RATIO unless %{$coverage};
+</span><span class="">  627: # --------------------------------------------------
+</span><span class="">  628: # _is_interesting
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  629: #
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  630: # Purpose:    Return true if the coverage hashref
+</span><span class="">  631: #             contains any branch not yet in the
+</span><span class="">  632: #             global covered set.
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  633: #
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
@@ -1033,38 +1033,38 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  634: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  635: 	return 0;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  636: }
-</span><span class="">  637: 
-</span><span class="">  638: # --------------------------------------------------
-</span><span class="">  639: # _update_covered
-</span><span class="">  640: #
-</span><span class="">  641: # Purpose:    Merge newly covered branches into the
-</span><span class="">  642: #             global covered set.
-</span><span class="">  643: #
-</span><span class="">  644: # Entry:      $coverage - hashref of branch keys.
-</span><span class="">  645: # Exit:       Returns nothing. Updates $self-&gt;{covered}.
-</span><span class="">  646: # Side effects: Modifies $self-&gt;{covered}.
-</span><span class="">  647: # --------------------------------------------------
-</span><span class="">  648: sub _update_covered {
-</span><span class="">  649: 	my ($self, $coverage) = @_;
-</span><span class="">  650: 	$self-&gt;{covered}{$_} = 1 for keys %{$coverage};
-</span><span class="">  651: }
-</span><span class="">  652: 
-</span><span class="">  653: # --------------------------------------------------
-</span><span class="">  654: # _generate_random
-</span><span class="">  655: #
-</span><span class="">  656: # Purpose:    Generate a random input value from the
-</span><span class="">  657: #             top-level schema input specification.
-</span><span class="">  658: #
-</span><span class="">  659: # Entry:      None beyond $self.
-</span><span class="">  660: # Exit:       Returns a randomly generated value.
-</span><span class="">  661: # Side effects: None.
-</span><span class="">  662: # --------------------------------------------------
-</span><span class="">  663: sub _generate_random {
-</span><span class="">  664: 	my ($self) = @_;
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  665: 	return $self-&gt;_generate_for_schema($self-&gt;{schema}{input});
+<span class="">  634: # Entry:      $coverage - hashref of branch keys.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  635: # Exit:       Returns 1 if interesting, 0 otherwise.
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  636: #
+</span><span class="">  637: # Side effects: None.
+</span><span class="">  638: #
+</span><span class="">  639: # Notes:      When no coverage data is available,
+</span><span class="">  640: #             keeps a random sample of inputs at
+</span><span class="">  641: #             RANDOM_KEEP_RATIO so the corpus still
+</span><span class="">  642: #             grows even without branch feedback.
+</span><span class="">  643: # --------------------------------------------------
+</span><span class="">  644: sub _is_interesting {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">645 → 648 → 653</span></span>  645: 	my ($self, $coverage) = @_;
+</span><span class="">  646: 
+</span><span class="">  647: 	# Check for any newly covered branch
+</span><span class="">  648: 	for my $key (keys %{$coverage}) {
+</span><span class="">  649: 		return 1 unless $self-&gt;{covered}{$key};
+</span><span class="">  650: 	}
+</span><span class="">  651: 
+</span><span class="">  652: 	# No coverage data &acirc;&#128;&#148; keep a random sample to grow the corpus
+</span><span class="">  653: 	return rand() &lt; $RANDOM_KEEP_RATIO unless %{$coverage};
+</span><span class="">  654: 
+</span><span class="">  655: 	return 0;
+</span><span class="">  656: }
+</span><span class="">  657: 
+</span><span class="">  658: # --------------------------------------------------
+</span><span class="">  659: # _update_covered
+</span><span class="">  660: #
+</span><span class="">  661: # Purpose:    Merge newly covered branches into the
+</span><span class="">  662: #             global covered set.
+</span><span class="">  663: #
+</span><span class="">  664: # Entry:      $coverage - hashref of branch keys.
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  665: # Exit:       Returns nothing. Updates $self-&gt;{covered}.
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1086,37 +1086,37 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  666: }
-</span><span class="">  667: 
-</span><span class="">  668: # --------------------------------------------------
-</span><span class="">  669: # _generate_for_schema
-</span><span class="">  670: #
-</span><span class="">  671: # Purpose:    Recursively generate a random value
-</span><span class="">  672: #             matching a schema specification hashref.
-</span><span class="">  673: #
-</span><span class="">  674: # Entry:      $spec - schema spec hashref or scalar
-</span><span class="">  675: #             type hint.
-</span><span class="">  676: #
-</span><span class="">  677: # Exit:       Returns a generated value appropriate
-</span><span class="">  678: #             for the spec type, or undef if spec is
-</span><span class="">  679: #             absent or &#39;undef&#39;.
-</span><span class="">  680: #
+<span class="">  666: # Side effects: Modifies $self-&gt;{covered}.
+</span><span class="">  667: # --------------------------------------------------
+</span><span class="">  668: sub _update_covered {
+</span><span class="">  669: 	my ($self, $coverage) = @_;
+</span><span class="">  670: 	$self-&gt;{covered}{$_} = 1 for keys %{$coverage};
+</span><span class="">  671: }
+</span><span class="">  672: 
+</span><span class="">  673: # --------------------------------------------------
+</span><span class="">  674: # _generate_random
+</span><span class="">  675: #
+</span><span class="">  676: # Purpose:    Generate a random input value from the
+</span><span class="">  677: #             top-level schema input specification.
+</span><span class="">  678: #
+</span><span class="">  679: # Entry:      None beyond $self.
+</span><span class="">  680: # Exit:       Returns a randomly generated value.
 </span><span class="">  681: # Side effects: None.
-</span><span class="">  682: #
-</span><span class="">  683: # Notes:      Edge cases declared in edge_case_array
-</span><span class="">  684: #             are selected at EDGE_CASE_RATIO frequency
-</span><span class="">  685: #             to bias toward known interesting values.
-</span><span class="">  686: # --------------------------------------------------
-</span><span class="">  687: sub _generate_for_schema {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">688 → 696 → 702</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">688 → 696 → 0</span></span>  688: 	my ($self, $spec) = @_;
-</span><span class="">  689: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  690: 	return undef unless defined $spec;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  691: 	return undef if $spec eq &#39;undef&#39;;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  692: 
-</span><span class="">  693: 	my $type = ref($spec) ? ($spec-&gt;{type} // $TYPE_STRING) : $TYPE_STRING;
-</span><span class="">  694: 
-</span><span class="">  695: 	# Bias toward declared edge cases at EDGE_CASE_RATIO frequency
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  696: 	if(ref($spec) &amp;&amp; $spec-&gt;{edge_case_array} &amp;&amp; rand() &lt; $EDGE_CASE_RATIO) {
+</span><span class="">  682: # --------------------------------------------------
+</span><span class="">  683: sub _generate_random {
+</span><span class="">  684: 	my ($self) = @_;
+</span><span class="">  685: 	return $self-&gt;_generate_for_schema($self-&gt;{schema}{input});
+</span><span class="">  686: }
+</span><span class="">  687: 
+</span><span class="">  688: # --------------------------------------------------
+</span><span class="">  689: # _generate_for_schema
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  690: #
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  691: # Purpose:    Recursively generate a random value
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  692: #             matching a schema specification hashref.
+</span><span class="">  693: #
+</span><span class="">  694: # Entry:      $spec - schema spec hashref or scalar
+</span><span class="">  695: #             type hint.
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  696: #
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 1, Survived: 3)</summary>
@@ -1146,13 +1146,13 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  697: 		my @ec = @{ $spec-&gt;{edge_case_array} };
-</span><span class="">  698: 		return $ec[ int(rand(@ec)) ];
-</span><span class="">  699: 	}
-</span><span class="">  700: 
-</span><span class="">  701: 	# Dispatch to type-specific generator
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">702 → 702 → 0</span></span>  702: 	if    ($type eq $TYPE_INTEGER) { return $self-&gt;_rand_int($spec)    }
-</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  703: 	elsif ($type eq $TYPE_NUMBER)  { return $self-&gt;_rand_num($spec)    }
+<span class="">  697: # Exit:       Returns a generated value appropriate
+</span><span class="">  698: #             for the spec type, or undef if spec is
+</span><span class="">  699: #             absent or &#39;undef&#39;.
+</span><span class="">  700: #
+</span><span class="">  701: # Side effects: None.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  702: #
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  703: # Notes:      Edge cases declared in edge_case_array
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1174,10 +1174,10 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  704: 	elsif ($type eq $TYPE_BOOLEAN) { return int(rand(2))               }
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  705: 	elsif ($type eq $TYPE_ARRAY)   { return $self-&gt;_rand_array($spec)  }
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  706: 	elsif ($type eq $TYPE_HASH)    { return $self-&gt;_rand_hash($spec)   }
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  707: 	else                           { return $self-&gt;_rand_string($spec) }
+<span class="">  704: #             are selected at EDGE_CASE_RATIO frequency
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  705: #             to bias toward known interesting values.
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  706: # --------------------------------------------------
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  707: sub _generate_for_schema {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1199,27 +1199,27 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  708: }
+<span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">708 → 716 → 722</span></span>  708: 	my ($self, $spec) = @_;
 </span><span class="">  709: 
-</span><span class="">  710: # --------------------------------------------------
-</span><span class="">  711: # _rand_int
-</span><span class="">  712: #
-</span><span class="">  713: # Purpose:    Generate a random integer within the
-</span><span class="">  714: #             spec&#39;s min/max range, biased toward
-</span><span class="">  715: #             boundary values at INT_BOUNDARY_RATIO.
-</span><span class="">  716: #
-</span><span class="">  717: # Entry:      $spec - schema spec hashref.
-</span><span class="">  718: # Exit:       Returns an integer scalar.
-</span><span class="">  719: # Side effects: None.
-</span><span class="">  720: # --------------------------------------------------
-</span><span class="">  721: sub _rand_int {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">722 → 728 → 733</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">722 → 728 → 0</span></span>  722: 	my ($self, $spec) = @_;
-</span><span class="">  723: 
-</span><span class="">  724: 	my $min = $spec-&gt;{min} // $INT32_MIN;
-</span><span class="">  725: 	my $max = $spec-&gt;{max} // $INT32_MAX;
-</span><span class="">  726: 
-</span><span class="">  727: 	# Bias toward boundary values to probe edge conditions
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  728: 	if(rand() &lt; $INT_BOUNDARY_RATIO) {
+</span><span class="">  710: 	return undef unless defined $spec;
+</span><span class="">  711: 	return undef if $spec eq &#39;undef&#39;;
+</span><span class="">  712: 
+</span><span class="">  713: 	my $type = ref($spec) ? ($spec-&gt;{type} // $TYPE_STRING) : $TYPE_STRING;
+</span><span class="">  714: 
+</span><span class="">  715: 	# Bias toward declared edge cases at EDGE_CASE_RATIO frequency
+</span><span class="">  716: 	if(ref($spec) &amp;&amp; $spec-&gt;{edge_case_array} &amp;&amp; rand() &lt; $EDGE_CASE_RATIO) {
+</span><span class="">  717: 		my @ec = @{ $spec-&gt;{edge_case_array} };
+</span><span class="">  718: 		return $ec[ int(rand(@ec)) ];
+</span><span class="">  719: 	}
+</span><span class="">  720: 
+</span><span class="">  721: 	# Dispatch to type-specific generator
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">722 → 722 → 0</span></span>  722: 	if    ($type eq $TYPE_INTEGER) { return $self-&gt;_rand_int($spec)    }
+</span><span class="">  723: 	elsif ($type eq $TYPE_NUMBER)  { return $self-&gt;_rand_num($spec)    }
+</span><span class="">  724: 	elsif ($type eq $TYPE_BOOLEAN) { return int(rand(2))               }
+</span><span class="">  725: 	elsif ($type eq $TYPE_ARRAY)   { return $self-&gt;_rand_array($spec)  }
+</span><span class="">  726: 	elsif ($type eq $TYPE_HASH)    { return $self-&gt;_rand_hash($spec)   }
+</span><span class="">  727: 	else                           { return $self-&gt;_rand_string($spec) }
+</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  728: }
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
@@ -1250,11 +1250,11 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 								</div>
 							</li><li><b>COND_INV_728_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">  729: 		my @interesting = ($min, $min + 1, 0, -1, 1, $max - 1, $max);
-</span><span class="">  730: 		return $interesting[ int(rand(@interesting)) ];
-</span><span class="">  731: 	}
-</span><span class="">  732: 
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">733 → 733 → 0</span></span>  733: 	return $min + int(rand($max - $min + 1));
+<span class="">  729: 
+</span><span class="">  730: # --------------------------------------------------
+</span><span class="">  731: # _rand_int
+</span><span class="">  732: #
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  733: # Purpose:    Generate a random integer within the
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1276,50 +1276,50 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  734: }
-</span><span class="">  735: 
-</span><span class="">  736: # --------------------------------------------------
-</span><span class="">  737: # _rand_num
-</span><span class="">  738: #
-</span><span class="">  739: # Purpose:    Generate a random floating point number
-</span><span class="">  740: #             within the spec&#39;s min/max range.
-</span><span class="">  741: #
-</span><span class="">  742: # Entry:      $spec - schema spec hashref.
-</span><span class="">  743: # Exit:       Returns a numeric scalar.
-</span><span class="">  744: # Side effects: None.
-</span><span class="">  745: # --------------------------------------------------
-</span><span class="">  746: sub _rand_num {
-</span><span class="">  747: 	my ($self, $spec) = @_;
-</span><span class="">  748: 
-</span><span class="">  749: 	my $min = $spec-&gt;{min} // -1e9;
-</span><span class="">  750: 	my $max = $spec-&gt;{max} //  1e9;
-</span><span class="">  751: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  752: 	return $min + rand($max - $min);
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  753: }
-</span><span class="">  754: 
-</span><span class="">  755: # --------------------------------------------------
-</span><span class="">  756: # _rand_string
-</span><span class="">  757: #
-</span><span class="">  758: # Purpose:    Generate a random string within the
-</span><span class="">  759: #             spec&#39;s min/max length range, biased
-</span><span class="">  760: #             toward boundary lengths.
+<span class="">  734: #             spec&#39;s min/max range, biased toward
+</span><span class="">  735: #             boundary values at INT_BOUNDARY_RATIO.
+</span><span class="">  736: #
+</span><span class="">  737: # Entry:      $spec - schema spec hashref.
+</span><span class="">  738: # Exit:       Returns an integer scalar.
+</span><span class="">  739: # Side effects: None.
+</span><span class="">  740: # --------------------------------------------------
+</span><span class="">  741: sub _rand_int {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">742 → 748 → 753</span></span>  742: 	my ($self, $spec) = @_;
+</span><span class="">  743: 
+</span><span class="">  744: 	my $min = $spec-&gt;{min} // $INT32_MIN;
+</span><span class="">  745: 	my $max = $spec-&gt;{max} // $INT32_MAX;
+</span><span class="">  746: 
+</span><span class="">  747: 	# Bias toward boundary values to probe edge conditions
+</span><span class="">  748: 	if(rand() &lt; $INT_BOUNDARY_RATIO) {
+</span><span class="">  749: 		my @interesting = ($min, $min + 1, 0, -1, 1, $max - 1, $max);
+</span><span class="">  750: 		return $interesting[ int(rand(@interesting)) ];
+</span><span class="">  751: 	}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  752: 
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  753: 	return $min + int(rand($max - $min + 1));
+</span><span class="">  754: }
+</span><span class="">  755: 
+</span><span class="">  756: # --------------------------------------------------
+</span><span class="">  757: # _rand_num
+</span><span class="">  758: #
+</span><span class="">  759: # Purpose:    Generate a random floating point number
+</span><span class="">  760: #             within the spec&#39;s min/max range.
 </span><span class="">  761: #
 </span><span class="">  762: # Entry:      $spec - schema spec hashref.
-</span><span class="">  763: # Exit:       Returns a string scalar.
+</span><span class="">  763: # Exit:       Returns a numeric scalar.
 </span><span class="">  764: # Side effects: None.
-</span><span class="">  765: #
-</span><span class="">  766: # Notes:      Character set includes control chars
-</span><span class="">  767: #             and NUL to probe boundary handling.
-</span><span class="">  768: # --------------------------------------------------
-</span><span class="">  769: sub _rand_string {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">770 → 777 → 785</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">770 → 777 → 0</span></span>  770: 	my ($self, $spec) = @_;
+</span><span class="">  765: # --------------------------------------------------
+</span><span class="">  766: sub _rand_num {
+</span><span class="">  767: 	my ($self, $spec) = @_;
+</span><span class="">  768: 
+</span><span class="">  769: 	my $min = $spec-&gt;{min} // -1e9;
+</span><span class="">  770: 	my $max = $spec-&gt;{max} //  1e9;
 </span><span class="">  771: 
-</span><span class="">  772: 	my $min_len = $spec-&gt;{min} // 0;
-</span><span class="">  773: 	my $max_len = $spec-&gt;{max} // $DEFAULT_MAX_STR_LEN;
+</span><span class="">  772: 	return $min + rand($max - $min);
+</span><span class="">  773: }
 </span><span class="">  774: 
-</span><span class="">  775: 	# Bias toward boundary lengths at STR_BOUNDARY_RATIO frequency
-</span><span class="">  776: 	my $len;
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch.">  777: 	if(rand() &lt; $STR_BOUNDARY_RATIO) {
+</span><span class="">  775: # --------------------------------------------------
+</span><span class="">  776: # _rand_string
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch.">  777: #
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
@@ -1350,14 +1350,14 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 								</div>
 							</li><li><b>COND_INV_777_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">  778: 		my @boundary_lens = ($min_len, $min_len + 1, $max_len - 1, $max_len);
-</span><span class="">  779: 		$len = $boundary_lens[ int(rand(@boundary_lens)) ];
-</span><span class="">  780: 	} else {
-</span><span class="">  781: 		$len = $min_len + int(rand($max_len - $min_len + 1));
-</span><span class="">  782: 	}
-</span><span class="">  783: 
-</span><span class="">  784: 	# Clamp to non-negative
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">785 → 788 → 0</span></span>  785: 	$len = 0 if $len &lt; 0;
+<span class="">  778: # Purpose:    Generate a random string within the
+</span><span class="">  779: #             spec&#39;s min/max length range, biased
+</span><span class="">  780: #             toward boundary lengths.
+</span><span class="">  781: #
+</span><span class="">  782: # Entry:      $spec - schema spec hashref.
+</span><span class="">  783: # Exit:       Returns a string scalar.
+</span><span class="">  784: # Side effects: None.
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  785: #
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
@@ -1387,156 +1387,156 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  786: 
-</span><span class="">  787: 	my @chars = (&#39;a&#39;..&#39;z&#39;, &#39;A&#39;..&#39;Z&#39;, &#39;0&#39;..&#39;9&#39;, &#39; &#39;, &quot;\t&quot;, &quot;\n&quot;, &quot;\0&quot;);
-</span><span class="">  788: 	return join &#39;&#39;, map { $chars[ int(rand(@chars)) ] } 1 .. $len;
-</span><span class="">  789: }
-</span><span class="">  790: 
-</span><span class="">  791: # --------------------------------------------------
-</span><span class="">  792: # _rand_array
-</span><span class="">  793: #
-</span><span class="">  794: # Purpose:    Generate a random arrayref with 0 to
-</span><span class="">  795: #             DEFAULT_MAX_ARRAY elements, each
-</span><span class="">  796: #             generated from the items spec.
-</span><span class="">  797: #
-</span><span class="">  798: # Entry:      $spec - schema spec hashref.
-</span><span class="">  799: # Exit:       Returns an arrayref.
-</span><span class="">  800: # Side effects: None.
-</span><span class="">  801: # --------------------------------------------------
-</span><span class="">  802: sub _rand_array {
-</span><span class="">  803: 	my ($self, $spec) = @_;
-</span><span class="">  804: 
-</span><span class="">  805: 	my $items = $spec-&gt;{items} // {};
-</span><span class="">  806: 	my $count = int(rand($DEFAULT_MAX_ARRAY + 1));
-</span><span class="">  807: 
-</span><span class="">  808: 	return [ map { $self-&gt;_generate_for_schema($items) } 1 .. $count ];
+<span class="">  786: # Notes:      Character set includes control chars
+</span><span class="">  787: #             and NUL to probe boundary handling.
+</span><span class="">  788: # --------------------------------------------------
+</span><span class="">  789: sub _rand_string {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">790 → 797 → 805</span></span>  790: 	my ($self, $spec) = @_;
+</span><span class="">  791: 
+</span><span class="">  792: 	my $min_len = $spec-&gt;{min} // 0;
+</span><span class="">  793: 	my $max_len = $spec-&gt;{max} // $DEFAULT_MAX_STR_LEN;
+</span><span class="">  794: 
+</span><span class="">  795: 	# Bias toward boundary lengths at STR_BOUNDARY_RATIO frequency
+</span><span class="">  796: 	my $len;
+</span><span class="">  797: 	if(rand() &lt; $STR_BOUNDARY_RATIO) {
+</span><span class="">  798: 		my @boundary_lens = ($min_len, $min_len + 1, $max_len - 1, $max_len);
+</span><span class="">  799: 		$len = $boundary_lens[ int(rand(@boundary_lens)) ];
+</span><span class="">  800: 	} else {
+</span><span class="">  801: 		$len = $min_len + int(rand($max_len - $min_len + 1));
+</span><span class="">  802: 	}
+</span><span class="">  803: 
+</span><span class="">  804: 	# Clamp to non-negative
+</span><span class="">  805: 	$len = 0 if $len &lt; 0;
+</span><span class="">  806: 
+</span><span class="">  807: 	my @chars = (&#39;a&#39;..&#39;z&#39;, &#39;A&#39;..&#39;Z&#39;, &#39;0&#39;..&#39;9&#39;, &#39; &#39;, &quot;\t&quot;, &quot;\n&quot;, &quot;\0&quot;);
+</span><span class="">  808: 	return join &#39;&#39;, map { $chars[ int(rand(@chars)) ] } 1 .. $len;
 </span><span class="">  809: }
 </span><span class="">  810: 
 </span><span class="">  811: # --------------------------------------------------
-</span><span class="">  812: # _rand_hash
+</span><span class="">  812: # _rand_array
 </span><span class="">  813: #
-</span><span class="">  814: # Purpose:    Generate a random hashref with values
-</span><span class="">  815: #             generated from the properties spec.
-</span><span class="">  816: #
-</span><span class="">  817: # Entry:      $spec - schema spec hashref.
-</span><span class="">  818: # Exit:       Returns a hashref.
-</span><span class="">  819: # Side effects: None.
-</span><span class="">  820: # --------------------------------------------------
-</span><span class="">  821: sub _rand_hash {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">822 → 827 → 831</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">822 → 827 → 0</span></span>  822: 	my ($self, $spec) = @_;
-</span><span class="">  823: 
-</span><span class="">  824: 	my $props = $spec-&gt;{properties} // {};
-</span><span class="">  825: 	my %h;
-</span><span class="">  826: 
-</span><span class="">  827: 	for my $key (keys %{$props}) {
-</span><span class="">  828: 		$h{$key} = $self-&gt;_generate_for_schema($props-&gt;{$key});
-</span><span class="">  829: 	}
+</span><span class="">  814: # Purpose:    Generate a random arrayref with 0 to
+</span><span class="">  815: #             DEFAULT_MAX_ARRAY elements, each
+</span><span class="">  816: #             generated from the items spec.
+</span><span class="">  817: #
+</span><span class="">  818: # Entry:      $spec - schema spec hashref.
+</span><span class="">  819: # Exit:       Returns an arrayref.
+</span><span class="">  820: # Side effects: None.
+</span><span class="">  821: # --------------------------------------------------
+</span><span class="">  822: sub _rand_array {
+</span><span class="">  823: 	my ($self, $spec) = @_;
+</span><span class="">  824: 
+</span><span class="">  825: 	my $items = $spec-&gt;{items} // {};
+</span><span class="">  826: 	my $count = int(rand($DEFAULT_MAX_ARRAY + 1));
+</span><span class="">  827: 
+</span><span class="">  828: 	return [ map { $self-&gt;_generate_for_schema($items) } 1 .. $count ];
+</span><span class="">  829: }
 </span><span class="">  830: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">831 → 831 → 0</span></span>  831: 	return \%h;
-</span><span class="">  832: }
-</span><span class="">  833: 
-</span><span class="">  834: # --------------------------------------------------
-</span><span class="">  835: # _input_is_valid
+</span><span class="">  831: # --------------------------------------------------
+</span><span class="">  832: # _rand_hash
+</span><span class="">  833: #
+</span><span class="">  834: # Purpose:    Generate a random hashref with values
+</span><span class="">  835: #             generated from the properties spec.
 </span><span class="">  836: #
-</span><span class="">  837: # Purpose:    Return true if the input satisfies all
-</span><span class="">  838: #             constraints in the schema. Used to
-</span><span class="">  839: #             distinguish real bugs (die on valid
-</span><span class="">  840: #             input) from expected failures (die on
-</span><span class="">  841: #             invalid input).
-</span><span class="">  842: #
-</span><span class="">  843: # Entry:      $input - the value to validate.
-</span><span class="">  844: # Exit:       Returns 1 if valid, 0 if not.
-</span><span class="">  845: #             Returns 1 if no schema is available.
-</span><span class="">  846: # Side effects: None.
-</span><span class="">  847: # --------------------------------------------------
-</span><span class="">  848: sub _input_is_valid {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">849 → 858 → 862</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">849 → 858 → 0</span></span>  849: 	my ($self, $input) = @_;
+</span><span class="">  837: # Entry:      $spec - schema spec hashref.
+</span><span class="">  838: # Exit:       Returns a hashref.
+</span><span class="">  839: # Side effects: None.
+</span><span class="">  840: # --------------------------------------------------
+</span><span class="">  841: sub _rand_hash {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">842 → 847 → 851</span></span>  842: 	my ($self, $spec) = @_;
+</span><span class="">  843: 
+</span><span class="">  844: 	my $props = $spec-&gt;{properties} // {};
+</span><span class="">  845: 	my %h;
+</span><span class="">  846: 
+</span><span class="">  847: 	for my $key (keys %{$props}) {
+</span><span class="">  848: 		$h{$key} = $self-&gt;_generate_for_schema($props-&gt;{$key});
+</span><span class="">  849: 	}
 </span><span class="">  850: 
-</span><span class="">  851: 	my $spec = $self-&gt;{schema}{input};
-</span><span class="">  852: 
-</span><span class="">  853: 	# No schema means we cannot judge validity
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  854: 	return 1 unless defined $spec &amp;&amp; ref($spec);
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  855: 
-</span><span class="">  856: 	my $input_style = $self-&gt;{schema}{input_style} // &#39;&#39;;
-</span><span class="">  857: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  858: 	if($input_style eq &#39;hash&#39; || ref($input) eq &#39;HASH&#39;) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  859: 		return $self-&gt;_validate_hash_input($input, $spec);
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  860: 	}
-</span><span class="">  861: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">862 → 862 → 0</span></span>  862: 	return $self-&gt;_validate_value($input, $spec);
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  863: }
-</span><span class="">  864: 
-</span><span class="">  865: # --------------------------------------------------
-</span><span class="">  866: # _validate_hash_input
-</span><span class="">  867: #
-</span><span class="">  868: # Purpose:    Validate a hash-style input against the
-</span><span class="">  869: #             schema spec, checking each named field.
-</span><span class="">  870: #
-</span><span class="">  871: # Entry:      $input - hashref of named parameters.
-</span><span class="">  872: #             $spec  - schema spec hashref.
-</span><span class="">  873: # Exit:       Returns 1 if valid, 0 if not.
-</span><span class="">  874: # Side effects: None.
-</span><span class="">  875: # --------------------------------------------------
-</span><span class="">  876: sub _validate_hash_input {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">877 → 881 → 900</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">877 → 881 → 0</span></span>  877: 	my ($self, $input, $spec) = @_;
-</span><span class="">  878: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  879: 	return 0 unless defined $input;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  880: 
-</span><span class="">  881: 	for my $key (keys %{$spec}) {
-</span><span class="">  882: 		# Skip internal metadata keys
-</span><span class="">  883: 		next if $key =~ /^_/;
+</span><span class="">  851: 	return \%h;
+</span><span class="">  852: }
+</span><span class="">  853: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  854: # --------------------------------------------------
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  855: # _input_is_valid
+</span><span class="">  856: #
+</span><span class="">  857: # Purpose:    Return true if the input satisfies all
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  858: #             constraints in the schema. Used to
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  859: #             distinguish real bugs (die on valid
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  860: #             input) from expected failures (die on
+</span><span class="">  861: #             invalid input).
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  862: #
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  863: # Entry:      $input - the value to validate.
+</span><span class="">  864: # Exit:       Returns 1 if valid, 0 if not.
+</span><span class="">  865: #             Returns 1 if no schema is available.
+</span><span class="">  866: # Side effects: None.
+</span><span class="">  867: # --------------------------------------------------
+</span><span class="">  868: sub _input_is_valid {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">869 → 878 → 882</span></span>  869: 	my ($self, $input) = @_;
+</span><span class="">  870: 
+</span><span class="">  871: 	my $spec = $self-&gt;{schema}{input};
+</span><span class="">  872: 
+</span><span class="">  873: 	# No schema means we cannot judge validity
+</span><span class="">  874: 	return 1 unless defined $spec &amp;&amp; ref($spec);
+</span><span class="">  875: 
+</span><span class="">  876: 	my $input_style = $self-&gt;{schema}{input_style} // &#39;&#39;;
+</span><span class="">  877: 
+</span><span class="">  878: 	if($input_style eq &#39;hash&#39; || ref($input) eq &#39;HASH&#39;) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  879: 		return $self-&gt;_validate_hash_input($input, $spec);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  880: 	}
+</span><span class="">  881: 
+</span><span class="">  882: 	return $self-&gt;_validate_value($input, $spec);
+</span><span class="">  883: }
 </span><span class="">  884: 
-</span><span class="">  885: 		my $field_spec = $spec-&gt;{$key};
-</span><span class="">  886: 		next unless ref($field_spec) eq &#39;HASH&#39;;
-</span><span class="">  887: 
-</span><span class="">  888: 		my $value = ref($input) eq &#39;HASH&#39; ? $input-&gt;{$key} : undef;
-</span><span class="">  889: 
-</span><span class="">  890: 		# Required field missing is always invalid
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  891: 		if(!defined($value) &amp;&amp; !$field_spec-&gt;{optional}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  892: 			return 0;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  893: 		}
-</span><span class="">  894: 
-</span><span class="">  895: 		next unless defined $value;
-</span><span class="">  896: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  897: 		return 0 unless $self-&gt;_validate_value($value, $field_spec);
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  898: 	}
-</span><span class="">  899: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">900 → 900 → 0</span></span>  900: 	return 1;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  901: }
-</span><span class="">  902: 
-</span><span class="">  903: # --------------------------------------------------
-</span><span class="">  904: # _validate_value
-</span><span class="">  905: #
-</span><span class="">  906: # Purpose:    Validate a single value against a schema
-</span><span class="">  907: #             type spec, checking type and constraints.
-</span><span class="">  908: #
-</span><span class="">  909: # Entry:      $value - the value to validate.
-</span><span class="">  910: #             $spec  - schema spec hashref.
-</span><span class="">  911: # Exit:       Returns 1 if valid, 0 if not.
-</span><span class="">  912: # Side effects: None.
-</span><span class="">  913: #
-</span><span class="">  914: # Notes:      Number validation accepts both integer
-</span><span class="">  915: #             and floating point forms including
-</span><span class="">  916: #             scientific notation. Type mismatch
-</span><span class="">  917: #             always returns 0.
-</span><span class="">  918: # --------------------------------------------------
-</span><span class="">  919: sub _validate_value {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">920 → 927 → 957</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">920 → 927 → 0</span></span>  920: 	my ($self, $value, $spec) = @_;
-</span><span class="">  921: 
-</span><span class="">  922: 	# Undef is never valid unless optional &acirc;&#128;&#148; caller already checked optional
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  923: 	return 0 unless defined $value;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  924: 
-</span><span class="">  925: 	my $type = $spec-&gt;{type} // $TYPE_STRING;
-</span><span class="">  926: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  927: 	if($type eq $TYPE_INTEGER) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  928: 		return 0 unless $value =~ /^-?\d+$/;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  929: 		return 0 if defined($spec-&gt;{min}) &amp;&amp; $value &lt; $spec-&gt;{min};
-</span><p> <b> Mutants (Total: 5, Killed: 5, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  930: 		return 0 if defined($spec-&gt;{max}) &amp;&amp; $value &gt; $spec-&gt;{max};
-</span><p> <b> Mutants (Total: 5, Killed: 5, Survived: 0)</b><p><span class="">  931: 	}
-</span><span class="">  932: 	elsif($type eq $TYPE_NUMBER) {
-</span><span class="">  933: 		# Accept integers, decimals, and scientific notation
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  934: 		return 0 unless $value =~ /^-?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  935: 		return 0 if defined($spec-&gt;{min}) &amp;&amp; $value &lt; $spec-&gt;{min};
+</span><span class="">  885: # --------------------------------------------------
+</span><span class="">  886: # _validate_hash_input
+</span><span class="">  887: #
+</span><span class="">  888: # Purpose:    Validate a hash-style input against the
+</span><span class="">  889: #             schema spec, checking each named field.
+</span><span class="">  890: #
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  891: # Entry:      $input - hashref of named parameters.
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  892: #             $spec  - schema spec hashref.
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  893: # Exit:       Returns 1 if valid, 0 if not.
+</span><span class="">  894: # Side effects: None.
+</span><span class="">  895: # --------------------------------------------------
+</span><span class="">  896: sub _validate_hash_input {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">897 → 901 → 920</span></span>  897: 	my ($self, $input, $spec) = @_;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  898: 
+</span><span class="">  899: 	return 0 unless defined $input;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  900: 
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  901: 	for my $key (keys %{$spec}) {
+</span><span class="">  902: 		# Skip internal metadata keys
+</span><span class="">  903: 		next if $key =~ /^_/;
+</span><span class="">  904: 
+</span><span class="">  905: 		my $field_spec = $spec-&gt;{$key};
+</span><span class="">  906: 		next unless ref($field_spec) eq &#39;HASH&#39;;
+</span><span class="">  907: 
+</span><span class="">  908: 		my $value = ref($input) eq &#39;HASH&#39; ? $input-&gt;{$key} : undef;
+</span><span class="">  909: 
+</span><span class="">  910: 		# Required field missing is always invalid
+</span><span class="">  911: 		if(!defined($value) &amp;&amp; !$field_spec-&gt;{optional}) {
+</span><span class="">  912: 			return 0;
+</span><span class="">  913: 		}
+</span><span class="">  914: 
+</span><span class="">  915: 		next unless defined $value;
+</span><span class="">  916: 
+</span><span class="">  917: 		return 0 unless $self-&gt;_validate_value($value, $field_spec);
+</span><span class="">  918: 	}
+</span><span class="">  919: 
+</span><span class="">  920: 	return 1;
+</span><span class="">  921: }
+</span><span class="">  922: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  923: # --------------------------------------------------
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  924: # _validate_value
+</span><span class="">  925: #
+</span><span class="">  926: # Purpose:    Validate a single value against a schema
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  927: #             type spec, checking type and constraints.
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  928: #
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  929: # Entry:      $value - the value to validate.
+</span><p> <b> Mutants (Total: 5, Killed: 5, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  930: #             $spec  - schema spec hashref.
+</span><p> <b> Mutants (Total: 5, Killed: 5, Survived: 0)</b><p><span class="">  931: # Exit:       Returns 1 if valid, 0 if not.
+</span><span class="">  932: # Side effects: None.
+</span><span class="">  933: #
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  934: # Notes:      Number validation accepts both integer
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  935: #             and floating point forms including
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -1582,7 +1582,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  936: 		return 0 if defined($spec-&gt;{max}) &amp;&amp; $value &gt; $spec-&gt;{max};
+<span class="survived-3 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Boolean logic mutation survived. Add tests covering both true and false paths.">  936: #             scientific notation. Type mismatch
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -1628,51 +1628,51 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  937: 	}
-</span><span class="">  938: 	elsif($type eq $TYPE_STRING) {
-</span><span class="">  939: 		my $len = length($value);
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  940: 		return 0 if defined($spec-&gt;{min}) &amp;&amp; $len &lt; $spec-&gt;{min};
-</span><p> <b> Mutants (Total: 5, Killed: 5, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  941: 		return 0 if defined($spec-&gt;{max}) &amp;&amp; $len &gt; $spec-&gt;{max};
-</span><p> <b> Mutants (Total: 5, Killed: 5, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  942: 		if(defined($spec-&gt;{matches})) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  943: 			(my $pat = $spec-&gt;{matches}) =~ s{^/(.+)/$}{$1};
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  944: 			return 0 unless $value =~ /$pat/;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  945: 		}
-</span><span class="">  946: 	}
-</span><span class="">  947: 	elsif($type eq $TYPE_BOOLEAN) {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  948: 		return 0 unless $value =~ /^[01]$/;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  949: 	}
-</span><span class="">  950: 	elsif($type eq $TYPE_ARRAY || $type eq &#39;array&#39;) {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  951: 		return 0 unless ref($value) eq &#39;ARRAY&#39;;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  952: 	}
-</span><span class="">  953: 	elsif($type eq $TYPE_HASH || $type eq &#39;hash&#39;) {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  954: 		return 0 unless ref($value) eq &#39;HASH&#39;;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  955: 	}
-</span><span class="">  956: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">957 → 957 → 0</span></span>  957: 	return 1;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  958: }
-</span><span class="">  959: 
-</span><span class="">  960: # --------------------------------------------------
-</span><span class="">  961: # _mutate
-</span><span class="">  962: #
-</span><span class="">  963: # Purpose:    Apply a random mutation to an input
-</span><span class="">  964: #             value, dispatching on its type.
-</span><span class="">  965: #
-</span><span class="">  966: # Entry:      $input - the value to mutate.
-</span><span class="">  967: # Exit:       Returns a mutated copy of the input.
-</span><span class="">  968: # Side effects: None.
-</span><span class="">  969: #
-</span><span class="">  970: # Notes:      Blessed references are passed through
-</span><span class="">  971: #             unchanged. Undef is replaced with a
-</span><span class="">  972: #             freshly generated random value.
-</span><span class="">  973: # --------------------------------------------------
-</span><span class="">  974: sub _mutate {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">975 → 979 → 1001</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">975 → 979 → 0</span></span>  975: 	my ($self, $input) = @_;
+<span class="">  937: #             always returns 0.
+</span><span class="">  938: # --------------------------------------------------
+</span><span class="">  939: sub _validate_value {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">940 → 947 → 977</span></span>  940: 	my ($self, $value, $spec) = @_;
+</span><p> <b> Mutants (Total: 5, Killed: 5, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  941: 
+</span><p> <b> Mutants (Total: 5, Killed: 5, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  942: 	# Undef is never valid unless optional &acirc;&#128;&#148; caller already checked optional
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  943: 	return 0 unless defined $value;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  944: 
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  945: 	my $type = $spec-&gt;{type} // $TYPE_STRING;
+</span><span class="">  946: 
+</span><span class="">  947: 	if($type eq $TYPE_INTEGER) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  948: 		return 0 unless $value =~ /^-?\d+$/;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  949: 		return 0 if defined($spec-&gt;{min}) &amp;&amp; $value &lt; $spec-&gt;{min};
+</span><span class="">  950: 		return 0 if defined($spec-&gt;{max}) &amp;&amp; $value &gt; $spec-&gt;{max};
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  951: 	}
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  952: 	elsif($type eq $TYPE_NUMBER) {
+</span><span class="">  953: 		# Accept integers, decimals, and scientific notation
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  954: 		return 0 unless $value =~ /^-?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  955: 		return 0 if defined($spec-&gt;{min}) &amp;&amp; $value &lt; $spec-&gt;{min};
+</span><span class="">  956: 		return 0 if defined($spec-&gt;{max}) &amp;&amp; $value &gt; $spec-&gt;{max};
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  957: 	}
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  958: 	elsif($type eq $TYPE_STRING) {
+</span><span class="">  959: 		my $len = length($value);
+</span><span class="">  960: 		return 0 if defined($spec-&gt;{min}) &amp;&amp; $len &lt; $spec-&gt;{min};
+</span><span class="">  961: 		return 0 if defined($spec-&gt;{max}) &amp;&amp; $len &gt; $spec-&gt;{max};
+</span><span class="">  962: 		if(defined($spec-&gt;{matches})) {
+</span><span class="">  963: 			(my $pat = $spec-&gt;{matches}) =~ s{^/(.+)/$}{$1};
+</span><span class="">  964: 			return 0 unless $value =~ /$pat/;
+</span><span class="">  965: 		}
+</span><span class="">  966: 	}
+</span><span class="">  967: 	elsif($type eq $TYPE_BOOLEAN) {
+</span><span class="">  968: 		return 0 unless $value =~ /^[01]$/;
+</span><span class="">  969: 	}
+</span><span class="">  970: 	elsif($type eq $TYPE_ARRAY || $type eq &#39;array&#39;) {
+</span><span class="">  971: 		return 0 unless ref($value) eq &#39;ARRAY&#39;;
+</span><span class="">  972: 	}
+</span><span class="">  973: 	elsif($type eq $TYPE_HASH || $type eq &#39;hash&#39;) {
+</span><span class="">  974: 		return 0 unless ref($value) eq &#39;HASH&#39;;
+</span><span class="">  975: 	}
 </span><span class="">  976: 
-</span><span class="">  977: 	my $type = ref($input);
-</span><span class="">  978: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  979: 	if(!defined $input) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  980: 		# Replace undef with a fresh random value
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  981: 		return $self-&gt;_generate_random();
+</span><span class="">  977: 	return 1;
+</span><span class="">  978: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  979: 
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  980: # --------------------------------------------------
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  981: # _mutate
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1694,17 +1694,17 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  982: 	}
-</span><span class="">  983: 	elsif(!$type) {
-</span><span class="">  984: 		# Dispatch scalar mutation based on apparent type
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  985: 		if($input =~ /^-?\d+$/) {
+<span class="">  982: #
+</span><span class="">  983: # Purpose:    Apply a random mutation to an input
+</span><span class="">  984: #             value, dispatching on its type.
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  985: #
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
 				<li><b>COND_INV_985_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  986: 			return $self-&gt;_mutate_int($input);
+<span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  986: # Entry:      $input - the value to mutate.
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1726,8 +1726,8 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  987: 		} elsif($input =~ /^-?[\d.]+$/) {
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  988: 			return $self-&gt;_mutate_num($input);
+<span class="">  987: # Exit:       Returns a mutated copy of the input.
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  988: # Side effects: None.
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1749,8 +1749,8 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  989: 		} else {
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  990: 			return $self-&gt;_mutate_string($input);
+<span class="">  989: #
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  990: # Notes:      Blessed references are passed through
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1772,37 +1772,37 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  991: 		}
-</span><span class="">  992: 	}
-</span><span class="">  993: 	elsif($type eq &#39;ARRAY&#39;) {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  994: 		return $self-&gt;_mutate_array($input);
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  995: 	}
-</span><span class="">  996: 	elsif($type eq &#39;HASH&#39;) {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  997: 		return $self-&gt;_mutate_hash($input);
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  998: 	}
-</span><span class="">  999: 
-</span><span class=""> 1000: 	# Blessed refs and other types pass through unchanged
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1001 → 1001 → 0</span></span> 1001: 	return $input;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 1002: }
-</span><span class=""> 1003: 
-</span><span class=""> 1004: # --------------------------------------------------
-</span><span class=""> 1005: # _mutate_int
-</span><span class=""> 1006: #
-</span><span class=""> 1007: # Purpose:    Apply a random arithmetic mutation to
-</span><span class=""> 1008: #             an integer value.
-</span><span class=""> 1009: #
-</span><span class=""> 1010: # Entry:      $n - the integer to mutate.
-</span><span class=""> 1011: # Exit:       Returns a mutated integer.
-</span><span class=""> 1012: # Side effects: None.
-</span><span class=""> 1013: # --------------------------------------------------
-</span><span class=""> 1014: sub _mutate_int {
-</span><span class=""> 1015: 	my ($self, $n) = @_;
-</span><span class=""> 1016: 
-</span><span class=""> 1017: 	my @ops = (
-</span><span class=""> 1018: 		sub { $n + 1              },
-</span><span class=""> 1019: 		sub { $n - 1              },
-</span><span class=""> 1020: 		sub { $n * 2              },
-</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 1021: 		sub { $n == 0 ? 1 : int($n / 2) },
+<span class="">  991: #             unchanged. Undef is replaced with a
+</span><span class="">  992: #             freshly generated random value.
+</span><span class="">  993: # --------------------------------------------------
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  994: sub _mutate {
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">995 → 999 → 1021</span></span>  995: 	my ($self, $input) = @_;
+</span><span class="">  996: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  997: 	my $type = ref($input);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  998: 
+</span><span class="">  999: 	if(!defined $input) {
+</span><span class=""> 1000: 		# Replace undef with a fresh random value
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1001: 		return $self-&gt;_generate_random();
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 1002: 	}
+</span><span class=""> 1003: 	elsif(!$type) {
+</span><span class=""> 1004: 		# Dispatch scalar mutation based on apparent type
+</span><span class=""> 1005: 		if($input =~ /^-?\d+$/) {
+</span><span class=""> 1006: 			return $self-&gt;_mutate_int($input);
+</span><span class=""> 1007: 		} elsif($input =~ /^-?[\d.]+$/) {
+</span><span class=""> 1008: 			return $self-&gt;_mutate_num($input);
+</span><span class=""> 1009: 		} else {
+</span><span class=""> 1010: 			return $self-&gt;_mutate_string($input);
+</span><span class=""> 1011: 		}
+</span><span class=""> 1012: 	}
+</span><span class=""> 1013: 	elsif($type eq &#39;ARRAY&#39;) {
+</span><span class=""> 1014: 		return $self-&gt;_mutate_array($input);
+</span><span class=""> 1015: 	}
+</span><span class=""> 1016: 	elsif($type eq &#39;HASH&#39;) {
+</span><span class=""> 1017: 		return $self-&gt;_mutate_hash($input);
+</span><span class=""> 1018: 	}
+</span><span class=""> 1019: 
+</span><span class=""> 1020: 	# Blessed refs and other types pass through unchanged
+</span><span class="survived-1 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 1021: 	return $input;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
@@ -1816,60 +1816,60 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 1022: 		sub { -$n                 },
-</span><span class=""> 1023: 		sub { 0                   },
-</span><span class=""> 1024: 		sub { $INT32_MAX          },
-</span><span class=""> 1025: 		sub { $INT32_MIN          },
-</span><span class=""> 1026: 	);
-</span><span class=""> 1027: 
-</span><span class=""> 1028: 	return $ops[ int(rand(@ops)) ]-&gt;();
-</span><span class=""> 1029: }
-</span><span class=""> 1030: 
-</span><span class=""> 1031: # --------------------------------------------------
-</span><span class=""> 1032: # _mutate_num
-</span><span class=""> 1033: #
-</span><span class=""> 1034: # Purpose:    Apply a random arithmetic mutation to
-</span><span class=""> 1035: #             a floating point value.
-</span><span class=""> 1036: #
-</span><span class=""> 1037: # Entry:      $n - the number to mutate.
-</span><span class=""> 1038: # Exit:       Returns a mutated number.
-</span><span class=""> 1039: # Side effects: None.
-</span><span class=""> 1040: # --------------------------------------------------
-</span><span class=""> 1041: sub _mutate_num {
-</span><span class=""> 1042: 	my ($self, $n) = @_;
-</span><span class=""> 1043: 
-</span><span class=""> 1044: 	my @ops = (
-</span><span class=""> 1045: 		sub { $n + rand(10)        },
-</span><span class=""> 1046: 		sub { $n - rand(10)        },
-</span><span class=""> 1047: 		sub { $n * (1 + rand())    },
-</span><span class=""> 1048: 		sub { 0                    },
-</span><span class=""> 1049: 		sub { -$n                  },
-</span><span class=""> 1050: 	);
-</span><span class=""> 1051: 
-</span><span class=""> 1052: 	return $ops[ int(rand(@ops)) ]-&gt;();
-</span><span class=""> 1053: }
-</span><span class=""> 1054: 
-</span><span class=""> 1055: # --------------------------------------------------
-</span><span class=""> 1056: # _mutate_string
-</span><span class=""> 1057: #
-</span><span class=""> 1058: # Purpose:    Apply a random structural mutation to
-</span><span class=""> 1059: #             a string value &acirc;&#128;&#148; bit flip, insert,
-</span><span class=""> 1060: #             delete, truncate, repeat, or replace
-</span><span class=""> 1061: #             with an interesting known value.
-</span><span class=""> 1062: #
-</span><span class=""> 1063: # Entry:      $s - the string to mutate.
-</span><span class=""> 1064: # Exit:       Returns a mutated string.
-</span><span class=""> 1065: # Side effects: None.
-</span><span class=""> 1066: # --------------------------------------------------
-</span><span class=""> 1067: sub _mutate_string {
-</span><span class=""> 1068: 	my ($self, $s) = @_;
-</span><span class=""> 1069: 
-</span><span class=""> 1070: 	my $len = length($s);
+<span class=""> 1022: }
+</span><span class=""> 1023: 
+</span><span class=""> 1024: # --------------------------------------------------
+</span><span class=""> 1025: # _mutate_int
+</span><span class=""> 1026: #
+</span><span class=""> 1027: # Purpose:    Apply a random arithmetic mutation to
+</span><span class=""> 1028: #             an integer value.
+</span><span class=""> 1029: #
+</span><span class=""> 1030: # Entry:      $n - the integer to mutate.
+</span><span class=""> 1031: # Exit:       Returns a mutated integer.
+</span><span class=""> 1032: # Side effects: None.
+</span><span class=""> 1033: # --------------------------------------------------
+</span><span class=""> 1034: sub _mutate_int {
+</span><span class=""> 1035: 	my ($self, $n) = @_;
+</span><span class=""> 1036: 
+</span><span class=""> 1037: 	my @ops = (
+</span><span class=""> 1038: 		sub { $n + 1              },
+</span><span class=""> 1039: 		sub { $n - 1              },
+</span><span class=""> 1040: 		sub { $n * 2              },
+</span><span class=""> 1041: 		sub { $n == 0 ? 1 : int($n / 2) },
+</span><span class=""> 1042: 		sub { -$n                 },
+</span><span class=""> 1043: 		sub { 0                   },
+</span><span class=""> 1044: 		sub { $INT32_MAX          },
+</span><span class=""> 1045: 		sub { $INT32_MIN          },
+</span><span class=""> 1046: 	);
+</span><span class=""> 1047: 
+</span><span class=""> 1048: 	return $ops[ int(rand(@ops)) ]-&gt;();
+</span><span class=""> 1049: }
+</span><span class=""> 1050: 
+</span><span class=""> 1051: # --------------------------------------------------
+</span><span class=""> 1052: # _mutate_num
+</span><span class=""> 1053: #
+</span><span class=""> 1054: # Purpose:    Apply a random arithmetic mutation to
+</span><span class=""> 1055: #             a floating point value.
+</span><span class=""> 1056: #
+</span><span class=""> 1057: # Entry:      $n - the number to mutate.
+</span><span class=""> 1058: # Exit:       Returns a mutated number.
+</span><span class=""> 1059: # Side effects: None.
+</span><span class=""> 1060: # --------------------------------------------------
+</span><span class=""> 1061: sub _mutate_num {
+</span><span class=""> 1062: 	my ($self, $n) = @_;
+</span><span class=""> 1063: 
+</span><span class=""> 1064: 	my @ops = (
+</span><span class=""> 1065: 		sub { $n + rand(10)        },
+</span><span class=""> 1066: 		sub { $n - rand(10)        },
+</span><span class=""> 1067: 		sub { $n * (1 + rand())    },
+</span><span class=""> 1068: 		sub { 0                    },
+</span><span class=""> 1069: 		sub { -$n                  },
+</span><span class=""> 1070: 	);
 </span><span class=""> 1071: 
-</span><span class=""> 1072: 	my @ops = (
-</span><span class=""> 1073: 		# Bit flip a random character
-</span><span class=""> 1074: 		sub {
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1075: 			return $s unless $len;
+</span><span class=""> 1072: 	return $ops[ int(rand(@ops)) ]-&gt;();
+</span><span class=""> 1073: }
+</span><span class=""> 1074: 
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1075: # --------------------------------------------------
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1891,21 +1891,21 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 1076: 			my $pos  = int(rand($len));
-</span><span class=""> 1077: 			my $char = substr($s, $pos, 1);
-</span><span class=""> 1078: 			substr($s, $pos, 1) = chr(ord($char) ^ (1 &lt;&lt; int(rand(8))));
-</span><span class=""> 1079: 			$s
-</span><span class=""> 1080: 		},
-</span><span class=""> 1081: 		# Insert a random byte
-</span><span class=""> 1082: 		sub {
-</span><span class=""> 1083: 			my $pos  = int(rand($len + 1));
-</span><span class=""> 1084: 			my $char = chr(int(rand(256)));
-</span><span class=""> 1085: 			substr($s, $pos, 0, $char);
-</span><span class=""> 1086: 			$s
-</span><span class=""> 1087: 		},
-</span><span class=""> 1088: 		# Delete a random character
-</span><span class=""> 1089: 		sub {
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1090: 			return $s unless $len;
+<span class=""> 1076: # _mutate_string
+</span><span class=""> 1077: #
+</span><span class=""> 1078: # Purpose:    Apply a random structural mutation to
+</span><span class=""> 1079: #             a string value &acirc;&#128;&#148; bit flip, insert,
+</span><span class=""> 1080: #             delete, truncate, repeat, or replace
+</span><span class=""> 1081: #             with an interesting known value.
+</span><span class=""> 1082: #
+</span><span class=""> 1083: # Entry:      $s - the string to mutate.
+</span><span class=""> 1084: # Exit:       Returns a mutated string.
+</span><span class=""> 1085: # Side effects: None.
+</span><span class=""> 1086: # --------------------------------------------------
+</span><span class=""> 1087: sub _mutate_string {
+</span><span class=""> 1088: 	my ($self, $s) = @_;
+</span><span class=""> 1089: 
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1090: 	my $len = length($s);
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1927,161 +1927,181 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 1091: 			substr($s, int(rand($len)), 1, &#39;&#39;);
-</span><span class=""> 1092: 			$s
-</span><span class=""> 1093: 		},
-</span><span class=""> 1094: 		# Truncate at a random position
-</span><span class=""> 1095: 		sub { substr($s, 0, int(rand($len + 1))) },
-</span><span class=""> 1096: 		# Double the string
-</span><span class=""> 1097: 		sub { $s x 2 },
-</span><span class=""> 1098: 		# Replace with a known interesting string
-</span><span class=""> 1099: 		sub {
-</span><span class=""> 1100: 			my @interesting = (
-</span><span class=""> 1101: 				&#39;&#39;, &#39; &#39;, &quot;\0&quot;, &quot;\n&quot;, &quot;\t&quot;,
-</span><span class=""> 1102: 				&#39;a&#39; x 256,
-</span><span class=""> 1103: 				&#39;null&#39;, &#39;undefined&#39;,
-</span><span class=""> 1104: 				&quot;&#39;; DROP TABLE foo; --&quot;,
-</span><span class=""> 1105: 				&#39;&lt;script&gt;alert(1)&lt;/script&gt;&#39;,
-</span><span class=""> 1106: 			);
-</span><span class=""> 1107: 			$interesting[ int(rand(@interesting)) ]
-</span><span class=""> 1108: 		},
-</span><span class=""> 1109: 	);
-</span><span class=""> 1110: 
-</span><span class=""> 1111: 	return $ops[ int(rand(@ops)) ]-&gt;();
-</span><span class=""> 1112: }
-</span><span class=""> 1113: 
-</span><span class=""> 1114: # --------------------------------------------------
-</span><span class=""> 1115: # _mutate_array
-</span><span class=""> 1116: #
-</span><span class=""> 1117: # Purpose:    Apply a random structural mutation to
-</span><span class=""> 1118: #             an arrayref &acirc;&#128;&#148; mutate element, duplicate,
-</span><span class=""> 1119: #             delete, or empty.
-</span><span class=""> 1120: #
-</span><span class=""> 1121: # Entry:      $arr - the arrayref to mutate.
-</span><span class=""> 1122: # Exit:       Returns a mutated arrayref copy.
-</span><span class=""> 1123: # Side effects: None.
-</span><span class=""> 1124: # --------------------------------------------------
-</span><span class=""> 1125: sub _mutate_array {
-</span><span class=""> 1126: 	my ($self, $arr) = @_;
-</span><span class=""> 1127: 
-</span><span class=""> 1128: 	my @copy = @{$arr};
-</span><span class=""> 1129: 
-</span><span class=""> 1130: 	my @ops = (
-</span><span class=""> 1131: 		# Mutate a random element
-</span><span class=""> 1132: 		sub {
-</span><span class=""> 1133: 			return [] unless @copy;
-</span><span class=""> 1134: 			my $i = int(rand(@copy));
-</span><span class=""> 1135: 			$copy[$i] = $self-&gt;_mutate($copy[$i]);
-</span><span class=""> 1136: 			\@copy
-</span><span class=""> 1137: 		},
-</span><span class=""> 1138: 		# Duplicate a random element
-</span><span class=""> 1139: 		sub {
-</span><span class=""> 1140: 			return \@copy unless @copy;
-</span><span class=""> 1141: 			my $i = int(rand(@copy));
-</span><span class=""> 1142: 			splice @copy, $i, 0, $copy[$i];
-</span><span class=""> 1143: 			\@copy
-</span><span class=""> 1144: 		},
-</span><span class=""> 1145: 		# Delete a random element
-</span><span class=""> 1146: 		sub {
-</span><span class=""> 1147: 			return \@copy unless @copy;
-</span><span class=""> 1148: 			splice @copy, int(rand(@copy)), 1;
-</span><span class=""> 1149: 			\@copy
-</span><span class=""> 1150: 		},
-</span><span class=""> 1151: 		# Return empty array
-</span><span class=""> 1152: 		sub { [] },
-</span><span class=""> 1153: 	);
-</span><span class=""> 1154: 
-</span><span class=""> 1155: 	return $ops[ int(rand(@ops)) ]-&gt;();
-</span><span class=""> 1156: }
-</span><span class=""> 1157: 
-</span><span class=""> 1158: # --------------------------------------------------
-</span><span class=""> 1159: # _mutate_hash
-</span><span class=""> 1160: #
-</span><span class=""> 1161: # Purpose:    Apply a random mutation to one value
-</span><span class=""> 1162: #             in a hashref copy.
-</span><span class=""> 1163: #
-</span><span class=""> 1164: # Entry:      $h - the hashref to mutate.
-</span><span class=""> 1165: # Exit:       Returns a mutated hashref copy.
-</span><span class=""> 1166: # Side effects: None.
-</span><span class=""> 1167: # --------------------------------------------------
-</span><span class=""> 1168: sub _mutate_hash {
-</span><span class=""> 1169: 	my ($self, $h) = @_;
-</span><span class=""> 1170: 
-</span><span class=""> 1171: 	my %copy = %{$h};
-</span><span class=""> 1172: 	my @keys = keys %copy;
-</span><span class=""> 1173: 
-</span><span class=""> 1174: 	# Return unchanged if hash is empty
-</span><span class=""> 1175: 	return \%copy unless @keys;
-</span><span class=""> 1176: 
-</span><span class=""> 1177: 	my $k = $keys[ int(rand(@keys)) ];
-</span><span class=""> 1178: 	$copy{$k} = $self-&gt;_mutate($copy{$k});
-</span><span class=""> 1179: 
-</span><span class=""> 1180: 	return \%copy;
-</span><span class=""> 1181: }
-</span><span class=""> 1182: 
-</span><span class=""> 1183: # --------------------------------------------------
-</span><span class=""> 1184: # _seed_corpus
-</span><span class=""> 1185: #
-</span><span class=""> 1186: # Purpose:    Pre-populate the corpus with a small
-</span><span class=""> 1187: #             set of randomly generated inputs to
-</span><span class=""> 1188: #             give the fuzzing loop a starting point.
-</span><span class=""> 1189: #
-</span><span class=""> 1190: # Entry:      None beyond $self.
-</span><span class=""> 1191: # Exit:       Returns nothing. Appends to $self-&gt;{corpus}.
-</span><span class=""> 1192: # Side effects: Modifies $self-&gt;{corpus}.
-</span><span class=""> 1193: # --------------------------------------------------
-</span><span class=""> 1194: sub _seed_corpus {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1195 → 1197 → 0</span></span> 1195: 	my $self = $_[0];
+<span class=""> 1091: 
+</span><span class=""> 1092: 	my @ops = (
+</span><span class=""> 1093: 		# Bit flip a random character
+</span><span class=""> 1094: 		sub {
+</span><span class=""> 1095: 			return $s unless $len;
+</span><span class=""> 1096: 			my $pos  = int(rand($len));
+</span><span class=""> 1097: 			my $char = substr($s, $pos, 1);
+</span><span class=""> 1098: 			substr($s, $pos, 1) = chr(ord($char) ^ (1 &lt;&lt; int(rand(8))));
+</span><span class=""> 1099: 			$s
+</span><span class=""> 1100: 		},
+</span><span class=""> 1101: 		# Insert a random byte
+</span><span class=""> 1102: 		sub {
+</span><span class=""> 1103: 			my $pos  = int(rand($len + 1));
+</span><span class=""> 1104: 			my $char = chr(int(rand(256)));
+</span><span class=""> 1105: 			substr($s, $pos, 0, $char);
+</span><span class=""> 1106: 			$s
+</span><span class=""> 1107: 		},
+</span><span class=""> 1108: 		# Delete a random character
+</span><span class=""> 1109: 		sub {
+</span><span class=""> 1110: 			return $s unless $len;
+</span><span class=""> 1111: 			substr($s, int(rand($len)), 1, &#39;&#39;);
+</span><span class=""> 1112: 			$s
+</span><span class=""> 1113: 		},
+</span><span class=""> 1114: 		# Truncate at a random position
+</span><span class=""> 1115: 		sub { substr($s, 0, int(rand($len + 1))) },
+</span><span class=""> 1116: 		# Double the string
+</span><span class=""> 1117: 		sub { $s x 2 },
+</span><span class=""> 1118: 		# Replace with a known interesting string
+</span><span class=""> 1119: 		sub {
+</span><span class=""> 1120: 			my @interesting = (
+</span><span class=""> 1121: 				&#39;&#39;, &#39; &#39;, &quot;\0&quot;, &quot;\n&quot;, &quot;\t&quot;,
+</span><span class=""> 1122: 				&#39;a&#39; x 256,
+</span><span class=""> 1123: 				&#39;null&#39;, &#39;undefined&#39;,
+</span><span class=""> 1124: 				&quot;&#39;; DROP TABLE foo; --&quot;,
+</span><span class=""> 1125: 				&#39;&lt;script&gt;alert(1)&lt;/script&gt;&#39;,
+</span><span class=""> 1126: 			);
+</span><span class=""> 1127: 			$interesting[ int(rand(@interesting)) ]
+</span><span class=""> 1128: 		},
+</span><span class=""> 1129: 	);
+</span><span class=""> 1130: 
+</span><span class=""> 1131: 	return $ops[ int(rand(@ops)) ]-&gt;();
+</span><span class=""> 1132: }
+</span><span class=""> 1133: 
+</span><span class=""> 1134: # --------------------------------------------------
+</span><span class=""> 1135: # _mutate_array
+</span><span class=""> 1136: #
+</span><span class=""> 1137: # Purpose:    Apply a random structural mutation to
+</span><span class=""> 1138: #             an arrayref &acirc;&#128;&#148; mutate element, duplicate,
+</span><span class=""> 1139: #             delete, or empty.
+</span><span class=""> 1140: #
+</span><span class=""> 1141: # Entry:      $arr - the arrayref to mutate.
+</span><span class=""> 1142: # Exit:       Returns a mutated arrayref copy.
+</span><span class=""> 1143: # Side effects: None.
+</span><span class=""> 1144: # --------------------------------------------------
+</span><span class=""> 1145: sub _mutate_array {
+</span><span class=""> 1146: 	my ($self, $arr) = @_;
+</span><span class=""> 1147: 
+</span><span class=""> 1148: 	my @copy = @{$arr};
+</span><span class=""> 1149: 
+</span><span class=""> 1150: 	my @ops = (
+</span><span class=""> 1151: 		# Mutate a random element
+</span><span class=""> 1152: 		sub {
+</span><span class=""> 1153: 			return [] unless @copy;
+</span><span class=""> 1154: 			my $i = int(rand(@copy));
+</span><span class=""> 1155: 			$copy[$i] = $self-&gt;_mutate($copy[$i]);
+</span><span class=""> 1156: 			\@copy
+</span><span class=""> 1157: 		},
+</span><span class=""> 1158: 		# Duplicate a random element
+</span><span class=""> 1159: 		sub {
+</span><span class=""> 1160: 			return \@copy unless @copy;
+</span><span class=""> 1161: 			my $i = int(rand(@copy));
+</span><span class=""> 1162: 			splice @copy, $i, 0, $copy[$i];
+</span><span class=""> 1163: 			\@copy
+</span><span class=""> 1164: 		},
+</span><span class=""> 1165: 		# Delete a random element
+</span><span class=""> 1166: 		sub {
+</span><span class=""> 1167: 			return \@copy unless @copy;
+</span><span class=""> 1168: 			splice @copy, int(rand(@copy)), 1;
+</span><span class=""> 1169: 			\@copy
+</span><span class=""> 1170: 		},
+</span><span class=""> 1171: 		# Return empty array
+</span><span class=""> 1172: 		sub { [] },
+</span><span class=""> 1173: 	);
+</span><span class=""> 1174: 
+</span><span class=""> 1175: 	return $ops[ int(rand(@ops)) ]-&gt;();
+</span><span class=""> 1176: }
+</span><span class=""> 1177: 
+</span><span class=""> 1178: # --------------------------------------------------
+</span><span class=""> 1179: # _mutate_hash
+</span><span class=""> 1180: #
+</span><span class=""> 1181: # Purpose:    Apply a random mutation to one value
+</span><span class=""> 1182: #             in a hashref copy.
+</span><span class=""> 1183: #
+</span><span class=""> 1184: # Entry:      $h - the hashref to mutate.
+</span><span class=""> 1185: # Exit:       Returns a mutated hashref copy.
+</span><span class=""> 1186: # Side effects: None.
+</span><span class=""> 1187: # --------------------------------------------------
+</span><span class=""> 1188: sub _mutate_hash {
+</span><span class=""> 1189: 	my ($self, $h) = @_;
+</span><span class=""> 1190: 
+</span><span class=""> 1191: 	my %copy = %{$h};
+</span><span class=""> 1192: 	my @keys = keys %copy;
+</span><span class=""> 1193: 
+</span><span class=""> 1194: 	# Return unchanged if hash is empty
+</span><span class=""> 1195: 	return \%copy unless @keys;
 </span><span class=""> 1196: 
-</span><span class=""> 1197: 	for (1 .. $SEED_CORPUS_SIZE) {
-</span><span class=""> 1198: 		push @{ $self-&gt;{corpus} }, {
-</span><span class=""> 1199: 			input    =&gt; $self-&gt;_generate_random(),
-</span><span class=""> 1200: 			coverage =&gt; {},
-</span><span class=""> 1201: 		};
-</span><span class=""> 1202: 	}
-</span><span class=""> 1203: }
-</span><span class=""> 1204: 
-</span><span class=""> 1205: # --------------------------------------------------
-</span><span class=""> 1206: # _build_report
-</span><span class=""> 1207: #
-</span><span class=""> 1208: # Purpose:    Construct the summary report hashref
-</span><span class=""> 1209: #             returned by run().
-</span><span class=""> 1210: #
-</span><span class=""> 1211: # Entry:      None beyond $self.
-</span><span class=""> 1212: # Exit:       Returns a report hashref.
-</span><span class=""> 1213: # Side effects: None.
-</span><span class=""> 1214: # --------------------------------------------------
-</span><span class=""> 1215: sub _build_report {
-</span><span class=""> 1216: 	my $self = $_[0];
-</span><span class=""> 1217: 
-</span><span class=""> 1218: 	return {
-</span><span class=""> 1219: 		total_iterations   =&gt; $self-&gt;{stats}{total},
-</span><span class=""> 1220: 		interesting_inputs =&gt; $self-&gt;{stats}{interesting},
-</span><span class=""> 1221: 		corpus_size        =&gt; scalar @{ $self-&gt;{corpus} },
-</span><span class=""> 1222: 		branches_covered   =&gt; $self-&gt;{stats}{coverage},
-</span><span class=""> 1223: 		bugs_found         =&gt; $self-&gt;{stats}{bugs},
-</span><span class=""> 1224: 		bugs               =&gt; $self-&gt;{bugs},
-</span><span class=""> 1225: 	};
-</span><span class=""> 1226: }
-</span><span class=""> 1227: 
-</span><span class=""> 1228: =head1 AUTHOR
-</span><span class=""> 1229: 
-</span><span class=""> 1230: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
-</span><span class=""> 1231: 
-</span><span class=""> 1232: Portions of this module&#39;s initial design and documentation were created
-</span><span class=""> 1233: with the assistance of AI.
-</span><span class=""> 1234: 
-</span><span class=""> 1235: =head1 LICENCE AND COPYRIGHT
-</span><span class=""> 1236: 
-</span><span class=""> 1237: Copyright 2026 Nigel Horne.
-</span><span class=""> 1238: 
-</span><span class=""> 1239: Usage is subject to GPL2 licence terms.
-</span><span class=""> 1240: If you use it,
-</span><span class=""> 1241: please let me know.
-</span><span class=""> 1242: 
-</span><span class=""> 1243: =cut
-</span><span class=""> 1244: 
-</span><span class=""> 1245: 1;
+</span><span class=""> 1197: 	my $k = $keys[ int(rand(@keys)) ];
+</span><span class=""> 1198: 	$copy{$k} = $self-&gt;_mutate($copy{$k});
+</span><span class=""> 1199: 
+</span><span class=""> 1200: 	return \%copy;
+</span><span class=""> 1201: }
+</span><span class=""> 1202: 
+</span><span class=""> 1203: # --------------------------------------------------
+</span><span class=""> 1204: # _seed_corpus
+</span><span class=""> 1205: #
+</span><span class=""> 1206: # Purpose:    Pre-populate the corpus with a small
+</span><span class=""> 1207: #             set of randomly generated inputs to
+</span><span class=""> 1208: #             give the fuzzing loop a starting point.
+</span><span class=""> 1209: #
+</span><span class=""> 1210: # Entry:      None beyond $self.
+</span><span class=""> 1211: # Exit:       Returns nothing. Appends to $self-&gt;{corpus}.
+</span><span class=""> 1212: # Side effects: Modifies $self-&gt;{corpus}.
+</span><span class=""> 1213: # --------------------------------------------------
+</span><span class=""> 1214: sub _seed_corpus {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1215 → 1217 → 0</span></span> 1215: 	my $self = $_[0];
+</span><span class=""> 1216: 
+</span><span class=""> 1217: 	for (1 .. $SEED_CORPUS_SIZE) {
+</span><span class=""> 1218: 		push @{ $self-&gt;{corpus} }, {
+</span><span class=""> 1219: 			input    =&gt; $self-&gt;_generate_random(),
+</span><span class=""> 1220: 			coverage =&gt; {},
+</span><span class=""> 1221: 		};
+</span><span class=""> 1222: 	}
+</span><span class=""> 1223: }
+</span><span class=""> 1224: 
+</span><span class=""> 1225: # --------------------------------------------------
+</span><span class=""> 1226: # _build_report
+</span><span class=""> 1227: #
+</span><span class=""> 1228: # Purpose:    Construct the summary report hashref
+</span><span class=""> 1229: #             returned by run().
+</span><span class=""> 1230: #
+</span><span class=""> 1231: # Entry:      None beyond $self.
+</span><span class=""> 1232: # Exit:       Returns a report hashref.
+</span><span class=""> 1233: # Side effects: None.
+</span><span class=""> 1234: # --------------------------------------------------
+</span><span class=""> 1235: sub _build_report {
+</span><span class=""> 1236: 	my $self = $_[0];
+</span><span class=""> 1237: 
+</span><span class=""> 1238: 	return {
+</span><span class=""> 1239: 		total_iterations   =&gt; $self-&gt;{stats}{total},
+</span><span class=""> 1240: 		interesting_inputs =&gt; $self-&gt;{stats}{interesting},
+</span><span class=""> 1241: 		corpus_size        =&gt; scalar @{ $self-&gt;{corpus} },
+</span><span class=""> 1242: 		branches_covered   =&gt; $self-&gt;{stats}{coverage},
+</span><span class=""> 1243: 		bugs_found         =&gt; $self-&gt;{stats}{bugs},
+</span><span class=""> 1244: 		bugs               =&gt; $self-&gt;{bugs},
+</span><span class=""> 1245: 	};
+</span><span class=""> 1246: }
+</span><span class=""> 1247: 
+</span><span class=""> 1248: =head1 AUTHOR
+</span><span class=""> 1249: 
+</span><span class=""> 1250: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
+</span><span class=""> 1251: 
+</span><span class=""> 1252: Portions of this module&#39;s initial design and documentation were created
+</span><span class=""> 1253: with the assistance of AI.
+</span><span class=""> 1254: 
+</span><span class=""> 1255: =head1 LICENCE AND COPYRIGHT
+</span><span class=""> 1256: 
+</span><span class=""> 1257: Copyright 2026 Nigel Horne.
+</span><span class=""> 1258: 
+</span><span class=""> 1259: Usage is subject to GPL2 licence terms.
+</span><span class=""> 1260: If you use it,
+</span><span class=""> 1261: please let me know.
+</span><span class=""> 1262: 
+</span><span class=""> 1263: =cut
+</span><span class=""> 1264: 
+</span><span class=""> 1265: 1;
 </span></pre>
 
 <script>

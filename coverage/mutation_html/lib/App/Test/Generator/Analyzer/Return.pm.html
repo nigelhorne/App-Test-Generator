@@ -246,7 +246,7 @@ pre details.mutant-details ul {
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
 TER2 (Branch): 80.00%<br>
-TER3 (LCSAJ): 100.0% (7/7)<br>
+TER3 (LCSAJ): 100.0% (3/3)<br>
 Approximate LCSAJ segments: 11<br>
 </div>
 
@@ -406,7 +406,7 @@ Approximate LCSAJ segments: 11<br>
 </span><span class="">  114: =cut
 </span><span class="">  115: 
 </span><span class="">  116: sub analyze {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">117 → 134 → 148</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">117 → 134 → 0</span></span>  117: 	my ($self, $method) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">117 → 134 → 148</span></span>  117: 	my ($self, $method) = @_;
 </span><span class="">  118: 
 </span><span class="">  119: 	# Accept either a Model::Method object or a raw hashref,
 </span><span class="">  120: 	# since callers in SchemaExtractor pass raw hashrefs
@@ -437,7 +437,7 @@ Approximate LCSAJ segments: 11<br>
 </span><span class="">  145: 	# Use negative lookahead to avoid matching
 </span><span class="">  146: 	# return $self-&gt;{...} which is a property return
 </span><span class="">  147: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">148 → 148 → 161</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">148 → 148 → 0</span></span>  148: 	if($source =~ /return\s+\$self(?!-&gt;)/) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">148 → 148 → 161</span></span>  148: 	if($source =~ /return\s+\$self(?!-&gt;)/) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  149: 		$add-&gt;(
 </span><span class="">  150: 			category =&gt; &#39;return&#39;,
 </span><span class="">  151: 			signal   =&gt; &#39;returns_self&#39;,
@@ -450,7 +450,7 @@ Approximate LCSAJ segments: 11<br>
 </span><span class="">  158: 	# numeric literal, or undef. All indicate the method
 </span><span class="">  159: 	# returns a fixed value rather than a computed state.
 </span><span class="">  160: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">161 → 161 → 169</span></span><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">161 → 161 → 0</span></span>  161: 	if($source =~ /return\s+(?:[&#39;&quot;\d]|undef\b)/) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">161 → 161 → 169</span></span>  161: 	if($source =~ /return\s+(?:[&#39;&quot;\d]|undef\b)/) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  162: 		$add-&gt;(
 </span><span class="">  163: 			category =&gt; &#39;return&#39;,
 </span><span class="">  164: 			signal   =&gt; &#39;returns_constant&#39;,
@@ -458,7 +458,7 @@ Approximate LCSAJ segments: 11<br>
 </span><span class="">  166: 		);
 </span><span class="">  167: 	}
 </span><span class="">  168: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">169 → 169 → 0</span></span>  169: 	return;
+</span><span class="">  169: 	return;
 </span><span class="">  170: }
 </span><span class="">  171: 
 </span><span class="">  172: =head1 LICENCE AND COPYRIGHT
