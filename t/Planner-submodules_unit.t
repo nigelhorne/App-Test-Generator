@@ -370,7 +370,7 @@ subtest 'Mock::plan() assigns capture_io for performs_io' => sub {
 	is($result->{my_method}, 'capture_io', 'performs_io -> exactly capture_io');
 };
 
-subtest 'Mock::plan() mock_system takes precedence over capture_io' => sub {
+subtest 'Mock::plan() assigns both strategies when both side effects present' => sub {
 	my $p = App::Test::Generator::Planner::Mock->new;
 	my $result = $p->plan({
 		my_method => { _analysis => { side_effects => {
@@ -378,8 +378,8 @@ subtest 'Mock::plan() mock_system takes precedence over capture_io' => sub {
 			performs_io    => 1,
 		} } }
 	});
-	is($result->{my_method}, 'mock_system',
-		'mock_system takes precedence when both present');
+	is_deeply($result->{my_method}, ['mock_system', 'capture_io'],
+		'both mock_system and capture_io applied when both present');
 };
 
 subtest 'Mock::plan() omits pure methods from result' => sub {

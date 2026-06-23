@@ -184,6 +184,34 @@ Revision history for App-Test-Generator
 	  required-group, dependency, etc.) analysed; parameter extraction
 	  now reuses _extract_parameters_from_signature(), which already
 	  supports all four parameter-declaration styles.
+	- Fix Analyzer::ReturnMeta.pm's stability bonus for boolean returns
+	  being undocumented in POD: since stability_score starts at 100 and
+	  is clamped to [0, 100], the bonus is a no-op unless an earlier
+	  penalty already reduced the score, which POD readers had no way of
+	  knowing. Documented the no-op-in-the-common-case behaviour.
+	- Fix Planner::Mock.pm plan() silently dropping the capture_io mock
+	  for any method that is both calls_external and performs_io, since
+	  the if/elsif gave mock_system precedence; such a method now gets
+	  an arrayref of both mock strategies instead of losing one.
+	- Fix CoverageGuidedFuzzer.pm _run_with_cover() walking the full
+	  Devel::Cover state twice per fuzz iteration (once for "before",
+	  once for "after"); coverage state only grows, so this iteration's
+	  "before" is now the cached "after" snapshot from the previous
+	  iteration, halving the per-iteration Devel::Cover walk count.
+	- Fix CoverageGuidedFuzzer.pm _validate_value() matching a schema-
+	  supplied 'matches' regex against fuzzer-generated input with no
+	  bound on catastrophic backtracking; the match is now wrapped in
+	  the same alarm()-based timeout already used to bound target_sub
+	  calls, and a timeout is treated as a non-match.
+	- Fix SchemaExtractor.pm's TODO POD section claiming union-type
+	  parsing (e.g. scalar | scalarref) in =head4 Input specs was
+	  unimplemented; _map_formal_input_type already handles it. Narrowed
+	  the TODO to the part that is genuinely still unimplemented (the
+	  enum/memberof constraint synonym).
+	- Fix TestStrategy.pm's getset-accessor branch picking an arbitrary,
+	  hash-order-dependent input parameter when more than one candidate
+	  was present; candidates are now sorted by their schema position
+	  field first, making the choice deterministic.
 
 	[Enhancements]
 	- Pin shogo82148/actions-setup-perl to immutable commit SHA

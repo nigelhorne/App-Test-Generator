@@ -18,6 +18,7 @@ Readonly my $INT_BOUNDARY_RATIO   => 0.30;  # 30% chance to use boundary int
 Readonly my $STR_BOUNDARY_RATIO   => 0.30;  # 30% chance to use boundary length
 Readonly my $SEED_CORPUS_SIZE     => 5;     # initial random inputs to seed corpus
 Readonly my $DEFAULT_MAX_STR_LEN  => 64;
+Readonly my $MATCHES_REGEX_TIMEOUT_SECS => 1; # ReDoS guard for schema 'matches' patterns
 Readonly my $DEFAULT_MAX_ARRAY    => 4;     # max elements in random array (0..N)
 Readonly my $INT32_MAX            => 2**31 - 1;
 Readonly my $INT32_MIN            => -(2**31);
@@ -549,14 +550,18 @@ sub _run_one {
 # Notes:      Snapshot comparison is imprecise for
 #             concurrent use but correct for single-
 #             threaded fuzzing. Instance is passed
-#             as invocant when set.
+#             as invocant when set. Devel::Cover state
+#             only grows, so this iteration's "before"
+#             is exactly the previous iteration's
+#             "after" -- cached in $self to avoid two
+#             full Devel::Cover walks per iteration.
 # --------------------------------------------------
 sub _run_with_cover {
 	my ($self, $input, $result_ref, $error_ref) = @_;
 
 	Devel::Cover::start() if Devel::Cover->can('start');
 
-	my %before = $self->_snapshot_cover();
+	my %before = %{ $self->{_last_cover_snapshot} || {} };
 
 	# Include instance as invocant for method calls
 	my @call_args = defined($self->{instance})
@@ -575,6 +580,7 @@ sub _run_with_cover {
 	$$error_ref = $@ if $@;
 
 	my %after = $self->_snapshot_cover();
+	$self->{_last_cover_snapshot} = { %after };
 	Devel::Cover::stop() if Devel::Cover->can('stop');
 
 	# Return only branches newly hit in this call
@@ -961,7 +967,21 @@ sub _validate_value {
 		return 0 if defined($spec->{max}) && $len > $spec->{max};
 		if(defined($spec->{matches})) {
 			(my $pat = $spec->{matches}) =~ s{^/(.+)/$}{$1};
-			return 0 unless $value =~ /$pat/;
+
+			# ReDoS guard: a schema-supplied pattern matched against
+			# fuzzer-generated (attacker-shaped) input could exhibit
+			# catastrophic backtracking. Bound the match with alarm()
+			# the same way target_sub calls are bounded elsewhere in
+			# this module, and treat a timeout as a non-match.
+			my $matched = eval {
+				local $SIG{ALRM} = sub { die "matches regex timed out\n" };
+				alarm($MATCHES_REGEX_TIMEOUT_SECS);
+				my $m = $value =~ /$pat/;
+				alarm(0);
+				$m;
+			};
+			alarm(0);
+			return 0 unless $matched;
 		}
 	}
 	elsif($type eq $TYPE_BOOLEAN) {

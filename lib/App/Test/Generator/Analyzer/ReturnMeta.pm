@@ -123,7 +123,11 @@ during analysis.
 
 Both scores start at 100 and are reduced by penalties for each detected
 risk pattern. A small bonus is applied to stability for boolean return
-types. All scores are clamped to [0, 100] after adjustments.
+types, but since C<stability_score> starts at 100 and is clamped to
+[0, 100] after all adjustments, this bonus is a no-op unless an earlier
+penalty has already reduced the score below 100 — for a boolean-returning
+function with no other detected risk, C<stability_score> is unaffected
+by C<$BONUS_BOOLEAN_STABILITY> and remains 100.
 
 =head3 API specification
 

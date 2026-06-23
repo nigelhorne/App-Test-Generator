@@ -9750,8 +9750,9 @@ it is useful for creating a template which you can modify to create a working sc
 
 =head1 TODO
 
-Extend C<=head4 Input> parsing to cover union types (e.g. C<scalar | scalarref>)
-and the C<enum>/C<memberof> constraint synonym.
+Extend C<=head4 Input> parsing to cover the C<enum>/C<memberof> constraint
+synonym (union types, e.g. C<scalar | scalarref>, are already handled by
+C<_map_formal_input_type>).
 
 =head1 SEE ALSO
 

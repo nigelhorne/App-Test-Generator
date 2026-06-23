@@ -221,9 +221,15 @@ sub _plan_for_method {
 		} elsif($acc_type eq $ACCESSOR_GETSET) {
 			# For getset accessors, check the input parameter
 			# type to determine if object injection or boolean
-			# set tests are more appropriate
-			my ($param) = grep { !/^_/ } keys %{ $schema->{input} || {} };
-			my $param_type = ($param && $schema->{input}{$param}{type}) // '';
+			# set tests are more appropriate. Sort by position (keys
+			# %hash has no defined order) so the choice is deterministic
+			# if more than one candidate is present.
+			my $input = $schema->{input} || {};
+			my ($param) = sort {
+				($input->{$a}{position} // 9999) <=> ($input->{$b}{position} // 9999)
+				|| $a cmp $b
+			} grep { !/^_/ } keys %{ $input };
+			my $param_type = ($param && $input->{$param}{type}) // '';
 
 			if($param_type eq $TYPE_OBJECT) {
 				$plan{$TEST_OBJECT_INJECT} = 1;
