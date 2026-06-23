@@ -2590,6 +2590,35 @@ subtest '_analyze_relationships() deduplicates relationships' => sub {
 	ok(scalar @mutex <= 1, 'duplicate relationships deduplicated');
 };
 
+# ------------------------------------------------------------------
+# Regression: parameter names were extracted with a hardcoded
+# my (...) = @_ regex, so shift-style and modern-signature methods
+# never reached @param_names and _analyze_relationships always
+# returned an empty arrayref for them regardless of what the body
+# actually did with its parameters.
+# ------------------------------------------------------------------
+subtest '_analyze_relationships() detects mutually exclusive params in shift-style method' => sub {
+	my $e = _extractor();
+	my $method = {
+		name => 'connect',
+		body => 'sub connect { my $self = shift; my $file = shift; my $host = shift; die if $file && $host; }',
+	};
+	my $result = $e->_analyze_relationships($method);
+	my @mutex = grep { $_->{type} eq 'mutually_exclusive' } @{$result};
+	ok(scalar @mutex > 0, 'mutually_exclusive relationship detected for shift-style params');
+};
+
+subtest '_analyze_relationships() detects mutually exclusive params in modern-signature method' => sub {
+	my $e = _extractor();
+	my $method = {
+		name => 'connect',
+		body => 'sub connect($self, $file, $host) { die if $file && $host; }',
+	};
+	my $result = $e->_analyze_relationships($method);
+	my @mutex = grep { $_->{type} eq 'mutually_exclusive' } @{$result};
+	ok(scalar @mutex > 0, 'mutually_exclusive relationship detected for modern-signature params');
+};
+
 # ==================================================================
 # _build_schema_from_meta
 # ==================================================================
