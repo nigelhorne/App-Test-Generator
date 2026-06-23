@@ -760,6 +760,17 @@ subtest '_detect_list_context() detects list return with multiple values' => sub
 	is($output{type}, 'array', 'array type from list return');
 };
 
+subtest '_detect_list_context() ignores commas nested inside brackets' => sub {
+	my $e = _extractor();
+	my %output;
+	# Only one top-level comma (between the hashref and $c) -- the
+	# comma inside { x => 1, y => 2 } must not be counted, or this
+	# would be (wrongly) treated as a 3-value list return
+	$e->_detect_list_context(\%output, 'sub foo { return ({ x => 1, y => 2 }, $c); }');
+	is($output{type}, 'array', 'array type from list return');
+	is($output{_list_return}, 2, 'nested comma not counted toward list size');
+};
+
 # ==================================================================
 # _validate_output
 # ==================================================================

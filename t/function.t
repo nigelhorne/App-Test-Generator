@@ -1298,13 +1298,15 @@ subtest 'Mutator::_dedup_mutants - removes exact duplicates' => sub {
 
 	my $make = sub {
 		my %args = @_;
-		return {
+		return App::Test::Generator::Mutant->new(
+			id          => $args{id}          // 'TEST',
 			line        => $args{line}        // 1,
 			original    => $args{original}    // 'x',
 			description => $args{description} // 'test',
 			context     => $args{context}     // '',
 			line_content => $args{line_content} // '',
-		};
+			transform   => sub {},
+		);
 	};
 
 	# Two identical mutants must collapse to one
@@ -1329,24 +1331,28 @@ subtest 'Mutator::_dedup_mutants - removes redundant arithmetic no-ops' => sub {
 	my $fn = \&App::Test::Generator::Mutator::_dedup_mutants;
 
 	# +0 arithmetic no-op must be filtered as redundant
-	my $noop = {
+	my $noop = App::Test::Generator::Mutant->new(
+		id          => 'NOOP_1',
 		line        => 1,
 		original    => 'x + 0',
 		description => 'add zero',
 		context     => '',
 		line_content => '',
-	};
+		transform   => sub {},
+	);
 	my $result = $fn->([$noop]);
 	is(scalar(@{$result}), 0, '+0 no-op removed as redundant');
 
 	# -0 arithmetic no-op must also be filtered
-	my $noop2 = {
+	my $noop2 = App::Test::Generator::Mutant->new(
+		id          => 'NOOP_2',
 		line        => 1,
 		original    => 'x - 0',
 		description => 'sub zero',
 		context     => '',
 		line_content => '',
-	};
+		transform   => sub {},
+	);
 	$result = $fn->([$noop2]);
 	is(scalar(@{$result}), 0, '-0 no-op removed as redundant');
 
@@ -1356,12 +1362,25 @@ subtest 'Mutator::_dedup_mutants - removes redundant arithmetic no-ops' => sub {
 # ==================================================================
 # _is_redundant_mutation()
 # ==================================================================
+my $make_mutant = sub {
+	my %args = @_;
+	return App::Test::Generator::Mutant->new(
+		id          => $args{id}          // 'TEST',
+		line        => $args{line}        // 1,
+		original    => $args{original}    // 'x',
+		description => $args{description} // 'test',
+		context     => $args{context}     // '',
+		line_content => $args{line_content} // '',
+		transform   => sub {},
+	);
+};
+
 subtest 'Mutator::_is_redundant_mutation - arithmetic no-ops are redundant' => sub {
 	my $fn = \&App::Test::Generator::Mutator::_is_redundant_mutation;
 
-	ok($fn->({ original => 'x + 0' }), '+0 is redundant');
-	ok($fn->({ original => 'x - 0' }), '-0 is redundant');
-	ok(!$fn->({ original => 'x + 1' }), '+1 is not redundant');
+	ok($fn->($make_mutant->(original => 'x + 0')), '+0 is redundant');
+	ok($fn->($make_mutant->(original => 'x - 0')), '-0 is redundant');
+	ok(!$fn->($make_mutant->(original => 'x + 1')), '+1 is not redundant');
 
 	done_testing();
 };
@@ -1370,11 +1389,11 @@ subtest 'Mutator::_is_redundant_mutation - double negation in conditional' => su
 	my $fn = \&App::Test::Generator::Mutator::_is_redundant_mutation;
 
 	ok(
-		$fn->({ original => '!!$x', context => 'conditional' }),
+		$fn->($make_mutant->(original => '!!$x', context => 'conditional')),
 		'double negation in conditional is redundant'
 	);
 	ok(
-		!$fn->({ original => '!!$x', context => '' }),
+		!$fn->($make_mutant->(original => '!!$x', context => '')),
 		'double negation outside conditional is not redundant'
 	);
 
@@ -1384,9 +1403,9 @@ subtest 'Mutator::_is_redundant_mutation - double negation in conditional' => su
 subtest 'Mutator::_is_redundant_mutation - boolean literal flip is redundant' => sub {
 	my $fn = \&App::Test::Generator::Mutator::_is_redundant_mutation;
 
-	ok($fn->({ original => '1' }), 'standalone 1 is redundant');
-	ok($fn->({ original => '0' }), 'standalone 0 is redundant');
-	ok(!$fn->({ original => '42' }), 'non-boolean integer is not redundant');
+	ok($fn->($make_mutant->(original => '1')), 'standalone 1 is redundant');
+	ok($fn->($make_mutant->(original => '0')), 'standalone 0 is redundant');
+	ok(!$fn->($make_mutant->(original => '42')), 'non-boolean integer is not redundant');
 
 	done_testing();
 };
@@ -1395,11 +1414,11 @@ subtest 'Mutator::_is_redundant_mutation - comment lines are redundant' => sub {
 	my $fn = \&App::Test::Generator::Mutator::_is_redundant_mutation;
 
 	ok(
-		$fn->({ original => 'x', line_content => '# a comment' }),
+		$fn->($make_mutant->(original => 'x', line_content => '# a comment')),
 		'mutation on comment line is redundant'
 	);
 	ok(
-		!$fn->({ original => 'x', line_content => 'my $x = 1;' }),
+		!$fn->($make_mutant->(original => 'x', line_content => 'my $x = 1;')),
 		'mutation on code line is not redundant'
 	);
 

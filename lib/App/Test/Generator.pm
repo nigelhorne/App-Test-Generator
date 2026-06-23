@@ -182,7 +182,7 @@ From the command line:
 
   # Attempt to create a formal definition from a routine package, then run tests against that formal definition
   # This is the holy grail of automatic test generation, just by looking at the source code
-  extract-schemas bin/extract-schemas lib/Sample/Module.pm && fuzz-harness-generator -r schemas/greet.yaml
+  extract-schemas lib/App/Test/Generator/Sample/Module.pm && fuzz-harness-generator -r schemas/greet.yml
 
 From Perl:
 
@@ -1666,7 +1666,10 @@ sub generate
 
 	# sensible defaults
 	$function ||= 'run';
-	_assert_identifier($function, 'function');
+	# package => 1: fully-qualified sub names (e.g. DB::DB, a debugger
+	# hook installed into the DB:: package regardless of its source
+	# package) are legitimate function names, not just bare identifiers
+	_assert_identifier($function, 'function', package => 1);
 	$iterations ||= DEFAULT_ITERATIONS;		 # default fuzz runs if not specified
 	$seed = undef if defined $seed && $seed eq '';	# treat empty as undef
 
@@ -2035,9 +2038,12 @@ sub generate
 			if(ref($inputs) eq 'ARRAY') {
 				$input_str = join(', ', map { perl_quote($_) } @{$inputs});
 			} elsif(ref($inputs) eq 'HASH') {
-				$input_str = Dumper($inputs);
-				$input_str =~ s/\$VAR1 =//;
-				$input_str =~ s/;//;
+				$input_str = render_fallback($inputs);
+
+				# YAML can't express Perl's undef, so a corpus value of
+				# the sentinel string 'undef' means "this param is
+				# undef" -- convert the quoted sentinel back to the
+				# bareword so the generated test passes real undef
 				$input_str =~ s/=> 'undef'/=> undef/gms;
 			} else {
 				$input_str = $inputs;

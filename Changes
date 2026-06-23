@@ -1,6 +1,7 @@
 Revision history for App-Test-Generator
 
-0.40
+0.39	Sun May 24 17:43:17 EDT 2026
+
 	[Bug fixes]
 	- Fix mutation.json incorrectly added to .gitignore while the file is
 	  tracked by git; removed the .gitignore entry and untracked the file
@@ -56,6 +57,58 @@ Revision history for App-Test-Generator
 	  so the @INC-walking loop never found a 'lib' directory on Windows
 	  when the input file and the cwd were on different drives; now uses
 	  catpath() to keep the volume attached.
+	- Fix SchemaExtractor _infer_type_from_expression() and
+	  _parse_modern_signature() using hand-rolled brace/bracket depth
+	  counters to split comma-separated lists, which mishandled nested
+	  brackets (e.g. a signature default value containing a hashref
+	  literal could be split on the comma inside the hashref); both now
+	  use Text::Balanced::extract_bracketed() to skip over nested
+	  structures correctly.
+	- Fix Mutator.pm's _dedup_mutants(), _is_redundant_mutation(), and
+	  apply_mutant() reaching into Mutant objects via direct hash access
+	  (e.g. $m->{line}), bypassing the class's own accessor methods; all
+	  six call sites now use the Mutant accessors ($m->line, $m->original,
+	  $m->transform, etc).
+	- Fix Devel::App::Test::Generator::LCSAJ::Runtime's DB::DB debugger
+	  hook calling abs_path() (a filesystem stat) on every single
+	  statement executed under the debugger; resolved paths are now
+	  memoised per raw $file in %NORM_CACHE.
+	- Fix lib/App/Test/Generator/Sample/Module.pm declaring
+	  package Test::App::Generator::Sample::Module (reversed word order)
+	  instead of App::Test::Generator::Sample::Module, so the package
+	  name did not match its location under
+	  lib/App/Test/Generator/Sample/; renamed throughout the file.
+	- Fix Generator.pm SYNOPSIS extract-schemas example passing two
+	  positional arguments (bin/extract-schemas lib/Sample/Module.pm)
+	  instead of one, referencing a nonexistent lib/Sample/Module.pm path,
+	  and naming the generated schema file schemas/greet.yaml when
+	  extract-schemas actually writes schemas/greet.yml; corrected all
+	  three.
+	- Fix lib/App/Test/Generator/Exporter/YAML.pm having no package
+	  statement (so it loaded into main::), no input validation before
+	  YAML::XS::DumpFile(), and no test coverage; added the package
+	  statement, Params::Validate::Strict validation of plan/file
+	  (rejecting non-hashref plans and missing/empty file paths), and
+	  t/Exporter-YAML.t.
+	- Fix generate()'s _assert_identifier() check on the function name
+	  rejecting fully-qualified sub names such as DB::DB, breaking
+	  t/app.t's self-test sweep against
+	  Devel::App::Test::Generator::LCSAJ::Runtime.pm (DB::DB is a Perl
+	  debugger hook, always installed into the DB:: package regardless
+	  of its source package); the function-name check now allows "::"
+	  separators, same as the existing module-name check.
+	- Fix SchemaExtractor's heuristic numeric-type inference missing
+	  parameters that are only ever validated via an explicit
+	  looks_like_number($param) call rather than direct arithmetic
+	  adjacency (e.g. a parameter used as looks_like_number($b) in a
+	  guard clause and only later folded into arithmetic via
+	  $a + ($b // 0), where $b never sits next to an operator itself);
+	  such parameters fell back to type 'string', so fuzz-generated
+	  non-numeric inputs caused generated tests to fail against code
+	  that legitimately dies on non-numeric input. An explicit
+	  looks_like_number($param) call in the source is now treated as a
+	  direct numeric-type assertion, checked before the existing
+	  arithmetic-operator and comparison heuristics.
 
 	- Fix _compile_signature_isolated()'s "fast path" Safe compartment,
 	  tried before falling back to the subprocess unconditionally;
@@ -141,8 +194,6 @@ Revision history for App-Test-Generator
 	  git pull --rebase before pushing, reducing non-fast-forward
 	  rejections when mutate.yml's commit and dashboard.yml's
 	  workflow_run-triggered commit land close together.
-
-0.39	Sun May 24 17:43:17 EDT 2026
 
 	[Bug fixes]
 	- Fix mutation dashboard Total column excluding skipped mutants; Total now

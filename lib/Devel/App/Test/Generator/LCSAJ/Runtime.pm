@@ -62,8 +62,11 @@ non-internal file is recorded.
 =cut
 
 # --------------------------------------------------
-# %HITS   - { normalised_path => { line_number => hit_count } }
-# %TARGET - set of normalised paths to record (empty means record everything)
+# %HITS       - { normalised_path => { line_number => hit_count } }
+# %TARGET     - set of normalised paths to record (empty means record everything)
+# %NORM_CACHE - { raw_file => normalised_path }, memoises abs_path()
+#               since DB::DB sees the same $file on every consecutive
+#               statement within a source file
 #
 # These must be package globals (our) rather than lexicals because DB::DB
 # is called by the Perl debugger infrastructure and needs to access them
@@ -71,6 +74,7 @@ non-internal file is recorded.
 # --------------------------------------------------
 our %HITS;
 our %TARGET;
+our %NORM_CACHE;
 
 # --------------------------------------------------
 # Populate %TARGET from LCSAJ_TARGETS at compile time.
@@ -152,15 +156,18 @@ sub _normalize {
 #             be as fast as possible.
 #             Internal files and out-of-target files
 #             are skipped immediately.
+#             abs_path() resolution is memoised in
+#             %NORM_CACHE per raw $file, since the same
+#             file is seen on every consecutive statement.
 # --------------------------------------------------
 sub DB::DB {
 	my (undef, $file, $line) = caller(0);
 
 	return unless defined $file && defined $line;
 
-	# Resolve symlinks and relative components to a stable absolute path
-	my $abs  = abs_path($file) // $file;
-	my $norm = _normalize($abs);
+	# Resolve symlinks and relative components to a stable absolute path,
+	# cached per raw $file to avoid a stat() on every statement
+	my $norm = $NORM_CACHE{$file} //= _normalize(abs_path($file) // $file);
 
 	# Never record hits inside this module itself — suffix match is used
 	# so it works regardless of CWD or install prefix

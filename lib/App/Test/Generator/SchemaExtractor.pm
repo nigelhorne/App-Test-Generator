@@ -1655,20 +1655,15 @@ sub _extract_class_methods {
 		my $class_name = $1;
 		my $start_pos = pos($content);
 
-		# Find the matching closing brace (simple brace counting)
-		my $depth = 1;
-		my $class_end = $start_pos;
+		# Find the matching closing brace. $start_pos is just after the
+		# opening '{' consumed by the regex above, so back up one
+		# character to hand the brace itself to extract_bracketed.
+		require Text::Balanced;
+		my $extracted = Text::Balanced::extract_bracketed(substr($content, $start_pos - 1), '{}');
 
-		while ($depth > 0 && $class_end < length($content)) {
-			my $char = substr($content, $class_end, 1);
-			$depth++ if $char eq '{';
-			$depth-- if $char eq '}';
-			$class_end++;
-		}
+		next unless defined $extracted;	# unbalanced braces, skip class
 
-		next if $depth != 0;	# unbalanced braces, skip class
-
-		my $class_body = substr($content, $start_pos, $class_end - $start_pos - 1);
+		my $class_body = substr($extracted, 1, length($extracted) - 2);
 
 		$self->_log("  Found class $class_name");
 
@@ -2778,25 +2773,32 @@ sub _parse_pv_call {
 	$string =~ s/^\s*\(\s*//;
 	$string =~ s/\s*\)\s*$//;
 
-	# Find the first comma at brace-depth 0
-	my $depth = 0;
-	my $comma_pos;
+	# Find the first comma at brace-depth 0, jumping over each balanced
+	# {...} block in one step via extract_bracketed rather than
+	# counting depth character by character
+	require Text::Balanced;
+	my $rest = $string;
+	my $comma_pos = 0;
+	my $found_comma = 0;
 
-	for my $i (0 .. length($string) - 1) {
-		my $char = substr($string, $i, 1);
-
-		if ($char eq '{') {
-			$depth++;
-		} elsif ($char eq '}') {
-			$depth--;
-			return if $depth < 0;	# Broken source code
-		} elsif ($char eq ',' && $depth == 0) {
-			$comma_pos = $i;
+	while (length $rest) {
+		if (substr($rest, 0, 1) eq '{') {
+			# extract_bracketed advances $rest past the extracted block
+			# in place, so $rest must not be re-truncated afterwards
+			my $extracted = Text::Balanced::extract_bracketed($rest, '{}');
+			return unless defined $extracted;	# Broken source code
+			$comma_pos += length $extracted;
+			next;
+		}
+		if (substr($rest, 0, 1) eq ',') {
+			$found_comma = 1;
 			last;
 		}
+		$comma_pos++;
+		$rest = substr($rest, 1);
 	}
 
-	return unless defined $comma_pos;
+	return unless $found_comma;
 
 	my $first_arg = substr($string, 0, $comma_pos);
 	my $hash_str = substr($string, $comma_pos + 1);
@@ -4429,13 +4431,20 @@ sub _detect_list_context {
 	# Avoid false positives from function calls
 	if ($code =~ /return\s*\(\s*([^)]+)\s*\)\s*;/) {
 		my $content = $1;
-		# Count commas outside of nested structures
+
+		# Count commas outside of nested structures, jumping over each
+		# balanced bracketed block in one step via extract_bracketed
+		require Text::Balanced;
 		my $comma_count = 0;
-		my $depth = 0;
-		for my $char (split //, $content) {
-			$depth++ if $char eq '(' || $char eq '[' || $char eq '{';
-			$depth-- if $char eq ')' || $char eq ']' || $char eq '}';
-			$comma_count++ if $char eq ',' && $depth == 0;
+		my $rest = $content;
+		while (length $rest) {
+			if (substr($rest, 0, 1) =~ /[(\[{]/) {
+				my $extracted = Text::Balanced::extract_bracketed($rest, '(){}[]');
+				last unless defined $extracted;	# Unbalanced brackets
+				next;
+			}
+			$comma_count++ if substr($rest, 0, 1) eq ',';
+			$rest = substr($rest, 1);
 		}
 
 		if ($comma_count > 0 && $content !~ /\b(?:bless|new)\b/) {
@@ -4737,12 +4746,17 @@ sub _infer_type_from_expression {
 
 	# Check for multiple comma-separated values (indicates array/list)
 	if ($expr =~ /,/) {
+		require Text::Balanced;
 		my $comma_count = 0;
-		my $depth = 0;
-		for my $char (split //, $expr) {
-			$depth++ if $char =~ /[\(\[\{]/;
-			$depth-- if $char =~ /[\)\]\}]/;
-			$comma_count++ if $char eq ',' && $depth == 0;
+		my $rest = $expr;
+		while (length $rest) {
+			if (substr($rest, 0, 1) =~ /[(\[{]/) {
+				my $extracted = Text::Balanced::extract_bracketed($rest, '(){}[]');
+				last unless defined $extracted;	# Unbalanced brackets
+				next;
+			}
+			$comma_count++ if substr($rest, 0, 1) eq ',';
+			$rest = substr($rest, 1);
 		}
 
 		if ($comma_count > 0) {
@@ -5176,9 +5190,20 @@ sub _analyze_parameter_type {
 	# Heuristic numeric inference (low confidence)
 	# ------------------------------------------------------------
 	if (!$p->{type}) {
+		# An explicit looks_like_number($param) check is a direct
+		# numeric-type assertion by the author, stronger evidence than
+		# incidental arithmetic adjacency (e.g. $param is only ever
+		# used inside a defined-or default before the arithmetic, so
+		# the arithmetic-operator check below never sees $param itself
+		# next to an operator).
+		if ($code =~ /\blooks_like_number\s*\(\s*\$$param\s*\)/) {
+			$p->{type} = 'number';
+			$p->{_type_confidence} = 'heuristic';
+			$self->_log("  CODE: $param inferred as number (looks_like_number check)");
+		}
 		# Numeric operators: + - * / % **
 		# Use \/(?!\/) to exclude // (defined-or) from matching as division.
-		if (
+		elsif (
 			$code =~ /\$$param\s*(?:[\+\-\*\%]|\/(?!\/))/ ||
 			$code =~ /(?:[\+\-\*\%]|\/(?!\/))\s*\$$param/ ||
 			$code =~ /\bint\s*\(\s*\$$param\s*\)/ ||
@@ -5851,24 +5876,30 @@ sub _parse_modern_signature {
 
 	$self->_log("  DEBUG: Parsing signature: [$sig]");
 
-	# Split signature by commas, but respect nested structures
+	# Split signature by commas, but respect nested structures (e.g. a
+	# default value containing a hashref/arrayref literal)
+	require Text::Balanced;
 	my @parts;
 	my $current = '';
-	my $depth = 0;
+	my $rest = $sig;
 
-	for my $char (split //, $sig) {
-		if ($char eq '(' || $char eq '[' || $char eq '{') {
-			$depth++;
-			$current .= $char;
-		} elsif ($char eq ')' || $char eq ']' || $char eq '}') {
-			$depth--;
-			$current .= $char;
-		} elsif ($char eq ',' && $depth == 0) {
+	while (length $rest) {
+		if (substr($rest, 0, 1) =~ /[(\[{]/) {
+			# extract_bracketed advances $rest past the extracted block
+			# in place, so $rest must not be re-truncated afterwards
+			my $extracted = Text::Balanced::extract_bracketed($rest, '(){}[]');
+			last unless defined $extracted;	# Unbalanced brackets
+			$current .= $extracted;
+			next;
+		}
+		if (substr($rest, 0, 1) eq ',') {
 			push @parts, $current;
 			$current = '';
-		} else {
-			$current .= $char;
+			$rest = substr($rest, 1);
+			next;
 		}
+		$current .= substr($rest, 0, 1);
+		$rest = substr($rest, 1);
 	}
 	push @parts, $current if $current =~ /\S/;
 

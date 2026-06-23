@@ -360,7 +360,7 @@ sub apply_mutant {
 	# Parse the workspace copy and apply the mutation transform
 	my $doc = PPI::Document->new($target) or croak "Failed to parse $target";
 
-	$mutant->{transform}->($doc);
+	$mutant->transform->($doc);
 
 	$doc->save($target);
 }
@@ -440,9 +440,9 @@ sub _dedup_mutants {
 	for my $m (@{$mutants}) {
 		# Build a stable key from metadata — not from the coderef
 		my $key = join '|',
-			$m->{line}        // '',
-			$m->{original}    // '',
-			$m->{description} // '';
+			$m->line        // '',
+			$m->original    // '',
+			$m->description // '';
 
 		next if $seen{$key}++;
 		next if _is_redundant_mutation($m);
@@ -460,7 +460,7 @@ sub _dedup_mutants {
 #     redundant and should be skipped in fast
 #     mutation mode.
 #
-# Entry:      $m - a Mutant hashref.
+# Entry:      $m - a Mutant object.
 #
 # Exit:       Returns 1 if redundant, 0 otherwise.
 #
@@ -474,7 +474,7 @@ sub _dedup_mutants {
 sub _is_redundant_mutation {
 	my ($m) = @_;
 
-	my $orig = $m->{original} // '';
+	my $orig = $m->original // '';
 
 	# Arithmetic no-ops add nothing to mutation coverage
 	return 1 if $orig =~ /\+\s*0$/;
@@ -482,7 +482,7 @@ sub _is_redundant_mutation {
 
 	# Double negation inside conditionals forces boolean context
 	# in Perl and is not a meaningful mutation
-	if($m->{context} && $m->{context} eq 'conditional') {
+	if($m->context && $m->context eq 'conditional') {
 		return 1 if $orig =~ /^\!\!/;
 	}
 
@@ -490,7 +490,7 @@ sub _is_redundant_mutation {
 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
 
 	# Mutations inside comments are unreachable code
-	return 1 if $m->{line_content} && $m->{line_content} =~ /^\s*#/;
+	return 1 if $m->line_content && $m->line_content =~ /^\s*#/;
 
 	return 0;
 }

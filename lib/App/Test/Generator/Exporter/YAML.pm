@@ -1,6 +1,15 @@
+package App::Test::Generator::Exporter::YAML;
+
+use strict;
+use warnings;
+use Params::Validate::Strict 0.30;
 use YAML::XS;
 
 our $VERSION = '0.39';
+
+=head1 NAME
+
+App::Test::Generator::Exporter::YAML - Serialise a test plan to YAML
 
 =head1 VERSION
 
@@ -48,5 +57,22 @@ Nothing.
 
 sub export {
 	my ($self, $plan, $file) = @_;
-	YAML::XS::DumpFile($file, $plan);
+
+	my %args;
+	$args{plan} = $plan if defined $plan;
+	$args{file} = $file if defined $file;
+
+	my $params = Params::Validate::Strict::validate_strict({
+		args => \%args,
+		schema => {
+			plan => { type => 'hashref' },
+			file => { type => 'string', min => 1 },
+		}
+	});
+
+	YAML::XS::DumpFile($params->{file}, $params->{plan});
+
+	return;
 }
+
+1;
