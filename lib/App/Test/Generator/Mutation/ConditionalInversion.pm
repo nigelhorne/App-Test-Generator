@@ -163,12 +163,14 @@ sub mutate {
 
 		my $mutant = eval {
 			App::Test::Generator::Mutant->new(
-				id          => "COND_INV_${line}_${col}",
-				group       => "COND_INV:$line",
-				description => "Invert condition $type to $flipped",
-				line        => $line,
-				type        => 'boolean',
-				original    => $cond->content(),
+				id           => "COND_INV_${line}_${col}",
+				group        => "COND_INV:$line",
+				description  => "Invert condition $type to $flipped",
+				line         => $line,
+				type         => 'boolean',
+				original     => $cond->content(),
+				context      => 'conditional',
+				line_content => $self->_line_content($doc, $line),
 
 				# Closure captures line, col and flipped so it targets
 				# exactly the right statement in the document copy

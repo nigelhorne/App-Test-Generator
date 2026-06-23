@@ -129,9 +129,12 @@ sub analyze {
 	# --------------------------------------------------
 	# Detect: return $self->{property}
 	# Negative lookahead ensures this does not also match
-	# plain return $self (handled separately below)
+	# plain return $self (handled separately below).
+	# Matched with /g so a method with several differing
+	# property-returning branches contributes evidence for
+	# each one found, not just the first in the source.
 	# --------------------------------------------------
-	if($source =~ /return\s+\$self->\{(\w+)\}/) {
+	while($source =~ /return\s+\$self->\{(\w+)\}/g) {
 		$add->(
 			category => 'return',
 			signal   => 'returns_property',
@@ -142,10 +145,13 @@ sub analyze {
 
 	# --------------------------------------------------
 	# Detect: return $self
-	# Use negative lookahead to avoid matching
-	# return $self->{...} which is a property return
+	# \b after \$self prevents matching variable names that
+	# merely start with "self" (e.g. $self_backup, $selfish);
+	# the negative lookahead then excludes return $self->{...}
+	# which is a property return handled above. Matched with
+	# /g for the same multi-occurrence reason as above.
 	# --------------------------------------------------
-	if($source =~ /return\s+\$self(?!->)/) {
+	while($source =~ /return\s+\$self\b(?!->)/g) {
 		$add->(
 			category => 'return',
 			signal   => 'returns_self',
@@ -157,8 +163,10 @@ sub analyze {
 	# Detect: return of a constant literal — quoted string,
 	# numeric literal, or undef. All indicate the method
 	# returns a fixed value rather than a computed state.
+	# Matched with /g for the same multi-occurrence reason
+	# as the patterns above.
 	# --------------------------------------------------
-	if($source =~ /return\s+(?:['"\d]|undef\b)/) {
+	while($source =~ /return\s+(?:['"\d]|undef\b)/g) {
 		$add->(
 			category => 'return',
 			signal   => 'returns_constant',

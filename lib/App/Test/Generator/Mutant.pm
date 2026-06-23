@@ -69,6 +69,21 @@ C<boolean>.
 An optional string grouping related mutants together e.g. all mutations
 on the same source line.
 
+=item * C<context>
+
+An optional string classifying the syntactic context the mutation was
+taken from, e.g. C<conditional> when the mutated code sits inside an
+C<if>/C<unless>/C<while>/C<until> condition, or C<statement>/C<expression>
+otherwise. Used by L<App::Test::Generator::Mutator>'s fast-mode dedup to
+recognise mutations that Perl's own boolean coercion already makes
+redundant.
+
+=item * C<line_content>
+
+An optional string holding the raw source text of the line the mutation
+targets. Used by L<App::Test::Generator::Mutator>'s fast-mode dedup to
+skip mutations on comment-only lines.
+
 =back
 
 =head3 Returns
@@ -81,13 +96,15 @@ attribute is missing or if C<transform> is not a CODE reference.
 =head4 input
 
     {
-        id          => { type => SCALAR },
-        description => { type => SCALAR },
-        original    => { type => SCALAR },
-        line        => { type => SCALAR },
-        transform   => { type => CODEREF },
-        type        => { type => SCALAR, optional => 1 },
-        group       => { type => SCALAR, optional => 1 },
+        id           => { type => SCALAR },
+        description  => { type => SCALAR },
+        original     => { type => SCALAR },
+        line         => { type => SCALAR },
+        transform    => { type => CODEREF },
+        type         => { type => SCALAR, optional => 1 },
+        group        => { type => SCALAR, optional => 1 },
+        context      => { type => SCALAR, optional => 1 },
+        line_content => { type => SCALAR, optional => 1 },
     }
 
 =head4 output
@@ -258,6 +275,47 @@ e.g. all mutations targeting the same source line.
 =cut
 
 sub group { $_[0]->{group} }
+
+=head2 context
+
+Return the optional syntactic-context classification string,
+e.g. C<conditional> or C<statement>.
+
+    my $context = $mutant->context;
+
+=head3 API specification
+
+=head4 input
+
+    { self => { type => OBJECT, isa => 'App::Test::Generator::Mutant' } }
+
+=head4 output
+
+    { type => SCALAR, optional => 1 }
+
+=cut
+
+sub context { $_[0]->{context} }
+
+=head2 line_content
+
+Return the optional raw source text of the line this mutant targets.
+
+    my $text = $mutant->line_content;
+
+=head3 API specification
+
+=head4 input
+
+    { self => { type => OBJECT, isa => 'App::Test::Generator::Mutant' } }
+
+=head4 output
+
+    { type => SCALAR, optional => 1 }
+
+=cut
+
+sub line_content { $_[0]->{line_content} }
 
 =head1 AUTHOR
 

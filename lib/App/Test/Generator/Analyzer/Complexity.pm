@@ -166,6 +166,12 @@ sub analyze {
 	# not a Model::Method object — access the body key directly
 	my $body = $method->{body} // '';
 
+	# Branch/logic/exception keywords and the ?/&&/|| operators are
+	# only real decision points as actual code; the same characters
+	# inside a string literal (e.g. "Are you sure?") or a comment
+	# must not inflate the cyclomatic score
+	my $code_only = _strip_strings_and_comments($body);
+
 	my %result = (
 		cyclomatic_score => $CYCLOMATIC_BASE,
 		branching_points => 0,
@@ -179,20 +185,20 @@ sub analyze {
 	# new decision point that increases cyclomatic complexity
 	# --------------------------------------------------
 	for my $token (@BRANCH_TOKENS) {
-		my $count = () = $body =~ /\b$token\b/g;
+		my $count = () = $code_only =~ /\b$token\b/g;
 		$result{branching_points} += $count;
 		$result{cyclomatic_score} += $count;
 	}
 
 	# Logical operators also introduce implicit branches
-	my $logic_count = () = $body =~ /&&|\|\||\?/g;
+	my $logic_count = () = $code_only =~ /&&|\|\||\?/g;
 	$result{cyclomatic_score} += $logic_count;
 
 	# --------------------------------------------------
 	# Early returns — each return beyond the first adds
 	# an additional exit path through the method
 	# --------------------------------------------------
-	my $return_count = () = $body =~ /\breturn\b/g;
+	my $return_count = () = $code_only =~ /\breturn\b/g;
 	$result{early_returns}    = $return_count > 1 ? $return_count - 1 : 0;
 	$result{cyclomatic_score} += $result{early_returns};
 
@@ -201,7 +207,7 @@ sub analyze {
 	# a path that must be tested separately
 	# --------------------------------------------------
 	for my $token (@EXCEPTION_TOKENS) {
-		my $count = () = $body =~ /\b$token\b/g;
+		my $count = () = $code_only =~ /\b$token\b/g;
 		$result{exception_paths} += $count;
 		$result{cyclomatic_score} += $count;
 	}
@@ -234,6 +240,29 @@ sub analyze {
 		                            $LEVEL_HIGH;
 
 	return \%result;
+}
+
+# --------------------------------------------------
+# Purpose: blank out the contents of '...' and "..." string
+#          literals and # line comments so that the keyword
+#          and operator counts above only see real code, not
+#          words/punctuation that merely appear inside a
+#          message or comment.
+# Entry:   a raw source body string.
+# Exit:    the same string with string-literal contents and
+#          comment text removed.
+# Side effects: none. Best-effort only — does not handle q//,
+#          qq//, heredocs, or quote-like operators with custom
+#          delimiters.
+# --------------------------------------------------
+sub _strip_strings_and_comments {
+	my ($body) = @_;
+
+	$body =~ s/"(?:[^"\\]|\\.)*"//g;
+	$body =~ s/'(?:[^'\\]|\\.)*'//g;
+	$body =~ s/#.*$//mg;
+
+	return $body;
 }
 
 1;

@@ -7319,10 +7319,13 @@ sub _set_defaults {
 # Side effects: Logs detections to stdout when
 #               verbose is set.
 #
-# Notes:      Parameter names are extracted from
-#             the my (...) = @_ pattern only —
-#             shift-style parameters are not
-#             currently analysed for relationships.
+# Notes:      Parameter names are extracted via
+#             _extract_parameters_from_signature, so
+#             every style it supports -- my (...) =
+#             @_, shift-style (my $x = shift), direct-
+#             index ($_[N]), and modern signatures --
+#             is analysed for relationships, not just
+#             the my (...) = @_ list-assignment form.
 # --------------------------------------------------
 sub _analyze_relationships {
 	my ($self, $method) = @_;
@@ -7330,12 +7333,12 @@ sub _analyze_relationships {
 	my $code = $method->{body};
 	my @relationships;
 
-	# Extract all parameter names from the method
-	my @param_names;
-	if ($code =~ /my\s*\(\s*\$\w+\s*,\s*(.+?)\)\s*=\s*\@_/s) {
-		my $params = $1;
-		@param_names = $params =~ /\$(\w+)/g;
-	}
+	# Extract all parameter names from the method, using the same
+	# multi-style detection used for schema population so shift-style
+	# and modern-signature methods get relationship analysis too
+	my %params;
+	$self->_extract_parameters_from_signature(\%params, $code);
+	my @param_names = sort { $params{$a}{position} <=> $params{$b}{position} } keys %params;
 
 	return [] unless @param_names;
 

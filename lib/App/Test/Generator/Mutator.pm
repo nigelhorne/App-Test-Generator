@@ -209,8 +209,11 @@ sub generate_mutants {
 	my @mutants;
 
 	# Run each registered mutation strategy against the document,
-	# excluding any candidates on skip-annotated lines
+	# excluding any candidates on skip-annotated lines. applies_to()
+	# is a cheap pre-filter -- skip the mutate() walk entirely for
+	# strategies that have nothing to match in this document.
 	for my $mutation (@{$self->{mutations}}) {
+		next unless $mutation->applies_to($doc);
 		push @mutants, grep { !$skip_lines{$_->line} } $mutation->mutate($doc);
 	}
 

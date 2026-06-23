@@ -194,6 +194,11 @@ sub mutate {
 		my $line = $op->location->[0];
 		my $col  = $op->location->[1];
 
+		# An operator that is a direct child of a Structure::Condition
+		# sits in an if/unless/while/until condition rather than a
+		# plain statement or block
+		my $context = $parent->isa('PPI::Structure::Condition') ? 'conditional' : 'expression';
+
 		# Generate one mutant per flip of this operator
 		for my $change (@{ $FLIP{$original} }) {
 			# Build a unique id from location and the specific flip
@@ -202,12 +207,14 @@ sub mutate {
 
 			my $mutant = eval {
 				App::Test::Generator::Mutant->new(
-					id          => $id,
-					group       => "NUM_BOUNDARY:$line",
-					description => "Numeric boundary flip $original to $change",
-					original    => $original,
-					line        => $line,
-					type        => 'comparison',
+					id           => $id,
+					group        => "NUM_BOUNDARY:$line",
+					description  => "Numeric boundary flip $original to $change",
+					original     => $original,
+					line         => $line,
+					type         => 'comparison',
+					context      => $context,
+					line_content => $self->_line_content($doc, $line),
 
 					# The transform closure captures line, col, original
 					# and change so it targets precisely the right operator
