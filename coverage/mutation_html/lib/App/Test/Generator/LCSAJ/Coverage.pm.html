@@ -245,7 +245,7 @@ pre details.mutant-details ul {
  <a href="../Model/Method.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
-TER2 (Branch): 83.33%<br>
+TER2 (Branch): 91.67%<br>
 TER3 (LCSAJ): 100.0% (1/1)<br>
 Approximate LCSAJ segments: 13<br>
 </div>
@@ -382,7 +382,7 @@ Approximate LCSAJ segments: 13<br>
 </span><span class="">   90: =cut
 </span><span class="">   91: 
 </span><span class="">   92: sub merge {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">93 → 108 → 122</span></span>   93: 	my ($lcsaj_file, $hits_file, $out_file) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">93 → 108 → 126</span></span>   93: 	my ($lcsaj_file, $hits_file, $out_file) = @_;
 </span><span class="">   94: 
 </span><span class="">   95: 	# Validate all three file arguments before attempting any IO
 </span><span class="">   96: 	croak &#39;lcsaj_file required&#39; unless defined $lcsaj_file;
@@ -410,44 +410,53 @@ Approximate LCSAJ segments: 13<br>
 </span><span class="">  118: 		$path-&gt;{covered} = $covered;
 </span><span class="">  119: 	}
 </span><span class="">  120: 
-</span><span class="">  121: 	# Write the annotated paths to the output file
-</span><span class="">  122: 	open my $fh, &#39;&gt;&#39;, $out_file or croak &quot;Cannot write coverage output to $out_file: $!&quot;;
-</span><span class="">  123: 	print $fh encode_json($paths);
-</span><span class="">  124: 	close $fh;
-</span><span class="">  125: }
-</span><span class="">  126: 
-</span><span class="">  127: # --------------------------------------------------
-</span><span class="">  128: # _slurp
-</span><span class="">  129: #
-</span><span class="">  130: # Purpose:    Read the entire contents of a file and
-</span><span class="">  131: #             return it as a string.
-</span><span class="">  132: #
-</span><span class="">  133: # Entry:      $file - path to the file to read.
+</span><span class="">  121: 	# Write the annotated paths to the output file. autodie is disabled
+</span><span class="">  122: 	# for this open so the custom error message below is actually
+</span><span class="">  123: 	# reachable -- under &quot;use autodie qw(:all)&quot; open() never returns
+</span><span class="">  124: 	# false on failure, it throws its own exception instead, which
+</span><span class="">  125: 	# would silently make the &quot;or croak&quot; dead code.
+</span><span class="">  126: 	no autodie qw(open);
+</span><span class="">  127: 	open my $fh, &#39;&gt;&#39;, $out_file or croak &quot;Cannot write coverage output to $out_file: $!&quot;;
+</span><span class="">  128: 	print $fh encode_json($paths);
+</span><span class="">  129: 	close $fh;
+</span><span class="">  130: }
+</span><span class="">  131: 
+</span><span class="">  132: # --------------------------------------------------
+</span><span class="">  133: # _slurp
 </span><span class="">  134: #
-</span><span class="">  135: # Exit:       Returns the file contents as a scalar
-</span><span class="">  136: #             string. Croaks if the file cannot be
-</span><span class="">  137: #             opened.
-</span><span class="">  138: #
-</span><span class="">  139: # Side effects: None beyond opening and closing the
-</span><span class="">  140: #               file handle.
-</span><span class="">  141: #
-</span><span class="">  142: # Notes:      Uses three-argument open for safety with
-</span><span class="">  143: #             filenames containing special characters.
-</span><span class="">  144: #             Sets $/ to undef to slurp the whole file
-</span><span class="">  145: #             in one read, localised to avoid affecting
-</span><span class="">  146: #             other code.
-</span><span class="">  147: # --------------------------------------------------
-</span><span class="">  148: sub _slurp {
-</span><span class="">  149: 	my $file = $_[0];
-</span><span class="">  150: 
-</span><span class="">  151: 	open my $fh, &#39;&lt;&#39;, $file or croak &quot;Cannot read $file: $!&quot;;
-</span><span class="">  152: 
-</span><span class="">  153: 	# Localise $/ to undef to slurp entire file in one read
-</span><span class="">  154: 	local $/;
-</span><span class="">  155: 	return &lt;$fh&gt;;
-</span><span class="">  156: }
-</span><span class="">  157: 
-</span><span class="">  158: 1;
+</span><span class="">  135: # Purpose:    Read the entire contents of a file and
+</span><span class="">  136: #             return it as a string.
+</span><span class="">  137: #
+</span><span class="">  138: # Entry:      $file - path to the file to read.
+</span><span class="">  139: #
+</span><span class="">  140: # Exit:       Returns the file contents as a scalar
+</span><span class="">  141: #             string. Croaks if the file cannot be
+</span><span class="">  142: #             opened.
+</span><span class="">  143: #
+</span><span class="">  144: # Side effects: None beyond opening and closing the
+</span><span class="">  145: #               file handle.
+</span><span class="">  146: #
+</span><span class="">  147: # Notes:      Uses three-argument open for safety with
+</span><span class="">  148: #             filenames containing special characters.
+</span><span class="">  149: #             Sets $/ to undef to slurp the whole file
+</span><span class="">  150: #             in one read, localised to avoid affecting
+</span><span class="">  151: #             other code.
+</span><span class="">  152: # --------------------------------------------------
+</span><span class="">  153: sub _slurp {
+</span><span class="">  154: 	my $file = $_[0];
+</span><span class="">  155: 
+</span><span class="">  156: 	# autodie is disabled for this open for the same reason as in
+</span><span class="">  157: 	# merge() above -- it would otherwise make the custom &quot;Cannot
+</span><span class="">  158: 	# read&quot; message unreachable dead code.
+</span><span class="">  159: 	no autodie qw(open);
+</span><span class="">  160: 	open my $fh, &#39;&lt;&#39;, $file or croak &quot;Cannot read $file: $!&quot;;
+</span><span class="">  161: 
+</span><span class="">  162: 	# Localise $/ to undef to slurp entire file in one read
+</span><span class="">  163: 	local $/;
+</span><span class="">  164: 	return &lt;$fh&gt;;
+</span><span class="">  165: }
+</span><span class="">  166: 
+</span><span class="">  167: 1;
 </span></pre>
 
 <script>

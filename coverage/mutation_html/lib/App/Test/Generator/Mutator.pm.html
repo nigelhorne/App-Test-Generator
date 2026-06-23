@@ -244,8 +244,8 @@ pre details.mutant-details ul {
 <div class="nav"><a href="Mutation/ReturnUndef.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
  <a href="TestStrategy.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
-TER1 (Statement): 96.46%<br>
-TER2 (Branch): 89.58%<br>
+TER1 (Statement): 100.00%<br>
+TER2 (Branch): 91.67%<br>
 TER3 (LCSAJ): 100.0% (5/5)<br>
 Approximate LCSAJ segments: 49<br>
 </div>
@@ -658,7 +658,7 @@ Approximate LCSAJ segments: 49<br>
 </span><span class="">  360: 	# Parse the workspace copy and apply the mutation transform
 </span><span class="">  361: 	my $doc = PPI::Document-&gt;new($target) or croak &quot;Failed to parse $target&quot;;
 </span><span class="">  362: 
-</span><span class="">  363: 	$mutant-&gt;{transform}-&gt;($doc);
+</span><span class="">  363: 	$mutant-&gt;transform-&gt;($doc);
 </span><span class="">  364: 
 </span><span class="">  365: 	$doc-&gt;save($target);
 </span><span class="">  366: }
@@ -751,9 +751,9 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  440: 	for my $m (@{$mutants}) {
 </span><span class="">  441: 		# Build a stable key from metadata &acirc;&#128;&#148; not from the coderef
 </span><span class="">  442: 		my $key = join &#39;|&#39;,
-</span><span class="">  443: 			$m-&gt;{line}        // &#39;&#39;,
-</span><span class="">  444: 			$m-&gt;{original}    // &#39;&#39;,
-</span><span class="">  445: 			$m-&gt;{description} // &#39;&#39;;
+</span><span class="">  443: 			$m-&gt;line        // &#39;&#39;,
+</span><span class="">  444: 			$m-&gt;original    // &#39;&#39;,
+</span><span class="">  445: 			$m-&gt;description // &#39;&#39;;
 </span><span class="">  446: 
 </span><span class="">  447: 		next if $seen{$key}++;
 </span><span class="">  448: 		next if _is_redundant_mutation($m);
@@ -771,7 +771,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  460: #     redundant and should be skipped in fast
 </span><span class="">  461: #     mutation mode.
 </span><span class="">  462: #
-</span><span class="">  463: # Entry:      $m - a Mutant hashref.
+</span><span class="">  463: # Entry:      $m - a Mutant object.
 </span><span class="">  464: #
 </span><span class="">  465: # Exit:       Returns 1 if redundant, 0 otherwise.
 </span><span class="">  466: #
@@ -785,7 +785,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  474: sub _is_redundant_mutation {
 </span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">475 → 485 → 490</span></span>  475: 	my ($m) = @_;
 </span><span class="">  476: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  477: 	my $orig = $m-&gt;{original} // &#39;&#39;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  477: 	my $orig = $m-&gt;original // &#39;&#39;;
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  478: 
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  479: 	# Arithmetic no-ops add nothing to mutation coverage
 </span><span class="">  480: 	return 1 if $orig =~ /\+\s*0$/;
@@ -793,7 +793,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  482: 
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  483: 	# Double negation inside conditionals forces boolean context
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  484: 	# in Perl and is not a meaningful mutation
-</span><span class="">  485: 	if($m-&gt;{context} &amp;&amp; $m-&gt;{context} eq &#39;conditional&#39;) {
+</span><span class="">  485: 	if($m-&gt;context &amp;&amp; $m-&gt;context eq &#39;conditional&#39;) {
 </span><span class="">  486: 		return 1 if $orig =~ /^\!\!/;
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  487: 	}
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  488: 
@@ -801,7 +801,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  490: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  491: 
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  492: 	# Mutations inside comments are unreachable code
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  493: 	return 1 if $m-&gt;{line_content} &amp;&amp; $m-&gt;{line_content} =~ /^\s*#/;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  493: 	return 1 if $m-&gt;line_content &amp;&amp; $m-&gt;line_content =~ /^\s*#/;
 </span><span class="">  494: 
 </span><span class="">  495: 	return 0;
 </span><span class="">  496: }

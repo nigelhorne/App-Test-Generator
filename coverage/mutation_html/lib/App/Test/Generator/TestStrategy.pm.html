@@ -244,8 +244,8 @@ pre details.mutant-details ul {
 <div class="nav"><a href="Mutator.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
  <a href="Analyzer/Complexity.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
-TER1 (Statement): 98.11%<br>
-TER2 (Branch): 83.33%<br>
+TER1 (Statement): 100.00%<br>
+TER2 (Branch): 86.67%<br>
 TER3 (LCSAJ): 100.0% (8/8)<br>
 Approximate LCSAJ segments: 31<br>
 </div>
@@ -496,7 +496,7 @@ Approximate LCSAJ segments: 31<br>
 </span><span class="">  204: 	# Accessor detection &acirc;&#128;&#148; choose test types based on
 </span><span class="">  205: 	# whether the method is a getter, setter, or both
 </span><span class="">  206: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">207 → 207 → 241</span></span>  207: 	if($schema-&gt;{accessor} &amp;&amp; scalar keys %{ $schema-&gt;{accessor} }) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">207 → 207 → 247</span></span>  207: 	if($schema-&gt;{accessor} &amp;&amp; scalar keys %{ $schema-&gt;{accessor} }) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  208: 		my $acc_type = $schema-&gt;{accessor}{type} // &#39;&#39;;
 </span><span class="">  209: 
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  210: 		if($acc_type eq $ACCESSOR_GETTER) {
@@ -519,70 +519,76 @@ Approximate LCSAJ segments: 31<br>
 </span><span class="">  221: 		} elsif($acc_type eq $ACCESSOR_GETSET) {
 </span><span class="">  222: 			# For getset accessors, check the input parameter
 </span><span class="">  223: 			# type to determine if object injection or boolean
-</span><span class="">  224: 			# set tests are more appropriate
-</span><span class="">  225: 			my ($param) = grep { !/^_/ } keys %{ $schema-&gt;{input} || {} };
-</span><span class="">  226: 			my $param_type = ($param &amp;&amp; $schema-&gt;{input}{$param}{type}) // &#39;&#39;;
-</span><span class="">  227: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  228: 			if($param_type eq $TYPE_OBJECT) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  229: 				$plan{$TEST_OBJECT_INJECT} = 1;
-</span><span class="">  230: 			} elsif($param_type eq $TYPE_BOOLEAN) {
-</span><span class="">  231: 				$plan{$TEST_BOOLEAN_SET} = 1;
-</span><span class="">  232: 			}
-</span><span class="">  233: 			$plan{$TEST_GETSET} = 1;
-</span><span class="">  234: 		}
-</span><span class="">  235: 	}
-</span><span class="">  236: 
-</span><span class="">  237: 	# --------------------------------------------------
-</span><span class="">  238: 	# Void return type &acirc;&#128;&#148; verify the method returns nothing
-</span><span class="">  239: 	# and does not accidentally return a useful value
-</span><span class="">  240: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">241 → 241 → 249</span></span>  241: 	if(($schema-&gt;{output}{type} // &#39;&#39;) eq $TYPE_VOID) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  242: 		$plan{$TEST_VOID} = 1;
-</span><span class="">  243: 	}
-</span><span class="">  244: 
-</span><span class="">  245: 	# --------------------------------------------------
-</span><span class="">  246: 	# Error handling &acirc;&#128;&#148; verify error return conventions
-</span><span class="">  247: 	# are tested explicitly
-</span><span class="">  248: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">249 → 249 → 258</span></span>  249: 	if($schema-&gt;{output}{_error_return}
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  250: 	|| $schema-&gt;{output}{success_failure_pattern}) {
-</span><span class="">  251: 		$plan{$TEST_ERROR_HANDLING} = 1;
-</span><span class="">  252: 	}
-</span><span class="">  253: 
+</span><span class="">  224: 			# set tests are more appropriate. Sort by position (keys
+</span><span class="">  225: 			# %hash has no defined order) so the choice is deterministic
+</span><span class="">  226: 			# if more than one candidate is present.
+</span><span class="">  227: 			my $input = $schema-&gt;{input} || {};
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  228: 			my ($param) = sort {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  229: 				($input-&gt;{$a}{position} // 9999) &lt;=&gt; ($input-&gt;{$b}{position} // 9999)
+</span><span class="">  230: 				|| $a cmp $b
+</span><span class="">  231: 			} grep { !/^_/ } keys %{ $input };
+</span><span class="">  232: 			my $param_type = ($param &amp;&amp; $input-&gt;{$param}{type}) // &#39;&#39;;
+</span><span class="">  233: 
+</span><span class="">  234: 			if($param_type eq $TYPE_OBJECT) {
+</span><span class="">  235: 				$plan{$TEST_OBJECT_INJECT} = 1;
+</span><span class="">  236: 			} elsif($param_type eq $TYPE_BOOLEAN) {
+</span><span class="">  237: 				$plan{$TEST_BOOLEAN_SET} = 1;
+</span><span class="">  238: 			}
+</span><span class="">  239: 			$plan{$TEST_GETSET} = 1;
+</span><span class="">  240: 		}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  241: 	}
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  242: 
+</span><span class="">  243: 	# --------------------------------------------------
+</span><span class="">  244: 	# Void return type &acirc;&#128;&#148; verify the method returns nothing
+</span><span class="">  245: 	# and does not accidentally return a useful value
+</span><span class="">  246: 	# --------------------------------------------------
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">247 → 247 → 255</span></span>  247: 	if(($schema-&gt;{output}{type} // &#39;&#39;) eq $TYPE_VOID) {
+</span><span class="">  248: 		$plan{$TEST_VOID} = 1;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  249: 	}
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  250: 
+</span><span class="">  251: 	# --------------------------------------------------
+</span><span class="">  252: 	# Error handling &acirc;&#128;&#148; verify error return conventions
+</span><span class="">  253: 	# are tested explicitly
 </span><span class="">  254: 	# --------------------------------------------------
-</span><span class="">  255: 	# Boundary hints from YAML test configuration &acirc;&#128;&#148;
-</span><span class="">  256: 	# generate boundary/equivalence class tests
-</span><span class="">  257: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">258 → 258 → 266</span></span>  258: 	if($schema-&gt;{_yamltest_hints} &amp;&amp; keys %{ $schema-&gt;{_yamltest_hints} }) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  259: 		$plan{$TEST_BOUNDARY} = 1;
-</span><span class="">  260: 	}
-</span><span class="">  261: 
-</span><span class="">  262: 	# --------------------------------------------------
-</span><span class="">  263: 	# Method chaining &acirc;&#128;&#148; verify that $self is returned
-</span><span class="">  264: 	# and that calls can be chained
-</span><span class="">  265: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">266 → 266 → 274</span></span>  266: 	if($schema-&gt;{output}{_returns_self}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  267: 		$plan{$TEST_CHAINING} = 1;
-</span><span class="">  268: 	}
-</span><span class="">  269: 
-</span><span class="">  270: 	# --------------------------------------------------
-</span><span class="">  271: 	# Boolean output &acirc;&#128;&#148; needs predicate tests regardless
-</span><span class="">  272: 	# of whether an accessor was detected
-</span><span class="">  273: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">274 → 274 → 282</span></span>  274: 	if(($schema-&gt;{output}{type} // &#39;&#39;) eq $TYPE_BOOLEAN) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  275: 		$plan{$TEST_PREDICATE} = 1;
-</span><span class="">  276: 	}
-</span><span class="">  277: 
-</span><span class="">  278: 	# --------------------------------------------------
-</span><span class="">  279: 	# Always generate at least a basic call test even
-</span><span class="">  280: 	# if no other test types were identified
-</span><span class="">  281: 	# --------------------------------------------------
-</span><span class="">  282: 	$plan{$TEST_BASIC} = 1 unless %plan;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">255 → 255 → 264</span></span>  255: 	if($schema-&gt;{output}{_error_return}
+</span><span class="">  256: 	|| $schema-&gt;{output}{success_failure_pattern}) {
+</span><span class="">  257: 		$plan{$TEST_ERROR_HANDLING} = 1;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  258: 	}
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  259: 
+</span><span class="">  260: 	# --------------------------------------------------
+</span><span class="">  261: 	# Boundary hints from YAML test configuration &acirc;&#128;&#148;
+</span><span class="">  262: 	# generate boundary/equivalence class tests
+</span><span class="">  263: 	# --------------------------------------------------
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">264 → 264 → 272</span></span>  264: 	if($schema-&gt;{_yamltest_hints} &amp;&amp; keys %{ $schema-&gt;{_yamltest_hints} }) {
+</span><span class="">  265: 		$plan{$TEST_BOUNDARY} = 1;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  266: 	}
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  267: 
+</span><span class="">  268: 	# --------------------------------------------------
+</span><span class="">  269: 	# Method chaining &acirc;&#128;&#148; verify that $self is returned
+</span><span class="">  270: 	# and that calls can be chained
+</span><span class="">  271: 	# --------------------------------------------------
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">272 → 272 → 280</span></span>  272: 	if($schema-&gt;{output}{_returns_self}) {
+</span><span class="">  273: 		$plan{$TEST_CHAINING} = 1;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  274: 	}
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  275: 
+</span><span class="">  276: 	# --------------------------------------------------
+</span><span class="">  277: 	# Boolean output &acirc;&#128;&#148; needs predicate tests regardless
+</span><span class="">  278: 	# of whether an accessor was detected
+</span><span class="">  279: 	# --------------------------------------------------
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">280 → 280 → 288</span></span>  280: 	if(($schema-&gt;{output}{type} // &#39;&#39;) eq $TYPE_BOOLEAN) {
+</span><span class="">  281: 		$plan{$TEST_PREDICATE} = 1;
+</span><span class="">  282: 	}
 </span><span class="">  283: 
-</span><span class="">  284: 	return \%plan;
-</span><span class="">  285: }
-</span><span class="">  286: 
-</span><span class="">  287: 1;
+</span><span class="">  284: 	# --------------------------------------------------
+</span><span class="">  285: 	# Always generate at least a basic call test even
+</span><span class="">  286: 	# if no other test types were identified
+</span><span class="">  287: 	# --------------------------------------------------
+</span><span class="">  288: 	$plan{$TEST_BASIC} = 1 unless %plan;
+</span><span class="">  289: 
+</span><span class="">  290: 	return \%plan;
+</span><span class="">  291: }
+</span><span class="">  292: 
+</span><span class="">  293: 1;
 </span></pre>
 
 <script>

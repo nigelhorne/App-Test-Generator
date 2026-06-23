@@ -415,122 +415,126 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  123: 
 </span><span class="">  124: Both scores start at 100 and are reduced by penalties for each detected
 </span><span class="">  125: risk pattern. A small bonus is applied to stability for boolean return
-</span><span class="">  126: types. All scores are clamped to [0, 100] after adjustments.
-</span><span class="">  127: 
-</span><span class="">  128: =head3 API specification
-</span><span class="">  129: 
-</span><span class="">  130: =head4 input
+</span><span class="">  126: types, but since C&lt;stability_score&gt; starts at 100 and is clamped to
+</span><span class="">  127: [0, 100] after all adjustments, this bonus is a no-op unless an earlier
+</span><span class="">  128: penalty has already reduced the score below 100 &acirc;&#128;&#148; for a boolean-returning
+</span><span class="">  129: function with no other detected risk, C&lt;stability_score&gt; is unaffected
+</span><span class="">  130: by C&lt;$BONUS_BOOLEAN_STABILITY&gt; and remains 100.
 </span><span class="">  131: 
-</span><span class="">  132:     {
-</span><span class="">  133:         self   =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Analyzer::ReturnMeta&#39; },
-</span><span class="">  134:         schema =&gt; { type =&gt; HASHREF },
-</span><span class="">  135:     }
-</span><span class="">  136: 
-</span><span class="">  137: =head4 output
-</span><span class="">  138: 
-</span><span class="">  139:     {
-</span><span class="">  140:         type    =&gt; HASHREF,
-</span><span class="">  141:         keys    =&gt; {
-</span><span class="">  142:             stability_score   =&gt; { type =&gt; SCALAR },
-</span><span class="">  143:             consistency_score =&gt; { type =&gt; SCALAR },
-</span><span class="">  144:             risk_flags        =&gt; { type =&gt; ARRAYREF },
-</span><span class="">  145:         },
-</span><span class="">  146:     }
-</span><span class="">  147: 
-</span><span class="">  148: =cut
-</span><span class="">  149: 
-</span><span class="">  150: sub analyze {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">151 → 163 → 174</span></span>  151: 	my ($self, $schema) = @_;
-</span><span class="">  152: 
-</span><span class="">  153: 	my $output      = $schema-&gt;{output} || {};
-</span><span class="">  154: 	my @risk;
-</span><span class="">  155: 	my $stability   = 100;
-</span><span class="">  156: 	my $consistency = 100;
-</span><span class="">  157: 
-</span><span class="">  158: 	# --------------------------------------------------
-</span><span class="">  159: 	# Context sensitivity &acirc;&#128;&#148; function returns differently
-</span><span class="">  160: 	# in list vs scalar context, making it harder to test
-</span><span class="">  161: 	# predictably
+</span><span class="">  132: =head3 API specification
+</span><span class="">  133: 
+</span><span class="">  134: =head4 input
+</span><span class="">  135: 
+</span><span class="">  136:     {
+</span><span class="">  137:         self   =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Analyzer::ReturnMeta&#39; },
+</span><span class="">  138:         schema =&gt; { type =&gt; HASHREF },
+</span><span class="">  139:     }
+</span><span class="">  140: 
+</span><span class="">  141: =head4 output
+</span><span class="">  142: 
+</span><span class="">  143:     {
+</span><span class="">  144:         type    =&gt; HASHREF,
+</span><span class="">  145:         keys    =&gt; {
+</span><span class="">  146:             stability_score   =&gt; { type =&gt; SCALAR },
+</span><span class="">  147:             consistency_score =&gt; { type =&gt; SCALAR },
+</span><span class="">  148:             risk_flags        =&gt; { type =&gt; ARRAYREF },
+</span><span class="">  149:         },
+</span><span class="">  150:     }
+</span><span class="">  151: 
+</span><span class="">  152: =cut
+</span><span class="">  153: 
+</span><span class="">  154: sub analyze {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">155 → 167 → 178</span></span>  155: 	my ($self, $schema) = @_;
+</span><span class="">  156: 
+</span><span class="">  157: 	my $output      = $schema-&gt;{output} || {};
+</span><span class="">  158: 	my @risk;
+</span><span class="">  159: 	my $stability   = 100;
+</span><span class="">  160: 	my $consistency = 100;
+</span><span class="">  161: 
 </span><span class="">  162: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  163: 	if($output-&gt;{_context_aware}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  164: 		push @risk, &#39;context_sensitive&#39;;
-</span><span class="">  165: 		$stability   -= $PENALTY_CONTEXT_SENSITIVE_STABILITY;
-</span><span class="">  166: 		$consistency -= $PENALTY_CONTEXT_SENSITIVE_CONSISTENCY;
-</span><span class="">  167: 	}
-</span><span class="">  168: 
-</span><span class="">  169: 	# --------------------------------------------------
-</span><span class="">  170: 	# Mixed return types &acirc;&#128;&#148; function claims to return self
-</span><span class="">  171: 	# but is not typed as object, suggesting inconsistent
-</span><span class="">  172: 	# return paths
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  163: 	# Context sensitivity &acirc;&#128;&#148; function returns differently
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  164: 	# in list vs scalar context, making it harder to test
+</span><span class="">  165: 	# predictably
+</span><span class="">  166: 	# --------------------------------------------------
+</span><span class="">  167: 	if($output-&gt;{_context_aware}) {
+</span><span class="">  168: 		push @risk, &#39;context_sensitive&#39;;
+</span><span class="">  169: 		$stability   -= $PENALTY_CONTEXT_SENSITIVE_STABILITY;
+</span><span class="">  170: 		$consistency -= $PENALTY_CONTEXT_SENSITIVE_CONSISTENCY;
+</span><span class="">  171: 	}
+</span><span class="">  172: 
 </span><span class="">  173: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">174 → 174 → 184</span></span>  174: 	if($output-&gt;{_returns_self} &amp;&amp; ($output-&gt;{type} // &#39;&#39;) ne &#39;object&#39;) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  175: 		push @risk, &#39;mixed_return_types&#39;;
-</span><span class="">  176: 		$consistency -= $PENALTY_MIXED_RETURN_CONSISTENCY;
-</span><span class="">  177: 	}
-</span><span class="">  178: 
-</span><span class="">  179: 	# --------------------------------------------------
-</span><span class="">  180: 	# Implicit undef returns &acirc;&#128;&#148; function falls off the end
-</span><span class="">  181: 	# without an explicit return, making error paths hard
-</span><span class="">  182: 	# to distinguish from successful empty returns
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  174: 	# Mixed return types &acirc;&#128;&#148; function claims to return self
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  175: 	# but is not typed as object, suggesting inconsistent
+</span><span class="">  176: 	# return paths
+</span><span class="">  177: 	# --------------------------------------------------
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">178 → 178 → 188</span></span>  178: 	if($output-&gt;{_returns_self} &amp;&amp; ($output-&gt;{type} // &#39;&#39;) ne &#39;object&#39;) {
+</span><span class="">  179: 		push @risk, &#39;mixed_return_types&#39;;
+</span><span class="">  180: 		$consistency -= $PENALTY_MIXED_RETURN_CONSISTENCY;
+</span><span class="">  181: 	}
+</span><span class="">  182: 
 </span><span class="">  183: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">184 → 184 → 194</span></span>  184: 	if($output-&gt;{_error_handling}{implicit_undef}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  185: 		push @risk, &#39;implicit_error_return&#39;;
-</span><span class="">  186: 		$stability -= $PENALTY_IMPLICIT_UNDEF_STABILITY;
-</span><span class="">  187: 	}
-</span><span class="">  188: 
-</span><span class="">  189: 	# --------------------------------------------------
-</span><span class="">  190: 	# Explicit undef on error &acirc;&#128;&#148; function explicitly returns
-</span><span class="">  191: 	# undef on failure; lower penalty than implicit since
-</span><span class="">  192: 	# the intent is at least documented in the code
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  184: 	# Implicit undef returns &acirc;&#128;&#148; function falls off the end
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  185: 	# without an explicit return, making error paths hard
+</span><span class="">  186: 	# to distinguish from successful empty returns
+</span><span class="">  187: 	# --------------------------------------------------
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">188 → 188 → 198</span></span>  188: 	if($output-&gt;{_error_handling}{implicit_undef}) {
+</span><span class="">  189: 		push @risk, &#39;implicit_error_return&#39;;
+</span><span class="">  190: 		$stability -= $PENALTY_IMPLICIT_UNDEF_STABILITY;
+</span><span class="">  191: 	}
+</span><span class="">  192: 
 </span><span class="">  193: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">194 → 194 → 204</span></span>  194: 	if($output-&gt;{_error_return} &amp;&amp; $output-&gt;{_error_return} eq &#39;undef&#39;) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  195: 		push @risk, &#39;undef_on_error&#39;;
-</span><span class="">  196: 		$stability -= $PENALTY_EXPLICIT_UNDEF_STABILITY;
-</span><span class="">  197: 	}
-</span><span class="">  198: 
-</span><span class="">  199: 	# --------------------------------------------------
-</span><span class="">  200: 	# Empty list error pattern &acirc;&#128;&#148; function returns () on
-</span><span class="">  201: 	# error, which is indistinguishable from a successful
-</span><span class="">  202: 	# call that found no results
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  194: 	# Explicit undef on error &acirc;&#128;&#148; function explicitly returns
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  195: 	# undef on failure; lower penalty than implicit since
+</span><span class="">  196: 	# the intent is at least documented in the code
+</span><span class="">  197: 	# --------------------------------------------------
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">198 → 198 → 208</span></span>  198: 	if($output-&gt;{_error_return} &amp;&amp; $output-&gt;{_error_return} eq &#39;undef&#39;) {
+</span><span class="">  199: 		push @risk, &#39;undef_on_error&#39;;
+</span><span class="">  200: 		$stability -= $PENALTY_EXPLICIT_UNDEF_STABILITY;
+</span><span class="">  201: 	}
+</span><span class="">  202: 
 </span><span class="">  203: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">204 → 204 → 213</span></span>  204: 	if($output-&gt;{_error_handling}{empty_list}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  205: 		push @risk, &#39;empty_list_error&#39;;
-</span><span class="">  206: 		$consistency -= $PENALTY_EMPTY_LIST_CONSISTENCY;
-</span><span class="">  207: 	}
-</span><span class="">  208: 
-</span><span class="">  209: 	# --------------------------------------------------
-</span><span class="">  210: 	# Exception swallowing &acirc;&#128;&#148; function catches exceptions
-</span><span class="">  211: 	# without rethrowing, hiding failures from the caller
-</span><span class="">  212: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">213 → 213 → 224</span></span>  213: 	if($output-&gt;{_error_handling}{exception_handling}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  214: 		push @risk, &#39;exception_swallowing&#39;;
-</span><span class="">  215: 		$stability -= $PENALTY_EXCEPTION_SWALLOW_STABILITY;
-</span><span class="">  216: 	}
-</span><span class="">  217: 
-</span><span class="">  218: 	# --------------------------------------------------
-</span><span class="">  219: 	# Boolean return bonus &acirc;&#128;&#148; boolean returns are the most
-</span><span class="">  220: 	# predictable and easiest to assert, so a small boost
-</span><span class="">  221: 	# is applied. Only has effect if stability was already
-</span><span class="">  222: 	# reduced below 95 by earlier penalties.
-</span><span class="">  223: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">224 → 224 → 229</span></span>  224: 	if($output-&gt;{type} &amp;&amp; $output-&gt;{type} eq &#39;boolean&#39;) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  225: 		$stability += $BONUS_BOOLEAN_STABILITY;
-</span><span class="">  226: 	}
-</span><span class="">  227: 
-</span><span class="">  228: 	# Clamp both scores to the valid [0, 100] range
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  229: 	$stability   = 0   if $stability   &lt; 0;
-</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  230: 	$stability   = 100 if $stability   &gt; 100;
-</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  231: 	$consistency = 0   if $consistency &lt; 0;
-</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  232: 	$consistency = 100 if $consistency &gt; 100;
-</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="">  233: 
-</span><span class="">  234: 	return {
-</span><span class="">  235: 		stability_score   =&gt; $stability,
-</span><span class="">  236: 		consistency_score =&gt; $consistency,
-</span><span class="">  237: 		risk_flags        =&gt; \@risk,
-</span><span class="">  238: 	};
-</span><span class="">  239: }
-</span><span class="">  240: 
-</span><span class="">  241: 1;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  204: 	# Empty list error pattern &acirc;&#128;&#148; function returns () on
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  205: 	# error, which is indistinguishable from a successful
+</span><span class="">  206: 	# call that found no results
+</span><span class="">  207: 	# --------------------------------------------------
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">208 → 208 → 217</span></span>  208: 	if($output-&gt;{_error_handling}{empty_list}) {
+</span><span class="">  209: 		push @risk, &#39;empty_list_error&#39;;
+</span><span class="">  210: 		$consistency -= $PENALTY_EMPTY_LIST_CONSISTENCY;
+</span><span class="">  211: 	}
+</span><span class="">  212: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  213: 	# --------------------------------------------------
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  214: 	# Exception swallowing &acirc;&#128;&#148; function catches exceptions
+</span><span class="">  215: 	# without rethrowing, hiding failures from the caller
+</span><span class="">  216: 	# --------------------------------------------------
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">217 → 217 → 228</span></span>  217: 	if($output-&gt;{_error_handling}{exception_handling}) {
+</span><span class="">  218: 		push @risk, &#39;exception_swallowing&#39;;
+</span><span class="">  219: 		$stability -= $PENALTY_EXCEPTION_SWALLOW_STABILITY;
+</span><span class="">  220: 	}
+</span><span class="">  221: 
+</span><span class="">  222: 	# --------------------------------------------------
+</span><span class="">  223: 	# Boolean return bonus &acirc;&#128;&#148; boolean returns are the most
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  224: 	# predictable and easiest to assert, so a small boost
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  225: 	# is applied. Only has effect if stability was already
+</span><span class="">  226: 	# reduced below 95 by earlier penalties.
+</span><span class="">  227: 	# --------------------------------------------------
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">228 → 228 → 233</span></span>  228: 	if($output-&gt;{type} &amp;&amp; $output-&gt;{type} eq &#39;boolean&#39;) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  229: 		$stability += $BONUS_BOOLEAN_STABILITY;
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  230: 	}
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  231: 
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  232: 	# Clamp both scores to the valid [0, 100] range
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="">  233: 	$stability   = 0   if $stability   &lt; 0;
+</span><span class="">  234: 	$stability   = 100 if $stability   &gt; 100;
+</span><span class="">  235: 	$consistency = 0   if $consistency &lt; 0;
+</span><span class="">  236: 	$consistency = 100 if $consistency &gt; 100;
+</span><span class="">  237: 
+</span><span class="">  238: 	return {
+</span><span class="">  239: 		stability_score   =&gt; $stability,
+</span><span class="">  240: 		consistency_score =&gt; $consistency,
+</span><span class="">  241: 		risk_flags        =&gt; \@risk,
+</span><span class="">  242: 	};
+</span><span class="">  243: }
+</span><span class="">  244: 
+</span><span class="">  245: 1;
 </span></pre>
 
 <script>

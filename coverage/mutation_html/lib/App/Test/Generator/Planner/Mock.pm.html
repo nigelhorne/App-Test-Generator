@@ -247,7 +247,7 @@ pre details.mutant-details ul {
 TER1 (Statement): 100.00%<br>
 TER2 (Branch): 100.00%<br>
 TER3 (LCSAJ): 100.0% (1/1)<br>
-Approximate LCSAJ segments: 7<br>
+Approximate LCSAJ segments: 9<br>
 </div>
 
     <div class="legend">
@@ -301,8 +301,8 @@ Approximate LCSAJ segments: 7<br>
 </span><span class="">    9: # Mock strategy labels written to the plan output.
 </span><span class="">   10: # mock_system is used when a method calls external
 </span><span class="">   11: # commands; capture_io when it performs IO operations.
-</span><span class="">   12: # Note: if a method does both, mock_system takes
-</span><span class="">   13: # precedence &acirc;&#128;&#148; see note in plan() below.
+</span><span class="">   12: # A method needing both gets an arrayref of both labels
+</span><span class="">   13: # &acirc;&#128;&#148; see note in plan() below.
 </span><span class="">   14: # --------------------------------------------------
 </span><span class="">   15: Readonly my $MOCK_SYSTEM     =&gt; &#39;mock_system&#39;;
 </span><span class="">   16: Readonly my $MOCK_CAPTURE_IO =&gt; &#39;capture_io&#39;;
@@ -379,14 +379,14 @@ Approximate LCSAJ segments: 7<br>
 </span><span class="">   87: 
 </span><span class="">   88: =head3 Returns
 </span><span class="">   89: 
-</span><span class="">   90: A hashref mapping method names to mock strategy strings. Only methods
-</span><span class="">   91: that require mocking appear in the output &acirc;&#128;&#148; pure methods are omitted.
+</span><span class="">   90: A hashref mapping method names to a mock strategy. Only methods that
+</span><span class="">   91: require mocking appear in the output &acirc;&#128;&#148; pure methods are omitted.
 </span><span class="">   92: 
 </span><span class="">   93: Currently supported strategy values are C&lt;mock_system&gt; and
-</span><span class="">   94: C&lt;capture_io&gt;. If a method both calls external commands and performs
-</span><span class="">   95: IO, C&lt;mock_system&gt; takes precedence. This is a known limitation and
-</span><span class="">   96: may be revised in a future version to support multiple strategies per
-</span><span class="">   97: method.
+</span><span class="">   94: C&lt;capture_io&gt;. A method needing only one of these gets that value as
+</span><span class="">   95: a plain scalar string. A method that both calls external commands and
+</span><span class="">   96: performs IO needs both mocks applied, so it gets an arrayref
+</span><span class="">   97: C&lt;[mock_system, capture_io]&gt; instead of a single string.
 </span><span class="">   98: 
 </span><span class="">   99: =head3 API specification
 </span><span class="">  100: 
@@ -402,7 +402,7 @@ Approximate LCSAJ segments: 7<br>
 </span><span class="">  110:     {
 </span><span class="">  111:         type =&gt; HASHREF,
 </span><span class="">  112:         keys =&gt; {
-</span><span class="">  113:             &#39;*&#39; =&gt; { type =&gt; SCALAR },
+</span><span class="">  113:             &#39;*&#39; =&gt; { type =&gt; &#39;scalar | arrayref&#39; },
 </span><span class="">  114:         },
 </span><span class="">  115:     }
 </span><span class="">  116: 
@@ -423,12 +423,12 @@ Approximate LCSAJ segments: 7<br>
 </span><span class="">  131: 
 </span><span class="">  132: 		# --------------------------------------------------
 </span><span class="">  133: 		# Assign mock strategy based on detected side effects.
-</span><span class="">  134: 		# mock_system takes precedence over capture_io when
-</span><span class="">  135: 		# both are present &acirc;&#128;&#148; this is a known limitation.
-</span><span class="">  136: 		# TODO: consider supporting multiple strategies per
-</span><span class="">  137: 		# method as an arrayref in a future version.
-</span><span class="">  138: 		# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  139: 		if($effects-&gt;{calls_external}) {
+</span><span class="">  134: 		# A method needing both gets an arrayref of both labels
+</span><span class="">  135: 		# rather than silently dropping one of them.
+</span><span class="">  136: 		# --------------------------------------------------
+</span><span class="">  137: 		if($effects-&gt;{calls_external} &amp;&amp; $effects-&gt;{performs_io}) {
+</span><span class="">  138: 			$mock_plan{$method} = [$MOCK_SYSTEM, $MOCK_CAPTURE_IO];
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  139: 		} elsif($effects-&gt;{calls_external}) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  140: 			$mock_plan{$method} = $MOCK_SYSTEM;
 </span><span class="">  141: 		} elsif($effects-&gt;{performs_io}) {
 </span><span class="">  142: 			$mock_plan{$method} = $MOCK_CAPTURE_IO;

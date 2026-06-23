@@ -242,7 +242,47 @@ pre details.mutant-details ul {
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm</h1>
 <div class="nav"><a href="../../../../../App/Test/Generator/Sample/Module.pm.html">⬅ Previous</a> <a href="../../../../../../../index.html">Index</a>
- <a href="../../../../../App/Test/Generator/CoverageGuidedFuzzer.pm.html">Next ➡</a></div>
+ <a href="../../../../../App/Test/Generator/CoverageGuidedFuzzer.pm.html">Next ➡</a></div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 90.57%<br>
+TER2 (Branch): 81.25%<br>
+TER3 (LCSAJ): 0.0% (0/2)<br>
+Approximate LCSAJ segments: 17<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
 		<div class="legend">
 			<h3>Mutant Testing Legend</h3>
 			<span class="legend-box survived-1"></span> Survived (tests missed this)
@@ -314,73 +354,73 @@ pre details.mutant-details ul {
 </span><span class="">   62: =cut
 </span><span class="">   63: 
 </span><span class="">   64: # --------------------------------------------------
-</span><span class="">   65: # %HITS   - { normalised_path =&gt; { line_number =&gt; hit_count } }
-</span><span class="">   66: # %TARGET - set of normalised paths to record (empty means record everything)
-</span><span class="">   67: #
-</span><span class="">   68: # These must be package globals (our) rather than lexicals because DB::DB
-</span><span class="">   69: # is called by the Perl debugger infrastructure and needs to access them
-</span><span class="">   70: # without a closure. Lexical vars would not be visible in DB::DB.
-</span><span class="">   71: # --------------------------------------------------
-</span><span class="">   72: our %HITS;
-</span><span class="">   73: our %TARGET;
-</span><span class="">   74: 
-</span><span class="">   75: # --------------------------------------------------
-</span><span class="">   76: # Populate %TARGET from LCSAJ_TARGETS at compile time.
-</span><span class="">   77: # The env var contains absolute realpath() output
-</span><span class="">   78: # separated by colons. Stray newlines from broken
-</span><span class="">   79: # shell pipelines are stripped defensively.
-</span><span class="">   80: # --------------------------------------------------
-</span><span class="">   81: BEGIN {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 82 → 85 → 0</span></span>   82: 	my $targets_env = $ENV{LCSAJ_TARGETS} // &#39;&#39;;
-</span><span class="">   83: 	$targets_env =~ s/\n//g;
-</span><span class="">   84: 
-</span><span class="">   85: 	for my $t (split /:/, $targets_env) {
-</span><span class="">   86: 		next unless length $t;
-</span><span class="">   87: 
-</span><span class="">   88: 		# Inline normalisation &acirc;&#128;&#148; cannot call _normalize here since
-</span><span class="">   89: 		# BEGIN runs before named subs are compiled when BEGIN
-</span><span class="">   90: 		# appears at the top of the file
-</span><span class="">   91: 		my $f = $t;
-</span><span class="">   92: 		$f =~ s{^.*/blib/lib/}{lib/};
-</span><span class="">   93: 		$f =~ s{^.*/lib/}{lib/};
-</span><span class="">   94: 		$TARGET{$f} = 1;
-</span><span class="">   95: 	}
-</span><span class="">   96: }
-</span><span class="">   97: 
-</span><span class="">   98: END {
-</span><span class="">   99: 	_write_results();
+</span><span class="">   65: # %HITS       - { normalised_path =&gt; { line_number =&gt; hit_count } }
+</span><span class="">   66: # %TARGET     - set of normalised paths to record (empty means record everything)
+</span><span class="">   67: # %NORM_CACHE - { raw_file =&gt; normalised_path }, memoises abs_path()
+</span><span class="">   68: #               since DB::DB sees the same $file on every consecutive
+</span><span class="">   69: #               statement within a source file
+</span><span class="">   70: #
+</span><span class="">   71: # These must be package globals (our) rather than lexicals because DB::DB
+</span><span class="">   72: # is called by the Perl debugger infrastructure and needs to access them
+</span><span class="">   73: # without a closure. Lexical vars would not be visible in DB::DB.
+</span><span class="">   74: # --------------------------------------------------
+</span><span class="">   75: our %HITS;
+</span><span class="">   76: our %TARGET;
+</span><span class="">   77: our %NORM_CACHE;
+</span><span class="">   78: 
+</span><span class="">   79: # --------------------------------------------------
+</span><span class="">   80: # Populate %TARGET from LCSAJ_TARGETS at compile time.
+</span><span class="">   81: # The env var contains absolute realpath() output
+</span><span class="">   82: # separated by colons. Stray newlines from broken
+</span><span class="">   83: # shell pipelines are stripped defensively.
+</span><span class="">   84: # --------------------------------------------------
+</span><span class="">   85: BEGIN {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 86 → 89 → 0</span></span>   86: 	my $targets_env = $ENV{LCSAJ_TARGETS} // &#39;&#39;;
+</span><span class="">   87: 	$targets_env =~ s/\n//g;
+</span><span class="">   88: 
+</span><span class="">   89: 	for my $t (split /:/, $targets_env) {
+</span><span class="">   90: 		next unless length $t;
+</span><span class="">   91: 
+</span><span class="">   92: 		# Inline normalisation &acirc;&#128;&#148; cannot call _normalize here since
+</span><span class="">   93: 		# BEGIN runs before named subs are compiled when BEGIN
+</span><span class="">   94: 		# appears at the top of the file
+</span><span class="">   95: 		my $f = $t;
+</span><span class="">   96: 		$f =~ s{^.*/blib/lib/}{lib/};
+</span><span class="">   97: 		$f =~ s{^.*/lib/}{lib/};
+</span><span class="">   98: 		$TARGET{$f} = 1;
+</span><span class="">   99: 	}
 </span><span class="">  100: }
 </span><span class="">  101: 
-</span><span class="">  102: # --------------------------------------------------
-</span><span class="">  103: # _normalize
-</span><span class="">  104: #
-</span><span class="">  105: # Purpose:    Convert an absolute or build-tree path
-</span><span class="">  106: #             to a canonical lib-relative form so that
-</span><span class="">  107: #             paths recorded at runtime match the
-</span><span class="">  108: #             targets derived from LCSAJ_TARGETS.
-</span><span class="">  109: #
-</span><span class="">  110: # Entry:      $path - an absolute or relative file path.
-</span><span class="">  111: #
-</span><span class="">  112: # Exit:       Returns a lib-relative path string,
-</span><span class="">  113: #             e.g. lib/Foo/Bar.pm
-</span><span class="">  114: #
-</span><span class="">  115: # Side effects: None.
-</span><span class="">  116: #
-</span><span class="">  117: # Notes:      Must be defined before the BEGIN block
-</span><span class="">  118: #             that calls it, since BEGIN runs at compile
-</span><span class="">  119: #             time and later subs may not yet be compiled.
+</span><span class="">  102: END {
+</span><span class="">  103: 	_write_results();
+</span><span class="">  104: }
+</span><span class="">  105: 
+</span><span class="">  106: # --------------------------------------------------
+</span><span class="">  107: # _normalize
+</span><span class="">  108: #
+</span><span class="">  109: # Purpose:    Convert an absolute or build-tree path
+</span><span class="">  110: #             to a canonical lib-relative form so that
+</span><span class="">  111: #             paths recorded at runtime match the
+</span><span class="">  112: #             targets derived from LCSAJ_TARGETS.
+</span><span class="">  113: #
+</span><span class="">  114: # Entry:      $path - an absolute or relative file path.
+</span><span class="">  115: #
+</span><span class="">  116: # Exit:       Returns a lib-relative path string,
+</span><span class="">  117: #             e.g. lib/Foo/Bar.pm
+</span><span class="">  118: #
+</span><span class="">  119: # Side effects: None.
 </span><span class="">  120: #
-</span><span class="">  121: # Examples:
-</span><span class="">  122: #   /home/user/proj/blib/lib/Foo/Bar.pm  -&gt;  lib/Foo/Bar.pm
-</span><span class="">  123: #   /home/user/proj/lib/Foo/Bar.pm       -&gt;  lib/Foo/Bar.pm
-</span><span class="">  124: # --------------------------------------------------
-</span><span class="">  125: sub _normalize {
-</span><span class="">  126: 	my $f = $_[0];
-</span><span class="">  127: 
-</span><span class="">  128: 	# Strip everything up to and including blib/lib/ or lib/
-</span><span class="">  129: 	$f =~ s{^.*/blib/lib/}{lib/};
-</span><span class="">  130: 	$f =~ s{^.*/lib/}{lib/};
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  131: 	return $f;
+</span><span class="">  121: # Notes:      Must be defined before the BEGIN block
+</span><span class="">  122: #             that calls it, since BEGIN runs at compile
+</span><span class="">  123: #             time and later subs may not yet be compiled.
+</span><span class="">  124: #
+</span><span class="">  125: # Examples:
+</span><span class="">  126: #   /home/user/proj/blib/lib/Foo/Bar.pm  -&gt;  lib/Foo/Bar.pm
+</span><span class="">  127: #   /home/user/proj/lib/Foo/Bar.pm       -&gt;  lib/Foo/Bar.pm
+</span><span class="">  128: # --------------------------------------------------
+</span><span class="">  129: sub _normalize {
+</span><span class="">  130: 	my $f = $_[0];
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  131: 
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -402,137 +442,148 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  132: }
-</span><span class="">  133: 
-</span><span class="">  134: # --------------------------------------------------
-</span><span class="">  135: # DB::DB
-</span><span class="">  136: #
-</span><span class="">  137: # Purpose:    Called by the Perl debugger before every
-</span><span class="">  138: #             statement. Records (file, line) hits for
-</span><span class="">  139: #             later LCSAJ coverage analysis.
+<span class="">  132: 	# Strip everything up to and including blib/lib/ or lib/
+</span><span class="">  133: 	$f =~ s{^.*/blib/lib/}{lib/};
+</span><span class="">  134: 	$f =~ s{^.*/lib/}{lib/};
+</span><span class="">  135: 	return $f;
+</span><span class="">  136: }
+</span><span class="">  137: 
+</span><span class="">  138: # --------------------------------------------------
+</span><span class="">  139: # DB::DB
 </span><span class="">  140: #
-</span><span class="">  141: # Entry:      No arguments &acirc;&#128;&#148; caller(0) is used to get
-</span><span class="">  142: #             the current file and line number.
-</span><span class="">  143: #
-</span><span class="">  144: # Exit:       Returns nothing. Updates %HITS in place.
-</span><span class="">  145: #
-</span><span class="">  146: # Side effects: Increments %HITS{$norm}{$line}.
+</span><span class="">  141: # Purpose:    Called by the Perl debugger before every
+</span><span class="">  142: #             statement. Records (file, line) hits for
+</span><span class="">  143: #             later LCSAJ coverage analysis.
+</span><span class="">  144: #
+</span><span class="">  145: # Entry:      No arguments &acirc;&#128;&#148; caller(0) is used to get
+</span><span class="">  146: #             the current file and line number.
 </span><span class="">  147: #
-</span><span class="">  148: # Notes:      This sub lives in the DB:: package as
-</span><span class="">  149: #             required by Perl&#39;s debugger protocol.
-</span><span class="">  150: #             It is called for every statement executed
-</span><span class="">  151: #             while the debugger is active, so it must
-</span><span class="">  152: #             be as fast as possible.
-</span><span class="">  153: #             Internal files and out-of-target files
-</span><span class="">  154: #             are skipped immediately.
-</span><span class="">  155: # --------------------------------------------------
-</span><span class="">  156: sub DB::DB {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 157 → 170 → 174</span></span>  157: 	my (undef, $file, $line) = caller(0);
-</span><span class="">  158: 
-</span><span class="">  159: 	return unless defined $file &amp;&amp; defined $line;
-</span><span class="">  160: 
-</span><span class="">  161: 	# Resolve symlinks and relative components to a stable absolute path
-</span><span class="">  162: 	my $abs  = abs_path($file) // $file;
-</span><span class="">  163: 	my $norm = _normalize($abs);
-</span><span class="">  164: 
-</span><span class="">  165: 	# Never record hits inside this module itself &acirc;&#128;&#148; suffix match is used
-</span><span class="">  166: 	# so it works regardless of CWD or install prefix
-</span><span class="">  167: 	return if $norm =~ m{(?:^|/)Devel/App/Test/Generator/LCSAJ/Runtime\.pm$};
-</span><span class="">  168: 
-</span><span class="">  169: 	# If a target list was provided, skip files not in it
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  170: 	if(%TARGET) {
+</span><span class="">  148: # Exit:       Returns nothing. Updates %HITS in place.
+</span><span class="">  149: #
+</span><span class="">  150: # Side effects: Increments %HITS{$norm}{$line}.
+</span><span class="">  151: #
+</span><span class="">  152: # Notes:      This sub lives in the DB:: package as
+</span><span class="">  153: #             required by Perl&#39;s debugger protocol.
+</span><span class="">  154: #             It is called for every statement executed
+</span><span class="">  155: #             while the debugger is active, so it must
+</span><span class="">  156: #             be as fast as possible.
+</span><span class="">  157: #             Internal files and out-of-target files
+</span><span class="">  158: #             are skipped immediately.
+</span><span class="">  159: #             abs_path() resolution is memoised in
+</span><span class="">  160: #             %NORM_CACHE per raw $file, since the same
+</span><span class="">  161: #             file is seen on every consecutive statement.
+</span><span class="">  162: # --------------------------------------------------
+</span><span class="">  163: sub DB::DB {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot-uncovered">●</span><span class="lcsaj-tip-text">[NOT COVERED] 164 → 177 → 181</span></span>  164: 	my (undef, $file, $line) = caller(0);
+</span><span class="">  165: 
+</span><span class="">  166: 	return unless defined $file &amp;&amp; defined $line;
+</span><span class="">  167: 
+</span><span class="">  168: 	# Resolve symlinks and relative components to a stable absolute path,
+</span><span class="">  169: 	# cached per raw $file to avoid a stat() on every statement
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch.">  170: 	my $norm = $NORM_CACHE{$file} //= _normalize(abs_path($file) // $file);
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
 				<li><b>COND_INV_170_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="">  171: 		return unless $TARGET{$norm};
-</span><span class="">  172: 	}
-</span><span class="">  173: 
-</span><span class="">  174: 	$HITS{$norm}{$line}++;
-</span><span class="">  175: }
-</span><span class="">  176: 
-</span><span class="">  177: # --------------------------------------------------
-</span><span class="">  178: # _write_results
-</span><span class="">  179: #
-</span><span class="">  180: # Purpose:    Serialise %HITS to a per-process JSON
-</span><span class="">  181: #             file in the output directory.
-</span><span class="">  182: #
-</span><span class="">  183: # Entry:      None. Reads %HITS and $OUT_DIR.
-</span><span class="">  184: #
-</span><span class="">  185: # Exit:       Returns nothing. Writes a JSON file.
-</span><span class="">  186: #             Returns immediately if %HITS is empty.
-</span><span class="">  187: #
-</span><span class="">  188: # Side effects: Creates $OUT_DIR if absent.
-</span><span class="">  189: #               Writes cover_html/lcsaj_hits/hits_PID.json
-</span><span class="">  190: #
-</span><span class="">  191: # Notes:      Called from END so it runs even when
-</span><span class="">  192: #             prove exits non-zero &acirc;&#128;&#148; mutation tests
-</span><span class="">  193: #             are expected to fail. PID is included
-</span><span class="">  194: #             in the filename so parallel test runs
-</span><span class="">  195: #             produce separate files without collision.
-</span><span class="">  196: # --------------------------------------------------
-</span><span class="">  197: sub _write_results {
-</span><span class="">  198: 	return unless %HITS;
-</span><span class="">  199: 
-</span><span class="">  200: 	# Include PID in filename to support parallel test runs
-</span><span class="">  201: 	my $out_file = &quot;$OUT_DIR/hits_$$.json&quot;;
-</span><span class="">  202: 
-</span><span class="">  203: 	make_path($OUT_DIR) unless -d $OUT_DIR;
-</span><span class="">  204: 
-</span><span class="">  205: 	open my $fh, &#39;&gt;&#39;, $out_file or croak &quot;Cannot write $out_file: $!&quot;;
+<span class="">  171: 
+</span><span class="">  172: 	# Never record hits inside this module itself &acirc;&#128;&#148; suffix match is used
+</span><span class="">  173: 	# so it works regardless of CWD or install prefix
+</span><span class="">  174: 	return if $norm =~ m{(?:^|/)Devel/App/Test/Generator/LCSAJ/Runtime\.pm$};
+</span><span class="">  175: 
+</span><span class="">  176: 	# If a target list was provided, skip files not in it
+</span><span class="">  177: 	if(%TARGET) {
+</span><span class="">  178: 		return unless $TARGET{$norm};
+</span><span class="">  179: 	}
+</span><span class="">  180: 
+</span><span class="">  181: 	$HITS{$norm}{$line}++;
+</span><span class="">  182: }
+</span><span class="">  183: 
+</span><span class="">  184: # --------------------------------------------------
+</span><span class="">  185: # _write_results
+</span><span class="">  186: #
+</span><span class="">  187: # Purpose:    Serialise %HITS to a per-process JSON
+</span><span class="">  188: #             file in the output directory.
+</span><span class="">  189: #
+</span><span class="">  190: # Entry:      None. Reads %HITS and $OUT_DIR.
+</span><span class="">  191: #
+</span><span class="">  192: # Exit:       Returns nothing. Writes a JSON file.
+</span><span class="">  193: #             Returns immediately if %HITS is empty.
+</span><span class="">  194: #
+</span><span class="">  195: # Side effects: Creates $OUT_DIR if absent.
+</span><span class="">  196: #               Writes cover_html/lcsaj_hits/hits_PID.json
+</span><span class="">  197: #
+</span><span class="">  198: # Notes:      Called from END so it runs even when
+</span><span class="">  199: #             prove exits non-zero &acirc;&#128;&#148; mutation tests
+</span><span class="">  200: #             are expected to fail. PID is included
+</span><span class="">  201: #             in the filename so parallel test runs
+</span><span class="">  202: #             produce separate files without collision.
+</span><span class="">  203: # --------------------------------------------------
+</span><span class="">  204: sub _write_results {
+</span><span class="">  205: 	return unless %HITS;
 </span><span class="">  206: 
-</span><span class="">  207: 	print $fh encode_json(\%HITS);
-</span><span class="">  208: 	close $fh;
-</span><span class="">  209: }
-</span><span class="">  210: 
-</span><span class="">  211: 1;
-</span><span class="">  212: 
-</span><span class="">  213: __END__
-</span><span class="">  214: 
-</span><span class="">  215: =head1 OUTPUT FORMAT
-</span><span class="">  216: 
-</span><span class="">  217: C&lt;cover_html/lcsaj_hits/hits_PID.json&gt; is a JSON object of the form:
-</span><span class="">  218: 
-</span><span class="">  219:   {
-</span><span class="">  220:     &quot;lib/Foo/Bar.pm&quot;: { &quot;12&quot;: 3, &quot;15&quot;: 1, ... },
-</span><span class="">  221:     ...
-</span><span class="">  222:   }
+</span><span class="">  207: 	# Include PID in filename to support parallel test runs
+</span><span class="">  208: 	my $out_file = &quot;$OUT_DIR/hits_$$.json&quot;;
+</span><span class="">  209: 
+</span><span class="">  210: 	make_path($OUT_DIR) unless -d $OUT_DIR;
+</span><span class="">  211: 
+</span><span class="">  212: 	# autodie is disabled for this open -- under &quot;use autodie qw(open)&quot;
+</span><span class="">  213: 	# open() never returns false on failure, it throws its own exception
+</span><span class="">  214: 	# instead, which would silently make the &quot;or croak&quot; below dead code
+</span><span class="">  215: 	no autodie qw(open);
+</span><span class="">  216: 	open my $fh, &#39;&gt;&#39;, $out_file or croak &quot;Cannot write $out_file: $!&quot;;
+</span><span class="">  217: 
+</span><span class="">  218: 	print $fh encode_json(\%HITS);
+</span><span class="">  219: 	close $fh;
+</span><span class="">  220: }
+</span><span class="">  221: 
+</span><span class="">  222: 1;
 </span><span class="">  223: 
-</span><span class="">  224: Keys are lib-relative paths (C&lt;lib/...&gt;); values are objects mapping line
-</span><span class="">  225: numbers (as strings) to hit counts. One file is written per process so
-</span><span class="">  226: parallel test runs produce separate files.
+</span><span class="">  224: __END__
+</span><span class="">  225: 
+</span><span class="">  226: =head1 OUTPUT FORMAT
 </span><span class="">  227: 
-</span><span class="">  228: =head1 NOTES ON FILE PLACEMENT
+</span><span class="">  228: C&lt;cover_html/lcsaj_hits/hits_PID.json&gt; is a JSON object of the form:
 </span><span class="">  229: 
-</span><span class="">  230: The C&lt;-d:App::Test::Generator::LCSAJ::Runtime&gt; flag causes Perl to load
-</span><span class="">  231: C&lt;Devel::App::Test::Generator::LCSAJ::Runtime&gt;, which it finds at:
-</span><span class="">  232: 
-</span><span class="">  233:   lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm
+</span><span class="">  230:   {
+</span><span class="">  231:     &quot;lib/Foo/Bar.pm&quot;: { &quot;12&quot;: 3, &quot;15&quot;: 1, ... },
+</span><span class="">  232:     ...
+</span><span class="">  233:   }
 </span><span class="">  234: 
-</span><span class="">  235: Ensure this path is on C&lt;@INC&gt; (C&lt;-Mblib&gt; or C&lt;-Ilib&gt; in PERL5OPT).
-</span><span class="">  236: 
-</span><span class="">  237: =head1 SEE ALSO
+</span><span class="">  235: Keys are lib-relative paths (C&lt;lib/...&gt;); values are objects mapping line
+</span><span class="">  236: numbers (as strings) to hit counts. One file is written per process so
+</span><span class="">  237: parallel test runs produce separate files.
 </span><span class="">  238: 
-</span><span class="">  239: L&lt;Devel::Cover&gt;, L&lt;App::Test::Generator&gt;
+</span><span class="">  239: =head1 NOTES ON FILE PLACEMENT
 </span><span class="">  240: 
-</span><span class="">  241: =head1 AUTHOR
-</span><span class="">  242: 
-</span><span class="">  243: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
-</span><span class="">  244: 
-</span><span class="">  245: Portions of this module&#39;s initial design and documentation were created
-</span><span class="">  246: with the assistance of AI.
+</span><span class="">  241: The C&lt;-d:App::Test::Generator::LCSAJ::Runtime&gt; flag causes Perl to load
+</span><span class="">  242: C&lt;Devel::App::Test::Generator::LCSAJ::Runtime&gt;, which it finds at:
+</span><span class="">  243: 
+</span><span class="">  244:   lib/Devel/App/Test/Generator/LCSAJ/Runtime.pm
+</span><span class="">  245: 
+</span><span class="">  246: Ensure this path is on C&lt;@INC&gt; (C&lt;-Mblib&gt; or C&lt;-Ilib&gt; in PERL5OPT).
 </span><span class="">  247: 
-</span><span class="">  248: =head1 LICENCE AND COPYRIGHT
+</span><span class="">  248: =head1 SEE ALSO
 </span><span class="">  249: 
-</span><span class="">  250: Copyright 2025-2026 Nigel Horne.
+</span><span class="">  250: L&lt;Devel::Cover&gt;, L&lt;App::Test::Generator&gt;
 </span><span class="">  251: 
-</span><span class="">  252: Usage is subject to the terms of GPL2.
-</span><span class="">  253: If you use it,
-</span><span class="">  254: please let me know.
+</span><span class="">  252: =head1 AUTHOR
+</span><span class="">  253: 
+</span><span class="">  254: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
 </span><span class="">  255: 
-</span><span class="">  256: =cut
+</span><span class="">  256: Portions of this module&#39;s initial design and documentation were created
+</span><span class="">  257: with the assistance of AI.
+</span><span class="">  258: 
+</span><span class="">  259: =head1 LICENCE AND COPYRIGHT
+</span><span class="">  260: 
+</span><span class="">  261: Copyright 2025-2026 Nigel Horne.
+</span><span class="">  262: 
+</span><span class="">  263: Usage is subject to the terms of GPL2.
+</span><span class="">  264: If you use it,
+</span><span class="">  265: please let me know.
+</span><span class="">  266: 
+</span><span class="">  267: =cut
 </span></pre>
 
 <script>

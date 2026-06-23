@@ -242,7 +242,47 @@ pre details.mutant-details ul {
 <button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
 <h1>lib/App/Test/Generator/Sample/Module.pm</h1>
 <div class="nav"><a href="../../../../../../index.html">Index</a>
- <a href="../../../../Devel/App/Test/Generator/LCSAJ/Runtime.pm.html">Next ➡</a></div>
+ <a href="../../../../Devel/App/Test/Generator/LCSAJ/Runtime.pm.html">Next ➡</a></div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 100.00%<br>
+TER2 (Branch): 97.50%<br>
+TER3 (LCSAJ): 0.0% (0/1)<br>
+Approximate LCSAJ segments: 41<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
 		<div class="legend">
 			<h3>Mutant Testing Legend</h3>
 			<span class="legend-box survived-1"></span> Survived (tests missed this)
@@ -250,7 +290,7 @@ pre details.mutant-details ul {
 			<span class="legend-box none"></span> No mutation
 		</div>
 	<pre>
-<span class="">    1: package Test::App::Generator::Sample::Module;
+<span class="">    1: package App::Test::Generator::Sample::Module;
 </span><span class="">    2: 
 </span><span class="">    3: use strict;
 </span><span class="">    4: use warnings;
@@ -274,7 +314,7 @@ pre details.mutant-details ul {
 </span><span class="">   22: 
 </span><span class="">   23: =head1 NAME
 </span><span class="">   24: 
-</span><span class="">   25: Test::App::Generator::Sample::Module - Example module for schema extraction testing
+</span><span class="">   25: App::Test::Generator::Sample::Module - Example module for schema extraction testing
 </span><span class="">   26: 
 </span><span class="">   27: =head1 VERSION
 </span><span class="">   28: 
@@ -282,9 +322,9 @@ pre details.mutant-details ul {
 </span><span class="">   30: 
 </span><span class="">   31: =head1 SYNOPSIS
 </span><span class="">   32: 
-</span><span class="">   33:     use Test::App::Generator::Sample::Module;
+</span><span class="">   33:     use App::Test::Generator::Sample::Module;
 </span><span class="">   34: 
-</span><span class="">   35:     my $obj = Test::App::Generator::Sample::Module-&gt;new();
+</span><span class="">   35:     my $obj = App::Test::Generator::Sample::Module-&gt;new();
 </span><span class="">   36:     my $result = $obj-&gt;validate_email(&#39;user@example.com&#39;);
 </span><span class="">   37: 
 </span><span class="">   38: =head1 DESCRIPTION
@@ -298,7 +338,7 @@ pre details.mutant-details ul {
 </span><span class="">   46: 
 </span><span class="">   47: Constructor. Returns a new instance.
 </span><span class="">   48: 
-</span><span class="">   49:     my $obj = Test::App::Generator::Sample::Module-&gt;new();
+</span><span class="">   49:     my $obj = App::Test::Generator::Sample::Module-&gt;new();
 </span><span class="">   50: 
 </span><span class="">   51: =head3 Returns
 </span><span class="">   52: 
@@ -312,7 +352,7 @@ pre details.mutant-details ul {
 </span><span class="">   60: 
 </span><span class="">   61: =head4 output
 </span><span class="">   62: 
-</span><span class="">   63:     { type =&gt; OBJECT, isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; }
+</span><span class="">   63:     { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Sample::Module&#39; }
 </span><span class="">   64: 
 </span><span class="">   65: =cut
 </span><span class="">   66: 
@@ -348,7 +388,7 @@ pre details.mutant-details ul {
 </span><span class="">   96: =head4 input
 </span><span class="">   97: 
 </span><span class="">   98:     {
-</span><span class="">   99:         self  =&gt; { type =&gt; OBJECT, isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; },
+</span><span class="">   99:         self  =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Sample::Module&#39; },
 </span><span class="">  100:         email =&gt; { type =&gt; SCALAR, min =&gt; 5, max =&gt; 254 },
 </span><span class="">  101:     }
 </span><span class="">  102: 
@@ -428,7 +468,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  118: 	croak &#39;Invalid email format&#39;
 </span><span class="">  119: 		unless $email =~ /^[^@]+\@[^@]+\.[^@]+$/;
 </span><span class="">  120: 
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  121: 	return 1;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  121: 	return 1;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -477,7 +517,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  146: =head4 input
 </span><span class="">  147: 
 </span><span class="">  148:     {
-</span><span class="">  149:         self       =&gt; { type =&gt; OBJECT, isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; },
+</span><span class="">  149:         self       =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Sample::Module&#39; },
 </span><span class="">  150:         birth_year =&gt; { type =&gt; SCALAR, min =&gt; 1900 },
 </span><span class="">  151:     }
 </span><span class="">  152: 
@@ -554,7 +594,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 								</div>
 							</li></ul></details>
 <span class="">  172: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  173: 	return $current_year - $birth_year;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  173: 	return $current_year - $birth_year;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -603,7 +643,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  198: =head4 input
 </span><span class="">  199: 
 </span><span class="">  200:     {
-</span><span class="">  201:         self  =&gt; { type =&gt; OBJECT,   isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; },
+</span><span class="">  201:         self  =&gt; { type =&gt; OBJECT,   isa =&gt; &#39;App::Test::Generator::Sample::Module&#39; },
 </span><span class="">  202:         names =&gt; { type =&gt; ARRAYREF },
 </span><span class="">  203:     }
 </span><span class="">  204: 
@@ -655,7 +695,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 							</li></ul></details>
 <span class="">  222: 	}
 </span><span class="">  223: 
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  224: 	return $count;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  224: 	return $count;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -704,7 +744,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  249: =head4 input
 </span><span class="">  250: 
 </span><span class="">  251:     {
-</span><span class="">  252:         self   =&gt; { type =&gt; OBJECT,  isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; },
+</span><span class="">  252:         self   =&gt; { type =&gt; OBJECT,  isa =&gt; &#39;App::Test::Generator::Sample::Module&#39; },
 </span><span class="">  253:         config =&gt; { type =&gt; HASHREF },
 </span><span class="">  254:     }
 </span><span class="">  255: 
@@ -777,7 +817,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  301: =head4 input
 </span><span class="">  302: 
 </span><span class="">  303:     {
-</span><span class="">  304:         self     =&gt; { type =&gt; OBJECT, isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; },
+</span><span class="">  304:         self     =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Sample::Module&#39; },
 </span><span class="">  305:         name     =&gt; { type =&gt; SCALAR, min =&gt; 1, max =&gt; 50 },
 </span><span class="">  306:         greeting =&gt; { type =&gt; SCALAR, optional =&gt; 1 },
 </span><span class="">  307:     }
@@ -856,7 +896,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  322: 	# Apply default greeting when caller does not supply one
 </span><span class="">  323: 	$greeting ||= &#39;Hello&#39;;
 </span><span class="">  324: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  325: 	return &quot;$greeting, $name!&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  325: 	return &quot;$greeting, $name!&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -906,7 +946,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  351: =head4 input
 </span><span class="">  352: 
 </span><span class="">  353:     {
-</span><span class="">  354:         self    =&gt; { type =&gt; OBJECT, isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; },
+</span><span class="">  354:         self    =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Sample::Module&#39; },
 </span><span class="">  355:         enabled =&gt; { type =&gt; SCALAR },
 </span><span class="">  356:     }
 </span><span class="">  357: 
@@ -971,7 +1011,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  395: =head4 input
 </span><span class="">  396: 
 </span><span class="">  397:     {
-</span><span class="">  398:         self  =&gt; { type =&gt; OBJECT, isa =&gt; &#39;Test::App::Generator::Sample::Module&#39; },
+</span><span class="">  398:         self  =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Sample::Module&#39; },
 </span><span class="">  399:         score =&gt; { type =&gt; SCALAR, min =&gt; 0.0, max =&gt; 100.0 },
 </span><span class="">  400:     }
 </span><span class="">  401: 
@@ -1047,7 +1087,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 							</li></ul></details>
 <span class="">  419: 
 </span><span class="">  420: 	# Compare against the pass threshold constant
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  421: 	return $score &gt;= $PASS_THRESHOLD ? &#39;Pass&#39; : &#39;Fail&#39;;
+</span><span class="survived-3 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  421: 	return $score &gt;= $PASS_THRESHOLD ? &#39;Pass&#39; : &#39;Fail&#39;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
