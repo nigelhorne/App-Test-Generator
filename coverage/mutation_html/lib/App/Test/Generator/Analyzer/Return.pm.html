@@ -245,9 +245,9 @@ pre details.mutant-details ul {
  <a href="ReturnMeta.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
-TER2 (Branch): 80.00%<br>
+TER2 (Branch): 50.00%<br>
 TER3 (LCSAJ): 100.0% (3/3)<br>
-Approximate LCSAJ segments: 11<br>
+Approximate LCSAJ segments: 5<br>
 </div>
 
     <div class="legend">
@@ -406,7 +406,7 @@ Approximate LCSAJ segments: 11<br>
 </span><span class="">  114: =cut
 </span><span class="">  115: 
 </span><span class="">  116: sub analyze {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">117 → 134 → 148</span></span>  117: 	my ($self, $method) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">117 → 137 → 154</span></span>  117: 	my ($self, $method) = @_;
 </span><span class="">  118: 
 </span><span class="">  119: 	# Accept either a Model::Method object or a raw hashref,
 </span><span class="">  120: 	# since callers in SchemaExtractor pass raw hashrefs
@@ -421,57 +421,65 @@ Approximate LCSAJ segments: 11<br>
 </span><span class="">  129: 	# --------------------------------------------------
 </span><span class="">  130: 	# Detect: return $self-&gt;{property}
 </span><span class="">  131: 	# Negative lookahead ensures this does not also match
-</span><span class="">  132: 	# plain return $self (handled separately below)
-</span><span class="">  133: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  134: 	if($source =~ /return\s+\$self-&gt;\{(\w+)\}/) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  135: 		$add-&gt;(
-</span><span class="">  136: 			category =&gt; &#39;return&#39;,
-</span><span class="">  137: 			signal   =&gt; &#39;returns_property&#39;,
-</span><span class="">  138: 			value    =&gt; $1,
-</span><span class="">  139: 			weight   =&gt; $WEIGHT_RETURNS_PROPERTY,
-</span><span class="">  140: 		);
-</span><span class="">  141: 	}
-</span><span class="">  142: 
-</span><span class="">  143: 	# --------------------------------------------------
-</span><span class="">  144: 	# Detect: return $self
-</span><span class="">  145: 	# Use negative lookahead to avoid matching
-</span><span class="">  146: 	# return $self-&gt;{...} which is a property return
-</span><span class="">  147: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">148 → 148 → 161</span></span>  148: 	if($source =~ /return\s+\$self(?!-&gt;)/) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  149: 		$add-&gt;(
-</span><span class="">  150: 			category =&gt; &#39;return&#39;,
-</span><span class="">  151: 			signal   =&gt; &#39;returns_self&#39;,
-</span><span class="">  152: 			weight   =&gt; $WEIGHT_RETURNS_SELF,
-</span><span class="">  153: 		);
-</span><span class="">  154: 	}
-</span><span class="">  155: 
-</span><span class="">  156: 	# --------------------------------------------------
-</span><span class="">  157: 	# Detect: return of a constant literal &acirc;&#128;&#148; quoted string,
-</span><span class="">  158: 	# numeric literal, or undef. All indicate the method
-</span><span class="">  159: 	# returns a fixed value rather than a computed state.
-</span><span class="">  160: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">161 → 161 → 169</span></span>  161: 	if($source =~ /return\s+(?:[&#39;&quot;\d]|undef\b)/) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  162: 		$add-&gt;(
-</span><span class="">  163: 			category =&gt; &#39;return&#39;,
-</span><span class="">  164: 			signal   =&gt; &#39;returns_constant&#39;,
-</span><span class="">  165: 			weight   =&gt; $WEIGHT_RETURNS_CONSTANT,
-</span><span class="">  166: 		);
-</span><span class="">  167: 	}
-</span><span class="">  168: 
-</span><span class="">  169: 	return;
-</span><span class="">  170: }
-</span><span class="">  171: 
-</span><span class="">  172: =head1 LICENCE AND COPYRIGHT
-</span><span class="">  173: 
-</span><span class="">  174: Copyright 2025-2026 Nigel Horne.
-</span><span class="">  175: 
-</span><span class="">  176: Usage is subject to GPL2 licence terms.
-</span><span class="">  177: If you use it,
-</span><span class="">  178: please let me know.
+</span><span class="">  132: 	# plain return $self (handled separately below).
+</span><span class="">  133: 	# Matched with /g so a method with several differing
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  134: 	# property-returning branches contributes evidence for
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  135: 	# each one found, not just the first in the source.
+</span><span class="">  136: 	# --------------------------------------------------
+</span><span class="">  137: 	while($source =~ /return\s+\$self-&gt;\{(\w+)\}/g) {
+</span><span class="">  138: 		$add-&gt;(
+</span><span class="">  139: 			category =&gt; &#39;return&#39;,
+</span><span class="">  140: 			signal   =&gt; &#39;returns_property&#39;,
+</span><span class="">  141: 			value    =&gt; $1,
+</span><span class="">  142: 			weight   =&gt; $WEIGHT_RETURNS_PROPERTY,
+</span><span class="">  143: 		);
+</span><span class="">  144: 	}
+</span><span class="">  145: 
+</span><span class="">  146: 	# --------------------------------------------------
+</span><span class="">  147: 	# Detect: return $self
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  148: 	# \b after \$self prevents matching variable names that
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  149: 	# merely start with &quot;self&quot; (e.g. $self_backup, $selfish);
+</span><span class="">  150: 	# the negative lookahead then excludes return $self-&gt;{...}
+</span><span class="">  151: 	# which is a property return handled above. Matched with
+</span><span class="">  152: 	# /g for the same multi-occurrence reason as above.
+</span><span class="">  153: 	# --------------------------------------------------
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">154 → 154 → 169</span></span>  154: 	while($source =~ /return\s+\$self\b(?!-&gt;)/g) {
+</span><span class="">  155: 		$add-&gt;(
+</span><span class="">  156: 			category =&gt; &#39;return&#39;,
+</span><span class="">  157: 			signal   =&gt; &#39;returns_self&#39;,
+</span><span class="">  158: 			weight   =&gt; $WEIGHT_RETURNS_SELF,
+</span><span class="">  159: 		);
+</span><span class="">  160: 	}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  161: 
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  162: 	# --------------------------------------------------
+</span><span class="">  163: 	# Detect: return of a constant literal &acirc;&#128;&#148; quoted string,
+</span><span class="">  164: 	# numeric literal, or undef. All indicate the method
+</span><span class="">  165: 	# returns a fixed value rather than a computed state.
+</span><span class="">  166: 	# Matched with /g for the same multi-occurrence reason
+</span><span class="">  167: 	# as the patterns above.
+</span><span class="">  168: 	# --------------------------------------------------
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">169 → 169 → 177</span></span>  169: 	while($source =~ /return\s+(?:[&#39;&quot;\d]|undef\b)/g) {
+</span><span class="">  170: 		$add-&gt;(
+</span><span class="">  171: 			category =&gt; &#39;return&#39;,
+</span><span class="">  172: 			signal   =&gt; &#39;returns_constant&#39;,
+</span><span class="">  173: 			weight   =&gt; $WEIGHT_RETURNS_CONSTANT,
+</span><span class="">  174: 		);
+</span><span class="">  175: 	}
+</span><span class="">  176: 
+</span><span class="">  177: 	return;
+</span><span class="">  178: }
 </span><span class="">  179: 
-</span><span class="">  180: =cut
+</span><span class="">  180: =head1 LICENCE AND COPYRIGHT
 </span><span class="">  181: 
-</span><span class="">  182: 1;
+</span><span class="">  182: Copyright 2025-2026 Nigel Horne.
+</span><span class="">  183: 
+</span><span class="">  184: Usage is subject to GPL2 licence terms.
+</span><span class="">  185: If you use it,
+</span><span class="">  186: please let me know.
+</span><span class="">  187: 
+</span><span class="">  188: =cut
+</span><span class="">  189: 
+</span><span class="">  190: 1;
 </span></pre>
 
 <script>

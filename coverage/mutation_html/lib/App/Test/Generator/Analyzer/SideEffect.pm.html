@@ -448,77 +448,109 @@ Approximate LCSAJ segments: 13<br>
 </span><span class="">  156: =cut
 </span><span class="">  157: 
 </span><span class="">  158: sub analyze {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">159 → 177 → 191</span></span>  159: 	my ($self, $method) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">159 → 183 → 197</span></span>  159: 	my ($self, $method) = @_;
 </span><span class="">  160: 
 </span><span class="">  161: 	# Method argument is a raw hashref from SchemaExtractor
 </span><span class="">  162: 	my $body = $method-&gt;{body} // &#39;&#39;;
 </span><span class="">  163: 
-</span><span class="">  164: 	my %result = (
-</span><span class="">  165: 		mutates_self    =&gt; 0,
-</span><span class="">  166: 		mutates_globals =&gt; 0,
-</span><span class="">  167: 		performs_io     =&gt; 0,
-</span><span class="">  168: 		calls_external  =&gt; 0,
-</span><span class="">  169: 		mutation_fields =&gt; [],
-</span><span class="">  170: 	);
-</span><span class="">  171: 
-</span><span class="">  172: 	# --------------------------------------------------
-</span><span class="">  173: 	# Detect assignment to $self-&gt;{field} &acirc;&#128;&#148; any such
-</span><span class="">  174: 	# assignment means the method mutates its own state
-</span><span class="">  175: 	# --------------------------------------------------
-</span><span class="">  176: 	my %seen_fields;
-</span><span class="">  177: 	while($body =~ /\$self-&gt;\{(\w+)\}\s*=/g) {
-</span><span class="">  178: 		$result{mutates_self} = 1;
-</span><span class="">  179: 
-</span><span class="">  180: 		# Deduplicate field names in case the same field
-</span><span class="">  181: 		# is assigned more than once in the method body
-</span><span class="">  182: 		push @{ $result{mutation_fields} }, $1
-</span><span class="">  183: 			unless $seen_fields{$1}++;
-</span><span class="">  184: 	}
+</span><span class="">  164: 	# IO/exec keywords are only real side effects as bare identifiers;
+</span><span class="">  165: 	# the same words inside string literals or comments (e.g. a log
+</span><span class="">  166: 	# message &quot;system check failed&quot; or a comment &quot;# warn the caller&quot;)
+</span><span class="">  167: 	# must not trigger a false positive
+</span><span class="">  168: 	my $code_only = _strip_strings_and_comments($body);
+</span><span class="">  169: 
+</span><span class="">  170: 	my %result = (
+</span><span class="">  171: 		mutates_self    =&gt; 0,
+</span><span class="">  172: 		mutates_globals =&gt; 0,
+</span><span class="">  173: 		performs_io     =&gt; 0,
+</span><span class="">  174: 		calls_external  =&gt; 0,
+</span><span class="">  175: 		mutation_fields =&gt; [],
+</span><span class="">  176: 	);
+</span><span class="">  177: 
+</span><span class="">  178: 	# --------------------------------------------------
+</span><span class="">  179: 	# Detect assignment to $self-&gt;{field} &acirc;&#128;&#148; any such
+</span><span class="">  180: 	# assignment means the method mutates its own state
+</span><span class="">  181: 	# --------------------------------------------------
+</span><span class="">  182: 	my %seen_fields;
+</span><span class="">  183: 	while($body =~ /\$self-&gt;\{(\w+)\}\s*=/g) {
+</span><span class="">  184: 		$result{mutates_self} = 1;
 </span><span class="">  185: 
-</span><span class="">  186: 	# --------------------------------------------------
-</span><span class="">  187: 	# Detect mutation of global variables &acirc;&#128;&#148; %ENV, %SIG,
-</span><span class="">  188: 	# @ARGV and common Perl special variables.
-</span><span class="">  189: 	# NOTE: does not catch all possible globals.
-</span><span class="">  190: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">191 → 191 → 199</span></span>  191: 	if($body =~ GLOBAL_PATTERN) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  192: 		$result{mutates_globals} = 1;
-</span><span class="">  193: 	}
-</span><span class="">  194: 
-</span><span class="">  195: 	# --------------------------------------------------
-</span><span class="">  196: 	# Detect IO operations &acirc;&#128;&#148; print, say, warn, open etc.
-</span><span class="">  197: 	# Higher-level logging abstractions are not detected.
-</span><span class="">  198: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">199 → 199 → 207</span></span>  199: 	if($body =~ IO_PATTERN) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  200: 		$result{performs_io} = 1;
-</span><span class="">  201: 	}
-</span><span class="">  202: 
-</span><span class="">  203: 	# --------------------------------------------------
-</span><span class="">  204: 	# Detect external command execution via system(),
-</span><span class="">  205: 	# exec(), qx() or backtick operators
-</span><span class="">  206: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">207 → 207 → 217</span></span>  207: 	if($body =~ EXEC_PATTERN) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  208: 		$result{calls_external} = 1;
-</span><span class="">  209: 	}
-</span><span class="">  210: 
-</span><span class="">  211: 	# --------------------------------------------------
-</span><span class="">  212: 	# Classify purity level based on detected side effects.
-</span><span class="">  213: 	# pure         &acirc;&#128;&#148; no side effects of any kind
-</span><span class="">  214: 	# self_mutating &acirc;&#128;&#148; only mutates own state, no external effects
-</span><span class="">  215: 	# impure       &acirc;&#128;&#148; any external side effect present
+</span><span class="">  186: 		# Deduplicate field names in case the same field
+</span><span class="">  187: 		# is assigned more than once in the method body
+</span><span class="">  188: 		push @{ $result{mutation_fields} }, $1
+</span><span class="">  189: 			unless $seen_fields{$1}++;
+</span><span class="">  190: 	}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  191: 
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  192: 	# --------------------------------------------------
+</span><span class="">  193: 	# Detect mutation of global variables &acirc;&#128;&#148; %ENV, %SIG,
+</span><span class="">  194: 	# @ARGV and common Perl special variables.
+</span><span class="">  195: 	# NOTE: does not catch all possible globals.
+</span><span class="">  196: 	# --------------------------------------------------
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">197 → 197 → 208</span></span>  197: 	if($body =~ GLOBAL_PATTERN) {
+</span><span class="">  198: 		$result{mutates_globals} = 1;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  199: 	}
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  200: 
+</span><span class="">  201: 	# --------------------------------------------------
+</span><span class="">  202: 	# Detect IO operations &acirc;&#128;&#148; print, say, warn, open etc.
+</span><span class="">  203: 	# Higher-level logging abstractions are not detected.
+</span><span class="">  204: 	# Matched against $code_only so a keyword appearing
+</span><span class="">  205: 	# inside a string literal or comment is not mistaken
+</span><span class="">  206: 	# for an actual IO call.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  207: 	# --------------------------------------------------
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">208 → 208 → 217</span></span>  208: 	if($code_only =~ IO_PATTERN) {
+</span><span class="">  209: 		$result{performs_io} = 1;
+</span><span class="">  210: 	}
+</span><span class="">  211: 
+</span><span class="">  212: 	# --------------------------------------------------
+</span><span class="">  213: 	# Detect external command execution via system(),
+</span><span class="">  214: 	# exec(), qx() or backtick operators. Matched against
+</span><span class="">  215: 	# $code_only for the same reason as IO_PATTERN above.
 </span><span class="">  216: 	# --------------------------------------------------
-</span><span class="">  217: 	my $has_external = $result{mutates_globals}
-</span><span class="">  218: 		|| $result{performs_io}
-</span><span class="">  219: 		|| $result{calls_external};
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">217 → 217 → 227</span></span>  217: 	if($code_only =~ EXEC_PATTERN) {
+</span><span class="">  218: 		$result{calls_external} = 1;
+</span><span class="">  219: 	}
 </span><span class="">  220: 
-</span><span class="">  221: 	$result{purity_level} =
-</span><span class="">  222: 		!$result{mutates_self} &amp;&amp; !$has_external ? $PURITY_PURE         :
-</span><span class="">  223: 		$result{mutates_self}  &amp;&amp; !$has_external ? $PURITY_SELF_MUTATING :
-</span><span class="">  224: 		                                           $PURITY_IMPURE;
-</span><span class="">  225: 
-</span><span class="">  226: 	return \%result;
-</span><span class="">  227: }
-</span><span class="">  228: 
-</span><span class="">  229: 1;
+</span><span class="">  221: 	# --------------------------------------------------
+</span><span class="">  222: 	# Classify purity level based on detected side effects.
+</span><span class="">  223: 	# pure         &acirc;&#128;&#148; no side effects of any kind
+</span><span class="">  224: 	# self_mutating &acirc;&#128;&#148; only mutates own state, no external effects
+</span><span class="">  225: 	# impure       &acirc;&#128;&#148; any external side effect present
+</span><span class="">  226: 	# --------------------------------------------------
+</span><span class="">  227: 	my $has_external = $result{mutates_globals}
+</span><span class="">  228: 		|| $result{performs_io}
+</span><span class="">  229: 		|| $result{calls_external};
+</span><span class="">  230: 
+</span><span class="">  231: 	$result{purity_level} =
+</span><span class="">  232: 		!$result{mutates_self} &amp;&amp; !$has_external ? $PURITY_PURE         :
+</span><span class="">  233: 		$result{mutates_self}  &amp;&amp; !$has_external ? $PURITY_SELF_MUTATING :
+</span><span class="">  234: 		                                           $PURITY_IMPURE;
+</span><span class="">  235: 
+</span><span class="">  236: 	return \%result;
+</span><span class="">  237: }
+</span><span class="">  238: 
+</span><span class="">  239: # --------------------------------------------------
+</span><span class="">  240: # Purpose: blank out the contents of &#39;...&#39; and &quot;...&quot; string
+</span><span class="">  241: #          literals and # line comments so that keyword regexes
+</span><span class="">  242: #          (IO_PATTERN, EXEC_PATTERN) only match real code, not
+</span><span class="">  243: #          words that merely appear inside a message or comment.
+</span><span class="">  244: # Entry:   a raw source body string.
+</span><span class="">  245: # Exit:    the same string with string-literal contents and
+</span><span class="">  246: #          comment text replaced by blanks, same overall layout.
+</span><span class="">  247: # Side effects: none. Best-effort only &acirc;&#128;&#148; does not handle q//,
+</span><span class="">  248: #          qq//, heredocs, or quote-like operators with custom
+</span><span class="">  249: #          delimiters.
+</span><span class="">  250: # --------------------------------------------------
+</span><span class="">  251: sub _strip_strings_and_comments {
+</span><span class="">  252: 	my ($body) = @_;
+</span><span class="">  253: 
+</span><span class="">  254: 	$body =~ s/&quot;(?:[^&quot;\\]|\\.)*&quot;//g;
+</span><span class="">  255: 	$body =~ s/&#39;(?:[^&#39;\\]|\\.)*&#39;//g;
+</span><span class="">  256: 	$body =~ s/#.*$//mg;
+</span><span class="">  257: 
+</span><span class="">  258: 	return $body;
+</span><span class="">  259: }
+</span><span class="">  260: 
+</span><span class="">  261: 1;
 </span></pre>
 
 <script>
