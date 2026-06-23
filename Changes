@@ -57,6 +57,81 @@ Revision history for App-Test-Generator
 	  when the input file and the cwd were on different drives; now uses
 	  catpath() to keep the volume attached.
 
+	- Fix _compile_signature_isolated()'s "fast path" Safe compartment,
+	  tried before falling back to the subprocess unconditionally;
+	  Type::Params/Types::Common pull in XS modules and Safe cannot host
+	  XS/dynamic loading, so the compartment never succeeded for any real
+	  signature_for() declaration and was dead code giving a false
+	  impression of sandboxing. Removed; the subprocess path (gated on
+	  allow_signature_exec => 1) is now the only path.
+	- Fix Generator.pm splicing module/function/transform/field names
+	  unescaped into generated test source; added _assert_identifier()
+	  and applied it before every such splice point so a name that is
+	  not identifier-shaped now croaks instead of producing a test file
+	  with injected code.
+	- Fix extract-schemas2 calling Planner->new without the required
+	  package argument, crashing on every invocation; package is now
+	  passed through from the extracted schema.
+	- Fix Template.pm _dedup_cases() always being a no-op: a return
+	  inside the eval{} block returned from the eval, not from
+	  _dedup_cases, so the deduplicated result was discarded and the
+	  unduplicated $cases was always returned to the caller.
+	- Fix SchemaExtractor _detect_dependencies() relationship detection
+	  losing pos() state on a shared $code string across nested global
+	  matches; affected loops now operate on independent copies/resets.
+	- Fix SchemaExtractor numeric boundary-value hints double-counting
+	  values already present from a previous hint pass; boundary values
+	  are now added through a seen-value set, so re-running hint
+	  generation on the same schema no longer duplicates values.
+	- Fix SchemaExtractor _detect_external_object_dependency() not
+	  resetting pos($method_body) before its global match, so a prior
+	  match elsewhere on the same string could cause this detector to
+	  start scanning mid-string and miss leading dependencies; pos() is
+	  now explicitly reset to 0 first.
+	- Fix CoverageGuidedFuzzer calling target_sub with no time bound, so
+	  a target that hangs (e.g. on an unexpected infinite-loop input)
+	  hung the whole fuzz run; calls are now wrapped in alarm()-based
+	  timeout (default 5s, configurable via timeout => N, 0 disables).
+	- Fix LCSAJ.pm's CFG builder connecting every branch point only to a
+	  newly-created true-block successor, leaving the false-arm block
+	  disconnected from the frontier and silently dropped as an empty
+	  leaf with no lines or edges; both true and false successors are
+	  now wired into the frontier so subsequent statements are recorded
+	  against both arms.
+	- Fix Mutator generate_mutants() never calling each mutation
+	  strategy's applies_to() pre-filter before mutate(), and never
+	  populating the context/line_content fields on the Mutant objects
+	  it constructs; both are now wired through.
+	- Fix Analyzer::SideEffect.pm and Analyzer::Complexity.pm counting
+	  IO/exec keywords, branch/logic/exception keywords, and the
+	  literal ? character when they merely appeared inside a string
+	  literal or comment (e.g. "Are you sure?" or a # comment containing
+	  "die"); source is now stripped of string and comment content
+	  before these keyword/operator counts are taken.
+	- Fix Analyzer::Return.pm's \$self(?!->) returns_self pattern
+	  matching the \$self prefix of any longer variable name (e.g.
+	  \$self_backup, \$selfish); added a \b word boundary. Also fixed
+	  all three return-pattern matches running as a single non-/g match,
+	  so a method with several qualifying return statements only ever
+	  contributed one evidence entry instead of one per occurrence.
+	- Fix Mutation::BooleanNegation and Mutation::ReturnUndef mutating
+	  only the first PPI token of a multi-token return expression (e.g.
+	  $self->{value}), since $ret->schild(1) captures just the leading
+	  Symbol token of a chained/dereferencing expression; this produced
+	  broken mutants like 'return !($self)->{value};' and
+	  'return undef->{value};' that die at runtime rather than testing
+	  the intended boolean/undef substitution. Both now resolve the
+	  full expression span (up to a trailing postfix conditional/loop
+	  modifier or the statement terminator) and wrap/replace it as a
+	  whole.
+	- Fix SchemaExtractor _analyze_relationships() extracting parameter
+	  names with a hardcoded my (...) = @_ regex only, so shift-style
+	  (my $x = shift) and modern-signature (sub foo($self, $x)) methods
+	  never had their parameter relationships (mutually-exclusive,
+	  required-group, dependency, etc.) analysed; parameter extraction
+	  now reuses _extract_parameters_from_signature(), which already
+	  supports all four parameter-declaration styles.
+
 	[Enhancements]
 	- Pin shogo82148/actions-setup-perl to immutable commit SHA
 	  (a198315 / v1.41.1) in dashboard.yml, mutate.yml, and the
