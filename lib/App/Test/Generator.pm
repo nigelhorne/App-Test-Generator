@@ -2160,6 +2160,10 @@ sub generate
 	$tt->process($template, $vars, \$test) or croak($tt->error());
 
 	if ($test_file) {
+		# autodie is disabled for this open -- under "use autodie qw(:all)"
+		# open() never returns false on failure, it throws its own exception
+		# instead, which would silently make the "or croak" dead code.
+		no autodie qw(open);
 		open my $fh, '>:encoding(UTF-8)', $test_file or croak "Cannot open $test_file: $!";
 		print $fh "$test\n";
 		close $fh;

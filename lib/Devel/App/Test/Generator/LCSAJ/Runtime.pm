@@ -209,6 +209,10 @@ sub _write_results {
 
 	make_path($OUT_DIR) unless -d $OUT_DIR;
 
+	# autodie is disabled for this open -- under "use autodie qw(open)"
+	# open() never returns false on failure, it throws its own exception
+	# instead, which would silently make the "or croak" below dead code
+	no autodie qw(open);
 	open my $fh, '>', $out_file or croak "Cannot write $out_file: $!";
 
 	print $fh encode_json(\%HITS);

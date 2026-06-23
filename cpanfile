@@ -45,6 +45,7 @@ on 'test' => sub {
 	requires 'Symbol';
 	requires 'Test::DescribeMe';
 	requires 'Test::LectroTest';
+	requires 'Test::Memory::Cycle';
 	requires 'Test::Mockingbird', '0.10';
 	requires 'Test::Most';
 	requires 'Test::Needs';

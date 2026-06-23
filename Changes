@@ -212,6 +212,12 @@ Revision history for App-Test-Generator
 	  hash-order-dependent input parameter when more than one candidate
 	  was present; candidates are now sorted by their schema position
 	  field first, making the choice deterministic.
+	- Fix LCSAJ::Coverage.pm's custom "Cannot read $file: $!" / "Cannot
+	  write coverage output to $out_file: $!" croak messages being
+	  unreachable dead code under "use autodie qw(:all)" (autodie's
+	  open() never returns false, so "open(...) or croak(...)" never
+	  fires); autodie is now disabled locally for these two open calls
+	  so the documented custom messages are actually produced on failure.
 
 	[Enhancements]
 	- Pin shogo82148/actions-setup-perl to immutable commit SHA
