@@ -2,6 +2,14 @@ Revision history for App-Test-Generator
 
 0.40
 	[Bug fixes]
+	- Fix LCSAJ::_save_lcsaj() building an output directory path by
+	  joining $dir with $file's full path when $file has no 'lib/'
+	  segment to strip (e.g. a File::Temp tempfile). On Windows this
+	  embedded a second drive letter mid-path and made
+	  File::Path::make_path fail with "Invalid argument"; on other
+	  platforms it silently created a deeply nested mirror of $file's
+	  absolute path under $dir. Now falls back to the basename when
+	  the stripped path is still absolute.
 	- Removed Test::Needs gates that never reflect a genuine dependency:
 	  t/params_validate.t, t/moosex_params_validate.t (Params::Validate
 	  and MooseX::Params::Validate/MooseX::Types::Moose appear only in

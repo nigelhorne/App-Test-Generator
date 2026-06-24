@@ -350,6 +350,14 @@ sub _save_lcsaj {
 	# Handle both Unix / and Windows \ separators
 	$rel =~ s{^(?:.*[/\\])?lib[/\\]}{};
 
+	# If $file had no 'lib/' segment (e.g. a File::Temp tempfile), the
+	# substitution above is a no-op and $rel is still $file's full
+	# absolute path. Joining that onto $dir below would embed a second
+	# absolute path — and, on Windows, a second drive letter — inside
+	# the constructed directory name, which File::Path::make_path
+	# rejects outright ("Invalid argument"). Fall back to the basename.
+	$rel = basename($rel) if File::Spec->file_name_is_absolute($rel);
+
 	my $base = basename($rel);
 
 	# Mirror the directory structure expected by _lcsaj_coverage_for_file:
