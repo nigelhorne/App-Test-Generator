@@ -2,6 +2,14 @@ Revision history for App-Test-Generator
 
 0.40
 	[Bug fixes]
+	- Fix t/function.t's BEGIN-time LCSAJ_TARGETS subtest spawning its
+	  child perl process via qx{}/backticks with a shell-quoted -e
+	  argument (single quotes). qx{} always goes through a shell, and
+	  cmd.exe on Windows does not treat single quotes as a quoting
+	  character, so the child process failed to parse its own -e
+	  script ("Can't find string terminator"). Switched to list-form
+	  system() under Capture::Tiny::capture_merged(), which passes the
+	  -e argument directly with no shell involved on any platform.
 	- Fix LCSAJ::_save_lcsaj() building an output directory path by
 	  joining $dir with $file's full path when $file has no 'lib/'
 	  segment to strip (e.g. a File::Temp tempfile). On Windows this

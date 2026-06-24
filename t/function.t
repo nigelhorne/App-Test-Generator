@@ -7,7 +7,7 @@ use Test::Most;
 use Test::Mockingbird;
 use Test::Returns;
 use Test::Memory::Cycle;
-use Capture::Tiny qw(capture_stdout);
+use Capture::Tiny qw(capture_stdout capture_merged);
 use File::Temp qw(tempdir tempfile);
 use File::Spec;
 use File::Path qw(make_path);
@@ -3072,9 +3072,18 @@ subtest 'Devel::App::Test::Generator::LCSAJ::Runtime - BEGIN-time LCSAJ_TARGETS 
 	my $targets = '/build/blib/lib/Foo.pm:/home/user/proj/lib/Bar.pm:' . "\n";
 	local $ENV{LCSAJ_TARGETS} = $targets;
 
+	# List-form system() under capture_merged(), not qx{}/backticks --
+	# qx{} always goes through a shell, and a shell-quoted '...' -e
+	# argument that works under sh/bash is invalid syntax for
+	# cmd.exe on Windows (single quotes are not its quoting
+	# character), which previously made the child perl process fail
+	# to parse its own -e script.
 	my @inc_args = map { ('-I', $_) } @INC;
-	my $output = qx{$^X @inc_args -MDevel::App::Test::Generator::LCSAJ::Runtime -e 'print join(q{,}, sort keys %Devel::App::Test::Generator::LCSAJ::Runtime::TARGET)' 2>&1};
-	is($?, 0, 'the child process exits cleanly') or diag($output);
+	my $code = 'print join(q{,}, sort keys %Devel::App::Test::Generator::LCSAJ::Runtime::TARGET)';
+	my ($output, $exit) = capture_merged {
+		system($^X, @inc_args, '-MDevel::App::Test::Generator::LCSAJ::Runtime', '-e', $code);
+	};
+	is($exit, 0, 'the child process exits cleanly') or diag($output);
 	is(
 		$output,
 		'lib/Bar.pm,lib/Foo.pm',
