@@ -50,6 +50,7 @@ on 'test' => sub {
 	requires 'Test::Most';
 	requires 'Test::Needs';
 	requires 'Test::Returns', '0.03';
+	requires 'Test::Without::Module';
 	requires 'Unicode::GCString';
 	requires 'Unicode::Normalize';
 };
