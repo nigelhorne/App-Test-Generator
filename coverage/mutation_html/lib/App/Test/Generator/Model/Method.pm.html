@@ -303,200 +303,765 @@ Approximate LCSAJ segments: 59<br>
 </span><span class="">   11: 
 </span><span class="">   12: our $VERSION = &#39;0.39&#39;;
 </span><span class="">   13: 
-</span><span class="">   14: =head1 VERSION
+</span><span class="">   14: =head1 NAME
 </span><span class="">   15: 
-</span><span class="">   16: Version 0.39
+</span><span class="">   16: App::Test::Generator::Model::Method - Evidence-based model of a single method under test
 </span><span class="">   17: 
-</span><span class="">   18: =cut
+</span><span class="">   18: =head1 VERSION
 </span><span class="">   19: 
-</span><span class="">   20: sub new {
-</span><span class="">   21: 	my ($class, %args) = @_;
-</span><span class="">   22: 	croak &#39;name required&#39;   unless defined $args{name};
-</span><span class="">   23: 	croak &#39;source required&#39; unless defined $args{source};
-</span><span class="">   24: 
-</span><span class="">   25: 	my $self = {
-</span><span class="">   26: 		name          =&gt; $args{name},
-</span><span class="">   27: 		source        =&gt; $args{source},
-</span><span class="">   28: 		# parameters    =&gt; [],
-</span><span class="">   29: 		evidence      =&gt; [],
-</span><span class="">   30: 		return_type   =&gt; undef,
-</span><span class="">   31: 		classification =&gt; undef,
-</span><span class="">   32: 		confidence    =&gt; undef,
-</span><span class="">   33: 	};
-</span><span class="">   34: 
-</span><span class="">   35: 	return bless $self, $class;
-</span><span class="">   36: }
-</span><span class="">   37: 
-</span><span class="">   38: # Read-only accessors &acirc;&#128;&#148; name and source are immutable after construction
-</span><span class="">   39: sub name   { $_[0]-&gt;{name}   }
-</span><span class="">   40: sub source { $_[0]-&gt;{source} }
-</span><span class="">   41: 
-</span><span class="">   42: sub return_type {
-</span><span class="">   43: 	my ($self, $val) = @_;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   44: 	$self-&gt;{return_type} = $val if @_ &gt; 1;
-</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   45: 	return $self-&gt;{return_type};
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   46: }
-</span><span class="">   47: 
-</span><span class="">   48: sub classification {
-</span><span class="">   49: 	my ($self, $val) = @_;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   50: 	$self-&gt;{classification} = $val if @_ &gt; 1;
-</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   51: 	return $self-&gt;{classification};
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   52: }
-</span><span class="">   53: 
-</span><span class="">   54: sub confidence {
-</span><span class="">   55: 	my ($self, $val) = @_;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   56: 	$self-&gt;{confidence} = $val if @_ &gt; 1;
-</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   57: 	return $self-&gt;{confidence};
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   58: }
-</span><span class="">   59: 
-</span><span class="">   60: sub add_evidence {
-</span><span class="">   61: 	my ($self, %args) = @_;
-</span><span class="">   62: 
-</span><span class="">   63: 	# Validate category &acirc;&#128;&#148; must be one of the three recognised kinds
-</span><span class="">   64: 	my %valid_categories = map { $_ =&gt; 1 } qw(return input effect);
+</span><span class="">   20: Version 0.39
+</span><span class="">   21: 
+</span><span class="">   22: =head1 DESCRIPTION
+</span><span class="">   23: 
+</span><span class="">   24: Accumulates weighted evidence about a single method&#39;s return behaviour,
+</span><span class="">   25: gathered independently by several analysers
+</span><span class="">   26: (L&lt;App::Test::Generator::Analyzer::Return&gt; and friends), then resolves
+</span><span class="">   27: that evidence into a best-guess return type, test classification, and
+</span><span class="">   28: confidence level. This lets multiple independent heuristics contribute
+</span><span class="">   29: to one final judgement instead of the first heuristic to run winning
+</span><span class="">   30: outright.
+</span><span class="">   31: 
+</span><span class="">   32: =head2 new
+</span><span class="">   33: 
+</span><span class="">   34: Construct a new Method model.
+</span><span class="">   35: 
+</span><span class="">   36:     my $method = App::Test::Generator::Model::Method-&gt;new(
+</span><span class="">   37:         name   =&gt; &#39;get_name&#39;,
+</span><span class="">   38:         source =&gt; &#39;sub get_name { return $_[0]-&gt;{name}; }&#39;,
+</span><span class="">   39:     );
+</span><span class="">   40: 
+</span><span class="">   41: =head3 Arguments
+</span><span class="">   42: 
+</span><span class="">   43: =over 4
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   44: 
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   45: =item * C&lt;name&gt;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   46: 
+</span><span class="">   47: The method&#39;s name. Required.
+</span><span class="">   48: 
+</span><span class="">   49: =item * C&lt;source&gt;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   50: 
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   51: The method&#39;s raw Perl source text. Required.
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   52: 
+</span><span class="">   53: =back
+</span><span class="">   54: 
+</span><span class="">   55: =head3 Returns
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   56: 
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   57: A blessed hashref with C&lt;evidence&gt; initialised to an empty arrayref
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   58: and C&lt;return_type&gt;, C&lt;classification&gt;, and C&lt;confidence&gt; initialised
+</span><span class="">   59: to C&lt;undef&gt;. Croaks with C&lt;&quot;name required&quot;&gt; or C&lt;&quot;source required&quot;&gt;
+</span><span class="">   60: if either argument is missing.
+</span><span class="">   61: 
+</span><span class="">   62: =head3 API specification
+</span><span class="">   63: 
+</span><span class="">   64: =head4 input
 </span><span class="">   65: 
-</span><span class="">   66: 	my $cat = $args{category} // &#39;&#39;;
-</span><span class="">   67: 	croak &quot;Invalid evidence category &#39;$cat&#39;&quot; unless $valid_categories{$cat};
-</span><span class="">   68: 
-</span><span class="">   69: 	# Validate signal &acirc;&#128;&#148; must be a known signal name to catch typos early.
-</span><span class="">   70: 	# Signals are per-category; we validate the full set across all categories.
-</span><span class="">   71: 	my %valid_signals = map { $_ =&gt; 1 } qw(
-</span><span class="">   72: 		returns_property returns_constant returns_self
-</span><span class="">   73: 		legacy_type context_aware error_pattern
-</span><span class="">   74: 		input_validated input_typed input_optional
-</span><span class="">   75: 		has_side_effect no_side_effect
-</span><span class="">   76: 	);
-</span><span class="">   77: 
-</span><span class="">   78: 	my $sig = $args{signal} // &#39;&#39;;
-</span><span class="">   79: 	croak &quot;Invalid evidence signal &#39;$sig&#39;&quot; unless $valid_signals{$sig};
-</span><span class="">   80: 
-</span><span class="">   81: 	push @{ $self-&gt;{evidence} }, {
-</span><span class="">   82: 		category =&gt; $args{category},
-</span><span class="">   83: 		signal   =&gt; $args{signal},
-</span><span class="">   84: 		value    =&gt; $args{value},
-</span><span class="">   85: 		weight   =&gt; defined $args{weight} ? $args{weight} : 1,
-</span><span class="">   86: 	};
-</span><span class="">   87: }
-</span><span class="">   88: 
-</span><span class="">   89: sub evidence {
-</span><span class="">   90: 	my $self = $_[0];
-</span><span class="">   91: 	return @{ $self-&gt;{evidence} };
-</span><span class="">   92: }
-</span><span class="">   93: 
-</span><span class="">   94: sub evidence_ref {
-</span><span class="">   95: 	my $self = $_[0];
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   96: 	return $self-&gt;{evidence};
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   97: }
+</span><span class="">   66:     {
+</span><span class="">   67:         name   =&gt; { type =&gt; SCALAR },
+</span><span class="">   68:         source =&gt; { type =&gt; SCALAR },
+</span><span class="">   69:     }
+</span><span class="">   70: 
+</span><span class="">   71: =head4 output
+</span><span class="">   72: 
+</span><span class="">   73:     { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; }
+</span><span class="">   74: 
+</span><span class="">   75: =cut
+</span><span class="">   76: 
+</span><span class="">   77: sub new {
+</span><span class="">   78: 	my ($class, %args) = @_;
+</span><span class="">   79: 	croak &#39;name required&#39;   unless defined $args{name};
+</span><span class="">   80: 	croak &#39;source required&#39; unless defined $args{source};
+</span><span class="">   81: 
+</span><span class="">   82: 	my $self = {
+</span><span class="">   83: 		name          =&gt; $args{name},
+</span><span class="">   84: 		source        =&gt; $args{source},
+</span><span class="">   85: 		# parameters    =&gt; [],
+</span><span class="">   86: 		evidence      =&gt; [],
+</span><span class="">   87: 		return_type   =&gt; undef,
+</span><span class="">   88: 		classification =&gt; undef,
+</span><span class="">   89: 		confidence    =&gt; undef,
+</span><span class="">   90: 	};
+</span><span class="">   91: 
+</span><span class="">   92: 	return bless $self, $class;
+</span><span class="">   93: }
+</span><span class="">   94: 
+</span><span class="">   95: =head2 name
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   96: 
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   97: Return the method&#39;s name.
 </span><span class="">   98: 
-</span><span class="">   99: sub resolve_return_type {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">100 → 103 → 129</span></span>  100: 	my $self = $_[0];
-</span><span class="">  101: 	my %score = (property =&gt; 0, constant =&gt; 0, object =&gt; 0);
+</span><span class="">   99:     my $name = $method-&gt;name;
+</span><span class="">  100: 
+</span><span class="">  101: =head3 Arguments
 </span><span class="">  102: 
-</span><span class="">  103: 	for my $ev (@{ $self-&gt;{evidence} }) {
-</span><span class="">  104: 		next unless $ev-&gt;{category} eq &#39;return&#39;;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  105: 		if($ev-&gt;{signal} eq &#39;returns_property&#39;) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  106: 			$score{property} += $ev-&gt;{weight};
-</span><span class="">  107: 		} elsif($ev-&gt;{signal} eq &#39;returns_constant&#39;) {
-</span><span class="">  108: 			$score{constant} += $ev-&gt;{weight};
-</span><span class="">  109: 		} elsif($ev-&gt;{signal} eq &#39;returns_self&#39;) {
-</span><span class="">  110: 			$score{object} += $ev-&gt;{weight};
-</span><span class="">  111: 		} elsif($ev-&gt;{signal} eq &#39;legacy_type&#39;) {
-</span><span class="">  112: 			# Legacy type hint &acirc;&#128;&#148; map to nearest score bucket if recognisable
-</span><span class="">  113: 			my $t = $ev-&gt;{value} // &#39;&#39;;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  114: 			if($t eq &#39;object&#39;)   { $score{object}   += $ev-&gt;{weight} }
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  115: 			elsif($t eq &#39;self&#39;)  { $score{object}   += $ev-&gt;{weight} }
-</span><span class="">  116: 			else                 { $score{property} += $ev-&gt;{weight} }
-</span><span class="">  117: 		} elsif($ev-&gt;{signal} eq &#39;context_aware&#39;) {
-</span><span class="">  118: 			# Context-aware return suggests getter behaviour
-</span><span class="">  119: 			$score{property} += $ev-&gt;{weight};
-</span><span class="">  120: 		} elsif($ev-&gt;{signal} eq &#39;error_pattern&#39;) {
-</span><span class="">  121: 			# Error pattern return doesn&#39;t strongly imply a type &acirc;&#128;&#148;
-</span><span class="">  122: 			# give a small nudge toward property (scalar return)
-</span><span class="">  123: 			$score{property} += $ev-&gt;{weight};
-</span><span class="">  124: 		}
-</span><span class="">  125: 		# Unknown signals are ignored &acirc;&#128;&#148; they may be used by external consumers
-</span><span class="">  126: 	}
+</span><span class="">  103: None beyond C&lt;$self&gt;.
+</span><span class="">  104: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  105: =head3 Returns
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  106: 
+</span><span class="">  107: The name string supplied to C&lt;new&gt;. Read-only &acirc;&#128;&#148; there is no setter;
+</span><span class="">  108: C&lt;name&gt; ignores any extra arguments passed to it.
+</span><span class="">  109: 
+</span><span class="">  110: =head3 API specification
+</span><span class="">  111: 
+</span><span class="">  112: =head4 input
+</span><span class="">  113: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  114:     { self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; } }
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  115: 
+</span><span class="">  116: =head4 output
+</span><span class="">  117: 
+</span><span class="">  118:     { type =&gt; SCALAR }
+</span><span class="">  119: 
+</span><span class="">  120: =cut
+</span><span class="">  121: 
+</span><span class="">  122: sub name   { $_[0]-&gt;{name}   }
+</span><span class="">  123: 
+</span><span class="">  124: =head2 source
+</span><span class="">  125: 
+</span><span class="">  126: Return the method&#39;s raw source text.
 </span><span class="">  127: 
-</span><span class="">  128: 	# Tie-break alphabetically &acirc;&#128;&#148; deterministic but arbitrary
-</span><span class="">  129: 	my ($winner) = sort { ($score{$b} || 0) &lt;=&gt; ($score{$a} || 0) || $a cmp $b } keys %score;
-</span><span class="">  130: 
-</span><span class="">  131: 	$self-&gt;{return_type} = $winner || &#39;unknown&#39;;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  132: 	return $self-&gt;{return_type};
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  133: }
-</span><span class="">  134: 
-</span><span class="">  135: sub resolve_confidence {
-</span><span class="">  136: 	my $self = $_[0];
-</span><span class="">  137: 
-</span><span class="">  138: 	my $total = 0;
-</span><span class="">  139: 	$total += $_-&gt;{weight} for @{ $self-&gt;{evidence} };
+</span><span class="">  128:     my $source = $method-&gt;source;
+</span><span class="">  129: 
+</span><span class="">  130: =head3 Arguments
+</span><span class="">  131: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  132: None beyond C&lt;$self&gt;.
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  133: 
+</span><span class="">  134: =head3 Returns
+</span><span class="">  135: 
+</span><span class="">  136: The source string supplied to C&lt;new&gt;. Read-only &acirc;&#128;&#148; there is no setter;
+</span><span class="">  137: C&lt;source&gt; ignores any extra arguments passed to it.
+</span><span class="">  138: 
+</span><span class="">  139: =head3 API specification
 </span><span class="">  140: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  141: 	my $level = $total &gt;= $HIGH_CONFIDENCE_THRESHOLD ? &#39;high&#39; : $total &gt;= $MEDIUM_CONFIDENCE_THRESHOLD ? &#39;medium&#39; : &#39;low&#39;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  141: =head4 input
 </span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="">  142: 
-</span><span class="">  143: 	$self-&gt;{confidence} = { score =&gt; $total, level =&gt; $level };
+</span><span class="">  143:     { self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; } }
 </span><span class="">  144: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  145: 	return $self-&gt;{confidence};
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  146: }
-</span><span class="">  147: 
-</span><span class="">  148: sub resolve_classification {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">149 → 154 → 164</span></span>  149: 	my $self = $_[0];
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  145: =head4 output
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  146: 
+</span><span class="">  147:     { type =&gt; SCALAR }
+</span><span class="">  148: 
+</span><span class="">  149: =cut
 </span><span class="">  150: 
-</span><span class="">  151: 	# Return_type must be resolved before classification can be determined
-</span><span class="">  152: 	$self-&gt;resolve_return_type() unless defined $self-&gt;{return_type};
-</span><span class="">  153: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  154: 	if($self-&gt;{return_type} eq &#39;object&#39;) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  155: 		$self-&gt;{classification} = &#39;chainable&#39;;
-</span><span class="">  156: 	} elsif ($self-&gt;{return_type} eq &#39;property&#39;) {
-</span><span class="">  157: 		$self-&gt;{classification} = &#39;getter&#39;;
-</span><span class="">  158: 	} elsif ($self-&gt;{return_type} eq &#39;constant&#39;) {
-</span><span class="">  159: 		$self-&gt;{classification} = &#39;constant&#39;;
-</span><span class="">  160: 	} else {
-</span><span class="">  161: 		$self-&gt;{classification} = &#39;unknown&#39;;
-</span><span class="">  162: 	}
+</span><span class="">  151: sub source { $_[0]-&gt;{source} }
+</span><span class="">  152: 
+</span><span class="">  153: =head2 return_type
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  154: 
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  155: Read/write accessor for the resolved return type.
+</span><span class="">  156: 
+</span><span class="">  157:     $method-&gt;return_type(&#39;object&#39;);
+</span><span class="">  158:     my $type = $method-&gt;return_type;
+</span><span class="">  159: 
+</span><span class="">  160: =head3 Arguments
+</span><span class="">  161: 
+</span><span class="">  162: =over 4
 </span><span class="">  163: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  164: 	return $self-&gt;{classification};
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  165: }
-</span><span class="">  166: 
-</span><span class="">  167: sub absorb_legacy_output {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">168 → 172 → 181</span></span>  168: 	my ($self, $output) = @_;
-</span><span class="">  169: 
-</span><span class="">  170: 	return unless $output &amp;&amp; ref $output eq &#39;HASH&#39;;
-</span><span class="">  171: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  172: 	if ($output-&gt;{type}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  173: 		$self-&gt;add_evidence(
-</span><span class="">  174: 			category =&gt; &#39;return&#39;,
-</span><span class="">  175: 			signal   =&gt; &#39;legacy_type&#39;,
-</span><span class="">  176: 			value    =&gt; $output-&gt;{type},
-</span><span class="">  177: 			weight   =&gt; 20,
-</span><span class="">  178: 		);
-</span><span class="">  179: 	}
-</span><span class="">  180: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">181 → 181 → 189</span></span>  181: 	if ($output-&gt;{_returns_self}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  182: 		$self-&gt;add_evidence(
-</span><span class="">  183: 			category =&gt; &#39;return&#39;,
-</span><span class="">  184: 			signal   =&gt; &#39;returns_self&#39;,
-</span><span class="">  185: 			weight   =&gt; 25,
-</span><span class="">  186: 		);
-</span><span class="">  187: 	}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  164: =item * C&lt;$val&gt;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  165: 
+</span><span class="">  166: Optional. If supplied (including C&lt;undef&gt;), stores it as the new
+</span><span class="">  167: return type.
+</span><span class="">  168: 
+</span><span class="">  169: =back
+</span><span class="">  170: 
+</span><span class="">  171: =head3 Returns
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  172: 
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  173: The current return type string, or C&lt;undef&gt; if not yet resolved (or
+</span><span class="">  174: explicitly set back to C&lt;undef&gt;).
+</span><span class="">  175: 
+</span><span class="">  176: =head3 Side effects
+</span><span class="">  177: 
+</span><span class="">  178: Overwrites the stored return type when called with an argument.
+</span><span class="">  179: 
+</span><span class="">  180: =head3 API specification
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  181: 
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  182: =head4 input
+</span><span class="">  183: 
+</span><span class="">  184:     {
+</span><span class="">  185:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; },
+</span><span class="">  186:         val  =&gt; { type =&gt; SCALAR, optional =&gt; 1 },
+</span><span class="">  187:     }
 </span><span class="">  188: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">189 → 189 → 197</span></span>  189: 	if ($output-&gt;{_context_aware}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  190: 		$self-&gt;add_evidence(
-</span><span class="">  191: 			category =&gt; &#39;return&#39;,
-</span><span class="">  192: 			signal   =&gt; &#39;context_aware&#39;,
-</span><span class="">  193: 			weight   =&gt; 15,
-</span><span class="">  194: 		);
-</span><span class="">  195: 	}
-</span><span class="">  196: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">197 → 197 → 0</span></span>  197: 	if ($output-&gt;{_error_return}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  198: 		$self-&gt;add_evidence(
-</span><span class="">  199: 			category =&gt; &#39;return&#39;,
-</span><span class="">  200: 			signal   =&gt; &#39;error_pattern&#39;,
-</span><span class="">  201: 			value    =&gt; $output-&gt;{_error_return},
-</span><span class="">  202: 			weight   =&gt; 15,
-</span><span class="">  203: 		);
-</span><span class="">  204: 	}
-</span><span class="">  205: }
-</span><span class="">  206: 
-</span><span class="">  207: 1;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  189: =head4 output
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  190: 
+</span><span class="">  191:     { type =&gt; SCALAR, optional =&gt; 1 }
+</span><span class="">  192: 
+</span><span class="">  193: =cut
+</span><span class="">  194: 
+</span><span class="">  195: sub return_type {
+</span><span class="">  196: 	my ($self, $val) = @_;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  197: 	$self-&gt;{return_type} = $val if @_ &gt; 1;
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  198: 	return $self-&gt;{return_type};
+</span><span class="">  199: }
+</span><span class="">  200: 
+</span><span class="">  201: =head2 classification
+</span><span class="">  202: 
+</span><span class="">  203: Read/write accessor for the resolved test classification.
+</span><span class="">  204: 
+</span><span class="">  205:     $method-&gt;classification(&#39;getter&#39;);
+</span><span class="">  206:     my $class = $method-&gt;classification;
+</span><span class="">  207: 
+</span><span class="">  208: =head3 Arguments
+</span><span class="">  209: 
+</span><span class="">  210: =over 4
+</span><span class="">  211: 
+</span><span class="">  212: =item * C&lt;$val&gt;
+</span><span class="">  213: 
+</span><span class="">  214: Optional. If supplied (including C&lt;undef&gt;), stores it as the new
+</span><span class="">  215: classification.
+</span><span class="">  216: 
+</span><span class="">  217: =back
+</span><span class="">  218: 
+</span><span class="">  219: =head3 Returns
+</span><span class="">  220: 
+</span><span class="">  221: The current classification string, or C&lt;undef&gt; if not yet resolved.
+</span><span class="">  222: 
+</span><span class="">  223: =head3 Side effects
+</span><span class="">  224: 
+</span><span class="">  225: Overwrites the stored classification when called with an argument.
+</span><span class="">  226: 
+</span><span class="">  227: =head3 API specification
+</span><span class="">  228: 
+</span><span class="">  229: =head4 input
+</span><span class="">  230: 
+</span><span class="">  231:     {
+</span><span class="">  232:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; },
+</span><span class="">  233:         val  =&gt; { type =&gt; SCALAR, optional =&gt; 1 },
+</span><span class="">  234:     }
+</span><span class="">  235: 
+</span><span class="">  236: =head4 output
+</span><span class="">  237: 
+</span><span class="">  238:     { type =&gt; SCALAR, optional =&gt; 1 }
+</span><span class="">  239: 
+</span><span class="">  240: =cut
+</span><span class="">  241: 
+</span><span class="">  242: sub classification {
+</span><span class="">  243: 	my ($self, $val) = @_;
+</span><span class="">  244: 	$self-&gt;{classification} = $val if @_ &gt; 1;
+</span><span class="">  245: 	return $self-&gt;{classification};
+</span><span class="">  246: }
+</span><span class="">  247: 
+</span><span class="">  248: =head2 confidence
+</span><span class="">  249: 
+</span><span class="">  250: Read/write accessor for the resolved confidence hashref.
+</span><span class="">  251: 
+</span><span class="">  252:     $method-&gt;confidence({ score =&gt; 45, level =&gt; &#39;medium&#39; });
+</span><span class="">  253:     my $conf = $method-&gt;confidence;
+</span><span class="">  254: 
+</span><span class="">  255: =head3 Arguments
+</span><span class="">  256: 
+</span><span class="">  257: =over 4
+</span><span class="">  258: 
+</span><span class="">  259: =item * C&lt;$val&gt;
+</span><span class="">  260: 
+</span><span class="">  261: Optional. If supplied (including C&lt;undef&gt;), stores it as the new
+</span><span class="">  262: confidence value.
+</span><span class="">  263: 
+</span><span class="">  264: =back
+</span><span class="">  265: 
+</span><span class="">  266: =head3 Returns
+</span><span class="">  267: 
+</span><span class="">  268: The current confidence hashref (with C&lt;score&gt; and C&lt;level&gt; keys), or
+</span><span class="">  269: C&lt;undef&gt; if not yet resolved.
+</span><span class="">  270: 
+</span><span class="">  271: =head3 Side effects
+</span><span class="">  272: 
+</span><span class="">  273: Overwrites the stored confidence value when called with an argument.
+</span><span class="">  274: 
+</span><span class="">  275: =head3 API specification
+</span><span class="">  276: 
+</span><span class="">  277: =head4 input
+</span><span class="">  278: 
+</span><span class="">  279:     {
+</span><span class="">  280:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; },
+</span><span class="">  281:         val  =&gt; { type =&gt; HASHREF, optional =&gt; 1 },
+</span><span class="">  282:     }
+</span><span class="">  283: 
+</span><span class="">  284: =head4 output
+</span><span class="">  285: 
+</span><span class="">  286:     { type =&gt; HASHREF, optional =&gt; 1 }
+</span><span class="">  287: 
+</span><span class="">  288: =cut
+</span><span class="">  289: 
+</span><span class="">  290: sub confidence {
+</span><span class="">  291: 	my ($self, $val) = @_;
+</span><span class="">  292: 	$self-&gt;{confidence} = $val if @_ &gt; 1;
+</span><span class="">  293: 	return $self-&gt;{confidence};
+</span><span class="">  294: }
+</span><span class="">  295: 
+</span><span class="">  296: =head2 add_evidence
+</span><span class="">  297: 
+</span><span class="">  298: Record one piece of weighted evidence about the method&#39;s behaviour.
+</span><span class="">  299: 
+</span><span class="">  300:     $method-&gt;add_evidence(
+</span><span class="">  301:         category =&gt; &#39;return&#39;,
+</span><span class="">  302:         signal   =&gt; &#39;returns_property&#39;,
+</span><span class="">  303:         value    =&gt; &#39;name&#39;,
+</span><span class="">  304:         weight   =&gt; 20,
+</span><span class="">  305:     );
+</span><span class="">  306: 
+</span><span class="">  307: =head3 Arguments
+</span><span class="">  308: 
+</span><span class="">  309: =over 4
+</span><span class="">  310: 
+</span><span class="">  311: =item * C&lt;category&gt;
+</span><span class="">  312: 
+</span><span class="">  313: One of C&lt;return&gt;, C&lt;input&gt;, or C&lt;effect&gt;. Required. Croaks
+</span><span class="">  314: C&lt;&quot;Invalid evidence category &#39;...&#39;&quot;&gt; for any other value, including a
+</span><span class="">  315: missing category.
+</span><span class="">  316: 
+</span><span class="">  317: =item * C&lt;signal&gt;
+</span><span class="">  318: 
+</span><span class="">  319: A recognised signal name (see L&lt;/Notes&gt;). Required. Croaks
+</span><span class="">  320: C&lt;&quot;Invalid evidence signal &#39;...&#39;&quot;&gt; for any other value, including a
+</span><span class="">  321: missing signal.
+</span><span class="">  322: 
+</span><span class="">  323: =item * C&lt;value&gt;
+</span><span class="">  324: 
+</span><span class="">  325: Optional. An arbitrary value associated with the signal (e.g. the
+</span><span class="">  326: property name for C&lt;returns_property&gt;).
+</span><span class="">  327: 
+</span><span class="">  328: =item * C&lt;weight&gt;
+</span><span class="">  329: 
+</span><span class="">  330: Optional. A numeric weight. Defaults to 1.
+</span><span class="">  331: 
+</span><span class="">  332: =back
+</span><span class="">  333: 
+</span><span class="">  334: =head3 Returns
+</span><span class="">  335: 
+</span><span class="">  336: Nothing (undef).
+</span><span class="">  337: 
+</span><span class="">  338: =head3 Side effects
+</span><span class="">  339: 
+</span><span class="">  340: Appends an evidence hashref (with keys C&lt;category&gt;, C&lt;signal&gt;,
+</span><span class="">  341: C&lt;value&gt;, C&lt;weight&gt;) to the object&#39;s internal evidence list.
+</span><span class="">  342: 
+</span><span class="">  343: =head3 Notes
+</span><span class="">  344: 
+</span><span class="">  345: Recognised signals are C&lt;returns_property&gt;, C&lt;returns_constant&gt;,
+</span><span class="">  346: C&lt;returns_self&gt;, C&lt;legacy_type&gt;, C&lt;context_aware&gt;, C&lt;error_pattern&gt;
+</span><span class="">  347: (intended for category C&lt;return&gt;); C&lt;input_validated&gt;, C&lt;input_typed&gt;,
+</span><span class="">  348: C&lt;input_optional&gt; (category C&lt;input&gt;); and C&lt;has_side_effect&gt;,
+</span><span class="">  349: C&lt;no_side_effect&gt; (category C&lt;effect&gt;). Signal validity is checked
+</span><span class="">  350: against the full set regardless of category &acirc;&#128;&#148; passing a return-only
+</span><span class="">  351: signal with C&lt;category =E&lt;gt&gt; &#39;input&#39;&gt; does not croak.
+</span><span class="">  352: 
+</span><span class="">  353: =head3 API specification
+</span><span class="">  354: 
+</span><span class="">  355: =head4 input
+</span><span class="">  356: 
+</span><span class="">  357:     {
+</span><span class="">  358:         self     =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; },
+</span><span class="">  359:         category =&gt; { type =&gt; SCALAR },
+</span><span class="">  360:         signal   =&gt; { type =&gt; SCALAR },
+</span><span class="">  361:         value    =&gt; { type =&gt; SCALAR, optional =&gt; 1 },
+</span><span class="">  362:         weight   =&gt; { type =&gt; SCALAR, optional =&gt; 1 },
+</span><span class="">  363:     }
+</span><span class="">  364: 
+</span><span class="">  365: =head4 output
+</span><span class="">  366: 
+</span><span class="">  367:     { type =&gt; UNDEF }
+</span><span class="">  368: 
+</span><span class="">  369: =cut
+</span><span class="">  370: 
+</span><span class="">  371: sub add_evidence {
+</span><span class="">  372: 	my ($self, %args) = @_;
+</span><span class="">  373: 
+</span><span class="">  374: 	# Validate category &acirc;&#128;&#148; must be one of the three recognised kinds
+</span><span class="">  375: 	my %valid_categories = map { $_ =&gt; 1 } qw(return input effect);
+</span><span class="">  376: 
+</span><span class="">  377: 	my $cat = $args{category} // &#39;&#39;;
+</span><span class="">  378: 	croak &quot;Invalid evidence category &#39;$cat&#39;&quot; unless $valid_categories{$cat};
+</span><span class="">  379: 
+</span><span class="">  380: 	# Validate signal &acirc;&#128;&#148; must be a known signal name to catch typos early.
+</span><span class="">  381: 	# Signals are per-category; we validate the full set across all categories.
+</span><span class="">  382: 	my %valid_signals = map { $_ =&gt; 1 } qw(
+</span><span class="">  383: 		returns_property returns_constant returns_self
+</span><span class="">  384: 		legacy_type context_aware error_pattern
+</span><span class="">  385: 		input_validated input_typed input_optional
+</span><span class="">  386: 		has_side_effect no_side_effect
+</span><span class="">  387: 	);
+</span><span class="">  388: 
+</span><span class="">  389: 	my $sig = $args{signal} // &#39;&#39;;
+</span><span class="">  390: 	croak &quot;Invalid evidence signal &#39;$sig&#39;&quot; unless $valid_signals{$sig};
+</span><span class="">  391: 
+</span><span class="">  392: 	push @{ $self-&gt;{evidence} }, {
+</span><span class="">  393: 		category =&gt; $args{category},
+</span><span class="">  394: 		signal   =&gt; $args{signal},
+</span><span class="">  395: 		value    =&gt; $args{value},
+</span><span class="">  396: 		weight   =&gt; defined $args{weight} ? $args{weight} : 1,
+</span><span class="">  397: 	};
+</span><span class="">  398: 
+</span><span class="">  399: 	return;
+</span><span class="">  400: }
+</span><span class="">  401: 
+</span><span class="">  402: =head2 evidence
+</span><span class="">  403: 
+</span><span class="">  404: Return all recorded evidence entries.
+</span><span class="">  405: 
+</span><span class="">  406:     my @evidence = $method-&gt;evidence;
+</span><span class="">  407:     for my $entry (@evidence) {
+</span><span class="">  408:         print &quot;$entry-&gt;{category}/$entry-&gt;{signal}: $entry-&gt;{weight}\n&quot;;
+</span><span class="">  409:     }
+</span><span class="">  410: 
+</span><span class="">  411: =head3 Arguments
+</span><span class="">  412: 
+</span><span class="">  413: None beyond C&lt;$self&gt;.
+</span><span class="">  414: 
+</span><span class="">  415: =head3 Returns
+</span><span class="">  416: 
+</span><span class="">  417: A list of evidence hashrefs (each with keys C&lt;category&gt;, C&lt;signal&gt;,
+</span><span class="">  418: C&lt;value&gt;, C&lt;weight&gt;), in the order they were added via
+</span><span class="">  419: C&lt;add_evidence&gt;. Empty list if no evidence has been recorded. Called
+</span><span class="">  420: in scalar context, returns the count of evidence entries.
+</span><span class="">  421: 
+</span><span class="">  422: =head3 API specification
+</span><span class="">  423: 
+</span><span class="">  424: =head4 input
+</span><span class="">  425: 
+</span><span class="">  426:     { self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; } }
+</span><span class="">  427: 
+</span><span class="">  428: =head4 output
+</span><span class="">  429: 
+</span><span class="">  430:     { type =&gt; ARRAYREF, items =&gt; { type =&gt; HASHREF } }
+</span><span class="">  431: 
+</span><span class="">  432: =cut
+</span><span class="">  433: 
+</span><span class="">  434: sub evidence {
+</span><span class="">  435: 	my $self = $_[0];
+</span><span class="">  436: 	return @{ $self-&gt;{evidence} };
+</span><span class="">  437: }
+</span><span class="">  438: 
+</span><span class="">  439: =head2 evidence_ref
+</span><span class="">  440: 
+</span><span class="">  441: Return all recorded evidence entries as an arrayref.
+</span><span class="">  442: 
+</span><span class="">  443:     my $ref = $method-&gt;evidence_ref;
+</span><span class="">  444:     print &quot;count: &quot;, scalar(@$ref), &quot;\n&quot;;
+</span><span class="">  445: 
+</span><span class="">  446: =head3 Arguments
+</span><span class="">  447: 
+</span><span class="">  448: None beyond C&lt;$self&gt;.
+</span><span class="">  449: 
+</span><span class="">  450: =head3 Returns
+</span><span class="">  451: 
+</span><span class="">  452: An arrayref of the same evidence hashrefs returned by C&lt;evidence&gt;.
+</span><span class="">  453: This is the live internal arrayref, not a copy &acirc;&#128;&#148; modifying it
+</span><span class="">  454: modifies the object&#39;s evidence list.
+</span><span class="">  455: 
+</span><span class="">  456: =head3 API specification
+</span><span class="">  457: 
+</span><span class="">  458: =head4 input
+</span><span class="">  459: 
+</span><span class="">  460:     { self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; } }
+</span><span class="">  461: 
+</span><span class="">  462: =head4 output
+</span><span class="">  463: 
+</span><span class="">  464:     { type =&gt; ARRAYREF, items =&gt; { type =&gt; HASHREF } }
+</span><span class="">  465: 
+</span><span class="">  466: =cut
+</span><span class="">  467: 
+</span><span class="">  468: sub evidence_ref {
+</span><span class="">  469: 	my $self = $_[0];
+</span><span class="">  470: 	return $self-&gt;{evidence};
+</span><span class="">  471: }
+</span><span class="">  472: 
+</span><span class="">  473: =head2 resolve_return_type
+</span><span class="">  474: 
+</span><span class="">  475: Derive a return type from the accumulated C&lt;return&gt;-category evidence
+</span><span class="">  476: and store it.
+</span><span class="">  477: 
+</span><span class="">  478:     $method-&gt;add_evidence(category =&gt; &#39;return&#39;, signal =&gt; &#39;returns_self&#39;, weight =&gt; 20);
+</span><span class="">  479:     my $type = $method-&gt;resolve_return_type;   # &#39;object&#39;
+</span><span class="">  480: 
+</span><span class="">  481: =head3 Arguments
+</span><span class="">  482: 
+</span><span class="">  483: None beyond C&lt;$self&gt;.
+</span><span class="">  484: 
+</span><span class="">  485: =head3 Returns
+</span><span class="">  486: 
+</span><span class="">  487: One of C&lt;object&gt;, C&lt;property&gt;, or C&lt;constant&gt;, chosen by summing the
+</span><span class="">  488: weight of all C&lt;return&gt;-category evidence into three buckets
+</span><span class="">  489: (C&lt;returns_self&gt; -&gt; object; C&lt;returns_property&gt;, C&lt;context_aware&gt;,
+</span><span class="">  490: C&lt;error_pattern&gt; -&gt; property; C&lt;returns_constant&gt; -&gt; constant;
+</span><span class="">  491: C&lt;legacy_type&gt; -&gt; object or property depending on its C&lt;value&gt;) and
+</span><span class="">  492: picking the highest-scoring bucket. Ties are broken alphabetically
+</span><span class="">  493: among the tied bucket names (C&lt;constant&gt; E&lt;lt&gt; C&lt;object&gt; E&lt;lt&gt;
+</span><span class="">  494: C&lt;property&gt;). With no C&lt;return&gt;-category evidence at all, all three
+</span><span class="">  495: buckets score 0 and C&lt;constant&gt; wins the alphabetical tie-break.
+</span><span class="">  496: 
+</span><span class="">  497: =head3 Side effects
+</span><span class="">  498: 
+</span><span class="">  499: Sets C&lt;return_type&gt; to the resolved value.
+</span><span class="">  500: 
+</span><span class="">  501: =head3 Notes
+</span><span class="">  502: 
+</span><span class="">  503: Evidence outside the C&lt;return&gt; category is ignored. Evidence with an
+</span><span class="">  504: unrecognised signal name is also ignored (this can only happen if a
+</span><span class="">  505: caller other than C&lt;add_evidence&gt; populated the evidence list
+</span><span class="">  506: directly, since C&lt;add_evidence&gt; itself rejects unrecognised signals).
+</span><span class="">  507: 
+</span><span class="">  508: =head3 API specification
+</span><span class="">  509: 
+</span><span class="">  510: =head4 input
+</span><span class="">  511: 
+</span><span class="">  512:     { self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; } }
+</span><span class="">  513: 
+</span><span class="">  514: =head4 output
+</span><span class="">  515: 
+</span><span class="">  516:     { type =&gt; SCALAR }
+</span><span class="">  517: 
+</span><span class="">  518: =cut
+</span><span class="">  519: 
+</span><span class="">  520: sub resolve_return_type {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">521 → 524 → 550</span></span>  521: 	my $self = $_[0];
+</span><span class="">  522: 	my %score = (property =&gt; 0, constant =&gt; 0, object =&gt; 0);
+</span><span class="">  523: 
+</span><span class="">  524: 	for my $ev (@{ $self-&gt;{evidence} }) {
+</span><span class="">  525: 		next unless $ev-&gt;{category} eq &#39;return&#39;;
+</span><span class="">  526: 		if($ev-&gt;{signal} eq &#39;returns_property&#39;) {
+</span><span class="">  527: 			$score{property} += $ev-&gt;{weight};
+</span><span class="">  528: 		} elsif($ev-&gt;{signal} eq &#39;returns_constant&#39;) {
+</span><span class="">  529: 			$score{constant} += $ev-&gt;{weight};
+</span><span class="">  530: 		} elsif($ev-&gt;{signal} eq &#39;returns_self&#39;) {
+</span><span class="">  531: 			$score{object} += $ev-&gt;{weight};
+</span><span class="">  532: 		} elsif($ev-&gt;{signal} eq &#39;legacy_type&#39;) {
+</span><span class="">  533: 			# Legacy type hint &acirc;&#128;&#148; map to nearest score bucket if recognisable
+</span><span class="">  534: 			my $t = $ev-&gt;{value} // &#39;&#39;;
+</span><span class="">  535: 			if($t eq &#39;object&#39;)   { $score{object}   += $ev-&gt;{weight} }
+</span><span class="">  536: 			elsif($t eq &#39;self&#39;)  { $score{object}   += $ev-&gt;{weight} }
+</span><span class="">  537: 			else                 { $score{property} += $ev-&gt;{weight} }
+</span><span class="">  538: 		} elsif($ev-&gt;{signal} eq &#39;context_aware&#39;) {
+</span><span class="">  539: 			# Context-aware return suggests getter behaviour
+</span><span class="">  540: 			$score{property} += $ev-&gt;{weight};
+</span><span class="">  541: 		} elsif($ev-&gt;{signal} eq &#39;error_pattern&#39;) {
+</span><span class="">  542: 			# Error pattern return doesn&#39;t strongly imply a type &acirc;&#128;&#148;
+</span><span class="">  543: 			# give a small nudge toward property (scalar return)
+</span><span class="">  544: 			$score{property} += $ev-&gt;{weight};
+</span><span class="">  545: 		}
+</span><span class="">  546: 		# Unknown signals are ignored &acirc;&#128;&#148; they may be used by external consumers
+</span><span class="">  547: 	}
+</span><span class="">  548: 
+</span><span class="">  549: 	# Tie-break alphabetically &acirc;&#128;&#148; deterministic but arbitrary
+</span><span class="">  550: 	my ($winner) = sort { ($score{$b} || 0) &lt;=&gt; ($score{$a} || 0) || $a cmp $b } keys %score;
+</span><span class="">  551: 
+</span><span class="">  552: 	$self-&gt;{return_type} = $winner || &#39;unknown&#39;;
+</span><span class="">  553: 	return $self-&gt;{return_type};
+</span><span class="">  554: }
+</span><span class="">  555: 
+</span><span class="">  556: =head2 resolve_confidence
+</span><span class="">  557: 
+</span><span class="">  558: Derive a confidence level from the total weight of all accumulated
+</span><span class="">  559: evidence (every category, not just C&lt;return&gt;) and store it.
+</span><span class="">  560: 
+</span><span class="">  561:     $method-&gt;add_evidence(category =&gt; &#39;return&#39;, signal =&gt; &#39;returns_self&#39;, weight =&gt; 50);
+</span><span class="">  562:     my $conf = $method-&gt;resolve_confidence;   # { score =&gt; 50, level =&gt; &#39;high&#39; }
+</span><span class="">  563: 
+</span><span class="">  564: =head3 Arguments
+</span><span class="">  565: 
+</span><span class="">  566: None beyond C&lt;$self&gt;.
+</span><span class="">  567: 
+</span><span class="">  568: =head3 Returns
+</span><span class="">  569: 
+</span><span class="">  570: A hashref with keys C&lt;score&gt; (the sum of every evidence entry&#39;s
+</span><span class="">  571: C&lt;weight&gt;) and C&lt;level&gt;, which is C&lt;low&gt; if C&lt;score&gt; is below
+</span><span class="">  572: C&lt;$MEDIUM_CONFIDENCE_THRESHOLD&gt; (20), C&lt;medium&gt; if at least 20 but
+</span><span class="">  573: below C&lt;$HIGH_CONFIDENCE_THRESHOLD&gt; (40), or C&lt;high&gt; if 40 or above.
+</span><span class="">  574: With no evidence at all, C&lt;score&gt; is 0 and C&lt;level&gt; is C&lt;low&gt;.
+</span><span class="">  575: 
+</span><span class="">  576: =head3 Side effects
+</span><span class="">  577: 
+</span><span class="">  578: Sets C&lt;confidence&gt; to the resolved hashref.
+</span><span class="">  579: 
+</span><span class="">  580: =head3 API specification
+</span><span class="">  581: 
+</span><span class="">  582: =head4 input
+</span><span class="">  583: 
+</span><span class="">  584:     { self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; } }
+</span><span class="">  585: 
+</span><span class="">  586: =head4 output
+</span><span class="">  587: 
+</span><span class="">  588:     {
+</span><span class="">  589:         type =&gt; HASHREF,
+</span><span class="">  590:         keys =&gt; {
+</span><span class="">  591:             score =&gt; { type =&gt; SCALAR },
+</span><span class="">  592:             level =&gt; { type =&gt; SCALAR },
+</span><span class="">  593:         },
+</span><span class="">  594:     }
+</span><span class="">  595: 
+</span><span class="">  596: =cut
+</span><span class="">  597: 
+</span><span class="">  598: sub resolve_confidence {
+</span><span class="">  599: 	my $self = $_[0];
+</span><span class="">  600: 
+</span><span class="">  601: 	my $total = 0;
+</span><span class="">  602: 	$total += $_-&gt;{weight} for @{ $self-&gt;{evidence} };
+</span><span class="">  603: 
+</span><span class="">  604: 	my $level = $total &gt;= $HIGH_CONFIDENCE_THRESHOLD ? &#39;high&#39; : $total &gt;= $MEDIUM_CONFIDENCE_THRESHOLD ? &#39;medium&#39; : &#39;low&#39;;
+</span><span class="">  605: 
+</span><span class="">  606: 	$self-&gt;{confidence} = { score =&gt; $total, level =&gt; $level };
+</span><span class="">  607: 
+</span><span class="">  608: 	return $self-&gt;{confidence};
+</span><span class="">  609: }
+</span><span class="">  610: 
+</span><span class="">  611: =head2 resolve_classification
+</span><span class="">  612: 
+</span><span class="">  613: Derive a test classification from the resolved return type and store
+</span><span class="">  614: it.
+</span><span class="">  615: 
+</span><span class="">  616:     $method-&gt;add_evidence(category =&gt; &#39;return&#39;, signal =&gt; &#39;returns_self&#39;, weight =&gt; 20);
+</span><span class="">  617:     my $class = $method-&gt;resolve_classification;   # &#39;chainable&#39;
+</span><span class="">  618: 
+</span><span class="">  619: =head3 Arguments
+</span><span class="">  620: 
+</span><span class="">  621: None beyond C&lt;$self&gt;.
+</span><span class="">  622: 
+</span><span class="">  623: =head3 Returns
+</span><span class="">  624: 
+</span><span class="">  625: C&lt;chainable&gt; if C&lt;return_type&gt; is C&lt;object&gt;, C&lt;getter&gt; if
+</span><span class="">  626: C&lt;property&gt;, C&lt;constant&gt; if C&lt;constant&gt;, or C&lt;unknown&gt; for any other
+</span><span class="">  627: value.
+</span><span class="">  628: 
+</span><span class="">  629: =head3 Side effects
+</span><span class="">  630: 
+</span><span class="">  631: Calls C&lt;resolve_return_type&gt; first (and so also sets C&lt;return_type&gt;)
+</span><span class="">  632: if C&lt;return_type&gt; has not already been resolved. Sets
+</span><span class="">  633: C&lt;classification&gt; to the resolved value.
+</span><span class="">  634: 
+</span><span class="">  635: =head3 API specification
+</span><span class="">  636: 
+</span><span class="">  637: =head4 input
+</span><span class="">  638: 
+</span><span class="">  639:     { self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; } }
+</span><span class="">  640: 
+</span><span class="">  641: =head4 output
+</span><span class="">  642: 
+</span><span class="">  643:     { type =&gt; SCALAR }
+</span><span class="">  644: 
+</span><span class="">  645: =cut
+</span><span class="">  646: 
+</span><span class="">  647: sub resolve_classification {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">648 → 653 → 663</span></span>  648: 	my $self = $_[0];
+</span><span class="">  649: 
+</span><span class="">  650: 	# Return_type must be resolved before classification can be determined
+</span><span class="">  651: 	$self-&gt;resolve_return_type() unless defined $self-&gt;{return_type};
+</span><span class="">  652: 
+</span><span class="">  653: 	if($self-&gt;{return_type} eq &#39;object&#39;) {
+</span><span class="">  654: 		$self-&gt;{classification} = &#39;chainable&#39;;
+</span><span class="">  655: 	} elsif ($self-&gt;{return_type} eq &#39;property&#39;) {
+</span><span class="">  656: 		$self-&gt;{classification} = &#39;getter&#39;;
+</span><span class="">  657: 	} elsif ($self-&gt;{return_type} eq &#39;constant&#39;) {
+</span><span class="">  658: 		$self-&gt;{classification} = &#39;constant&#39;;
+</span><span class="">  659: 	} else {
+</span><span class="">  660: 		$self-&gt;{classification} = &#39;unknown&#39;;
+</span><span class="">  661: 	}
+</span><span class="">  662: 
+</span><span class="">  663: 	return $self-&gt;{classification};
+</span><span class="">  664: }
+</span><span class="">  665: 
+</span><span class="">  666: =head2 absorb_legacy_output
+</span><span class="">  667: 
+</span><span class="">  668: Convert a legacy schema output hashref (the pre-evidence-model output
+</span><span class="">  669: descriptor format) into one or more C&lt;return&gt;-category evidence
+</span><span class="">  670: entries.
+</span><span class="">  671: 
+</span><span class="">  672:     $method-&gt;absorb_legacy_output({
+</span><span class="">  673:         type          =&gt; &#39;object&#39;,
+</span><span class="">  674:         _returns_self =&gt; 1,
+</span><span class="">  675:     });
+</span><span class="">  676: 
+</span><span class="">  677: =head3 Arguments
+</span><span class="">  678: 
+</span><span class="">  679: =over 4
+</span><span class="">  680: 
+</span><span class="">  681: =item * C&lt;$output&gt;
+</span><span class="">  682: 
+</span><span class="">  683: A hashref of legacy output hints, or C&lt;undef&gt;.
+</span><span class="">  684: 
+</span><span class="">  685: =back
+</span><span class="">  686: 
+</span><span class="">  687: =head3 Returns
+</span><span class="">  688: 
+</span><span class="">  689: Nothing (undef).
+</span><span class="">  690: 
+</span><span class="">  691: =head3 Side effects
+</span><span class="">  692: 
+</span><span class="">  693: For each recognised key present and true in C&lt;$output&gt;, calls
+</span><span class="">  694: C&lt;add_evidence&gt; once:
+</span><span class="">  695: 
+</span><span class="">  696: =over 4
+</span><span class="">  697: 
+</span><span class="">  698: =item * C&lt;type&gt; -&gt; C&lt;legacy_type&gt; evidence, C&lt;value&gt; set to
+</span><span class="">  699: C&lt;$output-E&lt;gt&gt;{type}&gt;, weight 20.
+</span><span class="">  700: 
+</span><span class="">  701: =item * C&lt;_returns_self&gt; -&gt; C&lt;returns_self&gt; evidence, weight 25.
+</span><span class="">  702: 
+</span><span class="">  703: =item * C&lt;_context_aware&gt; -&gt; C&lt;context_aware&gt; evidence, weight 15.
+</span><span class="">  704: 
+</span><span class="">  705: =item * C&lt;_error_return&gt; -&gt; C&lt;error_pattern&gt; evidence, C&lt;value&gt; set to
+</span><span class="">  706: C&lt;$output-E&lt;gt&gt;{_error_return}&gt;, weight 15.
+</span><span class="">  707: 
+</span><span class="">  708: =back
+</span><span class="">  709: 
+</span><span class="">  710: =head3 Notes
+</span><span class="">  711: 
+</span><span class="">  712: C&lt;$output&gt; being C&lt;undef&gt; or any non-hashref value is silently
+</span><span class="">  713: ignored &acirc;&#128;&#148; no evidence is added and no exception is raised. A hashref
+</span><span class="">  714: with none of the four recognised keys set to a true value also adds
+</span><span class="">  715: no evidence.
+</span><span class="">  716: 
+</span><span class="">  717: =head3 API specification
+</span><span class="">  718: 
+</span><span class="">  719: =head4 input
+</span><span class="">  720: 
+</span><span class="">  721:     {
+</span><span class="">  722:         self   =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Model::Method&#39; },
+</span><span class="">  723:         output =&gt; { type =&gt; HASHREF, optional =&gt; 1 },
+</span><span class="">  724:     }
+</span><span class="">  725: 
+</span><span class="">  726: =head4 output
+</span><span class="">  727: 
+</span><span class="">  728:     { type =&gt; UNDEF }
+</span><span class="">  729: 
+</span><span class="">  730: =cut
+</span><span class="">  731: 
+</span><span class="">  732: sub absorb_legacy_output {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">733 → 737 → 746</span></span>  733: 	my ($self, $output) = @_;
+</span><span class="">  734: 
+</span><span class="">  735: 	return unless $output &amp;&amp; ref $output eq &#39;HASH&#39;;
+</span><span class="">  736: 
+</span><span class="">  737: 	if ($output-&gt;{type}) {
+</span><span class="">  738: 		$self-&gt;add_evidence(
+</span><span class="">  739: 			category =&gt; &#39;return&#39;,
+</span><span class="">  740: 			signal   =&gt; &#39;legacy_type&#39;,
+</span><span class="">  741: 			value    =&gt; $output-&gt;{type},
+</span><span class="">  742: 			weight   =&gt; 20,
+</span><span class="">  743: 		);
+</span><span class="">  744: 	}
+</span><span class="">  745: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">746 → 746 → 754</span></span>  746: 	if ($output-&gt;{_returns_self}) {
+</span><span class="">  747: 		$self-&gt;add_evidence(
+</span><span class="">  748: 			category =&gt; &#39;return&#39;,
+</span><span class="">  749: 			signal   =&gt; &#39;returns_self&#39;,
+</span><span class="">  750: 			weight   =&gt; 25,
+</span><span class="">  751: 		);
+</span><span class="">  752: 	}
+</span><span class="">  753: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">754 → 754 → 762</span></span>  754: 	if ($output-&gt;{_context_aware}) {
+</span><span class="">  755: 		$self-&gt;add_evidence(
+</span><span class="">  756: 			category =&gt; &#39;return&#39;,
+</span><span class="">  757: 			signal   =&gt; &#39;context_aware&#39;,
+</span><span class="">  758: 			weight   =&gt; 15,
+</span><span class="">  759: 		);
+</span><span class="">  760: 	}
+</span><span class="">  761: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">762 → 762 → 0</span></span>  762: 	if ($output-&gt;{_error_return}) {
+</span><span class="">  763: 		$self-&gt;add_evidence(
+</span><span class="">  764: 			category =&gt; &#39;return&#39;,
+</span><span class="">  765: 			signal   =&gt; &#39;error_pattern&#39;,
+</span><span class="">  766: 			value    =&gt; $output-&gt;{_error_return},
+</span><span class="">  767: 			weight   =&gt; 15,
+</span><span class="">  768: 		);
+</span><span class="">  769: 	}
+</span><span class="">  770: }
+</span><span class="">  771: 
+</span><span class="">  772: 1;
 </span></pre>
 
 <script>

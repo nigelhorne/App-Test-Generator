@@ -420,86 +420,86 @@ Approximate LCSAJ segments: 27<br>
 </span><span class="">  128: Only return statements that have an expression child (i.e. not bare
 </span><span class="">  129: C&lt;return;&gt; statements) are mutated.
 </span><span class="">  130: 
-</span><span class="">  131: =head3 API specification
-</span><span class="">  132: 
-</span><span class="">  133: =head4 input
-</span><span class="">  134: 
-</span><span class="">  135:     {
-</span><span class="">  136:         self =&gt; {
-</span><span class="">  137:             type =&gt; OBJECT,
-</span><span class="">  138:             isa  =&gt; &#39;App::Test::Generator::Mutation::BooleanNegation&#39;,
-</span><span class="">  139:         },
-</span><span class="">  140:         doc =&gt; {
-</span><span class="">  141:             type =&gt; OBJECT,
-</span><span class="">  142:             isa  =&gt; &#39;PPI::Document&#39;,
-</span><span class="">  143:         },
-</span><span class="">  144:     }
-</span><span class="">  145: 
-</span><span class="">  146: =head4 output
-</span><span class="">  147: 
-</span><span class="">  148:     {
-</span><span class="">  149:         type     =&gt; ARRAYREF,
-</span><span class="">  150:         elements =&gt; {
-</span><span class="">  151:             type =&gt; OBJECT,
-</span><span class="">  152:             isa  =&gt; &#39;App::Test::Generator::Mutant&#39;,
-</span><span class="">  153:         },
-</span><span class="">  154:     }
-</span><span class="">  155: 
-</span><span class="">  156: =cut
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  157: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  158: sub mutate {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">159 → 177 → 264</span></span>  159: 	my ($self, $doc) = @_;
-</span><span class="">  160: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  161: 	# PPI &gt;= 1.270 classifies return statements as PPI::Statement::Break
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  162: 	# (alongside last/next/redo) rather than PPI::Statement::Return.
-</span><span class="">  163: 	# Use a custom predicate to match only &#39;return&#39; Break nodes.
-</span><span class="">  164: 	my $returns = $doc-&gt;find(sub {
-</span><span class="">  165: 		my $node = $_[1];
-</span><span class="">  166: 		# Must be a Break statement -- the parent class for return in
-</span><span class="">  167: 		# newer PPI versions
-</span><span class="">  168: 		return 0 unless $node-&gt;isa(&#39;PPI::Statement::Break&#39;);
-</span><span class="">  169: 		# Distinguish return from last/next/redo by checking the
-</span><span class="">  170: 		# first significant child token
-</span><span class="">  171: 		my $first = $node-&gt;schild(0) or return 0;
-</span><span class="">  172: 		return $first-&gt;content eq &#39;return&#39;;
-</span><span class="">  173: 	}) || [];
-</span><span class="">  174: 
-</span><span class="">  175: 	my @mutants;
-</span><span class="">  176: 
-</span><span class="">  177: 	for my $ret (@{$returns}) {
-</span><span class="">  178: 		# Skip bare return statements with no expression to negate,
-</span><span class="">  179: 		# and bare returns with only a postfix conditional/loop
-</span><span class="">  180: 		# modifier (return if $cond; has nothing to negate)
-</span><span class="">  181: 		my @expr = _return_expr_span($ret);
-</span><span class="">  182: 		next unless @expr;
+</span><span class="">  131: Each mutant&#39;s optional C&lt;context&gt; field is set to C&lt;conditional&gt; if
+</span><span class="">  132: the return statement sits inside (or is itself the keyword of) an
+</span><span class="">  133: C&lt;if&gt;/C&lt;unless&gt;/C&lt;while&gt;/C&lt;until&gt; compound statement, or C&lt;statement&gt;
+</span><span class="">  134: otherwise; its C&lt;line_content&gt; field holds the raw source text of the
+</span><span class="">  135: mutated line. Both are consumed by
+</span><span class="">  136: L&lt;App::Test::Generator::Mutator&gt;&#39;s fast-mode dedup.
+</span><span class="">  137: 
+</span><span class="">  138: =head3 API specification
+</span><span class="">  139: 
+</span><span class="">  140: =head4 input
+</span><span class="">  141: 
+</span><span class="">  142:     {
+</span><span class="">  143:         self =&gt; {
+</span><span class="">  144:             type =&gt; OBJECT,
+</span><span class="">  145:             isa  =&gt; &#39;App::Test::Generator::Mutation::BooleanNegation&#39;,
+</span><span class="">  146:         },
+</span><span class="">  147:         doc =&gt; {
+</span><span class="">  148:             type =&gt; OBJECT,
+</span><span class="">  149:             isa  =&gt; &#39;PPI::Document&#39;,
+</span><span class="">  150:         },
+</span><span class="">  151:     }
+</span><span class="">  152: 
+</span><span class="">  153: =head4 output
+</span><span class="">  154: 
+</span><span class="">  155:     {
+</span><span class="">  156:         type     =&gt; ARRAYREF,
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  157:         elements =&gt; {
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  158:             type =&gt; OBJECT,
+</span><span class="">  159:             isa  =&gt; &#39;App::Test::Generator::Mutant&#39;,
+</span><span class="">  160:         },
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  161:     }
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  162: 
+</span><span class="">  163: =cut
+</span><span class="">  164: 
+</span><span class="">  165: sub mutate {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">166 → 184 → 271</span></span>  166: 	my ($self, $doc) = @_;
+</span><span class="">  167: 
+</span><span class="">  168: 	# PPI &gt;= 1.270 classifies return statements as PPI::Statement::Break
+</span><span class="">  169: 	# (alongside last/next/redo) rather than PPI::Statement::Return.
+</span><span class="">  170: 	# Use a custom predicate to match only &#39;return&#39; Break nodes.
+</span><span class="">  171: 	my $returns = $doc-&gt;find(sub {
+</span><span class="">  172: 		my $node = $_[1];
+</span><span class="">  173: 		# Must be a Break statement -- the parent class for return in
+</span><span class="">  174: 		# newer PPI versions
+</span><span class="">  175: 		return 0 unless $node-&gt;isa(&#39;PPI::Statement::Break&#39;);
+</span><span class="">  176: 		# Distinguish return from last/next/redo by checking the
+</span><span class="">  177: 		# first significant child token
+</span><span class="">  178: 		my $first = $node-&gt;schild(0) or return 0;
+</span><span class="">  179: 		return $first-&gt;content eq &#39;return&#39;;
+</span><span class="">  180: 	}) || [];
+</span><span class="">  181: 
+</span><span class="">  182: 	my @mutants;
 </span><span class="">  183: 
-</span><span class="">  184: 		# Skip a lone structure node (e.g. return ($x, $y) gives a
-</span><span class="">  185: 		# single PPI::Structure::List child) &acirc;&#128;&#148; wrapping it is not
-</span><span class="">  186: 		# useful and there is nothing simple to splice around
-</span><span class="">  187: 		next if @expr == 1 &amp;&amp; !$expr[0]-&gt;isa(&#39;PPI::Token&#39;);
-</span><span class="">  188: 
-</span><span class="">  189: 		# Capture location so the transform closure targets the
-</span><span class="">  190: 		# exact statement rather than the first match on that line
-</span><span class="">  191: 		my $line = $ret-&gt;location-&gt;[0];
-</span><span class="">  192: 		my $col  = $ret-&gt;location-&gt;[1];
-</span><span class="">  193: 
-</span><span class="">  194: 		# Build a unique ID from line and column so multiple return
-</span><span class="">  195: 		# statements in the same file never collide
-</span><span class="">  196: 		my $id = &quot;BOOL_NEGATE_${line}_${col}&quot;;
-</span><span class="">  197: 
-</span><span class="">  198: 		my $mutant = eval {
-</span><span class="">  199: 			App::Test::Generator::Mutant-&gt;new(
-</span><span class="">  200: 				id           =&gt; $id,
-</span><span class="">  201: 				group        =&gt; &quot;BOOL_NEGATE:$line&quot;,
-</span><span class="">  202: 				description  =&gt; &#39;Negate boolean return expression&#39;,
-</span><span class="">  203: 				original     =&gt; $ret-&gt;content,
-</span><span class="">  204: 				line         =&gt; $line,
-</span><span class="">  205: 				type         =&gt; &#39;boolean&#39;,
-</span><span class="">  206: 				context      =&gt; $self-&gt;_in_conditional($ret) ? &#39;conditional&#39; : &#39;statement&#39;,
-</span><span class="">  207: 				line_content =&gt; $self-&gt;_line_content($doc, $line),
-</span><span class="">  208: 
-</span><span class="">  209: 				# The transform closure captures line and col so it
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  210: 				# targets precisely the right return statement in the
+</span><span class="">  184: 	for my $ret (@{$returns}) {
+</span><span class="">  185: 		# Skip bare return statements with no expression to negate,
+</span><span class="">  186: 		# and bare returns with only a postfix conditional/loop
+</span><span class="">  187: 		# modifier (return if $cond; has nothing to negate)
+</span><span class="">  188: 		my @expr = _return_expr_span($ret);
+</span><span class="">  189: 		next unless @expr;
+</span><span class="">  190: 
+</span><span class="">  191: 		# Skip a lone structure node (e.g. return ($x, $y) gives a
+</span><span class="">  192: 		# single PPI::Structure::List child) &acirc;&#128;&#148; wrapping it is not
+</span><span class="">  193: 		# useful and there is nothing simple to splice around
+</span><span class="">  194: 		next if @expr == 1 &amp;&amp; !$expr[0]-&gt;isa(&#39;PPI::Token&#39;);
+</span><span class="">  195: 
+</span><span class="">  196: 		# Capture location so the transform closure targets the
+</span><span class="">  197: 		# exact statement rather than the first match on that line
+</span><span class="">  198: 		my $line = $ret-&gt;location-&gt;[0];
+</span><span class="">  199: 		my $col  = $ret-&gt;location-&gt;[1];
+</span><span class="">  200: 
+</span><span class="">  201: 		# Build a unique ID from line and column so multiple return
+</span><span class="">  202: 		# statements in the same file never collide
+</span><span class="">  203: 		my $id = &quot;BOOL_NEGATE_${line}_${col}&quot;;
+</span><span class="">  204: 
+</span><span class="">  205: 		my $mutant = eval {
+</span><span class="">  206: 			App::Test::Generator::Mutant-&gt;new(
+</span><span class="">  207: 				id           =&gt; $id,
+</span><span class="">  208: 				group        =&gt; &quot;BOOL_NEGATE:$line&quot;,
+</span><span class="">  209: 				description  =&gt; &#39;Negate boolean return expression&#39;,
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  210: 				original     =&gt; $ret-&gt;content,
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -521,121 +521,128 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  211: 				# document copy it receives at test time
-</span><span class="">  212: 				transform =&gt; sub {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  213: 					my $doc  = $_[0];
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  214: 
-</span><span class="">  215: 					# Locate all return statements in the fresh document copy using
-</span><span class="">  216: 					# the same PPI::Statement::Break predicate as the outer find --
-</span><span class="">  217: 					# PPI &gt;= 1.270 no longer uses PPI::Statement::Return
-</span><span class="">  218: 					my $rets = $doc-&gt;find(sub {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  219: 						my $node = $_[1];
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  220: 						# Match Break nodes only -- covers return/last/next/redo
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  221: 						return 0 unless $node-&gt;isa(&#39;PPI::Statement::Break&#39;);
-</span><span class="">  222: 						# Filter to return specifically by inspecting the first token
-</span><span class="">  223: 						my $first = $node-&gt;schild(0) or return 0;
-</span><span class="">  224: 						return $first-&gt;content eq &#39;return&#39;;
-</span><span class="">  225: 					}) || [];
-</span><span class="">  226: 
-</span><span class="">  227: 					for my $ret (@{$rets}) {
-</span><span class="">  228: 						# Match by line and column to avoid mutating
-</span><span class="">  229: 						# the wrong return statement
-</span><span class="">  230: 						next unless $ret-&gt;line_number   == $line;
-</span><span class="">  231: 						next unless $ret-&gt;column_number == $col;
-</span><span class="">  232: 
-</span><span class="">  233: 						# Skip bare returns with no expression
-</span><span class="">  234: 						my @expr = _return_expr_span($ret);
-</span><span class="">  235: 						last unless @expr;
-</span><span class="">  236: 
-</span><span class="">  237: 						# Skip a lone structure node
-</span><span class="">  238: 						last if @expr == 1 &amp;&amp; !$expr[0]-&gt;isa(&#39;PPI::Token&#39;);
+<span class="">  211: 				line         =&gt; $line,
+</span><span class="">  212: 				type         =&gt; &#39;boolean&#39;,
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  213: 				context      =&gt; $self-&gt;_in_conditional($ret) ? &#39;conditional&#39; : &#39;statement&#39;,
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  214: 				line_content =&gt; $self-&gt;_line_content($doc, $line),
+</span><span class="">  215: 
+</span><span class="">  216: 				# The transform closure captures line and col so it
+</span><span class="">  217: 				# targets precisely the right return statement in the
+</span><span class="">  218: 				# document copy it receives at test time
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  219: 				transform =&gt; sub {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  220: 					my $doc  = $_[0];
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  221: 
+</span><span class="">  222: 					# Locate all return statements in the fresh document copy using
+</span><span class="">  223: 					# the same PPI::Statement::Break predicate as the outer find --
+</span><span class="">  224: 					# PPI &gt;= 1.270 no longer uses PPI::Statement::Return
+</span><span class="">  225: 					my $rets = $doc-&gt;find(sub {
+</span><span class="">  226: 						my $node = $_[1];
+</span><span class="">  227: 						# Match Break nodes only -- covers return/last/next/redo
+</span><span class="">  228: 						return 0 unless $node-&gt;isa(&#39;PPI::Statement::Break&#39;);
+</span><span class="">  229: 						# Filter to return specifically by inspecting the first token
+</span><span class="">  230: 						my $first = $node-&gt;schild(0) or return 0;
+</span><span class="">  231: 						return $first-&gt;content eq &#39;return&#39;;
+</span><span class="">  232: 					}) || [];
+</span><span class="">  233: 
+</span><span class="">  234: 					for my $ret (@{$rets}) {
+</span><span class="">  235: 						# Match by line and column to avoid mutating
+</span><span class="">  236: 						# the wrong return statement
+</span><span class="">  237: 						next unless $ret-&gt;line_number   == $line;
+</span><span class="">  238: 						next unless $ret-&gt;column_number == $col;
 </span><span class="">  239: 
-</span><span class="">  240: 						# Wrap the whole expression span in !(...) rather
-</span><span class="">  241: 						# than just its first token -- $self-&gt;{x} is three
-</span><span class="">  242: 						# significant children (Symbol, Operator, Structure)
-</span><span class="">  243: 						# and wrapping only the leading $self produced the
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  244: 						# broken mutant &#39;return !($self)-&gt;{x};&#39;
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  245: 						$expr[0]-&gt;insert_before(PPI::Token::Operator-&gt;new(&#39;!&#39;));
-</span><span class="">  246: 						$expr[0]-&gt;insert_before(PPI::Token::Structure-&gt;new(&#39;(&#39;));
-</span><span class="">  247: 						$expr[-1]-&gt;insert_after(PPI::Token::Structure-&gt;new(&#39;)&#39;));
-</span><span class="">  248: 						last;
-</span><span class="">  249: 					}
-</span><span class="">  250: 				},
-</span><span class="">  251: 			);
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  252: 		};
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  253: 
-</span><span class="">  254: 		# If the Mutant construction fails, report clearly rather than
-</span><span class="">  255: 		# silently dropping the mutant from the results
-</span><span class="">  256: 		if($@ || !$mutant) {
-</span><span class="">  257: 			warn &quot;Failed to construct mutant $id: $@&quot; if $@;
-</span><span class="">  258: 			next;
-</span><span class="">  259: 		}
+</span><span class="">  240: 						# Skip bare returns with no expression
+</span><span class="">  241: 						my @expr = _return_expr_span($ret);
+</span><span class="">  242: 						last unless @expr;
+</span><span class="">  243: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  244: 						# Skip a lone structure node
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  245: 						last if @expr == 1 &amp;&amp; !$expr[0]-&gt;isa(&#39;PPI::Token&#39;);
+</span><span class="">  246: 
+</span><span class="">  247: 						# Wrap the whole expression span in !(...) rather
+</span><span class="">  248: 						# than just its first token -- $self-&gt;{x} is three
+</span><span class="">  249: 						# significant children (Symbol, Operator, Structure)
+</span><span class="">  250: 						# and wrapping only the leading $self produced the
+</span><span class="">  251: 						# broken mutant &#39;return !($self)-&gt;{x};&#39;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  252: 						$expr[0]-&gt;insert_before(PPI::Token::Operator-&gt;new(&#39;!&#39;));
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  253: 						$expr[0]-&gt;insert_before(PPI::Token::Structure-&gt;new(&#39;(&#39;));
+</span><span class="">  254: 						$expr[-1]-&gt;insert_after(PPI::Token::Structure-&gt;new(&#39;)&#39;));
+</span><span class="">  255: 						last;
+</span><span class="">  256: 					}
+</span><span class="">  257: 				},
+</span><span class="">  258: 			);
+</span><span class="">  259: 		};
 </span><span class="">  260: 
-</span><span class="">  261: 		push @mutants, $mutant;
-</span><span class="">  262: 	}
-</span><span class="">  263: 
-</span><span class="">  264: 	return @mutants;
-</span><span class="">  265: }
-</span><span class="">  266: 
-</span><span class="">  267: # --------------------------------------------------
-</span><span class="">  268: # Purpose: identify the PPI elements making up the expression
-</span><span class="">  269: #          being returned by a &#39;return&#39; statement, excluding
-</span><span class="">  270: #          the leading &#39;return&#39; keyword, the trailing statement
-</span><span class="">  271: #          terminator, and any postfix conditional/loop modifier
-</span><span class="">  272: #          (if/unless/while/until/for/foreach) and its condition.
-</span><span class="">  273: # Entry:   a PPI::Statement::Break node already confirmed to be
-</span><span class="">  274: #          a &#39;return&#39; statement.
-</span><span class="">  275: # Exit:    a list of the significant child elements making up
-</span><span class="">  276: #          the return expression, or an empty list for a bare
-</span><span class="">  277: #          return (with or without a postfix modifier).
-</span><span class="">  278: # Side effects: none.
-</span><span class="">  279: # --------------------------------------------------
-</span><span class="">  280: sub _return_expr_span {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">281 → 286 → 290</span></span>  281: 	my ($ret) = @_;
-</span><span class="">  282: 
-</span><span class="">  283: 	my @children = $ret-&gt;schildren;
-</span><span class="">  284: 	shift @children;
-</span><span class="">  285: 
-</span><span class="">  286: 	if(@children &amp;&amp; $children[-1]-&gt;isa(&#39;PPI::Token::Structure&#39;) &amp;&amp; $children[-1]-&gt;content eq &#39;;&#39;) {
-</span><span class="">  287: 		pop @children;
-</span><span class="">  288: 	}
+</span><span class="">  261: 		# If the Mutant construction fails, report clearly rather than
+</span><span class="">  262: 		# silently dropping the mutant from the results
+</span><span class="">  263: 		if($@ || !$mutant) {
+</span><span class="">  264: 			warn &quot;Failed to construct mutant $id: $@&quot; if $@;
+</span><span class="">  265: 			next;
+</span><span class="">  266: 		}
+</span><span class="">  267: 
+</span><span class="">  268: 		push @mutants, $mutant;
+</span><span class="">  269: 	}
+</span><span class="">  270: 
+</span><span class="">  271: 	return @mutants;
+</span><span class="">  272: }
+</span><span class="">  273: 
+</span><span class="">  274: # --------------------------------------------------
+</span><span class="">  275: # Purpose: identify the PPI elements making up the expression
+</span><span class="">  276: #          being returned by a &#39;return&#39; statement, excluding
+</span><span class="">  277: #          the leading &#39;return&#39; keyword, the trailing statement
+</span><span class="">  278: #          terminator, and any postfix conditional/loop modifier
+</span><span class="">  279: #          (if/unless/while/until/for/foreach) and its condition.
+</span><span class="">  280: # Entry:   a PPI::Statement::Break node already confirmed to be
+</span><span class="">  281: #          a &#39;return&#39; statement.
+</span><span class="">  282: # Exit:    a list of the significant child elements making up
+</span><span class="">  283: #          the return expression, or an empty list for a bare
+</span><span class="">  284: #          return (with or without a postfix modifier).
+</span><span class="">  285: # Side effects: none.
+</span><span class="">  286: # --------------------------------------------------
+</span><span class="">  287: sub _return_expr_span {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">288 → 293 → 297</span></span>  288: 	my ($ret) = @_;
 </span><span class="">  289: 
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">290 → 290 → 298</span></span>  290: 	for my $i (0 .. $#children) {
-</span><span class="">  291: 		my $child = $children[$i];
-</span><span class="">  292: 		next unless $child-&gt;isa(&#39;PPI::Token::Word&#39;);
-</span><span class="">  293: 		next unless $child-&gt;content =~ /^(?:if|unless|while|until|for|foreach)$/;
-</span><span class="">  294: 		@children = @children[0 .. $i - 1];
-</span><span class="">  295: 		last;
-</span><span class="">  296: 	}
-</span><span class="">  297: 
-</span><span class="">  298: 	return @children;
-</span><span class="">  299: }
-</span><span class="">  300: 
-</span><span class="">  301: =head1 AUTHOR
-</span><span class="">  302: 
-</span><span class="">  303: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  290: 	my @children = $ret-&gt;schildren;
+</span><span class="">  291: 	shift @children;
+</span><span class="">  292: 
+</span><span class="">  293: 	if(@children &amp;&amp; $children[-1]-&gt;isa(&#39;PPI::Token::Structure&#39;) &amp;&amp; $children[-1]-&gt;content eq &#39;;&#39;) {
+</span><span class="">  294: 		pop @children;
+</span><span class="">  295: 	}
+</span><span class="">  296: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">297 → 297 → 305</span></span>  297: 	for my $i (0 .. $#children) {
+</span><span class="">  298: 		my $child = $children[$i];
+</span><span class="">  299: 		next unless $child-&gt;isa(&#39;PPI::Token::Word&#39;);
+</span><span class="">  300: 		next unless $child-&gt;content =~ /^(?:if|unless|while|until|for|foreach)$/;
+</span><span class="">  301: 		@children = @children[0 .. $i - 1];
+</span><span class="">  302: 		last;
+</span><span class="">  303: 	}
 </span><span class="">  304: 
-</span><span class="">  305: =head1 LICENCE AND COPYRIGHT
-</span><span class="">  306: 
-</span><span class="">  307: Copyright 2026 Nigel Horne.
-</span><span class="">  308: 
-</span><span class="">  309: Usage is subject to licence terms.
-</span><span class="">  310: 
-</span><span class="">  311: The licence terms of this software are as follows:
-</span><span class="">  312: 
-</span><span class="">  313: =over 4
-</span><span class="">  314: 
-</span><span class="">  315: =item * Personal single user, single computer use: GPL2
-</span><span class="">  316: 
-</span><span class="">  317: =item * All other users (including Commercial, Charity, Educational,
-</span><span class="">  318: Government) must apply in writing for a licence for use from Nigel Horne
-</span><span class="">  319: at the above e-mail.
-</span><span class="">  320: 
-</span><span class="">  321: =back
-</span><span class="">  322: 
-</span><span class="">  323: =cut
-</span><span class="">  324: 
-</span><span class="">  325: 1;
+</span><span class="">  305: 	return @children;
+</span><span class="">  306: }
+</span><span class="">  307: 
+</span><span class="">  308: =head1 AUTHOR
+</span><span class="">  309: 
+</span><span class="">  310: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  311: 
+</span><span class="">  312: =head1 LICENCE AND COPYRIGHT
+</span><span class="">  313: 
+</span><span class="">  314: Copyright 2026 Nigel Horne.
+</span><span class="">  315: 
+</span><span class="">  316: Usage is subject to licence terms.
+</span><span class="">  317: 
+</span><span class="">  318: The licence terms of this software are as follows:
+</span><span class="">  319: 
+</span><span class="">  320: =over 4
+</span><span class="">  321: 
+</span><span class="">  322: =item * Personal single user, single computer use: GPL2
+</span><span class="">  323: 
+</span><span class="">  324: =item * All other users (including Commercial, Charity, Educational,
+</span><span class="">  325: Government) must apply in writing for a licence for use from Nigel Horne
+</span><span class="">  326: at the above e-mail.
+</span><span class="">  327: 
+</span><span class="">  328: =back
+</span><span class="">  329: 
+</span><span class="">  330: =cut
+</span><span class="">  331: 
+</span><span class="">  332: 1;
 </span></pre>
 
 <script>
