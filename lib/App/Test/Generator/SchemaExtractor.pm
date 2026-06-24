@@ -1263,8 +1263,10 @@ Print progress messages to stdout during analysis. Optional, default 0.
 =item * C<include_private>
 
 Include methods whose names begin with C<_> in the analysis. Optional,
-default 0. Methods named C<_new>, C<_init>, and C<_build> are always
-included regardless of this setting.
+default 0. Methods whose name begins with C<_new>, C<_init>, or
+C<_build> are always included regardless of this setting (a prefix
+match, so e.g. C<_build_attribute> and C<_init_logger> qualify too,
+matching common Moose builder/initializer naming conventions).
 
 =item * C<max_parameters>
 

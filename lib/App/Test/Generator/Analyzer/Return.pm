@@ -81,8 +81,12 @@ constant literal value.
 
 =item * C<$method>
 
-An L<App::Test::Generator::Model::Method> object. Evidence is added
-to this object in place via C<add_evidence>.
+Normally an L<App::Test::Generator::Model::Method> object; evidence is
+added to it in place via C<add_evidence>. A plain hashref with a
+C<source> or C<body> key is also accepted defensively (as SchemaExtractor
+callers may pass one), but in that case no evidence is recorded — only
+a Model::Method object exposing both C<source()> and C<add_evidence()>
+actually accumulates evidence.
 
 =back
 

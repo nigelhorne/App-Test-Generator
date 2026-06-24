@@ -177,10 +177,13 @@ sub analyze {
 
 	# --------------------------------------------------
 	# Detect assignment to $self->{field} — any such
-	# assignment means the method mutates its own state
+	# assignment means the method mutates its own state.
+	# Matched against $code_only so a field-assignment-like
+	# fragment appearing inside a string literal or comment
+	# is not mistaken for an actual mutation.
 	# --------------------------------------------------
 	my %seen_fields;
-	while($body =~ /\$self->\{(\w+)\}\s*=/g) {
+	while($code_only =~ /\$self->\{(\w+)\}\s*=/g) {
 		$result{mutates_self} = 1;
 
 		# Deduplicate field names in case the same field
@@ -191,10 +194,11 @@ sub analyze {
 
 	# --------------------------------------------------
 	# Detect mutation of global variables — %ENV, %SIG,
-	# @ARGV and common Perl special variables.
+	# @ARGV and common Perl special variables. Matched
+	# against $code_only for the same reason as above.
 	# NOTE: does not catch all possible globals.
 	# --------------------------------------------------
-	if($body =~ GLOBAL_PATTERN) {
+	if($code_only =~ GLOBAL_PATTERN) {
 		$result{mutates_globals} = 1;
 	}
 

@@ -138,6 +138,14 @@ None beyond C<$self>.
 
 A string containing the complete Perl test file source.
 
+=head3 Notes
+
+A method whose plan has the C<boundary_tests> flag set (because its
+schema carries non-empty C<_yamltest_hints>) gets one smoke-test block
+per hint value in C<boundary_values> and C<invalid_inputs>, calling
+the method with that value and asserting only that the call does not
+crash the test process.
+
 =head3 API specification
 
 =head4 input
@@ -245,6 +253,8 @@ sub _emit_method_tests {
 	$code .= $self->_emit_boolean_test($method) if $plan->{$TEST_PREDICATE} || $plan->{$TEST_BOOLEAN};
 
 	$code .= $self->_emit_void_test($method) if $plan->{$TEST_VOID};
+
+	$code .= $self->_emit_boundary_test($method) if $plan->{$TEST_BOUNDARY};
 
 	return $code;
 }
@@ -511,6 +521,55 @@ sub _emit_void_test {
 	ok(!defined \$result, '$method returns nothing (void)');
 }
 END_TEST
+}
+
+# --------------------------------------------------
+# _emit_boundary_test
+#
+# Purpose:    Emit one smoke-test block per boundary
+#             or invalid-input value detected by
+#             SchemaExtractor's _yamltest_hints, calling
+#             the method with each and confirming the
+#             call does not crash the test process.
+#
+# Entry:      $method - method name string.
+#             Schema is read from $self.
+# Exit:       Returns a string of Perl test code, or
+#             the empty string if no hint values exist.
+# Side effects: None.
+# Notes:      boundary_values and invalid_inputs are
+#             deliberately tested the same way: these
+#             are smoke tests proving resilience, not
+#             assertions on whether the call should
+#             succeed or die, since invalid_inputs are
+#             expected to be rejected while boundary_values
+#             are expected to be accepted.
+# --------------------------------------------------
+sub _emit_boundary_test {
+	my ($self, $method) = @_;
+
+	require App::Test::Generator;
+
+	my $hints  = $self->{schema}{$method}{_yamltest_hints} || {};
+	my @values = (
+		@{ $hints->{boundary_values} || [] },
+		@{ $hints->{invalid_inputs}  || [] },
+	);
+
+	return '' unless @values;
+
+	my $code = '';
+	for my $value (@values) {
+		my $literal = App::Test::Generator::perl_quote($value);
+		$code .= <<"END_TEST";
+{
+	eval { \$obj->$method($literal) };
+	pass('$method survives boundary input $literal');
+}
+END_TEST
+	}
+
+	return $code;
 }
 
 1;

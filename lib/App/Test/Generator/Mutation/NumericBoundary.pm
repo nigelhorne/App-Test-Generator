@@ -137,6 +137,13 @@ The following operators and their flips are supported:
 Mutant IDs include line number, column number, and the flip target to
 ensure uniqueness even when multiple operators share a source line.
 
+Each mutant's optional C<context> field is set to C<conditional> if
+the operator sits inside (or is itself the keyword of) an
+C<if>/C<unless>/C<while>/C<until> compound statement, or C<expression>
+otherwise; its C<line_content> field holds the raw source text of the
+mutated line. Both are consumed by
+L<App::Test::Generator::Mutator>'s fast-mode dedup.
+
 =head3 API specification
 
 =head4 input
@@ -194,10 +201,13 @@ sub mutate {
 		my $line = $op->location->[0];
 		my $col  = $op->location->[1];
 
-		# An operator that is a direct child of a Structure::Condition
-		# sits in an if/unless/while/until condition rather than a
-		# plain statement or block
-		my $context = $parent->isa('PPI::Structure::Condition') ? 'conditional' : 'expression';
+		# PPI always wraps a condition's content in a
+		# PPI::Statement::Expression, so the operator's immediate
+		# parent is never literally PPI::Structure::Condition --
+		# use the shared ancestor-walking helper instead, as
+		# BooleanNegation and ReturnUndef do, to correctly detect
+		# operators inside if/unless/while/until conditions
+		my $context = $self->_in_conditional($op) ? 'conditional' : 'expression';
 
 		# Generate one mutant per flip of this operator
 		for my $change (@{ $FLIP{$original} }) {

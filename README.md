@@ -23,7 +23,7 @@ From the command line:
 
     # Attempt to create a formal definition from a routine package, then run tests against that formal definition
     # This is the holy grail of automatic test generation, just by looking at the source code
-    extract-schemas bin/extract-schemas lib/Sample/Module.pm && fuzz-harness-generator -r schemas/greet.yaml
+    extract-schemas lib/App/Test/Generator/Sample/Module.pm && fuzz-harness-generator -r schemas/greet.yml
 
 From Perl:
 
@@ -756,10 +756,10 @@ This example takes you through testing the online\_render method of [HTML::Genea
         name: Fuzz testing with perl ${{ matrix.perl }} on ${{ matrix.os }}
 
         steps:
-          - uses: actions/checkout@v5
+          - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
           - name: Set up Perl
-            uses: shogo82148/actions-setup-perl@v1
+            uses: shogo82148/actions-setup-perl@a198315ec4e9244f206879ea7b63078003aec8a6 # v1.41.1
             with:
               perl-version: ${{ matrix.perl }}
 
@@ -1350,10 +1350,6 @@ in a generated test file.
 A comma-separated string of `key =` value> pairs sorted by key.
 Returns an empty string if `$href` is undef, empty, or not a hashref.
 
-### Side effects
-
-None.
-
 ### Notes
 
 Keys and values are both rendered via `perl_quote`. In particular,
@@ -1391,10 +1387,6 @@ A comma-separated string of `'key' =` \[ val, ... \]> entries, one per
 qualifying key, sorted alphabetically. Returns the string `'()'` if
 `$href` is undef, empty, or not a hashref — this produces an empty
 hash assignment in the generated test rather than a syntax error.
-
-### Side effects
-
-None.
 
 ### Notes
 

@@ -213,6 +213,14 @@ None beyond C<$self>.
 A hashref with keys C<total_iterations>, C<interesting_inputs>,
 C<corpus_size>, C<branches_covered>, C<bugs_found>, and C<bugs>.
 
+=head3 Notes
+
+A C<target_sub> call that dies is only recorded in C<bugs> when the
+input that triggered it is valid per C<schema>. A die triggered by an
+input the schema itself marks invalid (e.g. out of the declared
+C<min>/C<max> range) is expected behaviour, not a bug, and is silently
+discarded.
+
 =head3 API specification
 
 =head4 input

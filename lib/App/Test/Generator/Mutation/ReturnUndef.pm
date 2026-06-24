@@ -131,6 +131,13 @@ when multiple return statements appear in the same source file.
 Only return statements with an expression child are mutated - bare
 C<return;> statements are skipped as they already return undef.
 
+Each mutant's optional C<context> field is set to C<conditional> if
+the return statement sits inside (or is itself the keyword of) an
+C<if>/C<unless>/C<while>/C<until> compound statement, or C<statement>
+otherwise; its C<line_content> field holds the raw source text of the
+mutated line. Both are consumed by
+L<App::Test::Generator::Mutator>'s fast-mode dedup.
+
 =head3 API specification
 
 =head4 input

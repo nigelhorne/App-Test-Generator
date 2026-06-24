@@ -306,6 +306,89 @@ Revision history for App-Test-Generator
 	  (my ($x, $y) = @_ inside a sub ref) are not mistaken for the outer
 	  method's parameters.
 
+	[Bug fixes]
+	- Fix Mutation::NumericBoundary's conditional-context detection
+	  (used for Mutator's fast-mode dedup) always evaluating false: PPI
+	  wraps a condition's content in PPI::Statement::Expression, so an
+	  operator's immediate parent is never literally
+	  PPI::Structure::Condition. Operators inside if/unless/while/until
+	  conditions were always tagged 'expression'. Now uses the same
+	  ancestor-walking _in_conditional() helper already shared by
+	  BooleanNegation and ReturnUndef.
+	- Fix Analyzer::SideEffect.pm's mutates_self and mutates_globals
+	  detection ($self->{field} = ... assignment and %ENV/%SIG/@ARGV
+	  mutation) matching against the raw method body instead of the
+	  comment/string-stripped $code_only, so a field-assignment-like
+	  fragment inside a string literal or comment could be mistaken for
+	  an actual mutation. Both checks now match against $code_only, same
+	  as the keyword/operator counts already fixed in a prior release.
+	- Fix Emitter::Perl.pm's _emit_method_tests() having no dispatch
+	  branch for the boundary_tests plan flag: TestStrategy.pm sets
+	  $plan{boundary_tests} when a method's schema carries non-empty
+	  _yamltest_hints, but the corresponding $TEST_BOUNDARY constant was
+	  defined and never read, so methods planned for boundary testing
+	  silently got zero generated test code for it. Added the dispatch
+	  line plus a new _emit_boundary_test() that emits one smoke-test
+	  block per boundary_values/invalid_inputs hint value.
+	- Fix TestStrategy.pm's generate_plan() extracting side_effects and
+	  dependencies from each method's schema _analysis but never using
+	  them, while the module's own DESCRIPTION claimed the plan was
+	  based on them; verified empirically that schema side-effect data
+	  has zero effect on the generated plan. Removed the dead
+	  extraction and corrected DESCRIPTION to attribute side-effect- and
+	  dependency-driven planning to Planner::Mock and Planner::Isolation,
+	  where it actually happens.
+	- Fix SchemaExtractor.pm's include_private POD describing the
+	  always-included _new/_init/_build method-name override as an
+	  exact-name match; _find_methods actually does a prefix match
+	  (/^_(new|init|build)/), so e.g. _build_attribute and _init_logger
+	  are also force-included, matching common Moose builder/
+	  initializer naming conventions. Confirmed via git log -L that the
+	  prefix behaviour is original and deliberate; POD corrected to
+	  match.
+	- Fix Generator.pm's render_hash() POD describing $href's values as
+	  always hashrefs; a scalar value that is a recognised type string
+	  is silently expanded to { type => $value } before being skipped-
+	  with-a-warning, which the POD did not mention.
+	- Fix Generator.pm's _perl_quote() POD omitting that the strings
+	  'true'/'false' are special-cased to the Perl boolean constants
+	  !!1/!!0 rather than being single-quoted like other strings.
+	- Fix Analyzer::Complexity.pm and Analyzer::Return.pm POD describing
+	  their $method argument as an App::Test::Generator::Model::Method
+	  object; SchemaExtractor's actual callers pass a plain hashref with
+	  a body/source key, not a Model::Method instance. POD corrected to
+	  describe the real calling convention.
+	- Fix README.md's extract-schemas usage example passing two
+	  positional arguments and referencing a nonexistent
+	  lib/Sample/Module.pm with a .yaml extension; corrected to the real
+	  invocation (extract-schemas lib/App/Test/Generator/Sample/Module.pm
+	  && fuzz-harness-generator -r schemas/greet.yml) and updated its
+	  GitHub Actions example to the same pinned action SHAs already used
+	  in dashboard.yml/mutate.yml.
+
+	[Enhancements]
+	- Add comprehensive black-box subtests to t/unit.t validating the
+	  public, POD-documented API of every .pm file under lib/ (all 27
+	  modules), written strictly against each module's documented
+	  Arguments/Returns contract rather than incidental implementation
+	  behaviour. Where a module's existing dedicated test file
+	  (e.g. t/Planner-Isolation.t, t/TestStrategy.t,
+	  t/Template_unit.t) already exercised its public API exhaustively
+	  in equivalent black-box style, no duplicate coverage was added to
+	  t/unit.t.
+	- Add missing public-API POD (Purpose, Arguments, Returns, API
+	  specification) to every previously undocumented public method in
+	  Model::Method.pm, which had none beyond a VERSION section; to
+	  Template.pm's get_data_section(); and to Planner.pm's build_plan(),
+	  which previously carried only an internal TODO-style comment
+	  despite being a public method.
+	- Add Notes sections to Mutation::BooleanNegation, ::ConditionalInversion,
+	  ::NumericBoundary, and ::ReturnUndef documenting the context and
+	  line_content fields each mutant carries for Mutator's fast-mode
+	  dedup, and to CoverageGuidedFuzzer.pm documenting that a
+	  target_sub die is only recorded as a bug when the triggering input
+	  is schema-valid.
+
 0.38	Mon May 18 21:19:40 EDT 2026
 
 	[Bug fixes]

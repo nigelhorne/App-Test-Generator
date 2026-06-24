@@ -99,8 +99,10 @@ Analyse the source of a method and return a complexity report hashref.
 
 =item * C<$method>
 
-An L<App::Test::Generator::Model::Method> object. The method source is
-read via C<source()>.
+A hashref describing the method, as built internally by
+L<App::Test::Generator::SchemaExtractor>. The method source is read
+from its C<body> key (a plain string of Perl source); this is I<not>
+an L<App::Test::Generator::Model::Method> object.
 
 =back
 
@@ -140,7 +142,7 @@ purposes.
 
     {
         self   => { type => OBJECT, isa => 'App::Test::Generator::Analyzer::Complexity' },
-        method => { type => OBJECT, isa => 'App::Test::Generator::Model::Method' },
+        method => { type => HASHREF, keys => { body => { type => SCALAR, optional => 1 } } },
     }
 
 =head4 output

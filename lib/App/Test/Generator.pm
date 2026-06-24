@@ -1556,7 +1556,7 @@ Takes a schema file and produces a test file (or STDOUT).
         input_file  => { type => 'string', optional => 1 },
         output_file => { type => 'string', optional => 1 },
         schema      => { type => 'hashref', optional => 1 },
-        quiet       => { type => 'boolean', optional => 1 },
+        quiet       => { type => 'boolean', optional => 1 },	# accepted but not yet implemented; has no effect
     }
 
 =head4 Output
@@ -2189,7 +2189,6 @@ sub generate
 #
 # Entry:      $name - the string to check.
 # Exit:       Returns 1 if builtin, 0 otherwise.
-# Side effects: None.
 # --------------------------------------------------
 sub _is_perl_builtin {
 	my $name = $_[0];
@@ -2313,8 +2312,6 @@ sub _load_schema {
 #             Croaks if the section exists but is not
 #             a hashref (and not the string 'undef').
 #
-# Side effects: None.
-#
 # Notes:      The string 'undef' is treated as an
 #             absent section — callers that set a
 #             section to 'undef' in YAML get the same
@@ -2426,7 +2423,6 @@ sub _validate_config {
 #             $schema->{input} must be a hashref.
 #
 # Exit:       Returns nothing. Croaks on invalid type.
-# Side effects: None.
 # --------------------------------------------------
 sub _validate_input_params {
 	my $schema = $_[0];
@@ -2468,7 +2464,6 @@ sub _validate_input_params {
 #
 # Exit:       Returns nothing. Croaks on invalid or
 #             duplicate positions. Carps on gaps.
-# Side effects: None.
 # --------------------------------------------------
 sub _validate_input_positions {
 	my $schema = $_[0];
@@ -2530,7 +2525,6 @@ sub _validate_input_positions {
 # Exit:       Returns nothing. Croaks on conflicting
 #             or malformed enum/memberof. Carps on
 #             unknown semantic types.
-# Side effects: None.
 # --------------------------------------------------
 sub _validate_input_semantics {
 	my $schema = $_[0];
@@ -2581,7 +2575,6 @@ sub _validate_input_semantics {
 #
 # Exit:       Returns nothing. Croaks on invalid property
 #             definitions. Carps on unknown builtins.
-# Side effects: None.
 # --------------------------------------------------
 sub _validate_transform_properties {
 	my $schema = $_[0];
@@ -2685,8 +2678,6 @@ sub _normalize_config {
 # Exit:       Returns 1 if the type is known,
 #             0 if the type is unknown or undef.
 #
-# Side effects: None.
-#
 # Notes:      The lookup hash is declared with
 #             'state' so it is built only once per
 #             process rather than on every call —
@@ -2740,8 +2731,6 @@ sub _valid_type {
 #
 # Exit:       Returns $name unchanged on success.
 #             Croaks if $name is not identifier-shaped.
-#
-# Side effects: None.
 # --------------------------------------------------
 sub _assert_identifier {
 	my ($name, $what, %opts) = @_;
@@ -2941,8 +2930,9 @@ input specification passed to L<Params::Validate::Strict>.
 =item * C<$href>
 
 A hashref whose values are themselves hashrefs containing field
-specifications. Keys whose values are not hashrefs are skipped with
-a warning.
+specifications. A scalar value that is a recognised type string (see
+C<_valid_type>) is expanded to C<{ type =E<gt> $value }>. Any other
+non-hashref value is skipped with a warning.
 
 =back
 
@@ -2973,11 +2963,11 @@ Other sub-keys are rendered via C<perl_quote>.
 
 =head4 input
 
-    { href => { type => HASHREF, optional => 1 } }
+    { href => { type => 'hashref', optional => 1 } }
 
 =head4 output
 
-    { type => SCALAR }
+    { type => 'string' }
 
 =cut
 
@@ -3076,10 +3066,6 @@ or Regexp objects — all are handled by C<perl_quote>.
 A comma-separated string of C<key => value> pairs sorted by key.
 Returns an empty string if C<$href> is undef, empty, or not a hashref.
 
-=head3 Side effects
-
-None.
-
 =head3 Notes
 
 Keys and values are both rendered via C<perl_quote>. In particular,
@@ -3091,11 +3077,11 @@ the generated test.
 
 =head4 input
 
-    { href => { type => HASHREF, optional => 1 } }
+    { href => { type => 'hashref', optional => 1 } }
 
 =head4 output
 
-    { type => SCALAR }
+    { type => 'string' }
 
 =cut
 
@@ -3139,10 +3125,6 @@ qualifying key, sorted alphabetically. Returns the string C<'()'> if
 C<$href> is undef, empty, or not a hashref — this produces an empty
 hash assignment in the generated test rather than a syntax error.
 
-=head3 Side effects
-
-None.
-
 =head3 Notes
 
 Array element values are rendered via C<perl_quote> which handles
@@ -3154,11 +3136,11 @@ mixed-value hashes and only want the arrayref entries rendered.
 
 =head4 input
 
-    { href => { type => HASHREF, optional => 1 } }
+    { href => { type => 'hashref', optional => 1 } }
 
 =head4 output
 
-    { type => SCALAR }
+    { type => 'string' }
 
 =cut
 
@@ -3203,8 +3185,6 @@ sub render_arrayref_map {
 # Exit:       Returns 1 if any field has a defined
 #             'position' key, 0 otherwise.
 #
-# Side effects: None.
-#
 # Notes:      Returns 0 immediately for undef or non-hash
 #             input rather than throwing — callers use the
 #             return value as a boolean and do not expect
@@ -3242,8 +3222,6 @@ sub _has_positions {
 # Exit:       Returns a Perl source-code fragment that
 #             evaluates to the original string value,
 #             or the string 'undef' if $s is undef.
-#
-# Side effects: None.
 #
 # Notes:      index() returns -1 when not found and
 #             any value >= 0 when found, including 0
@@ -3299,8 +3277,6 @@ sub q_wrap {
 # Entry:      $s - the string to escape.
 # Exit:       Returns the escaped string, or an
 #             empty string if $s is undef.
-#
-# Side effects: None.
 #
 # Notes:      NUL byte replacement produces the
 #             two-character sequence \0 which is
@@ -3358,9 +3334,11 @@ when evaluated in a generated test file.
 =item * C<$v>
 
 Any Perl value. May be undef, a scalar, an arrayref, a Regexp, or a blessed
-object. All types are handled — undef becomes C<'undef'>, numbers are
-unquoted, strings are single-quoted, arrayrefs recurse, Regexps become
-C<qr{...}>, and anything else falls through to C<render_fallback>.
+object. All types are handled — undef becomes C<'undef'>, the strings
+C<'true'>/C<'false'> become the Perl boolean constants C<!!1>/C<!!0>,
+numbers are unquoted, other strings are single-quoted, arrayrefs recurse,
+Regexps become C<qr{...}>, and anything else (including hashrefs and
+blessed objects) falls through to C<render_fallback>.
 
 =back
 
@@ -3457,8 +3435,6 @@ sub _perl_quote {
 #             Returns an empty arrayref if no transforms
 #             produce any testable properties.
 #             Never returns undef.
-#
-# Side effects: None. Does not modify any argument.
 #
 # Notes:      Transforms whose input is the string
 #             'undef' or whose input spec is not a
@@ -3639,8 +3615,6 @@ sub _generate_transform_properties {
 # Exit:       Returns a hashref keyed by semantic
 #             type name. Each value is a hashref
 #             with 'code' and 'description' keys.
-#
-# Side effects: None.
 #
 # Notes:      The returned hashref is built fresh
 #             on every call — callers that need it
@@ -3900,8 +3874,6 @@ sub _get_semantic_generators {
 #             name. Each value is a hashref with
 #             'description', 'code_template', and
 #             'applicable_to' keys.
-#
-# Side effects: None.
 #
 # Notes:      'applicable_to' lists the types for
 #             which each property is meaningful. It
@@ -4288,8 +4260,6 @@ sub _schema_to_lectrotest_generator {
 # Exit:       Returns 1 if the output type is one of
 #             'number', 'integer', or 'float'.
 #             Returns 0 otherwise.
-#
-# Side effects: None.
 # --------------------------------------------------
 sub _is_numeric_transform {
 	my ($input_spec, $output_spec) = @_;
@@ -4318,8 +4288,6 @@ sub _is_numeric_transform {
 #
 # Exit:       Returns 1 if the output type is 'string'.
 #             Returns 0 otherwise.
-#
-# Side effects: None.
 # --------------------------------------------------
 sub _is_string_transform {
 	my ($input_spec, $output_spec) = @_;
@@ -4348,8 +4316,6 @@ sub _is_string_transform {
 # Exit:       Returns 1 if the dominant input and
 #             output types are identical strings.
 #             Returns 0 otherwise.
-#
-# Side effects: None.
 #
 # Notes:      Uses _get_dominant_type for both sides.
 #             For multi-field input specs, dominant
@@ -4390,8 +4356,6 @@ sub _same_type {
 # Exit:       Returns a type string. Returns
 #             $DEFAULT_FIELD_TYPE ('string') if no
 #             type can be determined.
-#
-# Side effects: None.
 # --------------------------------------------------
 sub _get_dominant_type {
 	my $spec = $_[0];
@@ -4436,8 +4400,6 @@ sub _get_dominant_type {
 # Exit:       Returns a string of Perl source code.
 #             Returns an empty string if $properties
 #             is undef, not an arrayref, or empty.
-#
-# Side effects: None.
 #
 # Notes:      The generated code uses 4-space
 #             indentation deliberately — this is the
@@ -4513,8 +4475,6 @@ sub _render_properties {
 #             Returns an empty list if no properties
 #             can be detected or if $input_spec is
 #             undef or the string 'undef'.
-#
-# Side effects: None.
 #
 # Notes:      The 'positive' heuristic checks the
 #             transform name case-insensitively against

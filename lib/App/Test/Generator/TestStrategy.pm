@@ -49,7 +49,10 @@ Version 0.39
 
 Generates a test strategy plan for all methods in a schema, determining
 which test types should be produced for each method based on its
-accessor classification, output type, side effects, and other metadata.
+accessor classification, output type, and other metadata. Side-effect
+and dependency-driven planning (mocking, isolation) is handled
+separately by L<App::Test::Generator::Planner::Mock> and
+L<App::Test::Generator::Planner::Isolation>.
 
 =head2 new
 
@@ -154,13 +157,6 @@ sub generate_plan {
 
 	for my $method (keys %{ $self->{schema} }) {
 		my $schema = $self->{schema}{$method};
-
-		# Extract analysis metadata from the schema — note that
-		# $schema is already the per-method hashref so we access
-		# _analysis directly, not via the method name key again
-		my $analysis = $schema->{_analysis}          || {};
-		my $effects  = $analysis->{side_effects}     || {};
-		my $deps     = $analysis->{dependencies}     || {};
 
 		# Generate and store the plan for this method
 		$self->{plans}{$method} = $self->_plan_for_method($schema);
