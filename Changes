@@ -1,7 +1,6 @@
 Revision history for App-Test-Generator
 
-0.39	Sun May 24 17:43:17 EDT 2026
-
+0.40
 	[Bug fixes]
 	- Fix Planner::Fixture::plan() comparing $isolation->{$method}
 	  directly against the 'shared_fixture' string. Planner::Isolation::
@@ -124,7 +123,6 @@ Revision history for App-Test-Generator
 	  looks_like_number($param) call in the source is now treated as a
 	  direct numeric-type assertion, checked before the existing
 	  arithmetic-operator and comparison heuristics.
-
 	- Fix _compile_signature_isolated()'s "fast path" Safe compartment,
 	  tried before falling back to the subprocess unconditionally;
 	  Type::Params/Types::Common pull in XS modules and Safe cannot host
@@ -256,6 +254,8 @@ Revision history for App-Test-Generator
 	  git pull --rebase before pushing, reducing non-fast-forward
 	  rejections when mutate.yml's commit and dashboard.yml's
 	  workflow_run-triggered commit land close together.
+
+0.39	Sun May 24 17:43:17 EDT 2026
 
 	[Bug fixes]
 	- Fix mutation dashboard Total column excluding skipped mutants; Total now
