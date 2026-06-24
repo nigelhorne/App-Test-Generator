@@ -2,6 +2,21 @@ Revision history for App-Test-Generator
 
 0.40
 	[Bug fixes]
+	- Removed Test::Needs gates that never reflect a genuine dependency:
+	  t/params_validate.t, t/moosex_params_validate.t (Params::Validate
+	  and MooseX::Params::Validate/MooseX::Types::Moose appear only in
+	  heredoc fixture text parsed by PPI/Safe::reval, never truly loaded),
+	  t/params_validate_strict.t (already a hard PREREQ_PM), and the
+	  HTML::Genealogy::Map gate in t/fuzz.t (leftover from deleted
+	  t/conf/html_genealogy_map.{conf,yml} fixtures). The
+	  MooseX::Params::Validate fix restores real extraction coverage
+	  that was previously silently skipped on any machine without Moose
+	  installed.
+	- Added a Test::Needs gate for Type::Params/Types::Common to the
+	  signature_for subtest in t/integration.t: that fixture is compiled
+	  by a genuinely spawned perl -T subprocess, which
+	  Test::Without::Module cannot fake "missing" for, so the dependency
+	  must be a hard skip rather than left to croak.
 	- Fix Planner::Fixture::plan() comparing $isolation->{$method}
 	  directly against the 'shared_fixture' string. Planner::Isolation::
 	  plan() actually returns a per-method hashref with a 'fixture' key

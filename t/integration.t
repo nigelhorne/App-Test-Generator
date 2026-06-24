@@ -5,6 +5,7 @@ use warnings;
 use Readonly;
 use Test::Most;
 use Test::Mockingbird;
+use Test::Needs;
 use Test::Returns;
 use Test::Without::Module;
 use Capture::Tiny qw(capture);
@@ -1120,6 +1121,16 @@ subtest 'Concurrency: independent CoverageGuidedFuzzer instances do not share co
 # ==================================================================
 
 subtest 'SchemaExtractor: signature_for extraction degrades gracefully without BSD::Resource' => sub {
+	# The fixture module below is only ever compiled by the isolated
+	# perl -T subprocess spawned from _compile_signature_isolated()
+	# (PIPELINE 14 sets allow_signature_exec => 1), so the dependency
+	# on Type::Params/Types::Common is real, not just text inside this
+	# process. Test::Without::Module cannot simulate "missing" for it
+	# (its @INC hook does not propagate to the spawned subprocess), so
+	# unlike BSD::Resource below, this is a hard skip, not a fallback
+	# under test.
+	test_needs('Type::Params', 'Types::Common');
+
 	my $module_src = <<'END_MODULE';
 package TestModule::SignatureFor;
 use Types::Standard qw(Num);
