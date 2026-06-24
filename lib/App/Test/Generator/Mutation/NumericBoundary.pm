@@ -70,8 +70,6 @@ sub applies_to {
 	my $ops = $doc->find('PPI::Token::Operator') || [];
 	for my $op (@{$ops}) {
 		next unless exists $FLIP{$op->content()};
-		my $next_sib = $op->next_sibling();
-		next if $next_sib && $next_sib->isa('PPI::Token::Symbol');
 		my $parent = $op->parent();
 		next unless $parent->isa('PPI::Statement')
 			|| $parent->isa('PPI::Structure::Condition')
@@ -181,11 +179,6 @@ sub mutate {
 	for my $op (@{$ops}) {
 		my $original = $op->content();
 
-		# Skip readline operators — < immediately followed by
-		# a symbol token is <$fh> not a numeric comparison
-		my $next_sib = $op->next_sibling();
-		next if $next_sib && $next_sib->isa('PPI::Token::Symbol');
-
 		# Only process comparison operators that have defined flips
 		next unless exists $FLIP{$original};
 
@@ -237,15 +230,6 @@ sub mutate {
 							next unless $op->line_number   == $line;
 							next unless $op->column_number == $col;
 							next unless $op->content       eq $original;
-
-							# Safety check — do not mutate if this looks like
-							# a readline operator (<$fh>) rather than a numeric
-							# comparison. A readline < is immediately followed
-							# by a symbol token starting with $
-							my $next_sib = $op->next_sibling;
-							if($next_sib && $next_sib->isa('PPI::Token::Symbol')) {
-								last;
-							}
 
 							$op->set_content($change);
 							last;

@@ -2230,6 +2230,25 @@ subtest 'Mutation::NumericBoundary::mutate - Mutant construction failure is skip
 	done_testing();
 };
 
+subtest 'Mutation::NumericBoundary::mutate - falsy construction result without dying is skipped' => sub {
+	my $strategy = App::Test::Generator::Mutation::NumericBoundary->new();
+	my $doc      = PPI::Document->new(\"if (\$x > 1) { my \$y = 1; }\n");
+
+	# Unlike the "boom" mock above, this exercises the other half of
+	# "if($@ || !$mutant)": Mutant::new returning a false value without
+	# dying, leaving $@ empty -- the (! $mutant) arm of the guard.
+	Test::Mockingbird::mock('App::Test::Generator::Mutant', 'new', sub { return 0 });
+
+	my @mutants;
+	lives_ok { @mutants = $strategy->mutate($doc) }
+		'mutate() does not propagate a falsy-without-dying construction result';
+	is(scalar(@mutants), 0, 'all candidate flips for this operator were skipped');
+
+	Test::Mockingbird::unmock('App::Test::Generator::Mutant', 'new');
+
+	done_testing();
+};
+
 subtest 'Mutation::NumericBoundary::mutate - return shape and memory cycles' => sub {
 	my $strategy = App::Test::Generator::Mutation::NumericBoundary->new();
 	my $doc      = PPI::Document->new(\"if (\$x > 1) { my \$y = 1; }\n");

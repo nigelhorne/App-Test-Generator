@@ -20,6 +20,8 @@ Readonly my $OUT_DIR => 'cover_html/lcsaj_hits';
 
 Devel::App::Test::Generator::LCSAJ::Runtime - Debugger backend for LCSAJ coverage
 
+=encoding UTF-8
+
 =head1 VERSION
 
 Version 0.39
@@ -160,6 +162,64 @@ sub _normalize {
 #             %NORM_CACHE per raw $file, since the same
 #             file is seen on every consecutive statement.
 # --------------------------------------------------
+=head2 DB::DB
+
+Perl debugger hook, automatically invoked by the interpreter before every
+statement while this module is active as a C<-d:> debugger backend.
+Records a per-(file, line) hit count used later for LCSAJ coverage
+analysis.
+
+=head3 Arguments
+
+None. Perl calls this sub directly; the current execution location is
+obtained internally via C<caller(0)>.
+
+=head3 Returns
+
+Nothing meaningful — this is a void debugger callback.
+
+=head3 Side effects
+
+Increments C<%HITS{$norm}{$line}> for the normalised path and line number
+of the statement about to execute. Resolves each distinct raw filename
+via C<Cwd::abs_path> once, memoising the result in C<%NORM_CACHE>.
+
+=head3 Usage example
+
+Not called directly — activated via the Perl debugger flag:
+
+    PERL5OPT='-d:App::Test::Generator::LCSAJ::Runtime -Mblib' prove -l t
+
+=head3 API specification
+
+=head4 input
+
+    { }
+
+=head4 output
+
+    { type => UNDEF }
+
+=head3 Formal specification
+
+Let H be the hits relation (file x line) → ℕ, T be the target-file set,
+and I be the internal-file predicate (true only for this module's own
+source path).
+
+  ┌ DB_DB ──────────────────────────────────────────
+  │ ΔH
+  │ file? : FilePath
+  │ line? : ℕ
+  ├─────────────────────────────────────────────────
+  │ norm == normalize(file?)
+  │ ¬I(norm) ∧ (T = ∅ ∨ norm ∈ T)
+  │   ⟹ H′(norm, line?) = H(norm, line?) + 1
+  │ I(norm) ∨ (T ≠ ∅ ∧ norm ∉ T)
+  │   ⟹ H′ = H
+  └─────────────────────────────────────────────────
+
+=cut
+
 sub DB::DB {
 	my (undef, $file, $line) = caller(0);
 
