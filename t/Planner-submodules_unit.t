@@ -72,14 +72,16 @@ subtest 'Fixture::plan() returns empty hashref for empty isolation' => sub {
 
 subtest 'Fixture::plan() assigns shared mode for shared_fixture isolation' => sub {
 	my $f      = App::Test::Generator::Planner::Fixture->new();
-	my $result = $f->plan({}, { get_name => 'shared_fixture' });
+	my $result = $f->plan({}, { get_name => { fixture => 'shared_fixture' } });
 	is($result->{get_name}{mode}, 'shared', 'shared_fixture -> shared');
 };
 
+# Isolation::plan() returns a per-method hashref with a 'fixture' key
+# (not a bare string) — Fixture::plan() reads $isolation->{$method}{fixture}.
 subtest 'Fixture::plan() assigns new_per_test for all other isolation modes' => sub {
 	my $f = App::Test::Generator::Planner::Fixture->new();
 	for my $mode (qw(isolated fresh_object isolated_block none)) {
-		my $result = $f->plan({}, { my_method => $mode });
+		my $result = $f->plan({}, { my_method => { fixture => $mode } });
 		is($result->{my_method}{mode}, 'new_per_test',
 			"'$mode' -> new_per_test");
 	}
@@ -88,9 +90,9 @@ subtest 'Fixture::plan() assigns new_per_test for all other isolation modes' => 
 subtest 'Fixture::plan() handles multiple methods' => sub {
 	my $f      = App::Test::Generator::Planner::Fixture->new();
 	my $result = $f->plan({}, {
-		a => 'shared_fixture',
-		b => 'isolated',
-		c => 'none',
+		a => { fixture => 'shared_fixture' },
+		b => { fixture => 'isolated' },
+		c => { fixture => 'none' },
 	});
 	is(scalar keys %{$result},   3,            'three methods in result');
 	is($result->{a}{mode}, 'shared',       'a -> shared');
@@ -100,7 +102,7 @@ subtest 'Fixture::plan() handles multiple methods' => sub {
 
 subtest 'Fixture::plan() schema argument is accepted but does not affect output' => sub {
 	my $f = App::Test::Generator::Planner::Fixture->new();
-	my $isolation = { foo => 'shared_fixture' };
+	my $isolation = { foo => { fixture => 'shared_fixture' } };
 	my $r1 = $f->plan(undef,           $isolation);
 	my $r2 = $f->plan({ module => 'X' }, $isolation);
 	is_deeply($r1, $r2, 'schema content does not affect fixture plan');

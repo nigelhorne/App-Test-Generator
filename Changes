@@ -3,6 +3,21 @@ Revision history for App-Test-Generator
 0.39	Sun May 24 17:43:17 EDT 2026
 
 	[Bug fixes]
+	- Fix Planner::Fixture::plan() comparing $isolation->{$method}
+	  directly against the 'shared_fixture' string. Planner::Isolation::
+	  plan() actually returns a per-method hashref with a 'fixture' key
+	  (plus optional env/filesystem/time/network keys), not a bare mode
+	  string, so the comparison always stringified a hash reference and
+	  was always false. In practice this meant every method planned by
+	  Planner::build_plan() silently got 'new_per_test' fixture mode,
+	  even purity-'pure' methods that should have gotten a shared
+	  fixture. Each module's own unit tests passed because they fed
+	  Fixture::plan() a fabricated flat-string isolation map that never
+	  matched Isolation::plan()'s real output shape; only composing the
+	  two through build_plan() in a new end-to-end test caught the
+	  mismatch. Fixed to read $isolation->{$method}{fixture}; updated
+	  Fixture.pm's POD and t/Planner-Fixture.t, t/Planner-submodules_unit.t,
+	  and t/function.t's fixtures to the real per-method hashref shape.
 	- Fix mutation.json incorrectly added to .gitignore while the file is
 	  tracked by git; removed the .gitignore entry and untracked the file
 	  with git rm --cached so it is no longer committed.
@@ -220,6 +235,19 @@ Revision history for App-Test-Generator
 	  so the documented custom messages are actually produced on failure.
 
 	[Enhancements]
+	- Add cross-module end-to-end subtests to t/integration.t:
+	  Planner::build_plan()'s full five-subsystem composition (verifying
+	  the documented TestStrategy/Mock/Isolation/Fixture/Grouping
+	  responsibility split with real side-effect/dependency metadata,
+	  and that build_plan() calls each subsystem exactly once via
+	  Test::Mockingbird::spy); a SchemaExtractor -> Exporter::YAML ->
+	  disk -> Generator round trip; independent-instance concurrency
+	  checks for Mutator and CoverageGuidedFuzzer (interleaved calls on
+	  separate instances must not leak state); and a Test::Without::
+	  Module-based fallback check proving SchemaExtractor's
+	  signature_for() extraction is unaffected by BSD::Resource being
+	  unavailable. Test::Returns' returns_ok() is used to validate
+	  build_plan()'s output against its documented API specification.
 	- Pin shogo82148/actions-setup-perl to immutable commit SHA
 	  (a198315 / v1.41.1) in dashboard.yml, mutate.yml, and the
 	  POD-embedded CI template; actions/checkout similarly pinned to

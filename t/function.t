@@ -1881,7 +1881,7 @@ subtest 'Planner::Fixture - exception message and return shape' => sub {
 		qr/^isolation must be a hashref/,
 		'plan() croaks with the documented exact message for a non-hashref isolation';
 
-	my $fixture_plan = $planner->plan({}, { save => 'shared_fixture', read => 'fresh_object' });
+	my $fixture_plan = $planner->plan({}, { save => { fixture => 'shared_fixture' }, read => { fixture => 'fresh_object' } });
 	returns_ok(
 		$fixture_plan->{save},
 		{ type => 'hashref', schema => { mode => { type => 'string' } } },
