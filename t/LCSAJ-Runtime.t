@@ -32,6 +32,14 @@ subtest 'DB::DB() memoises abs_path() per file across repeated calls' => sub {
 };
 
 subtest 'DB::DB() still records hits after the cache is warm' => sub {
+	# DB::DB() skips recording for any file outside %TARGET once
+	# LCSAJ_TARGETS has scoped it (the normal case while real mutation
+	# testing is running against specific lib files). This test calls
+	# DB::DB() directly against its own file, which is never one of
+	# those targets, so %TARGET must be cleared here rather than relying
+	# on the ambient environment -- otherwise this subtest's result
+	# depends on who else set LCSAJ_TARGETS before prove started.
+	local %Devel::App::Test::Generator::LCSAJ::Runtime::TARGET = ();
 	%Devel::App::Test::Generator::LCSAJ::Runtime::HITS = ();
 	DB::DB();
 	my $this_file = Devel::App::Test::Generator::LCSAJ::Runtime::_normalize(__FILE__);
