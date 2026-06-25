@@ -1231,7 +1231,7 @@ Takes a schema file and produces a test file (or STDOUT).
         input_file  => { type => 'string', optional => 1 },
         output_file => { type => 'string', optional => 1 },
         schema      => { type => 'hashref', optional => 1 },
-        quiet       => { type => 'boolean', optional => 1 },
+        quiet       => { type => 'boolean', optional => 1 },    # accepted but not yet implemented; has no effect
     }
 
 #### Output
@@ -1293,8 +1293,9 @@ input specification passed to [Params::Validate::Strict](https://metacpan.org/po
 - `$href`
 
     A hashref whose values are themselves hashrefs containing field
-    specifications. Keys whose values are not hashrefs are skipped with
-    a warning.
+    specifications. A scalar value that is a recognised type string (see
+    `_valid_type`) is expanded to `{ type => $value }`. Any other
+    non-hashref value is skipped with a warning.
 
 ### Returns
 
@@ -1323,11 +1324,11 @@ Other sub-keys are rendered via `perl_quote`.
 
 #### input
 
-    { href => { type => HASHREF, optional => 1 } }
+    { href => { type => 'hashref', optional => 1 } }
 
 #### output
 
-    { type => SCALAR }
+    { type => 'string' }
 
 ## render\_args\_hash
 
@@ -1361,11 +1362,11 @@ the generated test.
 
 #### input
 
-    { href => { type => HASHREF, optional => 1 } }
+    { href => { type => 'hashref', optional => 1 } }
 
 #### output
 
-    { type => SCALAR }
+    { type => 'string' }
 
 ## render\_arrayref\_map
 
@@ -1399,11 +1400,11 @@ mixed-value hashes and only want the arrayref entries rendered.
 
 #### input
 
-    { href => { type => HASHREF, optional => 1 } }
+    { href => { type => 'hashref', optional => 1 } }
 
 #### output
 
-    { type => SCALAR }
+    { type => 'string' }
 
 ## perl\_quote
 
@@ -1415,9 +1416,11 @@ when evaluated in a generated test file.
 - `$v`
 
     Any Perl value. May be undef, a scalar, an arrayref, a Regexp, or a blessed
-    object. All types are handled — undef becomes `'undef'`, numbers are
-    unquoted, strings are single-quoted, arrayrefs recurse, Regexps become
-    `qr{...}`, and anything else falls through to `render_fallback`.
+    object. All types are handled — undef becomes `'undef'`, the strings
+    `'true'`/`'false'` become the Perl boolean constants `!!1`/`!!0`,
+    numbers are unquoted, other strings are single-quoted, arrayrefs recurse,
+    Regexps become `qr{...}`, and anything else (including hashrefs and
+    blessed objects) falls through to `render_fallback`.
 
 ### API specification
 

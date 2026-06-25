@@ -2,6 +2,29 @@ Revision history for App-Test-Generator
 
 0.40
 	[Bug fixes]
+	- Fix bin/generate-test-dashboard passing --changed_only to
+	  test-generator-mutate without a --base_sha, causing the diff to
+	  cover only HEAD~1. With dashboard.yml's concurrency cancel-in-progress
+	  policy, coalesced CI runs left stale survivor entries for any file not
+	  touched in the final commit of a batch; those entries were never
+	  refreshed by subsequent runs. Now computes BASE_SHA by skipping the
+	  workflow's own bookkeeping commits (same logic as mutate.yml), so the
+	  diff always covers everything since mutation.json was last meaningfully
+	  regenerated.
+	- Fix bin/test-generator-mutate setting $ENV{LCSAJ_TARGETS} to the
+	  mutation-scoped file list before running the baseline system('prove')
+	  check. This caused t/LCSAJ-Runtime.t (which calls DB::DB() directly
+	  against its own file) to fail spuriously whenever --file or
+	  --changed_only selected a subset of lib files, aborting the entire
+	  mutation run before any mutants were tested. LCSAJ_TARGETS is now
+	  assigned after baseline verification, scoped only to the mutation runs.
+	- Fix t/LCSAJ-Runtime.t's hit-recording subtest assuming %TARGET is
+	  empty. During mutation testing LCSAJ_TARGETS is intentionally scoped
+	  to the file under mutation (never a test file), so %TARGET is
+	  non-empty and the subtest's direct DB::DB() call was filtered out,
+	  making the 'hit recorded' assertion fail for every per-mutant prove
+	  run. This produced a fake 100% kill rate that invalidated all mutation
+	  results. Fixed by using local %TARGET = () within that subtest.
 	- Fix t/function.t's BEGIN-time LCSAJ_TARGETS subtest spawning its
 	  child perl process via qx{}/backticks with a shell-quoted -e
 	  argument (single quotes). qx{} always goes through a shell, and
