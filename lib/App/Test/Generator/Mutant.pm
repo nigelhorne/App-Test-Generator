@@ -4,11 +4,11 @@ use strict;
 use warnings;
 use Carp qw(croak);
 
-our $VERSION = '0.39';
+our $VERSION = '0.40';
 
 =head1 VERSION
 
-Version 0.39
+Version 0.40
 
 =head1 DESCRIPTION
 
@@ -97,7 +97,7 @@ attribute is missing or if C<transform> is not a CODE reference.
 
     {
         id           => { type => SCALAR },
-        description  => { type => SCALAR },
+        description  => { type => 'string' },
         original     => { type => SCALAR },
         line         => { type => SCALAR },
         transform    => { type => CODEREF },
@@ -110,7 +110,7 @@ attribute is missing or if C<transform> is not a CODE reference.
 =head4 output
 
     {
-        type => OBJECT,
+        type => 'object',
         isa  => 'App::Test::Generator::Mutant',
     }
 
@@ -126,8 +126,7 @@ sub new {
 	}
 
 	# Ensure transform is actually executable
-	croak 'transform must be a CODE reference'
-		unless ref($args{transform}) eq 'CODE';
+	croak 'transform must be a CODE reference' unless ref($args{transform}) eq 'CODE';
 
 	return bless \%args, $class;
 }
@@ -142,7 +141,7 @@ Return the unique identifier for this mutant.
 
 =head4 input
 
-    { self => { type => OBJECT, isa => 'App::Test::Generator::Mutant' } }
+    { self => { type => 'object', isa => 'App::Test::Generator::Mutant' } }
 
 =head4 output
 
@@ -150,7 +149,9 @@ Return the unique identifier for this mutant.
 
 =cut
 
-sub id          { $_[0]->{id}          }
+sub id {
+	return $_[0]->{id};
+}
 
 =head2 description
 
@@ -162,7 +163,7 @@ Return the human-readable description of the mutation.
 
 =head4 input
 
-    { self => { type => OBJECT, isa => 'App::Test::Generator::Mutant' } }
+    { self => { type => 'object', isa => 'App::Test::Generator::Mutant' } }
 
 =head4 output
 
@@ -307,11 +308,11 @@ Return the optional raw source text of the line this mutant targets.
 
 =head4 input
 
-    { self => { type => OBJECT, isa => 'App::Test::Generator::Mutant' } }
+    { self => { type => 'object', isa => 'App::Test::Generator::Mutant' } }
 
 =head4 output
 
-    { type => SCALAR, optional => 1 }
+    { type => 'string', optional => 1 }
 
 =cut
 
