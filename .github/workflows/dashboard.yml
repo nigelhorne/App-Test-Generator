@@ -35,7 +35,7 @@ jobs:
 
       # Install Perl via perlbrew
       - name: Setup Perl environment
-        uses: shogo82148/actions-setup-perl@a198315ec4e9244f206879ea7b63078003aec8a6 # v1.41.1
+        uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: ${{ matrix.perl }}
           # install cpanminus
@@ -97,7 +97,8 @@ jobs:
             echo "Running on ATG itself — using repo version"
             perl Makefile.PL && make install
           else
-            cpanm -iqn App::Test::Generator@0.40
+            echo "Install ATG"
+            cpanm -iqn App::Test::Generator@0.41
           fi
 
       - name: Generate dashboard
@@ -107,7 +108,9 @@ jobs:
           NONINTERACTIVE_TESTING: 1
         run: |
           if [ "${{ github.repository }}" = "nigelhorne/App-Test-Generator" ]; then
-            bin/generate-test-dashboard
+            bin/generate-test-dashboard \
+              --exclude lib/Devel \
+              --exclude lib/App/Test/Generator/Sample
           else
             generate-test-dashboard
           fi

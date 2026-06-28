@@ -30,7 +30,15 @@ jobs:
 
       - run: echo "$(pwd)/local/bin" >> $GITHUB_PATH
 
-      - run: perl Makefile.PL && make install
+      - name: Install ATG
+        run: |
+          if [ "${{ github.repository }}" = "nigelhorne/App-Test-Generator" ]; then
+            echo "Running on ATG itself — using repo version"
+            perl Makefile.PL && make install
+          else
+            echo "Install ATG"
+            cpanm -iqn App::Test::Generator@0.41
+          fi
 
       - name: Find last code commit
         run: |
