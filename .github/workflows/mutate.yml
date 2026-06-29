@@ -34,7 +34,7 @@ jobs:
 
       - name: Find last code commit
         run: |
-          BASE=$(git log --oneline | grep -v "^.\{8\} \(Add generated mutant\|Add coverage snapshot\|Update mutation results\)" | head -1 | awk '{print $1}')
+          BASE=$(git log --oneline | grep -v "^\S\+ \(Add generated mutant\|Add coverage snapshot\|Update mutation results\)" | head -1 | awk '{print $1}')
           if [ -z "$BASE" ]; then
             echo "::warning::Could not determine a base commit from git log; test-generator-mutate will fall back to HEAD~1"
           fi
@@ -61,6 +61,11 @@ jobs:
           NO_NETWORK_TESTING: 1
           NONINTERACTIVE_TESTING: 1
         run: |
+          if [ -n "$MUTATION_BASE_SHA" ]; then
+            BASE_SHA_FLAG="--base_sha $MUTATION_BASE_SHA"
+          else
+            BASE_SHA_FLAG=""
+          fi
           if [ "${{ github.repository }}" = "nigelhorne/App-Test-Generator" ]; then
             MUTATE_CMD="perl -Ilib -Iblib/lib bin/test-generator-mutate"
             $MUTATE_CMD \
@@ -68,7 +73,7 @@ jobs:
               --tests t \
               --json mutation.json \
               --changed_only \
-              --base_sha "$MUTATION_BASE_SHA" \
+              $BASE_SHA_FLAG \
               --mutation_level fast \
               --exclude lib/Devel \
               --exclude lib/App/Test/Generator/Sample
@@ -99,6 +104,6 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Update mutation results ($(date +%Y-%m-%d) $(git rev-parse --short HEAD))"
-            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
             git push origin HEAD:"${GITHUB_REF_NAME}"
           fi
