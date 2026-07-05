@@ -13,6 +13,14 @@ Revision history for App-Test-Generator
 	- Add --minimize-corpus flag to bin/extract-schemas: calls
 	  minimize_corpus() between run() and save_corpus() so corpus files
 	  stay bounded in size across repeated CI runs.
+	- Add CPAN Testers reproduction harness to bin/test-generator-index:
+	  for each FAIL report where installed-module data is available, a
+	  self-contained shell script (cover_html/reproduce/reproduce-GUID.sh)
+	  is generated that pins every installed module version with cpanm
+	  and suggests the matching Perl via perlbrew/plenv, allowing any
+	  developer to reproduce the exact failing environment locally.
+	  Scripts are linked as downloadable "Script" links in the CPAN
+	  Testers failure table on the dashboard.
 
 0.41	Sun Jun 28 08:01:43 EDT 2026
 	[Bug fixes]
