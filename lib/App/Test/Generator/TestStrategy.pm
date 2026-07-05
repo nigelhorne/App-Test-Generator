@@ -69,12 +69,14 @@ Construct a new TestStrategy.
 
 =item * C<schema>
 
-A hashref of method name to schema hashref. Optional — defaults to
+A hashref of method name to schema hashref
+Optional - defaults to
 an empty hashref.
 
 =item * C<thresholds>
 
-A hashref of threshold configuration. Optional — defaults to
+A hashref of threshold configuration.
+Optional - defaults to
 C<< { confidence => 'medium' } >>.
 
 =back
