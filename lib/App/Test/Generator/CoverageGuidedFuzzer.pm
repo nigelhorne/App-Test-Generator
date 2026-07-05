@@ -38,7 +38,7 @@ Readonly my $TYPE_STRING  => 'string';
 # --------------------------------------------------
 Readonly my @JSON_MODULES => qw(JSON::MaybeXS JSON);
 
-our $VERSION = '0.41';
+our $VERSION = '0.42';
 
 =head1 NAME
 
@@ -60,6 +60,11 @@ Version 0.41
     );
 
     my $report = $fuzzer->run();
+
+    # Optional: trim corpus to minimum branch-covering subset before saving
+    my $stats = $fuzzer->minimize_corpus();
+    printf "corpus %d -> %d entries\n", $stats->{before}, $stats->{after};
+
     $fuzzer->save_corpus('t/corpus/validate.json');
 
 =head1 DESCRIPTION

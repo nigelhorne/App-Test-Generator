@@ -37,7 +37,7 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
-our $VERSION = '0.41';
+our $VERSION = '0.42';
 
 use constant {
 	DEFAULT_ITERATIONS => 30,
