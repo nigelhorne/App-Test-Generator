@@ -1,6 +1,19 @@
 Revision history for App-Test-Generator
 
 0.41	Sun Jun 28 08:01:43 EDT 2026
+	[New features]
+	- Add CoverageGuidedFuzzer->minimize_corpus(): reduces the accumulated
+	  fuzz corpus to the minimum subset that still covers every branch
+	  discovered in the current run, using a greedy set-cover algorithm.
+	  Entries without branch data (loaded from a previous run or kept by
+	  random sampling when Devel::Cover is unavailable) are deduplicated
+	  by canonical JSON fingerprint. Bug-triggering inputs are always
+	  retained regardless of coverage contribution. Returns a hashref
+	  with keys before, after, and branches.
+	- Add --minimize-corpus flag to bin/extract-schemas: calls
+	  minimize_corpus() between run() and save_corpus() so corpus files
+	  stay bounded in size across repeated CI runs.
+
 	[Bug fixes]
 	- Fix bin/test-generator-mutate's per-mutant prove invocation: switch
 	  from a workspace-copy + PERL5LIB strategy to in-place mutation of
