@@ -3383,6 +3383,7 @@ sub perl_quote {
 
 sub _perl_quote {
 	my ($v, $depth) = @_;
+	no warnings 'recursion';    ## no critic (TestingAndDebugging::ProhibitNoWarnings)
 	croak('perl_quote: structure too deeply nested (circular reference?)') if $depth > 100;
 
 	# Undef produces the Perl literal 'undef'

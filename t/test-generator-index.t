@@ -503,7 +503,10 @@ subtest 'generate_reproduction_script() creates script file and returns its name
 	is($name, "reproduce-$guid.sh", 'returns correct filename');
 	my $path = File::Spec->catfile($dir, 'reproduce', $name);
 	ok(-f $path, 'script file exists');
-	ok(-x $path, 'script file is executable');
+SKIP: {
+		skip 'execute bits not meaningful on Windows', 1 if $^O eq 'MSWin32';
+		ok(-x $path, 'script file is executable');
+	}
 };
 
 subtest 'generate_reproduction_script() embeds report metadata in header' => sub {
