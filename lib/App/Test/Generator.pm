@@ -161,7 +161,7 @@ Version 0.42
 =head1 SYNOPSIS
 
 C<App::Test::Generator> is a suite to help the testing of CPAN modules.
-It consists of 5 subsystems:
+It consists of 6 subsystems:
 
 =over 4
 
@@ -174,6 +174,8 @@ It consists of 5 subsystems:
 =item * Test Dashboard
 
 =item * Benchmark Generation
+
+=item * Workflow Deployment
 
 =back
 
@@ -191,6 +193,9 @@ From the command line:
 
   # Generate a Benchmark::cmpthese script from a schema; each transform becomes one timed variant
   benchmark-generator -i schemas/abs.yml -o benchmarks/abs.pl
+
+  # Copy dashboard.yml and mutate.yml into a module repository's .github/workflows/ directory
+  deploy-workflows --target /path/to/my-module
 
 From Perl:
 
@@ -251,6 +256,8 @@ The distribution ships the following command-line tools:
 =over 4
 
 =item * L<benchmark-generator> - generate a self-contained L<Benchmark> C<cmpthese> script from a YAML schema. Each transform in the schema becomes one named variant; representative input values are derived from each parameter's type and range constraints.
+
+=item * L<deploy-workflows> - copy C<dashboard.yml> and C<mutate.yml> into the target repository's C<.github/workflows/> directory. Both files are embedded verbatim in the script, so no ATG source tree is needed after installation. Supports C<--target>, C<--force>, and C<--dry-run>.
 
 =item * L<extract-schemas> - heuristically extract YAML parameter schemas from a C<.pm> file, with optional coverage-guided fuzzing (C<--fuzz>) and corpus minimization (C<--minimize-corpus>).
 

@@ -23,6 +23,15 @@ Revision history for App-Test-Generator
 	  (for annotated examples) compares the return value with is().
 	  SchemaExtractor::_extract_pod_examples now also accepts =head1
 	  SYNOPSIS (previously only =head2) and collects =for example blocks.
+	- Add GitHub Actions workflow deployment: new script bin/deploy-workflows
+	  copies dashboard.yml and mutate.yml (both embedded verbatim in the
+	  script via Data::Section::Simple __DATA__ sections) into the target
+	  repository's .github/workflows/ directory. Supports --target DIR,
+	  --force (overwrite existing files), --dry-run (preview without
+	  writing), --version, and --help. Prints git add/commit/push next-step
+	  instructions on success. The embedded workflow files are identical to
+	  the master copies in .github/workflows/ and work without any sibling
+	  files, maintaining the portability guarantee introduced in 0.41.
 	- Add automatic benchmark generation: new module
 	  App::Test::Generator::BenchmarkGenerator and new script
 	  bin/benchmark-generator produce self-contained Perl benchmark scripts
