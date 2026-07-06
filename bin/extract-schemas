@@ -480,6 +480,12 @@ Limited information. Manual review required.
     # Subsequent runs: loads corpus and extends it
     extract-schemas --fuzz lib/MyModule.pm
 
+=head2 Keep corpus bounded with minimization
+
+    # Trims each corpus to the smallest subset that still covers every branch,
+    # preventing unbounded growth across many CI runs.
+    extract-schemas --fuzz --minimize-corpus lib/MyModule.pm
+
 =head2 Verbose Mode
 
     extract-schemas --verbose lib/MyModule.pm
