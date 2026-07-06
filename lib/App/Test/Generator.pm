@@ -11,9 +11,6 @@ use warnings;
 use autodie qw(:all);
 
 use utf8;
-binmode STDOUT, ':utf8';
-binmode STDERR, ':utf8';
-
 use open qw(:std :encoding(UTF-8));
 
 use App::Test::Generator::Template;
@@ -2051,10 +2048,10 @@ sub generate
 	# When the schema says output type is 'array', capture into @_r then take a ref.
 	if(($output{type} // '') eq 'array') {
 		if(defined($call_code)) {
-			$call_code =~ s/^\$result = (.*?);/my \@_r = ($1); \$result = \\\@_r;/s;
+			$call_code =~ s/\A\$result = ([^;]+);/my \@_r = ($1); \$result = \\\@_r;/;
 		}
 		if(defined($position_code)) {
-			$position_code =~ s/^\$result = (.*?);/my \@_r = ($1); \$result = \\\@_r;/s;
+			$position_code =~ s/\A\$result = ([^;]+);/my \@_r = ($1); \$result = \\\@_r;/;
 		}
 	}
 
