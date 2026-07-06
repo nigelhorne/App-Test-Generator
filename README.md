@@ -4,7 +4,7 @@ App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Da
 
 # VERSION
 
-Version 0.41
+Version 0.42
 
 # SYNOPSIS
 
@@ -24,6 +24,9 @@ From the command line:
     # Attempt to create a formal definition from a routine package, then run tests against that formal definition
     # This is the holy grail of automatic test generation, just by looking at the source code
     extract-schemas lib/App/Test/Generator/Sample/Module.pm && fuzz-harness-generator -r schemas/greet.yml
+
+    # Generate round-trip tests that run every code example in a module's POD and verify the results
+    pod-example-tester lib/My/Module.pm --output t/pod_examples.t
 
 From Perl:
 
@@ -69,6 +72,16 @@ The generated tests combine:
 This approach strengthens your test suite by probing both expected and
 unexpected inputs, helping you to catch boundary errors, invalid data
 handling, and regressions without manually writing every case.
+
+# TOOLS
+
+The distribution ships the following command-line tools:
+
+- [extract-schemas](https://metacpan.org/pod/extract-schemas) — heuristically extract YAML parameter schemas from a `.pm` file, with optional coverage-guided fuzzing (`--fuzz`) and corpus minimization (`--minimize-corpus`).
+- [fuzz-harness-generator](https://metacpan.org/pod/fuzz-harness-generator) — generate a `Test::Most` fuzzing harness from a YAML schema.
+- [pod-example-tester](https://metacpan.org/pod/pod-example-tester) — generate a `Test::Most` round-trip test file from a module's POD code examples. Annotated examples (`# returns value` / `# => value`) get `is()` assertions; unannotated verbatim blocks are wrapped in `eval{}` and checked for no exception.
+- [test-generator-mutate](https://metacpan.org/pod/test-generator-mutate) — run mutation testing against a module's test suite.
+- [test-generator-index](https://metacpan.org/pod/test-generator-index) — generate the HTML test-quality dashboard, combining Devel::Cover statement/branch data, LCSAJ path coverage, mutation results, and CPAN Testers failure analysis. For each CPAN Testers FAIL report, also writes a self-contained shell script (`cover_html/reproduce/reproduce-GUID.sh`) that pins every installed module at its exact failing version, enabling local reproduction of the failure environment.
 
 # DESCRIPTION
 
@@ -1492,3 +1505,11 @@ Copyright 2025-2026 Nigel Horne.
 Usage is subject to the terms of GPL2.
 If you use it,
 please let me know.
+
+# POD ERRORS
+
+Hey! **The above document had some coding errors, which are explained below:**
+
+- Around line 247:
+
+    Non-ASCII character seen before =encoding in '—'. Assuming UTF-8
