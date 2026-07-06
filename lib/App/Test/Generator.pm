@@ -188,6 +188,9 @@ From the command line:
   # This is the holy grail of automatic test generation, just by looking at the source code
   extract-schemas lib/App/Test/Generator/Sample/Module.pm && fuzz-harness-generator -r schemas/greet.yml
 
+  # Fuzz a module and keep the corpus bounded: trim to the minimum subset that still covers every branch
+  extract-schemas --fuzz --minimize-corpus lib/My/Module.pm
+
   # Generate round-trip tests that run every code example in a module's POD and verify the results
   pod-example-tester lib/My/Module.pm --output t/pod_examples.t
 
