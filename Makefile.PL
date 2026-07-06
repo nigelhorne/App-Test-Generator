@@ -58,6 +58,7 @@ WriteMakefile(
 		'Return::Set' => 0.03,
 		'Safe' => 0,
 		'Template' => 0,
+		'Text::Balanced' => 0,
 		'URI' => 0,
 		'UUID::Tiny' => 0,
 		'WWW::RT::CPAN' => 0,
