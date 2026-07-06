@@ -106,9 +106,15 @@ each CI push via C<.github/workflows/dashboard.yml>.
 
 =head1 OUTPUTS
 
-  cover_html/index.html     - Main dashboard (coverage table, trend chart,
-                              CPAN Testers failures, mutation report)
-  cover_html/mutation_html/ - Per-file mutation heatmap pages
+  cover_html/index.html          - Main dashboard (coverage table, trend chart,
+                                   CPAN Testers failures, mutation report)
+  cover_html/mutation_html/      - Per-file mutation heatmap pages
+  cover_html/reproduce/          - CPAN Testers reproduction scripts, one per
+                                   FAIL report where installed-module data was
+                                   available (reproduce-GUID.sh, mode 0755).
+                                   Each script pins every installed module
+                                   version with cpanm and suggests the matching
+                                   Perl via perlbrew/plenv.
 
 =head1 OPTIONS
 
@@ -5777,6 +5783,65 @@ sub _own_file_coverage_pct {
 
 	return $count ? $sum / $count : undef;
 }
+
+=head1 FUNCTIONS
+
+=head2 generate_reproduction_script
+
+  my $name = generate_reproduction_script($dist, $version, $report, $installed_mods, $outdir);
+
+Generates a self-contained POSIX shell script that reproduces the exact
+environment of a CPAN Testers failure report, then returns the script's
+filename (C<reproduce-GUID.sh>) on success, or C<undef> if the report has
+no C<guid> field.
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$dist> — distribution name (e.g. C<Foo-Bar>).
+
+=item * C<$version> — distribution version string (e.g. C<1.23>).
+
+=item * C<$report> — hashref with at minimum C<guid>, C<perl>, C<osname>,
+and C<reporter> keys as returned by the CPAN Testers API.
+
+=item * C<$installed_mods> — hashref of C<< Module => version >> pairs from
+L</extract_installed_modules>, or an empty hashref.
+
+=item * C<$outdir> — root output directory.  The script is written to
+C<$outdir/reproduce/reproduce-$guid.sh> (mode 0755).
+
+=back
+
+=head3 Output script content
+
+The generated script contains:
+
+=over 4
+
+=item * A C<set -e> guard followed by a perlbrew advisory comment.
+
+=item * If C<$installed_mods> is non-empty: a C<cpanm --notest> command that
+pins every installed module at its exact failing version (modules are
+single-quoted and sorted alphabetically to prevent shell-injection).
+
+=item * A C<cpanm --look Dist@version> command to open the distribution's
+source, plus a comment showing the local-checkout alternative
+(C<perl Makefile.PL && make && make test>).
+
+=back
+
+=head2 extract_installed_modules
+
+  my $mods = extract_installed_modules($html);
+
+Parses the C<Installed modules:> section from a CPAN Testers report HTML
+page and returns a hashref of C<< Module => version >> pairs.  Returns an
+empty hashref if C<$html> is undef or the section is absent.
+
+Module names are validated against C<[A-Z]\w*(?:::\w+)*> and versions
+against C<[\d._]+>, so the returned hashref is safe for shell interpolation.
 
 =head1 AUTHOR
 

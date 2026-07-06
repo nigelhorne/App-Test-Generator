@@ -583,4 +583,85 @@ subtest 'generate_reproduction_script() strips HTML from reporter name' => sub {
 	unlike($content, qr/"/,                         'quotes stripped');
 };
 
+subtest 'generate_reproduction_script() includes set -e and report URL' => sub {
+	my $dir  = tempdir(CLEANUP => 1);
+	my $guid = 'aaaabbbb-1234-5678-abcd-000000000006';
+	generate_reproduction_script('My-Dist', '1.23',
+		{ guid => $guid }, {}, $dir);
+	my $path = File::Spec->catfile($dir, 'reproduce', "reproduce-$guid.sh");
+	open my $fh, '<', $path;
+	my $content = do { local $/; <$fh> };
+	close $fh;
+	like($content, qr/^set -e$/m,                      'set -e is present');
+	like($content, qr|cpantesters\.org/cpan/report/$guid|, 'report URL included');
+	like($content, qr/^#!/,                             'starts with shebang');
+};
+
+subtest 'generate_reproduction_script() single-quotes module names (shell safety)' => sub {
+	my $dir  = tempdir(CLEANUP => 1);
+	my $guid = 'aaaabbbb-1234-5678-abcd-000000000007';
+	generate_reproduction_script('My-Dist', '1.23',
+		{ guid => $guid },
+		{ 'Foo::Bar' => '1.23', 'Baz' => '0.01' },
+		$dir);
+	my $path = File::Spec->catfile($dir, 'reproduce', "reproduce-$guid.sh");
+	open my $fh, '<', $path;
+	my $content = do { local $/; <$fh> };
+	close $fh;
+	like($content, qr/'Baz\@0\.01'/,       'module pinned in single quotes');
+	like($content, qr/'Foo::Bar\@1\.23'/, 'scoped module pinned in single quotes');
+};
+
+# ==================================================================
+# extract_installed_modules
+# Inline copy so we can test it in isolation.
+# ==================================================================
+
+sub extract_installed_modules {
+	my ($html) = @_;
+	my %mods;
+
+	return \%mods unless $html;
+
+	if($html =~ /Installed modules:(.*?)(?:\n\n|\z)/s) {
+		my $block = $1;
+		while($block =~ /^\s*([A-Z]\w*(?:::\w+)*)\s+v?([\d._]+)/mg) {
+			my ($module, $version) = ($1, $2);
+			next if $module =~ /^(Perl|OS|Reporter|Tester)$/;
+			$mods{$module} = $version;
+		}
+	}
+
+	return \%mods;
+}
+
+subtest 'extract_installed_modules() returns empty hashref for undef' => sub {
+	my $result = extract_installed_modules(undef);
+	is(ref($result), 'HASH', 'returns hashref');
+	is(scalar(keys %$result), 0, 'empty for undef input');
+};
+
+subtest 'extract_installed_modules() parses module list from HTML' => sub {
+	my $html = "Some text\nInstalled modules:\n  Foo::Bar 1.23\n  Baz 0.01\n\n";
+	my $result = extract_installed_modules($html);
+	is($result->{'Foo::Bar'}, '1.23', 'Foo::Bar version captured');
+	is($result->{'Baz'},       '0.01', 'Baz version captured');
+};
+
+subtest 'extract_installed_modules() strips noise keywords' => sub {
+	my $html = "Installed modules:\n  Perl 5.036\n  OS linux\n  Reporter Fred\n  Tester auto\n  Real::Mod 2.00\n\n";
+	my $result = extract_installed_modules($html);
+	ok(!exists $result->{'Perl'},     'Perl noise skipped');
+	ok(!exists $result->{'OS'},       'OS noise skipped');
+	ok(!exists $result->{'Reporter'}, 'Reporter noise skipped');
+	ok(!exists $result->{'Tester'},   'Tester noise skipped');
+	is($result->{'Real::Mod'}, '2.00', 'real module captured');
+};
+
+subtest 'extract_installed_modules() handles v-prefix on version' => sub {
+	my $html = "Installed modules:\n  MyModule v1.2.3\n\n";
+	my $result = extract_installed_modules($html);
+	is($result->{'MyModule'}, '1.2.3', 'v-prefix stripped from version');
+};
+
 done_testing();
