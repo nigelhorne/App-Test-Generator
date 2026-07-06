@@ -934,59 +934,60 @@ https://pjcj.net
 <tr><td class="h"></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">elsif ($op eq &#39;&lt;=&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">elsif ($op eq &#39;&gt;&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">elsif ($op eq &#39;&gt;=&#39;) { }</td></tr>
-<tr><td class="h"><a id="L9282">9282</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless $pod</td></tr>
-<tr><td class="h"><a id="L9287">9287</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless $pod =~ /=head2\s+SYNOPSIS\s*(.+?)(?=\n=head|\z)/s</td></tr>
-<tr><td class="h"><a id="L9297">9297</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">defined $3 ? :</td></tr>
+<tr><td class="h"><a id="L9285">9285</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless $pod</td></tr>
+<tr><td class="h"><a id="L9291">9291</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($pod =~ /=head[12]\s+SYNOPSIS\s*(.+?)(?=\n=head|\z)/s)</td></tr>
+<tr><td class="h"><a id="L9302">9302</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless length $synopsis</td></tr>
+<tr><td class="h"><a id="L9311">9311</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">defined $3 ? :</td></tr>
 <tr><td class="h"></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">defined $2 ? :</td></tr>
-<tr><td class="h"><a id="L9301">9301</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if %kv</td></tr>
-<tr><td class="h"><a id="L9309">9309</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless (scalar @examples)</td></tr>
-<tr><td class="h"><a id="L9318">9318</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless @args</td></tr>
-<tr><td class="h"><a id="L9329">9329</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (scalar @examples)</td></tr>
-<tr><td class="h"><a id="L9374">9374</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless defined $value</td></tr>
-<tr><td class="h"><a id="L9384">9384</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ m[\|\||/{2}])</td></tr>
-<tr><td class="h"><a id="L9394">9394</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /^qq?\{(.*?)\}$/s) { }</td></tr>
+<tr><td class="h"><a id="L9315">9315</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if %kv</td></tr>
+<tr><td class="h"><a id="L9323">9323</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless (scalar @examples)</td></tr>
+<tr><td class="h"><a id="L9332">9332</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">unless @args</td></tr>
+<tr><td class="h"><a id="L9343">9343</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (scalar @examples)</td></tr>
+<tr><td class="h"><a id="L9388">9388</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless defined $value</td></tr>
+<tr><td class="h"><a id="L9398">9398</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ m[\|\||/{2}])</td></tr>
+<tr><td class="h"><a id="L9408">9408</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /^qq?\{(.*?)\}$/s) { }</td></tr>
 <tr><td class="h"></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">elsif ($value =~ /^qw\{(.*?)\}$/s) { }</td></tr>
 <tr><td class="h"></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">elsif ($value =~ /^q[qwx]?\s*([^a-zA-Z0-9\{\[])(.*?)\1$/s) { }</td></tr>
-<tr><td class="h"><a id="L9403">9403</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /^([&#39;&quot;])(.*)\1$/s)</td></tr>
-<tr><td class="h"><a id="L9406">9406</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($from_code)</td></tr>
-<tr><td class="h"><a id="L9417">9417</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless ($from_code)</td></tr>
-<tr><td class="h"><a id="L9426">9426</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless ($value =~ /^\(/)</td></tr>
-<tr><td class="h"><a id="L9431">9431</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /^\{\s*\}$/)</td></tr>
-<tr><td class="h"><a id="L9436">9436</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /^\[\s*\]$/)</td></tr>
-<tr><td class="h"><a id="L9441">9441</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /^-?\d+(?:\.\d+)?$/)</td></tr>
-<tr><td class="h"><a id="L9442">9442</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /\./) { }</td></tr>
-<tr><td class="h"><a id="L9450">9450</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /^(true|false)$/i)</td></tr>
-<tr><td class="h"><a id="L9451">9451</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">lc $1 eq &#39;true&#39; ? :</td></tr>
-<tr><td class="h"><a id="L9455">9455</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($value eq &#39;1&#39;) { }</td></tr>
+<tr><td class="h"><a id="L9417">9417</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /^([&#39;&quot;])(.*)\1$/s)</td></tr>
+<tr><td class="h"><a id="L9420">9420</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($from_code)</td></tr>
+<tr><td class="h"><a id="L9431">9431</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless ($from_code)</td></tr>
+<tr><td class="h"><a id="L9440">9440</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless ($value =~ /^\(/)</td></tr>
+<tr><td class="h"><a id="L9445">9445</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /^\{\s*\}$/)</td></tr>
+<tr><td class="h"><a id="L9450">9450</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /^\[\s*\]$/)</td></tr>
+<tr><td class="h"><a id="L9455">9455</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /^-?\d+(?:\.\d+)?$/)</td></tr>
+<tr><td class="h"><a id="L9456">9456</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /\./) { }</td></tr>
+<tr><td class="h"><a id="L9464">9464</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /^(true|false)$/i)</td></tr>
+<tr><td class="h"><a id="L9465">9465</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">lc $1 eq &#39;true&#39; ? :</td></tr>
+<tr><td class="h"><a id="L9469">9469</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if ($value eq &#39;1&#39;) { }</td></tr>
 <tr><td class="h"></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">elsif ($value eq &#39;0&#39;) { }</td></tr>
-<tr><td class="h"><a id="L9462">9462</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value eq &quot;undef&quot;)</td></tr>
-<tr><td class="h"><a id="L9467">9467</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value eq &quot;__PACKAGE__&quot;)</td></tr>
-<tr><td class="h"><a id="L9475">9475</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /^\$[a-zA-Z_]/ or $value =~ /\(.*\)/)</td></tr>
-<tr><td class="h"><a id="L9476">9476</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if $value =~ /^\$|\@|\%/</td></tr>
-<tr><td class="h"><a id="L9528">9528</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if $pod-&gt;{&#39;_from_input_spec&#39;}</td></tr>
-<tr><td class="h"><a id="L9531">9531</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (exists $pod_params-&gt;{$param} and not exists $code_params-&gt;{$param})</td></tr>
-<tr><td class="h"><a id="L9536">9536</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (not exists $pod_params-&gt;{$param} and exists $code_params-&gt;{$param})</td></tr>
-<tr><td class="h"><a id="L9537">9537</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($param eq &quot;class&quot;)</td></tr>
-<tr><td class="h"><a id="L9541">9541</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($param eq &quot;self&quot;)</td></tr>
-<tr><td class="h"><a id="L9550">9550</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($pod-&gt;{&#39;type&#39;} and $code-&gt;{&#39;type&#39;} and $pod-&gt;{&#39;type&#39;} ne $code-&gt;{&#39;type&#39;})</td></tr>
-<tr><td class="h"><a id="L9551">9551</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (not $self-&gt;_types_are_compatible($pod-&gt;{&#39;type&#39;}, $code-&gt;{&#39;type&#39;})) { }</td></tr>
-<tr><td class="h"><a id="L9559">9559</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (exists $pod-&gt;{&#39;optional&#39;} and exists $code-&gt;{&#39;optional&#39;} and $pod-&gt;{&#39;optional&#39;} != $code-&gt;{&#39;optional&#39;})</td></tr>
-<tr><td class="h"><a id="L9561">9561</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">$pod-&gt;{&#39;optional&#39;} ? :</td></tr>
-<tr><td class="h"><a id="L9562">9562</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">$code-&gt;{&#39;optional&#39;} ? :</td></tr>
-<tr><td class="h"><a id="L9567">9567</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $pod-&gt;{&#39;min&#39;} and defined $code-&gt;{&#39;min&#39;} and $pod-&gt;{&#39;min&#39;} != $code-&gt;{&#39;min&#39;})</td></tr>
-<tr><td class="h"><a id="L9571">9571</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $pod-&gt;{&#39;max&#39;} and defined $code-&gt;{&#39;max&#39;} and $pod-&gt;{&#39;max&#39;} != $code-&gt;{&#39;max&#39;})</td></tr>
-<tr><td class="h"><a id="L9576">9576</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($pod-&gt;{&#39;matches&#39;} and $code-&gt;{&#39;matches&#39;} and $pod-&gt;{&#39;matches&#39;} ne $code-&gt;{&#39;matches&#39;})</td></tr>
-<tr><td class="h"><a id="L9605">9605</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless defined $val</td></tr>
-<tr><td class="h"><a id="L9608">9608</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if $val =~ /^(0|off|none)$/i</td></tr>
-<tr><td class="h"><a id="L9609">9609</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if $val =~ /^(1|warn|warning)$/i</td></tr>
-<tr><td class="h"><a id="L9610">9610</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if $val =~ /^(2|fatal|die|error)$/i</td></tr>
-<tr><td class="h"><a id="L9636">9636</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if $pod_type eq $code_type</td></tr>
-<tr><td class="h"><a id="L9649">9649</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (my $allowed = $compatible_types{$pod_type})</td></tr>
-<tr><td class="h"><a id="L9654">9654</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (my $allowed = $compatible_types{$code_type})</td></tr>
-<tr><td class="h"><a id="L9719">9719</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (my $errors = $schema-&gt;{&#39;_pod_validation_errors&#39;})</td></tr>
-<tr><td class="h"><a id="L9721">9721</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">$schema-&gt;{&#39;_pod_disagreement&#39;} ? :</td></tr>
-<tr><td class="h"><a id="L9728">9728</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (@reports) { }</td></tr>
-<tr><td class="h"><a id="L9744">9744</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if $self-&gt;{&#39;verbose&#39;}</td></tr>
+<tr><td class="h"><a id="L9476">9476</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value eq &quot;undef&quot;)</td></tr>
+<tr><td class="h"><a id="L9481">9481</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value eq &quot;__PACKAGE__&quot;)</td></tr>
+<tr><td class="h"><a id="L9489">9489</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($value =~ /^\$[a-zA-Z_]/ or $value =~ /\(.*\)/)</td></tr>
+<tr><td class="h"><a id="L9490">9490</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if $value =~ /^\$|\@|\%/</td></tr>
+<tr><td class="h"><a id="L9542">9542</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if $pod-&gt;{&#39;_from_input_spec&#39;}</td></tr>
+<tr><td class="h"><a id="L9545">9545</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (exists $pod_params-&gt;{$param} and not exists $code_params-&gt;{$param})</td></tr>
+<tr><td class="h"><a id="L9550">9550</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (not exists $pod_params-&gt;{$param} and exists $code_params-&gt;{$param})</td></tr>
+<tr><td class="h"><a id="L9551">9551</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($param eq &quot;class&quot;)</td></tr>
+<tr><td class="h"><a id="L9555">9555</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($param eq &quot;self&quot;)</td></tr>
+<tr><td class="h"><a id="L9564">9564</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if ($pod-&gt;{&#39;type&#39;} and $code-&gt;{&#39;type&#39;} and $pod-&gt;{&#39;type&#39;} ne $code-&gt;{&#39;type&#39;})</td></tr>
+<tr><td class="h"><a id="L9565">9565</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (not $self-&gt;_types_are_compatible($pod-&gt;{&#39;type&#39;}, $code-&gt;{&#39;type&#39;})) { }</td></tr>
+<tr><td class="h"><a id="L9573">9573</a></td><td class="c0">50</td><td class="c0">T</td><td class="c3">F</td><td class="s">if (exists $pod-&gt;{&#39;optional&#39;} and exists $code-&gt;{&#39;optional&#39;} and $pod-&gt;{&#39;optional&#39;} != $code-&gt;{&#39;optional&#39;})</td></tr>
+<tr><td class="h"><a id="L9575">9575</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">$pod-&gt;{&#39;optional&#39;} ? :</td></tr>
+<tr><td class="h"><a id="L9576">9576</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">$code-&gt;{&#39;optional&#39;} ? :</td></tr>
+<tr><td class="h"><a id="L9581">9581</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $pod-&gt;{&#39;min&#39;} and defined $code-&gt;{&#39;min&#39;} and $pod-&gt;{&#39;min&#39;} != $code-&gt;{&#39;min&#39;})</td></tr>
+<tr><td class="h"><a id="L9585">9585</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if (defined $pod-&gt;{&#39;max&#39;} and defined $code-&gt;{&#39;max&#39;} and $pod-&gt;{&#39;max&#39;} != $code-&gt;{&#39;max&#39;})</td></tr>
+<tr><td class="h"><a id="L9590">9590</a></td><td class="c0">0</td><td class="c0">T</td><td class="c0">F</td><td class="s">if ($pod-&gt;{&#39;matches&#39;} and $code-&gt;{&#39;matches&#39;} and $pod-&gt;{&#39;matches&#39;} ne $code-&gt;{&#39;matches&#39;})</td></tr>
+<tr><td class="h"><a id="L9619">9619</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">unless defined $val</td></tr>
+<tr><td class="h"><a id="L9622">9622</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if $val =~ /^(0|off|none)$/i</td></tr>
+<tr><td class="h"><a id="L9623">9623</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if $val =~ /^(1|warn|warning)$/i</td></tr>
+<tr><td class="h"><a id="L9624">9624</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if $val =~ /^(2|fatal|die|error)$/i</td></tr>
+<tr><td class="h"><a id="L9650">9650</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if $pod_type eq $code_type</td></tr>
+<tr><td class="h"><a id="L9663">9663</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (my $allowed = $compatible_types{$pod_type})</td></tr>
+<tr><td class="h"><a id="L9668">9668</a></td><td class="c0">50</td><td class="c3">T</td><td class="c0">F</td><td class="s">if (my $allowed = $compatible_types{$code_type})</td></tr>
+<tr><td class="h"><a id="L9733">9733</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (my $errors = $schema-&gt;{&#39;_pod_validation_errors&#39;})</td></tr>
+<tr><td class="h"><a id="L9735">9735</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">$schema-&gt;{&#39;_pod_disagreement&#39;} ? :</td></tr>
+<tr><td class="h"><a id="L9742">9742</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if (@reports) { }</td></tr>
+<tr><td class="h"><a id="L9758">9758</a></td><td class="c3">100</td><td class="c3">T</td><td class="c3">F</td><td class="s">if $self-&gt;{&#39;verbose&#39;}</td></tr>
 </table>
 </body>
 </html>
