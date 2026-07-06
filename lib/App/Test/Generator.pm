@@ -161,7 +161,7 @@ Version 0.42
 =head1 SYNOPSIS
 
 C<App::Test::Generator> is a suite to help the testing of CPAN modules.
-It consists of 4 modules:
+It consists of 5 subsystems:
 
 =over 4
 
@@ -172,6 +172,8 @@ It consists of 4 modules:
 =item * LCSAJ Metrics
 
 =item * Test Dashboard
+
+=item * Benchmark Generation
 
 =back
 
@@ -186,6 +188,9 @@ From the command line:
 
   # Generate round-trip tests that run every code example in a module's POD and verify the results
   pod-example-tester lib/My/Module.pm --output t/pod_examples.t
+
+  # Generate a Benchmark::cmpthese script from a schema; each transform becomes one timed variant
+  benchmark-generator -i schemas/abs.yml -o benchmarks/abs.pl
 
 From Perl:
 
@@ -244,6 +249,8 @@ handling, and regressions without manually writing every case.
 The distribution ships the following command-line tools:
 
 =over 4
+
+=item * L<benchmark-generator> - generate a self-contained L<Benchmark> C<cmpthese> script from a YAML schema. Each transform in the schema becomes one named variant; representative input values are derived from each parameter's type and range constraints.
 
 =item * L<extract-schemas> - heuristically extract YAML parameter schemas from a C<.pm> file, with optional coverage-guided fuzzing (C<--fuzz>) and corpus minimization (C<--minimize-corpus>).
 

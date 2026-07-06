@@ -21,6 +21,7 @@ WriteMakefile(
 		: ()),
 	EXE_FILES => [
 		'bin/test-generator-mutate',
+		'bin/benchmark-generator',
 		'bin/fuzz-harness-generator',
 		'bin/extract-schemas',
 		'bin/extract-schemas2',

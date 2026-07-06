@@ -23,6 +23,14 @@ Revision history for App-Test-Generator
 	  (for annotated examples) compares the return value with is().
 	  SchemaExtractor::_extract_pod_examples now also accepts =head1
 	  SYNOPSIS (previously only =head2) and collects =for example blocks.
+	- Add automatic benchmark generation: new module
+	  App::Test::Generator::BenchmarkGenerator and new script
+	  bin/benchmark-generator produce self-contained Perl benchmark scripts
+	  (using Benchmark::cmpthese) from any ATG YAML schema. Each transform
+	  defined in the schema becomes a named cmpthese variant; representative
+	  input values are derived from each parameter's type and range
+	  constraints (min/max midpoint, or type defaults). OOP schemas (those
+	  with a new: key) emit a constructor call before the benchmark loop.
 	- Add CPAN Testers reproduction harness to bin/test-generator-index:
 	  for each FAIL report where installed-module data is available, a
 	  self-contained shell script (cover_html/reproduce/reproduce-GUID.sh)

@@ -9,12 +9,13 @@ Version 0.42
 # SYNOPSIS
 
 `App::Test::Generator` is a suite to help the testing of CPAN modules.
-It consists of 4 modules:
+It consists of 5 subsystems:
 
 - Fuzz Tester
 - Mutation Testing
 - LCSAJ Metrics
 - Test Dashboard
+- Benchmark Generation
 
 From the command line:
 
@@ -27,6 +28,9 @@ From the command line:
 
     # Generate round-trip tests that run every code example in a module's POD and verify the results
     pod-example-tester lib/My/Module.pm --output t/pod_examples.t
+
+    # Generate a Benchmark::cmpthese script from a schema; each transform becomes one timed variant
+    benchmark-generator -i schemas/abs.yml -o benchmarks/abs.pl
 
 From Perl:
 
@@ -78,6 +82,7 @@ handling, and regressions without manually writing every case.
 
 The distribution ships the following command-line tools:
 
+- [benchmark-generator](https://metacpan.org/pod/benchmark-generator) - generate a self-contained [Benchmark](https://metacpan.org/pod/Benchmark) `cmpthese` script from a YAML schema. Each transform in the schema becomes one named variant; representative input values are derived from each parameter's type and range constraints.
 - [extract-schemas](https://metacpan.org/pod/extract-schemas) - heuristically extract YAML parameter schemas from a `.pm` file, with optional coverage-guided fuzzing (`--fuzz`) and corpus minimization (`--minimize-corpus`).
 - [fuzz-harness-generator](https://metacpan.org/pod/fuzz-harness-generator) - generate a `Test::Most` fuzzing harness from a YAML schema.
 - [pod-example-tester](https://metacpan.org/pod/pod-example-tester) - generate a `Test::Most` round-trip test file from a module's POD code examples. Annotated examples (`# returns value` / `# => value`) get `is()` assertions; unannotated verbatim blocks are wrapped in `eval{}` and checked for no exception.
