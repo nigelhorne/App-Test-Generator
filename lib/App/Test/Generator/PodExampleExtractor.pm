@@ -93,22 +93,22 @@ Each element is a hashref with keys:
 
 =over 4
 
-=item * C<label>    — human-readable name for use as a test label
+=item * C<label>    - human-readable name for use as a test label
 
-=item * C<section>  — POD section/method from which it was extracted
+=item * C<section>  - POD section/method from which it was extracted
 
-=item * C<code>     — the raw code text (may be multi-line)
+=item * C<code>     - the raw code text (may be multi-line)
 
-=item * C<expected> — expected return value string (undef if not annotated)
+=item * C<expected> - expected return value string (undef if not annotated)
 
-=item * C<annotated_line> — the single line carrying a C<# returns> / C<< # => >> annotation, or undef
+=item * C<annotated_line> - the single line carrying a C<# returns> / C<< # => >> annotation, or undef
 
 =back
 
 =cut
 
 sub extract {
-	my ($self) = @_;
+	my $self = $_[0];
 
 	my $text = read_file($self->{file}, err_mode => 'croak');
 
@@ -142,7 +142,7 @@ sub extract {
 # Exit:       Returns a list of example hashrefs.
 # --------------------------------------------------
 sub _extract_synopsis_blocks {
-	my ($text) = @_;
+	my $text = $_[0];
 
 	my @examples;
 	while($text =~ /=head[12]\s+SYNOPSIS\s*\n(.*?)(?=\n=head|\n=cut|\z)/sg) {
@@ -162,7 +162,7 @@ sub _extract_synopsis_blocks {
 # Exit:       Returns a list of example hashrefs.
 # --------------------------------------------------
 sub _extract_for_example_blocks {
-	my ($text) = @_;
+	my $text = $_[0];
 
 	my @examples;
 	my $n = 0;
@@ -186,7 +186,7 @@ sub _extract_for_example_blocks {
 #             annotated line plus the leading context, if any).
 # --------------------------------------------------
 sub _extract_annotated_lines {
-	my ($text) = @_;
+	my $text = $_[0];
 
 	my @examples;
 	my $section = 'UNKNOWN';
@@ -289,7 +289,7 @@ sub _verbatim_paragraphs {
 # Exit:       Returns the dedented string with trailing whitespace removed.
 # --------------------------------------------------
 sub _dedent {
-	my ($text) = @_;
+	my $text = $_[0];
 	my @lines = split /\n/, $text;
 	my @non_empty = grep { /\S/ } @lines;
 	return '' unless @non_empty;
@@ -314,7 +314,7 @@ sub _dedent {
 # Exit:       Returns 1 (Perl) or '' (not Perl).
 # --------------------------------------------------
 sub _looks_like_perl {
-	my ($code) = @_;
+	my $code = $_[0];
 	for my $line (split /\n/, $code) {
 		next unless $line =~ /\S/;    # skip blank lines
 		next if $line =~ /^\s*#/;     # skip comment-only lines

@@ -1368,9 +1368,15 @@ Property-based testing with transforms is particularly useful for:
 
 =head3 Requirements
 
-Property-based testing requires L<Test::LectroTest> to be installed:
+Property-based testing requires both L<Test::LectroTest> and
+L<Test::LectroTest::Compat> to be installed:
 
-  cpanm Test::LectroTest
+  cpanm Test::LectroTest Test::LectroTest::Compat
+
+L<Test::LectroTest::Compat> provides the C<use_ok> bridge between
+L<Test::LectroTest> and L<Test::Most>; it is used in every generated
+property-based test file.  Both are declared in the distribution's
+C<TEST_REQUIRES> so they are installed automatically during C<make test>.
 
 If not installed, the generated tests will automatically skip the property-based
 portion with a message.

@@ -56,7 +56,7 @@ C<perl>.  It is not a test file and has no dependency on any test framework.
 
 =head4 input
 
-    schema   => HashRef   (required) — ATG schema hashref as loaded from YAML
+    schema   => HashRef   (required) - ATG schema hashref as loaded from YAML
 
 =head4 output
 
@@ -87,7 +87,7 @@ A string containing the complete benchmark script, ready to write to a file.
 =cut
 
 sub generate {
-	my ($self) = @_;
+	my $self = $_[0];
 
 	my $schema   = $self->{schema};
 	my $module   = $schema->{module}   // croak 'schema missing module';

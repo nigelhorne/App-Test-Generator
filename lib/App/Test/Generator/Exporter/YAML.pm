@@ -5,7 +5,7 @@ use warnings;
 use Params::Validate::Strict 0.30;
 use YAML::XS;
 
-our $VERSION = '0.41';
+our $VERSION = '0.42';
 
 =head1 NAME
 

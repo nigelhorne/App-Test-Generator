@@ -25,7 +25,6 @@ WriteMakefile(
 		'bin/deploy-workflows',
 		'bin/fuzz-harness-generator',
 		'bin/extract-schemas',
-		'bin/extract-schemas2',
 		'bin/test-generator-index',
 		'bin/generate-test-dashboard',
 		'bin/instrument-modules',
@@ -76,6 +75,7 @@ WriteMakefile(
 		'JSON::PP' => 0,
 		'Test::DescribeMe' => 0,
 		'Test::LectroTest' => 0,
+		'Test::LectroTest::Compat' => 0,
 		'Test::Memory::Cycle' => 0,
 		'Test::Mockingbird' => 0.10,
 		'Test::Most' => 0,
@@ -89,6 +89,12 @@ WriteMakefile(
 	clean	 => { FILES => 'App-Test-Generator-*' },
 	META_MERGE => {
 		'meta-spec' => { version => 2 },
+		optional_features => {
+			coverage_guided_fuzzing => {
+				description => 'Coverage-guided corpus pruning in CoverageGuidedFuzzer',
+				prereqs => { runtime => { recommends => { 'Devel::Cover' => '1.51' } } },
+			},
+		},
 		resources => {
 			homepage => 'https://metacpan.org/pod/App::Test::Generator',
 			repository => {

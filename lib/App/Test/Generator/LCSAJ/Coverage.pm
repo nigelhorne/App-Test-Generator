@@ -7,7 +7,7 @@ use autodie qw(:all);
 use Carp qw(croak);
 use JSON::MaybeXS;
 
-our $VERSION = '0.41';
+our $VERSION = '0.42';
 
 =head1 NAME
 

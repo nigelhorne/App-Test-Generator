@@ -11,7 +11,7 @@ use App::Test::Generator::Planner::Fixture;
 use App::Test::Generator::Planner::Mock;
 use App::Test::Generator::Planner::Grouping;
 
-our $VERSION = '0.41';
+our $VERSION = '0.42';
 
 # Accessor type strings used in plan_all() strategy mapping
 Readonly my $ACCESSOR_GET      => 'get';

@@ -9,13 +9,14 @@ Version 0.42
 # SYNOPSIS
 
 `App::Test::Generator` is a suite to help the testing of CPAN modules.
-It consists of 5 subsystems:
+It consists of 6 subsystems:
 
 - Fuzz Tester
 - Mutation Testing
 - LCSAJ Metrics
 - Test Dashboard
 - Benchmark Generation
+- Workflow Deployment
 
 From the command line:
 

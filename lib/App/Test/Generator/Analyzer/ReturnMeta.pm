@@ -19,7 +19,7 @@ Readonly my $PENALTY_EMPTY_LIST_CONSISTENCY        => 15;
 Readonly my $PENALTY_EXCEPTION_SWALLOW_STABILITY   => 20;
 Readonly my $BONUS_BOOLEAN_STABILITY               => 5;
 
-our $VERSION = '0.41';
+our $VERSION = '0.42';
 
 =head1 VERSION
 
