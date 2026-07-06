@@ -13,7 +13,7 @@ App::Test::Generator::Exporter::YAML - Serialise a test plan to YAML
 
 =head1 VERSION
 
-Version 0.41
+Version 0.42
 
 =cut
 

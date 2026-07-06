@@ -24,7 +24,7 @@ Devel::App::Test::Generator::LCSAJ::Runtime - Debugger backend for LCSAJ coverag
 
 =head1 VERSION
 
-Version 0.41
+Version 0.42
 
 =cut
 

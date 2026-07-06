@@ -45,7 +45,7 @@ calculation.
 
 =head1 VERSION
 
-Version 0.41
+Version 0.42
 
 =head2 generate
 

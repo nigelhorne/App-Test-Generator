@@ -13,6 +13,16 @@ Revision history for App-Test-Generator
 	- Add --minimize-corpus flag to bin/extract-schemas: calls
 	  minimize_corpus() between run() and save_corpus() so corpus files
 	  stay bounded in size across repeated CI runs.
+	- Add POD example round-trip testing: new module
+	  App::Test::Generator::PodExampleExtractor extracts runnable code
+	  examples from =head1 SYNOPSIS, =head2 SYNOPSIS, and =for example
+	  begin/end blocks, plus annotated inline examples of the form
+	  "# returns value" or "# => value". New script bin/pod-example-tester
+	  generates a Test::Most-based .t file from any .pm file; each
+	  subtest wraps the example in eval{}, asserts it does not die, and
+	  (for annotated examples) compares the return value with is().
+	  SchemaExtractor::_extract_pod_examples now also accepts =head1
+	  SYNOPSIS (previously only =head2) and collects =for example blocks.
 	- Add CPAN Testers reproduction harness to bin/test-generator-index:
 	  for each FAIL report where installed-module data is available, a
 	  self-contained shell script (cover_html/reproduce/reproduce-GUID.sh)

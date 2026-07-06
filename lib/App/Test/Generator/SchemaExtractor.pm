@@ -65,7 +65,7 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 
 =head1 VERSION
 
-Version 0.41
+Version 0.42
 
 =cut
 
@@ -9261,20 +9261,23 @@ sub _extract_boundary_value_hints {
 # --------------------------------------------------
 # _extract_pod_examples
 #
-# Purpose:    Extract example method call patterns
-#             from a method's SYNOPSIS POD section
-#             and add them as valid_inputs hints.
+# Purpose:    Extract example method call patterns from a method's
+#             SYNOPSIS section (=head1 or =head2) and from any
+#             =for example begin/end blocks, and add them as
+#             valid_inputs hints for fuzzing.
 #
-# Entry:      $pod   - POD string for the method.
-#                      May be undef.
-#             $hints - hints hashref (modified in
-#                      place via valid_inputs key).
+# Entry:      $pod   - POD string for the method. May be undef.
+#             $hints - hints hashref (modified in place via the
+#                      valid_inputs key).
 #
-# Exit:       Returns $hints. Appends to
-#             $hints->{valid_inputs}.
+# Exit:       Returns $hints. Appends to $hints->{valid_inputs}.
 #
-# Side effects: Logs the number of examples found
-#               to stdout when verbose is set.
+# Side effects: Logs the number of examples found to stdout when
+#               verbose is set.
+#
+# Notes:      For standalone runnable round-trip tests (not just
+#             fuzzing hints) use App::Test::Generator::PodExampleExtractor
+#             and bin/pod-example-tester instead.
 # --------------------------------------------------
 sub _extract_pod_examples {
 	my ($self, $pod, $hints) = @_;
@@ -9283,9 +9286,20 @@ sub _extract_pod_examples {
 
 	my @examples;
 
-	# Extract SYNOPSIS
-	return $hints unless $pod =~ /=head2\s+SYNOPSIS\s*(.+?)(?=\n=head|\z)/s;
-	my $synopsis = $1;
+	# Accept both =head1 SYNOPSIS (module-level) and =head2 SYNOPSIS (method-level)
+	my $synopsis = '';
+	if($pod =~ /=head[12]\s+SYNOPSIS\s*(.+?)(?=\n=head|\z)/s) {
+		$synopsis = $1;
+	}
+
+	# Also collect =for example begin ... =for example end blocks
+	my @for_blocks;
+	while($pod =~ /=for\s+example\s+begin(.+?)=for\s+example\s+end/sg) {
+		push @for_blocks, $1;
+	}
+	$synopsis .= join('', @for_blocks);
+
+	return $hints unless length($synopsis);
 
 	# Constructor examples: ->wilma(foo => 'bar', count => 5)
 	while ($synopsis =~ /->([a-z_0-9A-Z]+)\s*\(\s*(.*?)\s*\)/sg) {

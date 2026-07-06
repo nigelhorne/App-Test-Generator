@@ -17,7 +17,7 @@ App::Test::Generator::Model::Method - Evidence-based model of a single method un
 
 =head1 VERSION
 
-Version 0.41
+Version 0.42
 
 =head1 DESCRIPTION
 

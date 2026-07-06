@@ -26,7 +26,7 @@ App::Test::Generator::Sample::Module - Example module for schema extraction test
 
 =head1 VERSION
 
-Version 0.41
+Version 0.42
 
 =head1 SYNOPSIS
 

@@ -156,7 +156,7 @@ App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Da
 
 =head1 VERSION
 
-Version 0.41
+Version 0.42
 
 =head1 SYNOPSIS
 
@@ -183,6 +183,9 @@ From the command line:
   # Attempt to create a formal definition from a routine package, then run tests against that formal definition
   # This is the holy grail of automatic test generation, just by looking at the source code
   extract-schemas lib/App/Test/Generator/Sample/Module.pm && fuzz-harness-generator -r schemas/greet.yml
+
+  # Generate round-trip tests that run every code example in a module's POD and verify the results
+  pod-example-tester lib/My/Module.pm --output t/pod_examples.t
 
 From Perl:
 
@@ -234,6 +237,24 @@ The generated tests combine:
 This approach strengthens your test suite by probing both expected and
 unexpected inputs, helping you to catch boundary errors, invalid data
 handling, and regressions without manually writing every case.
+
+=head1 TOOLS
+
+The distribution ships the following command-line tools:
+
+=over 4
+
+=item * L<extract-schemas> — heuristically extract YAML parameter schemas from a C<.pm> file, with optional coverage-guided fuzzing (C<--fuzz>) and corpus minimization (C<--minimize-corpus>).
+
+=item * L<fuzz-harness-generator> — generate a C<Test::Most> fuzzing harness from a YAML schema.
+
+=item * L<pod-example-tester> — generate a C<Test::Most> round-trip test file from a module's POD code examples. Annotated examples (C<# returns value> / C<< # => value >>) get C<is()> assertions; unannotated verbatim blocks are wrapped in C<eval{}> and checked for no exception.
+
+=item * L<test-generator-mutate> — run mutation testing against a module's test suite.
+
+=item * L<test-generator-index> — generate the HTML test-quality dashboard, combining Devel::Cover statement/branch data, LCSAJ path coverage, mutation results, and CPAN Testers failure analysis. For each CPAN Testers FAIL report, also writes a self-contained shell script (C<cover_html/reproduce/reproduce-GUID.sh>) that pins every installed module at its exact failing version, enabling local reproduction of the failure environment.
+
+=back
 
 =head1 DESCRIPTION
 

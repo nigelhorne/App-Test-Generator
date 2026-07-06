@@ -27,6 +27,7 @@ WriteMakefile(
 		'bin/test-generator-index',
 		'bin/generate-test-dashboard',
 		'bin/instrument-modules',
+		'bin/pod-example-tester',
 	], MIN_PERL_VERSION => '5.036',
 	PREREQ_PM => {
 		'autodie' => 0,
