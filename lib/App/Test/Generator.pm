@@ -178,7 +178,7 @@ It consists of 4 modules:
 From the command line:
 
   # Takes the formal definition of a routine, creates tests against that routine, and runs the test
-  fuzz-harness-generator -r t/conf/add.yml
+  fuzz-harness-generator -r t/conf/abs.yml
 
   # Attempt to create a formal definition from a routine package, then run tests against that formal definition
   # This is the holy grail of automatic test generation, just by looking at the source code
@@ -190,18 +190,19 @@ From the command line:
 From Perl:
 
   use App::Test::Generator qw(generate);
+  use App::Test::Generator::SchemaExtractor;
 
   # Generate to STDOUT
-  App::Test::Generator->generate("t/conf/add.yml");
+  App::Test::Generator->generate("t/conf/abs.yml");
 
   # Generate directly to a file
-  App::Test::Generator->generate('t/conf/add.yml', 't/add_fuzz.t');
+  App::Test::Generator->generate('t/conf/abs.yml', 't/add_fuzz.t');
 
   # Holy grail mode - read a Perl file, generate tests, and run them
   # This is a long way away yet, but see t/schema_input.t for a proof of concept
   my $extractor = App::Test::Generator::SchemaExtractor->new(
-    input_file => 'Foo.pm',
-    output_dir => $dir
+    input_file => 'lib/App/Test/Generator/Template.pm',
+    output_dir => '/tmp',
   );
   my $schemas = $extractor->extract_all();
   foreach my $schema(keys %{$schemas}) {
@@ -210,7 +211,7 @@ From Perl:
       schema => $schemas->{$schema},
       output_file => $tempfile,
     );
-    system("$^X -I$dir $tempfile");
+    system("$^X -Ilib $tempfile");
     unlink $tempfile;
   }
 
@@ -244,15 +245,15 @@ The distribution ships the following command-line tools:
 
 =over 4
 
-=item * L<extract-schemas> — heuristically extract YAML parameter schemas from a C<.pm> file, with optional coverage-guided fuzzing (C<--fuzz>) and corpus minimization (C<--minimize-corpus>).
+=item * L<extract-schemas> - heuristically extract YAML parameter schemas from a C<.pm> file, with optional coverage-guided fuzzing (C<--fuzz>) and corpus minimization (C<--minimize-corpus>).
 
-=item * L<fuzz-harness-generator> — generate a C<Test::Most> fuzzing harness from a YAML schema.
+=item * L<fuzz-harness-generator> - generate a C<Test::Most> fuzzing harness from a YAML schema.
 
-=item * L<pod-example-tester> — generate a C<Test::Most> round-trip test file from a module's POD code examples. Annotated examples (C<# returns value> / C<< # => value >>) get C<is()> assertions; unannotated verbatim blocks are wrapped in C<eval{}> and checked for no exception.
+=item * L<pod-example-tester> - generate a C<Test::Most> round-trip test file from a module's POD code examples. Annotated examples (C<# returns value> / C<< # => value >>) get C<is()> assertions; unannotated verbatim blocks are wrapped in C<eval{}> and checked for no exception.
 
-=item * L<test-generator-mutate> — run mutation testing against a module's test suite.
+=item * L<test-generator-mutate> - run mutation testing against a module's test suite.
 
-=item * L<test-generator-index> — generate the HTML test-quality dashboard, combining Devel::Cover statement/branch data, LCSAJ path coverage, mutation results, and CPAN Testers failure analysis. For each CPAN Testers FAIL report, also writes a self-contained shell script (C<cover_html/reproduce/reproduce-GUID.sh>) that pins every installed module at its exact failing version, enabling local reproduction of the failure environment.
+=item * L<test-generator-index> - generate the HTML test-quality dashboard, combining Devel::Cover statement/branch data, LCSAJ path coverage, mutation results, and CPAN Testers failure analysis. For each CPAN Testers FAIL report, also writes a self-contained shell script (C<cover_html/reproduce/reproduce-GUID.sh>) that pins every installed module at its exact failing version, enabling local reproduction of the failure environment.
 
 =back
 

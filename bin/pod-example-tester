@@ -184,11 +184,21 @@ sub _emit_subtest {
 			print $fh "\tis(\$result, $expected, 'returns expected value from POD annotation');\n";
 		}
 	} else {
-		# Verbatim block: run whole block in eval, check no exception
+		# Verbatim block: run whole block in eval, check no exception.
+		# Stub any variables the snippet uses but doesn't declare so the
+		# generated file compiles cleanly under "use strict".
 		print $fh "\tplan tests => 1;\n";
 		print $fh "\tmy \$ok = eval {\n";
+		my @stubs = _stub_undeclared_vars($code);
+		if(@stubs) {
+			print $fh "\t\tmy (", join(', ', @stubs), ");\n";
+		}
 		for my $line (split /\n/, $code) {
-			print $fh "\t\t$line\n";
+			if(my $neutralized = _neutralize_exec($line)) {
+				print $fh "\t\t$neutralized\n";
+			} else {
+				print $fh "\t\t$line\n";
+			}
 		}
 		print $fh "\t\t1;\n";
 		print $fh "\t};\n";
@@ -196,6 +206,61 @@ sub _emit_subtest {
 	}
 
 	print $fh "};\n\n";
+}
+
+# ---------------------------------------------------------------------------
+# _neutralize_exec — if a line from a verbatim SYNOPSIS block would invoke
+# a shell command (system, exec, backticks, qx), return a replacement
+# note() call that describes what would have run instead of executing it.
+# Returns the empty string (false) for safe lines so the caller can pass
+# them through unchanged.
+#
+# Lines that are already comments are left alone — they can't execute.
+# ---------------------------------------------------------------------------
+sub _neutralize_exec {
+	my ($line) = @_;
+	return '' if $line =~ /^\s*#/;    # pure comment — harmless
+	return '' unless $line =~ /\b(?:system|exec)\s*\(|`|\bqx\s*[{(\[\/|]/;
+
+	(my $msg = $line) =~ s/^\s+//;    # strip leading whitespace for display
+	$msg =~ s/'/\\'/g;                 # escape single quotes for q{}
+	$msg =~ s/\s+$//;
+
+	return "note('pod-example-tester: skipped shell call: $msg');";
+}
+
+# ---------------------------------------------------------------------------
+# _stub_undeclared_vars — return sorted list of sigil+name variables (e.g.
+# '$dir', '@items') that appear in the code block but are not declared with
+# my/our/local.  Used to inject stub declarations so generated eval blocks
+# compile cleanly under "use strict" even when SYNOPSIS snippets assume
+# surrounding context (e.g. a $dir variable set up by the caller).
+#
+# Well-known Perl builtins (@_, @INC, @ARGV, %ENV, %INC, %SIG, $_) are
+# excluded because they exist without explicit declaration.
+# ---------------------------------------------------------------------------
+{
+	my %PERL_BUILTINS = map { $_ => 1 } qw(
+		$_ @_ @INC @ARGV %ENV %INC %SIG
+	);
+
+	sub _stub_undeclared_vars {
+		my ($code) = @_;
+
+		my %declared;
+		# Capture every variable following a my/our/local keyword, including
+		# list forms: my ($a, $b) and foreach my $x(...)
+		while($code =~ /\b(?:my|our|local)\b[^;{]*?([\$\@\%]\w+)/g) {
+			$declared{$1} = 1;
+		}
+
+		my %used;
+		while($code =~ /([\$\@\%])([a-zA-Z_]\w*)/g) {
+			$used{"$1$2"} = 1;
+		}
+
+		return sort grep { !$declared{$_} && !$PERL_BUILTINS{$_} } keys %used;
+	}
 }
 
 # ---------------------------------------------------------------------------

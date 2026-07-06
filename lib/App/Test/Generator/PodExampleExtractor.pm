@@ -231,6 +231,10 @@ sub _extract_annotated_lines {
 #
 # Purpose:    Split a POD text block into its indented
 #             (verbatim) paragraphs and return example hashrefs.
+#             Paragraphs that contain no Perl-looking syntax
+#             (e.g. shell commands like "prove -l t/foo.t") are
+#             silently dropped — they would cause compile errors
+#             under "use strict" in the generated test file.
 #
 # Entry:      $block   - text block to scan
 #             $section - label string for the containing section
@@ -248,33 +252,82 @@ sub _verbatim_paragraphs {
 			push @current, $line;
 		} else {
 			if(@current) {
-				my $code = join("\n", @current);
-				$code =~ s/^[ \t]+//mg;
-				$code =~ s/\s+$//;
+				my $code = _dedent(join("\n", @current));
 				push @examples, {
 					section        => $section,
 					code           => $code,
 					expected       => undef,
 					annotated_line => undef,
-				} if length $code;
+				} if length($code) && _looks_like_perl($code);
 				@current = ();
 			}
 		}
 	}
 
 	if(@current) {
-		my $code = join("\n", @current);
-		$code =~ s/^[ \t]+//mg;
-		$code =~ s/\s+$//;
+		my $code = _dedent(join("\n", @current));
 		push @examples, {
 			section        => $section,
 			code           => $code,
 			expected       => undef,
 			annotated_line => undef,
-		} if length $code;
+		} if length($code) && _looks_like_perl($code);
 	}
 
 	return @examples;
+}
+
+# --------------------------------------------------
+# _dedent
+#
+# Purpose:    Remove the common leading whitespace from every line
+#             of a verbatim block so relative indentation is kept
+#             (like Python's textwrap.dedent).
+#
+# Entry:      $text - multi-line string
+#
+# Exit:       Returns the dedented string with trailing whitespace removed.
+# --------------------------------------------------
+sub _dedent {
+	my ($text) = @_;
+	my @lines = split /\n/, $text;
+	my @non_empty = grep { /\S/ } @lines;
+	return '' unless @non_empty;
+	my ($min) = sort { $a <=> $b }
+	            map  { /^([ \t]*)/ ? length($1) : 0 } @non_empty;
+	s/^[ \t]{0,$min}// for @lines;
+	my $out = join("\n", @lines);
+	$out =~ s/\s+$//;
+	return $out;
+}
+
+# --------------------------------------------------
+# _looks_like_perl
+#
+# Purpose:    Return true when a verbatim block contains at least one
+#             line that is recognisably Perl syntax.  Used to skip
+#             blocks of shell commands (e.g. "prove -l t/foo.t") that
+#             would cause compile errors under "use strict".
+#
+# Entry:      $code - dedented block text
+#
+# Exit:       Returns 1 (Perl) or '' (not Perl).
+# --------------------------------------------------
+sub _looks_like_perl {
+	my ($code) = @_;
+	for my $line (split /\n/, $code) {
+		next unless $line =~ /\S/;    # skip blank lines
+		next if $line =~ /^\s*#/;     # skip comment-only lines
+		# Perl sigils
+		return 1 if $line =~ /[\$\@\%]/;
+		# Perl keywords at start of statement
+		return 1 if $line =~ /^\s*(?:my|our|local|use|require|no|package|sub|for(?:each)?|if|unless|while|until|return|die|croak|warn|print|say|eval|BEGIN|END|push|pop|shift|unshift|keys|values|grep|map|sort)\b/;
+		# Method call or package separator
+		return 1 if $line =~ /(?:->|::)/;
+		# Fat comma — a hash or argument list
+		return 1 if $line =~ /=>/;
+	}
+	return '';
 }
 
 =head1 AUTHOR

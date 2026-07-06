@@ -250,4 +250,77 @@ subtest 'extract() works on Sample::Module and finds annotated examples' => sub 
 	is($vs->{expected}, "'Pass'", "expected value is 'Pass'");
 };
 
+# ==================================================================
+# Shell-command filtering (_looks_like_perl)
+# ==================================================================
+
+subtest 'extract() skips verbatim blocks containing only shell commands' => sub {
+	my $pm = _tmp_pm(<<'PM');
+package Foo;
+
+=head1 SYNOPSIS
+
+    fuzz-harness-generator -r schemas/foo.yml
+
+    extract-schemas lib/Foo.pm && fuzz-harness-generator -r schemas/greet.yml
+
+    use Foo;
+
+=cut
+
+1;
+PM
+	my $ex  = App::Test::Generator::PodExampleExtractor->new(file => $pm);
+	my $res = $ex->extract();
+	ok(!grep({ $_->{code} =~ /fuzz-harness-generator|extract-schemas/ } @$res),
+		'shell-command blocks are not extracted');
+	my @perl = grep { $_->{code} =~ /use Foo/ } @$res;
+	is(scalar @perl, 1, 'Perl code block is still extracted');
+};
+
+subtest 'pod-example-tester neutralizes system() calls in generated output' => sub {
+	my $pm = _tmp_pm(<<'PM');
+package Bar;
+
+=head1 SYNOPSIS
+
+    my $result = Bar->run();
+    system("rm -rf /");
+
+=cut
+
+sub run { 1 }
+1;
+PM
+	my $out = File::Temp->new(SUFFIX => '.t', UNLINK => 1);
+	system($^X, '-Ilib', 'bin/pod-example-tester', '--output', "$out", $pm) == 0
+		or plan skip_all => 'pod-example-tester not runnable';
+	my $generated = do { local $/; open my $fh, '<', "$out" or die $!; <$fh> };
+	unlike($generated, qr/^\s+system\s*\(/m, 'no executable system() statement in generated file');
+	like($generated,   qr/note\(.*skipped shell call/i, 'system() replaced with note()');
+};
+
+subtest '_looks_like_perl keeps blocks with sigils, keywords, :: and ->' => sub {
+	my $pm = _tmp_pm(<<'PM');
+package Foo;
+
+=head1 SYNOPSIS
+
+    my $obj = Foo->new();
+
+    prove -l t/foo.t
+
+    $obj->method();
+
+=cut
+
+1;
+PM
+	my $ex  = App::Test::Generator::PodExampleExtractor->new(file => $pm);
+	my $res = $ex->extract();
+	ok(!grep({ $_->{code} =~ /prove/ } @$res), 'bare "prove" command is skipped');
+	is(scalar(grep { $_->{code} =~ /Foo->new/ || $_->{code} =~ /\$obj/ } @$res),
+		2, 'two Perl blocks retained');
+};
+
 done_testing();
