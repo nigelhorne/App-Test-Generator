@@ -297,10 +297,10 @@ Readonly my $MAX_REPORTS_PER_GRADE => 20;
 
 # --------------------------------------------------
 # Enable dependency correlation analysis against
-# CPAN Testers reports. Set to 0 to disable if the
-# API is unreachable or the analysis is too slow.
+# CPAN Testers reports. Disabled automatically when
+# NO_NETWORK_TESTING is set in the environment.
 # --------------------------------------------------
-Readonly my $ENABLE_DEP_ANALYSIS => 1;
+Readonly my $ENABLE_DEP_ANALYSIS => $ENV{NO_NETWORK_TESTING} ? 0 : 1;
 
 # Per-GUID cache of installed module hashes from fetch_report_html;
 # populated by aggregate_dependency_stats, consumed by repro generation
