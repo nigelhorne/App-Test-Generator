@@ -8,7 +8,7 @@ use Test::Needs {
 	'perl' => 5.036,	# Later A::T::G need this version
 };
 
-use Test::DescribeMe qw(extended);
+# use Test::DescribeMe qw(extended);	# It takes some time, which is OK by itself, but soon mounts up when running a lot of mutant tests
 use FindBin qw($Bin);
 use IPC::Run3;
 use IPC::System::Simple qw(system);
