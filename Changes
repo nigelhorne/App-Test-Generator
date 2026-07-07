@@ -49,6 +49,22 @@ Revision history for App-Test-Generator
 	  Scripts are linked as downloadable "Script" links in the CPAN
 	  Testers failure table on the dashboard.
 
+	[Bug fixes]
+	- Fix SchemaExtractor::_compile_signature_isolated to degrade gracefully
+	  when the isolated subprocess fails. Previously a subprocess error
+	  (stderr) triggered an unconditional croak, propagating a fatal
+	  exception through _extract_type_params_schema's "or return" guard
+	  (which catches falsy returns but not exceptions). The croak now
+	  becomes a verbose-gated carp followed by a plain return so the caller
+	  falls back to heuristic analysis as intended. A secondary guard in the
+	  subprocess heredoc now checks that the return value of signature_for()
+	  is a blessed object with a parameters() method before calling it, so
+	  older Type::Params (< 2.x) installations — which install the
+	  constraint but return undef rather than the signature object — no
+	  longer cause the subprocess to die and write to stderr. Reported via
+	  CPAN Testers (t/integration.t "degrades gracefully without
+	  BSD::Resource" subtest, App-Test-Generator-0.41).
+
 0.41	Sun Jun 28 08:01:43 EDT 2026
 	[Bug fixes]
 	- Fix bin/test-generator-mutate's per-mutant prove invocation: switch

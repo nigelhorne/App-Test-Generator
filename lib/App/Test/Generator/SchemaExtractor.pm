@@ -3201,8 +3201,12 @@ sub FUNCTION_NAME {}
 # Create the Type::Params signature object
 my $sig = signature_for FUNCTION_NAME => SIGNATURE_EXPR;
 
-# Extract parameters
-my @sig_params = @{ $sig->parameters || [] };
+# Extract parameters — guard against older Type::Params (< 2.x) where
+# signature_for() installs the constraint but returns undef rather than
+# the signature object, so ->parameters() would die.
+my @sig_params = (defined $sig && ref $sig && $sig->can('parameters'))
+	? @{ $sig->parameters || [] }
+	: ();
 my $pos = 0;
 my @params;
 
@@ -3282,7 +3286,8 @@ PERL
 	waitpid($pid, 0);
 
 	if ($stderr && length $stderr) {
-		croak "Error compiling signature:\n$stderr";
+		carp "Error compiling signature:\n$stderr" if $self->{verbose};
+		return;
 	}
 
 	return decode_json($stdout);
