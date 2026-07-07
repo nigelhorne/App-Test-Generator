@@ -27,11 +27,17 @@ From the command line:
     # This is the holy grail of automatic test generation, just by looking at the source code
     extract-schemas lib/App/Test/Generator/Sample/Module.pm && fuzz-harness-generator -r schemas/greet.yml
 
+    # Fuzz a module and keep the corpus bounded: trim to the minimum subset that still covers every branch
+    extract-schemas --fuzz --minimize-corpus lib/My/Module.pm
+
     # Generate round-trip tests that run every code example in a module's POD and verify the results
     pod-example-tester lib/My/Module.pm --output t/pod_examples.t
 
     # Generate a Benchmark::cmpthese script from a schema; each transform becomes one timed variant
     benchmark-generator -i schemas/abs.yml -o benchmarks/abs.pl
+
+    # Copy dashboard.yml and mutate.yml into a module repository's .github/workflows/ directory
+    deploy-workflows --target /path/to/my-module
 
 From Perl:
 
@@ -84,6 +90,7 @@ handling, and regressions without manually writing every case.
 The distribution ships the following command-line tools:
 
 - [benchmark-generator](https://metacpan.org/pod/benchmark-generator) - generate a self-contained [Benchmark](https://metacpan.org/pod/Benchmark) `cmpthese` script from a YAML schema. Each transform in the schema becomes one named variant; representative input values are derived from each parameter's type and range constraints.
+- [deploy-workflows](https://metacpan.org/pod/deploy-workflows) - copy `dashboard.yml` and `mutate.yml` into the target repository's `.github/workflows/` directory. Both files are embedded verbatim in the script, so no ATG source tree is needed after installation. Supports `--target`, `--force`, and `--dry-run`.
 - [extract-schemas](https://metacpan.org/pod/extract-schemas) - heuristically extract YAML parameter schemas from a `.pm` file, with optional coverage-guided fuzzing (`--fuzz`) and corpus minimization (`--minimize-corpus`).
 - [fuzz-harness-generator](https://metacpan.org/pod/fuzz-harness-generator) - generate a `Test::Most` fuzzing harness from a YAML schema.
 - [pod-example-tester](https://metacpan.org/pod/pod-example-tester) - generate a `Test::Most` round-trip test file from a module's POD code examples. Annotated examples (`# returns value` / `# => value`) get `is()` assertions; unannotated verbatim blocks are wrapped in `eval{}` and checked for no exception.
@@ -1065,9 +1072,15 @@ Property-based testing with transforms is particularly useful for:
 
 ### Requirements
 
-Property-based testing requires [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest) to be installed:
+Property-based testing requires both [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest) and
+[Test::LectroTest::Compat](https://metacpan.org/pod/Test%3A%3ALectroTest%3A%3ACompat) to be installed:
 
-    cpanm Test::LectroTest
+    cpanm Test::LectroTest Test::LectroTest::Compat
+
+[Test::LectroTest::Compat](https://metacpan.org/pod/Test%3A%3ALectroTest%3A%3ACompat) provides the `use_ok` bridge between
+[Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest) and [Test::Most](https://metacpan.org/pod/Test%3A%3AMost); it is used in every generated
+property-based test file.  Both are declared in the distribution's
+`TEST_REQUIRES` so they are installed automatically during `make test`.
 
 If not installed, the generated tests will automatically skip the property-based
 portion with a message.
