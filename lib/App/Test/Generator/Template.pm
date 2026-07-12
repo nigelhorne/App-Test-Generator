@@ -1125,9 +1125,10 @@ sub _generate_float_cases {
 		[% END %]
 
 		if(!defined $spec->{max}) {
-			push @cases, { %{$mandatory_args}, ( $arg_name => $min + rand_num() ), _DESCRIPTION => 'min is defined but max is not' };
-			if($min == 0) {
-				push @cases, { %{$mandatory_args}, ( $arg_name => abs(rand_num()) ), _LINE => __LINE__ };	# Any positive number
+			if($min <= 0) {
+				push @cases, { %{$mandatory_args}, ( $arg_name => $min + abs(rand_num()) ), _LINE => __LINE__ };	# Any positive number
+			} else {
+				push @cases, { %{$mandatory_args}, ( $arg_name => $min + rand_num() ), _DESCRIPTION => 'min is defined but max is not' };
 			}
 		}
 	}
