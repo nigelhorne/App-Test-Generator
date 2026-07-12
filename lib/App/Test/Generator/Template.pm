@@ -883,7 +883,7 @@ sub fuzz_inputs
 					# If it's takes an integer, a float should die
 					push @cases, { _input => $case_input + 0.1, _STATUS => 'DIES', _LINE => __LINE__ };
 				} elsif(($type eq 'number') || ($type eq 'float')) {
-					$case_input = rand_num() + $input{'min'};
+					$case_input = abs(rand_num()) + $input{'min'};
 				} elsif($type eq 'boolean') {
 					$case_input = rand_bool();
 				} else {
@@ -1608,8 +1608,8 @@ sub generate_tests
 			} elsif ($type eq 'boolean') {
 				$case_input{$field} = rand_bool();
 			} elsif ($type eq 'number') {
-				if(my $min = $spec->{min}) {
-					$case_input{$field} = rand_num() + $min;
+				if(defined(my $min = $spec->{min})) {
+					$case_input{$field} = abs(rand_num()) + $min;
 				} else {
 					$case_input{$field} = rand_num();
 				}
@@ -2292,7 +2292,7 @@ sub _fill_foundation
 				if(defined $spec->{max}) {
 					$foundation->{$field} = $spec->{max};	# border
 				} else {
-					$foundation->{$field} = rand_num() + $spec->{'min'};
+					$foundation->{$field} = abs(rand_num()) + $spec->{'min'};
 				}
 			} else {
 				if(defined $spec->{max}) {
