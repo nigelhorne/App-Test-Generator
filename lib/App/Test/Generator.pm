@@ -1594,11 +1594,9 @@ Takes a schema file and produces a test file (or STDOUT).
 =head4 Input
 
     {
-        schema_file => { type => 'string', optional => 1 },
+        schema_file => { type => 'string', optional => 0, memberof => ['schemas/generate.yml'] },
         input_file  => { type => 'string', optional => 1 },
-        output_file => { type => 'string', optional => 1 },
-        schema      => { type => 'hashref', optional => 1 },
-        quiet       => { type => 'boolean', optional => 1 },	# accepted but not yet implemented; has no effect
+        output_file => { type => 'string', optional => 1, max => 255 },
     }
 
 =head4 Output
@@ -3005,7 +3003,7 @@ Other sub-keys are rendered via C<perl_quote>.
 
 =head4 input
 
-    { href => { type => 'hashref', optional => 1 } }
+    { href => { type => 'any', optional => 1 } }
 
 =head4 output
 
@@ -3119,7 +3117,7 @@ the generated test.
 
 =head4 input
 
-    { href => { type => 'hashref', optional => 1 } }
+    { href => { type => 'any', optional => 1 } }
 
 =head4 output
 

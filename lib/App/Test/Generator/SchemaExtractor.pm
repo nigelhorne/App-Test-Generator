@@ -1877,6 +1877,20 @@ sub _analyze_method {
 		$schema->{_analysis}{confidence_factors}{input} = [
 			'Input schema extracted from validator'
 		];
+		# =head4 Input spec overrides take highest priority — apply them on top of
+		# the validator schema so authors can tune test constraints (optional,
+		# memberof, matches) without altering the runtime validation call.
+		for my $name (keys %$pod_params) {
+			next unless $pod_params->{$name}{_from_input_spec};
+			my $pod_p = $pod_params->{$name};
+			$schema->{input}{$name} //= {};
+			$schema->{input}{$name}{optional}  = $pod_p->{optional}  if defined $pod_p->{optional};
+			$schema->{input}{$name}{memberof}  = $pod_p->{memberof}  if defined $pod_p->{memberof};
+			$schema->{input}{$name}{matches}   = $pod_p->{matches}   if defined $pod_p->{matches};
+			$schema->{input}{$name}{type}      = $pod_p->{type}      if defined $pod_p->{type};
+			$schema->{input}{$name}{min}       = $pod_p->{min}       if defined $pod_p->{min};
+			$schema->{input}{$name}{max}       = $pod_p->{max}       if defined $pod_p->{max};
+		}
 	} else {
 		# Merge field declarations into code_params before merging analyses
 		if (keys %$fields) {
@@ -3700,6 +3714,20 @@ sub _analyze_pod {
 				}
 				if ($spec =~ /\boptional\s*=>\s*(0|1)/i) {
 					$params{$name}{optional} = $1 + 0;
+				}
+				if ($spec =~ /\bmemberof\s*=>\s*\[([^\]]*)\]/i) {
+					my $list_str = $1;
+					my @vals;
+					while ($list_str =~ /['"]([^'"]*)['"]/g) {
+						push @vals, $1;
+					}
+					$params{$name}{memberof} = \@vals if @vals;
+				}
+				if ($spec =~ /\bmin\s*=>\s*(\d+)/i) {
+					$params{$name}{min} = $1 + 0;
+				}
+				if ($spec =~ /\bmax\s*=>\s*(\d+)/i) {
+					$params{$name}{max} = $1 + 0;
 				}
 			}
 			# A named-format Input spec signals a hash/named API.  Positional
@@ -6891,6 +6919,10 @@ sub _merge_parameter_analyses {
 			foreach my $key (keys %{$code->{$param}}) {
 				next if $key eq '_source';
 				next if $key eq 'position';
+				# Formal input-spec declared this param without a type — author
+				# intentionally left it unconstrained; don't let code heuristics
+				# silently fill in a type that would cause wrong-type die tests.
+				next if $key eq 'type' && $pod->{$param} && $pod->{$param}{_from_input_spec} && !defined $pod->{$param}{type};
 
 				# Only override if POD didn't provide this info or it's a stronger signal
 				my $from_pod = exists $pod->{$param};
