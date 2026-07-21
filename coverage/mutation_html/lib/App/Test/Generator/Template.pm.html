@@ -1828,7 +1828,7 @@ Approximate LCSAJ segments: 3<br>
 </span><span class=""> 1536: 			my %case_input = (%mandatory_args);
 </span><span class=""> 1537: 			# 1) Sometimes pick a field-specific edge-case
 </span><span class=""> 1538: 			if (exists $edge_cases{$field} &amp;&amp; rand() &lt; PROB_EDGE_CASE) {
-</span><span class=""> 1539: 				push @cases, { _input =&gt; \%case_input, status =&gt; &#39;OK&#39; } if(keys %case_input);
+</span><span class=""> 1539: 				push @cases, { _input =&gt; {%case_input}, status =&gt; &#39;OK&#39; } if(keys %case_input);
 </span><span class=""> 1540: 				$case_input{$field} = _pick_from($edge_cases{$field});
 </span><span class=""> 1541: 				next;
 </span><span class=""> 1542: 			}
@@ -1863,13 +1863,13 @@ Approximate LCSAJ segments: 3<br>
 </span><span class=""> 1571: 					if(my $min = $spec-&gt;{min}) {
 </span><span class=""> 1572: 						$case_input{$field} = rand_str($min);
 </span><span class=""> 1573: 						if($config{&#39;test_empty&#39;} &amp;&amp; ($min == 0)) {
-</span><span class=""> 1574: 							push @cases, { _input =&gt; \%case_input, status =&gt; &#39;OK&#39; } if(keys %case_input);
+</span><span class=""> 1574: 							push @cases, { _input =&gt; {%case_input}, status =&gt; &#39;OK&#39; } if(keys %case_input);
 </span><span class=""> 1575: 							$case_input{$field} = &#39;&#39;;
 </span><span class=""> 1576: 						}
 </span><span class=""> 1577: 					} else {
 </span><span class=""> 1578: 						$case_input{$field} = rand_str();
 </span><span class=""> 1579: 						if($config{&#39;test_empty&#39;}) {
-</span><span class=""> 1580: 							push @cases, { _input =&gt; \%case_input, status =&gt; &#39;OK&#39; } if(keys %case_input);
+</span><span class=""> 1580: 							push @cases, { _input =&gt; {%case_input}, status =&gt; &#39;OK&#39; } if(keys %case_input);
 </span><span class=""> 1581: 							$case_input{$field} = &#39;&#39;;
 </span><span class=""> 1582: 						}
 </span><span class=""> 1583: 					}

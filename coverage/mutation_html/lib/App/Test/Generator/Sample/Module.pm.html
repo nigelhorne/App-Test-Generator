@@ -245,9 +245,9 @@ pre details.mutant-details ul {
  <a href="../../../../Devel/App/Test/Generator/LCSAJ/Runtime.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
-TER2 (Branch): 100.00%<br>
-TER3 (LCSAJ): 100.0% (1/1)<br>
-Approximate LCSAJ segments: 41<br>
+TER2 (Branch): 95.65%<br>
+TER3 (LCSAJ): 100.0% (2/2)<br>
+Approximate LCSAJ segments: 47<br>
 </div>
 
     <div class="legend">
@@ -594,7 +594,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 								</div>
 							</li></ul></details>
 <span class="">  172: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  173: 	return $current_year - $birth_year;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  173: 	return $current_year - $birth_year;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -695,7 +695,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 							</li></ul></details>
 <span class="">  222: 	}
 </span><span class="">  223: 
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  224: 	return $count;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  224: 	return $count;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -829,10 +829,10 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  313: =cut
 </span><span class="">  314: 
 </span><span class="">  315: sub greet {
-</span><span class="">  316: 	my ($self, $name, $greeting) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">316 → 323 → 328</span></span>  316: 	my ($self, $name, $greeting) = @_;
 </span><span class="">  317: 
-</span><span class="">  318: 	croak &#39;Name is required&#39; unless defined $name;
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  319: 	croak &#39;Name too short&#39;   unless length($name) &gt;= $MIN_NAME_LEN;
+</span><span class="">  318: 	croak &#39;Name is required&#39;        unless defined $name;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  319: 	croak &#39;Name must be a string&#39;   if ref($name);
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
@@ -862,7 +862,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  320: 	croak &#39;Name too long&#39;    unless length($name) &lt;= $MAX_NAME_LEN;
+<span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  320: 	croak &#39;Name too short&#39;          unless length($name) &gt;= $MIN_NAME_LEN;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
@@ -892,11 +892,11 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  321: 
-</span><span class="">  322: 	# Apply default greeting when caller does not supply one
-</span><span class="">  323: 	$greeting ||= &#39;Hello&#39;;
-</span><span class="">  324: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  325: 	return &quot;$greeting, $name!&quot;;
+<span class="">  321: 	croak &#39;Name too long&#39;           unless length($name) &lt;= $MAX_NAME_LEN;
+</span><span class="">  322: 
+</span><span class="">  323: 	if(defined $greeting) {
+</span><span class="">  324: 		croak &#39;Greeting must be a string&#39; if ref($greeting);
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  325: 	}
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -918,49 +918,49 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  326: }
-</span><span class="">  327: 
-</span><span class="">  328: =head2 check_flag
+<span class="">  326: 
+</span><span class="">  327: 	# Apply default greeting when caller does not supply one
+</span><span class="">  328: 	$greeting ||= &#39;Hello&#39;;
 </span><span class="">  329: 
-</span><span class="">  330: Return a normalised boolean for a flag value.
-</span><span class="">  331: 
-</span><span class="">  332:     my $result = $obj-&gt;check_flag(1);   # returns 1
-</span><span class="">  333:     my $result = $obj-&gt;check_flag(0);   # returns 0
+</span><span class="">  330: 	return &quot;$greeting, $name!&quot;;
+</span><span class="">  331: }
+</span><span class="">  332: 
+</span><span class="">  333: =head2 check_flag
 </span><span class="">  334: 
-</span><span class="">  335: =head3 Arguments
+</span><span class="">  335: Return a normalised boolean for a flag value.
 </span><span class="">  336: 
-</span><span class="">  337: =over 4
-</span><span class="">  338: 
-</span><span class="">  339: =item * C&lt;$enabled&gt;
-</span><span class="">  340: 
-</span><span class="">  341: Boolean scalar.
-</span><span class="">  342: 
-</span><span class="">  343: =back
-</span><span class="">  344: 
-</span><span class="">  345: =head3 Returns
-</span><span class="">  346: 
-</span><span class="">  347: 1 if C&lt;$enabled&gt; is true, 0 otherwise.
-</span><span class="">  348: 
-</span><span class="">  349: =head3 API specification
-</span><span class="">  350: 
-</span><span class="">  351: =head4 input
-</span><span class="">  352: 
-</span><span class="">  353:     {
-</span><span class="">  354:         self    =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Sample::Module&#39; },
-</span><span class="">  355:         enabled =&gt; { type =&gt; SCALAR },
-</span><span class="">  356:     }
+</span><span class="">  337:     my $result = $obj-&gt;check_flag(1);   # returns 1
+</span><span class="">  338:     my $result = $obj-&gt;check_flag(0);   # returns 0
+</span><span class="">  339: 
+</span><span class="">  340: =head3 Arguments
+</span><span class="">  341: 
+</span><span class="">  342: =over 4
+</span><span class="">  343: 
+</span><span class="">  344: =item * C&lt;$enabled&gt;
+</span><span class="">  345: 
+</span><span class="">  346: Boolean scalar.
+</span><span class="">  347: 
+</span><span class="">  348: =back
+</span><span class="">  349: 
+</span><span class="">  350: =head3 Returns
+</span><span class="">  351: 
+</span><span class="">  352: 1 if C&lt;$enabled&gt; is true, 0 otherwise.
+</span><span class="">  353: 
+</span><span class="">  354: =head3 API specification
+</span><span class="">  355: 
+</span><span class="">  356: =head4 input
 </span><span class="">  357: 
-</span><span class="">  358: =head4 output
-</span><span class="">  359: 
-</span><span class="">  360:     { type =&gt; SCALAR }
-</span><span class="">  361: 
-</span><span class="">  362: =cut
-</span><span class="">  363: 
-</span><span class="">  364: sub check_flag {
-</span><span class="">  365: 	my ($self, $enabled) = @_;
+</span><span class="">  358:     {
+</span><span class="">  359:         self    =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Sample::Module&#39; },
+</span><span class="">  360:         enabled =&gt; { type =&gt; SCALAR },
+</span><span class="">  361:     }
+</span><span class="">  362: 
+</span><span class="">  363: =head4 output
+</span><span class="">  364: 
+</span><span class="">  365:     { type =&gt; SCALAR }
 </span><span class="">  366: 
-</span><span class="">  367: 	# Normalise any truthy/falsy value to a strict 1 or 0
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  368: 	return $enabled ? 1 : 0;
+</span><span class="">  367: =cut
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  368: 
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -982,56 +982,56 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  369: }
-</span><span class="">  370: 
-</span><span class="">  371: =head2 validate_score
-</span><span class="">  372: 
-</span><span class="">  373: Validate a numeric test score and return a pass/fail string.
-</span><span class="">  374: 
-</span><span class="">  375:     my $status = $obj-&gt;validate_score(75.5);  # returns &#39;Pass&#39;
-</span><span class="">  376:     my $status = $obj-&gt;validate_score(45.0);  # returns &#39;Fail&#39;
+<span class="">  369: sub check_flag {
+</span><span class="">  370: 	my ($self, $enabled) = @_;
+</span><span class="">  371: 
+</span><span class="">  372: 	# Normalise any truthy/falsy value to a strict 1 or 0
+</span><span class="">  373: 	return $enabled ? 1 : 0;
+</span><span class="">  374: }
+</span><span class="">  375: 
+</span><span class="">  376: =head2 validate_score
 </span><span class="">  377: 
-</span><span class="">  378: =head3 Arguments
+</span><span class="">  378: Validate a numeric test score and return a pass/fail string.
 </span><span class="">  379: 
-</span><span class="">  380: =over 4
-</span><span class="">  381: 
-</span><span class="">  382: =item * C&lt;$score&gt;
-</span><span class="">  383: 
-</span><span class="">  384: Number (C&lt;$MIN_SCORE&gt;-C&lt;$MAX_SCORE&gt;). Required.
-</span><span class="">  385: 
-</span><span class="">  386: =back
-</span><span class="">  387: 
-</span><span class="">  388: =head3 Returns
-</span><span class="">  389: 
-</span><span class="">  390: The string C&lt;&#39;Pass&#39;&gt; if the score meets or exceeds C&lt;$PASS_THRESHOLD&gt;,
-</span><span class="">  391: C&lt;&#39;Fail&#39;&gt; otherwise. Croaks on invalid input.
+</span><span class="">  380:     my $status = $obj-&gt;validate_score(75.5);  # returns &#39;Pass&#39;
+</span><span class="">  381:     my $status = $obj-&gt;validate_score(45.0);  # returns &#39;Fail&#39;
+</span><span class="">  382: 
+</span><span class="">  383: =head3 Arguments
+</span><span class="">  384: 
+</span><span class="">  385: =over 4
+</span><span class="">  386: 
+</span><span class="">  387: =item * C&lt;$score&gt;
+</span><span class="">  388: 
+</span><span class="">  389: Number (C&lt;$MIN_SCORE&gt;-C&lt;$MAX_SCORE&gt;). Required.
+</span><span class="">  390: 
+</span><span class="">  391: =back
 </span><span class="">  392: 
-</span><span class="">  393: =head3 API specification
+</span><span class="">  393: =head3 Returns
 </span><span class="">  394: 
-</span><span class="">  395: =head4 input
-</span><span class="">  396: 
-</span><span class="">  397:     {
-</span><span class="">  398:         self  =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Sample::Module&#39; },
-</span><span class="">  399:         score =&gt; { type =&gt; SCALAR, min =&gt; 0.0, max =&gt; 100.0 },
-</span><span class="">  400:     }
+</span><span class="">  395: The string C&lt;&#39;Pass&#39;&gt; if the score meets or exceeds C&lt;$PASS_THRESHOLD&gt;,
+</span><span class="">  396: C&lt;&#39;Fail&#39;&gt; otherwise. Croaks on invalid input.
+</span><span class="">  397: 
+</span><span class="">  398: =head3 API specification
+</span><span class="">  399: 
+</span><span class="">  400: =head4 input
 </span><span class="">  401: 
-</span><span class="">  402: =head4 output
-</span><span class="">  403: 
-</span><span class="">  404:     { type =&gt; SCALAR }
-</span><span class="">  405: 
-</span><span class="">  406: =cut
-</span><span class="">  407: 
-</span><span class="">  408: sub validate_score {
-</span><span class="">  409: 	my ($self, $score) = @_;
+</span><span class="">  402:     {
+</span><span class="">  403:         self  =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Sample::Module&#39; },
+</span><span class="">  404:         score =&gt; { type =&gt; SCALAR, min =&gt; 0.0, max =&gt; 100.0 },
+</span><span class="">  405:     }
+</span><span class="">  406: 
+</span><span class="">  407: =head4 output
+</span><span class="">  408: 
+</span><span class="">  409:     { type =&gt; SCALAR }
 </span><span class="">  410: 
-</span><span class="">  411: 	croak &#39;Score is required&#39;    unless defined $score;
+</span><span class="">  411: =cut
 </span><span class="">  412: 
-</span><span class="">  413: 	# Accept integers, decimals, and values like &#39;.5&#39; but not &#39;1.2.3&#39;
-</span><span class="">  414: 	croak &#39;Score must be numeric&#39;
-</span><span class="">  415: 		unless $score =~ /^(?:\d+\.?\d*|\.\d+)$/;
-</span><span class="">  416: 
-</span><span class="">  417: 	croak &#39;Score out of range&#39;
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  418: 		unless $score &gt;= $MIN_SCORE &amp;&amp; $score &lt;= $MAX_SCORE;
+</span><span class="">  413: sub validate_score {
+</span><span class="">  414: 	my ($self, $score) = @_;
+</span><span class="">  415: 
+</span><span class="">  416: 	croak &#39;Score is required&#39;    unless defined $score;
+</span><span class="">  417: 
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  418: 	# Accept integers, decimals, and values like &#39;.5&#39; but not &#39;1.2.3&#39;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 6, Killed: 0, Survived: 6)</summary>
@@ -1085,9 +1085,9 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  419: 
-</span><span class="">  420: 	# Compare against the pass threshold constant
-</span><span class="survived-3 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  421: 	return $score &gt;= $PASS_THRESHOLD ? &#39;Pass&#39; : &#39;Fail&#39;;
+<span class="">  419: 	croak &#39;Score must be numeric&#39;
+</span><span class="">  420: 		unless $score =~ /^(?:\d+\.?\d*|\.\d+)$/;
+</span><span class="survived-3 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  421: 
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -1133,51 +1133,51 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  422: }
-</span><span class="">  423: 
-</span><span class="">  424: =head2 mysterious_method
-</span><span class="">  425: 
-</span><span class="">  426: A deliberately under-validated method used to test that
-</span><span class="">  427: L&lt;App::Test::Generator::SchemaExtractor&gt; correctly assigns low
-</span><span class="">  428: confidence when validation is absent.
-</span><span class="">  429: 
-</span><span class="">  430: =head3 Arguments
-</span><span class="">  431: 
-</span><span class="">  432: =over 4
-</span><span class="">  433: 
-</span><span class="">  434: =item * C&lt;$thing&gt;
-</span><span class="">  435: 
-</span><span class="">  436: A value to double. No type validation is performed intentionally.
-</span><span class="">  437: 
-</span><span class="">  438: =back
-</span><span class="">  439: 
-</span><span class="">  440: =head3 Returns
-</span><span class="">  441: 
-</span><span class="">  442: C&lt;$thing * 2&gt;.
-</span><span class="">  443: 
-</span><span class="">  444: =head3 API specification
-</span><span class="">  445: 
-</span><span class="">  446: =head4 input
-</span><span class="">  447: 
-</span><span class="">  448:     {
-</span><span class="">  449:         self  =&gt; { type =&gt; OBJECT },
-</span><span class="">  450:         thing =&gt; { type =&gt; &#39;any&#39; },
-</span><span class="">  451:     }
+<span class="">  422: 	croak &#39;Score out of range&#39;
+</span><span class="">  423: 		unless $score &gt;= $MIN_SCORE &amp;&amp; $score &lt;= $MAX_SCORE;
+</span><span class="">  424: 
+</span><span class="">  425: 	# Compare against the pass threshold constant
+</span><span class="">  426: 	return $score &gt;= $PASS_THRESHOLD ? &#39;Pass&#39; : &#39;Fail&#39;;
+</span><span class="">  427: }
+</span><span class="">  428: 
+</span><span class="">  429: =head2 mysterious_method
+</span><span class="">  430: 
+</span><span class="">  431: A deliberately under-validated method used to test that
+</span><span class="">  432: L&lt;App::Test::Generator::SchemaExtractor&gt; correctly assigns low
+</span><span class="">  433: confidence when validation is absent.
+</span><span class="">  434: 
+</span><span class="">  435: =head3 Arguments
+</span><span class="">  436: 
+</span><span class="">  437: =over 4
+</span><span class="">  438: 
+</span><span class="">  439: =item * C&lt;$thing&gt;
+</span><span class="">  440: 
+</span><span class="">  441: A value to double. No type validation is performed intentionally.
+</span><span class="">  442: 
+</span><span class="">  443: =back
+</span><span class="">  444: 
+</span><span class="">  445: =head3 Returns
+</span><span class="">  446: 
+</span><span class="">  447: C&lt;$thing * 2&gt;.
+</span><span class="">  448: 
+</span><span class="">  449: =head3 API specification
+</span><span class="">  450: 
+</span><span class="">  451: =head4 input
 </span><span class="">  452: 
-</span><span class="">  453: =head4 output
-</span><span class="">  454: 
-</span><span class="">  455:     { type =&gt; &#39;number&#39; }
-</span><span class="">  456: 
-</span><span class="">  457: =cut
-</span><span class="">  458: 
-</span><span class="">  459: sub mysterious_method {
-</span><span class="">  460: 	my ($self, $thing) = @_;
+</span><span class="">  453:     {
+</span><span class="">  454:         self  =&gt; { type =&gt; OBJECT },
+</span><span class="">  455:         thing =&gt; { type =&gt; &#39;any&#39; },
+</span><span class="">  456:     }
+</span><span class="">  457: 
+</span><span class="">  458: =head4 output
+</span><span class="">  459: 
+</span><span class="">  460:     { type =&gt; &#39;number&#39; }
 </span><span class="">  461: 
-</span><span class="">  462: 	# Intentionally unvalidated &acirc;&#128;&#148; used to verify that SchemaExtractor
-</span><span class="">  463: 	# flags low-confidence schemas when no validation logic is present.
-</span><span class="">  464: 	# Callers passing non-numeric values will trigger a Perl warning;
-</span><span class="">  465: 	# this is expected behaviour for this test fixture.
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  466: 	return $thing * 2;
+</span><span class="">  462: =cut
+</span><span class="">  463: 
+</span><span class="">  464: sub mysterious_method {
+</span><span class="">  465: 	my ($self, $thing) = @_;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  466: 
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1199,19 +1199,24 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="">  467: }
-</span><span class="">  468: 
-</span><span class="">  469: =head1 AUTHOR
-</span><span class="">  470: 
-</span><span class="">  471: Example Author
-</span><span class="">  472: 
-</span><span class="">  473: =head1 LICENSE
-</span><span class="">  474: 
-</span><span class="">  475: This is free software.
-</span><span class="">  476: 
-</span><span class="">  477: =cut
-</span><span class="">  478: 
-</span><span class="">  479: 1;
+<span class="">  467: 	# Intentionally unvalidated &acirc;&#128;&#148; used to verify that SchemaExtractor
+</span><span class="">  468: 	# flags low-confidence schemas when no validation logic is present.
+</span><span class="">  469: 	# Callers passing non-numeric values will trigger a Perl warning;
+</span><span class="">  470: 	# this is expected behaviour for this test fixture.
+</span><span class="">  471: 	return $thing * 2;
+</span><span class="">  472: }
+</span><span class="">  473: 
+</span><span class="">  474: =head1 AUTHOR
+</span><span class="">  475: 
+</span><span class="">  476: Example Author
+</span><span class="">  477: 
+</span><span class="">  478: =head1 LICENSE
+</span><span class="">  479: 
+</span><span class="">  480: This is free software.
+</span><span class="">  481: 
+</span><span class="">  482: =cut
+</span><span class="">  483: 
+</span><span class="">  484: 1;
 </span></pre>
 
 <script>
