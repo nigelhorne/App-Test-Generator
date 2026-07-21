@@ -299,7 +299,7 @@ Approximate LCSAJ segments: 3<br>
 </span><span class="">    7: use utf8;
 </span><span class="">    8: use Data::Section::Simple;
 </span><span class="">    9: 
-</span><span class="">   10: our $VERSION = &#39;0.42&#39;;
+</span><span class="">   10: our $VERSION = &#39;0.43&#39;;
 </span><span class="">   11: 
 </span><span class="">   12: =head1 NAME
 </span><span class="">   13: 
@@ -307,7 +307,7 @@ Approximate LCSAJ segments: 3<br>
 </span><span class="">   15: 
 </span><span class="">   16: =head1 VERSION
 </span><span class="">   17: 
-</span><span class="">   18: Version 0.42
+</span><span class="">   18: Version 0.43
 </span><span class="">   19: 
 </span><span class="">   20: =head1 SYNOPSIS
 </span><span class="">   21: 
@@ -1408,9 +1408,9 @@ Approximate LCSAJ segments: 3<br>
 </span><span class=""> 1116: 	if (defined $spec-&gt;{min}) {
 </span><span class=""> 1117: 		my $min = $spec-&gt;{min};
 </span><span class=""> 1118: 		push @cases,
-</span><span class=""> 1119: 			{ %{$mandatory_args}, ( $arg_name =&gt; $min - 0.001, _STATUS =&gt; &#39;DIES&#39; ) },
-</span><span class=""> 1120: 			{ %{$mandatory_args}, ( $arg_name =&gt; $min, _LINE =&gt; __LINE__ ) },	# border
-</span><span class=""> 1121: 			{ %{$mandatory_args}, ( $arg_name =&gt; $min + 0.001 ) };	# just inside
+</span><span class=""> 1119: 			{ %{$mandatory_args}, ( $arg_name =&gt; $min - 0.001, _STATUS =&gt; &#39;DIES&#39; ), _DESCRIPTION =&gt; &#39;float below minimum value is denied&#39; },
+</span><span class=""> 1120: 			{ %{$mandatory_args}, ( $arg_name =&gt; $min, _LINE =&gt; __LINE__ ), _DESCRIPTION =&gt; &#39;float minimum value is allowed&#39; },	# border
+</span><span class=""> 1121: 			{ %{$mandatory_args}, ( $arg_name =&gt; $min + 0.001 ), _DESCRIPTION =&gt; &#39;float above minimum value is allowed&#39; };	# just inside
 </span><span class=""> 1122: 
 </span><span class=""> 1123: 		[% IF module %]
 </span><span class=""> 1124: 			push @cases, { %{$mandatory_args}, ( $arg_name =&gt; &quot;-inf&quot;, _STATUS =&gt; &#39;DIES&#39; ) };
