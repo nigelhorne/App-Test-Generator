@@ -6589,6 +6589,52 @@ sub _format_default {
 }
 
 # --------------------------------------------------
+# _module_constants
+#
+# Purpose:    Build and cache a hash of numeric
+#             constant values declared in the target
+#             module source, covering both Readonly
+#             lexicals and 'use constant' barewords.
+#             Used by _analyze_parameter_constraints
+#             to resolve right-hand sides like
+#             $MIN_NAME_LEN that are not literals.
+#
+# Entry:      None (uses $self->{_document}).
+#
+# Exit:       Returns a hashref { NAME => value }.
+#             Returns {} if the PPI document is not
+#             yet loaded.
+#
+# Side effects: Caches result in $self->{_constants}.
+# --------------------------------------------------
+sub _module_constants {
+	my ($self) = @_;
+	return $self->{_constants} if exists $self->{_constants};
+
+	my %c;
+	my $doc = $self->{_document};
+	unless ($doc) {
+		$self->{_constants} = \%c;
+		return \%c;
+	}
+
+	my $src = $doc->serialize();
+
+	# Readonly my $CONST => numeric_value;
+	while ($src =~ /Readonly\s+(?:my|our)\s+\$(\w+)\s*=>\s*([+-]?\d+(?:\.\d+)?)/g) {
+		$c{$1} = $2;
+	}
+
+	# use constant CONST => numeric_value;
+	while ($src =~ /use\s+constant\s+(\w+)\s*=>\s*([+-]?\d+(?:\.\d+)?)/g) {
+		$c{$1} = $2;
+	}
+
+	$self->{_constants} = \%c;
+	return \%c;
+}
+
+# --------------------------------------------------
 # _analyze_parameter_constraints
 #
 # Purpose:    Infer min, max, and regex match
@@ -6624,7 +6670,7 @@ sub _analyze_parameter_constraints {
 		$guarded = 1;
 	}
 
-	# Length checks for strings
+	# Length checks for strings — literal numeric RHS
 	if ($code =~ /length\s*\(\s*\$$param\s*\)\s*([<>]=?)\s*(\d+)/) {
 		my ($op, $val) = ($1, $2);
 		$p->{type} ||= 'string';
@@ -6638,6 +6684,24 @@ sub _analyze_parameter_constraints {
 			$p->{min} = $val;
 		}
 		$self->_log("  CODE: $param length constraint $op $val");
+	}
+
+	# Length checks for strings — Readonly / use-constant RHS ($CONST_NAME)
+	while ($code =~ /length\s*\(\s*\$$param\s*\)\s*([<>]=?)\s*\$(\w+)/g) {
+		my ($op, $const) = ($1, $2);
+		my $val = $self->_module_constants()->{$const};
+		next unless defined $val;
+		$p->{type} ||= 'string';
+		if ($op eq '<') {
+			$p->{max} = $val - 1;
+		} elsif ($op eq '<=') {
+			$p->{max} = $val;
+		} elsif ($op eq '>') {
+			$p->{min} = $val + 1;
+		} elsif ($op eq '>=') {
+			$p->{min} = $val;
+		}
+		$self->_log("  CODE: $param length constraint $op \$$const ($val)");
 	}
 
 	# Numeric range checks (only if NOT part of error guard)

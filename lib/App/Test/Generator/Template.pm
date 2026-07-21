@@ -1536,7 +1536,7 @@ sub generate_tests
 			my %case_input = (%mandatory_args);
 			# 1) Sometimes pick a field-specific edge-case
 			if (exists $edge_cases{$field} && rand() < PROB_EDGE_CASE) {
-				push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
+				push @cases, { _input => {%case_input}, status => 'OK' } if(keys %case_input);
 				$case_input{$field} = _pick_from($edge_cases{$field});
 				next;
 			}
@@ -1571,13 +1571,13 @@ sub generate_tests
 					if(my $min = $spec->{min}) {
 						$case_input{$field} = rand_str($min);
 						if($config{'test_empty'} && ($min == 0)) {
-							push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
+							push @cases, { _input => {%case_input}, status => 'OK' } if(keys %case_input);
 							$case_input{$field} = '';
 						}
 					} else {
 						$case_input{$field} = rand_str();
 						if($config{'test_empty'}) {
-							push @cases, { _input => \%case_input, status => 'OK' } if(keys %case_input);
+							push @cases, { _input => {%case_input}, status => 'OK' } if(keys %case_input);
 							$case_input{$field} = '';
 						}
 					}

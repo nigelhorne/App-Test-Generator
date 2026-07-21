@@ -315,9 +315,14 @@ Greeting string of the form C<"$greeting, $name!">.
 sub greet {
 	my ($self, $name, $greeting) = @_;
 
-	croak 'Name is required' unless defined $name;
-	croak 'Name too short'   unless length($name) >= $MIN_NAME_LEN;
-	croak 'Name too long'    unless length($name) <= $MAX_NAME_LEN;
+	croak 'Name is required'        unless defined $name;
+	croak 'Name must be a string'   if ref($name);
+	croak 'Name too short'          unless length($name) >= $MIN_NAME_LEN;
+	croak 'Name too long'           unless length($name) <= $MAX_NAME_LEN;
+
+	if(defined $greeting) {
+		croak 'Greeting must be a string' if ref($greeting);
+	}
 
 	# Apply default greeting when caller does not supply one
 	$greeting ||= 'Hello';

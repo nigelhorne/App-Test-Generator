@@ -25,6 +25,21 @@ Revision history for App-Test-Generator
 	  enabled. Also fix the omitted-reports footnote using a bare <p> tag
 	  inside <tbody>, which browsers silently eject from the table making
 	  the message invisible; changed to a <tr><td colspan="7"> row.
+	- Fix Template.pm generate_tests() intermediate push inside test_empty
+	  block using \%case_input (a shared reference) instead of {%case_input}
+	  (a snapshot copy). Both the intermediate push and the final push pointed
+	  to the same hashref; run_test()'s delete calls on the first case emptied
+	  the hash before the second case ran, producing @alist=() and the
+	  spurious "greet() survives (position test)" failure.
+	- Fix Sample::Module::greet() to reject reference types for the $name
+	  and $greeting parameters (croak 'Name must be a string' / 'Greeting
+	  must be a string'), matching the harness's expectation that passing
+	  ARRAY/HASH/SCALAR/CODE/blessed refs dies.
+	- Fix SchemaExtractor to resolve Readonly/use-constant numeric RHS when
+	  detecting length constraints: the previous regex only matched literal
+	  digits in e.g. length($name) >= $MIN_NAME_LEN; add _module_constants()
+	  helper and an extended regex so Readonly-based bounds populate min/max
+	  in the schema, raising greet's input confidence from MEDIUM to HIGH.
 
 0.43	Sat Jul 11 20:55:21 EDT 2026
 	[Bug fixes]
