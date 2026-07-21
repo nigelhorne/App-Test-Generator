@@ -1573,7 +1573,13 @@ sub _find_methods {
 	my $content = $document->content();
 	if ($content =~ /\bclass\b/) {
 		$self->_log('  Detecting class/method syntax...');
-		$self->_extract_class_methods($content, \@methods);
+		# Strip POD blocks and line comments before the regex scan so that
+		# patterns like  class Name {  inside documentation examples or
+		# the comment  # find "class Name {" blocks  don't produce
+		# spurious method names (e.g. the keyword 'if').
+		(my $code_only = $content) =~ s/^=\w[^\n]*.*?^=cut[^\n]*\n//gms;
+		$code_only =~ s/\s*#[^\n]*//g;
+		$self->_extract_class_methods($code_only, \@methods);
 	}
 
 	# Process method modifiers (Moose)

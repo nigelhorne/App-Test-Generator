@@ -2,6 +2,31 @@ Revision history for App-Test-Generator
 
 0.44
 	[Bug fixes]
+	- Fix fuzz harness leaving stray files in the current directory when
+	  testing functions such as generate() that write an output file: the
+	  generated run_test() now snapshots the CWD file listing before each
+	  call and unlinks any new files afterward, so file-writing side effects
+	  are cleaned up regardless of which parameter caused them.
+	- Fix SchemaExtractor::_merge_parameter_analyses silently applying code
+	  heuristic type inference to parameters declared in a formal =head4 Input
+	  spec that intentionally omit a type: when _from_input_spec is set and
+	  no type is present in the spec, the code-analysis type is now suppressed
+	  so the author's intent (no type constraint) is preserved.
+	- Fix SchemaExtractor::_find_methods running _extract_class_methods on the
+	  raw file content including POD blocks and line comments, causing false
+	  positives: the comment "# Simple pattern: find class Name { blocks"
+	  matched the class/method regex and extracted the Perl keyword 'if' as a
+	  spurious method name. POD blocks and line comments are now stripped from
+	  the content before the class/method scan.
+	- Fix Generator.pm POD =head4 input spec for render_args_hash,
+	  render_arrayref_map, and render_hash: changed type => 'hashref' to
+	  type => 'any' for the href parameter, matching the documented and
+	  implemented behaviour that each function returns '' (or '()') for
+	  non-hashref inputs rather than dying.
+	[New features]
+	- Add t/self-fuzz.t: end-to-end CLI self-test that runs extract-schemas
+	  then fuzz-harness-generator -r on every .pm under lib/, verifying that
+	  ATG can fuzz-test its own modules. Requires EXTENDED_TESTING=1.
 	- Fix SchemaExtractor::_compile_signature_isolated to degrade gracefully
 	  when the isolated subprocess fails. Previously a subprocess error
 	  (stderr) triggered an unconditional croak, propagating a fatal

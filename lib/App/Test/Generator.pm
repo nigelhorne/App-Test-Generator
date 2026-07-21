@@ -3176,7 +3176,7 @@ mixed-value hashes and only want the arrayref entries rendered.
 
 =head4 input
 
-    { href => { type => 'hashref', optional => 1 } }
+    { href => { type => 'any', optional => 1 } }
 
 =head4 output
 
