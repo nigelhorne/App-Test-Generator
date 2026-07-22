@@ -4,7 +4,7 @@ App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Da
 
 # VERSION
 
-Version 0.43
+Version 0.44
 
 # SYNOPSIS
 
@@ -1260,11 +1260,9 @@ Takes a schema file and produces a test file (or STDOUT).
 #### Input
 
     {
-        schema_file => { type => 'string', optional => 1 },
+        schema_file => { type => 'string', optional => 0 },
         input_file  => { type => 'string', optional => 1 },
-        output_file => { type => 'string', optional => 1 },
-        schema      => { type => 'hashref', optional => 1 },
-        quiet       => { type => 'boolean', optional => 1 },    # accepted but not yet implemented; has no effect
+        output_file => { type => 'string', optional => 1, max => 255 },
     }
 
 #### Output
@@ -1357,7 +1355,7 @@ Other sub-keys are rendered via `perl_quote`.
 
 #### input
 
-    { href => { type => 'hashref', optional => 1 } }
+    { href => { type => 'any', optional => 1 } }
 
 #### output
 
@@ -1395,7 +1393,7 @@ the generated test.
 
 #### input
 
-    { href => { type => 'hashref', optional => 1 } }
+    { href => { type => 'any', optional => 1 } }
 
 #### output
 
@@ -1433,7 +1431,7 @@ mixed-value hashes and only want the arrayref entries rendered.
 
 #### input
 
-    { href => { type => 'hashref', optional => 1 } }
+    { href => { type => 'any', optional => 1 } }
 
 #### output
 

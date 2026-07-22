@@ -1594,7 +1594,7 @@ Takes a schema file and produces a test file (or STDOUT).
 =head4 Input
 
     {
-        schema_file => { type => 'string', optional => 0, memberof => ['schemas/generate.yml'] },
+        schema_file => { type => 'string', optional => 0 },
         input_file  => { type => 'string', optional => 1 },
         output_file => { type => 'string', optional => 1, max => 255 },
     }
