@@ -23,6 +23,21 @@ Revision history for App-Test-Generator
 	  type => 'any' for the href parameter, matching the documented and
 	  implemented behaviour that each function returns '' (or '()') for
 	  non-hashref inputs rather than dying.
+	- Fix SchemaExtractor::_find_methods incorrectly extracting cross-package
+	  sub declarations (e.g. sub DB::DB { }) as module methods. Subs whose
+	  name contains '::' are now skipped immediately, so the Perl debugger
+	  hook in LCSAJ/Runtime.pm no longer appears as a fuzz target.
+	- Fix SchemaExtractor::_map_formal_input_type not recognising unquoted
+	  Params::Validate constants (OBJECT, SCALAR, HASHREF, ARRAYREF, CODEREF)
+	  in formal =head4 Input specs. The type regex now accepts both quoted
+	  strings ('object') and uppercase constants (OBJECT), so 'type => OBJECT,
+	  isa => ...' specs in Mutation/*.pm PODs now correctly produce
+	  type: object in the schema.
+	- Fix SchemaExtractor::_analyze_pod named-format Input spec parser not
+	  capturing the isa key (e.g. isa => 'PPI::Document'). The isa value is
+	  now extracted and stored alongside the type so the fuzz harness can
+	  construct a real object of the right class for mandatory object params
+	  (Template.pm already supported this via use_ok/new_ok when isa is set).
 	[New features]
 	- Add t/self-fuzz.t: end-to-end CLI self-test that runs extract-schemas
 	  then fuzz-harness-generator -r on every .pm under lib/, verifying that

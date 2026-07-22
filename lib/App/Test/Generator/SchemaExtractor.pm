@@ -1551,6 +1551,7 @@ sub _find_methods {
 
 		next unless defined $name;	# Skip anonymous routines
 		next if $name =~ /^(BEGIN|END|DESTROY|AUTOLOAD|CHECK|INIT|UNITCHECK)$/;
+		next if $name =~ /::/;		# cross-package sub (e.g. sub DB::DB { })
 
 		# Skip private methods unless explicitly included, or they're special
 		if ($name =~ /^_/ && $name !~ /^_(new|init|build)/) {
@@ -3735,6 +3736,9 @@ sub _analyze_pod {
 				if ($spec =~ /\bmax\s*=>\s*(\d+)/i) {
 					$params{$name}{max} = $1 + 0;
 				}
+				if ($spec =~ /\bisa\s*=>\s*['"]([^'"]+)['"]/i) {
+					$params{$name}{isa} = $1;
+				}
 			}
 			# A named-format Input spec signals a hash/named API.  Positional
 			# info from signature analysis is not meaningful here and causes
@@ -3765,8 +3769,10 @@ sub _analyze_pod {
 # --------------------------------------------------
 sub _map_formal_input_type {
 	my ($self, $spec) = @_;
-	return undef unless $spec =~ /\btype\s*=>\s*['"]([^'"]+)['"]/i;
-	my $raw = lc($1);
+	# Accept both quoted  type => 'scalar'  and unquoted Params::Validate
+	# constants  type => OBJECT  (no quotes around the constant name).
+	return undef unless $spec =~ /\btype\s*=>\s*(?:['"]([^'"]+)['"]|([A-Z_]+))/i;
+	my $raw = lc(defined($1) ? $1 : $2);
 	$raw =~ s/\s+//g;
 
 	my %map = (

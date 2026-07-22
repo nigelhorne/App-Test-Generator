@@ -35,21 +35,22 @@ my $fuzz_bin    = File::Spec->catfile($Bin, '..', 'bin', 'fuzz-harness-generator
 #
 #   generate       - requires schemas/generate.yml on disk (memberof path) and
 #                    takes 40+ s; tested separately via fuzz-harness-generator
-#   DB::DB         - Perl debugger hook; not a callable module method
+#   DB::DB         - Perl debugger hook; auto-filtered by SchemaExtractor since
+#                    0.45 (cross-package subs skipped); kept here as a belt-and-
+#                    suspenders guard in case the schema somehow surfaces it
 #   get_data_section - returns a ref type that Test::Returns cannot validate
 #   new            - constructors need properly typed args (hashref/object);
 #                    SchemaExtractor infers 'string' and the harness sends
 #                    random strings, crashing every call
-#   export         - Perl import-mechanism name; not a regular function
 #   merge          - requires valid file paths that exist on disk
-#   mutate         - requires a live PPI::Document object
-#   applies_to     - requires a live PPI::Document object
+#   mutate         - requires a live PPI::Document object; schema has new: ~
+#                    so auto-detected as OOP, but kept here for clarity
+#   applies_to     - requires a live PPI::Document object; same as mutate
 my %no_fuzz = map { $_ => 1 } qw(
 	generate
 	DB::DB
 	get_data_section
 	new
-	export
 	merge
 	mutate
 	applies_to
