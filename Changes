@@ -4,6 +4,13 @@ Revision history for App-Test-Generator
 	[Enhancements]
 	- Added --version option to bin/extract_schemas
 	- Changed close_stdin default from off to on
+	- Fix SchemaExtractor::_detect_accessor_methods injecting the property
+	  name as a spurious extra input parameter when a getter/setter's
+	  argument is named differently from the stored property (e.g. sub
+	  logdir { my $dir = shift; ... $self->{logdir} = $dir } generated
+	  both 'dir' and 'logdir' as position-0 parameters). The position
+	  assignment now targets the existing input key rather than creating a
+	  new key named after the property.
 
 0.44	Tue Jul 21 20:28:19 EDT 2026
 	[Bug fixes]

@@ -2322,12 +2322,22 @@ sub _detect_accessor_methods {
 				};
 			}
 		}
+		# Set position 0 on whichever single input parameter already exists.
+		# The parameter may be named differently from the stored property
+		# (e.g. $dir for the logdir property), so find the existing key
+		# rather than creating a new entry keyed by $property — doing the
+		# latter produces a duplicate-position collision between the real
+		# param and the spurious $property key.
 		if(ref($schema->{input}) eq 'HASH') {
-			if(scalar keys(%{$schema->{input}}) > 1) {
+			my @input_keys = keys %{$schema->{input}};
+			if(scalar @input_keys > 1) {
 				croak(__PACKAGE__, ': A getset accessor function can have at most one argument');
+			} elsif(@input_keys == 1) {
+				$schema->{input}{$input_keys[0]}{position} = 0;
+			} else {
+				$schema->{input}{$property}{position} = 0;
 			}
 		}
-		$schema->{input}->{$property}->{position} = 0;
 	} elsif ($code =~ /return\s+\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*;/) {
 		# -------------------------------
 		# Getter
