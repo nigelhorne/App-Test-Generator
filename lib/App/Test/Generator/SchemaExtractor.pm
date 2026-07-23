@@ -7959,7 +7959,7 @@ sub _write_schema {
 		function => $method_name,
 		module => $package_name,
 		config => {
-			close_stdin => 0,
+			close_stdin => 1,
 			dedup => 1,
 			test_nuls => 0,
 			test_undef => 0,
