@@ -245,7 +245,7 @@ pre details.mutant-details ul {
  <a href="Generator/Mutation/BooleanNegation.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 85.68%<br>
-TER2 (Branch): 74.73%<br>
+TER2 (Branch): 74.91%<br>
 TER3 (LCSAJ): 100.0% (61/61)<br>
 Approximate LCSAJ segments: 551<br>
 </div>
@@ -2160,7 +2160,7 @@ Approximate LCSAJ segments: 551<br>
 </span><span class=""> 1832: 
 </span><span class=""> 1833: 	# Sort the edge cases to keep it consistent across runs
 </span><span class=""> 1834: 	@edge_case_array = sort {
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1835: 		return -1 if !defined $a;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1835: 		return -1 if !defined $a;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2208,7 +2208,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 1838: 		my $na = Scalar::Util::looks_like_number($a);
 </span><span class=""> 1839: 		my $nb = Scalar::Util::looks_like_number($b);
 </span><span class=""> 1840: 
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1841: 		return $a &lt;=&gt; $b if $na &amp;&amp; $nb;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1841: 		return $a &lt;=&gt; $b if $na &amp;&amp; $nb;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2230,7 +2230,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1842: 		return -1 if $na;
+<span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1842: 		return -1 if $na;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2252,7 +2252,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1843: 		return 1 if $nb;
+<span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1843: 		return 1 if $nb;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -5023,7 +5023,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 4232: 			my $compiled = ref($pattern) eq &#39;Regexp&#39; ? $pattern : eval { qr/$pattern/ };
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4233: 			if($@ || !defined($compiled)) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4234: 				carp &quot;Invalid matches pattern &#39;$pattern&#39; for field &#39;$field_name&#39;: $@&quot;;
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4235: 				return &quot;$field_name &lt;- String(length =&gt; [$min_len, $max_len])&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4235: 				return &quot;$field_name &lt;- String(length =&gt; [$min_len, $max_len])&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -5167,7 +5167,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 4280: 	# Unknown type &acirc;&#128;&#148; fall back to String with a warning
 </span><span class=""> 4281: 	# --------------------------------------------------
 </span><span class=""> 4282: 	carp &quot;Unknown type &#39;$type&#39; for &#39;$field_name&#39; LectroTest generator, using String&quot;;
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4283: 	return &quot;$field_name &lt;- String&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4283: 	return &quot;$field_name &lt;- String&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
