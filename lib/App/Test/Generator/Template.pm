@@ -1633,6 +1633,7 @@ sub generate_tests
 					}
 				}
 
+				push @cases, { %mandatory_args, (field => [ 'fred', undef, 'wilma' ], _LINE => __LINE__, _DESCRIPTION => 'undef element in array') };
 				$case_input{$field} = rand_arrayref();
 			} elsif ($type eq 'hashref') {
 				$case_input{$field} = rand_hashref();
@@ -1697,6 +1698,8 @@ sub generate_tests
 							{ %mandatory_args, $field => [ (1) x ($len - 1) ] },	# just inside
 							{ %mandatory_args, $field => [ (1) x $len ] },	# border
 							{ %mandatory_args, $field => [ (1) x ($len + 1) ], _STATUS => 'DIES' }; # outside
+					} elsif((defined $spec->{min}) || ($spec->{min} <= 3)) {
+						push @cases, { %mandatory_args, $field => [ 'first', undef, 'third' ], _DESCRIPTION => 'undef in an arrayref', _LINE => __LINE__ };
 					}
 				} elsif ($type eq 'hashref') {
 					if (defined $spec->{min}) {
@@ -2233,7 +2236,7 @@ foreach my $transform (keys %transforms) {
 		if($type eq 'integer') {
 			push @tests, @{_generate_integer_cases($field, $spec, $foundation)};
 		} elsif(($type eq 'number') || ($type eq 'float')) {
-			push @tests, @{_generate_float_cases($field, $spec, $foundation, _LINE => __LINE__)};
+			push @tests, @{_generate_float_cases($field, $spec, $foundation)};
 		} elsif($type eq 'string') {
 			push @tests, @{_generate_string_cases($field, $spec, $foundation)};
 		} elsif($type eq 'boolean') {
@@ -2250,6 +2253,8 @@ foreach my $transform (keys %transforms) {
 				if((defined $spec->{min}) && ($spec->{'min'} != $spec->{'max'})) {
 					push @tests, { %{$foundation}, ( $field => rand_arrayref($spec->{max}) ) };	# border
 				}
+			} elsif((defined $spec->{min}) || ($spec->{min} <= 3)) {
+				push @tests, { %{$foundation}, ( $field => [ 'foo', undef, 'bar' ] ), _DESCRIPTION => 'undef in an arrayref', _LINE => __LINE__ };
 			}
 		} else {
 			die("TODO: transform type $type for test case");
