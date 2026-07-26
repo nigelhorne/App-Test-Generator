@@ -711,6 +711,10 @@ sub fuzz_inputs
 						{ %mandatory_args, $arg_name => sub { die 'fail' }, _STATUS => 'DIES' },
 						{ %mandatory_args, $arg_name => 'scalar when hashref is needed', _STATUS => 'DIES' },
 						{ %mandatory_args, $arg_name => \'scalarref when hashref is needed', _STATUS => 'DIES' };
+					if($config{test_undef}) {
+						push @cases,
+							{ %mandatory_args, $arg_name => { nested => { 'first', undef, 'third' } }, _DESCRIPTION => 'nested hash with undef' } if($config{test_undef});
+					}
 				} elsif ($type eq 'arrayref') {
 					my $circular_ref = [];
 					push @{$circular_ref}, $circular_ref;
@@ -738,8 +742,10 @@ sub fuzz_inputs
 						{ %mandatory_args, $arg_name => 42 },
 						{ %mandatory_args, $arg_name => 3.14 },
 						{ %mandatory_args, $arg_name => [] },
-						{ %mandatory_args, $arg_name => {} },
-						{ %mandatory_args, $arg_name => undef };
+						{ %mandatory_args, $arg_name => {} };
+					if($config{test_undef}) {
+						push @cases, { %mandatory_args, $arg_name => undef };
+					}
 				}
 
 				# --- matches (regex) ---
@@ -1633,9 +1639,13 @@ sub generate_tests
 					}
 				}
 
-				push @cases, { %mandatory_args, (field => [ 'fred', undef, 'wilma' ], _LINE => __LINE__, _DESCRIPTION => 'undef element in array') };
+				push @cases, { %mandatory_args, (field => [ 'fred', undef, 'wilma' ], _LINE => __LINE__, _DESCRIPTION => 'undef element in array') } if($config{test_undef});
 				$case_input{$field} = rand_arrayref();
 			} elsif ($type eq 'hashref') {
+				if($config{test_undef}) {
+					push @cases, { %mandatory_args, (field => { 'fred' => 'wilma', 'undef' => undef, 'foo' => 'bar' }, _LINE => __LINE__, _DESCRIPTION => 'undef element in hashref') };
+					push @cases, { %mandatory_args, (field => { 'fred' => 'wilma', 'nested' => { 'first' => 'one', 'undef' => undef, 'third' => 'three' }, 'foo' => 'bar' }, _LINE => __LINE__, _DESCRIPTION => 'undef element in nested hashref') };
+				}
 				$case_input{$field} = rand_hashref();
 			} elsif($config{'test_undef'}) {
 				$case_input{$field} = undef;
@@ -1699,7 +1709,7 @@ sub generate_tests
 							{ %mandatory_args, $field => [ (1) x $len ] },	# border
 							{ %mandatory_args, $field => [ (1) x ($len + 1) ], _STATUS => 'DIES' }; # outside
 					} elsif((defined $spec->{min}) || ($spec->{min} <= 3)) {
-						push @cases, { %mandatory_args, $field => [ 'first', undef, 'third' ], _DESCRIPTION => 'undef in an arrayref', _LINE => __LINE__ };
+						push @cases, { %mandatory_args, $field => [ 'first', undef, 'third' ], _DESCRIPTION => 'undef in an arrayref', _LINE => __LINE__ } if($config{test_undef});
 					}
 				} elsif ($type eq 'hashref') {
 					if (defined $spec->{min}) {
@@ -2254,7 +2264,7 @@ foreach my $transform (keys %transforms) {
 					push @tests, { %{$foundation}, ( $field => rand_arrayref($spec->{max}) ) };	# border
 				}
 			} elsif((defined $spec->{min}) || ($spec->{min} <= 3)) {
-				push @tests, { %{$foundation}, ( $field => [ 'foo', undef, 'bar' ] ), _DESCRIPTION => 'undef in an arrayref', _LINE => __LINE__ };
+				push @tests, { %{$foundation}, ( $field => [ 'foo', undef, 'bar' ] ), _DESCRIPTION => 'undef in an arrayref', _LINE => __LINE__ } if($config{test_undef});
 			}
 		} else {
 			die("TODO: transform type $type for test case");
