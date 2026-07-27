@@ -2985,10 +2985,6 @@ the form:
 
 Returns an empty string if C<$href> is undef, empty, or not a hashref.
 
-=head3 Side effects
-
-None. Does not modify C<$href>.
-
 =head3 Notes
 
 The C<matches> and C<nomatch> sub-keys are treated specially — their

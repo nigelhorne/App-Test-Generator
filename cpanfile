@@ -35,6 +35,7 @@ requires 'UUID::Tiny';
 requires 'WWW::RT::CPAN';
 requires 'YAML::XS';
 requires 'autodie';
+recommends 'Devel::Cover', '1.51';
 
 on 'test' => sub {
 	requires 'Data::Random';

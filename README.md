@@ -1337,10 +1337,6 @@ the form:
 
 Returns an empty string if `$href` is undef, empty, or not a hashref.
 
-### Side effects
-
-None. Does not modify `$href`.
-
 ### Notes
 
 The `matches` and `nomatch` sub-keys are treated specially — their
