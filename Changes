@@ -13,6 +13,9 @@ Revision history for App-Test-Generator
 	  new key named after the property.
 	- Arrayref testing - add an undef entry in the middle of the array
 	- Hashref testing - added undef in a nested hash
+	- Fix t/cli-test-generator-mutate.t failing on systems with git older
+	  than 1.8.5: replaced all 'git -C <dir>' invocations (which require
+	  git >= 1.8.5) with a portable chdir-based helper.
 
 0.44	Tue Jul 21 20:28:19 EDT 2026
 	[Bug fixes]
