@@ -3325,7 +3325,20 @@ PERL
 		return;
 	}
 
-	return decode_json($stdout);
+	# Child may be killed by the kernel OOM killer (SIGKILL) before it can
+	# write anything to stdout or stderr.  Guard both cases so we degrade
+	# gracefully rather than croaking with "malformed JSON".
+	if (!defined($stdout) || !length($stdout)) {
+		carp 'Signature subprocess produced no output' if $self->{verbose};
+		return;
+	}
+
+	my $result = eval { decode_json($stdout) };
+	if ($@) {
+		carp "Error decoding signature output: $@" if $self->{verbose};
+		return;
+	}
+	return $result;
 }
 
 # --------------------------------------------------

@@ -24,6 +24,14 @@ Revision history for App-Test-Generator
 	  and an "Out of memory" crash. The memory limit is now applied only
 	  in the child subprocess (via an env var passed through local %ENV),
 	  leaving the parent's address space unrestricted.
+	- Fix _compile_signature_isolated() calling decode_json() on empty or
+	  non-JSON output when the child subprocess is killed by the kernel
+	  OOM killer (SIGKILL) before it can write to stdout or stderr: the
+	  caller now guards for empty stdout and wraps decode_json() in eval,
+	  so a silent child crash degrades gracefully (return undef → fall
+	  back to heuristics) rather than croaking with "malformed JSON
+	  string" and propagating through the Test::Builder subtest boundary
+	  to kill the test process with exit 255.
 
 0.44	Tue Jul 21 20:28:19 EDT 2026
 	[Bug fixes]
