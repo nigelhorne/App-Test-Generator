@@ -32,6 +32,11 @@ Revision history for App-Test-Generator
 	  and an "Out of memory" crash. The memory limit is now applied only
 	  in the child subprocess (via an env var passed through local %ENV),
 	  leaving the parent's address space unrestricted.
+	- Fix t/type_params.t dying with "Your vendor has not defined
+	  BSD::Resource macro RLIMIT_AS" on platforms where BSD::Resource is
+	  installed but does not export RLIMIT_AS (e.g. some BSDs and macOS
+	  builds). The RLIMIT_AS() call is now wrapped in eval; if it croaks,
+	  the test is skipped with an explanatory message instead of aborting.
 	- Fix _compile_signature_isolated() calling decode_json() on empty or
 	  non-JSON output when the child subprocess is killed by the kernel
 	  OOM killer (SIGKILL) before it can write to stdout or stderr: the

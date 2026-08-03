@@ -17,7 +17,15 @@ if($^O ne 'MSWin32') {
 	require BSD::Resource;
 	BSD::Resource->import();
 
-	my ($soft, $hard) = getrlimit(BSD::Resource::RLIMIT_AS());
+	# RLIMIT_AS is not defined on all platforms (e.g. some BSDs and macOS
+	# builds where the vendor omitted the constant).  Treat it as unavailable
+	# rather than dying with "Your vendor has not defined ... RLIMIT_AS".
+	my $rlimit_as = eval { BSD::Resource::RLIMIT_AS() };
+	if($@) {
+		plan(skip_all => 'RLIMIT_AS not available on this platform');
+	}
+
+	my ($soft, $hard) = getrlimit($rlimit_as);
 	# Skip if less than 512MB available
 	if(($soft != BSD::Resource::RLIM_INFINITY()) && ($soft < 512 * 1024 * 1024)) {
 		plan(skip_all => 'Insufficient memory for type_params tests');
