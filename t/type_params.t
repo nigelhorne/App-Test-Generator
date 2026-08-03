@@ -8,10 +8,7 @@ use Test::Needs 'Type::Params', 'BSD::Resource';
 use File::Temp qw(tempdir);
 use File::Spec;
 
-# Load the module
-BEGIN {
-	use_ok('App::Test::Generator::SchemaExtractor');
-}
+use App::Test::Generator::SchemaExtractor;
 
 if($^O ne 'MSWin32') {
 	require BSD::Resource;

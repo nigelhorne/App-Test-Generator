@@ -37,6 +37,10 @@ Revision history for App-Test-Generator
 	  installed but does not export RLIMIT_AS (e.g. some BSDs and macOS
 	  builds). The RLIMIT_AS() call is now wrapped in eval; if it croaks,
 	  the test is skipped with an explanatory message instead of aborting.
+	  Also fix "Bad plan. You planned 0 tests but ran 1" on the same
+	  platform: the BEGIN { use_ok(...) } block fired test #1 before the
+	  plan(skip_all => ...) call declared 0 tests. Replaced with a plain
+	  use so no test runs before the skip checks.
 	- Fix _compile_signature_isolated() calling decode_json() on empty or
 	  non-JSON output when the child subprocess is killed by the kernel
 	  OOM killer (SIGKILL) before it can write to stdout or stderr: the
