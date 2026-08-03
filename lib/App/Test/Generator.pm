@@ -22,7 +22,7 @@ use File::Basename qw(basename);
 use File::Spec;
 use Module::Load::Conditional qw(check_install can_load);
 use Params::Get;
-use Params::Validate::Strict 0.30;
+use Params::Validate::Strict 0.36;
 use Readonly;
 use Readonly::Values::Boolean;
 use Scalar::Util qw(looks_like_number);

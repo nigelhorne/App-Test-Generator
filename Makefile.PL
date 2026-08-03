@@ -50,7 +50,7 @@ WriteMakefile(
 		'JSON::MaybeXS' => 0,
 		'Module::Load::Conditional' => 0,
 		'Params::Get' => 0.15,
-		'Params::Validate::Strict' => 0.30,
+		'Params::Validate::Strict' => 0.36,
 		'PPI' => 0,
 		'Pod::Simple' => 0,
 		'Pod::Usage' => 0,
