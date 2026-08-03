@@ -16,6 +16,14 @@ Revision history for App-Test-Generator
 	- Fix t/cli-test-generator-mutate.t failing on systems with git older
 	  than 1.8.5: replaced all 'git -C <dir>' invocations (which require
 	  git >= 1.8.5) with a portable chdir-based helper.
+	- Fix _compile_signature_isolated() calling setrlimit(RLIMIT_AS) on
+	  the parent process before open3(): the parent's address space was
+	  capped at 50 MB, causing the test framework to OOM during teardown
+	  inside a subtest, which manifested as "A context appears to have
+	  been destroyed without first calling release()" from Test::Builder
+	  and an "Out of memory" crash. The memory limit is now applied only
+	  in the child subprocess (via an env var passed through local %ENV),
+	  leaving the parent's address space unrestricted.
 
 0.44	Tue Jul 21 20:28:19 EDT 2026
 	[Bug fixes]

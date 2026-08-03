@@ -3226,6 +3226,15 @@ use Type::Params -sigs;
 use Types::Common -types;
 use JSON::MaybeXS;
 
+# Apply address-space limit passed from parent via env.  Done here (in the
+# child) rather than in the parent so the parent's memory is never capped.
+if (my $limit = $ENV{_ATG_RLIMIT_AS}) {
+    eval {
+        require BSD::Resource;
+        BSD::Resource::setrlimit(BSD::Resource::RLIMIT_AS(), $limit, $limit);
+    };
+}
+
 # Stub sub so Perl can parse it
 sub FUNCTION_NAME {}
 
@@ -3288,18 +3297,13 @@ PERL
 	my ($wtr, $rdr, $err) = (undef, undef, gensym);
 	local %ENV;
 
-	# Apply memory limit if BSD::Resource is available.
-	# This module is Unix-only and not available on Windows,
-	# so we guard the call and skip silently if not present.
-	eval {
-		require BSD::Resource;
-		BSD::Resource::setrlimit(
-			BSD::Resource::RLIMIT_AS(),
-			$MEMORY_LIMIT_BYTES,
-			$MEMORY_LIMIT_BYTES
-		);
-	};
-	# Ignore failure — resource limiting is best-effort only
+	# Pass the memory limit to the child via env so the child can apply
+	# setrlimit on itself after exec.  Must NOT call setrlimit here in the
+	# parent: setrlimit(RLIMIT_AS) constrains the parent's own address
+	# space, and when the parent later tries to allocate memory for test
+	# framework teardown it would OOM and crash inside the Test::Builder
+	# subtest context, producing a "context destroyed" error.
+	$ENV{_ATG_RLIMIT_AS} = $MEMORY_LIMIT_BYTES;
 
 	my $pid = open3($wtr, $rdr, $err, $^X, '-T');
 
