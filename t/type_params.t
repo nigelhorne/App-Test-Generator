@@ -143,17 +143,17 @@ END_MODULE
 		my $input = $schema->{input};
 		ok($input, 'Found input method schema');
 
-		cmp_deeply($input, {
-			'arg0' => {
-				'type' => 'number',
-				'optional' => 0,
-				'position' => 0,
-			}, 'arg1' => {
-				'type' => 'number',
-				'optional' => 0,
-				'position' => 1,
-			}
-		});
+		# Compare by position rather than key name: the key may be the real
+		# parameter name (from heuristics or Type::Params 2.x $p->name) or
+		# the positional placeholder 'arg0'/'arg1' (older Type::Params).
+		my @params = sort { $a->{position} <=> $b->{position} } values %$input;
+		is(scalar @params, 2, 'add_numbers has two input parameters');
+		is($params[0]{type},     'number', 'first parameter is numeric');
+		is($params[0]{optional}, 0,        'first parameter is required');
+		is($params[0]{position}, 0,        'first parameter is at position 0');
+		is($params[1]{type},     'number', 'second parameter is numeric');
+		is($params[1]{optional}, 0,        'second parameter is required');
+		is($params[1]{position}, 1,        'second parameter is at position 1');
 
 		cmp_ok($schema->{output}->{type}, 'eq', 'number', 'add_numbers returns a number');
 	};
@@ -200,13 +200,11 @@ END_MODULE
 		my $input = $schema->{input};
 		ok($input, 'Found input method schema');
 
-		cmp_deeply($input, {
-			'arg0' => {
-				'type' => 'object',
-				'optional' => 0,
-				'position' => 0,
-			}
-		});
+		my @params = sort { $a->{position} <=> $b->{position} } values %$input;
+		is(scalar @params, 1,        'add_child has one input parameter');
+		is($params[0]{type},     'object', 'parameter is an object type');
+		is($params[0]{optional}, 0,        'parameter is required');
+		is($params[0]{position}, 0,        'parameter is at position 0');
 	};
 }
 

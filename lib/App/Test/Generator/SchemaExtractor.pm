@@ -3260,8 +3260,11 @@ my @params;
 # }
 
 for my $p (@sig_params) {
+	my $name = ($p->can('name') && defined($p->name) && length($p->name))
+		? $p->name
+		: "arg$pos";
 	push @params, {
-		name => "arg$pos",
+		name => $name,
 		optional => $p->optional ? 1 : 0,
 		position => $pos,
 		type => $p->type->name

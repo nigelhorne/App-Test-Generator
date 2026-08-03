@@ -32,6 +32,17 @@ Revision history for App-Test-Generator
 	  and an "Out of memory" crash. The memory limit is now applied only
 	  in the child subprocess (via an env var passed through local %ENV),
 	  leaving the parent's address space unrestricted.
+	- Fix t/type_params.t 'signature_for' and 'documented example' subtests
+	  failing when _compile_signature_isolated() falls back to heuristics
+	  (e.g. because the 50 MB RLIMIT_AS is insufficient for Type::Params +
+	  Types::Common on some machines). The heuristics extract real parameter
+	  names ('first', 'second', 'child') while the payload hardcoded 'arg0',
+	  'arg1' — causing a key-name mismatch. Fix: (1) update the payload to
+	  use $p->name when Type::Params 2.x provides it, falling back to 'argN'
+	  only when the attribute is absent or empty; (2) rewrite the test
+	  assertions to sort parameters by position and check type/optionality
+	  rather than specific hash key names, so they pass regardless of which
+	  extraction path was used.
 	- Fix t/type_params.t dying with "Your vendor has not defined
 	  BSD::Resource macro RLIMIT_AS" on platforms where BSD::Resource is
 	  installed but does not export RLIMIT_AS (e.g. some BSDs and macOS
