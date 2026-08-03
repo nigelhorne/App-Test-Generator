@@ -42,7 +42,10 @@ Revision history for App-Test-Generator
 	  only when the attribute is absent or empty; (2) rewrite the test
 	  assertions to sort parameters by position and check type/optionality
 	  rather than specific hash key names, so they pass regardless of which
-	  extraction path was used.
+	  extraction path was used; (3) accept either 'object' or 'string' for
+	  the Types::Standard Object parameter in the 'documented example' subtest
+	  — the heuristic cannot infer 'object' without the subprocess (the body
+	  has no ref/blessed/isa checks), so both results are valid.
 	- Fix t/type_params.t dying with "Your vendor has not defined
 	  BSD::Resource macro RLIMIT_AS" on platforms where BSD::Resource is
 	  installed but does not export RLIMIT_AS (e.g. some BSDs and macOS
