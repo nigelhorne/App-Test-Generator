@@ -13,6 +13,14 @@ Revision history for App-Test-Generator
 	  new key named after the property.
 	- Arrayref testing - add an undef entry in the middle of the array
 	- Hashref testing - added undef in a nested hash
+	- Fix t/fuzz.t invoking bin/fuzz-harness-generator via the shebang
+	  (#!/usr/bin/env perl) rather than $^X: on CPAN smokers where $PATH
+	  resolves to a different system perl, the wrong interpreter was used,
+	  causing @INC to contain only system paths and missing declared PREREQ_PM
+	  dependencies. t/fuzz.t now calls [$^X, '...fuzz-harness-generator'].
+	  bin/fuzz-harness-generator similarly derives the prove path from $^X
+	  so the generated harness is always run under the same perl installation.
+	  Fixes GitHub#8
 	- Fix t/cli-test-generator-mutate.t failing on systems with git older
 	  than 1.8.5: replaced all 'git -C <dir>' invocations (which require
 	  git >= 1.8.5) with a portable chdir-based helper.
