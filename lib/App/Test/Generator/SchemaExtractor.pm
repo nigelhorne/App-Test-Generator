@@ -65,11 +65,11 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 
 =head1 VERSION
 
-Version 0.44
+Version 0.45
 
 =cut
 
-our $VERSION = '0.44';
+our $VERSION = '0.45';
 
 =head1 SYNOPSIS
 
