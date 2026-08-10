@@ -73,6 +73,31 @@ Revision history for App-Test-Generator
 	  arithmetic mean of per-file percentages as the archive-based points,
 	  guarded by a SHA check to avoid duplication if the snapshot was somehow
 	  already committed before HTML generation.
+	- Add t/path.t: explicit CFG path-coverage tests for Model::Method,
+	  BenchmarkGenerator, Analyzer::Complexity, Analyzer::SideEffect, and
+	  Planner::Isolation. Each subtest exercises one uniquely identifiable
+	  branch not covered by the module-specific unit tests. Paths added:
+	  resolve_return_type() signal branches (legacy_type×4 including the
+	  value='object'/'self'/other/undef sub-paths, context_aware,
+	  error_pattern) and tie-break cases (all-zero→constant, object=property
+	  tie→object); resolve_confidence() at all four threshold boundary
+	  points (19→low, 20→medium, 39→medium, 40→high); add_evidence()
+	  weight=0 stored as 0 not default 1; _representative_value() all 15
+	  branches (float/integer with no/min-only/max-only/both constraints,
+	  boolean/arrayref/hashref/unknown types, undef spec); _quote_value()
+	  all 4 paths; _build_call() all 5 call-syntax combinations;
+	  generate() missing-key croaks, has_new+builtin skips constructor,
+	  empty new_spec hashref→no-arg constructor, empty transforms→default
+	  variant; Complexity::analyze() given/when branch tokens, keyword
+	  inside dquoted strings stripped, escaped dquote handled, unmatched
+	  brace depth clamp, early_returns boundaries at 1 and 2 returns;
+	  SideEffect::analyze() read/write IO keywords, self+globals→impure
+	  purity path, false-positive guards for $self->{field}= inside strings
+	  and comments; Planner::Isolation::plan() scalar-falsy time/network
+	  values omit flags, hashref-truthy env propagates.
+	  Dead code flagged: Model::Method::resolve_return_type() line 552 —
+	  the `|| 'unknown'` fallback is unreachable because %score is always
+	  initialised with 3 keys so $winner is always a non-empty string.
 	- Fix test-generator-index delta column showing the wrong value for
 	  blib/-instrumented modules (the common case under 'cover -test').
 	  %deltas was keyed by the normalised lib/ path ($display_file) but
