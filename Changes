@@ -63,6 +63,21 @@ Revision history for App-Test-Generator
 	  back to heuristics) rather than croaking with "malformed JSON
 	  string" and propagating through the Test::Builder subtest boundary
 	  to kill the test process with exit 255.
+	- Fix test-generator-index delta column showing the wrong value for
+	  blib/-instrumented modules (the common case under 'cover -test').
+	  %deltas was keyed by the normalised lib/ path ($display_file) but
+	  the lookup used the raw Devel::Cover blib/ key ($file), so the
+	  exists() check always failed and the code silently fell through to
+	  a sparkline-based fallback. The fallback computes delta from the
+	  last two sparkline points; when the most-recent archive entry
+	  contained a 0.0 (from an older undef-percentage snapshot), the
+	  fallback computed 0.0 - 95.6 = -95.6%, displaying "▼ 95.6%" — the
+	  same number as the actual coverage. Fixed by: (1) using $display_file
+	  (already normalised to lib/) for both the %deltas lookup and the
+	  $prev_data lookup; (2) fixing the sparkline key-resolution order to
+	  avoid prepending "blib/" to a key already starting with "blib/"
+	  (which produced a double-prefix "blib/blib/..." path that never
+	  matched anything in historical snapshots).
 
 0.44	Tue Jul 21 20:28:19 EDT 2026
 	[Bug fixes]
