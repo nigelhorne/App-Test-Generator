@@ -474,7 +474,7 @@ Approximate LCSAJ segments: 551<br>
 </span><span class="">  182:   fuzz-harness-generator -r t/conf/abs.yml
 </span><span class="">  183: 
 </span><span class="">  184:   # Attempt to create a formal definition from a routine package, then run tests against that formal definition
-</span><span class="">  185:   # This is the holy grail of automatic test generation, just by looking at the source code
+</span><span class="">  185:   # This is the holy grail of test generation, a set of tests is automatically created directly from the source code,
 </span><span class="">  186:   extract-schemas lib/App/Test/Generator/Sample/Module.pm &amp;&amp; fuzz-harness-generator -r schemas/greet.yml
 </span><span class="">  187: 
 </span><span class="">  188:   # Fuzz a module and keep the corpus bounded: trim to the minimum subset that still covers every branch
@@ -2160,7 +2160,7 @@ Approximate LCSAJ segments: 551<br>
 </span><span class=""> 1832: 
 </span><span class=""> 1833: 	# Sort the edge cases to keep it consistent across runs
 </span><span class=""> 1834: 	@edge_case_array = sort {
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1835: 		return -1 if !defined $a;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1835: 		return -1 if !defined $a;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2252,7 +2252,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1843: 		return 1 if $nb;
+<span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1843: 		return 1 if $nb;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2274,7 +2274,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1844: 		return $a cmp $b;
+<span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1844: 		return $a cmp $b;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -3525,7 +3525,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class=""> 2877: 				&quot;Module &#39;$module&#39; found but failed to load: $err\n&quot; .
 </span><span class=""> 2878: 				&#39;  This might indicate a broken installation or missing dependencies.&#39;
 </span><span class=""> 2879: 			);
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 2880: 			return 0;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 2880: 			return 0;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -3687,23 +3687,23 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3012: 
 </span><span class=""> 3013: 	# Return empty string for absent or non-hash input &acirc;&#128;&#148; callers
 </span><span class=""> 3014: 	# treat &#39;&#39; as &quot;no input specification&quot; in the generated test
-</span><span class=""> 3015: 	return &#39;&#39; unless $href &amp;&amp; ref($href) eq &#39;HASH&#39;;
-</span><span class=""> 3016: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3015: 	return &#39;&#39; unless $href &amp;&amp; ref($href) eq &#39;HASH&#39;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3016: 
 </span><span class=""> 3017: 	my @lines;
 </span><span class=""> 3018: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3019: 	for my $k (sort keys %{$href}) {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3020: 		my $def = $href-&gt;{$k};
+</span><span class=""> 3019: 	for my $k (sort keys %{$href}) {
+</span><span class=""> 3020: 		my $def = $href-&gt;{$k};
 </span><span class=""> 3021: 
 </span><span class=""> 3022: 		# Handle scalar shorthand &acirc;&#128;&#148; &#39;arg1: string&#39; is equivalent to
 </span><span class=""> 3023: 		# &#39;arg1: { type: string }&#39; and is explicitly supported by the
 </span><span class=""> 3024: 		# validation layer in _validate_input_params
-</span><span class=""> 3025: 		unless(defined($def) &amp;&amp; ref($def) eq &#39;HASH&#39;) {
-</span><span class=""> 3026: 			if(defined($def) &amp;&amp; !ref($def) &amp;&amp; _valid_type($def)) {
-</span><span class=""> 3027: 				# Expand scalar type shorthand to a full spec hashref
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3025: 		unless(defined($def) &amp;&amp; ref($def) eq &#39;HASH&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3026: 			if(defined($def) &amp;&amp; !ref($def) &amp;&amp; _valid_type($def)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3027: 				# Expand scalar type shorthand to a full spec hashref
 </span><span class=""> 3028: 				$def = { type =&gt; $def };
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3029: 			} else {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3030: 				carp &quot;render_hash: skipping key &#39;$k&#39; &acirc;&#128;&#148; value is not a hashref or recognised type string&quot;;
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3031: 				next;
+</span><span class=""> 3029: 			} else {
+</span><span class=""> 3030: 				carp &quot;render_hash: skipping key &#39;$k&#39; &acirc;&#128;&#148; value is not a hashref or recognised type string&quot;;
+</span><span class=""> 3031: 				next;
 </span><span class=""> 3032: 			}
 </span><span class=""> 3033: 		}
 </span><span class=""> 3034: 
@@ -3715,19 +3715,19 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3040: 
 </span><span class=""> 3041: 			# Validate that reference types are ones we can render &acirc;&#128;&#148;
 </span><span class=""> 3042: 			# nested hashrefs are not yet supported
-</span><span class=""> 3043: 			if(ref($def-&gt;{$subk})) {
-</span><span class=""> 3044: 				unless((ref($def-&gt;{$subk}) eq &#39;ARRAY&#39;) ||
-</span><span class=""> 3045: 				       (ref($def-&gt;{$subk}) eq &#39;Regexp&#39;)) {
-</span><span class=""> 3046: 					croak(
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3047: 						__PACKAGE__,
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 3048: 						&quot;: $subk is a nested element, not yet supported (&quot;,
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3043: 			if(ref($def-&gt;{$subk})) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 3044: 				unless((ref($def-&gt;{$subk}) eq &#39;ARRAY&#39;) ||
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_3048_5: Invert condition unless to if</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_3044_5: Invert condition unless to if</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class=""> 3049: 						ref($def-&gt;{$subk}), &#39;)&#39;
+<span class=""> 3045: 				       (ref($def-&gt;{$subk}) eq &#39;Regexp&#39;)) {
+</span><span class=""> 3046: 					croak(
+</span><span class=""> 3047: 						__PACKAGE__,
+</span><span class=""> 3048: 						&quot;: $subk is a nested element, not yet supported (&quot;,
+</span><span class=""> 3049: 						ref($def-&gt;{$subk}), &#39;)&#39;
 </span><span class=""> 3050: 					);
 </span><span class=""> 3051: 				}
 </span><span class=""> 3052: 			}
@@ -3735,16 +3735,16 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3054: 			# matches and nomatch values must be Regexp objects in the
 </span><span class=""> 3055: 			# generated test &acirc;&#128;&#148; compile raw strings safely via eval so
 </span><span class=""> 3056: 			# patterns containing [ or \ don&#39;t cause compile failures
-</span><span class=""> 3057: 			if(($subk eq $KEY_MATCHES) || ($subk eq $KEY_NOMATCH)) {
-</span><span class=""> 3058: 				my $re = ref($def-&gt;{$subk}) eq &#39;Regexp&#39;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3057: 			if(($subk eq $KEY_MATCHES) || ($subk eq $KEY_NOMATCH)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3058: 				my $re = ref($def-&gt;{$subk}) eq &#39;Regexp&#39;
 </span><span class=""> 3059: 					? $def-&gt;{$subk}
 </span><span class=""> 3060: 					: eval { qr/$def-&gt;{$subk}/ };
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3061: 				if($@ || !defined($re)) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3062: 					carp &quot;render_hash: invalid $subk pattern &#39;$def-&gt;{$subk}&#39;: $@&quot;;
 </span><span class=""> 3063: 					next;
 </span><span class=""> 3064: 				}
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3065: 				push @pairs, &quot;$subk =&gt; &quot; . perl_quote($re);
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3066: 			} else {
+</span><span class=""> 3065: 				push @pairs, &quot;$subk =&gt; &quot; . perl_quote($re);
+</span><span class=""> 3066: 			} else {
 </span><span class=""> 3067: 				# All other sub-keys are rendered via perl_quote which
 </span><span class=""> 3068: 				# handles scalars, arrayrefs, and Regexp objects correctly
 </span><span class=""> 3069: 				push @pairs, &quot;$subk =&gt; &quot; . perl_quote($def-&gt;{$subk});
@@ -3755,12 +3755,12 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3074: 		push @lines, &quot;\t&quot; . perl_quote($k) . &#39; =&gt; { &#39; . join(&#39;, &#39;, @pairs) . &#39; }&#39;;
 </span><span class=""> 3075: 	}
 </span><span class=""> 3076: 
-</span><span class=""> 3077: 	return join(&quot;,\n&quot;, @lines);
-</span><span class=""> 3078: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3077: 	return join(&quot;,\n&quot;, @lines);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3078: }
 </span><span class=""> 3079: 
 </span><span class=""> 3080: =head2 render_args_hash
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3081: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3082: Render a flat hashref into a Perl source-code argument list of the
+</span><span class=""> 3081: 
+</span><span class=""> 3082: Render a flat hashref into a Perl source-code argument list of the
 </span><span class=""> 3083: form C&lt;&#39;key&#39; =&gt; value, ...&gt;, suitable for embedding in a function call
 </span><span class=""> 3084: in a generated test file.
 </span><span class=""> 3085: 
@@ -3806,20 +3806,20 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3125: 	my $href = $_[0];
 </span><span class=""> 3126: 
 </span><span class=""> 3127: 	# Return empty string for absent or non-hash input
-</span><span class=""> 3128: 	return &#39;&#39; unless $href &amp;&amp; ref($href) eq &#39;HASH&#39;;
-</span><span class=""> 3129: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3128: 	return &#39;&#39; unless $href &amp;&amp; ref($href) eq &#39;HASH&#39;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3129: 
 </span><span class=""> 3130: 	# Sort keys for deterministic output across runs &acirc;&#128;&#148; important for
 </span><span class=""> 3131: 	# generated test files that are committed to version control
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3132: 	my @pairs = map {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3133: 		perl_quote($_) . &#39; =&gt; &#39; . perl_quote($href-&gt;{$_})
+</span><span class=""> 3132: 	my @pairs = map {
+</span><span class=""> 3133: 		perl_quote($_) . &#39; =&gt; &#39; . perl_quote($href-&gt;{$_})
 </span><span class=""> 3134: 	} sort keys %{$href};
 </span><span class=""> 3135: 
-</span><span class=""> 3136: 	return join(&#39;, &#39;, @pairs);
-</span><span class=""> 3137: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3136: 	return join(&#39;, &#39;, @pairs);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3137: }
 </span><span class=""> 3138: 
 </span><span class=""> 3139: =head2 render_arrayref_map
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3140: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3141: Render a hashref whose values are arrayrefs into a Perl source-code
+</span><span class=""> 3140: 
+</span><span class=""> 3141: Render a hashref whose values are arrayrefs into a Perl source-code
 </span><span class=""> 3142: fragment suitable for use as a hash literal in a generated test file.
 </span><span class=""> 3143: 
 </span><span class=""> 3144:     my $code = render_arrayref_map({ name =&gt; [&#39;&#39;, &#39;a&#39; x 100] });
@@ -3866,12 +3866,12 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3185: 
 </span><span class=""> 3186: 	# Return &#39;()&#39; rather than &#39;&#39; so callers get a valid empty hash
 </span><span class=""> 3187: 	# literal rather than a syntax error in the generated test
-</span><span class=""> 3188: 	return &#39;()&#39; unless $href &amp;&amp; ref($href) eq &#39;HASH&#39;;
-</span><span class=""> 3189: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3188: 	return &#39;()&#39; unless $href &amp;&amp; ref($href) eq &#39;HASH&#39;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3189: 
 </span><span class=""> 3190: 	my @entries;
 </span><span class=""> 3191: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3192: 	for my $k (sort keys %{$href}) {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3193: 		my $aref = $href-&gt;{$k};
+</span><span class=""> 3192: 	for my $k (sort keys %{$href}) {
+</span><span class=""> 3193: 		my $aref = $href-&gt;{$k};
 </span><span class=""> 3194: 
 </span><span class=""> 3195: 		# Skip non-arrayref values &acirc;&#128;&#148; mixed hashes are allowed by callers
 </span><span class=""> 3196: 		next unless ref($aref) eq &#39;ARRAY&#39;;
@@ -3884,12 +3884,12 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3203: 		push @entries, &quot;\t&quot; . perl_quote($k) . &quot; =&gt; [ $vals ]&quot;;
 </span><span class=""> 3204: 	}
 </span><span class=""> 3205: 
-</span><span class=""> 3206: 	return join(&quot;,\n&quot;, @entries);
-</span><span class=""> 3207: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3206: 	return join(&quot;,\n&quot;, @entries);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3207: }
 </span><span class=""> 3208: 
 </span><span class=""> 3209: # --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3210: # _has_positions
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3211: #
+</span><span class=""> 3210: # _has_positions
+</span><span class=""> 3211: #
 </span><span class=""> 3212: # Purpose:    Determine whether any field in an input
 </span><span class=""> 3213: #             spec hashref declares a positional argument
 </span><span class=""> 3214: #             via the &#39;position&#39; key.
@@ -3911,24 +3911,24 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3230 → 3235 → 3245</span></span> 3230: 	my $input_spec = $_[0];
 </span><span class=""> 3231: 
 </span><span class=""> 3232: 	# Guard against undef or non-hash input &acirc;&#128;&#148; keys %$undef would throw
-</span><span class=""> 3233: 	return 0 unless defined($input_spec) &amp;&amp; ref($input_spec) eq &#39;HASH&#39;;
-</span><span class=""> 3234: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3233: 	return 0 unless defined($input_spec) &amp;&amp; ref($input_spec) eq &#39;HASH&#39;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3234: 
 </span><span class=""> 3235: 	for my $field (keys %{$input_spec}) {
 </span><span class=""> 3236: 		# Only examine fields whose spec is a hashref &acirc;&#128;&#148; scalar specs
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3237: 		# (e.g. input: { type: string }) cannot have positions
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3238: 		next unless ref($input_spec-&gt;{$field}) eq &#39;HASH&#39;;
+</span><span class=""> 3237: 		# (e.g. input: { type: string }) cannot have positions
+</span><span class=""> 3238: 		next unless ref($input_spec-&gt;{$field}) eq &#39;HASH&#39;;
 </span><span class=""> 3239: 
 </span><span class=""> 3240: 		# Return immediately on first match &acirc;&#128;&#148; no need to scan further
-</span><span class=""> 3241: 		return 1 if defined $input_spec-&gt;{$field}{position};
-</span><span class=""> 3242: 	}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3241: 		return 1 if defined $input_spec-&gt;{$field}{position};
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3242: 	}
 </span><span class=""> 3243: 
 </span><span class=""> 3244: 	# No positional arguments found in any field
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3245: 	return 0;
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3246: }
 </span><span class=""> 3247: 
 </span><span class=""> 3248: # --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3249: # q_wrap
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3250: #
+</span><span class=""> 3249: # q_wrap
+</span><span class=""> 3250: #
 </span><span class=""> 3251: # Purpose:    Wrap a string in the most readable
 </span><span class=""> 3252: #             q{} form that does not require escaping,
 </span><span class=""> 3253: #             falling back to single-quoted form with
@@ -3960,37 +3960,33 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3279: 	# Returning &#39;&#39; here preserves the original behaviour and avoids
 </span><span class=""> 3280: 	# injecting the bare word &#39;undef&#39; into contexts that expect a
 </span><span class=""> 3281: 	# quoted string value.
-</span><span class=""> 3282: 	return &quot;&#39;&#39;&quot; unless defined $s;
-</span><span class=""> 3283: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3282: 	return &quot;&#39;&#39;&quot; unless defined $s;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3283: 
 </span><span class=""> 3284: 	# Try bracket-form q{} delimiters first &acirc;&#128;&#148; most readable
 </span><span class=""> 3285: 	for my $p (@Q_BRACKET_PAIRS) {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3286: 		my ($l, $r) = @{$p};
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3287: 
+</span><span class=""> 3286: 		my ($l, $r) = @{$p};
+</span><span class=""> 3287: 
 </span><span class=""> 3288: 		# Only use this bracket pair if neither bracket
 </span><span class=""> 3289: 		# appears in the string &acirc;&#128;&#148; both must be checked
-</span><span class=""> 3290: 		return &quot;q$l$s$r&quot; unless $s =~ /\Q$l\E|\Q$r\E/;
-</span><span class=""> 3291: 	}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3290: 		return &quot;q$l$s$r&quot; unless $s =~ /\Q$l\E|\Q$r\E/;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3291: 	}
 </span><span class=""> 3292: 
 </span><span class=""> 3293: 	# Try single-character delimiters in preference order
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3294 → 3294 → 3299</span></span> 3294: 	for my $d (@Q_SINGLE_DELIMITERS) {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3295: 		# index() returns $INDEX_NOT_FOUND (-1) when not found.
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3294 → 3294 → 3299</span></span> 3294: 	for my $d (@Q_SINGLE_DELIMITERS) {
+</span><span class=""> 3295: 		# index() returns $INDEX_NOT_FOUND (-1) when not found.
 </span><span class=""> 3296: 		# Must use != $INDEX_NOT_FOUND rather than &gt; 0 since
 </span><span class=""> 3297: 		# the delimiter may legitimately appear at position 0
-</span><span class=""> 3298: 		return &quot;q$d$s$d&quot; if index($s, $d) == $INDEX_NOT_FOUND;
-</span><span class=""> 3299: 	}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3298: 		return &quot;q$d$s$d&quot; if index($s, $d) == $INDEX_NOT_FOUND;
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class=""> 3299: 	}
 </span><span class=""> 3300: 
 </span><span class=""> 3301: 	# Last resort &acirc;&#128;&#148; single-quoted string with escaped apostrophes
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3302: 	(my $esc = $s) =~ s/&#39;/\\&#39;/g;
-</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class=""> 3303: 	return &quot;&#39;$esc&#39;&quot;;
-</span><span class=""> 3304: }
-</span><span class=""> 3305: 
-</span><span class=""> 3306: # --------------------------------------------------
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 3307: # perl_sq
+</span><span class=""> 3302: 	(my $esc = $s) =~ s/&#39;/\\&#39;/g;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 3303: 	return &quot;&#39;$esc&#39;&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
 					<ul>
-				<li><b>BOOL_NEGATE_3307_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>BOOL_NEGATE_3303_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -3998,7 +3994,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>RETURN_UNDEF_3307_2: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
+							</li><li><b>RETURN_UNDEF_3303_2: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -4007,7 +4003,11 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 3308: #
+<span class=""> 3304: }
+</span><span class=""> 3305: 
+</span><span class=""> 3306: # --------------------------------------------------
+</span><span class=""> 3307: # perl_sq
+</span><span class=""> 3308: #
 </span><span class=""> 3309: # Purpose:    Escape a string for safe inclusion
 </span><span class=""> 3310: #             inside a single-quoted Perl string
 </span><span class=""> 3311: #             literal in generated test code.
@@ -4036,12 +4036,12 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3334: 
 </span><span class=""> 3335: 	# Return empty string for undef &acirc;&#128;&#148; callers that need
 </span><span class=""> 3336: 	# &#39;undef&#39; literal should use perl_quote instead
-</span><span class=""> 3337: 	return &#39;&#39; unless defined $s;
-</span><span class=""> 3338: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3337: 	return &#39;&#39; unless defined $s;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3338: 
 </span><span class=""> 3339: 	# Escape backslashes first so later substitutions
 </span><span class=""> 3340: 	# don&#39;t double-escape already-escaped sequences
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3341: 	$s =~ s/\\/\\\\/g;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3342: 
+</span><span class=""> 3341: 	$s =~ s/\\/\\\\/g;
+</span><span class=""> 3342: 
 </span><span class=""> 3343: 	# Escape apostrophes so they don&#39;t terminate the
 </span><span class=""> 3344: 	# surrounding single-quoted string literal
 </span><span class=""> 3345: 	$s =~ s/&#39;/\\&#39;/g;
@@ -4057,12 +4057,12 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3355: 	# double-quoted string context in generated code
 </span><span class=""> 3356: 	$s =~ s/\0/\\0/g;
 </span><span class=""> 3357: 
-</span><span class=""> 3358: 	return $s;
-</span><span class=""> 3359: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3358: 	return $s;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3359: }
 </span><span class=""> 3360: 
 </span><span class=""> 3361: =head2 perl_quote
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3362: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3363: Convert any Perl value into a source-code fragment that reproduces that value
+</span><span class=""> 3362: 
+</span><span class=""> 3363: Convert any Perl value into a source-code fragment that reproduces that value
 </span><span class=""> 3364: when evaluated in a generated test file.
 </span><span class=""> 3365: 
 </span><span class=""> 3366: =head3 Arguments
@@ -4094,52 +4094,52 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3392: 
 </span><span class=""> 3393: sub perl_quote {
 </span><span class=""> 3394: 	my ($v) = @_;
-</span><span class=""> 3395: 	return _perl_quote($v, 0);
-</span><span class=""> 3396: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3395: 	return _perl_quote($v, 0);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3396: }
 </span><span class=""> 3397: 
 </span><span class=""> 3398: sub _perl_quote {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3399 → 3411 → 3435</span></span> 3399: 	my ($v, $depth) = @_;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3400: 	no warnings &#39;recursion&#39;;    ## no critic (TestingAndDebugging::ProhibitNoWarnings)
-</span><span class=""> 3401: 	croak(&#39;perl_quote: structure too deeply nested (circular reference?)&#39;) if $depth &gt; 100;
-</span><span class=""> 3402: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">3399 → 3411 → 3435</span></span> 3399: 	my ($v, $depth) = @_;
+</span><span class=""> 3400: 	no warnings &#39;recursion&#39;;    ## no critic (TestingAndDebugging::ProhibitNoWarnings)
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3401: 	croak(&#39;perl_quote: structure too deeply nested (circular reference?)&#39;) if $depth &gt; 100;
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class=""> 3402: 
 </span><span class=""> 3403: 	# Undef produces the Perl literal &#39;undef&#39;
-</span><span class=""> 3404: 	return &#39;undef&#39; unless defined $v;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3405: 
-</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class=""> 3406: 	# Convert YAML boolean string literals to Perl
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3404: 	return &#39;undef&#39; unless defined $v;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3405: 
+</span><span class=""> 3406: 	# Convert YAML boolean string literals to Perl
 </span><span class=""> 3407: 	# boolean constants so they survive round-tripping
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3408: 	return &#39;!!1&#39; if $v eq &#39;true&#39;;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3409: 	return &#39;!!0&#39; if $v eq &#39;false&#39;;
-</span><span class=""> 3410: 
-</span><span class=""> 3411: 	if(ref($v)) {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3412: 		# Recursively quote each element of an arrayref
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3413: 		if(ref($v) eq &#39;ARRAY&#39;) {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3414: 			my @quoted_v = map { _perl_quote($_, $depth + 1) } @{$v};
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3409: 	return &#39;!!0&#39; if $v eq &#39;false&#39;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3410: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3411: 	if(ref($v)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3412: 		# Recursively quote each element of an arrayref
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3413: 		if(ref($v) eq &#39;ARRAY&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3414: 			my @quoted_v = map { _perl_quote($_, $depth + 1) } @{$v};
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3415: 			return &#39;[ &#39; . join(&#39;, &#39;, @quoted_v) . &#39; ]&#39;;
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3416: 		}
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3417: 
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3418: 		# Render Regexp objects as qr{} with modifiers
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3416: 		}
+</span><span class=""> 3417: 
+</span><span class=""> 3418: 		# Render Regexp objects as qr{} with modifiers
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3419: 		if(ref($v) eq &#39;Regexp&#39;) {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3420: 			my ($pat, $mods) = regexp_pattern($v);
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3420: 			my ($pat, $mods) = regexp_pattern($v);
 </span><span class=""> 3421: 			my $re = &quot;qr{$pat}&quot;;
 </span><span class=""> 3422: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3423: 			# Append modifiers (e.g. &#39;i&#39;, &#39;x&#39;) if present
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3424: 			$re .= $mods if $mods;
-</span><span class=""> 3425: 			return $re;
-</span><span class=""> 3426: 		}
+</span><span class=""> 3423: 			# Append modifiers (e.g. &#39;i&#39;, &#39;x&#39;) if present
+</span><span class=""> 3424: 			$re .= $mods if $mods;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3425: 			return $re;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3426: 		}
 </span><span class=""> 3427: 
 </span><span class=""> 3428: 		# Hashrefs and other reference types fall through
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3429: 		# to render_fallback which uses Data::Dumper
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3430: 		return render_fallback($v);
-</span><span class=""> 3431: 	}
+</span><span class=""> 3429: 		# to render_fallback which uses Data::Dumper
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3430: 		return render_fallback($v);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3431: 	}
 </span><span class=""> 3432: 
 </span><span class=""> 3433: 	# Numeric values are emitted unquoted so the generated
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3434: 	# test performs numeric rather than string comparison
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3435: 	return looks_like_number($v) ? $v : &quot;&#39;&quot; . perl_sq($v) . &quot;&#39;&quot;;
-</span><span class=""> 3436: }
+</span><span class=""> 3434: 	# test performs numeric rather than string comparison
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3435: 	return looks_like_number($v) ? $v : &quot;&#39;&quot; . perl_sq($v) . &quot;&#39;&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3436: }
 </span><span class=""> 3437: 
 </span><span class=""> 3438: # --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3439: # _generate_transform_properties
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3440: #
+</span><span class=""> 3439: # _generate_transform_properties
+</span><span class=""> 3440: #
 </span><span class=""> 3441: # Convert a hashref of transform
 </span><span class=""> 3442: #     specifications into an arrayref of
 </span><span class=""> 3443: #     LectroTest property definition hashrefs,
@@ -4205,12 +4205,12 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3503: 		# Guard: skip transforms with no input or with the
 </span><span class=""> 3504: 		# YAML scalar &#39;undef&#39; as their input &acirc;&#128;&#148; these have no
 </span><span class=""> 3505: 		# generator and cannot produce meaningful properties
-</span><span class=""> 3506: 		if(!defined($input_spec) ||
-</span><span class=""> 3507: 		   (!ref($input_spec) &amp;&amp; $input_spec eq &#39;undef&#39;)) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3506: 		if(!defined($input_spec) ||
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3507: 		   (!ref($input_spec) &amp;&amp; $input_spec eq &#39;undef&#39;)) {
 </span><span class=""> 3508: 			next;
 </span><span class=""> 3509: 		}
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3510: 
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3511: 		# Guard: skip transforms whose input is not a hashref &acirc;&#128;&#148;
+</span><span class=""> 3510: 
+</span><span class=""> 3511: 		# Guard: skip transforms whose input is not a hashref &acirc;&#128;&#148;
 </span><span class=""> 3512: 		# must come before the helper calls below so we never
 </span><span class=""> 3513: 		# pass a non-hash to _detect_transform_properties or
 </span><span class=""> 3514: 		# _process_custom_properties
@@ -4230,18 +4230,18 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3528: 
 </span><span class=""> 3529: 		# Process any custom properties defined in the schema
 </span><span class=""> 3530: 		my @custom_props = ();
-</span><span class=""> 3531: 		if(exists($transform-&gt;{properties}) &amp;&amp;
-</span><span class=""> 3532: 		   ref($transform-&gt;{properties}) eq &#39;ARRAY&#39;) {
-</span><span class=""> 3533: 			@custom_props = _process_custom_properties(
-</span><span class=""> 3534: 				$transform-&gt;{properties},
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 3535: 				$function,
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 3531: 		if(exists($transform-&gt;{properties}) &amp;&amp;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_3535_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_3531_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class=""> 3536: 				$module,
+<span class=""> 3532: 		   ref($transform-&gt;{properties}) eq &#39;ARRAY&#39;) {
+</span><span class=""> 3533: 			@custom_props = _process_custom_properties(
+</span><span class=""> 3534: 				$transform-&gt;{properties},
+</span><span class=""> 3535: 				$function,
+</span><span class=""> 3536: 				$module,
 </span><span class=""> 3537: 				$input_spec,
 </span><span class=""> 3538: 				$output_spec,
 </span><span class=""> 3539: 				$new
@@ -4274,18 +4274,18 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3566: 			_assert_identifier($field, &#39;input field name&#39;);
 </span><span class=""> 3567: 
 </span><span class=""> 3568: 			my $gen = _schema_to_lectrotest_generator($field, $spec);
-</span><span class=""> 3569: 			if(defined($gen) &amp;&amp; length($gen)) {
-</span><span class=""> 3570: 				push @generators, $gen;
-</span><span class=""> 3571: 				push @var_names, $field;
-</span><span class=""> 3572: 			}
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 3573: 		}
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 3569: 			if(defined($gen) &amp;&amp; length($gen)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_3573_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_3569_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class=""> 3574: 
+<span class=""> 3570: 				push @generators, $gen;
+</span><span class=""> 3571: 				push @var_names, $field;
+</span><span class=""> 3572: 			}
+</span><span class=""> 3573: 		}
+</span><span class=""> 3574: 
 </span><span class=""> 3575: 		my $gen_spec = join(&#39;, &#39;, @generators);
 </span><span class=""> 3576: 
 </span><span class=""> 3577: 		# Build the call expression for the function under test.
@@ -4295,12 +4295,12 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3581: 		# to test the method in isolation, not with specific
 </span><span class=""> 3582: 		# construction state.
 </span><span class=""> 3583: 		my $call_code;
-</span><span class=""> 3584: 		if($module &amp;&amp; defined($new)) {
-</span><span class=""> 3585: 			# OO mode &acirc;&#128;&#148; construct a fresh object for each trial
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3584: 		if($module &amp;&amp; defined($new)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3585: 			# OO mode &acirc;&#128;&#148; construct a fresh object for each trial
 </span><span class=""> 3586: 			$call_code  = &quot;my \$obj = new_ok(&#39;$module&#39;);&quot;;
 </span><span class=""> 3587: 			$call_code .= &quot;\$obj-&gt;$function&quot;;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3588: 		} elsif($module &amp;&amp; $module ne $MODULE_BUILTIN) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 3589: 			# Functional mode with a named module
+</span><span class=""> 3588: 		} elsif($module &amp;&amp; $module ne $MODULE_BUILTIN) {
+</span><span class=""> 3589: 			# Functional mode with a named module
 </span><span class=""> 3590: 			$call_code = &quot;$module\::$function&quot;;
 </span><span class=""> 3591: 		} else {
 </span><span class=""> 3592: 			# Builtin or unqualified function call
@@ -4310,18 +4310,18 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3596: 		# Build the argument list, respecting positional order
 </span><span class=""> 3597: 		# if the input spec declares positions
 </span><span class=""> 3598: 		my @args;
-</span><span class=""> 3599: 		if(_has_positions($input_spec)) {
-</span><span class=""> 3600: 			# Sort fields by declared position so the generated
-</span><span class=""> 3601: 			# call passes arguments in the correct order
-</span><span class=""> 3602: 			my @sorted = sort {
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 3603: 				$input_spec-&gt;{$a}{position} &lt;=&gt;
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 3599: 		if(_has_positions($input_spec)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_3603_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_3599_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class=""> 3604: 				$input_spec-&gt;{$b}{position}
+<span class=""> 3600: 			# Sort fields by declared position so the generated
+</span><span class=""> 3601: 			# call passes arguments in the correct order
+</span><span class=""> 3602: 			my @sorted = sort {
+</span><span class=""> 3603: 				$input_spec-&gt;{$a}{position} &lt;=&gt;
+</span><span class=""> 3604: 				$input_spec-&gt;{$b}{position}
 </span><span class=""> 3605: 			} keys %{$input_spec};
 </span><span class=""> 3606: 			@args = map { &quot;\$$_&quot; } @sorted;
 </span><span class=""> 3607: 		} else {
@@ -4353,12 +4353,12 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3633: 		};
 </span><span class=""> 3634: 	}
 </span><span class=""> 3635: 
-</span><span class=""> 3636: 	return \@properties;
-</span><span class=""> 3637: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3636: 	return \@properties;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3637: }
 </span><span class=""> 3638: 
 </span><span class=""> 3639: # --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3640: # _get_semantic_generators
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3641: #
+</span><span class=""> 3640: # _get_semantic_generators
+</span><span class=""> 3641: #
 </span><span class=""> 3642: # Return a hashref of named semantic
 </span><span class=""> 3643: #     generator definitions for use in
 </span><span class=""> 3644: #     LectroTest property-based tests.
@@ -4665,117 +4665,117 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 3945: 
 </span><span class=""> 3946: 				# String comparison works for all scalar types in Perl &acirc;&#128;&#148;
 </span><span class=""> 3947: 				# numeric values stringify consistently for eq
-</span><span class=""> 3948: 				return &quot;do { my \$tmp = $call_code; \$result eq \$tmp }&quot;;
-</span><span class=""> 3949: 			},
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3948: 				return &quot;do { my \$tmp = $call_code; \$result eq \$tmp }&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3949: 			},
 </span><span class=""> 3950: 			applicable_to =&gt; [&#39;all&#39;],
 </span><span class=""> 3951: 		},
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3952: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3953: 		non_negative =&gt; {
+</span><span class=""> 3952: 
+</span><span class=""> 3953: 		non_negative =&gt; {
 </span><span class=""> 3954: 			description   =&gt; &#39;Result is always non-negative&#39;,
 </span><span class=""> 3955: 			code_template =&gt; sub {
 </span><span class=""> 3956: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 3957: 				return &#39;$result &gt;= 0&#39;;
-</span><span class=""> 3958: 			},
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3957: 				return &#39;$result &gt;= 0&#39;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3958: 			},
 </span><span class=""> 3959: 			applicable_to =&gt; [&#39;number&#39;, &#39;integer&#39;, &#39;float&#39;],
 </span><span class=""> 3960: 		},
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3961: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3962: 		positive =&gt; {
+</span><span class=""> 3961: 
+</span><span class=""> 3962: 		positive =&gt; {
 </span><span class=""> 3963: 			description   =&gt; &#39;Result is always positive (&gt; 0)&#39;,
 </span><span class=""> 3964: 			code_template =&gt; sub {
 </span><span class=""> 3965: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 3966: 				return &#39;$result &gt; 0&#39;;
-</span><span class=""> 3967: 			},
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3966: 				return &#39;$result &gt; 0&#39;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3967: 			},
 </span><span class=""> 3968: 			applicable_to =&gt; [&#39;number&#39;, &#39;integer&#39;, &#39;float&#39;],
 </span><span class=""> 3969: 		},
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3970: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3971: 		non_empty =&gt; {
+</span><span class=""> 3970: 
+</span><span class=""> 3971: 		non_empty =&gt; {
 </span><span class=""> 3972: 			description   =&gt; &#39;Result is never empty&#39;,
 </span><span class=""> 3973: 			code_template =&gt; sub {
 </span><span class=""> 3974: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 3975: 				return &#39;length($result) &gt; 0&#39;;
-</span><span class=""> 3976: 			},
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3975: 				return &#39;length($result) &gt; 0&#39;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3976: 			},
 </span><span class=""> 3977: 			applicable_to =&gt; [&#39;string&#39;],
 </span><span class=""> 3978: 		},
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3979: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3980: 		length_preserved =&gt; {
+</span><span class=""> 3979: 
+</span><span class=""> 3980: 		length_preserved =&gt; {
 </span><span class=""> 3981: 			description   =&gt; &#39;Output length equals input length&#39;,
 </span><span class=""> 3982: 			code_template =&gt; sub {
 </span><span class=""> 3983: 				my ($function, $call_code, $input_vars) = @_;
 </span><span class=""> 3984: 				my $first_var = $input_vars-&gt;[0];
-</span><span class=""> 3985: 				return &quot;length(\$result) == length(\$$first_var)&quot;;
-</span><span class=""> 3986: 			},
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3985: 				return &quot;length(\$result) == length(\$$first_var)&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3986: 			},
 </span><span class=""> 3987: 			applicable_to =&gt; [&#39;string&#39;],
 </span><span class=""> 3988: 		},
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3989: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3990: 		uppercase =&gt; {
+</span><span class=""> 3989: 
+</span><span class=""> 3990: 		uppercase =&gt; {
 </span><span class=""> 3991: 			description   =&gt; &#39;Result is all uppercase&#39;,
 </span><span class=""> 3992: 			code_template =&gt; sub {
 </span><span class=""> 3993: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 3994: 				return &#39;$result eq uc($result)&#39;;
-</span><span class=""> 3995: 			},
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3994: 				return &#39;$result eq uc($result)&#39;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3995: 			},
 </span><span class=""> 3996: 			applicable_to =&gt; [&#39;string&#39;],
 </span><span class=""> 3997: 		},
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 3998: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 3999: 		lowercase =&gt; {
+</span><span class=""> 3998: 
+</span><span class=""> 3999: 		lowercase =&gt; {
 </span><span class=""> 4000: 			description   =&gt; &#39;Result is all lowercase&#39;,
 </span><span class=""> 4001: 			code_template =&gt; sub {
 </span><span class=""> 4002: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 4003: 				return &#39;$result eq lc($result)&#39;;
-</span><span class=""> 4004: 			},
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4003: 				return &#39;$result eq lc($result)&#39;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4004: 			},
 </span><span class=""> 4005: 			applicable_to =&gt; [&#39;string&#39;],
 </span><span class=""> 4006: 		},
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4007: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4008: 		trimmed =&gt; {
+</span><span class=""> 4007: 
+</span><span class=""> 4008: 		trimmed =&gt; {
 </span><span class=""> 4009: 			description   =&gt; &#39;Result has no leading or trailing whitespace&#39;,
 </span><span class=""> 4010: 			code_template =&gt; sub {
 </span><span class=""> 4011: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 4012: 				return &#39;$result !~ /^\s/ &amp;&amp; $result !~ /\s$/&#39;;
-</span><span class=""> 4013: 			},
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4012: 				return &#39;$result !~ /^\s/ &amp;&amp; $result !~ /\s$/&#39;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4013: 			},
 </span><span class=""> 4014: 			applicable_to =&gt; [&#39;string&#39;],
 </span><span class=""> 4015: 		},
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4016: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4017: 		sorted_ascending =&gt; {
+</span><span class=""> 4016: 
+</span><span class=""> 4017: 		sorted_ascending =&gt; {
 </span><span class=""> 4018: 			description   =&gt; &#39;Array is sorted in ascending order&#39;,
 </span><span class=""> 4019: 			code_template =&gt; sub {
 </span><span class=""> 4020: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 4021: 				return &#39;do { my @arr = @$result; my $sorted = 1; &#39; .
-</span><span class=""> 4022: 					&#39;for my $i (1..$#arr) { $sorted = 0 if $arr[$i] &lt; $arr[$i-1]; } &#39; .
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4021: 				return &#39;do { my @arr = @$result; my $sorted = 1; &#39; .
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4022: 					&#39;for my $i (1..$#arr) { $sorted = 0 if $arr[$i] &lt; $arr[$i-1]; } &#39; .
 </span><span class=""> 4023: 					&#39;$sorted }&#39;;
 </span><span class=""> 4024: 			},
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4025: 			applicable_to =&gt; [&#39;arrayref&#39;],
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4026: 		},
+</span><span class=""> 4025: 			applicable_to =&gt; [&#39;arrayref&#39;],
+</span><span class=""> 4026: 		},
 </span><span class=""> 4027: 
 </span><span class=""> 4028: 		sorted_descending =&gt; {
 </span><span class=""> 4029: 			description   =&gt; &#39;Array is sorted in descending order&#39;,
 </span><span class=""> 4030: 			code_template =&gt; sub {
 </span><span class=""> 4031: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 4032: 				return &#39;do { my @arr = @$result; my $sorted = 1; &#39; .
-</span><span class=""> 4033: 					&#39;for my $i (1..$#arr) { $sorted = 0 if $arr[$i] &gt; $arr[$i-1]; } &#39; .
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4032: 				return &#39;do { my @arr = @$result; my $sorted = 1; &#39; .
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4033: 					&#39;for my $i (1..$#arr) { $sorted = 0 if $arr[$i] &gt; $arr[$i-1]; } &#39; .
 </span><span class=""> 4034: 					&#39;$sorted }&#39;;
 </span><span class=""> 4035: 			},
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4036: 			applicable_to =&gt; [&#39;arrayref&#39;],
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4037: 		},
+</span><span class=""> 4036: 			applicable_to =&gt; [&#39;arrayref&#39;],
+</span><span class=""> 4037: 		},
 </span><span class=""> 4038: 
 </span><span class=""> 4039: 		unique_elements =&gt; {
 </span><span class=""> 4040: 			description   =&gt; &#39;Array has no duplicate elements&#39;,
 </span><span class=""> 4041: 			code_template =&gt; sub {
 </span><span class=""> 4042: 				my ($function, $call_code, $input_vars) = @_;
-</span><span class=""> 4043: 				return &#39;do { my @arr = @$result; my %seen; !grep { $seen{$_}++ } @arr }&#39;;
-</span><span class=""> 4044: 			},
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4043: 				return &#39;do { my @arr = @$result; my %seen; !grep { $seen{$_}++ } @arr }&#39;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4044: 			},
 </span><span class=""> 4045: 			applicable_to =&gt; [&#39;arrayref&#39;],
 </span><span class=""> 4046: 		},
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4047: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4048: 		preserves_keys =&gt; {
+</span><span class=""> 4047: 
+</span><span class=""> 4048: 		preserves_keys =&gt; {
 </span><span class=""> 4049: 			description   =&gt; &#39;Hash has same keys as input&#39;,
 </span><span class=""> 4050: 			code_template =&gt; sub {
 </span><span class=""> 4051: 				my ($function, $call_code, $input_vars) = @_;
 </span><span class=""> 4052: 				my $first_var = $input_vars-&gt;[0];
-</span><span class=""> 4053: 				return &#39;do { my @in  = sort keys %{$&#39; . $first_var . &#39;}; &#39; .
-</span><span class=""> 4054: 					&#39;my @out = sort keys %$result; &#39; .
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4053: 				return &#39;do { my @in  = sort keys %{$&#39; . $first_var . &#39;}; &#39; .
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4054: 					&#39;my @out = sort keys %$result; &#39; .
 </span><span class=""> 4055: 					&#39;join(&quot;,&quot;, @in) eq join(&quot;,&quot;, @out) }&#39;;
 </span><span class=""> 4056: 			},
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4057: 			applicable_to =&gt; [&#39;hashref&#39;],
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4058: 		},
+</span><span class=""> 4057: 			applicable_to =&gt; [&#39;hashref&#39;],
+</span><span class=""> 4058: 		},
 </span><span class=""> 4059: 	};
 </span><span class=""> 4060: }
 </span><span class=""> 4061: 
@@ -4832,49 +4832,45 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 4112: 	# fields &acirc;&#128;&#148; they produce realistic domain-specific
 </span><span class=""> 4113: 	# values rather than random character sequences
 </span><span class=""> 4114: 	# --------------------------------------------------
-</span><span class=""> 4115: 	if($type eq &#39;string&#39; &amp;&amp; defined($spec-&gt;{&#39;semantic&#39;})) {
-</span><span class=""> 4116: 		my $semantic_type = $spec-&gt;{&#39;semantic&#39;};
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4115: 	if($type eq &#39;string&#39; &amp;&amp; defined($spec-&gt;{&#39;semantic&#39;})) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4116: 		my $semantic_type = $spec-&gt;{&#39;semantic&#39;};
 </span><span class=""> 4117: 		my $generators    = _get_semantic_generators();
 </span><span class=""> 4118: 
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4119: 		if(exists($generators-&gt;{$semantic_type})) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4120: 			my $gen_code = $generators-&gt;{$semantic_type}{&#39;code&#39;};
 </span><span class=""> 4121: 
 </span><span class=""> 4122: 			# Compress the multi-line generator code into a
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4123: 			# single line for embedding in the ##[ ]## block
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4124: 			$gen_code =~ s/^\s+//;
+</span><span class=""> 4123: 			# single line for embedding in the ##[ ]## block
+</span><span class=""> 4124: 			$gen_code =~ s/^\s+//;
 </span><span class=""> 4125: 			$gen_code =~ s/\s+$//;
 </span><span class=""> 4126: 			$gen_code =~ s/\n\s+/ /g;
 </span><span class=""> 4127: 
-</span><span class=""> 4128: 			return &quot;$field_name &lt;- $gen_code&quot;;
-</span><span class=""> 4129: 		} else {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4128: 			return &quot;$field_name &lt;- $gen_code&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4129: 		} else {
 </span><span class=""> 4130: 			carp &quot;Unknown semantic type &#39;$semantic_type&#39;, &quot; .
 </span><span class=""> 4131: 				&quot;falling back to regular string generator&quot;;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4132: 			# Fall through to regular string generation below
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4133: 		}
+</span><span class=""> 4132: 			# Fall through to regular string generation below
+</span><span class=""> 4133: 		}
 </span><span class=""> 4134: 	}
 </span><span class=""> 4135: 
 </span><span class=""> 4136: 	# --------------------------------------------------
 </span><span class=""> 4137: 	# Integer generator
 </span><span class=""> 4138: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4139 → 4139 → 4162</span></span> 4139: 	if($type eq &#39;integer&#39;) {
-</span><span class=""> 4140: 		my $min = $spec-&gt;{&#39;min&#39;};
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4139 → 4139 → 4162</span></span> 4139: 	if($type eq &#39;integer&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4140: 		my $min = $spec-&gt;{&#39;min&#39;};
 </span><span class=""> 4141: 		my $max = $spec-&gt;{&#39;max&#39;};
 </span><span class=""> 4142: 
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4143: 		if(!defined($min) &amp;&amp; !defined($max)) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4144: 			# Unconstrained &acirc;&#128;&#148; use LectroTest&#39;s built-in Int
-</span><span class=""> 4145: 			return &quot;$field_name &lt;- Int&quot;;
-</span><span class=""> 4146: 		} elsif(!defined($min)) {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4147: 			# Only max defined &acirc;&#128;&#148; generate 0 to max
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4148: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { int(rand($max + 1)) })&quot;;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4149: 		} elsif(!defined($max)) {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4150: 			# Only min defined &acirc;&#128;&#148; generate min to min + range
-</span><span class=""> 4151: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { $min + int(rand($DEFAULT_GENERATOR_RANGE)) })&quot;;
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4152: 		} else {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4145: 			return &quot;$field_name &lt;- Int&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4146: 		} elsif(!defined($min)) {
+</span><span class=""> 4147: 			# Only max defined &acirc;&#128;&#148; generate 0 to max
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4148: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { int(rand($max + 1)) })&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
 					<ul>
-				<li><b>BOOL_NEGATE_4152_4: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>BOOL_NEGATE_4148_4: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -4882,7 +4878,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>RETURN_UNDEF_4152_4: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
+							</li><li><b>RETURN_UNDEF_4148_4: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -4891,72 +4887,72 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 4153: 			# Both defined &acirc;&#128;&#148; generate within [min, max]
+<span class=""> 4149: 		} elsif(!defined($max)) {
+</span><span class=""> 4150: 			# Only min defined &acirc;&#128;&#148; generate min to min + range
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4151: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { $min + int(rand($DEFAULT_GENERATOR_RANGE)) })&quot;;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
+					<ul>
+				<li><b>BOOL_NEGATE_4151_4: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boolean branch test suggestion
+ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>RETURN_UNDEF_4151_4: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Return value assertion
+is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class=""> 4152: 		} else {
+</span><span class=""> 4153: 			# Both defined &acirc;&#128;&#148; generate within [min, max]
 </span><span class=""> 4154: 			my $range = $max - $min;
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4155: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { $min + int(rand($range + 1)) })&quot;;
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
-					<ul>
-				<li><b>BOOL_NEGATE_4155_4: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boolean branch test suggestion
-ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>RETURN_UNDEF_4155_4: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Return value assertion
-is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class=""> 4156: 		}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4155: 			return &quot;$field_name &lt;- Int(sized =&gt; sub { $min + int(rand($range + 1)) })&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4156: 		}
 </span><span class=""> 4157: 	}
 </span><span class=""> 4158: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4159: 	# --------------------------------------------------
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4160: 	# Float / number generator
+</span><span class=""> 4159: 	# --------------------------------------------------
+</span><span class=""> 4160: 	# Float / number generator
 </span><span class=""> 4161: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4162 → 4162 → 4212</span></span> 4162: 	if($type eq &#39;number&#39; || $type eq &#39;float&#39;) {
-</span><span class=""> 4163: 		my $min = $spec-&gt;{&#39;min&#39;};
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4162 → 4162 → 4212</span></span> 4162: 	if($type eq &#39;number&#39; || $type eq &#39;float&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4163: 		my $min = $spec-&gt;{&#39;min&#39;};
 </span><span class=""> 4164: 		my $max = $spec-&gt;{&#39;max&#39;};
 </span><span class=""> 4165: 
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4166: 		if(!defined($min) &amp;&amp; !defined($max)) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4167: 			# Unconstrained &acirc;&#128;&#148; symmetric range around zero
-</span><span class=""> 4168: 			return &quot;$field_name &lt;- Float(sized =&gt; sub { rand($DEFAULT_GENERATOR_RANGE) - $DEFAULT_GENERATOR_RANGE / 2 })&quot;;
-</span><span class=""> 4169: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4170: 		} elsif(!defined($min)) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4171: 			# Only max defined &acirc;&#128;&#148; choose range based on sign of max
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4168: 			return &quot;$field_name &lt;- Float(sized =&gt; sub { rand($DEFAULT_GENERATOR_RANGE) - $DEFAULT_GENERATOR_RANGE / 2 })&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4169: 
+</span><span class=""> 4170: 		} elsif(!defined($min)) {
+</span><span class=""> 4171: 			# Only max defined &acirc;&#128;&#148; choose range based on sign of max
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4172: 			if($max == $ZERO_BOUNDARY) {
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4173: 				# max=0: negative numbers only
-</span><span class=""> 4174: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { -rand($DEFAULT_GENERATOR_RANGE) })&quot;;
-</span><span class=""> 4175: 			} elsif($max &gt; $ZERO_BOUNDARY) {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4176: 				# Positive max: generate 0 to max
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4177: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { rand($max) })&quot;;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4178: 			} else {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4179: 				# Negative max: generate from (max - range) to max
-</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class=""> 4180: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { ($max - $DEFAULT_GENERATOR_RANGE) + rand($DEFAULT_GENERATOR_RANGE + $max) })&quot;;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4181: 			}
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4182: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4174: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { -rand($DEFAULT_GENERATOR_RANGE) })&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4175: 			} elsif($max &gt; $ZERO_BOUNDARY) {
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class=""> 4176: 				# Positive max: generate 0 to max
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4177: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { rand($max) })&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4178: 			} else {
+</span><span class=""> 4179: 				# Negative max: generate from (max - range) to max
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4180: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { ($max - $DEFAULT_GENERATOR_RANGE) + rand($DEFAULT_GENERATOR_RANGE + $max) })&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4181: 			}
+</span><span class=""> 4182: 
 </span><span class=""> 4183: 		} elsif(!defined($max)) {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4184: 			# Only min defined &acirc;&#128;&#148; choose range based on sign of min
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4185: 			if($min == $ZERO_BOUNDARY) {
-</span><span class=""> 4186: 				# min=0: positive numbers only
-</span><span class=""> 4187: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { rand($DEFAULT_GENERATOR_RANGE) })&quot;;
-</span><span class=""> 4188: 			} elsif($min &gt; $ZERO_BOUNDARY) {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4189: 				# Positive min: generate min to min + range
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4190: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand($DEFAULT_GENERATOR_RANGE) })&quot;;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4191: 			} else {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 4192: 				# Negative min: generate from min to min + range
+</span><span class=""> 4184: 			# Only min defined &acirc;&#128;&#148; choose range based on sign of min
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4185: 			if($min == $ZERO_BOUNDARY) {
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4186: 				# min=0: positive numbers only
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4187: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { rand($DEFAULT_GENERATOR_RANGE) })&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one)."> 4188: 			} elsif($min &gt; $ZERO_BOUNDARY) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 3, Killed: 0, Survived: 3)</summary>
 					<ul>
-				<li><b>NUM_BOUNDARY_4192_17_<: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
+				<li><b>NUM_BOUNDARY_4188_17_<: Numeric boundary flip > to <</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -4964,7 +4960,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_4192_17_>=: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_4188_17_>=: Numeric boundary flip > to >=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -4972,7 +4968,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>NUM_BOUNDARY_4192_17_<=: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
+							</li><li><b>NUM_BOUNDARY_4188_17_<=: Numeric boundary flip > to <=</b><br>HIGH: Likely missing edge-case test (boundary value)
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -4981,54 +4977,54 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 4193: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand(-$min + $DEFAULT_GENERATOR_RANGE) })&quot;;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4194: 			}
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4195: 
+<span class=""> 4189: 				# Positive min: generate min to min + range
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4190: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand($DEFAULT_GENERATOR_RANGE) })&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4191: 			} else {
+</span><span class=""> 4192: 				# Negative min: generate from min to min + range
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4193: 				return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand(-$min + $DEFAULT_GENERATOR_RANGE) })&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4194: 			}
+</span><span class=""> 4195: 
 </span><span class=""> 4196: 		} else {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4197: 			# Both min and max defined &acirc;&#128;&#148; validate then generate
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4198: 			my $range = $max - $min;
-</span><span class=""> 4199: 			if($range &lt;= $ZERO_BOUNDARY) {
-</span><span class=""> 4200: 				carp &quot;Invalid range for &#39;$field_name&#39;: min=$min, max=$max&quot;;
+</span><span class=""> 4197: 			# Both min and max defined &acirc;&#128;&#148; validate then generate
+</span><span class=""> 4198: 			my $range = $max - $min;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4199: 			if($range &lt;= $ZERO_BOUNDARY) {
+</span><p> <b> Mutants (Total: 4, Killed: 4, Survived: 0)</b><p><span class=""> 4200: 				carp &quot;Invalid range for &#39;$field_name&#39;: min=$min, max=$max&quot;;
 </span><span class=""> 4201: 				# Return undef rather than emitting a degenerate
 </span><span class=""> 4202: 				# generator that would silently produce wrong values
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4203: 				return;
-</span><p> <b> Mutants (Total: 4, Killed: 4, Survived: 0)</b><p><span class=""> 4204: 			}
-</span><span class=""> 4205: 			return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand($range) })&quot;;
-</span><span class=""> 4206: 		}
+</span><span class=""> 4203: 				return;
+</span><span class=""> 4204: 			}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4205: 			return &quot;$field_name &lt;- Float(sized =&gt; sub { $min + rand($range) })&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4206: 		}
 </span><span class=""> 4207: 	}
 </span><span class=""> 4208: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4209: 	# --------------------------------------------------
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4210: 	# String generator
+</span><span class=""> 4209: 	# --------------------------------------------------
+</span><span class=""> 4210: 	# String generator
 </span><span class=""> 4211: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4212 → 4212 → 4251</span></span> 4212: 	if($type eq &#39;string&#39;) {
-</span><span class=""> 4213: 		my $min_len = $spec-&gt;{&#39;min&#39;} // 0;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4212 → 4212 → 4251</span></span> 4212: 	if($type eq &#39;string&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4213: 		my $min_len = $spec-&gt;{&#39;min&#39;} // 0;
 </span><span class=""> 4214: 		my $max_len = $spec-&gt;{&#39;max&#39;} // $DEFAULT_MAX_STRING_LEN;
 </span><span class=""> 4215: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4216: 		# If a regex pattern is declared, delegate to
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4217: 		# Data::Random::String::Matches for pattern-aware generation
-</span><span class=""> 4218: 		if(defined($spec-&gt;{&#39;matches&#39;})) {
-</span><span class=""> 4219: 			my $pattern = $spec-&gt;{&#39;matches&#39;};
+</span><span class=""> 4216: 		# If a regex pattern is declared, delegate to
+</span><span class=""> 4217: 		# Data::Random::String::Matches for pattern-aware generation
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4218: 		if(defined($spec-&gt;{&#39;matches&#39;})) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4219: 			my $pattern = $spec-&gt;{&#39;matches&#39;};
 </span><span class=""> 4220: 
 </span><span class=""> 4221: 			# Compile the pattern safely rather than splicing the raw
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4222: 			# string into qr/$pattern/ &acirc;&#128;&#148; the raw form lets a pattern
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4223: 			# containing an unescaped &#39;/&#39; break out of the qr//
+</span><span class=""> 4222: 			# string into qr/$pattern/ &acirc;&#128;&#148; the raw form lets a pattern
+</span><span class=""> 4223: 			# containing an unescaped &#39;/&#39; break out of the qr//
 </span><span class=""> 4224: 			# delimiter and inject arbitrary Perl into the generated
 </span><span class=""> 4225: 			# test. regexp_pattern() decomposes the already-compiled
 </span><span class=""> 4226: 			# Regexp object back into pattern text that is guaranteed
 </span><span class=""> 4227: 			# to be a self-contained regex body, safe to re-embed.
 </span><span class=""> 4228: 			my $compiled = ref($pattern) eq &#39;Regexp&#39; ? $pattern : eval { qr/$pattern/ };
-</span><span class=""> 4229: 			if($@ || !defined($compiled)) {
-</span><span class=""> 4230: 				carp &quot;Invalid matches pattern &#39;$pattern&#39; for field &#39;$field_name&#39;: $@&quot;;
-</span><span class=""> 4231: 				return &quot;$field_name &lt;- String(length =&gt; [$min_len, $max_len])&quot;;
-</span><span class=""> 4232: 			}
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4233: 			my ($pat, $mods) = regexp_pattern($compiled);
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4234: 			my $safe_re = &quot;qr{$pat}&quot; . ($mods // &#39;&#39;);
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4235: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4229: 			if($@ || !defined($compiled)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4230: 				carp &quot;Invalid matches pattern &#39;$pattern&#39; for field &#39;$field_name&#39;: $@&quot;;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4231: 				return &quot;$field_name &lt;- String(length =&gt; [$min_len, $max_len])&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
 					<ul>
-				<li><b>BOOL_NEGATE_4235_5: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>BOOL_NEGATE_4231_5: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -5036,7 +5032,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>RETURN_UNDEF_4235_5: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
+							</li><li><b>RETURN_UNDEF_4231_5: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -5045,23 +5041,23 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 4236: 			if(defined($spec-&gt;{&#39;max&#39;})) {
-</span><span class=""> 4237: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; $safe_re, length =&gt; $spec-&gt;{&#39;max&#39;} }) }&quot;;
-</span><span class=""> 4238: 			} elsif(defined($spec-&gt;{&#39;min&#39;})) {
-</span><span class=""> 4239: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; $safe_re, length =&gt; $spec-&gt;{&#39;min&#39;} }) }&quot;;
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4240: 			} else {
+<span class=""> 4232: 			}
+</span><span class=""> 4233: 			my ($pat, $mods) = regexp_pattern($compiled);
+</span><span class=""> 4234: 			my $safe_re = &quot;qr{$pat}&quot; . ($mods // &#39;&#39;);
+</span><span class=""> 4235: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4236: 			if(defined($spec-&gt;{&#39;max&#39;})) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_4240_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_4236_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4241: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; $safe_re }) }&quot;;
+<span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4237: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; $safe_re, length =&gt; $spec-&gt;{&#39;max&#39;} }) }&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
 					<ul>
-				<li><b>BOOL_NEGATE_4241_5: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>BOOL_NEGATE_4237_5: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -5069,7 +5065,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>RETURN_UNDEF_4241_5: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
+							</li><li><b>RETURN_UNDEF_4237_5: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -5078,13 +5074,13 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 4242: 			}
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4243: 		}
+<span class=""> 4238: 			} elsif(defined($spec-&gt;{&#39;min&#39;})) {
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4239: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; $safe_re, length =&gt; $spec-&gt;{&#39;min&#39;} }) }&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
 					<ul>
-				<li><b>BOOL_NEGATE_4243_5: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>BOOL_NEGATE_4239_5: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -5092,7 +5088,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>RETURN_UNDEF_4243_5: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
+							</li><li><b>RETURN_UNDEF_4239_5: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -5101,50 +5097,50 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 4244: 
+<span class=""> 4240: 			} else {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4241: 				return &quot;$field_name &lt;- Gen { Data::Random::String::Matches-&gt;create_random_string({ regex =&gt; $safe_re }) }&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4242: 			}
+</span><span class=""> 4243: 		}
+</span><span class=""> 4244: 
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4245: 		return &quot;$field_name &lt;- String(length =&gt; [$min_len, $max_len])&quot;;
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4246: 	}
 </span><span class=""> 4247: 
 </span><span class=""> 4248: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4249: 	# Boolean generator
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4250: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4251 → 4251 → 4258</span></span> 4251: 	if($type eq &#39;boolean&#39;) {
-</span><span class=""> 4252: 		return &quot;$field_name &lt;- Bool&quot;;
-</span><span class=""> 4253: 	}
+</span><span class=""> 4249: 	# Boolean generator
+</span><span class=""> 4250: 	# --------------------------------------------------
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4251 → 4251 → 4258</span></span> 4251: 	if($type eq &#39;boolean&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4252: 		return &quot;$field_name &lt;- Bool&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4253: 	}
 </span><span class=""> 4254: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4255: 	# --------------------------------------------------
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4256: 	# Arrayref generator
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4257: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4258 → 4258 → 4269</span></span> 4258: 	if($type eq &#39;arrayref&#39;) {
-</span><span class=""> 4259: 		my $min_size = $spec-&gt;{&#39;min&#39;} // 0;
+</span><span class=""> 4255: 	# --------------------------------------------------
+</span><span class=""> 4256: 	# Arrayref generator
+</span><span class=""> 4257: 	# --------------------------------------------------
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4258 → 4258 → 4269</span></span> 4258: 	if($type eq &#39;arrayref&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4259: 		my $min_size = $spec-&gt;{&#39;min&#39;} // 0;
 </span><span class=""> 4260: 		my $max_size = $spec-&gt;{&#39;max&#39;} // $DEFAULT_MAX_COLLECTION_SIZE;
-</span><span class=""> 4261: 		return &quot;$field_name &lt;- List(Int, length =&gt; [$min_size, $max_size])&quot;;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4262: 	}
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4263: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4261: 		return &quot;$field_name &lt;- List(Int, length =&gt; [$min_size, $max_size])&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4262: 	}
+</span><span class=""> 4263: 
 </span><span class=""> 4264: 	# --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4265: 	# Hashref generator
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4266: 	# LectroTest has no built-in Hash generator so we
+</span><span class=""> 4265: 	# Hashref generator
+</span><span class=""> 4266: 	# LectroTest has no built-in Hash generator so we
 </span><span class=""> 4267: 	# use Elements over a pre-built list of hashrefs
 </span><span class=""> 4268: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4269 → 4269 → 4278</span></span> 4269: 	if($type eq &#39;hashref&#39;) {
-</span><span class=""> 4270: 		my $min_keys = $spec-&gt;{&#39;min&#39;} // 0;
-</span><span class=""> 4271: 		my $max_keys = $spec-&gt;{&#39;max&#39;} // $DEFAULT_MAX_COLLECTION_SIZE;
-</span><span class=""> 4272: 		return &quot;$field_name &lt;- Elements(map { my \%h; for (1..\$_) { \$h{&#39;key&#39;.\$_} = \$_ }; \\\%h } $min_keys..$max_keys)&quot;;
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4273: 	}
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4269 → 4269 → 4278</span></span> 4269: 	if($type eq &#39;hashref&#39;) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_4273_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_4269_2: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class=""> 4274: 
-</span><span class=""> 4275: 	# --------------------------------------------------
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4276: 	# Unknown type &acirc;&#128;&#148; fall back to String with a warning
+<span class=""> 4270: 		my $min_keys = $spec-&gt;{&#39;min&#39;} // 0;
+</span><span class=""> 4271: 		my $max_keys = $spec-&gt;{&#39;max&#39;} // $DEFAULT_MAX_COLLECTION_SIZE;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4272: 		return &quot;$field_name &lt;- Elements(map { my \%h; for (1..\$_) { \$h{&#39;key&#39;.\$_} = \$_ }; \\\%h } $min_keys..$max_keys)&quot;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
 					<ul>
-				<li><b>BOOL_NEGATE_4276_3: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>BOOL_NEGATE_4272_3: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -5152,7 +5148,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
 </pre>
 								</div>
-							</li><li><b>RETURN_UNDEF_4276_3: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
+							</li><li><b>RETURN_UNDEF_4272_3: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
 
 								<div class="suggested-test">
 								<div class="suggest-label">🧪 Suggested Test</div>
@@ -5161,35 +5157,39 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class=""> 4277: 	# --------------------------------------------------
+<span class=""> 4273: 	}
+</span><span class=""> 4274: 
+</span><span class=""> 4275: 	# --------------------------------------------------
+</span><span class=""> 4276: 	# Unknown type &acirc;&#128;&#148; fall back to String with a warning
+</span><span class=""> 4277: 	# --------------------------------------------------
 </span><span class=""> 4278: 	carp &quot;Unknown type &#39;$type&#39; for &#39;$field_name&#39; LectroTest generator, using String&quot;;
-</span><span class=""> 4279: 	return &quot;$field_name &lt;- String&quot;;
-</span><span class=""> 4280: }
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 4279: 	return &quot;$field_name &lt;- String&quot;;
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
+					<ul>
+				<li><b>BOOL_NEGATE_4279_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Boolean branch test suggestion
+ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
+</pre>
+								</div>
+							</li><li><b>RETURN_UNDEF_4279_2: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
+
+								<div class="suggested-test">
+								<div class="suggest-label">🧪 Suggested Test</div>
+								<pre># Return value assertion
+is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
+</pre>
+								</div>
+							</li></ul></details>
+<span class=""> 4280: }
 </span><span class=""> 4281: 
 </span><span class=""> 4282: # --------------------------------------------------
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 4283: # _is_numeric_transform
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
-					<ul>
-				<li><b>BOOL_NEGATE_4283_2: Negate boolean return expression</b><br>MEDIUM: Add tests asserting both true and false outcomes
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Boolean branch test suggestion
-ok( !func(INPUT), &#39;Verify boolean branch behaviour&#39; );
-</pre>
-								</div>
-							</li><li><b>RETURN_UNDEF_4283_2: Replace return expression with undef</b><br>LOW: Mutation survived, but impact may be minor
-
-								<div class="suggested-test">
-								<div class="suggest-label">🧪 Suggested Test</div>
-								<pre># Return value assertion
-is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
-</pre>
-								</div>
-							</li></ul></details>
-<span class=""> 4284: #
+</span><span class=""> 4283: # _is_numeric_transform
+</span><span class=""> 4284: #
 </span><span class=""> 4285: # Determine whether a transform&#39;s output
 </span><span class=""> 4286: #     spec declares a numeric type, indicating
 </span><span class=""> 4287: #     that numeric range properties should be
@@ -5306,27 +5306,27 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4398 → 4409 → 4416</span></span> 4398: 	my $spec = $_[0];
 </span><span class=""> 4399: 
 </span><span class=""> 4400: 	# Guard: return default for undef or non-hash input
-</span><span class=""> 4401: 	return $DEFAULT_FIELD_TYPE
-</span><span class=""> 4402: 		unless defined($spec) &amp;&amp; ref($spec) eq &#39;HASH&#39;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4401: 	return $DEFAULT_FIELD_TYPE
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4402: 		unless defined($spec) &amp;&amp; ref($spec) eq &#39;HASH&#39;;
 </span><span class=""> 4403: 
 </span><span class=""> 4404: 	# Flat spec &acirc;&#128;&#148; type declared directly
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4405: 	return $spec-&gt;{&#39;type&#39;} if defined($spec-&gt;{&#39;type&#39;});
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4406: 
 </span><span class=""> 4407: 	# Multi-field spec &acirc;&#128;&#148; return the type of the first
 </span><span class=""> 4408: 	# sub-field that declares one
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4409: 	for my $field (keys %{$spec}) {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4410: 		next unless ref($spec-&gt;{$field}) eq &#39;HASH&#39;;
-</span><span class=""> 4411: 		return $spec-&gt;{$field}{&#39;type&#39;}
-</span><span class=""> 4412: 			if defined($spec-&gt;{$field}{&#39;type&#39;});
+</span><span class=""> 4409: 	for my $field (keys %{$spec}) {
+</span><span class=""> 4410: 		next unless ref($spec-&gt;{$field}) eq &#39;HASH&#39;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4411: 		return $spec-&gt;{$field}{&#39;type&#39;}
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4412: 			if defined($spec-&gt;{$field}{&#39;type&#39;});
 </span><span class=""> 4413: 	}
 </span><span class=""> 4414: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4415: 	# No type found anywhere &acirc;&#128;&#148; return the safe default
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4416: 	return $DEFAULT_FIELD_TYPE;
-</span><span class=""> 4417: }
+</span><span class=""> 4415: 	# No type found anywhere &acirc;&#128;&#148; return the safe default
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4416: 	return $DEFAULT_FIELD_TYPE;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4417: }
 </span><span class=""> 4418: 
 </span><span class=""> 4419: # --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4420: # _render_properties
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4421: #
+</span><span class=""> 4420: # _render_properties
+</span><span class=""> 4421: #
 </span><span class=""> 4422: # Purpose:    Render an arrayref of property definition
 </span><span class=""> 4423: #             hashrefs (as produced by
 </span><span class=""> 4424: #             _generate_transform_properties) into a
@@ -5359,25 +5359,25 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 4451: 
 </span><span class=""> 4452: 	# Return empty string for absent or non-array input &acirc;&#128;&#148;
 </span><span class=""> 4453: 	# callers treat &#39;&#39; as no property block to emit
-</span><span class=""> 4454: 	return &#39;&#39; unless defined($properties) &amp;&amp; ref($properties) eq &#39;ARRAY&#39;;
-</span><span class=""> 4455: 	return &#39;&#39; unless @{$properties};
-</span><span class=""> 4456: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4454: 	return &#39;&#39; unless defined($properties) &amp;&amp; ref($properties) eq &#39;ARRAY&#39;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4455: 	return &#39;&#39; unless @{$properties};
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4456: 
 </span><span class=""> 4457: 	my $code = &quot;use_ok(&#39;Test::LectroTest::Compat&#39;);\n\n&quot;;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4458: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4459: 	for my $prop (@{$properties}) {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4460: 		# Emit a labelled Property block for each transform property
+</span><span class=""> 4458: 
+</span><span class=""> 4459: 	for my $prop (@{$properties}) {
+</span><span class=""> 4460: 		# Emit a labelled Property block for each transform property
 </span><span class=""> 4461: 		$code .= &quot;# Transform property: $prop-&gt;{&#39;name&#39;}\n&quot;;
 </span><span class=""> 4462: 		$code .= &quot;my \$$prop-&gt;{&#39;name&#39;} = Property {\n&quot;;
 </span><span class=""> 4463: 		$code .= &quot;    ##[ $prop-&gt;{&#39;generator_spec&#39;} ]##\n&quot;;
 </span><span class=""> 4464: 		$code .= &quot;    \n&quot;;
 </span><span class=""> 4465: 		$code .= &quot;    my \$result = eval { $prop-&gt;{&#39;call_code&#39;} };\n&quot;;
 </span><span class=""> 4466: 
-</span><span class=""> 4467: 		if($prop-&gt;{&#39;should_die&#39;}) {
-</span><span class=""> 4468: 			# For transforms that expect death, pass if the
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4467: 		if($prop-&gt;{&#39;should_die&#39;}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4468: 			# For transforms that expect death, pass if the
 </span><span class=""> 4469: 			# eval caught an exception
 </span><span class=""> 4470: 			$code .= &quot;    my \$died = defined(\$\@) &amp;&amp; \$\@;\n&quot;;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4471: 			$code .= &quot;    \$died;\n&quot;;
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4472: 		} else {
+</span><span class=""> 4471: 			$code .= &quot;    \$died;\n&quot;;
+</span><span class=""> 4472: 		} else {
 </span><span class=""> 4473: 			# For normal transforms, pass only if no exception
 </span><span class=""> 4474: 			# was thrown and all property checks hold
 </span><span class=""> 4475: 			$code .= &quot;    my \$error = \$\@;\n&quot;;
@@ -5391,12 +5391,12 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 4483: 		$code .= &quot;holds(\$$prop-&gt;{&#39;name&#39;});\n&quot;;
 </span><span class=""> 4484: 	}
 </span><span class=""> 4485: 
-</span><span class=""> 4486: 	return $code;
-</span><span class=""> 4487: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4486: 	return $code;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4487: }
 </span><span class=""> 4488: 
 </span><span class=""> 4489: # --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4490: # _detect_transform_properties
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4491: #
+</span><span class=""> 4490: # _detect_transform_properties
+</span><span class=""> 4491: #
 </span><span class=""> 4492: # Purpose:    Automatically derive a list of testable
 </span><span class=""> 4493: #             LectroTest property hashrefs from a
 </span><span class=""> 4494: #             transform&#39;s input and output specs.
@@ -5434,52 +5434,52 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 4526: 	my @properties;
 </span><span class=""> 4527: 
 </span><span class=""> 4528: 	# Guard: skip undef input and the YAML scalar &#39;undef&#39;
-</span><span class=""> 4529: 	return @properties unless defined($input_spec);
-</span><span class=""> 4530: 	return @properties if(!ref($input_spec) &amp;&amp; $input_spec eq &#39;undef&#39;);
-</span><span class=""> 4531: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4529: 	return @properties unless defined($input_spec);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4530: 	return @properties if(!ref($input_spec) &amp;&amp; $input_spec eq &#39;undef&#39;);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4531: 
 </span><span class=""> 4532: 	# Default output spec to empty hash so all key lookups
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4533: 	# below are safe regardless of what the schema provides
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4534: 	$output_spec //= {};
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4535: 
+</span><span class=""> 4533: 	# below are safe regardless of what the schema provides
+</span><span class=""> 4534: 	$output_spec //= {};
+</span><span class=""> 4535: 
 </span><span class=""> 4536: 	# --------------------------------------------------
 </span><span class=""> 4537: 	# Property 1: Output range constraints (numeric)
 </span><span class=""> 4538: 	# --------------------------------------------------
-</span><span class=""> 4539: 	if(_is_numeric_transform($input_spec, $output_spec)) {
-</span><span class=""> 4540: 		if(defined($output_spec-&gt;{&#39;min&#39;})) {
-</span><span class=""> 4541: 			my $min = $output_spec-&gt;{&#39;min&#39;};
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4539: 	if(_is_numeric_transform($input_spec, $output_spec)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4540: 		if(defined($output_spec-&gt;{&#39;min&#39;})) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4541: 			my $min = $output_spec-&gt;{&#39;min&#39;};
 </span><span class=""> 4542: 			push @properties, {
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4543: 				name =&gt; &#39;min_constraint&#39;,
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4544: 				code =&gt; &quot;defined(\$result) &amp;&amp; looks_like_number(\$result) &amp;&amp; \$result &gt;= $min&quot;,
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4545: 			};
+</span><span class=""> 4543: 				name =&gt; &#39;min_constraint&#39;,
+</span><span class=""> 4544: 				code =&gt; &quot;defined(\$result) &amp;&amp; looks_like_number(\$result) &amp;&amp; \$result &gt;= $min&quot;,
+</span><span class=""> 4545: 			};
 </span><span class=""> 4546: 		}
 </span><span class=""> 4547: 
-</span><span class=""> 4548: 		if(defined($output_spec-&gt;{&#39;max&#39;})) {
-</span><span class=""> 4549: 			my $max = $output_spec-&gt;{&#39;max&#39;};
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4548: 		if(defined($output_spec-&gt;{&#39;max&#39;})) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4549: 			my $max = $output_spec-&gt;{&#39;max&#39;};
 </span><span class=""> 4550: 			push @properties, {
 </span><span class=""> 4551: 				name =&gt; &#39;max_constraint&#39;,
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4552: 				code =&gt; &quot;defined(\$result) &amp;&amp; looks_like_number(\$result) &amp;&amp; \$result &lt;= $max&quot;,
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4553: 			};
+</span><span class=""> 4552: 				code =&gt; &quot;defined(\$result) &amp;&amp; looks_like_number(\$result) &amp;&amp; \$result &lt;= $max&quot;,
+</span><span class=""> 4553: 			};
 </span><span class=""> 4554: 		}
 </span><span class=""> 4555: 
 </span><span class=""> 4556: 		# Heuristic: transforms named &#39;positive&#39; (case-insensitive)
 </span><span class=""> 4557: 		# imply a non-negative result constraint
-</span><span class=""> 4558: 		if($transform_name =~ /$TRANSFORM_POSITIVE_PATTERN/i) {
-</span><span class=""> 4559: 			push @properties, {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4558: 		if($transform_name =~ /$TRANSFORM_POSITIVE_PATTERN/i) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4559: 			push @properties, {
 </span><span class=""> 4560: 				name =&gt; &#39;non_negative&#39;,
 </span><span class=""> 4561: 				code =&gt; &quot;defined(\$result) &amp;&amp; looks_like_number(\$result) &amp;&amp; \$result &gt;= 0&quot;,
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4562: 			};
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4563: 		}
+</span><span class=""> 4562: 			};
+</span><span class=""> 4563: 		}
 </span><span class=""> 4564: 	}
 </span><span class=""> 4565: 
 </span><span class=""> 4566: 	# --------------------------------------------------
 </span><span class=""> 4567: 	# Property 2: Specific value output
 </span><span class=""> 4568: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4569 → 4569 → 4585</span></span> 4569: 	if(defined($output_spec-&gt;{&#39;value&#39;})) {
-</span><span class=""> 4570: 		my $expected = $output_spec-&gt;{&#39;value&#39;};
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4569 → 4569 → 4585</span></span> 4569: 	if(defined($output_spec-&gt;{&#39;value&#39;})) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4570: 		my $expected = $output_spec-&gt;{&#39;value&#39;};
 </span><span class=""> 4571: 
 </span><span class=""> 4572: 		# Numeric refs use == for comparison; scalars use eq
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4573: 		# via perl_quote to produce the correct quoted literal
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4574: 		push @properties, {
+</span><span class=""> 4573: 		# via perl_quote to produce the correct quoted literal
+</span><span class=""> 4574: 		push @properties, {
 </span><span class=""> 4575: 			name =&gt; &#39;exact_value&#39;,
 </span><span class=""> 4576: 			code =&gt; ref($expected)
 </span><span class=""> 4577: 				? &quot;\$result == $expected&quot;
@@ -5490,53 +5490,53 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 4582: 	# --------------------------------------------------
 </span><span class=""> 4583: 	# Property 3: String length constraints
 </span><span class=""> 4584: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4585 → 4585 → 4624</span></span> 4585: 	if(_is_string_transform($input_spec, $output_spec)) {
-</span><span class=""> 4586: 		if(defined($output_spec-&gt;{&#39;min&#39;})) {
-</span><span class=""> 4587: 			push @properties, {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4585 → 4585 → 4624</span></span> 4585: 	if(_is_string_transform($input_spec, $output_spec)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4586: 		if(defined($output_spec-&gt;{&#39;min&#39;})) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4587: 			push @properties, {
 </span><span class=""> 4588: 				name =&gt; &#39;min_length&#39;,
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4589: 				code =&gt; &quot;length(\$result) &gt;= $output_spec-&gt;{&#39;min&#39;}&quot;,
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4590: 			};
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4591: 		}
+</span><span class=""> 4589: 				code =&gt; &quot;length(\$result) &gt;= $output_spec-&gt;{&#39;min&#39;}&quot;,
+</span><span class=""> 4590: 			};
+</span><span class=""> 4591: 		}
 </span><span class=""> 4592: 
-</span><span class=""> 4593: 		if(defined($output_spec-&gt;{&#39;max&#39;})) {
-</span><span class=""> 4594: 			push @properties, {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4593: 		if(defined($output_spec-&gt;{&#39;max&#39;})) {
+</span>
+					<details class="mutant-details">
+					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
+					<ul>
+				<li><b>COND_INV_4593_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+</li></ul></details>
+<span class=""> 4594: 			push @properties, {
 </span><span class=""> 4595: 				name =&gt; &#39;max_length&#39;,
 </span><span class=""> 4596: 				code =&gt; &quot;length(\$result) &lt;= $output_spec-&gt;{&#39;max&#39;}&quot;,
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4597: 			};
+</span><span class=""> 4597: 			};
+</span><span class=""> 4598: 		}
+</span><span class=""> 4599: 
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4600: 		if(defined($output_spec-&gt;{&#39;matches&#39;})) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_4597_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_4600_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class=""> 4598: 		}
-</span><span class=""> 4599: 
-</span><span class=""> 4600: 		if(defined($output_spec-&gt;{&#39;matches&#39;})) {
-</span><span class=""> 4601: 			my $pattern = $output_spec-&gt;{&#39;matches&#39;};
+<span class=""> 4601: 			my $pattern = $output_spec-&gt;{&#39;matches&#39;};
 </span><span class=""> 4602: 
 </span><span class=""> 4603: 			# See the matching comment in _schema_to_lectrotest_generator &acirc;&#128;&#148;
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4604: 			# compile first and re-embed via regexp_pattern() rather than
-</span>
-					<details class="mutant-details">
-					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
-					<ul>
-				<li><b>COND_INV_4604_3: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
-</li></ul></details>
-<span class=""> 4605: 			# splicing the raw string into qr/$pattern/, which would let
+</span><span class=""> 4604: 			# compile first and re-embed via regexp_pattern() rather than
+</span><span class=""> 4605: 			# splicing the raw string into qr/$pattern/, which would let
 </span><span class=""> 4606: 			# an unescaped &#39;/&#39; break out of the delimiter.
 </span><span class=""> 4607: 			my $compiled = ref($pattern) eq &#39;Regexp&#39; ? $pattern : eval { qr/$pattern/ };
-</span><span class=""> 4608: 			if($@ || !defined($compiled)) {
-</span><span class=""> 4609: 				carp &quot;Invalid matches pattern &#39;$pattern&#39; for transform &#39;$transform_name&#39;: $@&quot;;
-</span><span class=""> 4610: 			} else {
-</span><span class=""> 4611: 				my ($pat, $mods) = regexp_pattern($compiled);
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4612: 				my $safe_re = &quot;qr{$pat}&quot; . ($mods // &#39;&#39;);
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4608: 			if($@ || !defined($compiled)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_4612_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_4608_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class=""> 4613: 				push @properties, {
+<span class=""> 4609: 				carp &quot;Invalid matches pattern &#39;$pattern&#39; for transform &#39;$transform_name&#39;: $@&quot;;
+</span><span class=""> 4610: 			} else {
+</span><span class=""> 4611: 				my ($pat, $mods) = regexp_pattern($compiled);
+</span><span class=""> 4612: 				my $safe_re = &quot;qr{$pat}&quot; . ($mods // &#39;&#39;);
+</span><span class=""> 4613: 				push @properties, {
 </span><span class=""> 4614: 					name =&gt; &#39;pattern_match&#39;,
 </span><span class=""> 4615: 					code =&gt; &quot;\$result =~ $safe_re&quot;,
 </span><span class=""> 4616: 				};
@@ -5547,17 +5547,17 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 4621: 	# --------------------------------------------------
 </span><span class=""> 4622: 	# Property 4: Type preservation
 </span><span class=""> 4623: 	# --------------------------------------------------
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4624 → 4624 → 4643</span></span> 4624: 	if(_same_type($input_spec, $output_spec)) {
-</span><span class=""> 4625: 		my $type = _get_dominant_type($output_spec);
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4624 → 4624 → 4643</span></span> 4624: 	if(_same_type($input_spec, $output_spec)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4625: 		my $type = _get_dominant_type($output_spec);
 </span><span class=""> 4626: 
 </span><span class=""> 4627: 		# Only emit a numeric_type check for numeric types &acirc;&#128;&#148;
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4628: 		# string and other types have no equivalent simple check
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4629: 		if($type eq &#39;number&#39; || $type eq &#39;integer&#39; || $type eq &#39;float&#39;) {
-</span><span class=""> 4630: 			push @properties, {
+</span><span class=""> 4628: 		# string and other types have no equivalent simple check
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4629: 		if($type eq &#39;number&#39; || $type eq &#39;integer&#39; || $type eq &#39;float&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4630: 			push @properties, {
 </span><span class=""> 4631: 				name =&gt; &#39;numeric_type&#39;,
 </span><span class=""> 4632: 				code =&gt; &#39;looks_like_number($result)&#39;,
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4633: 			};
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4634: 		}
+</span><span class=""> 4633: 			};
+</span><span class=""> 4634: 		}
 </span><span class=""> 4635: 	}
 </span><span class=""> 4636: 
 </span><span class=""> 4637: 	# --------------------------------------------------
@@ -5566,19 +5566,19 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 4640: 	# Emit a defined() check for all transforms except those
 </span><span class=""> 4641: 	# whose output type is explicitly &#39;undef&#39; &acirc;&#128;&#148; those are
 </span><span class=""> 4642: 	# expected to return nothing
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4643 → 4643 → 4650</span></span> 4643: 	unless(($output_spec-&gt;{&#39;type&#39;} // &#39;&#39;) eq &#39;undef&#39;) {
-</span><span class=""> 4644: 		push @properties, {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">4643 → 4643 → 4650</span></span> 4643: 	unless(($output_spec-&gt;{&#39;type&#39;} // &#39;&#39;) eq &#39;undef&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4644: 		push @properties, {
 </span><span class=""> 4645: 			name =&gt; &#39;defined&#39;,
 </span><span class=""> 4646: 			code =&gt; &#39;defined($result)&#39;,
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4647: 		};
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4648: 	}
+</span><span class=""> 4647: 		};
+</span><span class=""> 4648: 	}
 </span><span class=""> 4649: 
-</span><span class=""> 4650: 	return @properties;
-</span><span class=""> 4651: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4650: 	return @properties;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4651: }
 </span><span class=""> 4652: 
 </span><span class=""> 4653: # --------------------------------------------------
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4654: # _process_custom_properties
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4655: #
+</span><span class=""> 4654: # _process_custom_properties
+</span><span class=""> 4655: #
 </span><span class=""> 4656: # Purpose:    Process the &#39;properties&#39; array from a
 </span><span class=""> 4657: #             transform definition, resolving each
 </span><span class=""> 4658: #             entry to either a named builtin property
@@ -5632,49 +5632,49 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 4706: 		my $prop_code;
 </span><span class=""> 4707: 		my $prop_desc;
 </span><span class=""> 4708: 
-</span><span class=""> 4709: 		if(!ref($prop_def)) {
-</span><span class=""> 4710: 			# Plain string &acirc;&#128;&#148; look up as a named builtin property
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4709: 		if(!ref($prop_def)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4710: 			# Plain string &acirc;&#128;&#148; look up as a named builtin property
 </span><span class=""> 4711: 			$prop_name = $prop_def;
 </span><span class=""> 4712: 
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4713: 			unless(exists($builtin_properties-&gt;{$prop_name})) {
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4714: 				carp &quot;Unknown built-in property &#39;$prop_name&#39;, skipping&quot;;
 </span><span class=""> 4715: 				next;
 </span><span class=""> 4716: 			}
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4717: 
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4718: 			my $builtin = $builtin_properties-&gt;{$prop_name};
+</span><span class=""> 4717: 
+</span><span class=""> 4718: 			my $builtin = $builtin_properties-&gt;{$prop_name};
 </span><span class=""> 4719: 
 </span><span class=""> 4720: 			# Build the argument list, respecting positional order
 </span><span class=""> 4721: 			my @var_names = sort keys %{$input_spec};
 </span><span class=""> 4722: 			my @args;
-</span><span class=""> 4723: 			if(_has_positions($input_spec)) {
-</span><span class=""> 4724: 				my @sorted = sort { $input_spec-&gt;{$a}{&#39;position&#39;} &lt;=&gt; $input_spec-&gt;{$b}{&#39;position&#39;} } @var_names;
-</span><span class=""> 4725: 				@args = map { &quot;\$$_&quot; } @sorted;
-</span><span class=""> 4726: 			} else {
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4727: 				@args = map { &quot;\$$_&quot; } @var_names;
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4723: 			if(_has_positions($input_spec)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_4727_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_4723_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class=""> 4728: 			}
+<span class=""> 4724: 				my @sorted = sort { $input_spec-&gt;{$a}{&#39;position&#39;} &lt;=&gt; $input_spec-&gt;{$b}{&#39;position&#39;} } @var_names;
+</span><span class=""> 4725: 				@args = map { &quot;\$$_&quot; } @sorted;
+</span><span class=""> 4726: 			} else {
+</span><span class=""> 4727: 				@args = map { &quot;\$$_&quot; } @var_names;
+</span><span class=""> 4728: 			}
 </span><span class=""> 4729: 
 </span><span class=""> 4730: 			# Build the call expression for the builtin template.
 </span><span class=""> 4731: 			# $new here is the raw OO signal from the caller &acirc;&#128;&#148;
 </span><span class=""> 4732: 			# defined means OO mode, undef means functional
 </span><span class=""> 4733: 			my $call_code;
-</span><span class=""> 4734: 			if($module &amp;&amp; defined($new)) {
-</span><span class=""> 4735: 				# OO mode &acirc;&#128;&#148; fresh object per trial
-</span><span class=""> 4736: 				$call_code  = &quot;my \$obj = new_ok(&#39;$module&#39;);&quot;;
-</span><span class=""> 4737: 				$call_code .= &quot;\$obj-&gt;$function&quot;;
-</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4738: 			} elsif($module &amp;&amp; $module ne $MODULE_BUILTIN) {
+</span><span class="survived-1 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch."> 4734: 			if($module &amp;&amp; defined($new)) {
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 1, Killed: 0, Survived: 1)</summary>
 					<ul>
-				<li><b>COND_INV_4738_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
+				<li><b>COND_INV_4734_4: Invert condition if to unless</b><br>MEDIUM: Add tests asserting both true and false outcomes
 </li></ul></details>
-<span class=""> 4739: 				# Functional mode with a named module
+<span class=""> 4735: 				# OO mode &acirc;&#128;&#148; fresh object per trial
+</span><span class=""> 4736: 				$call_code  = &quot;my \$obj = new_ok(&#39;$module&#39;);&quot;;
+</span><span class=""> 4737: 				$call_code .= &quot;\$obj-&gt;$function&quot;;
+</span><span class=""> 4738: 			} elsif($module &amp;&amp; $module ne $MODULE_BUILTIN) {
+</span><span class=""> 4739: 				# Functional mode with a named module
 </span><span class=""> 4740: 				$call_code = &quot;$module\::$function&quot;;
 </span><span class=""> 4741: 			} else {
 </span><span class=""> 4742: 				# Builtin or unqualified function call
@@ -5693,19 +5693,19 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 4755: 			$prop_code = $prop_def-&gt;{&#39;code&#39;};
 </span><span class=""> 4756: 			$prop_desc = $prop_def-&gt;{&#39;description&#39;} || &quot;Custom property: $prop_name&quot;;
 </span><span class=""> 4757: 
-</span><span class=""> 4758: 			unless($prop_code) {
-</span><span class=""> 4759: 				carp &quot;Custom property &#39;$prop_name&#39; missing &#39;code&#39; field, skipping&quot;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4758: 			unless($prop_code) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4759: 				carp &quot;Custom property &#39;$prop_name&#39; missing &#39;code&#39; field, skipping&quot;;
 </span><span class=""> 4760: 				next;
 </span><span class=""> 4761: 			}
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4762: 
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4763: 			# Sanity-check: code must contain at least a variable
+</span><span class=""> 4762: 
+</span><span class=""> 4763: 			# Sanity-check: code must contain at least a variable
 </span><span class=""> 4764: 			# reference or a word character to be meaningful
-</span><span class=""> 4765: 			unless($prop_code =~ /\$/ || $prop_code =~ /\w+/) {
-</span><span class=""> 4766: 				carp &quot;Custom property &#39;$prop_name&#39; code looks invalid: $prop_code&quot;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4765: 			unless($prop_code =~ /\$/ || $prop_code =~ /\w+/) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4766: 				carp &quot;Custom property &#39;$prop_name&#39; code looks invalid: $prop_code&quot;;
 </span><span class=""> 4767: 				next;
 </span><span class=""> 4768: 			}
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4769: 
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 4770: 		} else {
+</span><span class=""> 4769: 
+</span><span class=""> 4770: 		} else {
 </span><span class=""> 4771: 			# Neither string nor hashref &acirc;&#128;&#148; unrecognised definition type
 </span><span class=""> 4772: 			carp &#39;Invalid property definition: &#39;, render_fallback($prop_def);
 </span><span class=""> 4773: 			next;
@@ -5718,12 +5718,12 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 4780: 		};
 </span><span class=""> 4781: 	}
 </span><span class=""> 4782: 
-</span><span class=""> 4783: 	return @properties;
-</span><span class=""> 4784: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4783: 	return @properties;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4784: }
 </span><span class=""> 4785: 
 </span><span class=""> 4786: =head1 NOTES
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 4787: 
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class=""> 4788: C&lt;seed&gt; and C&lt;iterations&gt; really should be within C&lt;config&gt;.
+</span><span class=""> 4787: 
+</span><span class=""> 4788: C&lt;seed&gt; and C&lt;iterations&gt; really should be within C&lt;config&gt;.
 </span><span class=""> 4789: 
 </span><span class=""> 4790: =head1 SEE ALSO
 </span><span class=""> 4791: 
