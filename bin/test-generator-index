@@ -852,6 +852,35 @@ foreach my $file (reverse sort @history_files) {
 	$processed_count++;
 }
 
+# Append the current run as the final trend point if it is not already
+# present in the archive.  The snapshot is written AFTER the HTML is
+# generated, so the current commit's entry will normally be absent —
+# the last visible trend point would otherwise be the previous commit's,
+# which may have anomalously low coverage (e.g. a partial Devel::Cover
+# run) and makes the trend appear to crash just before the current date.
+unless(grep { index($_->{url}, $commit_sha) >= 0 } @data_points_with_time) {
+	my ($cur_sum, $cur_count) = (0, 0);
+	for my $f (keys %{$cover_db->{summary}}) {
+		next if $f eq 'Total';
+		next if $f =~ /^\//;
+		next unless $f =~ /^(?:lib|blib|bin)\//;
+		$cur_sum += $cover_db->{summary}{$f}{total}{percentage} // 0;
+		$cur_count++;
+	}
+	if($cur_count) {
+		my $cur_ts = strftime('%Y-%m-%dT%H:%M:%S', localtime);
+		my $tz = strftime('%z', localtime);
+		$tz =~ s/([+-])(\d{2})(\d{2})/$1$2:$3/;
+		$cur_ts .= $tz;
+		push @data_points_with_time, {
+			timestamp => $cur_ts,
+			pct       => $cur_sum / $cur_count,
+			url       => "https://github.com/$config{github_user}/$config{github_repo}/commit/$commit_sha",
+			comment   => $commit_messages{$commit_sha} // 'Current run',
+		};
+	}
+}
+
 # Sort by timestamp to ensure chronological order
 @data_points_with_time = sort { $a->{timestamp} cmp $b->{timestamp} } @data_points_with_time;
 

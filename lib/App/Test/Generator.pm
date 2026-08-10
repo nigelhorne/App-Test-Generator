@@ -182,7 +182,7 @@ From the command line:
   fuzz-harness-generator -r t/conf/abs.yml
 
   # Attempt to create a formal definition from a routine package, then run tests against that formal definition
-  # This is the holy grail of automatic test generation, just by looking at the source code
+  # This is the holy grail of test generation, a set of tests is automatically created directly from the source code,
   extract-schemas lib/App/Test/Generator/Sample/Module.pm && fuzz-harness-generator -r schemas/greet.yml
 
   # Fuzz a module and keep the corpus bounded: trim to the minimum subset that still covers every branch

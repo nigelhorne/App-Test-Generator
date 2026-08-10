@@ -63,6 +63,16 @@ Revision history for App-Test-Generator
 	  back to heuristics) rather than croaking with "malformed JSON
 	  string" and propagating through the Test::Builder subtest boundary
 	  to kill the test process with exit 255.
+	- Fix test-generator-index coverage trend chart always ending one commit
+	  behind the current run: the coverage snapshot is written to the archive
+	  AFTER the HTML is generated, so the current commit's point was never in
+	  the trend data — the last visible point was the previous commit's
+	  (which could show anomalously low coverage, e.g. a partial Devel::Cover
+	  run, making the trend appear to crash at the right-hand edge). The
+	  current run is now appended as the final trend point using the same
+	  arithmetic mean of per-file percentages as the archive-based points,
+	  guarded by a SHA check to avoid duplication if the snapshot was somehow
+	  already committed before HTML generation.
 	- Fix test-generator-index delta column showing the wrong value for
 	  blib/-instrumented modules (the common case under 'cover -test').
 	  %deltas was keyed by the normalised lib/ path ($display_file) but
