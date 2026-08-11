@@ -54,6 +54,8 @@ and dependency-driven planning (mocking, isolation) is handled
 separately by L<App::Test::Generator::Planner::Mock> and
 L<App::Test::Generator::Planner::Isolation>.
 
+This way a package's API can be automatically tested.
+
 =head2 new
 
 Construct a new TestStrategy.
@@ -90,8 +92,8 @@ A blessed hashref.
 =head4 input
 
     {
-        schema     => { type => HASHREF, optional => 1 },
-        thresholds => { type => HASHREF, optional => 1 },
+        schema     => { type => 'hashref', optional => 1 },
+        thresholds => { type => 'hashref', optional => 1 },
     }
 
 =head4 output
@@ -146,9 +148,9 @@ boolean flags for the test types that should be generated.
 =head4 output
 
     {
-        type => HASHREF,
+        type => 'hashref',
         keys => {
-            '*' => { type => HASHREF },
+            '*' => { type => 'hashref' },
         },
     }
 
@@ -287,5 +289,19 @@ sub _plan_for_method {
 
 	return \%plan;
 }
+
+=head1 SUPPORT
+
+This module is provided as-is without any warranty.
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright 2025-2026 Nigel Horne.
+
+Usage is subject to the terms of GPL2.
+If you use it,
+please let me know.
+
+=cut
 
 1;

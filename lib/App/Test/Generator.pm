@@ -3,6 +3,8 @@ package App::Test::Generator;
 # TODO: Test validator from Params::Validate::Strict 0.16
 # TODO: $seed should be passed to Data::Random::String::Matches
 # TODO: positional args - when config_undef is set, see what happens when not all args are given
+# TODO: add JSCPD score to the dashboard, allowing a mechanism to show
+#	duplicated code rather like the way the LCSAJ drill down works
 
 use 5.036;
 
