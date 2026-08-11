@@ -211,7 +211,7 @@ jobs:
 
       - name: Set snapshot variables
         run: |
-          echo "SNAPSHOT_TIMESTAMP=$(date +%Y-%m-%d)" >> $GITHUB_ENV
+          echo "SNAPSHOT_TIMESTAMP=$(date -u +%Y-%m-%dT%H%M%SZ)" >> $GITHUB_ENV
           echo "SNAPSHOT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Add local bin to PATH

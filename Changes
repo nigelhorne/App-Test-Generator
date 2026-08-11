@@ -1,5 +1,19 @@
 Revision history for App-Test-Generator
 
+0.46
+	[Bug fixes]
+	- Fix dashboard delta column showing 0% for same-day runs with different
+	  coverage. Coverage snapshots are named YYYY-MM-DD-SHA.json; the delta
+	  computation sorts archive files alphabetically and takes the last as
+	  "most recent prior run". For same-day runs the SHA hex value determines
+	  sort order, which is unrelated to commit time, so an earlier run can
+	  sort after a later one and become the spurious "previous", producing a
+	  zero or wrong delta. Fix: change SNAPSHOT_TIMESTAMP from
+	  `date +%Y-%m-%d` to `date -u +%Y-%m-%dT%H%M%SZ` (full UTC datetime
+	  without colons) so alphabetical filename order matches chronological
+	  run order for all cases. Updated in dashboard.yml and the embedded
+	  __DATA__ copy in bin/deploy-workflows.
+
 0.45	Mon Aug 10 11:17:51 AM EDT 2026
 	[Enhancements]
 	- Added --version option to bin/extract_schemas
