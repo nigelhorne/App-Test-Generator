@@ -29,6 +29,13 @@ Revision history for App-Test-Generator
 	  comment metadata), and extract_all() auto-creating a missing output dir.
 
 	[Bug fixes]
+	- Fix test-generator-mutate ignoring subdirectory tests (GitHub issue #10):
+	  both the baseline prove run and each per-mutant prove run now pass -r so
+	  that .t files in subdirectories of --tests are included. Without -r,
+	  prove silently skipped subdirs, every mutant survived, and the mutation
+	  score was always 0% when tests lived below the top level. Regression
+	  tests added to t/cli-test-generator-mutate.t.
+
 	- Fix dashboard delta column showing 0% for same-day runs with different
 	  coverage. Coverage snapshots are named YYYY-MM-DD-SHA.json; the delta
 	  computation sorts archive files alphabetically and takes the last as
