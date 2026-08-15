@@ -2,6 +2,20 @@ Revision history for App-Test-Generator
 
 0.46
 	[Enhancements]
+	- Add t/data-flow.t: 30 data-flow tests tracing Define-Use chains across
+	  CoverageGuidedFuzzer (seed storage/srand, stats vs corpus coherence,
+	  corpus-ref staleness after minimize, load_corpus isolation for bugs and
+	  seed, accumulated stats across consecutive run() calls),
+	  Model::Method (evidence insertion order, evidence_ref aliasing,
+	  weight=0 stored as 0 not 1, resolve_return_type idempotent DD write,
+	  evidence isolation between objects), Exporter::YAML (plan round-trip,
+	  required-arg validation, O-U-K file-handle lifecycle),
+	  Analyzer::SideEffect (purity_level derived after all flag assignments,
+	  mutation_fields deduplication, code_only stripping of string literals),
+	  Planner::Mock (pure-method omission, scalar vs arrayref strategy
+	  values), and BenchmarkGenerator (absent input/transforms keys coerced
+	  to empty hashes, schema not mutated by generate()).
+
 	- Add t/transaction.t: comprehensive transaction-flow tests covering ten
 	  multi-step lifecycle sequences across CoverageGuidedFuzzer, Mutator, and
 	  SchemaExtractor. Tests verify: corpus lifecycle (run→minimize→save→load
