@@ -53,14 +53,19 @@ jobs:
           sudo apt install libdb-dev
         if: runner.os == 'Linux'
 
-      # - name: Upgrade Toolchain
-      #   run: |
-      #   run: cpanm -iqn --skip-satisfied ExtUtils::MakeMaker Module::Build
+      - name: Upgrade Toolchain
+        run: |
+          cpanm -iqn --skip-satisfied ExtUtils::MakeMaker Module::Build
 
       # Install module dependencies (from cpanfile or manually)
       - name: Install dependencies
+        env:
+          AUTOMATED_TESTING: 1
+          NO_NETWORK_TESTING: 1
+          NONINTERACTIVE_TESTING: 1
+          PERL_MM_USE_DEFAULT: 1
         run: |
-          cpanm --skip-satisfied --notest --installdeps .
+          cpanm --skip-satisfied --notest --installdeps --verbose .
           cpanm -iqn --skip-satisfied \
               Test::Most \
               Test::Mockingbird \

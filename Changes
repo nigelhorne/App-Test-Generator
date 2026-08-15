@@ -1,6 +1,19 @@
 Revision history for App-Test-Generator
 
 0.46
+	[Enhancements]
+	- Add t/transaction.t: comprehensive transaction-flow tests covering ten
+	  multi-step lifecycle sequences across CoverageGuidedFuzzer, Mutator, and
+	  SchemaExtractor. Tests verify: corpus lifecycle (run→minimize→save→load
+	  round-trip), minimize idempotency, bug-input preservation across minimize,
+	  mid-flight failure recovery (bad save/load paths leave in-memory state
+	  intact), multi-session corpus accumulation, Mutator state-machine ordering
+	  (apply_mutant without prepare_workspace croaks), MUTANT_SKIP annotation
+	  integrity (unclosed BEGIN, orphan END, nested BEGIN all croak; valid block
+	  excludes annotated lines), fast-vs-full mutation level count invariant,
+	  extract_all() YAML idempotency (data-structure comparison ignoring
+	  comment metadata), and extract_all() auto-creating a missing output dir.
+
 	[Bug fixes]
 	- Fix dashboard delta column showing 0% for same-day runs with different
 	  coverage. Coverage snapshots are named YYYY-MM-DD-SHA.json; the delta
