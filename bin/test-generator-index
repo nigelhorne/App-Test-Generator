@@ -4421,13 +4421,13 @@ sub _mutation_index {
 	}
 
 	# --------------------------------------------------
-	# Duplication Details table — lists every duplicate
+	# Duplication Report table — lists every duplicate
 	# block with its file, line range, and the file/line
 	# it duplicates, so the reader can see exactly which
 	# lines are copied without clicking into each file.
 	# --------------------------------------------------
 	if($cpd_data && %$cpd_data) {
-		push @html, "<h3>Duplication Details</h3>\n";
+		push @html, '<h2>Duplication Report</h2>';
 		push @html, "<p><em>Only duplicate blocks of 10 or more consecutive lines are shown.</em></p>\n";
 		push @html, "<table border='1' cellpadding='5'>\n";
 		push @html, "<tr><th>File</th><th>Lines (10+ consecutive)</th><th>Duplicated in</th></tr>\n";
