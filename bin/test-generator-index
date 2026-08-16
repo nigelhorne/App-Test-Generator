@@ -4428,8 +4428,9 @@ sub _mutation_index {
 	# --------------------------------------------------
 	if($cpd_data && %$cpd_data) {
 		push @html, "<h3>Duplication Details</h3>\n";
+		push @html, "<p><em>Only duplicate blocks of 10 or more consecutive lines are shown.</em></p>\n";
 		push @html, "<table border='1' cellpadding='5'>\n";
-		push @html, "<tr><th>File</th><th>Lines</th><th>Duplicated in</th></tr>\n";
+		push @html, "<tr><th>File</th><th>Lines (10+ consecutive)</th><th>Duplicated in</th></tr>\n";
 
 		for my $f (sort keys %$cpd_data) {
 			my $blocks = $cpd_data->{$f};
@@ -4444,6 +4445,7 @@ sub _mutation_index {
 			for my $b (sort { $a->{start} <=> $b->{start} } @$blocks) {
 				next unless ref $b eq 'HASH' && defined $b->{start};
 				my $end  = $b->{end}  // $b->{start};
+				next if ($end - $b->{start} + 1) < 10;
 				my $mf   = $b->{match_file} // '';
 				$mf =~ s{^.*/lib/}{lib/};
 				my $ml   = $b->{match_line} // '';

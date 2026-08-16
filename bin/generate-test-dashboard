@@ -106,7 +106,7 @@ if [ -f /tmp/cpd_prev.json ]; then
 	cp /tmp/cpd_prev.json cover_html/cpd.json
 fi
 timeout 300 perl -MCode::CutNPaste -MJSON::MaybeXS -MFile::Slurp -e '
-	my $window = 6;
+	my $window = 10;
 	my $c = Code::CutNPaste->new(
 		dirs         => ["lib"],
 		window       => $window,
