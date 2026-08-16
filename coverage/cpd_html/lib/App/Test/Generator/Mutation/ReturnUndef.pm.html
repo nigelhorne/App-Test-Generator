@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CPD: lib/App/Test/Generator/Mutation/ReturnUndef.pm</title>
+<style>
+body { font-family: monospace; font-size: 13px; background: #fff; color: #222; margin: 1em 2em; }
+h1 { font-size: 1.1em; font-family: sans-serif; }
+pre { line-height: 1.5; }
+.dup-line { background-color: #fff3cd; display: block; }
+.dup-line:hover { background-color: #ffe082; }
+.cpd-tip { position: relative; display: inline-block; }
+.cpd-tip .cpd-tip-text {
+    visibility: hidden;
+    background-color: #333;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+}
+.cpd-tip:hover .cpd-tip-text { visibility: visible; }
+.cpd-dot { color: #cc8800; margin-right: 4px; cursor: help; }
+.legend { font-family: sans-serif; font-size: 0.9em; margin-bottom: 1em;
+          padding: 6px 10px; background: #fff3cd; border: 1px solid #ffc107;
+          border-radius: 4px; display: inline-block; }
+</style>
+</head>
+<body>
+<p><a href="../../index.html">&larr; Dashboard</a> &nbsp;
+<a href="https://github.com/nigelhorne/App-Test-Generator/blob/ddf74c5c8a8cda7c816888b770035adf3af7ca9a/lib/App/Test/Generator/Mutation/ReturnUndef.pm" target="_blank">View on GitHub &#128269;</a></p>
+<h1>lib/App/Test/Generator/Mutation/ReturnUndef.pm &mdash; Duplicate Code Regions</h1>
+<div class="legend">
+  <span class="cpd-dot">&#9670;</span> Amber lines are part of a duplicate block (10+ lines).
+  Hover for the matching file and line.
+</div>
+<pre>
+    1: package App::Test::Generator::Mutation::ReturnUndef;
+    2: 
+    3: use strict;
+    4: use warnings;
+    5: use parent 'App::Test::Generator::Mutation::Base';
+    6: use App::Test::Generator::Mutant;
+    7: use PPI;
+    8: 
+<span class="dup-line">    9: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 10</span></span>our $VERSION = '0.45';</span><span class="dup-line">   10: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 10</span></span></span><span class="dup-line">   11: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 10</span></span>=head1 NAME</span><span class="dup-line">   12: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 10</span></span></span><span class="dup-line">   13: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 10</span></span>App::Test::Generator::Mutation::ReturnUndef - Replace return expressions</span><span class="dup-line">   14: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 10</span></span>with undef to expose missing undef-return checks in the test suite</span><span class="dup-line">   15: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 10</span></span></span><span class="dup-line">   16: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 10</span></span>=head1 VERSION</span><span class="dup-line">   17: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 10</span></span></span><span class="dup-line">   18: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 10</span></span>Version 0.45</span>   19: 
+   20: =head1 METHODS
+   21: 
+   22: =head2 applies_to
+   23: 
+   24: Return true if the given document contains at least one return
+   25: statement this mutation strategy could mutate. Used by
+   26: L&lt;App::Test::Generator::Mutator&gt; to pre-filter strategies before
+   27: calling C&lt;mutate&gt;, so a document with nothing to mutate skips the
+   28: walk entirely.
+   29: 
+   30:     my $applies = $mutation-&gt;applies_to($doc);
+   31: 
+   32: =head3 Arguments
+   33: 
+   34: =over 4
+   35: 
+   36: =item * C&lt;$doc&gt;
+   37: 
+   38: A L&lt;PPI::Document&gt; object to inspect.
+   39: 
+   40: =back
+   41: 
+   42: =head3 Returns
+   43: 
+   44: True if the document contains a C&lt;return&gt; statement (PPI::Statement::Break
+   45: whose first token is C&lt;return&gt;), false otherwise.
+   46: 
+   47: =head3 API specification
+   48: 
+   49: =head4 input
+   50: 
+   51:     {
+   52:         self =&gt; { type =&gt; OBJECT, isa =&gt; 'App::Test::Generator::Mutation::ReturnUndef' },
+   53:         doc  =&gt; { type =&gt; OBJECT, isa =&gt; 'PPI::Document' },
+   54:     }
+   55: 
+   56: =head4 output
+   57: 
+   58:     { type =&gt; SCALAR }
+   59: 
+   60: =cut
+   61: 
+   62: sub applies_to {
+   63: 	my ($self, $doc) = @_;
+   64: 
+   65: 	# PPI &gt;= 1.270 classifies return as PPI::Statement::Break rather
+   66: 	# than the dedicated PPI::Statement::Return class -- scan the whole
+   67: 	# document for at least one qualifying return statement. This must
+   68: 	# match the document-level pre-filter contract used by
+   69: 	# Mutator::generate_mutants (and documented in Mutation::Base) rather
+   70: 	# than testing a single node, otherwise every call from
+   71: 	# generate_mutants would see $doc itself, which is never a
+   72: 	# PPI::Statement::Break, and mutate() would never run.
+   73: 	my $returns = $doc-&gt;find(sub {
+   74: 		my $node = $_[1];
+   75: 		return 0 unless $node-&gt;isa('PPI::Statement::Break');
+   76: 		my $first = $node-&gt;schild(0) or return 0;
+   77: 		return $first-&gt;content eq 'return';
+   78: 	}) || [];
+   79: 
+   80: 	return @{$returns} ? 1 : 0;
+   81: }
+   82: 
+   83: =head2 mutate
+   84: 
+   85: Walk a PPI document and generate one mutant for each non-bare return
+   86: statement, replacing its expression with C&lt;undef&gt;. For example,
+   87: C&lt;return $result&gt; becomes C&lt;return undef&gt;.
+   88: 
+   89: Bare C&lt;return;&gt; statements are skipped because they already return
+   90: undef - mutating them would produce a redundant mutant that can never
+   91: be killed.
+   92: 
+   93:     my $mutation = App::Test::Generator::Mutation::ReturnUndef-&gt;new;
+   94:     my $doc      = PPI::Document-&gt;new(\$source);
+   95:     my @mutants  = $mutation-&gt;mutate($doc);
+   96: 
+   97:     for my $m (@mutants) {
+   98:         print $m-&gt;id, ': ', $m-&gt;description, "\n";
+   99:     }
+  100: 
+  101: =head3 Arguments
+  102: 
+  103: =over 4
+  104: 
+  105: =item * C&lt;$self&gt;
+  106: 
+  107: An instance of C&lt;App::Test::Generator::Mutation::ReturnUndef&gt;.
+  108: 
+  109: =item * C&lt;$doc&gt;
+  110: 
+  111: A L&lt;PPI::Document&gt; object representing the parsed source to mutate.
+  112: The document is not modified by this method.
+  113: 
+  114: =back
+  115: 
+  116: =head3 Returns
+  117: 
+  118: A list of L&lt;App::Test::Generator::Mutant&gt; objects, one per qualifying
+  119: return statement found in the document. Returns an empty list if no
+  120: non-bare return statements are found.
+  121: 
+  122: Each mutant carries a C&lt;transform&gt; closure that when called with a
+  123: fresh L&lt;PPI::Document&gt; copy will replace the targeted return expression
+  124: with the literal C&lt;undef&gt;.
+  125: 
+  126: =head3 Notes
+  127: 
+  128: Mutant IDs include both line and column number to ensure uniqueness
+  129: when multiple return statements appear in the same source file.
+  130: 
+  131: Only return statements with an expression child are mutated - bare
+  132: C&lt;return;&gt; statements are skipped as they already return undef.
+  133: 
+  134: Each mutant's optional C&lt;context&gt; field is set to C&lt;conditional&gt; if
+  135: the return statement sits inside (or is itself the keyword of) an
+  136: C&lt;if&gt;/C&lt;unless&gt;/C&lt;while&gt;/C&lt;until&gt; compound statement, or C&lt;statement&gt;
+  137: otherwise; its C&lt;line_content&gt; field holds the raw source text of the
+  138: mutated line. Both are consumed by
+  139: L&lt;App::Test::Generator::Mutator&gt;'s fast-mode dedup.
+  140: 
+  141: =head3 API specification
+  142: 
+  143: =head4 input
+  144: 
+  145:     {
+  146:         self =&gt; {
+  147:             type =&gt; OBJECT,
+  148:             isa  =&gt; 'App::Test::Generator::Mutation::ReturnUndef',
+  149:         },
+  150:         doc =&gt; {
+  151:             type =&gt; OBJECT,
+  152:             isa  =&gt; 'PPI::Document',
+  153:         },
+  154:     }
+  155: 
+  156: =head4 output
+  157: 
+  158:     {
+  159:         type     =&gt; ARRAYREF,
+  160:         elements =&gt; {
+  161:             type =&gt; OBJECT,
+  162:             isa  =&gt; 'App::Test::Generator::Mutant',
+  163:         },
+  164:     }
+  165: 
+  166: =cut
+  167: 
+  168: sub mutate {
+  169: 	my ($self, $doc) = @_;
+  170: 
+  171: 	# PPI &gt;= 1.270 classifies return statements as PPI::Statement::Break
+  172: 	# rather than PPI::Statement::Return -- use a custom predicate
+  173: 	my $returns = $doc-&gt;find(sub {
+  174: 		my $node = $_[1];
+  175: 		# Match Break nodes that are specifically return statements
+  176: 		return 0 unless $node-&gt;isa('PPI::Statement::Break');
+  177: 		my $first = $node-&gt;schild(0) or return 0;
+  178: 		return $first-&gt;content eq 'return';
+  179: 	}) || [];
+  180: 
+  181: 	my @mutants;
+  182: 
+  183: 	for my $ret (@{$returns}) {
+  184: 		# Skip bare return statements — they already return undef
+  185: 		# so mutating them would produce a redundant mutant that
+  186: 		# can never be killed by any meaningful test. Also skips
+  187: 		# bare returns with only a postfix conditional/loop modifier.
+<span class="dup-line">  188: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 188</span></span>		my @expr = _return_expr_span($ret);</span><span class="dup-line">  189: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 188</span></span>		next unless @expr;</span><span class="dup-line">  190: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 188</span></span></span><span class="dup-line">  191: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 188</span></span>		# Skip a lone structure node (e.g. return ($x, $y) gives a</span><span class="dup-line">  192: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 188</span></span>		# single PPI::Structure::List child) — nothing simple to splice</span><span class="dup-line">  193: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 188</span></span>		next if @expr == 1 &amp;&amp; !$expr[0]-&gt;isa('PPI::Token');</span><span class="dup-line">  194: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 188</span></span></span><span class="dup-line">  195: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 188</span></span>		# Capture location so the transform closure targets the</span><span class="dup-line">  196: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 188</span></span>		# exact statement rather than the first match on that line</span><span class="dup-line">  197: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 188</span></span>		my $line = $ret-&gt;location-&gt;[0];</span>  198: 		my $col  = $ret-&gt;location-&gt;[1];
+  199: 
+  200: 		# Build a unique ID from line and column so multiple return
+  201: 		# statements in the same file never collide
+  202: 		my $id = "RETURN_UNDEF_${line}_${col}";
+  203: 
+  204: 		my $mutant = eval {
+  205: 			App::Test::Generator::Mutant-&gt;new(
+  206: 				id           =&gt; $id,
+  207: 				group        =&gt; "RETURN_UNDEF:$line",
+  208: 				description  =&gt; 'Replace return expression with undef',
+  209: 				original     =&gt; $ret-&gt;content(),
+  210: 				line         =&gt; $line,
+  211: 				type         =&gt; 'return',
+  212: 				context      =&gt; $self-&gt;_in_conditional($ret) ? 'conditional' : 'statement',
+  213: 				line_content =&gt; $self-&gt;_line_content($doc, $line),
+  214: 
+  215: 				# The transform closure captures line and col so it
+  216: 				# targets precisely the right return statement in the
+  217: 				# document copy it receives at test time
+  218: 				transform =&gt; sub {
+<span class="dup-line">  219: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 220</span></span>					my $doc  = $_[0];</span><span class="dup-line">  220: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 220</span></span>					# PPI &gt;= 1.270 uses PPI::Statement::Break for return</span><span class="dup-line">  221: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 220</span></span>					my $rets = $doc-&gt;find(sub {</span><span class="dup-line">  222: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 220</span></span>						my $node = $_[1];</span><span class="dup-line">  223: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 220</span></span>						return 0 unless $node-&gt;isa('PPI::Statement::Break');</span><span class="dup-line">  224: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 220</span></span>						my $first = $node-&gt;schild(0) or return 0;</span><span class="dup-line">  225: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 220</span></span>						return $first-&gt;content eq 'return';</span><span class="dup-line">  226: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 220</span></span>						}) || [];</span><span class="dup-line">  227: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 220</span></span>					for my $ret (@{$rets}) {</span><span class="dup-line">  228: <span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm line 220</span></span>						next unless $ret-&gt;line_number   == $line;</span>  229: 						next unless $ret-&gt;column_number == $col;
+  230: 
+  231: 						my @expr = _return_expr_span($ret);
+  232: 						last unless @expr;
+  233: 						last if @expr == 1 &amp;&amp; !$expr[0]-&gt;isa('PPI::Token');
+  234: 
+  235: 						# Replace the whole expression span with a single
+  236: 						# 'undef' token rather than just its first token --
+  237: 						# $self-&gt;{x} is three significant children (Symbol,
+  238: 						# Operator, Structure) and replacing only the
+  239: 						# leading $self produced the broken mutant
+  240: 						# 'return undef-&gt;{x};'
+  241: 						$expr[0]-&gt;insert_before(PPI::Token::Word-&gt;new('undef'));
+  242: 						$_-&gt;remove for @expr;
+  243: 						last;
+  244: 					}
+  245: 				},
+  246: 			);
+  247: 		};
+  248: 
+  249: 		# If the Mutant construction fails, report clearly rather than
+  250: 		# silently dropping the mutant from the results
+  251: 		if($@ || !$mutant) {
+  252: 			warn "Failed to construct mutant $id: $@" if $@;
+  253: 			next;
+  254: 		}
+  255: 
+  256: 		push @mutants, $mutant;
+  257: 	}
+  258: 
+  259: 	return @mutants;
+  260: }
+  261: 
+  262: # --------------------------------------------------
+  263: # Purpose: identify the PPI elements making up the expression
+  264: #          being returned by a 'return' statement, excluding
+  265: #          the leading 'return' keyword, the trailing statement
+  266: #          terminator, and any postfix conditional/loop modifier
+  267: #          (if/unless/while/until/for/foreach) and its condition.
+  268: # Entry:   a PPI::Statement::Break node already confirmed to be
+  269: #          a 'return' statement.
+  270: # Exit:    a list of the significant child elements making up
+  271: #          the return expression, or an empty list for a bare
+  272: #          return (with or without a postfix modifier).
+  273: # Side effects: none.
+  274: # --------------------------------------------------
+  275: sub _return_expr_span {
+  276: 	my ($ret) = @_;
+  277: 
+  278: 	my @children = $ret-&gt;schildren;
+  279: 	shift @children;
+  280: 
+  281: 	if(@children &amp;&amp; $children[-1]-&gt;isa('PPI::Token::Structure') &amp;&amp; $children[-1]-&gt;content eq ';') {
+  282: 		pop @children;
+  283: 	}
+  284: 
+  285: 	for my $i (0 .. $#children) {
+  286: 		my $child = $children[$i];
+  287: 		next unless $child-&gt;isa('PPI::Token::Word');
+  288: 		next unless $child-&gt;content =~ /^(?:if|unless|while|until|for|foreach)$/;
+  289: 		@children = @children[0 .. $i - 1];
+  290: 		last;
+  291: 	}
+  292: 
+  293: 	return @children;
+  294: }
+  295: 
+  296: =head1 AUTHOR
+  297: 
+  298: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
+  299: 
+  300: =head1 LICENCE AND COPYRIGHT
+  301: 
+  302: Copyright 2026 Nigel Horne.
+  303: 
+  304: Usage is subject to the terms of GPL2.
+  305: If you use it,
+  306: please let me know.
+  307: 
+  308: =cut
+  309: 
+  310: 1;
+</pre>
+<script>
+document.addEventListener("mousemove", function(e) {
+    document.querySelectorAll(".cpd-tip-text").forEach(function(tip) {
+        tip.style.left = (e.clientX + 12) + "px";
+        tip.style.top  = (e.clientY + 12) + "px";
+    });
+});
+</script>
+</body>
+</html>
