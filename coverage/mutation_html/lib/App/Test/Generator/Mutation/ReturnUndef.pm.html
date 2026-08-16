@@ -312,6 +312,18 @@ Approximate LCSAJ segments: 27<br>
 	</p>
     </div>
 
+    <div class="legend">
+        <h3>Duplication Legend (CPD)</h3>
+        <p>
+        <span class="cpd-dot">&#9670;</span>
+        <b>Duplicate block</b> — this line is part of a code block duplicated elsewhere.
+        Hover to see the matching location.
+        </p>
+        <p>
+        Multiple diamonds on a line mean the block is duplicated in more than one other place.
+        </p>
+    </div>
+
 		<div class="legend">
 			<h3>Mutant Testing Legend</h3>
 			<span class="legend-box survived-1"></span> Survived (tests missed this)
@@ -327,12 +339,12 @@ Approximate LCSAJ segments: 27<br>
 </span><span class="">    6: use App::Test::Generator::Mutant;
 </span><span class="">    7: use PPI;
 </span><span class="">    8: 
-</span><span class="">    9: our $VERSION = &#39;0.45&#39;;
-</span><span class="">   10: 
-</span><span class="">   11: =head1 NAME
-</span><span class="">   12: 
-</span><span class="">   13: App::Test::Generator::Mutation::ReturnUndef - Replace return expressions
-</span><span class="">   14: with undef to expose missing undef-return checks in the test suite
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:10</span></span>    9: our $VERSION = &#39;0.45&#39;;
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:10</span></span>   10: 
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:10</span></span>   11: =head1 NAME
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:10</span></span>   12: 
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:10</span></span>   13: App::Test::Generator::Mutation::ReturnUndef - Replace return expressions
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:10</span></span>   14: with undef to expose missing undef-return checks in the test suite
 </span><span class="">   15: 
 </span><span class="">   16: =head1 VERSION
 </span><span class="">   17: 
@@ -506,12 +518,12 @@ Approximate LCSAJ segments: 27<br>
 </span><span class="">  185: 		# so mutating them would produce a redundant mutant that
 </span><span class="">  186: 		# can never be killed by any meaningful test. Also skips
 </span><span class="">  187: 		# bare returns with only a postfix conditional/loop modifier.
-</span><span class="">  188: 		my @expr = _return_expr_span($ret);
-</span><span class="">  189: 		next unless @expr;
-</span><span class="">  190: 
-</span><span class="">  191: 		# Skip a lone structure node (e.g. return ($x, $y) gives a
-</span><span class="">  192: 		# single PPI::Structure::List child) &acirc;&#128;&#148; nothing simple to splice
-</span><span class="">  193: 		next if @expr == 1 &amp;&amp; !$expr[0]-&gt;isa(&#39;PPI::Token&#39;);
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:188</span></span>  188: 		my @expr = _return_expr_span($ret);
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:188</span></span>  189: 		next unless @expr;
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:188</span></span>  190: 
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:188</span></span>  191: 		# Skip a lone structure node (e.g. return ($x, $y) gives a
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:188</span></span>  192: 		# single PPI::Structure::List child) &acirc;&#128;&#148; nothing simple to splice
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:188</span></span>  193: 		next if @expr == 1 &amp;&amp; !$expr[0]-&gt;isa(&#39;PPI::Token&#39;);
 </span><span class="">  194: 
 </span><span class="">  195: 		# Capture location so the transform closure targets the
 </span><span class="">  196: 		# exact statement rather than the first match on that line
@@ -525,7 +537,7 @@ Approximate LCSAJ segments: 27<br>
 </span><span class="">  204: 		my $mutant = eval {
 </span><span class="">  205: 			App::Test::Generator::Mutant-&gt;new(
 </span><span class="">  206: 				id           =&gt; $id,
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  207: 				group        =&gt; &quot;RETURN_UNDEF:$line&quot;,
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  207: 				group        =&gt; &quot;RETURN_UNDEF:$line&quot;,
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -558,12 +570,12 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  216: 				# targets precisely the right return statement in the
 </span><span class="">  217: 				# document copy it receives at test time
 </span><span class="">  218: 				transform =&gt; sub {
-</span><span class="">  219: 					my $doc  = $_[0];
-</span><span class="">  220: 					# PPI &gt;= 1.270 uses PPI::Statement::Break for return
-</span><span class="">  221: 					my $rets = $doc-&gt;find(sub {
-</span><span class="">  222: 						my $node = $_[1];
-</span><span class="">  223: 						return 0 unless $node-&gt;isa(&#39;PPI::Statement::Break&#39;);
-</span><span class="">  224: 						my $first = $node-&gt;schild(0) or return 0;
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:220</span></span>  219: 					my $doc  = $_[0];
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:220</span></span>  220: 					# PPI &gt;= 1.270 uses PPI::Statement::Break for return
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:220</span></span>  221: 					my $rets = $doc-&gt;find(sub {
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:220</span></span>  222: 						my $node = $_[1];
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:220</span></span>  223: 						return 0 unless $node-&gt;isa(&#39;PPI::Statement::Break&#39;);
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Mutation/BooleanNegation.pm:220</span></span>  224: 						my $first = $node-&gt;schild(0) or return 0;
 </span><span class="">  225: 						return $first-&gt;content eq &#39;return&#39;;
 </span><span class="">  226: 						}) || [];
 </span><span class="">  227: 					for my $ret (@{$rets}) {

@@ -312,6 +312,18 @@ Approximate LCSAJ segments: 47<br>
 	</p>
     </div>
 
+    <div class="legend">
+        <h3>Duplication Legend (CPD)</h3>
+        <p>
+        <span class="cpd-dot">&#9670;</span>
+        <b>Duplicate block</b> — this line is part of a code block duplicated elsewhere.
+        Hover to see the matching location.
+        </p>
+        <p>
+        Multiple diamonds on a line mean the block is duplicated in more than one other place.
+        </p>
+    </div>
+
 		<div class="legend">
 			<h3>Mutant Testing Legend</h3>
 			<span class="legend-box survived-1"></span> Survived (tests missed this)
@@ -390,12 +402,12 @@ Approximate LCSAJ segments: 47<br>
 </span><span class="">   69: 
 </span><span class="">   70: 	# Bless an empty hashref into the calling class
 </span><span class="">   71: 	return bless {}, $class;
-</span><span class="">   72: }
-</span><span class="">   73: 
-</span><span class="">   74: =head2 validate_email
-</span><span class="">   75: 
-</span><span class="">   76: Validate an email address against basic structural rules.
-</span><span class="">   77: 
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Analyzer/Return.pm:64</span></span><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Planner/Grouping.pm:67</span></span>   72: }
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Analyzer/Return.pm:64</span></span><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Planner/Grouping.pm:67</span></span>   73: 
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Analyzer/Return.pm:64</span></span><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Planner/Grouping.pm:67</span></span>   74: =head2 validate_email
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Analyzer/Return.pm:64</span></span><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Planner/Grouping.pm:67</span></span>   75: 
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Analyzer/Return.pm:64</span></span><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Planner/Grouping.pm:67</span></span>   76: Validate an email address against basic structural rules.
+</span><span class=""><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Analyzer/Return.pm:64</span></span><span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: lib/App/Test/Generator/Planner/Grouping.pm:67</span></span>   77: 
 </span><span class="">   78:     my $ok = $obj-&gt;validate_email(&#39;user@example.com&#39;);
 </span><span class="">   79: 
 </span><span class="">   80: =head3 Arguments
@@ -792,7 +804,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  268: 	# Store the config hashref directly &acirc;&#128;&#148; callers own the data
 </span><span class="">  269: 	$self-&gt;{config} = $config;
 </span><span class="">  270: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  271: 	return 1;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  271: 	return 1;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -925,7 +937,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  322: 
 </span><span class="">  323: 	if(defined $greeting) {
 </span><span class="">  324: 		croak &#39;Greeting must be a string&#39; if ref($greeting);
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  325: 	}
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  325: 	}
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1116,7 +1128,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 							</li></ul></details>
 <span class="">  419: 	croak &#39;Score must be numeric&#39;
 </span><span class="">  420: 		unless $score =~ /^(?:\d+\.?\d*|\.\d+)$/;
-</span><span class="survived-3 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Return value mutation survived. Add tests asserting exact return values.">  421: 
+</span><span class="survived-3 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Boolean logic mutation survived. Add tests covering both true and false paths.">  421: 
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
