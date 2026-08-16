@@ -4249,6 +4249,19 @@ sub _mutation_index {
 	push @html, '<li><b>Killed</b>: ', scalar(@{$data->{killed} || []}), '</li>';
 	push @html, '<li><b>Survived</b>: ', scalar(@{$data->{survived} || []}), '</li>';
 
+	if($cpd_data) {
+		my $cpd_files = scalar keys %$cpd_data;
+		my $cpd_blocks = 0;
+		$cpd_blocks += scalar @{ $cpd_data->{$_} } for keys %$cpd_data;
+		if($cpd_files) {
+			push @html, "<li><b>Duplication</b>: $cpd_blocks duplicate block(s) across $cpd_files file(s) (see Dup% column)</li>";
+		} else {
+			push @html, '<li><b>Duplication</b>: no duplicate code blocks detected</li>';
+		}
+	} else {
+		push @html, '<li><b>Duplication</b>: install <a href="https://metacpan.org/dist/Code-CutNPaste">Code::CutNPaste</a> to enable</li>';
+	}
+
 	push @html, '</ul>';
 
 	push @html, "<h3>Mutation Files</h3>\n";
@@ -4560,7 +4573,7 @@ sub _cpd_pct_for_file {
 	my ($file, $cpd_data) = @_;
 
 	my $blocks = _cpd_blocks_for_file($file, $cpd_data);
-	return undef unless @$blocks;
+	return 0 unless @$blocks;
 
 	my %dup_lines;
 	for my $b (@$blocks) {
@@ -4597,7 +4610,7 @@ sub _dup_badge {
 	my ($pct) = @_;
 
 	unless(defined $pct) {
-		return qq{<span class="coverage-badge" style="background-color:#999" title="No data">n/a</span>};
+		return qq{<span class="coverage-badge" style="background-color:#999" title="CPD tool not installed">n/a</span>};
 	}
 
 	# Invert: low dup% is green, high is red
