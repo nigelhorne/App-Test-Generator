@@ -4607,7 +4607,45 @@ sub _cpd_blocks_for_file {
 	$norm =~ s{^.*/lib/}{lib/};
 	$norm = "lib/$norm" unless $norm =~ m{^lib/};
 
-	return $cpd_data->{$norm} // $cpd_data->{$file} // [];
+	my $raw = $cpd_data->{$norm} // $cpd_data->{$file} // [];
+
+	# Filter out POD/boilerplate false positives.
+	# A block is discarded if any of its lines in the source file
+	# is a POD directive (starts with =), or if more than half the
+	# lines are blank — both are signatures of header boilerplate
+	# that appears identically in every module (VERSION, NAME pod,
+	# use strict, etc.).
+	my @kept;
+	BLOCK: for my $b (@$raw) {
+		next unless ref $b eq 'HASH' && defined $b->{start} && defined $b->{end};
+
+		# Try to read the block lines from the source file
+		my $src_path = $norm;   # lib/... relative
+		$src_path = $file unless -f $src_path;
+		if(open my $fh, '<', $src_path) {
+			my ($ln, @lines) = (0);
+			while(<$fh>) {
+				$ln++;
+				next if $ln < $b->{start};
+				last if $ln > $b->{end};
+				push @lines, $_;
+			}
+			close $fh;
+
+			if(@lines) {
+				# Any POD directive → boilerplate
+				next BLOCK if grep { /^=/ } @lines;
+
+				# Mostly blank → low-signal match
+				my $blank = grep { /^\s*$/ } @lines;
+				next BLOCK if ($blank / scalar @lines) > 0.5;
+			}
+		}
+
+		push @kept, $b;
+	}
+
+	return \@kept;
 }
 
 # --------------------------------------------------
