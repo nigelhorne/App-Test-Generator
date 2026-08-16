@@ -2,6 +2,27 @@ Revision history for App-Test-Generator
 
 0.46
 	[Enhancements]
+	- Add t/domain.t: 24 domain tests using Equivalence Partitioning and Boundary
+	  Value Analysis across six modules. Covers: Model::Method::new (name/source
+	  required-vs-undef domain), add_evidence (category enum EP, signal enum EP,
+	  weight BVA including zero vs absent vs negative), resolve_confidence (BVA at
+	  thresholds 19/20/39/40 for low/medium/high), resolve_return_type (all signal→
+	  bucket mappings including legacy_type values and alphabetical tie-breaks);
+	  BenchmarkGenerator::new (schema type domain: valid hashref, empty hashref,
+	  absent, undef, arrayref, scalarref), generate (module/function absent croaks,
+	  builtin module, transforms present vs absent), _representative_value (all type
+	  partitions, numeric min/max BVA including strict-greater-than boundary at
+	  min=default and strict-less-than boundary at max=default, min+max midpoint),
+	  _quote_value (undef, numeric 0, plain string, embedded single-quote, empty);
+	  CoverageGuidedFuzzer::new (schema/target_sub absent and undef, iterations and
+	  timeout BVA at 0 and 1, seed default vs explicit); Mutant::new (exists vs
+	  defined distinction for required attrs, transform type domain, optional attrs
+	  default to undef, line=0 edge); Analyzer::Complexity::analyze (cyclomatic
+	  threshold BVA at scores 3/4/7/8, early_returns BVA at 1/2/3 returns,
+	  nesting_depth BVA including unmatched-brace guard); Analyzer::SideEffect::
+	  analyze (purity_level EP for pure/self_mutating/impure combinations,
+	  mutation_fields deduplication domain, string-stripping false-positive guards).
+
 	- Add t/data-flow.t: 30 data-flow tests tracing Define-Use chains across
 	  CoverageGuidedFuzzer (seed storage/srand, stats vs corpus coherence,
 	  corpus-ref staleness after minimize, load_corpus isolation for bugs and
