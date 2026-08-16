@@ -222,6 +222,7 @@ Readonly my %config => (
 	lcsaj_root => 'cover_html/mutation_html/lib',
 	lcsaj_hits_file     => 'cover_html/lcsaj_hits.json', # Runtime.pm writes here
 	cpd_file            => 'cover_html/cpd.json',        # Code::CutNPaste output
+	cpd_output_dir      => 'cover_html/cpd_html',        # per-file CPD drill-down pages
 	output => 'cover_html/index.html',	# published to gh-pages
 	max_retry => 5,
 	min_locale_samples => 3,
@@ -1847,6 +1848,12 @@ if($mutation_db) {
 		my $next = $i < $#sorted_files ? $sorted_files[$i + 1] : undef;
 
 		_mutant_file_report($config{mutation_output_dir}, $file, $files->{$file}, $prev, $next, $cover_db, $config{lcsaj_root}, $lcsaj_hits, $cpd_data);
+	}
+
+	if($cpd_data) {
+		for my $file (sort keys %$cpd_data) {
+			_cpd_file_report($config{cpd_output_dir}, $file, $cpd_data, $github_base);
+		}
 	}
 }
 
@@ -4438,9 +4445,11 @@ sub _mutation_index {
 			my $display_f = $f;
 			$display_f =~ s{^.*/lib/}{lib/};
 			my $source_url = $github_base . $display_f;
+			my $drill_url  = "cpd_html/$display_f.html";
 			my $file_cell = sprintf(
-				'<a href="%s" class="icon-link" title="View source on GitHub" target="_blank">%s</a>',
-				$source_url, $display_f
+				'<a href="%s" title="View duplicate lines highlighted" target="_blank">%s</a>'
+				. ' <a href="%s" class="icon-link" title="View source on GitHub" target="_blank">&#128269;</a>',
+				$drill_url, $display_f, $source_url
 			);
 			for my $b (sort { $a->{start} <=> $b->{start} } @$blocks) {
 				next unless ref $b eq 'HASH' && defined $b->{start};
@@ -4636,6 +4645,147 @@ sub _cpd_pct_for_file {
 	}
 
 	return $total_lines ? (scalar keys %dup_lines) / $total_lines * 100 : 0;
+}
+
+# --------------------------------------------------
+# _cpd_file_report
+#
+# Purpose:    Generate a standalone HTML page for one
+#             source file showing its content with
+#             duplicate regions highlighted in amber.
+#             Pages are written to $out_dir/$file.html.
+#
+# Entry:      $out_dir    - directory to write pages into
+#             $file       - source file path (lib/...)
+#             $cpd_data   - decoded cpd.json hashref
+#             $github_base - base URL for GitHub links
+#
+# Exit:       Returns nothing. Writes one HTML file.
+#
+# Side effects: Creates directories; writes HTML file.
+# --------------------------------------------------
+sub _cpd_file_report {
+	my ($out_dir, $file, $cpd_data, $github_base) = @_;
+
+	my $display_f = $file;
+	$display_f =~ s{^.*/lib/}{lib/};
+
+	# Build line-number → list-of-match-locations map
+	my %dup_by_line;
+	my $blocks = _cpd_blocks_for_file($file, $cpd_data);
+	for my $b (@$blocks) {
+		next unless ref $b eq 'HASH' && defined $b->{start} && defined $b->{end};
+		next if ($b->{end} - $b->{start} + 1) < 10;
+		my $mf = $b->{match_file} // '';
+		$mf =~ s{^.*/lib/}{lib/};
+		my $ml = $b->{match_line} // '';
+		for my $ln ($b->{start} .. $b->{end}) {
+			push @{ $dup_by_line{$ln} }, "$mf line $ml";
+		}
+	}
+
+	return unless %dup_by_line || -f $file;   # nothing to show
+
+	# Ensure output directory exists
+	(my $page_path = "$out_dir/$display_f.html") =~ s{//}{/}g;
+	my $page_dir = $page_path;
+	$page_dir =~ s{/[^/]+$}{};
+	make_path($page_dir) unless -d $page_dir;
+
+	open my $out, '>', $page_path or return;
+
+	my $source_url = $github_base . $display_f;
+	my $title      = "CPD: $display_f";
+
+	print $out <<"HTML";
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>$title</title>
+<style>
+body { font-family: monospace; font-size: 13px; background: #fff; color: #222; margin: 1em 2em; }
+h1 { font-size: 1.1em; font-family: sans-serif; }
+pre { line-height: 1.5; }
+.dup-line { background-color: #fff3cd; display: block; }
+.dup-line:hover { background-color: #ffe082; }
+.cpd-tip { position: relative; display: inline-block; }
+.cpd-tip .cpd-tip-text {
+    visibility: hidden;
+    background-color: #333;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+}
+.cpd-tip:hover .cpd-tip-text { visibility: visible; }
+.cpd-dot { color: #cc8800; margin-right: 4px; cursor: help; }
+.legend { font-family: sans-serif; font-size: 0.9em; margin-bottom: 1em;
+          padding: 6px 10px; background: #fff3cd; border: 1px solid #ffc107;
+          border-radius: 4px; display: inline-block; }
+</style>
+</head>
+<body>
+<p><a href="../../index.html">&larr; Dashboard</a> &nbsp;
+<a href="$source_url" target="_blank">View on GitHub &#128269;</a></p>
+<h1>$display_f &mdash; Duplicate Code Regions</h1>
+<div class="legend">
+  <span class="cpd-dot">&#9670;</span> Amber lines are part of a duplicate block (10+ lines).
+  Hover for the matching file and line.
+</div>
+<pre>
+HTML
+
+	# Render the file line by line
+	if(open my $src, '<', $file) {
+		my $ln = 0;
+		while(my $content = <$src>) {
+			$ln++;
+			chomp $content;
+			my $escaped = $content;
+			$escaped =~ s/&/&amp;/g;
+			$escaped =~ s/</&lt;/g;
+			$escaped =~ s/>/&gt;/g;
+
+			my $line_no = sprintf('%5d: ', $ln);
+
+			if(my $matches = $dup_by_line{$ln}) {
+				my %seen;
+				my $tips = '';
+				for my $loc (@$matches) {
+					next if $seen{$loc}++;
+					(my $tip_text = $loc) =~ s/"/&quot;/g;
+					$tips .= qq{<span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: $tip_text</span></span>};
+				}
+				print $out qq{<span class="dup-line">$line_no$tips$escaped</span>};
+			} else {
+				print $out "$line_no$escaped\n";
+			}
+		}
+		close $src;
+	} else {
+		print $out "(source file not found)\n";
+	}
+
+	print $out <<"HTML";
+</pre>
+<script>
+document.addEventListener("mousemove", function(e) {
+    document.querySelectorAll(".cpd-tip-text").forEach(function(tip) {
+        tip.style.left = (e.clientX + 12) + "px";
+        tip.style.top  = (e.clientY + 12) + "px";
+    });
+});
+</script>
+</body>
+</html>
+HTML
+
+	close $out;
 }
 
 # --------------------------------------------------
