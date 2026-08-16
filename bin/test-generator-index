@@ -4403,6 +4403,10 @@ sub _mutation_index {
 
 	push @html, "</table>\n";
 
+	unless($cpd_data) {
+		push @html, '<p><em>Install <a href="https://metacpan.org/dist/Code-CutNPaste">Code::CutNPaste</a> to enable copy-paste duplication analysis (Dup% column).</em></p>';
+	}
+
 	# --------------------------------------------------
 	# Structural Coverage Summary (if provided)
 	# --------------------------------------------------
