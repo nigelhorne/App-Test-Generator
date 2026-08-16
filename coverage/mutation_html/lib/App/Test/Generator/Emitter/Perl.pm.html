@@ -236,6 +236,35 @@ pre details.mutant-details ul {
 	visibility: visible;
 }
 
+.cpd-dot {
+    color: #cc8800;
+    font-size: 10px;
+    margin-right: 3px;
+    cursor: help;
+}
+
+.cpd-tip {
+    position: relative;
+    display: inline-block;
+}
+
+.cpd-tip .cpd-tip-text {
+    visibility: hidden;
+    background-color: #333;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.cpd-tip:hover .cpd-tip-text {
+    visibility: visible;
+}
+
 </style>
 </head>
 <body>
@@ -884,7 +913,7 @@ function toggleTheme() {
 })();
 
 document.addEventListener("mousemove", function(e) {
-	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+	document.querySelectorAll(".lcsaj-tip-text, .cpd-tip-text").forEach(function(tip) {
 		tip.style.left = (e.clientX + 12) + "px";
 		tip.style.top  = (e.clientY + 12) + "px";
 	});
