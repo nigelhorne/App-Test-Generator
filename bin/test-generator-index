@@ -4421,6 +4421,51 @@ sub _mutation_index {
 	}
 
 	# --------------------------------------------------
+	# Duplication Details table — lists every duplicate
+	# block with its file, line range, and the file/line
+	# it duplicates, so the reader can see exactly which
+	# lines are copied without clicking into each file.
+	# --------------------------------------------------
+	if($cpd_data && %$cpd_data) {
+		push @html, "<h3>Duplication Details</h3>\n";
+		push @html, "<table border='1' cellpadding='5'>\n";
+		push @html, "<tr><th>File</th><th>Lines</th><th>Duplicated in</th></tr>\n";
+
+		for my $f (sort keys %$cpd_data) {
+			my $blocks = $cpd_data->{$f};
+			next unless ref $blocks eq 'ARRAY' && @$blocks;
+			my $display_f = $f;
+			$display_f =~ s{^.*/lib/}{lib/};
+			my $source_url = $github_base . $display_f;
+			my $file_cell = sprintf(
+				'<a href="%s" class="icon-link" title="View source on GitHub">%s</a>',
+				$source_url, $display_f
+			);
+			for my $b (sort { $a->{start} <=> $b->{start} } @$blocks) {
+				next unless ref $b eq 'HASH' && defined $b->{start};
+				my $end  = $b->{end}  // $b->{start};
+				my $mf   = $b->{match_file} // '';
+				$mf =~ s{^.*/lib/}{lib/};
+				my $ml   = $b->{match_line} // '';
+				my $range = $b->{start} == $end
+					? "line $b->{start}"
+					: "lines $b->{start}&ndash;$end";
+				my $match_url = $github_base . $mf;
+				my $match_cell = sprintf(
+					'<a href="%s#L%s" title="View in GitHub" target="_blank">%s line %s</a>',
+					$match_url, $ml, $mf, $ml
+				);
+				push @html, sprintf(
+					"<tr><td>%s</td><td>%s</td><td>%s</td></tr>\n",
+					$file_cell, $range, $match_cell
+				);
+			}
+		}
+
+		push @html, "</table>\n";
+	}
+
+	# --------------------------------------------------
 	# Structural Coverage Summary (if provided)
 	# --------------------------------------------------
 	if($coverage_data) {
