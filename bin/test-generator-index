@@ -102,6 +102,7 @@ each CI push via C<.github/workflows/dashboard.yml>.
   mutation.json             - Mutation testing results from test-generator-mutate
   cover_html/lcsaj_hits.json - LCSAJ path hit data from the LCSAJ runtime debugger
   cover_html/mutation_html/lib/ - Per-file LCSAJ path definitions (.lcsaj.json)
+  cover_html/cpd.json       - Copy-paste duplicate block data from Code::CutNPaste
   coverage_history/*.json   - Historical coverage snapshots for the trend chart
 
 =head1 OUTPUTS
@@ -181,11 +182,11 @@ each CI push via C<.github/workflows/dashboard.yml>.
                       dependency version cliff detection, and root
                       cause confidence scoring
   Mutation Report   - Per-file mutation score (killed/survived/total),
-                      cyclomatic complexity, and TER3 (LCSAJ path
-                      coverage) with raw fraction
+                      cyclomatic complexity, TER3 (LCSAJ path coverage),
+                      and duplication percentage (Dup%)
   Per-file Pages    - Line-by-line mutation heatmap with TER1/TER2/TER3
-                      metrics, LCSAJ path markers, and expandable
-                      mutant details with suggested tests
+                      metrics, LCSAJ path markers, CPD duplicate markers,
+                      and expandable mutant details with suggested tests
 
 =head1 DEPENDENCIES
 
@@ -220,6 +221,7 @@ Readonly my %config => (
 	mutation_output_dir => 'cover_html/mutation_html',   # where files are written
 	lcsaj_root => 'cover_html/mutation_html/lib',
 	lcsaj_hits_file     => 'cover_html/lcsaj_hits.json', # Runtime.pm writes here
+	cpd_file            => 'cover_html/cpd.json',        # Code::CutNPaste output
 	output => 'cover_html/index.html',	# published to gh-pages
 	max_retry => 5,
 	min_locale_samples => 3,
@@ -1820,9 +1822,17 @@ if($mutation_db) {
 		close $lfh;
 	}
 
+	my $cpd_data;
+
+	if($config{cpd_file} && -f $config{cpd_file}) {
+		open my $cfh, '<', $config{cpd_file};
+		$cpd_data = decode_json(do { local $/; <$cfh> });
+		close $cfh;
+	}
+
 	my $files = _group_by_file($mutation_db);
 
-	push @html, @{_mutation_index($mutation_db, $files, $cover_db, $config{lcsaj_root}, $lcsaj_hits)};
+	push @html, @{_mutation_index($mutation_db, $files, $cover_db, $config{lcsaj_root}, $lcsaj_hits, $cpd_data)};
 
 	# Pre-sort files worst-first so navigation order matches index order
 	my @sorted_files = sort { _file_score($files->{$a}) <=> _file_score($files->{$b}) || $a cmp $b } keys %$files;
@@ -1836,7 +1846,7 @@ if($mutation_db) {
 		# Only assign next if this is NOT the last file
 		my $next = $i < $#sorted_files ? $sorted_files[$i + 1] : undef;
 
-		_mutant_file_report($config{mutation_output_dir}, $file, $files->{$file}, $prev, $next, $cover_db, $config{lcsaj_root}, $lcsaj_hits);
+		_mutant_file_report($config{mutation_output_dir}, $file, $files->{$file}, $prev, $next, $cover_db, $config{lcsaj_root}, $lcsaj_hits, $cpd_data);
 	}
 }
 
@@ -4226,7 +4236,7 @@ sub _generate_fuzz_schemas {
 #             appear at the top.
 # --------------------------------------------------
 sub _mutation_index {
-	my ($data, $files, $coverage_data, $lcsaj_dir, $lcsaj_hits) = @_;
+	my ($data, $files, $coverage_data, $lcsaj_dir, $lcsaj_hits, $cpd_data) = @_;
 
 	my @html;
 
@@ -4247,10 +4257,13 @@ sub _mutation_index {
 	# Column headers for the mutation files table.
 	# TER3 = Third level Test Effectiveness Ratio (LCSAJ path coverage).
 	# Only shown when lcsaj_root is configured.
+	my $cpd_col_hdr = $cpd_data
+		? '<th title="Percentage of lines involved in duplicate code blocks (Code::CutNPaste)">Dup%</th>'
+		: '';
 	if($config{lcsaj_root}) {
-		push @html, "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Skipped</th><th>Score%</th><th>Complexity</th><th title=\"TER1=Statement, TER2=Branch, TER3=LCSAJ Path\">TER1 / TER2 / TER3</th></tr>\n";
+		push @html, "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Skipped</th><th>Score%</th><th>Complexity</th><th title=\"TER1=Statement, TER2=Branch, TER3=LCSAJ Path\">TER1 / TER2 / TER3</th>$cpd_col_hdr</tr>\n";
 	} else {
-		push @html, "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Skipped</th><th>Score%</th><th>Complexity</th></tr>\n";
+		push @html, "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Skipped</th><th>Score%</th><th>Complexity</th>$cpd_col_hdr</tr>\n";
 	}
 
 	for my $file (
@@ -4359,8 +4372,20 @@ sub _mutation_index {
 			$ter_cell = "$ter1_badge / $ter2_badge";
 		}
 
+		# --------------------------------------------------
+		# CPD column — percentage of file lines that appear
+		# in at least one duplicate block.
+		# --------------------------------------------------
+		my $cpd_cell = '';
+		if($cpd_data) {
+			my $dup_pct = _cpd_pct_for_file($file, $cpd_data);
+			# Invert badge colours: high duplication is bad (red), low is good (green)
+			my $cpd_badge = _dup_badge($dup_pct);
+			$cpd_cell = "<td>$cpd_badge</td>";
+		}
+
 		push @html, sprintf(
-			qq{<tr class="%s"><td><a href="%s" title="View mutation line by line" target="_blank">%s</a> %s</td><td>%d</td><td>%d</td><td>%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>},
+			qq{<tr class="%s"><td><a href="%s" title="View mutation line by line" target="_blank">%s</a> %s</td><td>%d</td><td>%d</td><td>%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>%s</tr>},
 			$row_class,
 			$html_file,
 			$file,
@@ -4372,6 +4397,7 @@ sub _mutation_index {
 			$badge_html,
 			$complexity_html,
 			$ter_cell,
+			$cpd_cell,
 		);
 	}
 
@@ -4483,6 +4509,106 @@ sub _ter_badge {
 }
 
 # --------------------------------------------------
+# _cpd_blocks_for_file
+#
+# Purpose:    Return the list of CPD duplicate blocks
+#             for a given file, normalising the key so
+#             it matches the lib/ form used in cpd.json.
+#
+# Entry:      $file     - source file path (any form)
+#             $cpd_data - decoded cpd.json hashref
+#
+# Exit:       Returns an arrayref of block hashrefs
+#             (each with start/end/match_file/match_line),
+#             or an empty arrayref if none found.
+#
+# Side effects: None.
+# --------------------------------------------------
+sub _cpd_blocks_for_file {
+	my ($file, $cpd_data) = @_;
+
+	return [] unless $cpd_data;
+
+	my $norm = $file;
+	$norm =~ s{^.*/blib/lib/}{lib/};
+	$norm =~ s{^.*/lib/}{lib/};
+	$norm = "lib/$norm" unless $norm =~ m{^lib/};
+
+	return $cpd_data->{$norm} // $cpd_data->{$file} // [];
+}
+
+# --------------------------------------------------
+# _cpd_pct_for_file
+#
+# Purpose:    Compute the percentage of lines in a
+#             source file that fall within at least
+#             one CPD duplicate block.
+#
+# Entry:      $file     - source file path
+#             $cpd_data - decoded cpd.json hashref
+#
+# Exit:       Returns a percentage (0-100) or undef
+#             if the file is not in cpd.json.
+#
+# Side effects: None.
+# --------------------------------------------------
+sub _cpd_pct_for_file {
+	my ($file, $cpd_data) = @_;
+
+	my $blocks = _cpd_blocks_for_file($file, $cpd_data);
+	return undef unless @$blocks;
+
+	my %dup_lines;
+	for my $b (@$blocks) {
+		next unless ref $b eq 'HASH' && defined $b->{start} && defined $b->{end};
+		$dup_lines{$_} = 1 for $b->{start} .. $b->{end};
+	}
+
+	# Use the actual file line count as the denominator
+	my $total_lines = 0;
+	if(open my $fh, '<', $file) {
+		$total_lines++ while <$fh>;
+		close $fh;
+	}
+
+	return $total_lines ? (scalar keys %dup_lines) / $total_lines * 100 : 0;
+}
+
+# --------------------------------------------------
+# _dup_badge
+#
+# Purpose:    Format a duplication percentage as a
+#             colour-coded HTML badge. Colour logic is
+#             the inverse of _ter_badge: low duplication
+#             is good (green), high is bad (red).
+#
+# Entry:      $pct - duplication percentage (0-100),
+#                    or undef if no data.
+#
+# Exit:       Returns an HTML span string.
+#
+# Side effects: None.
+# --------------------------------------------------
+sub _dup_badge {
+	my ($pct) = @_;
+
+	unless(defined $pct) {
+		return qq{<span class="coverage-badge" style="background-color:#999" title="No data">n/a</span>};
+	}
+
+	# Invert: low dup% is green, high is red
+	my ($class, $tooltip) =
+		$pct <= (100 - $config{med_threshold}) ? ('badge-good', 'Low duplication') :
+		$pct <= (100 - $config{low_threshold}) ? ('badge-warn', 'Moderate duplication') :
+						          ('badge-bad',  'High duplication');
+
+	return sprintf(
+		'<span class="coverage-badge %s" title="%s">%.1f%%</span>',
+		$class, $tooltip, $pct
+	);
+}
+
+# --------------------------------------------------
 # _group_by_file
 #
 # Purpose:    Partition a flat list of mutant hashrefs
@@ -4575,7 +4701,8 @@ sub _mutant_file_report {
 		$next,
 		$coverage_data,
 		$lcsaj_dir,
-		$lcsaj_hits
+		$lcsaj_hits,
+		$cpd_data,
 	) = @_;
 
 	return unless -f $file;
@@ -4721,6 +4848,29 @@ sub _mutant_file_report {
 	}
 
 	# --------------------------------------------------
+	# CPD legend — only shown when cpd_data is provided
+	# and this file has at least one duplicate block.
+	# --------------------------------------------------
+	if($cpd_data) {
+		my $cpd_blocks = _cpd_blocks_for_file($file, $cpd_data);
+		if(@$cpd_blocks) {
+			print $out qq{
+    <div class="legend">
+        <h3>Duplication Legend (CPD)</h3>
+        <p>
+        <span class="cpd-dot">&#9670;</span>
+        <b>Duplicate block</b> — this line is part of a code block duplicated elsewhere.
+        Hover to see the matching location.
+        </p>
+        <p>
+        Multiple diamonds on a line mean the block is duplicated in more than one other place.
+        </p>
+    </div>
+};
+		}
+	}
+
+	# --------------------------------------------------
 	# Legend explaining line colours
 	# --------------------------------------------------
 	print $out qq{
@@ -4809,6 +4959,41 @@ sub _mutant_file_report {
 		}
 	}
 
+	# --------------------------------------------------
+	# Pre-compute CPD marker map for this file.
+	# Each line that falls within a duplicate block
+	# gets an entry listing the matching locations.
+	# The file key in cpd_data uses lib/ paths so we
+	# normalise $file to match that form.
+	# --------------------------------------------------
+	my %cpd_by_line;
+
+	if($cpd_data) {
+		my $cpd_norm = $file;
+		$cpd_norm =~ s{^.*/blib/lib/}{lib/};
+		$cpd_norm =~ s{^.*/lib/}{lib/};
+		$cpd_norm = "lib/$cpd_norm" unless $cpd_norm =~ m{^lib/};
+
+		my $blocks = $cpd_data->{$cpd_norm}
+			// $cpd_data->{$file}
+			// [];
+
+		for my $b (@$blocks) {
+			next unless ref $b eq 'HASH';
+			my ($start, $end) = ($b->{start}, $b->{end});
+			next unless defined $start && defined $end;
+
+			# Normalise the match file path for display
+			my $mf = $b->{match_file} // '';
+			$mf =~ s{^.*/lib/}{lib/};
+			my $ml = $b->{match_line} // '';
+
+			for my $ln ($start .. $end) {
+				push @{ $cpd_by_line{$ln} }, "$mf:$ml";
+			}
+		}
+	}
+
 	for my $i (0 .. $#lines) {
 		my $line_no = $i + 1;
 		my $content = encode_entities($lines[$i]);
@@ -4868,6 +5053,21 @@ sub _mutant_file_report {
 			}
 		}
 
+		# CPD markers — one diamond per duplicate match location
+		my $cpd_marker = '';
+
+		if(my $matches = $cpd_by_line{$line_no}) {
+			# Deduplicate match locations so the same file:line
+			# doesn't produce two diamonds from overlapping blocks
+			my %seen_cpd;
+			for my $loc (@$matches) {
+				next if $seen_cpd{$loc}++;
+				my $tip = "Duplicate: $loc";
+				$tip =~ s/"/&quot;/g;
+				$cpd_marker .= qq{<span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">$tip</span></span>};
+			}
+		}
+
 		# Add tooltip class only if tooltip text exists
 		my $extra_class = $tooltip ? ' tooltip' : '';
 
@@ -4877,7 +5077,7 @@ sub _mutant_file_report {
 		my $tooltip_attr = $tooltip ? qq{ data-tooltip="$tooltip"} : '';
 
 		print $out qq{<span class="$class$extra_class"$tooltip_attr>};
-		print $out $lcsaj_marker, sprintf('%5d: %s', $line_no, $content);
+		print $out $lcsaj_marker, $cpd_marker, sprintf('%5d: %s', $line_no, $content);
 
 		# --------------------------------------------------
 		# Build expandable mutant details for this line
@@ -5369,6 +5569,35 @@ pre details.mutant-details ul {
 	visibility: visible;
 }
 
+.cpd-dot {
+    color: #cc8800;
+    font-size: 10px;
+    margin-right: 3px;
+    cursor: help;
+}
+
+.cpd-tip {
+    position: relative;
+    display: inline-block;
+}
+
+.cpd-tip .cpd-tip-text {
+    visibility: hidden;
+    background-color: #333;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.cpd-tip:hover .cpd-tip-text {
+    visibility: visible;
+}
+
 </style>
 </head>
 <body>
@@ -5395,7 +5624,7 @@ function toggleTheme() {
 })();
 
 document.addEventListener("mousemove", function(e) {
-	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+	document.querySelectorAll(".lcsaj-tip-text, .cpd-tip-text").forEach(function(tip) {
 		tip.style.left = (e.clientX + 12) + "px";
 		tip.style.top  = (e.clientY + 12) + "px";
 	});
