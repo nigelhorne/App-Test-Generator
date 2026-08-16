@@ -3,7 +3,7 @@ package App::Test::Generator;
 # TODO: Test validator from Params::Validate::Strict 0.16
 # TODO: $seed should be passed to Data::Random::String::Matches
 # TODO: positional args - when config_undef is set, see what happens when not all args are given
-# TODO: add JSCPD score to the dashboard, allowing a mechanism to show
+# TODO: add JSCPD score to the dashboard, adding a mechanism to show
 #	duplicated code rather like the way the LCSAJ drill down works
 
 use 5.036;
@@ -3687,9 +3687,7 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'Valid email addresses',
-		},
-
-		url => {
+		}, url => {
 			code => q{
 				Gen {
 					my @schemes = qw(http https);
@@ -3703,9 +3701,7 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'Valid HTTP/HTTPS URLs',
-		},
-
-		uuid => {
+		}, uuid => {
 			code => q{
 				Gen {
 					require UUID::Tiny;
@@ -3713,9 +3709,7 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'Valid UUIDv4 identifiers',
-		},
-
-		phone_us => {
+		}, phone_us => {
 			code => q{
 				Gen {
 					my $area = 200 + int(rand(800));
@@ -3725,9 +3719,7 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'US phone numbers (XXX-XXX-XXXX format)',
-		},
-
-		phone_e164 => {
+		}, phone_e164 => {
 			code => q{
 				Gen {
 					my $country = 1 + int(rand(999));
@@ -3737,27 +3729,21 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'E.164 international phone numbers',
-		},
-
-		ipv4 => {
+		}, ipv4 => {
 			code => q{
 				Gen {
 					join('.', map { int(rand(256)) } 1..4);
 				}
 			},
 			description => 'IPv4 addresses',
-		},
-
-		ipv6 => {
+		}, ipv6 => {
 			code => q{
 				Gen {
 					join(':', map { sprintf('%04x', int(rand(0x10000))) } 1..8);
 				}
 			},
 			description => 'IPv6 addresses',
-		},
-
-		username => {
+		}, username => {
 			code => q{
 				Gen {
 					my $len = 3 + int(rand(13));
@@ -3767,9 +3753,7 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'Valid usernames (alphanumeric with _ and -)',
-		},
-
-		slug => {
+		}, slug => {
 			code => q{
 				Gen {
 					my @words = qw(quick brown fox jumps over lazy dog hello world test data);
@@ -3778,18 +3762,14 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'URL slugs (lowercase words separated by hyphens)',
-		},
-
-		hex_color => {
+		}, hex_color => {
 			code => q{
 				Gen {
 					sprintf('#%06x', int(rand(0x1000000)));
 				}
 			},
 			description => 'Hex color codes (#RRGGBB)',
-		},
-
-		iso_date => {
+		}, iso_date => {
 			code => q{
 				Gen {
 					my $year = 2000 + int(rand(25));
@@ -3800,7 +3780,6 @@ sub _get_semantic_generators {
 			},
 			description => 'ISO 8601 date format (YYYY-MM-DD)',
 		},
-
 		iso_datetime => {
 			code => q{
 				Gen {
@@ -3815,9 +3794,7 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'ISO 8601 datetime format (YYYY-MM-DDTHH:MM:SSZ)',
-		},
-
-		semver => {
+		}, semver => {
 			code => q{
 				Gen {
 					my $major = int(rand(10));
@@ -3827,9 +3804,7 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'Semantic version strings (major.minor.patch)',
-		},
-
-		jwt => {
+		}, jwt => {
 			code => q{
 				Gen {
 					my @chars = ('A'..'Z', 'a'..'z', '0'..'9', '-', '_');
@@ -3840,9 +3815,7 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'JWT-like tokens (base64url format)',
-		},
-
-		json => {
+		}, json => {
 			code => q{
 				Gen {
 					my @keys = qw(id name value status count);
@@ -3852,9 +3825,7 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'Simple JSON objects',
-		},
-
-		base64 => {
+		}, base64 => {
 			code => q{
 				Gen {
 					my @chars = ('A'..'Z', 'a'..'z', '0'..'9', '+', '/');
@@ -3865,27 +3836,21 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'Base64-encoded strings',
-		},
-
-		md5 => {
+		}, md5 => {
 			code => q{
 				Gen {
 					join('', map { sprintf('%x', int(rand(16))) } 1..32);
 				}
 			},
 			description => 'MD5 hashes (32 hex characters)',
-		},
-
-		sha256 => {
+		}, sha256 => {
 			code => q{
 				Gen {
 					join('', map { sprintf('%x', int(rand(16))) } 1..64);
 				}
 			},
 			description => 'SHA-256 hashes (64 hex characters)',
-		},
-
-		unix_timestamp => {
+		}, unix_timestamp => {
 			code => q{
 				Gen {
 					time;
@@ -3950,27 +3915,21 @@ sub _get_builtin_properties {
 				return "do { my \$tmp = $call_code; \$result eq \$tmp }";
 			},
 			applicable_to => ['all'],
-		},
-
-		non_negative => {
+		}, non_negative => {
 			description   => 'Result is always non-negative',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
 				return '$result >= 0';
 			},
 			applicable_to => ['number', 'integer', 'float'],
-		},
-
-		positive => {
+		}, positive => {
 			description   => 'Result is always positive (> 0)',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
 				return '$result > 0';
 			},
 			applicable_to => ['number', 'integer', 'float'],
-		},
-
-		non_empty => {
+		}, non_empty => {
 			description   => 'Result is never empty',
 			code_template => sub {
 				my ($function, $call_code, $input_vars) = @_;
