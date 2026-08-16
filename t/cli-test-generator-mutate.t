@@ -109,7 +109,12 @@ sub run_cmd {
 # --tests are included in both the baseline check and per-mutant runs.
 # Before the fix (GitHub issue #10), prove ran without -r and silently
 # skipped any .t files inside subdirs, letting all mutants survive.
+# These blocks run a full mutation cycle so they are only run under
+# EXTENDED_TESTING=1 (each spawns multiple prove processes).
 # --------------------------------------------------------------------
+
+SKIP: {
+	skip 'EXTENDED_TESTING not set', 4 unless $ENV{EXTENDED_TESTING};
 
 {
 	my $rdir  = tempdir(CLEANUP => 1);
@@ -239,5 +244,7 @@ PM
 		'mutants survive when killer test is top-level-only — confirms subdirectory isolation')
 		or diag("stdout:\n$stdout\nstderr:\n$stderr");
 }
+
+} # end SKIP: EXTENDED_TESTING
 
 done_testing();
