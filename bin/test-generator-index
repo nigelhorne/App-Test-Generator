@@ -1851,8 +1851,13 @@ if($mutation_db) {
 	}
 
 	if($cpd_data) {
-		for my $file (sort keys %$cpd_data) {
-			_cpd_file_report($config{cpd_output_dir}, $file, $cpd_data, $github_base);
+		my @cpd_files = sort keys %$cpd_data;
+		for my $i (0 .. $#cpd_files) {
+			_cpd_file_report(
+				$config{cpd_output_dir}, $cpd_files[$i], $cpd_data, $github_base,
+				$i > 0            ? $cpd_files[$i - 1] : undef,
+				$i < $#cpd_files  ? $cpd_files[$i + 1] : undef,
+			);
 		}
 	}
 }
@@ -4434,13 +4439,55 @@ sub _mutation_index {
 	# lines are copied without clicking into each file.
 	# --------------------------------------------------
 	if($cpd_data && %$cpd_data) {
+
+		# Change 5: staleness warning — compare cpd.json mtime to
+		# the newest .pm under lib/ so stale results are flagged.
+		if($config{cpd_file} && -f $config{cpd_file}) {
+			my $cpd_mtime  = (stat($config{cpd_file}))[9] // 0;
+			my $newest_pm  = 0;
+			if(opendir my $dh, 'lib') {
+				# Recursive mtime scan via find(1) kept dependency-free
+				my @pm_files;
+				my @dirs = ('lib');
+				while(my $dir = shift @dirs) {
+					next unless opendir(my $d, $dir);
+					for my $e (readdir $d) {
+						next if $e =~ /^\./;
+						my $path = "$dir/$e";
+						push @dirs, $path if -d $path;
+						if($e =~ /\.pm$/) {
+							my $mt = (stat($path))[9] // 0;
+							$newest_pm = $mt if $mt > $newest_pm;
+						}
+					}
+					closedir $d;
+				}
+				closedir $dh;
+			}
+			if($newest_pm > $cpd_mtime) {
+				push @html, '<p class="notice" style="background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:6px 10px;">'
+					. '&#9888; CPD data may be stale &mdash; source files have changed since the last duplication scan. '
+					. 'Re-run the dashboard workflow to refresh.</p>';
+			}
+		}
+
 		push @html, '<h2>Duplication Report</h2>';
-		push @html, "<p><em>Only duplicate blocks of 10 or more consecutive lines are shown.</em></p>\n";
+		push @html, "<p><em>Only duplicate blocks of 10 or more consecutive lines are shown. "
+			. "Each pair is listed once. Intra-file duplicates are labelled <b>(same file)</b>.</em></p>\n";
 		push @html, "<table border='1' cellpadding='5'>\n";
 		push @html, "<tr><th>File</th><th>Lines (10+ consecutive)</th><th>Duplicated in</th></tr>\n";
 
-		for my $f (sort keys %$cpd_data) {
-			my $blocks = $cpd_data->{$f};
+		# Change 4: sort files by filtered block count descending, then name.
+		my %filtered_blocks;
+		for my $f (keys %$cpd_data) {
+			$filtered_blocks{$f} = _cpd_blocks_for_file($f, $cpd_data);
+		}
+
+		# Change 1: deduplicate pairs — track canonical (side_a, side_b) pairs.
+		my %seen_pairs;
+
+		for my $f (sort { scalar @{$filtered_blocks{$b}} <=> scalar @{$filtered_blocks{$a}} || $a cmp $b } keys %$cpd_data) {
+			my $blocks = $filtered_blocks{$f};
 			next unless ref $blocks eq 'ARRAY' && @$blocks;
 			my $display_f = $f;
 			$display_f =~ s{^.*/lib/}{lib/};
@@ -4458,17 +4505,53 @@ sub _mutation_index {
 				my $mf   = $b->{match_file} // '';
 				$mf =~ s{^.*/lib/}{lib/};
 				my $ml   = $b->{match_line} // '';
+
+				# Change 1: canonical pair key — deduplicate A↔B and B↔A
+				my $side_a    = "$display_f:$b->{start}";
+				my $side_b    = "$mf:$ml";
+				my $pair_key  = join "\0", sort($side_a, $side_b);
+				next if $seen_pairs{$pair_key}++;
+
 				my $range = $b->{start} == $end
 					? "line $b->{start}"
 					: "lines $b->{start}&ndash;$end";
-				my $match_url = $github_base . $mf;
-				my $match_cell = sprintf(
-					'<a href="%s#L%s" title="View in GitHub" target="_blank">%s line %s</a>',
-					$match_url, $ml, $mf, $ml
-				);
+
+				# Change 3: sample tooltip — first real code line of block
+				my $sample = _block_sample($display_f, $b->{start}, $end);
+				(my $sample_esc = $sample) =~ s/"/&quot;/g;
+				my $range_cell = $sample_esc
+					? qq{<span title="$sample_esc">$range</span>}
+					: $range;
+
+				# Change 2: link match to CPD drill-down if page will exist,
+				#           fall back to GitHub otherwise.
+				# Change 7: label intra-file duplicates distinctly.
+				my $intra = ($mf eq $display_f);
+				my $match_cell;
+				if($intra) {
+					my $drill_match = "cpd_html/$display_f.html";
+					$match_cell = sprintf(
+						'<a href="%s" title="Duplicate within same file" target="_blank">%s lines %s&ndash;%s</a>'
+						. ' <em>(same file)</em>',
+						$drill_match, $display_f, $ml, $ml + $end - $b->{start}
+					);
+				} elsif(exists $cpd_data->{$mf} || exists $cpd_data->{"lib/$mf"}) {
+					my $drill_match = "cpd_html/$mf.html";
+					$match_cell = sprintf(
+						'<a href="%s" title="View highlighted in CPD report" target="_blank">%s line %s</a>',
+						$drill_match, $mf, $ml
+					);
+				} else {
+					my $match_url = $github_base . $mf;
+					$match_cell = sprintf(
+						'<a href="%s#L%s" title="View in GitHub" target="_blank">%s line %s</a>',
+						$match_url, $ml, $mf, $ml
+					);
+				}
+
 				push @html, sprintf(
 					"<tr><td>%s</td><td>%s</td><td>%s</td></tr>\n",
-					$file_cell, $range, $match_cell
+					$file_cell, $range_cell, $match_cell
 				);
 			}
 		}
@@ -4649,6 +4732,42 @@ sub _cpd_blocks_for_file {
 }
 
 # --------------------------------------------------
+# _block_sample
+#
+# Purpose:    Return the first meaningful code line of
+#             a duplicate block for use as a tooltip,
+#             truncated to 60 characters.
+#
+# Entry:      $file  - source file path (lib/...)
+#             $start - first line number of the block
+#             $end   - last  line number of the block
+#
+# Exit:       Returns a plain-text string (may be empty).
+#
+# Side effects: None.
+# --------------------------------------------------
+sub _block_sample {
+	my ($file, $start, $end) = @_;
+
+	open my $fh, '<', $file or return '';
+	my ($ln, $sample) = (0, '');
+	while(<$fh>) {
+		$ln++;
+		next if $ln < $start;
+		last if $ln > $end;
+		chomp(my $line = $_);
+		next if $line =~ /^\s*$/;     # blank
+		next if $line =~ /^\s*#/;     # comment
+		next if $line =~ /^=/;        # POD
+		$line =~ s/^\s+//;
+		$sample = length($line) > 60 ? substr($line, 0, 57) . '...' : $line;
+		last;
+	}
+	close $fh;
+	return $sample;
+}
+
+# --------------------------------------------------
 # _cpd_pct_for_file
 #
 # Purpose:    Compute the percentage of lines in a
@@ -4693,22 +4812,25 @@ sub _cpd_pct_for_file {
 #             duplicate regions highlighted in amber.
 #             Pages are written to $out_dir/$file.html.
 #
-# Entry:      $out_dir    - directory to write pages into
-#             $file       - source file path (lib/...)
-#             $cpd_data   - decoded cpd.json hashref
+# Entry:      $out_dir     - directory to write pages into
+#             $file        - source file path (lib/...)
+#             $cpd_data    - decoded cpd.json hashref
 #             $github_base - base URL for GitHub links
+#             $prev_file   - previous file in CPD list (for nav)
+#             $next_file   - next file in CPD list (for nav)
 #
 # Exit:       Returns nothing. Writes one HTML file.
 #
 # Side effects: Creates directories; writes HTML file.
 # --------------------------------------------------
 sub _cpd_file_report {
-	my ($out_dir, $file, $cpd_data, $github_base) = @_;
+	my ($out_dir, $file, $cpd_data, $github_base, $prev_file, $next_file) = @_;
 
 	my $display_f = $file;
 	$display_f =~ s{^.*/lib/}{lib/};
 
-	# Build line-number → list-of-match-locations map
+	# Build line-number → list-of-match-locations map.
+	# Change 7: label intra-file matches "(same file, line N)"
 	my %dup_by_line;
 	my $blocks = _cpd_blocks_for_file($file, $cpd_data);
 	for my $b (@$blocks) {
@@ -4717,12 +4839,15 @@ sub _cpd_file_report {
 		my $mf = $b->{match_file} // '';
 		$mf =~ s{^.*/lib/}{lib/};
 		my $ml = $b->{match_line} // '';
+		my $label = ($mf eq $display_f)
+			? "same file, line $ml"
+			: "$mf line $ml";
 		for my $ln ($b->{start} .. $b->{end}) {
-			push @{ $dup_by_line{$ln} }, "$mf line $ml";
+			push @{ $dup_by_line{$ln} }, $label;
 		}
 	}
 
-	return unless %dup_by_line || -f $file;   # nothing to show
+	return unless %dup_by_line || -f $file;
 
 	# Ensure output directory exists
 	(my $page_path = "$out_dir/$display_f.html") =~ s{//}{/}g;
@@ -4734,6 +4859,29 @@ sub _cpd_file_report {
 
 	my $source_url = $github_base . $display_f;
 	my $title      = "CPD: $display_f";
+
+	# Change 6: build prev/next navigation links
+	my $prev_link = '';
+	my $next_link = '';
+	if($prev_file) {
+		my $prev_display = $prev_file;
+		$prev_display =~ s{^.*/lib/}{lib/};
+		# Compute relative path from this file's directory to prev's page
+		my $depth = () = $display_f =~ m{/}g;
+		my $prefix = '../' x $depth;
+		$prev_link = sprintf('&larr; <a href="%scpd_html/%s.html">%s</a> &nbsp; ',
+			$prefix, $prev_display, $prev_display);
+	}
+	if($next_file) {
+		my $next_display = $next_file;
+		$next_display =~ s{^.*/lib/}{lib/};
+		my $depth = () = $display_f =~ m{/}g;
+		my $prefix = '../' x $depth;
+		$next_link = sprintf(' &nbsp; <a href="%scpd_html/%s.html">%s</a> &rarr;',
+			$prefix, $next_display, $next_display);
+	}
+	my $depth_to_root = () = $display_f =~ m{/}g;
+	my $root_prefix   = '../' x $depth_to_root;
 
 	print $out <<"HTML";
 <!DOCTYPE html>
@@ -4762,18 +4910,20 @@ pre { line-height: 1.5; }
 }
 .cpd-tip:hover .cpd-tip-text { visibility: visible; }
 .cpd-dot { color: #cc8800; margin-right: 4px; cursor: help; }
+.intra-dot { color: #9944cc; margin-right: 4px; cursor: help; }
 .legend { font-family: sans-serif; font-size: 0.9em; margin-bottom: 1em;
           padding: 6px 10px; background: #fff3cd; border: 1px solid #ffc107;
           border-radius: 4px; display: inline-block; }
+.nav { font-family: sans-serif; font-size: 0.9em; margin-bottom: 0.5em; }
 </style>
 </head>
 <body>
-<p><a href="../../index.html">&larr; Dashboard</a> &nbsp;
+<p class="nav">${prev_link}<a href="${root_prefix}index.html">&uarr; Dashboard</a>${next_link} &nbsp; &nbsp;
 <a href="$source_url" target="_blank">View on GitHub &#128269;</a></p>
 <h1>$display_f &mdash; Duplicate Code Regions</h1>
 <div class="legend">
-  <span class="cpd-dot">&#9670;</span> Amber lines are part of a duplicate block (10+ lines).
-  Hover for the matching file and line.
+  <span class="cpd-dot">&#9670;</span> Amber lines duplicate code in another file &mdash; hover for location.<br>
+  <span class="intra-dot">&#9670;</span> Purple: duplicate of another region within this same file.
 </div>
 <pre>
 HTML
@@ -4797,7 +4947,9 @@ HTML
 				for my $loc (@$matches) {
 					next if $seen{$loc}++;
 					(my $tip_text = $loc) =~ s/"/&quot;/g;
-					$tips .= qq{<span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">Duplicate: $tip_text</span></span>};
+					# Change 7: purple dot for intra-file, amber for cross-file
+					my $dot_class = ($loc =~ /^same file/) ? 'intra-dot' : 'cpd-dot';
+					$tips .= qq{<span class="cpd-tip"><span class="$dot_class">&#9670;</span><span class="cpd-tip-text">Duplicate: $tip_text</span></span>};
 				}
 				print $out qq{<span class="dup-line">$line_no$tips$escaped</span>};
 			} else {
