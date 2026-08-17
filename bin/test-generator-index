@@ -1086,21 +1086,30 @@ function sortTable(th, colIndex) {
 	const prevOrder = table.getAttribute("data-sort-order") || "desc";
 	const asc = (prevCol != colIndex) ? true : (prevOrder === "desc");
 
-	const isNumeric = colIndex === 0; // Date column
+	const isDate = th.dataset.sortType === 'date';
 
 	const normalRows = rows.filter(r => !r.classList.contains("nosort"));
 	const fixedRows = rows.filter(r => r.classList.contains("nosort"));
 
 	normalRows.sort((a, b) => {
-		let x = a.cells[colIndex]?.innerText.trim() || "";
-		let y = b.cells[colIndex]?.innerText.trim() || "";
+		const cellA = a.cells[colIndex];
+		const cellB = b.cells[colIndex];
+		let x = (cellA?.dataset.value ?? cellA?.innerText ?? "").trim();
+		let y = (cellB?.dataset.value ?? cellB?.innerText ?? "").trim();
 
-		if(isNumeric) {
+		if(isDate) {
 			x = Date.parse(x) || 0;
 			y = Date.parse(y) || 0;
 		} else {
-			x = x.toLowerCase();
-			y = y.toLowerCase();
+			const nx = parseFloat(x);
+			const ny = parseFloat(y);
+			if(!isNaN(nx) && !isNaN(ny)) {
+				x = nx;
+				y = ny;
+			} else {
+				x = x.toLowerCase();
+				y = y.toLowerCase();
+			}
 		}
 
 		if(x < y) return asc ? -1 : 1;
@@ -1132,24 +1141,28 @@ function sortTable(th, colIndex) {
 
 
 // Initial display.
-// The table has been set up sorted in ascending order on the filename; reflect that in the GUI
+// The coverage table is pre-sorted ascending by filename from Perl; reflect that in the GUI.
+// The mutation and duplication tables are sorted by JS on load so the arrows always match data.
 document.addEventListener("DOMContentLoaded", () => {
-	const table = document.querySelector("table");
-	if(!table) return;
-
-	const headers = table.tHead.rows[0].cells;
-	for(let i = 0; i < headers.length; i++) {
-		const arrow = headers[i].querySelector(".arrow");
-		if(!arrow) continue;
-
-		if(i === 0) {
+	// Coverage table: pre-sorted ascending by File (col 0)
+	const covTable = document.querySelector("table:not(.sortable-table)");
+	if(covTable && covTable.tHead) {
+		const headers = covTable.tHead.rows[0].cells;
+		for(let i = 0; i < headers.length; i++) {
+			const arrow = headers[i].querySelector(".arrow");
+			if(!arrow) continue;
 			arrow.textContent = "▲";
-			arrow.classList.add("active");
-		} else {
-			arrow.textContent = "▲";
-			arrow.classList.remove("active");
+			arrow.classList.toggle("active", i === 0);
 		}
 	}
+
+	// Mutation Files table: sort by Score% (col 5) ascending (worst files first)
+	const mutTh = document.querySelector("table.mut-table thead th:nth-child(6)");
+	if(mutTh) sortTable(mutTh, 5);
+
+	// Duplication Report table: sort by File (col 0) ascending
+	const dupTh = document.querySelector("table.dup-table thead th:nth-child(1)");
+	if(dupTh) sortTable(dupTh, 0);
 });
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -1695,7 +1708,7 @@ HTML
 <table class="sortable-table" data-sort-col="0" data-sort-order="asc">
 <thead>
 <tr>
-	<th class="sortable" onclick="sortTable(this, 0)">
+	<th class="sortable" onclick="sortTable(this, 0)" data-sort-type="date">
 		<span class="label">Date</span> <span class="arrow">&#x25B2;</span>
 	</th>
 	<th class="sortable" onclick="sortTable(this, 1)">
@@ -4277,19 +4290,37 @@ sub _mutation_index {
 	push @html, '</ul>';
 
 	push @html, "<h3>Mutation Files</h3>\n";
-	push @html, "<table border='1' cellpadding='5'>\n";
+	push @html, "<table border='1' cellpadding='5' class=\"sortable-table mut-table\" data-sort-col=\"5\" data-sort-order=\"asc\">\n";
 
 	# Column headers for the mutation files table.
-	# TER3 = Third level Test Effectiveness Ratio (LCSAJ path coverage).
-	# Only shown when lcsaj_root is configured.
+	# TER is always column 7 in data rows; show the same column in the header
+	# regardless of lcsaj_root so the Dup% column index is always 8.
+	# TER3 label only shown when lcsaj_root is configured.
+	my $ter_hdr_label = $config{lcsaj_root}
+		? 'TER1 / TER2 / TER3'
+		: 'TER1 / TER2';
+	my $ter_hdr_title = $config{lcsaj_root}
+		? ' title="TER1=Statement, TER2=Branch, TER3=LCSAJ Path"'
+		: ' title="TER1=Statement coverage, TER2=Branch coverage"';
 	my $cpd_col_hdr = $cpd_data
-		? '<th title="Percentage of lines involved in duplicate code blocks (Code::CutNPaste)">Dup%</th>'
+		? '<th class="sortable" onclick="sortTable(this, 8)"><span class="label">Dup%</span> <span class="arrow">&#x25B2;</span></th>'
 		: '';
-	if($config{lcsaj_root}) {
-		push @html, "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Skipped</th><th>Score%</th><th>Complexity</th><th title=\"TER1=Statement, TER2=Branch, TER3=LCSAJ Path\">TER1 / TER2 / TER3</th>$cpd_col_hdr</tr>\n";
-	} else {
-		push @html, "<tr><th>File</th><th>Total</th><th>Killed</th><th>Survivors</th><th>Skipped</th><th>Score%</th><th>Complexity</th>$cpd_col_hdr</tr>\n";
-	}
+	push @html, <<"THEAD";
+<thead>
+<tr>
+<th class="sortable" onclick="sortTable(this, 0)"><span class="label">File</span> <span class="arrow">&#x25B2;</span></th>
+<th class="sortable" onclick="sortTable(this, 1)"><span class="label">Total</span> <span class="arrow">&#x25B2;</span></th>
+<th class="sortable" onclick="sortTable(this, 2)"><span class="label">Killed</span> <span class="arrow">&#x25B2;</span></th>
+<th class="sortable" onclick="sortTable(this, 3)"><span class="label">Survivors</span> <span class="arrow">&#x25B2;</span></th>
+<th class="sortable" onclick="sortTable(this, 4)"><span class="label">Skipped</span> <span class="arrow">&#x25B2;</span></th>
+<th class="sortable" onclick="sortTable(this, 5)"><span class="label">Score%</span> <span class="arrow active">&#x25B2;</span></th>
+<th class="sortable" onclick="sortTable(this, 6)"><span class="label">Complexity</span> <span class="arrow">&#x25B2;</span></th>
+<th class="sortable" onclick="sortTable(this, 7)"$ter_hdr_title><span class="label">$ter_hdr_label</span> <span class="arrow">&#x25B2;</span></th>
+$cpd_col_hdr
+</tr>
+</thead>
+<tbody>
+THEAD
 
 	for my $file (
 		sort { _file_score($files->{$a}) <=> _file_score($files->{$b}) || $a cmp $b } keys %$files
@@ -4432,7 +4463,7 @@ sub _mutation_index {
 		);
 	}
 
-	push @html, "</table>\n";
+	push @html, "</tbody></table>\n";
 
 	unless($cpd_data) {
 		push @html, '<p><em>Install <a href="https://metacpan.org/dist/Code-CutNPaste">Code::CutNPaste</a> to enable copy-paste duplication analysis (Dup% column).</em></p>';
@@ -4480,8 +4511,17 @@ sub _mutation_index {
 		push @html, '<h2>Duplication Report</h2>';
 		push @html, "<p><em>Only duplicate blocks of 10 or more consecutive lines are shown. "
 			. "Each pair is listed once. Intra-file duplicates are labelled <b>(same file)</b>.</em></p>\n";
-		push @html, "<table border='1' cellpadding='5'>\n";
-		push @html, "<tr><th>File</th><th>Lines (10+ consecutive)</th><th>Duplicated in</th></tr>\n";
+		push @html, "<table border='1' cellpadding='5' class=\"sortable-table dup-table\" data-sort-col=\"0\" data-sort-order=\"asc\">\n";
+		push @html, <<"THEAD";
+<thead>
+<tr>
+<th class="sortable" onclick="sortTable(this, 0)"><span class="label">File</span> <span class="arrow active">&#x25B2;</span></th>
+<th class="sortable" onclick="sortTable(this, 1)"><span class="label">Lines (10+ consecutive)</span> <span class="arrow">&#x25B2;</span></th>
+<th class="sortable" onclick="sortTable(this, 2)"><span class="label">Duplicated in</span> <span class="arrow">&#x25B2;</span></th>
+</tr>
+</thead>
+<tbody>
+THEAD
 
 		# Change 4: sort files by filtered block count descending, then name.
 		my %filtered_blocks;
@@ -4556,13 +4596,13 @@ sub _mutation_index {
 				}
 
 				push @html, sprintf(
-					"<tr><td>%s</td><td>%s</td><td>%s</td></tr>\n",
-					$file_cell, $range_cell, $match_cell
+					qq{<tr><td>%s</td><td data-value="%d">%s</td><td>%s</td></tr>\n},
+					$file_cell, $b->{start}, $range_cell, $match_cell
 				);
 			}
 		}
 
-		push @html, "</table>\n";
+		push @html, "</tbody></table>\n";
 	}
 
 	# --------------------------------------------------
@@ -4575,8 +4615,8 @@ sub _mutation_index {
 
 		my $branch_pct = $branch_total ? sprintf('%.2f', ($branch_hit / $branch_total) * 100) : 0;
 
-		push @html, "<h2>Structural Coverage (Approximate)</h2>";
-		push @html, "<div class='summary'>";
+		push @html, '<h2>Structural Coverage (Approximate)</h2>',
+			"<div class='summary'>";
 		push @html, "Statement Coverage: $stmt_pct% ($stmt_hit / $stmt_total)<br>";
 		push @html, "Branch Coverage: $branch_pct% ($branch_hit / $branch_total)<br>";
 		push @html, '<em>Approximate LCSAJ derived from branch and statement coverage.</em>';
