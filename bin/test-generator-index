@@ -387,7 +387,7 @@ push @html, <<"HTML";
 		/* Show cursor points on the headers to show that they are clickable */
 		th { background-color: #f2f2f2; cursor: pointer; }
 		th.sortable {
-			cursor: pointer;
+			cursor: grab;
 			user-select: none;
 			white-space: nowrap;
 		}
@@ -399,6 +399,11 @@ push @html, <<"HTML";
 			color: #000;	/* dark for active */
 			font-weight: bold;
 		}
+		/* Prevent child spans intercepting drag events so enter/leave fire only on the th */
+		th.sortable .label,
+		th.sortable .arrow { pointer-events: none; }
+		th.col-dragging { opacity: 0.4; cursor: grabbing; }
+		th.col-drag-over { outline: 2px dashed #555; background-color: #d8eaff !important; }
 		.sparkline {
 			display: inline-block;
 			vertical-align: middle;
@@ -1075,7 +1080,10 @@ if(resetBtn) {
 	});
 }
 
-function sortTable(th, colIndex) {
+function sortTable(th) {
+	// Always recompute colIndex from DOM so it stays correct after drag-reordering.
+	// The historic onclick="sortTable(this, N)" calls still work; the N is ignored.
+	const colIndex = Array.from(th.parentElement.cells).indexOf(th);
 	const table = th.closest("table");
 	if(!table || !table.tBodies.length) return;
 
@@ -1139,6 +1147,75 @@ function sortTable(th, colIndex) {
 	table.setAttribute("data-sort-order", asc ? "asc" : "desc");
 }
 
+// ---------------------------------------------------------
+// Column drag-to-reorder
+// ---------------------------------------------------------
+let _dragSrcTh = null;
+
+function _colDragStart(e) {
+	_dragSrcTh = this;
+	e.dataTransfer.effectAllowed = 'move';
+	e.dataTransfer.setData('text/plain', ''); // required by Firefox
+	this.classList.add('col-dragging');
+}
+
+function _colDragOver(e) {
+	if(!_dragSrcTh || _dragSrcTh === this) return;
+	e.preventDefault();
+	e.dataTransfer.dropEffect = 'move';
+}
+
+function _colDragEnter(e) {
+	if(!_dragSrcTh || _dragSrcTh === this) return;
+	// Clear previous drag-over highlight before setting the new one
+	document.querySelectorAll('th.col-drag-over').forEach(t => t.classList.remove('col-drag-over'));
+	this.classList.add('col-drag-over');
+}
+
+function _colDragLeave(e) {
+	// Only clear when leaving to something truly outside this th
+	if(!this.contains(e.relatedTarget)) {
+		this.classList.remove('col-drag-over');
+	}
+}
+
+function _colDrop(e) {
+	e.preventDefault();
+	e.stopPropagation();
+	if(!_dragSrcTh || _dragSrcTh === this) return false;
+
+	const table = this.closest('table');
+	const srcIdx = Array.from(_dragSrcTh.parentElement.cells).indexOf(_dragSrcTh);
+	const dstIdx = Array.from(this.parentElement.cells).indexOf(this);
+
+	// Move the cell at srcIdx to dstIdx in every row (thead + tbody)
+	Array.from(table.rows).forEach(row => {
+		const cells = row.cells;
+		if(cells.length <= Math.max(srcIdx, dstIdx)) return;
+		const moved = cells[srcIdx];
+		if(srcIdx < dstIdx) {
+			row.insertBefore(moved, cells[dstIdx].nextSibling);
+		} else {
+			row.insertBefore(moved, cells[dstIdx]);
+		}
+	});
+
+	// Update data-sort-col so the next sort-click knows the active column's new position
+	const activeArrow = table.querySelector('thead .arrow.active');
+	if(activeArrow) {
+		const activeTh = activeArrow.closest('th');
+		const newIdx = Array.from(activeTh.parentElement.cells).indexOf(activeTh);
+		table.setAttribute('data-sort-col', newIdx);
+	}
+
+	return false;
+}
+
+function _colDragEnd(e) {
+	this.classList.remove('col-dragging');
+	document.querySelectorAll('th.col-drag-over').forEach(t => t.classList.remove('col-drag-over'));
+	_dragSrcTh = null;
+}
 
 // Initial display.
 // The coverage table is pre-sorted ascending by filename from Perl; reflect that in the GUI.
@@ -1163,6 +1240,18 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Duplication Report table: sort by File (col 0) ascending
 	const dupTh = document.querySelector("table.dup-table thead th:nth-child(1)");
 	if(dupTh) sortTable(dupTh, 0);
+
+	// Wire up drag-to-reorder on every sortable column header
+	document.querySelectorAll('th.sortable').forEach(th => {
+		th.setAttribute('draggable', 'true');
+		th.title = (th.title ? th.title + ' · ' : '') + 'Drag to reorder columns';
+		th.addEventListener('dragstart',  _colDragStart);
+		th.addEventListener('dragover',   _colDragOver);
+		th.addEventListener('dragenter',  _colDragEnter);
+		th.addEventListener('dragleave',  _colDragLeave);
+		th.addEventListener('drop',       _colDrop);
+		th.addEventListener('dragend',    _colDragEnd);
+	});
 });
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -4267,10 +4356,10 @@ sub _mutation_index {
 
 	push @html, '<h2>Mutation Report</h2>';
 
-	push @html, '<h3>Mutation Summary</h3>';
-	push @html, '<ul>';
-	push @html, "<li><b>Score</b>: $data->{score}%</li>";
-	push @html, "<li><b>Total</b>: $data->{total}</li>";
+	push @html, '<h3>Mutation Summary</h3>',
+		'<ul>',
+		"<li><b>Score</b>: $data->{score}%</li>",
+		"<li><b>Total</b>: $data->{total}</li>";
 	push @html, '<li><b>Killed</b>: ', scalar(@{$data->{killed} || []}), '</li>';
 	push @html, '<li><b>Survived</b>: ', scalar(@{$data->{survived} || []}), '</li>';
 
