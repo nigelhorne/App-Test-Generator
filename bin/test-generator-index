@@ -4403,9 +4403,15 @@ sub _mutation_index {
 		# --------------------------------------------------
 		my $cpd_cell = '';
 		if($cpd_data) {
+			my $cpd_blocks = _cpd_blocks_for_file($file, $cpd_data);
 			my $dup_pct = _cpd_pct_for_file($file, $cpd_data);
 			# Invert badge colours: high duplication is bad (red), low is good (green)
 			my $cpd_badge = _dup_badge($dup_pct);
+			if(@$cpd_blocks) {
+				(my $cpd_display = $file) =~ s{^.*/lib/}{lib/};
+				my $cpd_url = "cpd_html/$cpd_display.html";
+				$cpd_badge = qq{<a href="$cpd_url" title="View duplicate lines highlighted" target="_blank">$cpd_badge</a>};
+			}
 			$cpd_cell = "<td>$cpd_badge</td>";
 		}
 
@@ -4732,6 +4738,28 @@ sub _cpd_blocks_for_file {
 }
 
 # --------------------------------------------------
+# _cpd_page_relpath
+#
+# Purpose:    Compute the relative URL from one CPD
+#             drill-down page to another, so prev/next
+#             links work regardless of directory depth.
+#
+# Entry:      $from - $display_f of the current page
+#             $to   - $display_f of the target page
+#
+# Exit:       Relative URL string (e.g. "Foo.pm.html"
+#             or "../Mutation/Bar.pm.html").
+#
+# Side effects: None.
+# --------------------------------------------------
+sub _cpd_page_relpath {
+	my ($from, $to) = @_;
+	(my $from_dir = $from) =~ s{[^/]+$}{};   # directory part of $from
+	# Prepend a fake absolute root so File::Spec can resolve correctly
+	return File::Spec->abs2rel("/$to.html", "/$from_dir");
+}
+
+# --------------------------------------------------
 # _block_sample
 #
 # Purpose:    Return the first meaningful code line of
@@ -4866,21 +4894,17 @@ sub _cpd_file_report {
 	if($prev_file) {
 		my $prev_display = $prev_file;
 		$prev_display =~ s{^.*/lib/}{lib/};
-		# Compute relative path from this file's directory to prev's page
-		my $depth = () = $display_f =~ m{/}g;
-		my $prefix = '../' x $depth;
-		$prev_link = sprintf('&larr; <a href="%scpd_html/%s.html">%s</a> &nbsp; ',
-			$prefix, $prev_display, $prev_display);
+		$prev_link = sprintf('&larr; <a href="%s">%s</a> &nbsp; ',
+			_cpd_page_relpath($display_f, $prev_display), $prev_display);
 	}
 	if($next_file) {
 		my $next_display = $next_file;
 		$next_display =~ s{^.*/lib/}{lib/};
-		my $depth = () = $display_f =~ m{/}g;
-		my $prefix = '../' x $depth;
-		$next_link = sprintf(' &nbsp; <a href="%scpd_html/%s.html">%s</a> &rarr;',
-			$prefix, $next_display, $next_display);
+		$next_link = sprintf(' &nbsp; <a href="%s">%s</a> &rarr;',
+			_cpd_page_relpath($display_f, $next_display), $next_display);
 	}
-	my $depth_to_root = () = $display_f =~ m{/}g;
+	# +1 for the cpd_html/ level that sits between cover_html/ and the file
+	my $depth_to_root = 1 + (() = $display_f =~ m{/}g);
 	my $root_prefix   = '../' x $depth_to_root;
 
 	print $out <<"HTML";
@@ -4909,8 +4933,11 @@ pre { line-height: 1.5; }
     pointer-events: none;
 }
 .cpd-tip:hover .cpd-tip-text { visibility: visible; }
-.cpd-dot { color: #cc8800; margin-right: 4px; cursor: help; }
-.intra-dot { color: #9944cc; margin-right: 4px; cursor: help; }
+.cpd-dot { color: #cc8800; margin-right: 4px; cursor: help; text-decoration: none; }
+.intra-dot { color: #9944cc; margin-right: 4px; cursor: help; text-decoration: none; }
+a.cpd-dot, a.intra-dot { cursor: pointer; }
+a.cpd-dot:hover { color: #ff8800; }
+a.intra-dot:hover { color: #7700bb; }
 .legend { font-family: sans-serif; font-size: 0.9em; margin-bottom: 1em;
           padding: 6px 10px; background: #fff3cd; border: 1px solid #ffc107;
           border-radius: 4px; display: inline-block; }
@@ -4947,9 +4974,17 @@ HTML
 				for my $loc (@$matches) {
 					next if $seen{$loc}++;
 					(my $tip_text = $loc) =~ s/"/&quot;/g;
-					# Change 7: purple dot for intra-file, amber for cross-file
+					# Purple dot for intra-file, amber for cross-file
 					my $dot_class = ($loc =~ /^same file/) ? 'intra-dot' : 'cpd-dot';
-					$tips .= qq{<span class="cpd-tip"><span class="$dot_class">&#9670;</span><span class="cpd-tip-text">Duplicate: $tip_text</span></span>};
+					my $match_file = ($loc =~ /^(lib\/\S+\.pm) line/) ? $1 : '';
+					if($match_file) {
+						my $href = _cpd_page_relpath($display_f, $match_file);
+						$tips .= qq{<a href="$href" class="$dot_class" title="Duplicate: $tip_text" target="_blank">&#9670;</a>};
+					} elsif($loc =~ /^same file/) {
+						$tips .= qq{<span class="cpd-tip"><span class="$dot_class">&#9670;</span><span class="cpd-tip-text">Duplicate: $tip_text</span></span>};
+					} else {
+						$tips .= qq{<span class="cpd-tip"><span class="$dot_class">&#9670;</span><span class="cpd-tip-text">Duplicate: $tip_text</span></span>};
+					}
 				}
 				print $out qq{<span class="dup-line">$line_no$tips$escaped</span>};
 			} else {
@@ -5258,12 +5293,13 @@ sub _mutant_file_report {
 	if($cpd_data) {
 		my $cpd_blocks = _cpd_blocks_for_file($file, $cpd_data);
 		if(@$cpd_blocks) {
+			my $cpd_page_url = "${ups}cpd_html/$file.html";
 			print $out qq{
     <div class="legend">
-        <h3>Duplication Legend (CPD)</h3>
+        <h3>Duplication Legend (CPD) &mdash; <a href="$cpd_page_url" target="_blank">View full CPD report &#128269;</a></h3>
         <p>
         <span class="cpd-dot">&#9670;</span>
-        <b>Duplicate block</b> — this line is part of a code block duplicated elsewhere.
+        <b>Duplicate block</b> &mdash; this line is part of a code block duplicated elsewhere.
         Hover to see the matching location.
         </p>
         <p>
@@ -5468,7 +5504,16 @@ sub _mutant_file_report {
 				next if $seen_cpd{$loc}++;
 				my $tip = "Duplicate: $loc";
 				$tip =~ s/"/&quot;/g;
-				$cpd_marker .= qq{<span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">$tip</span></span>};
+				# Build a link to the CPD drill-down page for the match file
+				my $cpd_link_file = ($loc =~ /^same file/) ? $file : ($loc =~ /^(lib\/\S+\.pm)/) ? $1 : '';
+				my $cpd_dot_html;
+				if($cpd_link_file) {
+					my $cpd_href = "${ups}cpd_html/$cpd_link_file.html";
+					$cpd_dot_html = qq{<a href="$cpd_href" class="cpd-dot" title="$tip" target="_blank">&#9670;</a>};
+				} else {
+					$cpd_dot_html = qq{<span class="cpd-tip"><span class="cpd-dot">&#9670;</span><span class="cpd-tip-text">$tip</span></span>};
+				}
+				$cpd_marker .= $cpd_dot_html;
 			}
 		}
 
@@ -5978,7 +6023,10 @@ pre details.mutant-details ul {
     font-size: 10px;
     margin-right: 3px;
     cursor: help;
+    text-decoration: none;
 }
+a.cpd-dot { cursor: pointer; }
+a.cpd-dot:hover { color: #ff8800; }
 
 .cpd-tip {
     position: relative;
