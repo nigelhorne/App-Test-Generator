@@ -50,6 +50,21 @@ Readonly my $SIGNATURE_TIMEOUT_SECS     => 3;
 Readonly my $MEMORY_LIMIT_BYTES         => 50_000_000;
 
 # --------------------------------------------------
+# Patterns for rejecting dangerous signature expressions
+# in _compile_signature_isolated
+# --------------------------------------------------
+Readonly my $UNSAFE_KEYWORD_RE => qr/\b(?:system|exec|open|fork|require|do|eval|qx)\b/;
+Readonly my $UNSAFE_CHAR_RE    => qr/[`{};]/;
+
+# --------------------------------------------------
+# strict_pod levels — integer values stored internally
+# but referred to by name everywhere in code
+# --------------------------------------------------
+Readonly my $STRICT_POD_OFF   => 0;
+Readonly my $STRICT_POD_WARN  => 1;
+Readonly my $STRICT_POD_FATAL => 2;
+
+# --------------------------------------------------
 # Numeric boundary values for test hint generation
 # --------------------------------------------------
 Readonly my $INT32_MAX => 2_147_483_647;
@@ -1444,7 +1459,9 @@ sub extract_all {
 	$self->_log("Parsing $self->{input_file}...");
 	$self->_log('Strict POD mode: ' . (qw(off warn fatal))[$self->{strict_pod}]);
 
-	my $document = PPI::Document->new($self->{input_file}) or die "Failed to parse $self->{input_file}: $!";
+	# $! is not meaningful here — PPI does not set errno on failure
+	my $document = PPI::Document->new($self->{input_file})
+		or croak "Failed to parse $self->{input_file}";
 
 	# Store document for later use
 	$self->{_document} = $document;
@@ -1864,7 +1881,7 @@ sub _analyze_method {
 			$schema->{_pod_validation_errors} = \@validation_errors;
 
 			# Either croak immediately or log based on configuration
-			if($self->{strict_pod} == 2) {	# 2 = fatal errors
+			if($self->{strict_pod} == $STRICT_POD_FATAL) {
 				croak("[POD STRICT] $error_msg");
 			} else {	# 1 = warnings
 				carp("[POD STRICT] $error_msg");
@@ -3211,12 +3228,9 @@ sub _compile_signature_isolated {
 	# concatenation. The actual control here is the allow_signature_exec
 	# opt-in above: this code must never run against a module the caller
 	# has not already decided to trust enough to execute.
-	if ($signature_expr =~ /\b(?:system|exec|open|fork|require|do|eval|qx)\b/) {
-		die 'Unsafe signature expression';
-	}
-
-	if ($signature_expr =~ /[`{};]/) {
-		die "Unsafe signature expression";
+	# Both checks unified into one croak so the message and class are consistent
+	if ($signature_expr =~ $UNSAFE_KEYWORD_RE || $signature_expr =~ $UNSAFE_CHAR_RE) {
+		croak 'Unsafe signature expression -- rejected to prevent code execution';
 	}
 
 	my $payload = <<'PERL';
@@ -9903,9 +9917,14 @@ sub _log {
 
 =head1 NOTES
 
-This is pre-pre-alpha proof of concept code.
-Nevertheless,
-it is useful for creating a template which you can modify to create a working schema to pass into L<App::Test::Generator>.
+C<SchemaExtractor> uses heuristic analysis of Perl source and POD to infer
+parameter types and constraints. Inference accuracy improves with
+well-documented modules; C<=head3 Input> / C<=head4 Input> formal specs are
+parsed at highest priority and override all heuristics.
+
+The output is always a best-effort schema suitable as a starting template;
+review and augment the generated YAML before using it as a definitive
+specification. Pass it to L<App::Test::Generator> to generate fuzz harnesses.
 
 =head1 TODO
 

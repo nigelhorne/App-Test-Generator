@@ -306,8 +306,9 @@ subtest 'Mutator::generate_mutants - fast mode no more mutants than full' => sub
 
 # ==================================================================
 # prepare_workspace()
-# POD: returns absolute path to temp directory; sets
-# $self->{workspace} and $self->{relative}; croaks if dircopy fails.
+# POD: returns absolute path to temp directory; sets private keys
+# _workspace, _relative, _lib_basename; does NOT mutate lib_dir;
+# croaks if dircopy fails.
 # ==================================================================
 subtest 'Mutator::prepare_workspace - returns a directory path' => sub {
 	# Mock dircopy so we do not touch the real filesystem
@@ -320,7 +321,7 @@ subtest 'Mutator::prepare_workspace - returns a directory path' => sub {
 	done_testing();
 };
 
-subtest 'Mutator::prepare_workspace - sets workspace on object' => sub {
+subtest 'Mutator::prepare_workspace - sets private workspace key on object' => sub {
 	my $guard = mock_scoped(
 		'File::Copy::Recursive::dircopy' => sub { 1 }
 	);
@@ -328,20 +329,23 @@ subtest 'Mutator::prepare_workspace - sets workspace on object' => sub {
 	my $m = App::Test::Generator::Mutator->new(file => $src_file);
 	my $path = $m->prepare_workspace();
 
-	is($m->{workspace}, $path, 'workspace stored on object matches return value');
+	is($m->{_workspace}, $path, '_workspace stored on object matches return value');
 
 	done_testing();
 };
 
-subtest 'Mutator::prepare_workspace - sets relative path on object' => sub {
+subtest 'Mutator::prepare_workspace - sets private relative path on object' => sub {
 	my $guard = mock_scoped(
 		'File::Copy::Recursive::dircopy' => sub { 1 }
 	);
 
 	my $m = App::Test::Generator::Mutator->new(file => $src_file);
+	my $orig_lib_dir = $m->{lib_dir};
 	$m->prepare_workspace();
 
-	ok(defined $m->{relative}, 'relative path set on object');
+	ok(defined $m->{_relative},     '_relative set');
+	ok(defined $m->{_lib_basename}, '_lib_basename set');
+	is($m->{lib_dir}, $orig_lib_dir, 'lib_dir not mutated by prepare_workspace');
 
 	done_testing();
 };
@@ -383,9 +387,9 @@ subtest 'Mutator::apply_mutant - applies transform to workspace file' => sub {
 	$m->prepare_workspace();
 
 	# Write the source file into the workspace at the expected path
-	my $ws_lib_dir = File::Spec->catfile($m->{workspace}, 'lib');
+	my $ws_lib_dir = File::Spec->catfile($m->{_workspace}, $m->{_lib_basename});
 	File::Path::make_path($ws_lib_dir);
-	my $ws_file = File::Spec->catfile($ws_lib_dir, $m->{relative});
+	my $ws_file = File::Spec->catfile($ws_lib_dir, $m->{_relative});
 	File::Copy::copy($src_file, $ws_file);
 
 	# Transform that marks the file with a known string

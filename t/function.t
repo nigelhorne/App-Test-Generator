@@ -556,7 +556,8 @@ subtest '_normalize_config' => sub {
 	# test generation is maximally thorough unless explicitly disabled
 	my %config;
 	$fn->(\%config);
-	for my $field (App::Test::Generator::CONFIG_TYPES()) {
+	# The canonical set is now a lexical hash — test via _normalize_config behaviour
+	for my $field (qw(test_nuls test_undef test_empty test_non_ascii dedup close_stdin test_security)) {
 		next if $field eq 'properties';
 		next if $field eq 'timeout';	# numeric — absence means use generated-test default, not 1
 		is($config{$field}, 1, "$field defaults to 1 when absent");

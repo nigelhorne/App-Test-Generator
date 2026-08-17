@@ -1,10 +1,9 @@
 package App::Test::Generator::Mutator;
 
-use strict;
-use warnings;
+use 5.036;
+use autodie qw(:io);    # covers open/close/read/write; excludes system (which legitimately fails)
 use Carp qw(croak);
 use Config;
-use File::Copy qw(copy);
 use File::Copy::Recursive qw(dircopy);
 use File::Spec;
 use File::Temp qw(tempdir);
@@ -25,8 +24,16 @@ Readonly my $LEVEL_FAST => 'fast';
 # --------------------------------------------------
 # Default values for optional constructor arguments
 # --------------------------------------------------
-Readonly my $DEFAULT_LIB_DIR => 'lib';
+Readonly my $DEFAULT_LIB_DIR        => 'lib';
 Readonly my $DEFAULT_MUTATION_LEVEL => $LEVEL_FULL;
+
+# --------------------------------------------------
+# Error message constants — named so test code can
+# match against them without duplicating the literal
+# --------------------------------------------------
+Readonly my $ERR_FILE_REQUIRED     => 'file required';
+Readonly my $ERR_WORKSPACE_NOT_SET => 'Workspace not prepared -- call prepare_workspace first';
+Readonly my $ERR_RELATIVE_NOT_SET  => 'Relative path not set -- call prepare_workspace first';
 
 our $VERSION = '0.45';
 
@@ -109,7 +116,7 @@ sub new {
 	my ($class, %args) = @_;
 
 	# file is required and must exist on disk
-	croak 'file required' unless defined $args{file};
+	croak $ERR_FILE_REQUIRED unless defined $args{file};
 	croak "file not found: $args{file}" unless -f $args{file};
 
 	return bless {
@@ -132,7 +139,10 @@ sub new {
 Parse the target file and generate all mutants by running each registered
 mutation strategy against the PPI document.
 
-    my @mutants = $mutator->generate_mutants();
+    my $mutants = $mutator->generate_mutants();   # scalar context → arrayref
+    for my $m (@{$mutants}) { ... }
+
+    my @mutants = $mutator->generate_mutants();   # list context → flat list (backward-compat)
 
 =head3 Arguments
 
@@ -140,9 +150,7 @@ None beyond C<$self>.
 
 =head3 Returns
 
-=head3 Returns
-
-A list of L<App::Test::Generator::Mutant> objects. In C<fast> mode,
+An arrayref of L<App::Test::Generator::Mutant> objects. In C<fast> mode,
 redundant and duplicate mutants are removed before returning.
 Lines within C<## MUTANT_SKIP_BEGIN> / C<## MUTANT_SKIP_END> annotation
 blocks are excluded from the candidate list entirely.
@@ -217,12 +225,14 @@ sub generate_mutants {
 		push @mutants, grep { !$skip_lines{$_->line} } $mutation->mutate($doc);
 	}
 
-	# In fast mode deduplicate and remove redundant mutants
-	if($self->{mutation_level} eq $LEVEL_FAST) {
-		return @{_dedup_mutants(\@mutants)};
-	}
+	# In fast mode deduplicate and remove redundant mutants before returning.
+	# Returns arrayref in scalar context and a flat list in list context so
+	# existing callers (my @m = generate_mutants()) continue to work unchanged.
+	my $result = $self->{mutation_level} eq $LEVEL_FAST
+		? _dedup_mutants(\@mutants)
+		: \@mutants;
 
-	return @mutants;
+	return wantarray ? @{$result} : $result;
 }
 
 =head2 prepare_workspace
@@ -252,7 +262,8 @@ via L<File::Temp>'s C<CLEANUP =E<gt> 1> behaviour.
 =head3 Side effects
 
 Creates a temporary directory. Recursively copies C<lib_dir> into it.
-Sets C<< $self->{workspace} >> and C<< $self->{relative} >>.
+Sets C<< $self->{_workspace} >>, C<< $self->{_relative} >>, and
+C<< $self->{_lib_basename} >>. Does not modify C<< $self->{lib_dir} >>.
 
 =head3 Notes
 
@@ -293,9 +304,11 @@ sub prepare_workspace {
 	# Copy the entire lib tree so all dependencies resolve in the workspace
 	dircopy($self->{lib_dir}, File::Spec->catfile($tmp, $lib_basename)) or croak "dircopy failed: $!";
 
-	$self->{workspace} = $tmp;
-	$self->{relative}  = $relative;
-	$self->{lib_dir}   = $lib_basename;	# normalise for apply_mutant
+	# Store normalised state under private keys — do NOT mutate lib_dir,
+	# which callers may inspect after this call expecting the original value.
+	$self->{_workspace}    = $tmp;
+	$self->{_relative}     = $relative;
+	$self->{_lib_basename} = $lib_basename;
 
 	return $tmp;
 }
@@ -344,16 +357,16 @@ sub apply_mutant {
 	my ($self, $mutant) = @_;
 
 	# Workspace must be prepared before applying any mutant
-	my $workspace = $self->{workspace}
-		or croak 'Workspace not prepared — call prepare_workspace first';
+	my $workspace = $self->{_workspace}
+		or croak $ERR_WORKSPACE_NOT_SET;
 
-	my $relative  = $self->{relative}
-		or croak 'Relative path not set — call prepare_workspace first';
+	my $relative  = $self->{_relative}
+		or croak $ERR_RELATIVE_NOT_SET;
 
 	# Construct the full path to the file in the workspace
 	my $target = File::Spec->catfile(
 		$workspace,
-		$self->{lib_dir},
+		$self->{_lib_basename},
 		$relative,
 	);
 
@@ -407,9 +420,13 @@ lib directory before running.
 sub run_tests {
 	my $self = $_[0];
 
-	# Locate prove on PATH — fall back to bare 'prove' and let shell find it
-	my $prove = File::Spec->catfile($Config{bin}, 'prove');
-	$prove = 'prove' unless -x $prove;
+	# Derive prove from $^X so CPAN smokers that install to a non-PATH
+	# location still resolve the correct perl/prove pair.  Config{bin}
+	# is a reliable fallback; bare 'prove' is last resort only.
+	my ($vol, $dir) = File::Spec->splitpath($^X);
+	my $prove       = File::Spec->catpath($vol, $dir, 'prove');
+	$prove          = File::Spec->catfile($Config{bin}, 'prove') unless -x $prove;
+	$prove          = 'prove' unless -x $prove;
 
 	return system($prove, '-l', 't') == 0;
 }
@@ -494,6 +511,35 @@ sub _is_redundant_mutation {
 
 	return 0;
 }
+
+=head1 LIMITATIONS
+
+=over 4
+
+=item * Single strategy registry
+
+The four built-in mutation strategies are hardcoded in C<new>. There is no
+plugin mechanism for registering additional strategies without subclassing.
+A future version should accept a C<strategies> arrayref argument.
+
+=item * No parallelism
+
+C<run_tests> is synchronous. For large test suites or large mutant sets,
+wall-clock time scales linearly. The in-place mutation strategy also
+serialises all mutants behind a single file lock.
+
+=item * PPI re-parse per apply_mutant call
+
+C<apply_mutant> re-parses the workspace copy of the target file for every
+mutant. For very large single-file modules the PPI parse time may dominate.
+
+=item * apply_mutant does not restore on abnormal exit
+
+If the process is killed between the write and restore in
+C<bin/test-generator-mutate>, the project file is left mutated.
+A C<git restore lib/...> recovers it.
+
+=back
 
 =head1 SEE ALSO
 

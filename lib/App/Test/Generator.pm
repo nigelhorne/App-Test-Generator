@@ -16,7 +16,7 @@ use utf8;
 use open qw(:std :encoding(UTF-8));
 
 use App::Test::Generator::Template;
-use Carp qw(carp croak);
+use Carp qw(carp croak confess);
 use Config::Abstraction 0.36;
 use Data::Dumper;
 use Data::Section::Simple;
@@ -38,12 +38,14 @@ our @EXPORT_OK = qw(generate);
 
 our $VERSION = '0.45';
 
-use constant {
-	DEFAULT_ITERATIONS => 30,
-	DEFAULT_PROPERTY_TRIALS => 1000
-};
+Readonly my $DEFAULT_ITERATIONS      => 30;
+Readonly my $DEFAULT_PROPERTY_TRIALS => 1000;
 
-use constant CONFIG_TYPES => ('test_nuls', 'test_undef', 'test_empty', 'test_non_ascii', 'dedup', 'properties', 'close_stdin', 'test_security', 'timeout');
+# Hash for O(1) lookup rather than a list needing grep O(n)
+Readonly my %VALID_CONFIG_KEYS => map { $_ => 1 } qw(
+	test_nuls test_undef test_empty test_non_ascii
+	dedup properties close_stdin test_security timeout
+);
 
 # --------------------------------------------------
 # Delimiter pairs tried in order when wrapping a
@@ -1712,7 +1714,7 @@ sub generate
 	# hook installed into the DB:: package regardless of its source
 	# package) are legitimate function names, not just bare identifiers
 	_assert_identifier($function, 'function', package => 1);
-	$iterations ||= DEFAULT_ITERATIONS;		 # default fuzz runs if not specified
+	$iterations ||= $DEFAULT_ITERATIONS;		 # default fuzz runs if not specified
 	$seed = undef if defined $seed && $seed eq '';	# treat empty as undef
 
 	# --- YAML corpus support (yaml_cases is filename string) ---
@@ -1961,14 +1963,16 @@ sub generate
 		my $type = $accessor{type};
 
 		if(!defined($new)) {
-			croak("BUG: $property: accessor $type can only work on an object, incorrectly tagged as $type");
+			# Internal invariant — schema has a contradictory accessor+type combination;
+			# confess gives the full call chain to aid debugging
+			confess("invariant violation: $property: accessor $type can only work on an object, incorrectly tagged as $type");
 		}
 		if($type eq 'getset') {
 			if(scalar(keys %input) != 1) {
-				croak("BUG: $property: getset must take one input argument, incorrectly tagged as getset");
+				confess("invariant violation: $property: getset must take one input argument, incorrectly tagged as getset");
 			}
 			if(scalar(keys %output) == 0) {
-				croak("BUG: $property: getset must give one output, incorrectly tagged as getset");
+				confess("invariant violation: $property: getset must give one output, incorrectly tagged as getset");
 			}
 		}
 	}
@@ -2193,7 +2197,7 @@ sub generate
 		iterations_code => int($iterations),
 		use_properties => $use_properties,
 		transform_properties_code => $transform_properties_code,
-		property_trials => $config{properties}{trials} // DEFAULT_PROPERTY_TRIALS,
+		property_trials => $config{properties}{trials} // $DEFAULT_PROPERTY_TRIALS,
 		relationships_code => $relationships_code,
 		module => $module
 	};
@@ -2448,9 +2452,9 @@ sub _validate_config {
 	# Validate any nested config sub-hash keys against known types
 	if(ref($schema->{config}) eq 'HASH') {
 		for my $k (keys %{$schema->{'config'}}) {
-			# CONFIG_TYPES is the authoritative list of valid keys
+			# %VALID_CONFIG_KEYS is the authoritative set — O(1) hash lookup
 			croak "unknown config setting '$k'"
-				unless grep { $_ eq $k } CONFIG_TYPES;
+				unless $VALID_CONFIG_KEYS{$k};
 		}
 	}
 }
@@ -2683,7 +2687,7 @@ sub _validate_transform_properties {
 sub _normalize_config {
 	my $config = $_[0];
 
-	for my $field (CONFIG_TYPES) {
+	for my $field (keys %VALID_CONFIG_KEYS) {
 		# Non-boolean fields are handled separately
 		next if $field eq $CONFIG_PROPERTIES_KEY;
 		next if $field eq 'timeout';	# numeric, not boolean; absence means use generated-test default
@@ -2862,8 +2866,8 @@ sub _validate_module {
 	my $verbose = $ENV{$ENV_TEST_VERBOSE} || $ENV{$ENV_GENERATOR_VERBOSE};
 
 	if($verbose) {
-		print STDERR "Found module '$module' at: $mod_info->{'file'}\n",
-			'  Version: ', ($mod_info->{'version'} || 'unknown'), "\n";
+		carp "Found module '$module' at: $mod_info->{'file'} " .
+			'(version ' . ($mod_info->{'version'} || 'unknown') . ')';
 	}
 
 	# Optional load validation — disabled by default because
@@ -2883,7 +2887,7 @@ sub _validate_module {
 		}
 
 		if($verbose) {
-			print STDERR "Successfully loaded module '$module'\n";
+			carp "Successfully loaded module '$module'";
 		}
 	}
 
@@ -3631,7 +3635,7 @@ sub _generate_transform_properties {
 			property_checks  => $property_checks,
 			should_die       => $should_die,
 			should_warn      => $should_warn,
-			trials           => $config->{'properties'}{'trials'} // DEFAULT_PROPERTY_TRIALS,
+			trials           => $config->{'properties'}{'trials'} // $DEFAULT_PROPERTY_TRIALS,
 		};
 	}
 
