@@ -4907,53 +4907,15 @@ sub _cpd_file_report {
 	my $depth_to_root = 1 + (() = $display_f =~ m{/}g);
 	my $root_prefix   = '../' x $depth_to_root;
 
-	print $out <<"HTML";
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>$title</title>
-<style>
-body { font-family: monospace; font-size: 13px; background: #fff; color: #222; margin: 1em 2em; }
-h1 { font-size: 1.1em; font-family: sans-serif; }
-pre { line-height: 1.5; }
-.dup-line { background-color: #fff3cd; display: block; }
-.dup-line:hover { background-color: #ffe082; }
-.cpd-tip { position: relative; display: inline-block; }
-.cpd-tip .cpd-tip-text {
-    visibility: hidden;
-    background-color: #333;
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    white-space: nowrap;
-    position: fixed;
-    z-index: 9999;
-    pointer-events: none;
-}
-.cpd-tip:hover .cpd-tip-text { visibility: visible; }
-.cpd-dot { color: #cc8800; margin-right: 4px; cursor: help; text-decoration: none; }
-.intra-dot { color: #9944cc; margin-right: 4px; cursor: help; text-decoration: none; }
-a.cpd-dot, a.intra-dot { cursor: pointer; }
-a.cpd-dot:hover { color: #ff8800; }
-a.intra-dot:hover { color: #7700bb; }
-.legend { font-family: sans-serif; font-size: 0.9em; margin-bottom: 1em;
-          padding: 6px 10px; background: #fff3cd; border: 1px solid #ffc107;
-          border-radius: 4px; display: inline-block; }
-.nav { font-family: sans-serif; font-size: 0.9em; margin-bottom: 0.5em; }
-</style>
-</head>
-<body>
-<p class="nav">${prev_link}<a href="${root_prefix}index.html">&uarr; Dashboard</a>${next_link} &nbsp; &nbsp;
-<a href="$source_url" target="_blank">View on GitHub &#128269;</a></p>
-<h1>$display_f &mdash; Duplicate Code Regions</h1>
-<div class="legend">
-  <span class="cpd-dot">&#9670;</span> Amber lines duplicate code in another file &mdash; hover for location.<br>
-  <span class="intra-dot">&#9670;</span> Purple: duplicate of another region within this same file.
-</div>
-<pre>
-HTML
+	print $out _mutant_file_header($title);
+	print $out qq{<div class="nav">${prev_link}<a href="${root_prefix}index.html">&uarr; Dashboard</a>${next_link} &nbsp; &nbsp;\n};
+	print $out qq{<a href="$source_url" target="_blank">View on GitHub &#128269;</a></div>\n};
+	print $out qq{<h1>$display_f &mdash; Duplicate Code Regions</h1>\n};
+	print $out qq{<div class="legend cpd-legend">\n};
+	print $out qq{  <span class="cpd-dot">&#9670;</span> Amber lines duplicate code in another file &mdash; hover for location.<br>\n};
+	print $out qq{  <span class="intra-dot">&#9670;</span> Purple: duplicate of another region within this same file.\n};
+	print $out qq{</div>\n};
+	print $out qq{<pre>\n};
 
 	# Render the file line by line
 	if(open my $src, '<', $file) {
@@ -4996,19 +4958,8 @@ HTML
 		print $out "(source file not found)\n";
 	}
 
-	print $out <<"HTML";
-</pre>
-<script>
-document.addEventListener("mousemove", function(e) {
-    document.querySelectorAll(".cpd-tip-text").forEach(function(tip) {
-        tip.style.left = (e.clientX + 12) + "px";
-        tip.style.top  = (e.clientY + 12) + "px";
-    });
-});
-</script>
-</body>
-</html>
-HTML
+	print $out "</pre>\n";
+	print $out _mutant_file_footer();
 
 	close $out;
 }
@@ -5780,12 +5731,15 @@ sub _relative_link {
 }
 
 sub _mutant_file_header {
+	my ($title) = @_;
+	$title //= '';
+	my $title_tag = $title ? "<title>$title</title>\n" : '';
 	return qq{
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
-<style>
+${title_tag}<style>
 
 /* --------------------------------------------------
    CSS Variables (Light Mode Default)
@@ -6048,6 +6002,22 @@ a.cpd-dot:hover { color: #ff8800; }
 
 .cpd-tip:hover .cpd-tip-text {
     visibility: visible;
+}
+
+/* CPD drill-down page styles */
+.dup-line { background-color: #fff3cd; display: block; }
+.dup-line:hover { background-color: #ffe082; }
+.intra-dot { color: #9944cc; margin-right: 4px; cursor: help; text-decoration: none; }
+a.intra-dot { cursor: pointer; }
+a.intra-dot:hover { color: #7700bb; }
+.cpd-legend {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    display: inline-block;
+    padding: 6px 10px;
+    margin-bottom: 1em;
+    font-size: 0.9em;
 }
 
 </style>
