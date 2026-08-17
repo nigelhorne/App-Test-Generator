@@ -2645,7 +2645,6 @@ subtest 'Model::Method::resolve_classification - isolated from resolve_return_ty
 		object   => 'chainable',
 		property => 'getter',
 		constant => 'constant',
-		bogus    => 'unknown',
 	);
 
 	for my $return_type (sort keys %expect) {
@@ -2662,6 +2661,19 @@ subtest 'Model::Method::resolve_classification - isolated from resolve_return_ty
 		is($m->resolve_classification, $expect{$return_type},
 			"mocked resolve_return_type() '$return_type' drives classification '$expect{$return_type}'");
 
+		Test::Mockingbird::unmock('App::Test::Generator::Model::Method', 'resolve_return_type');
+	}
+
+	# An alien return_type (unreachable via resolve_return_type) now confesses
+	{
+		my $m = App::Test::Generator::Model::Method->new(name => 'm', source => 'sub m {}');
+		Test::Mockingbird::mock(
+			'App::Test::Generator::Model::Method',
+			'resolve_return_type',
+			sub { $_[0]->{return_type} = 'bogus'; return 'bogus' },
+		);
+		throws_ok { $m->resolve_classification }
+			qr/invariant violation/, "mocked bogus return_type → confess fires";
 		Test::Mockingbird::unmock('App::Test::Generator::Model::Method', 'resolve_return_type');
 	}
 };

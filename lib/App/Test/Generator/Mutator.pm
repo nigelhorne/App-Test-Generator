@@ -149,7 +149,7 @@ A blessed hashref. Croaks if C<file> is missing or does not exist.
 
 C<file> was not supplied.
 
-=item C<file not found: $path>
+=item C<< file not found: PATH >>
 
 C<file> was supplied but does not exist on disk.
 
@@ -239,19 +239,20 @@ line numbers to 1.
 
 =over 4
 
-=item C<Unable to parse $file>
+=item C<< Unable to parse FILE >>
 
 PPI could not parse the source file (syntax error or unreadable file).
+FILE is the path passed to C<new>.
 
-=item C<$file: MUTANT_SKIP_BEGIN at line N with no prior MUTANT_SKIP_END>
+=item C<< FILE: MUTANT_SKIP_BEGIN at line N with no prior MUTANT_SKIP_END >>
 
 A C<## MUTANT_SKIP_BEGIN> marker was found while already inside a skip block.
 
-=item C<$file: MUTANT_SKIP_END at line N with no matching MUTANT_SKIP_BEGIN>
+=item C<< FILE: MUTANT_SKIP_END at line N with no matching MUTANT_SKIP_BEGIN >>
 
 A C<## MUTANT_SKIP_END> marker was found with no preceding C<## MUTANT_SKIP_BEGIN>.
 
-=item C<$file: MUTANT_SKIP_BEGIN at line N has no matching MUTANT_SKIP_END>
+=item C<< FILE: MUTANT_SKIP_BEGIN at line N has no matching MUTANT_SKIP_END >>
 
 The source file ended while still inside a skip block.
 
@@ -502,7 +503,7 @@ C<apply_mutant> was called before C<prepare_workspace>.
 
 Internal: the relative-path field was not set by C<prepare_workspace>.
 
-=item C<Failed to parse $target>
+=item C<< Failed to parse TARGET >>
 
 PPI could not parse the workspace copy of the target file.
 

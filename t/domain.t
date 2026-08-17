@@ -1098,4 +1098,31 @@ subtest 'Analyzer::SideEffect::analyze — string-stripping isolation' => sub {
 	}
 };
 
+# --------------------------------------------------
+# Logic-reducer tests: invariant assertions added after boolean reduction
+# --------------------------------------------------
+
+subtest 'Model::Method::resolve_classification — unreachable else confesses on invalid return_type' => sub {
+	# The else branch in resolve_classification is unreachable via the normal
+	# add_evidence → resolve_return_type path, because resolve_return_type only
+	# ever returns object/property/constant.  Directly injecting an alien value
+	# into {return_type} confirms the confess guard fires correctly.
+	my $m = App::Test::Generator::Model::Method->new(name => 'f', source => 'sub f {}');
+	$m->{return_type} = 'alien';    # bypass resolve_return_type
+	throws_ok { $m->resolve_classification() }
+		qr/invariant violation/, 'injected alien return_type → confess fires';
+};
+
+subtest 'Model::Method::add_evidence — category validation uses module-level constant (no per-call rebuild)' => sub {
+	# Validate that the three valid categories are accepted and that an invalid
+	# category is rejected — same behaviour as before the Readonly promotion,
+	# but now verified post-refactor.
+	my $m = App::Test::Generator::Model::Method->new(name => 'f', source => 'sub f {}');
+	lives_ok { $m->add_evidence(category => 'return',  signal => 'returns_constant') } 'return accepted';
+	lives_ok { $m->add_evidence(category => 'input',   signal => 'input_validated')  } 'input accepted';
+	lives_ok { $m->add_evidence(category => 'effect',  signal => 'has_side_effect')  } 'effect accepted';
+	throws_ok { $m->add_evidence(category => 'unknown', signal => 'returns_constant') }
+		qr/Invalid evidence category 'unknown'/, 'invalid category → correct error message';
+};
+
 done_testing();
