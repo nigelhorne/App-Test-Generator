@@ -2275,11 +2275,19 @@ sub generate_reproduction_script {
 	my ($dist, $version, $report, $installed_mods, $outdir) = @_;
 
 	my $guid     = $report->{guid}     or return;
+	# Strip control characters (including CR/LF) from fields that are
+	# written verbatim into shell script lines — a CRLF could terminate a
+	# comment and make subsequent text executable.
+	$guid =~ s/[\r\n\x00-\x1f]//g;
+	return unless length $guid;
 	my $perl     = $report->{perl}     // 'unknown';
+	$perl =~ s/[\r\n\x00-\x1f]//g;
 	my $os       = $report->{osname}   // 'unknown';
+	$os =~ s/[\r\n\x00-\x1f]//g;
 	my $reporter = $report->{reporter} // '';
 	$reporter =~ s/"//g;
 	$reporter =~ s/<[^>]+>//g;
+	$reporter =~ s/[\r\n\x00-\x1f]//g;
 	$reporter =~ s/\s+$//g;
 
 	my $repro_dir  = File::Spec->catdir($outdir, 'reproduce');
@@ -5349,11 +5357,12 @@ sub _mutant_file_report {
 	close $in;
 
 	# $file values come from mutation.json, keyed by paths discovered
-	# under lib/; reject any '..' segment before it can be used to
-	# build an output path, since the directory-preserving join below
-	# would otherwise let such a segment escape $dir.
+	# under lib/; reject any '..' segment or null byte before it can be
+	# used to build an output path, since the directory-preserving join
+	# below would otherwise let such a segment escape $dir.
 	croak("Refusing to report on suspicious file path: $file")
-		if grep { $_ eq File::Spec->updir } File::Spec->splitdir($file);
+		if $file =~ /\0/
+		|| grep { $_ eq File::Spec->updir } File::Spec->splitdir($file);
 
 	# Preserve directory structure inside report
 	my $relative_path = File::Spec->catfile($dir, $file . '.html');
@@ -5752,12 +5761,14 @@ sub _mutant_file_report {
 
 				for my $m (@line_mutants) {
 					if($m->{status} eq 'Survived') {
-						my $id = $m->{id} // 'unknown';
-						my $type = $m->{type} // '';
-						my $description = $m->{description} // '';
+						my $id          = encode_entities($m->{id}          // 'unknown');
+						my $type        = $m->{type} // '';
+						my $description = encode_entities($m->{description} // '');
+						my $difficulty  = encode_entities($m->{difficulty}  // '');
+						my $hint        = encode_entities($m->{hint}        // '');
 
 						$details .= "<li><b>$id: $description</b><br>";
-						$details .= "$m->{difficulty}: $m->{hint}\n";
+						$details .= "$difficulty: $hint\n";
 
 						# Show mutation type if available
 						if($type) {
