@@ -27,6 +27,20 @@ Revision history for App-Test-Generator
 	  Files table header when lcsaj_root was set, making the Dup% column index
 	  inconsistent; TER is now always in the header.
 
+	- Drag-to-reorder columns: all three sortable tables (Coverage, Mutation Files,
+	  Duplication Report) allow dragging a column header to a new position.
+	  Drag-and-drop uses the HTML5 API with pointer-events:none on child <span>
+	  elements to prevent flicker. The active sort column tracks its new position
+	  after reordering.
+
+	- Persistent sort and column order: sort direction, active sort column, and
+	  column order for all four tables (coverage, cpan, mut, dup) are saved to
+	  localStorage under keys atg_sort_<id> and atg_col_order_<id> and restored
+	  on the next page load. Columns are identified by their original index via
+	  data-col-id so the saved order survives new columns being added. A
+	  _initializingTables flag prevents the restore phase from overwriting saved
+	  state with the defaults.
+
 	- Add t/domain.t: 24 domain tests using Equivalence Partitioning and Boundary
 	  Value Analysis across six modules. Covers: Model::Method::new (name/source
 	  required-vs-undef domain), add_evidence (category enum EP, signal enum EP,
