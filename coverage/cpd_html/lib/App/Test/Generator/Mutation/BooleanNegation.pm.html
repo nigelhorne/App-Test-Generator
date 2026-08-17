@@ -1,15 +1,257 @@
+
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <title>CPD: lib/App/Test/Generator/Mutation/BooleanNegation.pm</title>
 <style>
-body { font-family: monospace; font-size: 13px; background: #fff; color: #222; margin: 1em 2em; }
-h1 { font-size: 1.1em; font-family: sans-serif; }
-pre { line-height: 1.5; }
-.dup-line { background-color: #fff3cd; display: block; }
-.dup-line:hover { background-color: #ffe082; }
-.cpd-tip { position: relative; display: inline-block; }
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+    color: #5555ff;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-dot-uncovered {
+    color: #cc4444;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
+.cpd-dot {
+    color: #cc8800;
+    font-size: 10px;
+    margin-right: 3px;
+    cursor: help;
+    text-decoration: none;
+}
+a.cpd-dot { cursor: pointer; }
+a.cpd-dot:hover { color: #ff8800; }
+
+.cpd-tip {
+    position: relative;
+    display: inline-block;
+}
+
 .cpd-tip .cpd-tip-text {
     visibility: hidden;
     background-color: #333;
@@ -22,23 +264,35 @@ pre { line-height: 1.5; }
     z-index: 9999;
     pointer-events: none;
 }
-.cpd-tip:hover .cpd-tip-text { visibility: visible; }
-.cpd-dot { color: #cc8800; margin-right: 4px; cursor: help; text-decoration: none; }
+
+.cpd-tip:hover .cpd-tip-text {
+    visibility: visible;
+}
+
+/* CPD drill-down page styles */
+.dup-line { background-color: #fff3cd; display: block; }
+.dup-line:hover { background-color: #ffe082; }
 .intra-dot { color: #9944cc; margin-right: 4px; cursor: help; text-decoration: none; }
-a.cpd-dot, a.intra-dot { cursor: pointer; }
-a.cpd-dot:hover { color: #ff8800; }
+a.intra-dot { cursor: pointer; }
 a.intra-dot:hover { color: #7700bb; }
-.legend { font-family: sans-serif; font-size: 0.9em; margin-bottom: 1em;
-          padding: 6px 10px; background: #fff3cd; border: 1px solid #ffc107;
-          border-radius: 4px; display: inline-block; }
-.nav { font-family: sans-serif; font-size: 0.9em; margin-bottom: 0.5em; }
+.cpd-legend {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    display: inline-block;
+    padding: 6px 10px;
+    margin-bottom: 1em;
+    font-size: 0.9em;
+}
+
 </style>
 </head>
 <body>
-<p class="nav"><a href="../../../../../../index.html">&uarr; Dashboard</a> &nbsp; <a href="ReturnUndef.pm.html">lib/App/Test/Generator/Mutation/ReturnUndef.pm</a> &rarr; &nbsp; &nbsp;
-<a href="https://github.com/nigelhorne/App-Test-Generator/blob/1e7ff1d619852332ef778d4c6222d8cd853a2314/lib/App/Test/Generator/Mutation/BooleanNegation.pm" target="_blank">View on GitHub &#128269;</a></p>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<div class="nav"><a href="../../../../../../index.html">&uarr; Dashboard</a> &nbsp; <a href="ReturnUndef.pm.html">lib/App/Test/Generator/Mutation/ReturnUndef.pm</a> &rarr; &nbsp; &nbsp;
+<a href="https://github.com/nigelhorne/App-Test-Generator/blob/2f5e62f3bc92c15d61a3fd5b1977a2092530675a/lib/App/Test/Generator/Mutation/BooleanNegation.pm" target="_blank">View on GitHub &#128269;</a></div>
 <h1>lib/App/Test/Generator/Mutation/BooleanNegation.pm &mdash; Duplicate Code Regions</h1>
-<div class="legend">
+<div class="legend cpd-legend">
   <span class="cpd-dot">&#9670;</span> Amber lines duplicate code in another file &mdash; hover for location.<br>
   <span class="intra-dot">&#9670;</span> Purple: duplicate of another region within this same file.
 </div>
@@ -356,13 +610,30 @@ a.intra-dot:hover { color: #7700bb; }
   331: 
   332: 1;
 </pre>
+
 <script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if(saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+
 document.addEventListener("mousemove", function(e) {
-    document.querySelectorAll(".cpd-tip-text").forEach(function(tip) {
-        tip.style.left = (e.clientX + 12) + "px";
-        tip.style.top  = (e.clientY + 12) + "px";
-    });
+	document.querySelectorAll(".lcsaj-tip-text, .cpd-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
 });
 </script>
 </body>
 </html>
+	
