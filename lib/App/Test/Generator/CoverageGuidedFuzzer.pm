@@ -160,6 +160,37 @@ A blessed hashref. Croaks if C<schema> or C<target_sub> is missing.
         isa  => 'App::Test::Generator::CoverageGuidedFuzzer',
     }
 
+=head3 EXAMPLE
+
+    my $fuzzer = App::Test::Generator::CoverageGuidedFuzzer->new(
+        schema     => { name => { type => 'string' } },
+        target_sub => sub { length($_[0]) },
+        iterations => 50,
+        seed       => 1234,
+    );
+
+=head3 MESSAGES
+
+=over 4
+
+=item C<schema required>
+
+C<schema> was not supplied or was falsy (e.g. C<undef> or C<0>).
+
+=item C<target_sub required>
+
+C<target_sub> was not supplied or was falsy.
+
+=back
+
+=head3 FORMAL SPECIFICATION
+
+Pre:  C<defined schema ∧ ref(target_sub) eq 'CODE'>
+
+Post: C<ref(result) eq 'App::Test::Generator::CoverageGuidedFuzzer'>
+      ∧ C<result-E<gt>{seed}> passed to C<srand()>
+      ∧ C<result-E<gt>{corpus} eq []>
+
 =cut
 
 sub new {
@@ -248,6 +279,35 @@ discarded.
         },
     }
 
+=head3 EXAMPLE
+
+    my $report = $fuzzer->run();
+    printf "Iterations:  %d\n", $report->{total_iterations};
+    printf "Corpus size: %d\n", $report->{corpus_size};
+    printf "Bugs found:  %d\n", $report->{bugs_found};
+    for my $bug (@{ $report->{bugs} }) {
+        printf "  input=%s  error=%s\n", $bug->{input}, $bug->{error};
+    }
+
+=head3 FORMAL SPECIFICATION
+
+Pre:  C<self-E<gt>{schema}> and C<self-E<gt>{target_sub}> are set
+
+Post: C<result-E<gt>{total_iterations} == self-E<gt>{iterations}>
+      ∧ C<result-E<gt>{corpus_size} == scalar @{self-E<gt>{corpus}}>
+      ∧ C<result-E<gt>{bugs_found} == scalar @{self-E<gt>{bugs}}>
+
+=head3 PSEUDOCODE
+
+    seed corpus with SEED_CORPUS_SIZE random inputs
+    for i in 1..iterations:
+        if corpus non-empty and rand < CORPUS_MUTATE_RATIO:
+            input = mutate(random corpus entry)
+        else:
+            input = generate_random()
+        run target_sub(input), record coverage and bugs
+    return report hashref
+
 =cut
 
 sub run {
@@ -294,6 +354,12 @@ C<input> and C<coverage>.
 
     { type => ARRAYREF }
 
+=head3 EXAMPLE
+
+    my $corpus = $fuzzer->corpus();
+    printf "%d entries in corpus\n", scalar @{$corpus};
+    # Each entry: { input => ..., coverage => { 'file:line:branch' => 1, ... } }
+
 =cut
 
 sub corpus { $_[0]->{corpus} }
@@ -314,6 +380,13 @@ C<error>.
 =head4 output
 
     { type => ARRAYREF }
+
+=head3 EXAMPLE
+
+    my $bugs = $fuzzer->bugs();
+    for my $b (@{$bugs}) {
+        printf "Bug: input=%s  error=%s\n", $b->{input}, $b->{error};
+    }
 
 =cut
 
@@ -357,6 +430,30 @@ Writes a JSON file to C<$path>.
 =head4 output
 
     { type => UNDEF }
+
+=head3 EXAMPLE
+
+    $fuzzer->run();
+    $fuzzer->minimize_corpus();
+    $fuzzer->save_corpus('t/corpus/my_func.json');
+
+=head3 MESSAGES
+
+=over 4
+
+=item C<path required>
+
+No path argument was supplied.
+
+=item C<Cannot write corpus to $path: $!>
+
+The file could not be opened for writing (permissions, missing directory, etc.).
+
+=item C<No JSON module available; install JSON or JSON::MaybeXS>
+
+Neither C<JSON::MaybeXS> nor C<JSON> is installed.
+
+=back
 
 =cut
 
@@ -418,6 +515,36 @@ Appends loaded entries to C<< $self->{corpus} >>.
 
     { type => UNDEF }
 
+=head3 EXAMPLE
+
+    my $fuzzer2 = App::Test::Generator::CoverageGuidedFuzzer->new(
+        schema     => $schema,
+        target_sub => \&My::Module::validate,
+    );
+    $fuzzer2->load_corpus('t/corpus/my_func.json');
+    my $report = $fuzzer2->run();
+
+=head3 MESSAGES
+
+=over 4
+
+=item C<path required>
+
+No path argument was supplied.
+
+=item C<Cannot read corpus from $path: $!>
+
+The file could not be opened for reading (missing file, permissions, etc.).
+
+=back
+
+=head3 FORMAL SPECIFICATION
+
+Note: C<load_corpus> does B<not> restore C<bugs> from the JSON file —
+the C<bugs> array in the JSON is written by C<save_corpus> but ignored on load.
+The loaded fuzzer starts with an empty C<bugs> list.  Seed values are also not
+restored; the constructor-supplied seed is retained.
+
 =cut
 
 sub load_corpus {
@@ -475,6 +602,32 @@ size after), and C<branches> (total unique branches still covered).
         type       => HASHREF,
         constraint => sub { defined $_[0]{before} && defined $_[0]{after} && defined $_[0]{branches} },
     }
+
+=head3 EXAMPLE
+
+    $fuzzer->run();
+    my $stats = $fuzzer->minimize_corpus();
+    printf "Corpus: %d -> %d entries (%d branches)\n",
+        $stats->{before}, $stats->{after}, $stats->{branches};
+    $fuzzer->save_corpus('t/corpus/my_func.json');
+
+=head3 FORMAL SPECIFICATION
+
+Post: C<result-E<gt>{before}> == pre corpus size
+      ∧ C<result-E<gt>{after}> ≤ C<result-E<gt>{before}>
+      ∧ C<scalar @{self-E<gt>{corpus}}> == C<result-E<gt>{after}>
+      ∧ every branch covered by the original corpus is still covered
+        by the minimized corpus
+      ∧ every bug-triggering input survives minimization
+
+=head3 PSEUDOCODE
+
+    partition corpus into with-coverage and without-coverage entries
+    greedy set-cover: repeatedly pick entry covering most uncovered branches
+    deduplicate without-coverage entries by JSON fingerprint
+    unconditionally add all bug inputs not already in minimized set
+    replace self.corpus with minimized list
+    return { before, after, branches }
 
 =cut
 
@@ -1399,6 +1552,80 @@ sub _build_report {
 		bugs               => $self->{bugs},
 	};
 }
+
+=head1 COMMON PITFALLS
+
+=over 4
+
+=item Forgetting that C<load_corpus> does not restore bugs
+
+The JSON written by C<save_corpus> contains a C<bugs> array, but C<load_corpus>
+reads only the C<corpus> key.  A freshly loaded fuzzer always starts with an
+empty bugs list.  If you need to carry bugs across sessions, persist them
+separately.
+
+=item Assuming coverage guidance is always active
+
+If C<Devel::Cover> is not installed, the fuzzer falls back to random-only mode
+and emits a warning.  Corpus entries in this mode have C<coverage =E<gt> {}>
+and are kept using the C<RANDOM_KEEP_RATIO> (20%) heuristic rather than branch
+novelty.  Install C<Devel::Cover> (or C<cpanm --with-recommends
+App::Test::Generator>) for full coverage-guided behaviour.
+
+=item Using C<refaddr> on C<corpus()> after C<minimize_corpus>
+
+C<minimize_corpus> replaces C<$self-E<gt>{corpus}> with a B<new> arrayref.
+Any caller that holds a reference to the old arrayref (e.g. from a prior
+C<corpus()> call) will see a stale snapshot.  Always call C<corpus()> after
+C<minimize_corpus> if you need the current list.
+
+=item Setting C<timeout =E<gt> 0> on blocking targets
+
+Setting C<timeout> to 0 disables the per-call C<alarm()>.  This is correct for
+targets that legitimately block (e.g. sleeping, waiting on I/O), but means a
+hung target_sub will hang the whole fuzzing run indefinitely.  Use a
+process-level timeout (e.g. C<Sys::AlarmCall>) if you need a safety net for
+blocking code.
+
+=back
+
+=head1 LIMITATIONS
+
+=over 4
+
+=item Single-threaded
+
+All fuzzing iterations run sequentially in the calling process.  For large
+iteration counts, wall-clock time scales linearly.  Parallelism requires
+splitting the iteration budget across multiple fuzzer instances and merging
+their corpora.
+
+=item Coverage granularity is branch-level
+
+Branch coverage is the finest granularity Devel::Cover exposes via its public
+API.  Path coverage (distinct sequences of branches) is not tracked — two
+inputs that cover the same branches but exercise different call orders are
+treated as equivalent.
+
+=item No inter-run learning without save/load
+
+The corpus is entirely in memory.  To carry learning across separate
+invocations, call C<save_corpus> at the end and C<load_corpus> at the start of
+each subsequent run.
+
+=back
+
+=head1 SEE ALSO
+
+=over 4
+
+=item L<Devel::Cover>
+
+=item L<App::Test::Generator>
+
+=item C<bin/extract-schemas> (the C<--minimize-corpus> flag)
+
+=back
 
 =head1 AUTHOR
 

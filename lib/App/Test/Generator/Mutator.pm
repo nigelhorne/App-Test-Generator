@@ -482,6 +482,39 @@ Overwrites the target file in the workspace with the mutated version.
 
     { type => UNDEF }
 
+=head3 EXAMPLE
+
+    $mutator->prepare_workspace();
+    for my $m (@{$mutants}) {
+        $mutator->apply_mutant($m);
+        # workspace file is now mutated; run tests against it
+    }
+
+=head3 MESSAGES
+
+=over 4
+
+=item C<Workspace not prepared -- call prepare_workspace first>
+
+C<apply_mutant> was called before C<prepare_workspace>.
+
+=item C<Relative path not set -- call prepare_workspace first>
+
+Internal: the relative-path field was not set by C<prepare_workspace>.
+
+=item C<Failed to parse $target>
+
+PPI could not parse the workspace copy of the target file.
+
+=back
+
+=head3 FORMAL SPECIFICATION
+
+Pre:  C<self-E<gt>{_workspace}> is defined ∧ C<self-E<gt>{_relative}> is defined
+      ∧ C<ref(mutant-E<gt>{transform}) eq 'CODE'>
+
+Post: workspace copy of target file contains the mutated content
+
 =cut
 
 sub apply_mutant {
@@ -545,6 +578,20 @@ lib directory before running.
 =head4 output
 
     { type => SCALAR }
+
+=head3 EXAMPLE
+
+    my $survived = $mutator->run_tests();
+    if($survived) {
+        print "mutant survived\n";
+    } else {
+        print "mutant killed\n";
+    }
+
+=head3 FORMAL SPECIFICATION
+
+Post: C<result ∈ {0, 1}>
+      ∧ C<result == 1> ⟺ all tests in C<t/> passed against current C<lib/>
 
 =cut
 
@@ -642,6 +689,42 @@ sub _is_redundant_mutation {
 
 	return 0;
 }
+
+=head1 COMMON PITFALLS
+
+=over 4
+
+=item Calling C<apply_mutant> before C<prepare_workspace>
+
+C<apply_mutant> requires C<prepare_workspace> to have been called first. The
+workspace holds the isolated copy of C<lib/> that receives mutations.
+
+=item Passing an absolute path as C<lib_dir>
+
+C<lib_dir> must be a B<relative> path (e.g. C<lib>). An absolute path causes
+C<apply_mutant> to construct a doubled directory under the workspace and then
+fail to find the target file.
+
+=item Checking C<< $mutator->{workspace} >> after the refactor
+
+Internal workspace state is stored in C<_workspace>, C<_relative>, and
+C<_lib_basename> (note the underscore prefix). The original C<lib_dir> value
+is never overwritten. Old code that reads C<< $mutator->{workspace} >> or
+C<< $mutator->{relative} >> (without underscores) will not find these keys.
+
+=item Forgetting that C<run_tests> drives C<prove> from C<$^X>
+
+C<run_tests> resolves C<prove> from the same Perl binary used to run the script.
+If you shell out to C<prove> directly in your own integration code, make sure
+you are using the matching C<prove>.
+
+=item C<generate_mutants> in list vs scalar context
+
+C<generate_mutants> returns a flat list in list context and an arrayref in
+scalar context.  Assign to an arrayref (C<my $m = $mutator-E<gt>generate_mutants()>)
+to guarantee you always get a reference regardless of calling context.
+
+=back
 
 =head1 LIMITATIONS
 
