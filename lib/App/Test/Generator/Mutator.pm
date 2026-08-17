@@ -45,6 +45,30 @@ App::Test::Generator::Mutator - Generate and apply mutation tests
 
 Version 0.45
 
+=head1 SYNOPSIS
+
+    use App::Test::Generator::Mutator;
+
+    my $mutator = App::Test::Generator::Mutator->new(
+        file           => 'lib/My/Module.pm',
+        lib_dir        => 'lib',
+        mutation_level => 'fast',
+    );
+
+    my $mutants = $mutator->generate_mutants();
+    printf "Generated %d mutants\n", scalar @{$mutants};
+
+    my $workspace = $mutator->prepare_workspace();
+
+    for my $m (@{$mutants}) {
+        $mutator->apply_mutant($m);
+        if($mutator->run_tests()) {
+            print "SURVIVED: ${\$m->description}\n";
+        } else {
+            print "KILLED:   ${\$m->description}\n";
+        }
+    }
+
 =head1 DESCRIPTION
 
 B<App::Test::Generator::Mutator> is a mutation engine that programmatically
@@ -110,6 +134,35 @@ A blessed hashref. Croaks if C<file> is missing or does not exist.
         isa  => 'App::Test::Generator::Mutator',
     }
 
+=head3 EXAMPLE
+
+    my $m = App::Test::Generator::Mutator->new(
+        file           => 'lib/Acme/Widget.pm',
+        mutation_level => 'fast',
+    );
+
+=head3 MESSAGES
+
+=over 4
+
+=item C<file required>
+
+C<file> was not supplied.
+
+=item C<file not found: $path>
+
+C<file> was supplied but does not exist on disk.
+
+=back
+
+=head3 FORMAL SPECIFICATION
+
+Pre:  C<file> is defined ∧ C<-f file>
+
+Post: C<ref(result) eq 'App::Test::Generator::Mutator'>
+      ∧ C<result-E<gt>{file} eq file>
+      ∧ C<result-E<gt>{mutation_level} ∈ {full, fast}>
+
 =cut
 
 sub new {
@@ -172,6 +225,57 @@ line numbers to 1.
         type     => ARRAYREF,
         elements => { type => OBJECT, isa => 'App::Test::Generator::Mutant' },
     }
+
+=head3 EXAMPLE
+
+    my $mutants = $mutator->generate_mutants();
+    printf "%d mutants generated\n", scalar @{$mutants};
+
+    for my $m (@{$mutants}) {
+        printf "line %d: %s\n", $m->line, $m->description;
+    }
+
+=head3 MESSAGES
+
+=over 4
+
+=item C<Unable to parse $file>
+
+PPI could not parse the source file (syntax error or unreadable file).
+
+=item C<$file: MUTANT_SKIP_BEGIN at line N with no prior MUTANT_SKIP_END>
+
+A C<## MUTANT_SKIP_BEGIN> marker was found while already inside a skip block.
+
+=item C<$file: MUTANT_SKIP_END at line N with no matching MUTANT_SKIP_BEGIN>
+
+A C<## MUTANT_SKIP_END> marker was found with no preceding C<## MUTANT_SKIP_BEGIN>.
+
+=item C<$file: MUTANT_SKIP_BEGIN at line N has no matching MUTANT_SKIP_END>
+
+The source file ended while still inside a skip block.
+
+=back
+
+=head3 FORMAL SPECIFICATION
+
+Pre:  C<prepare_workspace> need not have been called before this method.
+
+Post: C<ref(result) eq 'ARRAY'>
+      ∧ C<∀ m ∈ result: ref(m) eq 'App::Test::Generator::Mutant'>
+      ∧ C<∀ m ∈ result: ¬ skip_lines{m->line}>
+
+=head3 PSEUDOCODE
+
+    parse file with PPI
+    scan lines for MUTANT_SKIP_BEGIN / MUTANT_SKIP_END pairs → skip_lines
+    for each registered mutation strategy:
+        skip if strategy does not apply_to(doc)
+        for each mutant from strategy->mutate(doc):
+            include unless mutant.line ∈ skip_lines
+    if mutation_level == 'fast':
+        deduplicate and remove redundant mutants
+    return arrayref (or flat list in list context)
 
 =cut
 
@@ -284,6 +388,33 @@ lifetime of the enclosing scope.
     {
         type => SCALAR,
     }
+
+=head3 EXAMPLE
+
+    my $workspace = $mutator->prepare_workspace();
+    # workspace is an absolute temp dir path
+    # original lib_dir value is unchanged
+    printf "original lib_dir still: %s\n", $mutator->{lib_dir};
+
+=head3 MESSAGES
+
+=over 4
+
+=item C<dircopy failed: $!>
+
+The C<lib_dir> tree could not be copied into the temporary workspace directory,
+usually a permissions error.
+
+=back
+
+=head3 FORMAL SPECIFICATION
+
+Pre:  C<-d self-E<gt>{lib_dir}>
+      ∧ C<self-E<gt>{file}> begins with C<self-E<gt>{lib_dir}>
+
+Post: C<-d result>
+      ∧ C<self-E<gt>{_workspace} eq result>
+      ∧ C<self-E<gt>{lib_dir}> unchanged
 
 =cut
 
