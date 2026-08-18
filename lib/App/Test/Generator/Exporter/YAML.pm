@@ -44,9 +44,9 @@ Nothing.
 =head4 input
 
     {
-        self => { type => OBJECT },
-        plan => { type => HASHREF },
-        file => { type => 'string' },
+        self => { type => 'object' },
+        plan => { type => 'hashref' },
+        file => { type => 'string', min => 1 },
     }
 
 =head4 output
