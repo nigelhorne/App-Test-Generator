@@ -1600,7 +1600,7 @@ subtest 'PodExampleExtractor::new - accepts an existing file and stores path' =>
 
 subtest 'PodExampleExtractor::extract - returns an arrayref' => sub {
 	require App::Test::Generator::PodExampleExtractor;
-	my $mod = '/home/njh/src/njh/App-Test-Generator/lib/App/Test/Generator/Sample/Module.pm';
+	my $mod = File::Spec->catfile((File::Spec->splitpath(File::Spec->rel2abs($0)))[0,1], '..', 'lib', 'App', 'Test', 'Generator', 'Sample', 'Module.pm');
 	my $ex  = App::Test::Generator::PodExampleExtractor->new(file => $mod);
 	my $res = $ex->extract;
 	is(ref($res), 'ARRAY', 'extract() returns an arrayref');
@@ -1609,7 +1609,7 @@ subtest 'PodExampleExtractor::extract - returns an arrayref' => sub {
 
 subtest 'PodExampleExtractor::extract - each entry has label, section, and code' => sub {
 	require App::Test::Generator::PodExampleExtractor;
-	my $mod = '/home/njh/src/njh/App-Test-Generator/lib/App/Test/Generator/Sample/Module.pm';
+	my $mod = File::Spec->catfile((File::Spec->splitpath(File::Spec->rel2abs($0)))[0,1], '..', 'lib', 'App', 'Test', 'Generator', 'Sample', 'Module.pm');
 	my $ex  = App::Test::Generator::PodExampleExtractor->new(file => $mod);
 	my $res = $ex->extract;
 	for my $e (@$res) {
