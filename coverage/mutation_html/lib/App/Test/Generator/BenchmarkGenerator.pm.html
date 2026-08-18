@@ -1,0 +1,819 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>File: lib/App/Test/Generator/BenchmarkGenerator.pm</title>
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+    color: #5555ff;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-dot-uncovered {
+    color: #cc4444;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
+.cpd-dot {
+    color: #cc8800;
+    font-size: 10px;
+    margin-right: 3px;
+    cursor: help;
+    text-decoration: none;
+}
+a.cpd-dot { cursor: pointer; }
+a.cpd-dot:hover { color: #ff8800; }
+
+.cpd-tip {
+    position: relative;
+    display: inline-block;
+}
+
+.cpd-tip .cpd-tip-text {
+    visibility: hidden;
+    background-color: #333;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.cpd-tip:hover .cpd-tip-text {
+    visibility: visible;
+}
+
+/* CPD drill-down page styles */
+.dup-line { background-color: #fff3cd; display: block; }
+.dup-line:hover { background-color: #ffe082; }
+.intra-dot { color: #9944cc; margin-right: 4px; cursor: help; text-decoration: none; }
+a.intra-dot { cursor: pointer; }
+a.intra-dot:hover { color: #7700bb; }
+.cpd-legend {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    display: inline-block;
+    padding: 6px 10px;
+    margin-bottom: 1em;
+    font-size: 0.9em;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/App/Test/Generator/BenchmarkGenerator.pm</h1>
+<div class="nav"><a href="Analyzer/SideEffect.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
+ <a href="Emitter/Perl.pm.html">Next ➡</a></div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 100.00%<br>
+TER2 (Branch): 100.00%<br>
+TER3 (LCSAJ): 100.0% (7/7)<br>
+Approximate LCSAJ segments: 47<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package App::Test::Generator::BenchmarkGenerator;
+</span><span class="">    2: 
+</span><span class="">    3: use 5.036;
+</span><span class="">    4: use Carp qw(croak);
+</span><span class="">    5: use Params::Get qw(get_params);
+</span><span class="">    6: use Readonly;
+</span><span class="">    7: use Scalar::Util qw(looks_like_number);
+</span><span class="">    8: 
+</span><span class="">    9: our $VERSION = &#39;0.45&#39;;
+</span><span class="">   10: 
+</span><span class="">   11: Readonly my %TYPE_DEFAULTS =&gt; (
+</span><span class="">   12: 	number  =&gt; 42,
+</span><span class="">   13: 	integer =&gt; 42,
+</span><span class="">   14: 	float   =&gt; 3.14,
+</span><span class="">   15: 	string  =&gt; &quot;&#39;hello&#39;&quot;,
+</span><span class="">   16: 	boolean =&gt; 1,
+</span><span class="">   17: 	arrayref =&gt; &#39;[]&#39;,
+</span><span class="">   18: 	hashref  =&gt; &#39;{}&#39;,
+</span><span class="">   19: );
+</span><span class="">   20: 
+</span><span class="">   21: =head1 NAME
+</span><span class="">   22: 
+</span><span class="">   23: App::Test::Generator::BenchmarkGenerator - Generate Benchmark harnesses from ATG schemas
+</span><span class="">   24: 
+</span><span class="">   25: =head1 VERSION
+</span><span class="">   26: 
+</span><span class="">   27: Version 0.45
+</span><span class="">   28: 
+</span><span class="">   29: =head1 SYNOPSIS
+</span><span class="">   30: 
+</span><span class="">   31:     use App::Test::Generator::BenchmarkGenerator;
+</span><span class="">   32:     use YAML::XS qw(LoadFile);
+</span><span class="">   33: 
+</span><span class="">   34:     my $schema = LoadFile(&#39;schemas/my_func.yml&#39;);
+</span><span class="">   35:     my $bg     = App::Test::Generator::BenchmarkGenerator-&gt;new(schema =&gt; $schema);
+</span><span class="">   36:     print $bg-&gt;generate();
+</span><span class="">   37: 
+</span><span class="">   38: =head1 DESCRIPTION
+</span><span class="">   39: 
+</span><span class="">   40: Given an ATG YAML schema (as produced by C&lt;extract-schemas&gt; or written by hand),
+</span><span class="">   41: generates a self-contained Perl benchmark script using L&lt;Benchmark/cmpthese&gt;.
+</span><span class="">   42: 
+</span><span class="">   43: Each transform defined in the schema becomes one variant in the C&lt;cmpthese&gt; call,
+</span><span class="">   44: with representative input values derived from the transform&#39;s type and range
+</span><span class="">   45: constraints.  When no transforms are defined, a single C&lt;&#39;default&#39;&gt; variant is
+</span><span class="">   46: emitted using the base input specification.
+</span><span class="">   47: 
+</span><span class="">   48: The generated script is a plain C&lt;.pl&gt; file suitable for running directly with
+</span><span class="">   49: C&lt;perl&gt;.  It is not a test file and has no dependency on any test framework.
+</span><span class="">   50: 
+</span><span class="">   51: =head1 METHODS
+</span><span class="">   52: 
+</span><span class="">   53: =head2 new
+</span><span class="">   54: 
+</span><span class="">   55: Construct a new BenchmarkGenerator for a given ATG schema.
+</span><span class="">   56: 
+</span><span class="">   57:     my $bg = App::Test::Generator::BenchmarkGenerator-&gt;new(schema =&gt; $schema);
+</span><span class="">   58: 
+</span><span class="">   59: =head3 Arguments
+</span><span class="">   60: 
+</span><span class="">   61: =over 4
+</span><span class="">   62: 
+</span><span class="">   63: =item * C&lt;schema&gt;
+</span><span class="">   64: 
+</span><span class="">   65: A hashref representing the parsed YAML schema for the target function, as
+</span><span class="">   66: produced by C&lt;extract-schemas&gt; or written by hand.  Must contain at minimum
+</span><span class="">   67: C&lt;module&gt; and C&lt;function&gt; keys.  Required.
+</span><span class="">   68: 
+</span><span class="">   69: =back
+</span><span class="">   70: 
+</span><span class="">   71: =head3 Returns
+</span><span class="">   72: 
+</span><span class="">   73: A blessed C&lt;App::Test::Generator::BenchmarkGenerator&gt; object.
+</span><span class="">   74: Croaks if C&lt;schema&gt; is missing or not a hashref.
+</span><span class="">   75: 
+</span><span class="">   76: =head3 EXAMPLE
+</span><span class="">   77: 
+</span><span class="">   78:     use YAML::XS qw(LoadFile);
+</span><span class="">   79:     use App::Test::Generator::BenchmarkGenerator;
+</span><span class="">   80: 
+</span><span class="">   81:     my $schema = LoadFile(&#39;schemas/greet.yml&#39;);
+</span><span class="">   82:     my $bg     = App::Test::Generator::BenchmarkGenerator-&gt;new(schema =&gt; $schema);
+</span><span class="">   83:     print $bg-&gt;generate();
+</span><span class="">   84: 
+</span><span class="">   85: =head3 MESSAGES
+</span><span class="">   86: 
+</span><span class="">   87: =over 4
+</span><span class="">   88: 
+</span><span class="">   89: =item C&lt;schema is required&gt;
+</span><span class="">   90: 
+</span><span class="">   91: C&lt;schema&gt; was not supplied or was C&lt;undef&gt;.
+</span><span class="">   92: 
+</span><span class="">   93: =item C&lt;schema must be a hashref&gt;
+</span><span class="">   94: 
+</span><span class="">   95: C&lt;schema&gt; was supplied but is not a plain hashref (e.g. an arrayref or string
+</span><span class="">   96: was passed instead).
+</span><span class="">   97: 
+</span><span class="">   98: =back
+</span><span class="">   99: 
+</span><span class="">  100: =head3 API SPECIFICATION
+</span><span class="">  101: 
+</span><span class="">  102: =head4 input
+</span><span class="">  103: 
+</span><span class="">  104:     schema   =&gt; HashRef   (required) - ATG schema hashref as loaded from YAML
+</span><span class="">  105: 
+</span><span class="">  106: =head4 output
+</span><span class="">  107: 
+</span><span class="">  108: An C&lt;App::Test::Generator::BenchmarkGenerator&gt; object.
+</span><span class="">  109: 
+</span><span class="">  110: =head3 FORMAL SPECIFICATION
+</span><span class="">  111: 
+</span><span class="">  112: Pre:  C&lt;defined schema &acirc;&#136;&sect; ref(schema) eq &#39;HASH&#39;&gt;
+</span><span class="">  113: 
+</span><span class="">  114: Post: C&lt;ref(result) eq &#39;App::Test::Generator::BenchmarkGenerator&#39;&gt;
+</span><span class="">  115:       &acirc;&#136;&sect; C&lt;result-E&lt;gt&gt;{schema} eq schema&gt;
+</span><span class="">  116: 
+</span><span class="">  117: =cut
+</span><span class="">  118: 
+</span><span class="">  119: sub new {
+</span><span class="">  120: 	my ($class, @args) = @_;
+</span><span class="">  121: 	my $params = get_params(&#39;schema&#39;, \@args);
+</span><span class="">  122: 	croak &#39;schema is required&#39; unless defined $params-&gt;{schema};
+</span><span class="">  123: 	croak &#39;schema must be a hashref&#39; unless ref $params-&gt;{schema} eq &#39;HASH&#39;;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  124: 	return bless { schema =&gt; $params-&gt;{schema} }, $class;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  125: }
+</span><span class="">  126: 
+</span><span class="">  127: =head2 generate
+</span><span class="">  128: 
+</span><span class="">  129: Generate the complete benchmark script as a string.
+</span><span class="">  130: 
+</span><span class="">  131:     my $script = $bg-&gt;generate();
+</span><span class="">  132:     write_file(&#39;benchmarks/greet.pl&#39;, $script);
+</span><span class="">  133: 
+</span><span class="">  134: =head3 Arguments
+</span><span class="">  135: 
+</span><span class="">  136: None beyond C&lt;$self&gt;.
+</span><span class="">  137: 
+</span><span class="">  138: =head3 Returns
+</span><span class="">  139: 
+</span><span class="">  140: A string containing the complete, self-contained Perl benchmark script
+</span><span class="">  141: using C&lt;Benchmark::cmpthese&gt;.  The string is ready to write directly to a
+</span><span class="">  142: C&lt;.pl&gt; file and run with C&lt;perl&gt;.
+</span><span class="">  143: 
+</span><span class="">  144: Croaks if the schema is missing a C&lt;module&gt; or C&lt;function&gt; key.
+</span><span class="">  145: 
+</span><span class="">  146: =head3 EXAMPLE
+</span><span class="">  147: 
+</span><span class="">  148:     my $script = $bg-&gt;generate();
+</span><span class="">  149:     # Write to file
+</span><span class="">  150:     open my $fh, &#39;&gt;&#39;, &#39;benchmarks/my_func.pl&#39; or die $!;
+</span><span class="">  151:     print $fh $script;
+</span><span class="">  152:     close $fh;
+</span><span class="">  153: 
+</span><span class="">  154:     # Or run immediately:
+</span><span class="">  155:     require File::Temp;
+</span><span class="">  156:     my $tmp = File::Temp-&gt;new(SUFFIX =&gt; &#39;.pl&#39;);
+</span><span class="">  157:     print $tmp $script;
+</span><span class="">  158:     system($^X, &quot;$tmp&quot;);
+</span><span class="">  159: 
+</span><span class="">  160: =head3 MESSAGES
+</span><span class="">  161: 
+</span><span class="">  162: =over 4
+</span><span class="">  163: 
+</span><span class="">  164: =item C&lt;schema missing module&gt;
+</span><span class="">  165: 
+</span><span class="">  166: The schema hashref has no C&lt;module&gt; key.
+</span><span class="">  167: 
+</span><span class="">  168: =item C&lt;schema missing function&gt;
+</span><span class="">  169: 
+</span><span class="">  170: The schema hashref has no C&lt;function&gt; key.
+</span><span class="">  171: 
+</span><span class="">  172: =back
+</span><span class="">  173: 
+</span><span class="">  174: =head3 API SPECIFICATION
+</span><span class="">  175: 
+</span><span class="">  176: =head4 input
+</span><span class="">  177: 
+</span><span class="">  178: None (reads from the schema passed to C&lt;new&gt;).
+</span><span class="">  179: 
+</span><span class="">  180: =head4 output
+</span><span class="">  181: 
+</span><span class="">  182: A string containing the complete benchmark script, ready to write to a file.
+</span><span class="">  183: 
+</span><span class="">  184: =head3 FORMAL SPECIFICATION
+</span><span class="">  185: 
+</span><span class="">  186: Pre:  C&lt;defined schema-E&lt;gt&gt;{module} &acirc;&#136;&sect; defined schema-E&lt;gt&gt;{function}&gt;
+</span><span class="">  187: 
+</span><span class="">  188: Post: C&lt;result&gt; is a syntactically valid Perl script
+</span><span class="">  189:       &acirc;&#136;&sect; C&lt;result&gt; contains exactly one C&lt;cmpthese(...)&gt; call
+</span><span class="">  190:       &acirc;&#136;&sect; C&lt;|variants| == max(1, |schema-E&lt;gt&gt;{transforms}|)&gt;
+</span><span class="">  191: 
+</span><span class="">  192: =head3 PSEUDOCODE
+</span><span class="">  193: 
+</span><span class="">  194:     read module, function, input, transforms from schema
+</span><span class="">  195:     emit shebang, use strict/warnings, use Benchmark
+</span><span class="">  196:     unless module eq &#39;builtin&#39;: emit use $module
+</span><span class="">  197:     if schema has &#39;new&#39; key and not builtin:
+</span><span class="">  198:         emit my $obj = Module-&gt;new(...)
+</span><span class="">  199:     if transforms defined and non-empty:
+</span><span class="">  200:         for each transform: build a named variant call
+</span><span class="">  201:     else:
+</span><span class="">  202:         build a single &#39;default&#39; variant call
+</span><span class="">  203:     emit cmpthese($COUNT, { variant =&gt; sub { ... }, ... })
+</span><span class="">  204: 
+</span><span class="">  205: =cut
+</span><span class="">  206: 
+</span><span class="">  207: sub generate {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">208 → 214 → 218</span></span>  208: 	my $self = $_[0];
+</span><span class="">  209: 
+</span><span class="">  210: 	my $schema   = $self-&gt;{schema};
+</span><span class="">  211: 	my $module   = $schema-&gt;{module}   // croak &#39;schema missing module&#39;;
+</span><span class="">  212: 	my $function = $schema-&gt;{function} // croak &#39;schema missing function&#39;;
+</span><span class="">  213: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  214: 	unless($module eq &#39;builtin&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  215: 		croak(&quot;BenchmarkGenerator: module &#39;$module&#39; is not a valid Perl identifier&quot;)
+</span><span class="">  216: 			unless $module =~ /^[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*\z/;
+</span><span class="">  217: 	}
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">218 → 238 → 242</span></span>  218: 	croak(&quot;BenchmarkGenerator: function &#39;$function&#39; is not a valid Perl identifier&quot;)
+</span><span class="">  219: 		unless $function =~ /^[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*\z/;
+</span><span class="">  220: 	my $has_new  = exists $schema-&gt;{new};
+</span><span class="">  221: 	my %input    = %{ $schema-&gt;{input} // {} };
+</span><span class="">  222: 	my %xforms   = %{ $schema-&gt;{transforms} // {} };
+</span><span class="">  223: 
+</span><span class="">  224: 	my $is_builtin = ($module eq &#39;builtin&#39;);
+</span><span class="">  225: 
+</span><span class="">  226: 	my @lines;
+</span><span class="">  227: 
+</span><span class="">  228: 	push @lines,
+</span><span class="">  229: 		&#39;#!/usr/bin/env perl&#39;,
+</span><span class="">  230: 		&quot;# Benchmark for $function (&quot; . ($is_builtin ? &#39;builtin&#39; : &quot;module: $module&quot;) . &#39;)&#39;,
+</span><span class="">  231: 		&#39;# Generated by benchmark-generator (App::Test::Generator &#39; . $VERSION . &#39;)&#39;,
+</span><span class="">  232: 		&#39;# DO NOT EDIT -- regenerate with: benchmark-generator -i SCHEMA.yml&#39;,
+</span><span class="">  233: 		q{},
+</span><span class="">  234: 		&#39;use strict;&#39;,
+</span><span class="">  235: 		&#39;use warnings;&#39;,
+</span><span class="">  236: 		&#39;use Benchmark qw(cmpthese);&#39;;
+</span><span class="">  237: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  238: 	unless($is_builtin) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  239: 		push @lines, &quot;use $module;&quot;;
+</span><span class="">  240: 	}
+</span><span class="">  241: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">242 → 247 → 258</span></span>  242: 	push @lines,
+</span><span class="">  243: 		q{},
+</span><span class="">  244: 		&#39;my $COUNT = -3;    # seconds per variant (negative = time-based)&#39;,
+</span><span class="">  245: 		q{};
+</span><span class="">  246: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  247: 	if($has_new &amp;&amp; !$is_builtin) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  248: 		my $new_spec = $schema-&gt;{new};
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  249: 		if(ref $new_spec eq &#39;HASH&#39; &amp;&amp; %$new_spec) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  250: 			my $args = join(&#39;, &#39;, map { &quot;$_ =&gt; &quot; . _quote_value($new_spec-&gt;{$_}) } sort keys %$new_spec);
+</span><span class="">  251: 			push @lines, &quot;my \$obj = ${module}-&gt;new($args);&quot;;
+</span><span class="">  252: 		} else {
+</span><span class="">  253: 			push @lines, &quot;my \$obj = ${module}-&gt;new();&quot;;
+</span><span class="">  254: 		}
+</span><span class="">  255: 		push @lines, q{};
+</span><span class="">  256: 	}
+</span><span class="">  257: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">258 → 261 → 270</span></span>  258: 	push @lines, &quot;printf \&quot;Benchmarking ${function}\\n\\n\&quot;;&quot;, q{};
+</span><span class="">  259: 
+</span><span class="">  260: 	my %variants;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  261: 	if(%xforms) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  262: 		for my $name (sort keys %xforms) {
+</span><span class="">  263: 			my %xinput = %{ $xforms{$name}{input} // \%input };
+</span><span class="">  264: 			$variants{$name} = _build_call($module, $function, $has_new, \%xinput);
+</span><span class="">  265: 		}
+</span><span class="">  266: 	} else {
+</span><span class="">  267: 		$variants{&#39;default&#39;} = _build_call($module, $function, $has_new, \%input);
+</span><span class="">  268: 	}
+</span><span class="">  269: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">270 → 272 → 276</span></span>  270: 	push @lines, &#39;cmpthese($COUNT, {&#39;;
+</span><span class="">  271: 	my $name_width = length((sort { length($b) &lt;=&gt; length($a) } keys %variants)[0]);
+</span><span class="">  272: 	for my $name (sort keys %variants) {
+</span><span class="">  273: 		my $padded = sprintf &quot;%-*s&quot;, $name_width, &quot;&#39;$name&#39;&quot;;
+</span><span class="">  274: 		push @lines, &quot;\t$padded =&gt; sub { $variants{$name} },&quot;;
+</span><span class="">  275: 	}
+</span><span class="">  276: 	push @lines, &#39;});&#39;, q{};
+</span><span class="">  277: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  278: 	return join(&quot;\n&quot;, @lines);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  279: }
+</span><span class="">  280: 
+</span><span class="">  281: # --------------------------------------------------
+</span><span class="">  282: # _build_call
+</span><span class="">  283: #
+</span><span class="">  284: # Purpose:    Build the Perl expression that calls the target function
+</span><span class="">  285: #             with representative values derived from the input spec.
+</span><span class="">  286: #
+</span><span class="">  287: # Entry:      $module   - module name string
+</span><span class="">  288: #             $function - function/method name
+</span><span class="">  289: #             $has_new  - true if schema has &#39;new:&#39; key (OOP call)
+</span><span class="">  290: #             $input    - hashref of param name &acirc;&#134;&#146; spec
+</span><span class="">  291: #
+</span><span class="">  292: # Exit:       Returns a Perl expression string suitable for use inside
+</span><span class="">  293: #             an anonymous sub in a cmpthese() call.
+</span><span class="">  294: # --------------------------------------------------
+</span><span class="">  295: sub _build_call {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">296 → 301 → 317</span></span>  296: 	my ($module, $function, $has_new, $input) = @_;
+</span><span class="">  297: 
+</span><span class="">  298: 	my $has_positions = grep { defined $_-&gt;{position} } values %$input;
+</span><span class="">  299: 	my $call;
+</span><span class="">  300: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  301: 	if($has_positions) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  302: 		my @positional = sort { $a-&gt;{position} &lt;=&gt; $b-&gt;{position} }
+</span><span class="">  303: 		                 grep { defined $_-&gt;{position} }
+</span><span class="">  304: 		                 values %$input;
+</span><span class="">  305: 		my $args = join(&#39;, &#39;, map { _representative_value($_) } @positional);
+</span><span class="">  306: 		$call = $has_new ? &quot;\$obj-&gt;$function($args)&quot;
+</span><span class="">  307: 		                 : ($module eq &#39;builtin&#39; ? &quot;$function($args)&quot;
+</span><span class="">  308: 		                                         : &quot;${module}::$function($args)&quot;);
+</span><span class="">  309: 	} else {
+</span><span class="">  310: 		my @pairs = map { &quot;$_ =&gt; &quot; . _representative_value($input-&gt;{$_}) }
+</span><span class="">  311: 		            sort keys %$input;
+</span><span class="">  312: 		my $args = join(&#39;, &#39;, @pairs);
+</span><span class="">  313: 		$call = $has_new ? &quot;\$obj-&gt;$function($args)&quot;
+</span><span class="">  314: 		                 : &quot;${module}::$function($args)&quot;;
+</span><span class="">  315: 	}
+</span><span class="">  316: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  317: 	return $call;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  318: }
+</span><span class="">  319: 
+</span><span class="">  320: # --------------------------------------------------
+</span><span class="">  321: # _representative_value
+</span><span class="">  322: #
+</span><span class="">  323: # Purpose:    Return a Perl literal string that is a plausible representative
+</span><span class="">  324: #             value for a parameter given its schema spec.  The choice is
+</span><span class="">  325: #             informed by type, min, max, and enum constraints.
+</span><span class="">  326: #
+</span><span class="">  327: # Entry:      $spec - hashref with at minimum a &#39;type&#39; key
+</span><span class="">  328: #
+</span><span class="">  329: # Exit:       Returns a Perl literal string (e.g. &#39;42&#39;, &quot;&#39;hello&#39;&quot;, &#39;undef&#39;).
+</span><span class="">  330: # --------------------------------------------------
+</span><span class="">  331: sub _representative_value {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">332 → 337 → 355</span></span>  332: 	my ($spec) = @_;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  333: 	return &#39;undef&#39; unless defined $spec;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  334: 
+</span><span class="">  335: 	my $type = lc($spec-&gt;{type} // &#39;string&#39;);
+</span><span class="">  336: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  337: 	if($type eq &#39;number&#39; || $type eq &#39;integer&#39; || $type eq &#39;float&#39;) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  338: 		my $min = $spec-&gt;{min};
+</span><span class="">  339: 		my $max = $spec-&gt;{max};
+</span><span class="">  340: 		my $default = $TYPE_DEFAULTS{$type} // 42;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  341: 		if(defined $min &amp;&amp; looks_like_number($min) &amp;&amp; defined $max &amp;&amp; looks_like_number($max)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  342: 			return int(($min + $max) / 2);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  343: 		}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  344: 		if(defined $min &amp;&amp; looks_like_number($min)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  345: 			# pick the type default if it already satisfies &gt;= min, else min+1
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  346: 			return $default &gt; $min ? $default : $min + 1;
+</span><p> <b> Mutants (Total: 5, Killed: 5, Survived: 0)</b><p><span class="">  347: 		}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  348: 		if(defined $max &amp;&amp; looks_like_number($max)) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  349: 			# pick the type default if it already satisfies &lt;= max, else max-1
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  350: 			return $default &lt; $max ? $default : $max - 1;
+</span><p> <b> Mutants (Total: 5, Killed: 5, Survived: 0)</b><p><span class="">  351: 		}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  352: 		return $default;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  353: 	}
+</span><span class="">  354: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  355: 	return $TYPE_DEFAULTS{$type} // &quot;&#39;value&#39;&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  356: }
+</span><span class="">  357: 
+</span><span class="">  358: # --------------------------------------------------
+</span><span class="">  359: # _quote_value
+</span><span class="">  360: #
+</span><span class="">  361: # Purpose:    Quote a scalar value for use in generated Perl source.
+</span><span class="">  362: #
+</span><span class="">  363: # Entry:      $v - scalar value (undef, number, or string)
+</span><span class="">  364: #
+</span><span class="">  365: # Exit:       Returns a Perl literal string.
+</span><span class="">  366: # --------------------------------------------------
+</span><span class="">  367: sub _quote_value {
+</span><span class="">  368: 	my ($v) = @_;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  369: 	return &#39;undef&#39; unless defined $v;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  370: 	return $v if looks_like_number($v);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  371: 	(my $escaped = $v) =~ s/&#39;/\\&#39;/g;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  372: 	return &quot;&#39;$escaped&#39;&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  373: }
+</span><span class="">  374: 
+</span><span class="">  375: =head1 COMMON PITFALLS
+</span><span class="">  376: 
+</span><span class="">  377: =over 4
+</span><span class="">  378: 
+</span><span class="">  379: =item Schema missing C&lt;module&gt; or C&lt;function&gt;
+</span><span class="">  380: 
+</span><span class="">  381: C&lt;generate&gt; croaks immediately if either key is absent.  Always ensure the
+</span><span class="">  382: schema has been loaded from a valid ATG YAML file before calling C&lt;generate&gt;.
+</span><span class="">  383: 
+</span><span class="">  384: =item Expecting test-framework output
+</span><span class="">  385: 
+</span><span class="">  386: The generated script uses C&lt;Benchmark::cmpthese&gt; and prints timing results to
+</span><span class="">  387: STDOUT.  It is B&lt;not&gt; a test file and produces no TAP output.  Do not run it
+</span><span class="">  388: with C&lt;prove&gt;.
+</span><span class="">  389: 
+</span><span class="">  390: =item OOP schemas need a C&lt;new:&gt; key
+</span><span class="">  391: 
+</span><span class="">  392: If the function under benchmark is an instance method, the schema must have a
+</span><span class="">  393: C&lt;new:&gt; key (even if its value is an empty hashref C&lt;{}&gt;) so C&lt;generate&gt; emits
+</span><span class="">  394: a C&lt;my $obj = Module-&gt;new(...)&gt; constructor call before the C&lt;cmpthese&gt; block.
+</span><span class="">  395: Without it, the variant calls use C&lt;Module::function(...)&gt; form.
+</span><span class="">  396: 
+</span><span class="">  397: =item Transforms that omit the C&lt;input&gt; key
+</span><span class="">  398: 
+</span><span class="">  399: If a transform&#39;s hashref has no C&lt;input&gt; key, C&lt;generate&gt; falls back to the
+</span><span class="">  400: base schema C&lt;input&gt; spec for that variant.  This is intentional but may
+</span><span class="">  401: produce identical argument lists across variants if you forgot to add per-
+</span><span class="">  402: transform input overrides.
+</span><span class="">  403: 
+</span><span class="">  404: =back
+</span><span class="">  405: 
+</span><span class="">  406: =head1 LIMITATIONS
+</span><span class="">  407: 
+</span><span class="">  408: =over 4
+</span><span class="">  409: 
+</span><span class="">  410: =item Representative values are heuristic
+</span><span class="">  411: 
+</span><span class="">  412: C&lt;_representative_value&gt; picks a single value based on type and C&lt;min&gt;/C&lt;max&gt;
+</span><span class="">  413: constraints.  It does not guarantee the chosen value exercises any particular
+</span><span class="">  414: code path, and it does not use the schema&#39;s C&lt;enum&gt; or C&lt;matches&gt; keys.
+</span><span class="">  415: 
+</span><span class="">  416: =item No round-trip with C&lt;extract-schemas&gt;
+</span><span class="">  417: 
+</span><span class="">  418: The generator reads any conforming ATG YAML schema, but it does not verify
+</span><span class="">  419: that the schema accurately describes the actual function&#39;s signature.  If the
+</span><span class="">  420: schema is stale, the generated benchmark may pass wrong argument types.
+</span><span class="">  421: 
+</span><span class="">  422: =back
+</span><span class="">  423: 
+</span><span class="">  424: =head1 SEE ALSO
+</span><span class="">  425: 
+</span><span class="">  426: =over 4
+</span><span class="">  427: 
+</span><span class="">  428: =item L&lt;Benchmark&gt;
+</span><span class="">  429: 
+</span><span class="">  430: =item C&lt;bin/benchmark-generator&gt;
+</span><span class="">  431: 
+</span><span class="">  432: =item L&lt;App::Test::Generator&gt;
+</span><span class="">  433: 
+</span><span class="">  434: =back
+</span><span class="">  435: 
+</span><span class="">  436: =head1 AUTHOR
+</span><span class="">  437: 
+</span><span class="">  438: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  439: 
+</span><span class="">  440: =head1 LICENCE AND COPYRIGHT
+</span><span class="">  441: 
+</span><span class="">  442: Copyright 2026 Nigel Horne.
+</span><span class="">  443: 
+</span><span class="">  444: Usage is subject to the terms of GPL2.
+</span><span class="">  445: If you use it,
+</span><span class="">  446: please let me know.
+</span><span class="">  447: 
+</span><span class="">  448: =cut
+</span><span class="">  449: 
+</span><span class="">  450: 1;
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if(saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text, .cpd-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
+</script>
+</body>
+</html>
+	
