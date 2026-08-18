@@ -1125,4 +1125,322 @@ subtest 'Model::Method::add_evidence — category validation uses module-level c
 		qr/Invalid evidence category 'unknown'/, 'invalid category → correct error message';
 };
 
+# ==================================================================
+# GROUP A — Analyzer::Return::analyze
+#
+# Analyzer::Return adds evidence to a Model::Method object based on
+# pattern-matching against the method body. It does not produce a
+# standalone result hashref; it adds signals. We test the three
+# patterns it detects (returns_self, returns_property, returns_constant)
+# and the empty/undef body edge cases.
+# ==================================================================
+
+use App::Test::Generator::Analyzer::Return;
+
+Readonly my $RETURN_ANALYZER_CLASS => 'App::Test::Generator::Analyzer::Return';
+
+subtest 'EP: Analyzer::Return — returns_self signal added for "return $self"' => sub {
+	my $ra = $RETURN_ANALYZER_CLASS->new;
+	my $m  = App::Test::Generator::Model::Method->new(
+		name   => 'foo',
+		source => 'sub foo { return $self }',
+	);
+	$ra->analyze($m);
+	my @ev = grep { $_->{signal} eq 'returns_self' } $m->evidence;
+	ok(scalar @ev > 0, 'returns_self evidence added for "return $self"');
+};
+
+subtest 'EP: Analyzer::Return — returns_property signal added for "return $self->{key}"' => sub {
+	my $ra = $RETURN_ANALYZER_CLASS->new;
+	my $m  = App::Test::Generator::Model::Method->new(
+		name   => 'foo',
+		source => 'sub foo { return $self->{name} }',
+	);
+	$ra->analyze($m);
+	my @ev = grep { $_->{signal} eq 'returns_property' } $m->evidence;
+	ok(scalar @ev > 0, 'returns_property evidence added for "return $self->{key}"');
+};
+
+subtest 'EP: Analyzer::Return — returns_constant signal added for numeric literal' => sub {
+	my $ra = $RETURN_ANALYZER_CLASS->new;
+	my $m  = App::Test::Generator::Model::Method->new(
+		name   => 'foo',
+		source => 'sub foo { return 1 }',
+	);
+	$ra->analyze($m);
+	my @ev = grep { $_->{signal} eq 'returns_constant' } $m->evidence;
+	ok(scalar @ev > 0, 'returns_constant evidence added for "return 1"');
+};
+
+subtest 'EP: Analyzer::Return — returns_constant signal added for "return undef"' => sub {
+	my $ra = $RETURN_ANALYZER_CLASS->new;
+	my $m  = App::Test::Generator::Model::Method->new(
+		name   => 'foo',
+		source => 'sub foo { return undef }',
+	);
+	$ra->analyze($m);
+	my @ev = grep { $_->{signal} eq 'returns_constant' } $m->evidence;
+	ok(scalar @ev > 0, 'returns_constant evidence added for "return undef"');
+};
+
+subtest 'EP: Analyzer::Return — empty body adds no evidence' => sub {
+	my $ra = $RETURN_ANALYZER_CLASS->new;
+	my $m  = App::Test::Generator::Model::Method->new(
+		name   => 'foo',
+		source => '',
+	);
+	lives_ok { $ra->analyze($m) } 'analyze() lives on empty body';
+	is(scalar($m->evidence), 0, 'no evidence added for empty body');
+};
+
+subtest 'EP: Analyzer::Return — raw hashref accepted (SchemaExtractor code path)' => sub {
+	# SchemaExtractor passes a raw hashref, not a Model::Method object.
+	my $ra = $RETURN_ANALYZER_CLASS->new;
+	my $method_hashref = { source => 'sub foo { return $self }' };
+	lives_ok { $ra->analyze($method_hashref) } 'analyze() lives on raw hashref';
+};
+
+# ==================================================================
+# GROUP B — Planner::Isolation::plan parameter domain
+# ==================================================================
+
+use App::Test::Generator::Planner::Isolation;
+
+Readonly my $ISOLATION_CLASS => 'App::Test::Generator::Planner::Isolation';
+
+subtest 'EP: Planner::Isolation::plan — strategy must be a hashref' => sub {
+	my $iso    = $ISOLATION_CLASS->new;
+	my $schema = {};
+	throws_ok { $iso->plan($schema, undef) }
+		qr/strategy must be a hashref/, 'undef strategy croaks';
+	throws_ok { $iso->plan($schema, 'string') }
+		qr/strategy must be a hashref/, 'string strategy croaks';
+	throws_ok { $iso->plan($schema, []) }
+		qr/strategy must be a hashref/, 'arrayref strategy croaks';
+};
+
+subtest 'EP: Planner::Isolation — dependencies.time = 0 (falsy scalar) → key omitted' => sub {
+	my $iso    = $ISOLATION_CLASS->new;
+	my $schema = { foo => { _analysis => { side_effects => { purity_level => 'pure' },
+	                                        dependencies => { time => 0 } } } };
+	my $res    = $iso->plan($schema, { foo => 1 });
+	ok(!exists $res->{foo}{time}, 'time => 0 is omitted from result');
+};
+
+subtest 'EP: Planner::Isolation — dependencies.time = "" (falsy string) → key omitted' => sub {
+	my $iso    = $ISOLATION_CLASS->new;
+	my $schema = { foo => { _analysis => { side_effects => { purity_level => 'pure' },
+	                                        dependencies => { time => '' } } } };
+	my $res    = $iso->plan($schema, { foo => 1 });
+	ok(!exists $res->{foo}{time}, 'time => "" is omitted from result');
+};
+
+subtest 'EP: Planner::Isolation — dependencies.time = 1 (truthy) → key present, normalised to 1' => sub {
+	my $iso    = $ISOLATION_CLASS->new;
+	my $schema = { foo => { _analysis => { side_effects => { purity_level => 'pure' },
+	                                        dependencies => { time => 1 } } } };
+	my $res    = $iso->plan($schema, { foo => 1 });
+	is($res->{foo}{time}, 1, 'time => 1 is present and normalised to 1');
+};
+
+subtest 'EP: Planner::Isolation — dependencies.network domain mirrors time' => sub {
+	my $iso     = $ISOLATION_CLASS->new;
+	my $schema0 = { m => { _analysis => { side_effects => { purity_level => 'pure' },
+	                                       dependencies => { network => 0 } } } };
+	my $res_off = $iso->plan($schema0, { m => 1 });
+	ok(!exists $res_off->{m}{network}, 'network => 0 omitted');
+
+	my $schema1 = { m => { _analysis => { side_effects => { purity_level => 'pure' },
+	                                       dependencies => { network => 1 } } } };
+	my $res_on  = $iso->plan($schema1, { m => 1 });
+	is($res_on->{m}{network}, 1, 'network => 1 present');
+};
+
+subtest 'EP: Planner::Isolation — dependencies.env = {} (empty hashref, truthy ref) → key present' => sub {
+	my $iso    = $ISOLATION_CLASS->new;
+	my $schema = { foo => { _analysis => { side_effects => { purity_level => 'pure' },
+	                                        dependencies => { env => {} } } } };
+	my $res    = $iso->plan($schema, { foo => 1 });
+	ok(exists $res->{foo}{env}, 'env => {} (truthy ref) is present in result');
+};
+
+subtest 'EP: Planner::Isolation — dependencies.env = 0 (falsy scalar) → key omitted' => sub {
+	my $iso    = $ISOLATION_CLASS->new;
+	my $schema = { foo => { _analysis => { side_effects => { purity_level => 'pure' },
+	                                        dependencies => { env => 0 } } } };
+	my $res    = $iso->plan($schema, { foo => 1 });
+	ok(!exists $res->{foo}{env}, 'env => 0 (falsy scalar) omitted');
+};
+
+subtest 'EP: Planner::Isolation — dependencies.env = {K=>V} → stored verbatim' => sub {
+	my $iso     = $ISOLATION_CLASS->new;
+	my $env_val = { TZ => 'UTC' };
+	my $schema  = { foo => { _analysis => { side_effects => { purity_level => 'pure' },
+	                                         dependencies => { env => $env_val } } } };
+	my $res     = $iso->plan($schema, { foo => 1 });
+	is_deeply($res->{foo}{env}, $env_val, 'env hashref stored verbatim');
+};
+
+# ==================================================================
+# GROUP C — PodExampleExtractor::new and extract
+# ==================================================================
+
+use File::Temp qw(tempfile tempdir);
+use File::Spec;
+use File::Path qw(make_path);
+use App::Test::Generator::PodExampleExtractor;
+
+Readonly my $EXTRACTOR_CLASS => 'App::Test::Generator::PodExampleExtractor';
+
+subtest 'EP: PodExampleExtractor::new — undef file croaks' => sub {
+	throws_ok { $EXTRACTOR_CLASS->new(file => undef) }
+		qr/file is required/, 'undef file → croaks "file is required"';
+};
+
+subtest 'EP: PodExampleExtractor::new — absent file key croaks' => sub {
+	throws_ok { $EXTRACTOR_CLASS->new() }
+		qr/file is required/, 'absent file → croaks "file is required"';
+};
+
+subtest 'EP: PodExampleExtractor::new — non-existent path croaks' => sub {
+	throws_ok { $EXTRACTOR_CLASS->new(file => '/no/such/file.pm') }
+		qr/File not found/, 'non-existent file → croaks "File not found"';
+};
+
+subtest 'EP: PodExampleExtractor::new — directory path croaks' => sub {
+	my $dir = tempdir(CLEANUP => 1);
+	throws_ok { $EXTRACTOR_CLASS->new(file => $dir) }
+		qr/File not found/, 'directory path → croaks "File not found"';
+};
+
+subtest 'BVA: PodExampleExtractor::extract — file with 0 examples returns empty arrayref' => sub {
+	my ($fh, $path) = tempfile(SUFFIX => '.pm', UNLINK => 1);
+	print $fh "package NoExamples;\n1;\n";
+	close $fh;
+	my $ex  = $EXTRACTOR_CLASS->new(file => $path);
+	my $res = $ex->extract;
+	is(ref($res), 'ARRAY', 'extract returns arrayref');
+	is(scalar @$res, 0, 'empty arrayref for file with no POD examples');
+};
+
+subtest 'BVA: PodExampleExtractor::extract — file with exactly 1 example' => sub {
+	my ($fh, $path) = tempfile(SUFFIX => '.pm', UNLINK => 1);
+	print $fh <<'PM';
+package OneEx;
+=head1 SYNOPSIS
+    my $x = 1;
+=cut
+1;
+PM
+	close $fh;
+	my $ex  = $EXTRACTOR_CLASS->new(file => $path);
+	my $res = $ex->extract;
+	is(scalar @$res, 1, 'exactly 1 example returned');
+	ok(defined $res->[0]{label},   'entry has label');
+	ok(defined $res->[0]{section}, 'entry has section');
+	ok(defined $res->[0]{code},    'entry has code');
+};
+
+subtest 'EP: PodExampleExtractor::extract — annotated line captures expected value' => sub {
+	my ($fh, $path) = tempfile(SUFFIX => '.pm', UNLINK => 1);
+	print $fh <<'PM';
+package Annotated;
+=head1 SYNOPSIS
+    my $result = add(1, 2);    # returns 3
+=cut
+1;
+PM
+	close $fh;
+	my $ex  = $EXTRACTOR_CLASS->new(file => $path);
+	my $res = $ex->extract;
+	my @ann = grep { defined $_->{expected} } @$res;
+	ok(scalar @ann > 0, 'at least one annotated example with expected value');
+	is($ann[0]{expected}, '3', 'expected value correctly captured');
+};
+
+# ==================================================================
+# GROUP D — Mutator::new parameter domain
+# ==================================================================
+
+use App::Test::Generator::Mutator;
+
+Readonly my $MUTATOR_CLASS => 'App::Test::Generator::Mutator';
+
+{
+	# Create a real .pm file to use as the Mutator file target
+	my ($mfh, $mpath) = tempfile(SUFFIX => '.pm', UNLINK => 1);
+	print $mfh "package Dummy;\n1;\n";
+	close $mfh;
+
+	subtest 'EP: Mutator::new — absent file croaks' => sub {
+		throws_ok { $MUTATOR_CLASS->new(lib_dir => 'lib') }
+			qr/file required/, 'absent file → croaks "file required"';
+	};
+
+	subtest 'EP: Mutator::new — undef file croaks' => sub {
+		throws_ok { $MUTATOR_CLASS->new(file => undef, lib_dir => 'lib') }
+			qr/file required/, 'undef file → croaks "file required"';
+	};
+
+	subtest 'EP: Mutator::new — non-existent file croaks' => sub {
+		throws_ok { $MUTATOR_CLASS->new(file => '/no/such/module.pm') }
+			qr/file not found/, 'non-existent file → croaks "file not found"';
+	};
+
+	subtest 'EP: Mutator::new — valid relative lib_dir accepted' => sub {
+		lives_ok {
+			$MUTATOR_CLASS->new(file => $mpath, lib_dir => 'lib')
+		} 'valid relative lib_dir accepted';
+	};
+
+	subtest 'EP: Mutator::new — absent mutation_level defaults to "full"' => sub {
+		my $mut = $MUTATOR_CLASS->new(file => $mpath);
+		is($mut->{mutation_level}, 'full', 'absent mutation_level defaults to full');
+	};
+
+	subtest 'EP: Mutator::new — mutation_level "fast" accepted' => sub {
+		my $mut = $MUTATOR_CLASS->new(file => $mpath, mutation_level => 'fast');
+		is($mut->{mutation_level}, 'fast', 'fast mutation_level stored correctly');
+	};
+
+	subtest 'EP: Mutator::new — mutation_level "full" accepted' => sub {
+		my $mut = $MUTATOR_CLASS->new(file => $mpath, mutation_level => 'full');
+		is($mut->{mutation_level}, 'full', 'full mutation_level stored correctly');
+	};
+}
+
+# ==================================================================
+# GROUP E — BenchmarkGenerator::_build_call dispatch EP
+# ==================================================================
+
+Readonly my $BENCH_CLASS => 'App::Test::Generator::BenchmarkGenerator';
+
+subtest 'EP: BenchmarkGenerator::_build_call — named + has_new → $obj->func(k=>v)' => sub {
+	my $input = { x => { type => 'integer' }, y => { type => 'integer' } };
+	my $call = App::Test::Generator::BenchmarkGenerator::_build_call(
+		'Mod', 'func', 1, $input);
+	like($call, qr/^\$obj->func\(/, 'named + has_new → $obj->func(...)');
+};
+
+subtest 'EP: BenchmarkGenerator::_build_call — named + !has_new → Module::func(k=>v)' => sub {
+	my $input = { x => { type => 'integer' } };
+	my $call = App::Test::Generator::BenchmarkGenerator::_build_call(
+		'Mod', 'func', 0, $input);
+	like($call, qr/^Mod::func\(/, 'named + !has_new → Module::func(...)');
+};
+
+subtest 'EP: BenchmarkGenerator::_build_call — positional + has_new → $obj->func(args)' => sub {
+	my $input = { a => { type => 'integer', position => 0 } };
+	my $call = App::Test::Generator::BenchmarkGenerator::_build_call(
+		'Mod', 'func', 1, $input);
+	like($call, qr/^\$obj->func\(/, 'positional + has_new → $obj->func(args)');
+};
+
+subtest 'EP: BenchmarkGenerator::_build_call — positional + !has_new + !builtin → Module::func(args)' => sub {
+	my $input = { a => { type => 'integer', position => 0 } };
+	my $call = App::Test::Generator::BenchmarkGenerator::_build_call(
+		'Mod', 'func', 0, $input);
+	like($call, qr/^Mod::func\(/, 'positional + !has_new + !builtin → Module::func(args)');
+};
+
 done_testing();

@@ -963,4 +963,4 @@ subtest 'DF48 — apply_mutant() without prepare_workspace() croaks "Workspace n
 	);
 };
 
-done_testing;
+done_testing();
