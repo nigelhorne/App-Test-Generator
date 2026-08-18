@@ -1560,7 +1560,13 @@ sub _find_methods {
 	my ($self, $document) = @_;
 
 	my $subs = $document->find('PPI::Statement::Sub') || [];
-	my $sub_decls = $document->find('PPI::Statement') || [];
+	# Only fetch statements that begin with a Moose modifier keyword —
+	# fetching ALL PPI::Statement nodes on a large file returns thousands
+	# of nodes and then discards nearly all of them in the loop below.
+	my $sub_decls = $document->find(sub {
+		$_[1]->isa('PPI::Statement')
+		&& $_[1]->content =~ /^\s*(?:before|after|around)\b/
+	}) || [];
 
 	my @methods;
 	foreach my $sub (@$subs) {

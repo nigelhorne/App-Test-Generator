@@ -24,6 +24,20 @@ Readonly my $INT32_MAX            => 2**31 - 1;
 Readonly my $INT32_MIN            => -(2**31);
 
 # --------------------------------------------------
+# Character set and interesting-string constants —
+# computed once at load time rather than rebuilt on
+# every _rand_string / _mutate_string call.
+# --------------------------------------------------
+Readonly my @RAND_CHARS => ('a'..'z', 'A'..'Z', '0'..'9', ' ', "\t", "\n", "\0");
+Readonly my @INTERESTING_STRINGS => (
+	'', ' ', "\0", "\n", "\t",
+	'a' x 256,
+	'null', 'undefined',
+	"'; DROP TABLE foo; --",
+	'<script>alert(1)</script>',
+);
+
+# --------------------------------------------------
 # Type name constants — used in schema dispatch
 # --------------------------------------------------
 Readonly my $TYPE_INTEGER => 'integer';
@@ -714,8 +728,12 @@ sub minimize_corpus {
 sub _fingerprint {
 	my ($val) = @_;
 	return 'null' unless defined $val;
-	my $mod = _load_json_module();
-	return eval { $mod->new->canonical(1)->encode($val) } // "$val";
+	state $encoder;
+	unless ($encoder) {
+		my $mod = _load_json_module();
+		$encoder = eval { $mod->new->canonical(1) };
+	}
+	return eval { $encoder->encode($val) } // "$val";
 }
 
 # --------------------------------------------------
@@ -735,13 +753,16 @@ sub _fingerprint {
 #             preferred over JSON.
 # --------------------------------------------------
 sub _load_json_module {
+	state $cached;
+	return $cached if defined $cached;
 	for my $mod (@JSON_MODULES) {
 		# Convert package name to file path — require $var does not
 		# do the :: -> / conversion that bareword require does
 		(my $file = $mod) =~ s{::}{/}g;
 		$file .= '.pm';
-		my $ok = eval { require $file; 1 };
-		return $mod if $ok;
+		if (eval { require $file; 1 }) {
+			return $cached = $mod;
+		}
 	}
 	croak 'No JSON module available; install JSON or JSON::MaybeXS';
 }
@@ -849,7 +870,8 @@ sub _run_with_cover {
 
 	Devel::Cover::start() if Devel::Cover->can('start');
 
-	my %before = %{ $self->{_last_cover_snapshot} || {} };
+	my $before_ref = $self->{_last_cover_snapshot} || {};
+	my %before = %{$before_ref};
 
 	# Include instance as invocant for method calls
 	my @call_args = defined($self->{instance})
@@ -867,13 +889,13 @@ sub _run_with_cover {
 	alarm(0) if $self->{timeout};
 	$$error_ref = $@ if $@;
 
-	my %after = $self->_snapshot_cover();
-	$self->{_last_cover_snapshot} = { %after };
+	my $after = $self->_snapshot_cover();
+	$self->{_last_cover_snapshot} = $after;
 	Devel::Cover::stop() if Devel::Cover->can('stop');
 
 	# Return only branches newly hit in this call
 	my %delta;
-	for my $key (keys %after) {
+	for my $key (keys %{$after}) {
 		$delta{$key} = 1 unless exists $before{$key};
 	}
 
@@ -915,7 +937,7 @@ sub _snapshot_cover {
 		}
 	};
 
-	return %snap;
+	return \%snap;
 }
 
 # --------------------------------------------------
@@ -1098,8 +1120,7 @@ sub _rand_string {
 	# Clamp to non-negative
 	$len = 0 if $len < 0;
 
-	my @chars = ('a'..'z', 'A'..'Z', '0'..'9', ' ', "\t", "\n", "\0");
-	return join '', map { $chars[ int(rand(@chars)) ] } 1 .. $len;
+	return join '', map { $RAND_CHARS[ int(rand(@RAND_CHARS)) ] } 1 .. $len;
 }
 
 # --------------------------------------------------
@@ -1341,19 +1362,15 @@ sub _mutate {
 # --------------------------------------------------
 sub _mutate_int {
 	my ($self, $n) = @_;
-
-	my @ops = (
-		sub { $n + 1              },
-		sub { $n - 1              },
-		sub { $n * 2              },
-		sub { $n == 0 ? 1 : int($n / 2) },
-		sub { -$n                 },
-		sub { 0                   },
-		sub { $INT32_MAX          },
-		sub { $INT32_MIN          },
-	);
-
-	return $ops[ int(rand(@ops)) ]->();
+	my $op = int(rand(8));
+	return $n + 1                      if $op == 0;
+	return $n - 1                      if $op == 1;
+	return $n * 2                      if $op == 2;
+	return $n == 0 ? 1 : int($n / 2)  if $op == 3;
+	return -$n                         if $op == 4;
+	return 0                           if $op == 5;
+	return $INT32_MAX                  if $op == 6;
+	return $INT32_MIN;
 }
 
 # --------------------------------------------------
@@ -1368,16 +1385,12 @@ sub _mutate_int {
 # --------------------------------------------------
 sub _mutate_num {
 	my ($self, $n) = @_;
-
-	my @ops = (
-		sub { $n + rand(10)        },
-		sub { $n - rand(10)        },
-		sub { $n * (1 + rand())    },
-		sub { 0                    },
-		sub { -$n                  },
-	);
-
-	return $ops[ int(rand(@ops)) ]->();
+	my $op = int(rand(5));
+	return $n + rand(10)      if $op == 0;
+	return $n - rand(10)      if $op == 1;
+	return $n * (1 + rand())  if $op == 2;
+	return 0                  if $op == 3;
+	return -$n;
 }
 
 # --------------------------------------------------
@@ -1424,16 +1437,7 @@ sub _mutate_string {
 		# Double the string
 		sub { $s x 2 },
 		# Replace with a known interesting string
-		sub {
-			my @interesting = (
-				'', ' ', "\0", "\n", "\t",
-				'a' x 256,
-				'null', 'undefined',
-				"'; DROP TABLE foo; --",
-				'<script>alert(1)</script>',
-			);
-			$interesting[ int(rand(@interesting)) ]
-		},
+		sub { $INTERESTING_STRINGS[ int(rand(@INTERESTING_STRINGS)) ] },
 	);
 
 	return $ops[ int(rand(@ops)) ]->();
