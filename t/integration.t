@@ -1352,14 +1352,16 @@ subtest 'Analyzer::Return -> Model::Method pipeline resolves return type' => sub
 	ok(!%ledger, 'all documented Model::Method pipeline interactions exercised')
 		or diag('untested ledger keys: ', explain \%ledger);
 
-	# Two independent Model::Method instances must not share evidence state.
+	# Two independent Model::Method instances must not share evidence state:
+	# adding evidence to model_b must not appear in model.
 	my $model_b = App::Test::Generator::Model::Method->new(
 		name   => 'helper',
 		source => "sub helper { return 42; }",
 	);
+	my $count_before = scalar @{ $model->evidence_ref };
 	$model_b->add_evidence(category => 'return', signal => 'returns_constant', weight => 10);
-	isnt(scalar @{ $model->evidence_ref }, scalar @{ $model_b->evidence_ref },
-		'independent Model::Method instances do not share evidence arrays');
+	is(scalar @{ $model->evidence_ref }, $count_before,
+		'adding evidence to model_b does not affect model — no shared state');
 };
 
 subtest 'SchemaExtractor _analyze_method wires all three analyzers into schema _analysis' => sub {
@@ -1444,12 +1446,15 @@ subtest 'SchemaExtractor -> BenchmarkGenerator: in-memory pipeline produces runn
 	like($code, qr/use\s+Sample::Calculator/, 'output contains use Module statement');
 	delete $ledger{module_use_present};
 
-	# Generated script must at least compile under the current perl.
+	# Compile check must include the temp lib dir so perl -c can find
+	# Sample::Calculator (it was written to $tmpdir/lib/Sample/Calculator.pm).
+	my $lib_inc = File::Spec->catdir($tmpdir, 'lib');
 	my $outfile = File::Spec->catfile($tmpdir, 'bench.pl');
 	open my $fh, '>', $outfile or die $!;
 	print $fh $code;
 	close $fh;
-	is(system($^X, '-c', $outfile), 0, 'generated benchmark script compiles cleanly');
+	is(system($^X, "-I$lib_inc", '-c', $outfile), 0,
+		'generated benchmark script compiles cleanly (with sample module in @INC)');
 
 	ok(!%ledger, 'all documented BenchmarkGenerator cross-module interactions exercised')
 		or diag('untested ledger keys: ', explain \%ledger);
