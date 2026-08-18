@@ -2259,7 +2259,7 @@ sub _detect_accessor_methods {
 			factors => ['Detected combined getter/setter accessor'],
 		};
 		if (my $pod = $method->{pod}) {
-			if ($pod =~ /\b(LWP::UserAgent(::\w+)*)\b/) {
+			if ($pod =~ /\b(LWP::UserAgent(?:::\w+)*)\b/) {
 				my $class = $1;
 				$schema->{output} = {
 					type => 'object',
@@ -2327,7 +2327,7 @@ sub _detect_accessor_methods {
 
 		$self->_log("  Detected getter/setter accessor for property: $property");
 		if (my $pod = $method->{pod}) {
-			if ($pod =~ /\b(LWP::UserAgent(::\w+)*)\b/) {
+			if ($pod =~ /\b(LWP::UserAgent(?:::\w+)*)\b/) {
 				my $class = $1;
 				$schema->{output} = {
 					type => 'object',
@@ -4397,7 +4397,7 @@ sub _enhance_boolean_detection {
 	# Look for stronger boolean indicators
 	if ($pod && !$output->{type}) {
 		# Common boolean return patterns in POD
-		if ($pod =~ /returns?\s+(true|false|true|false|1|0)\s+(?:on|for|upon)\s+(success|failure|error|valid|invalid)/i) {
+		if ($pod =~ /returns?\s+(?:true|false|1|0)\s+(?:on|for|upon)\s+(?:success|failure|error|valid|invalid)/i) {
 			$boolean_score += 30;
 			$self->_log('  OUTPUT: Strong boolean indicator in POD (+30)');
 		}
@@ -4442,7 +4442,7 @@ sub _enhance_boolean_detection {
 
 	# Check method name for boolean indicators
 	if ($method_name) {
-		if ($method_name =~ /^(is_|has_|can_|should_|contains_|exists_|check_|verify_|validate_)/) {
+		if ($method_name =~ /^(?:is_|has_|can_|should_|contains_|exists_|check_|verify_|validate_)/) {
 			$boolean_score += 25;
 			$self->_log("  OUTPUT: Method name '$method_name' suggests boolean return (+25)");
 		}
@@ -5039,7 +5039,7 @@ sub _parse_constraints {
 	# Non-negative
 	elsif ($constraint =~ /non-negative/i) {
 		$param->{min} = 0;
-	} elsif($constraint =~ /(.+)?\s(.+)/) {
+	} elsif($constraint =~ /^(\S+)\s+(.+)$/) {
 		my ($op, $val) = ($1, $2);
 		if(looks_like_number($val)) {
 			if ($op eq '<') {
@@ -5131,14 +5131,14 @@ sub _analyze_code {
 		}
 	}
 
-	if($code =~ /(croak|die)\(.*\)\s+if\s*\(\s*scalar\(\@_\)\s*<\s*(\d+)\s*\)/s) {
-		my $required_count = $2;
+	if($code =~ /(?:croak|die)\(.*\)\s+if\s*\(\s*scalar\(\@_\)\s*<\s*(\d+)\s*\)/s) {
+		my $required_count = $1;
 		my @param_names = sort { $params{$a}{position} <=> $params{$b}{position} } keys %params;
 		for my $i (0 .. $required_count-1) {
 			$params{$param_names[$i]}{optional} = 0;
 			$self->_log("  CODE: $param_names[$i] marked required due to croak scalar check");
 		}
-	} elsif ($code =~ /(croak|die)\(.*\)\s+if\s*\(\s*scalar\(\@_\)\s*==\s*(0)\s*\)/s) {
+	} elsif ($code =~ /(?:croak|die)\(.*\)\s+if\s*\(\s*scalar\(\@_\)\s*==\s*0\s*\)/s) {
 		foreach my $param (keys %params) {
 			$params{$param}{optional} = 0;
 			$self->_log("  CODE: $param: all parameters are required due to 'scalar(@_) == 0' check");
