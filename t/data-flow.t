@@ -621,4 +621,346 @@ subtest 'DF30 — schema hashref not mutated by generate() (D-preserve invariant
 		'schema hashref is not mutated by generate()');
 };
 
+# ==================================================================
+# GROUP A: Analyzer::Complexity DU chains (DF31-DF36)
+# ==================================================================
+
+use App::Test::Generator::Analyzer::Complexity;
+
+# Helper: build a minimal method hashref with the given body string.
+sub _method { { body => $_[0] } }
+
+subtest 'DF31 — cyclomatic_score D-U chain: computed from tokens, not mutated after' => sub {
+	# D: cyclomatic_score set inside analyze()
+	# U: returned in the result hashref
+	# Invariant: modifying the returned hashref does not affect the analyser
+
+	my $ca  = App::Test::Generator::Analyzer::Complexity->new;
+	my $res = $ca->analyze(_method('if($x){return 1} return 0'));
+
+	ok(exists $res->{cyclomatic_score}, 'cyclomatic_score key present');
+	ok($res->{cyclomatic_score} >= 2,   'if + early-return raises score above 1');
+
+	# Mutate the returned value — the analyser must not share state
+	my $orig = $res->{cyclomatic_score};
+	$res->{cyclomatic_score} = 9999;
+
+	my $res2 = $ca->analyze(_method('if($x){return 1} return 0'));
+	is($res2->{cyclomatic_score}, $orig, 'analyser state unaffected by caller mutation');
+};
+
+subtest 'DF32 — early_returns counter DU: 0 for 1 return, 1 for 2, 2 for 3' => sub {
+	# D: early_returns = max(0, return_count - 1) inside analyze()
+	# U: returned in result hashref
+
+	my $ca = App::Test::Generator::Analyzer::Complexity->new;
+
+	my $r1 = $ca->analyze(_method('return 1;'));
+	is($r1->{early_returns}, 0, '1 return → 0 early returns');
+
+	my $r2 = $ca->analyze(_method('return 1; return 0;'));
+	is($r2->{early_returns}, 1, '2 returns → 1 early return');
+
+	my $r3 = $ca->analyze(_method('return 1; return 2; return 3;'));
+	is($r3->{early_returns}, 2, '3 returns → 2 early returns');
+};
+
+subtest 'DF33 — nesting_depth counter: opens on {, closes on }, never below 0' => sub {
+	# D: depth initialised to 0, incremented per {, decremented per } (guarded)
+	# U: max_depth written to nesting_depth in result
+
+	my $ca = App::Test::Generator::Analyzer::Complexity->new;
+
+	my $flat = $ca->analyze(_method('my $x = 1;'));
+	is($flat->{nesting_depth}, 0, 'no braces → depth 0');
+
+	my $one = $ca->analyze(_method('{ my $x = 1; }'));
+	is($one->{nesting_depth}, 1, 'one brace pair → depth 1');
+
+	my $two = $ca->analyze(_method('{ { my $x = 1; } }'));
+	is($two->{nesting_depth}, 2, 'nested braces → depth 2');
+
+	# Unmatched } must not underflow below 0
+	my $unmatched = $ca->analyze(_method('}'));
+	ok($unmatched->{nesting_depth} >= 0, 'unmatched } does not produce negative depth');
+};
+
+subtest 'DF34 — $code_only DU: keywords inside strings not counted' => sub {
+	# D: $code_only = _strip_strings_and_comments($body)
+	# U: all pattern-match counts run against $code_only, not $body
+	# If "if" inside a string were counted, cyclomatic_score would be > 1 for an
+	# otherwise empty method body.
+
+	my $ca = App::Test::Generator::Analyzer::Complexity->new;
+
+	# "if" inside a double-quoted string — must not increment branching_points
+	my $r = $ca->analyze(_method(q{my $msg = "if you're sure";}));
+	is($r->{branching_points}, 0, '"if" inside string literal not counted as branch');
+	is($r->{cyclomatic_score}, 1, 'cyclomatic score stays at base (1)');
+};
+
+subtest 'DF35 — complexity_level resolved from cyclomatic_score (threshold boundaries)' => sub {
+	# D: complexity_level written based on score <= LOW_THRESHOLD (3), HIGH_THRESHOLD (7)
+	# U: returned in result hashref; always present
+
+	my $ca = App::Test::Generator::Analyzer::Complexity->new;
+
+	# Score 1 (base, no branches) → low
+	my $low = $ca->analyze(_method('my $x = 1;'));
+	is($low->{complexity_level}, 'low', 'score 1 → low');
+
+	# Score 4 (base + 3 ifs) → moderate (one above LOW_THRESHOLD)
+	my $mod_body = join("\n", map { 'if($x){}' } 1..3);
+	my $mod = $ca->analyze(_method($mod_body));
+	is($mod->{complexity_level}, 'moderate', 'score 4 → moderate');
+
+	# Score 8 (base + 7 ifs) → high (one above HIGH_THRESHOLD)
+	my $high_body = join("\n", map { 'if($x){}' } 1..7);
+	my $high = $ca->analyze(_method($high_body));
+	is($high->{complexity_level}, 'high', 'score 8 → high');
+
+	# Key always present regardless of body
+	ok(exists $low->{complexity_level}, 'complexity_level key always in result');
+};
+
+subtest 'DF36 — two independent analyze() calls produce independent results' => sub {
+	# Verify no shared mutable state is retained between calls
+
+	my $ca = App::Test::Generator::Analyzer::Complexity->new;
+
+	my $a = $ca->analyze(_method('if($x){ if($y){} }'));
+	my $b = $ca->analyze(_method('my $z = 1;'));
+
+	isnt($a->{cyclomatic_score}, $b->{cyclomatic_score},
+		'two different bodies produce different scores');
+	is($b->{branching_points}, 0,
+		'second call not contaminated by first call branches');
+};
+
+# ==================================================================
+# GROUP B: Planner::Isolation DU chains (DF37-DF42)
+# ==================================================================
+
+use App::Test::Generator::Planner::Isolation;
+
+Readonly my $STRATEGY_ALL => { m => 1 };
+
+# Helper: build a schema for method 'm' with given purity and deps.
+sub _iso_schema {
+	my (%opts) = @_;
+	return {
+		m => {
+			_analysis => {
+				side_effects => { purity_level => $opts{purity} // 'pure' },
+				dependencies => $opts{deps} // {},
+			},
+		},
+	};
+}
+
+subtest 'DF37 — fixture key: pure→shared_fixture, self_mutating→fresh_object, impure→isolated_block' => sub {
+	my $pl = App::Test::Generator::Planner::Isolation->new;
+
+	my $r_pure = $pl->plan(_iso_schema(purity => 'pure'), $STRATEGY_ALL);
+	is($r_pure->{m}{fixture}, 'shared_fixture', 'pure → shared_fixture');
+
+	my $r_self = $pl->plan(_iso_schema(purity => 'self_mutating'), $STRATEGY_ALL);
+	is($r_self->{m}{fixture}, 'fresh_object', 'self_mutating → fresh_object');
+
+	my $r_imp = $pl->plan(_iso_schema(purity => 'impure'), $STRATEGY_ALL);
+	is($r_imp->{m}{fixture}, 'isolated_block', 'impure → isolated_block');
+};
+
+subtest 'DF38 — env key: empty hashref propagated (truthy ref), scalar 0 omitted, hashref stored verbatim' => sub {
+	my $pl = App::Test::Generator::Planner::Isolation->new;
+
+	# env => {} — empty hashref is truthy as a ref — must propagate
+	my $r_empty = $pl->plan(_iso_schema(deps => { env => {} }), $STRATEGY_ALL);
+	ok(exists $r_empty->{m}{env}, 'env => {} (truthy ref) propagated');
+
+	# env => 0 — falsy scalar — must be omitted
+	my $r_zero = $pl->plan(_iso_schema(deps => { env => 0 }), $STRATEGY_ALL);
+	ok(!exists $r_zero->{m}{env}, 'env => 0 (falsy scalar) omitted');
+
+	# env => {K=>V} — stored verbatim
+	my $env_hash = { HOME => '/tmp/test' };
+	my $r_full = $pl->plan(_iso_schema(deps => { env => $env_hash }), $STRATEGY_ALL);
+	is_deeply($r_full->{m}{env}, $env_hash, 'env hashref stored verbatim');
+};
+
+subtest 'DF39 — time key: falsy omitted, truthy normalised to 1' => sub {
+	my $pl = App::Test::Generator::Planner::Isolation->new;
+
+	my $r0 = $pl->plan(_iso_schema(deps => { time => 0 }), $STRATEGY_ALL);
+	ok(!exists $r0->{m}{time}, 'time => 0 omitted from plan');
+
+	my $r1 = $pl->plan(_iso_schema(deps => { time => 1 }), $STRATEGY_ALL);
+	is($r1->{m}{time}, 1, 'time => 1 normalised to 1');
+};
+
+subtest 'DF40 — network key: falsy omitted, truthy normalised to 1' => sub {
+	my $pl = App::Test::Generator::Planner::Isolation->new;
+
+	my $r0 = $pl->plan(_iso_schema(deps => { network => '' }), $STRATEGY_ALL);
+	ok(!exists $r0->{m}{network}, 'network => "" omitted');
+
+	my $r1 = $pl->plan(_iso_schema(deps => { network => 1 }), $STRATEGY_ALL);
+	is($r1->{m}{network}, 1, 'network => 1 normalised');
+};
+
+subtest 'DF41 — filesystem key: falsy omitted, truthy stored as-is' => sub {
+	my $pl = App::Test::Generator::Planner::Isolation->new;
+
+	my $r0 = $pl->plan(_iso_schema(deps => { filesystem => '' }), $STRATEGY_ALL);
+	ok(!exists $r0->{m}{filesystem}, 'filesystem => "" omitted');
+
+	my $fs = { path => '/tmp/data' };
+	my $r1 = $pl->plan(_iso_schema(deps => { filesystem => $fs }), $STRATEGY_ALL);
+	is_deeply($r1->{m}{filesystem}, $fs, 'filesystem hashref propagated');
+};
+
+subtest 'DF42 — two independent plan() calls produce independent result hashrefs' => sub {
+	my $pl = App::Test::Generator::Planner::Isolation->new;
+
+	my $r1 = $pl->plan(_iso_schema(purity => 'pure'), $STRATEGY_ALL);
+	my $r2 = $pl->plan(_iso_schema(purity => 'impure'), $STRATEGY_ALL);
+
+	isnt($r1->{m}{fixture}, $r2->{m}{fixture}, 'independent calls give different fixtures');
+
+	# Mutating one result must not affect the other
+	$r1->{m}{fixture} = 'CORRUPTED';
+	my $r3 = $pl->plan(_iso_schema(purity => 'pure'), $STRATEGY_ALL);
+	is($r3->{m}{fixture}, 'shared_fixture', 'analyser state not contaminated by r1 mutation');
+};
+
+# ==================================================================
+# GROUP C: Mutator private state DU chains (DF43-DF48)
+# ==================================================================
+
+use App::Test::Generator::Mutator;
+use File::Spec;
+use File::Path qw(make_path);
+use Cwd        qw(cwd);
+
+# Helper: build a minimal .pm file under a temp dir's lib/ and return
+# (mutator, tmpdir, pm_file) — the Mutator is ready to generate mutants.
+sub _mutator_in_tmp {
+	my $tmpdir = tempdir(CLEANUP => 1);
+	my $lib    = File::Spec->catdir($tmpdir, 'lib');
+	make_path($lib);
+	my $pm = File::Spec->catfile($lib, 'Foo.pm');
+	open my $fh, '>', $pm or die $!;
+	print $fh "package Foo;\nsub bar { return 1 }\n1;\n";
+	close $fh;
+
+	my $m = App::Test::Generator::Mutator->new(
+		file    => $pm,
+		lib_dir => 'lib',
+	);
+	return ($m, $tmpdir, $pm);
+}
+
+# Helper: chdir into $dir, call $code, chdir back; propagate exceptions.
+sub _in_dir {
+	my ($dir, $code) = @_;
+	my $orig = cwd();
+	chdir $dir or die "chdir $dir: $!";
+	my @r = eval { $code->() };
+	my $e = $@;
+	chdir $orig;
+	die $e if $e;
+	return @r;
+}
+
+subtest 'DF43 — _workspace key: absent before prepare_workspace(), defined after; lib_dir unchanged' => sub {
+	my ($m, $tmpdir) = _mutator_in_tmp();
+
+	ok(!exists $m->{_workspace}, '_workspace absent before prepare_workspace()');
+	is($m->{lib_dir}, 'lib', 'lib_dir is "lib" before prepare_workspace()');
+
+	_in_dir($tmpdir, sub { $m->prepare_workspace() });
+
+	ok(defined $m->{_workspace}, '_workspace defined after prepare_workspace()');
+	is($m->{lib_dir}, 'lib', 'lib_dir unchanged after prepare_workspace()');
+};
+
+subtest 'DF44 — _relative key: set during prepare_workspace(); ends with the .pm filename' => sub {
+	# D: _relative = file with lib_dir prefix stripped inside prepare_workspace()
+	# U: apply_mutant reads _relative to locate the file in the workspace
+	# When file is an absolute path and lib_dir is 'lib', the strip removes
+	# the 'lib/' component that actually appears in the path (if present),
+	# leaving a path that ends with the module filename.
+
+	my ($m, $tmpdir) = _mutator_in_tmp();
+
+	_in_dir($tmpdir, sub { $m->prepare_workspace() });
+
+	ok(defined $m->{_relative}, '_relative key set');
+	like($m->{_relative}, qr/Foo\.pm$/, '_relative ends with the pm filename');
+};
+
+subtest 'DF45 — _lib_basename key: set during prepare_workspace()' => sub {
+	my ($m, $tmpdir) = _mutator_in_tmp();
+
+	_in_dir($tmpdir, sub { $m->prepare_workspace() });
+
+	ok(defined $m->{_lib_basename}, '_lib_basename key set');
+	is($m->{_lib_basename}, 'lib', '_lib_basename matches the lib_dir argument');
+};
+
+subtest 'DF46 — generate_mutants() context-sensitive: list→flat list, scalar→arrayref' => sub {
+	# wantarray-sensitive API: list context returns a flat list of Mutant objects;
+	# scalar context returns an arrayref containing the same data.
+	# Two separate calls produce independent object sets — we verify type and count,
+	# not object identity across calls.
+
+	my ($m1, $tmpdir1) = _mutator_in_tmp();
+	my ($m2, $tmpdir2) = _mutator_in_tmp();
+
+	my @list_result = _in_dir($tmpdir1, sub { $m1->generate_mutants() });
+
+	# Scalar context — call directly (not through _in_dir which forces list context)
+	my $orig = cwd();
+	chdir $tmpdir2 or die "chdir: $!";
+	my $scalar_result = $m2->generate_mutants();   # wantarray false → arrayref
+	chdir $orig;
+
+	ok(ref($scalar_result) eq 'ARRAY', 'scalar context returns arrayref');
+	is(scalar @list_result, scalar @{$scalar_result},
+		'list and arrayref contain the same number of mutants');
+
+	# Every element in list context is a Mutant
+	for my $mut (@list_result) {
+		isa_ok($mut, 'App::Test::Generator::Mutant');
+	}
+};
+
+subtest 'DF47 — mutant objects are independent: modifying one does not affect another' => sub {
+	my ($m, $tmpdir) = _mutator_in_tmp();
+
+	my @mutants = _in_dir($tmpdir, sub { $m->generate_mutants() });
+	skip 'no mutants generated for this body', 1 unless @mutants >= 2;
+
+	my $orig_desc = $mutants[1]->{description};
+	$mutants[0]->{description} = 'CORRUPTED';
+
+	is($mutants[1]->{description}, $orig_desc,
+		'modifying mutant[0] description does not affect mutant[1]');
+};
+
+subtest 'DF48 — apply_mutant() without prepare_workspace() croaks "Workspace not prepared"' => sub {
+	my ($m, $tmpdir) = _mutator_in_tmp();
+
+	# generate_mutants() first so we have something to pass to apply_mutant
+	my @mutants = _in_dir($tmpdir, sub { $m->generate_mutants() });
+	skip 'no mutants to apply', 1 unless @mutants;
+
+	# No prepare_workspace() called — _workspace key is absent
+	throws_ok(
+		sub { $m->apply_mutant($mutants[0]) },
+		qr/Workspace not prepared/,
+		'apply_mutant() without prepare_workspace() croaks',
+	);
+};
+
 done_testing;
