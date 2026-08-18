@@ -210,6 +210,13 @@ sub generate {
 	my $schema   = $self->{schema};
 	my $module   = $schema->{module}   // croak 'schema missing module';
 	my $function = $schema->{function} // croak 'schema missing function';
+
+	unless($module eq 'builtin') {
+		croak("BenchmarkGenerator: module '$module' is not a valid Perl identifier")
+			unless $module =~ /^[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*\z/;
+	}
+	croak("BenchmarkGenerator: function '$function' is not a valid Perl identifier")
+		unless $function =~ /^[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*\z/;
 	my $has_new  = exists $schema->{new};
 	my %input    = %{ $schema->{input} // {} };
 	my %xforms   = %{ $schema->{transforms} // {} };
