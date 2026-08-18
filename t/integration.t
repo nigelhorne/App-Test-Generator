@@ -1446,14 +1446,18 @@ subtest 'SchemaExtractor -> BenchmarkGenerator: in-memory pipeline produces runn
 	like($code, qr/use\s+Sample::Calculator/, 'output contains use Module statement');
 	delete $ledger{module_use_present};
 
-	# Compile check must include the temp lib dir so perl -c can find
-	# Sample::Calculator (it was written to $tmpdir/lib/Sample/Calculator.pm).
-	my $lib_inc = File::Spec->catdir($tmpdir, 'lib');
+	# Compile check must include the project lib/ AND the temp lib dir.
+	# Sample::Calculator lives at $tmpdir/lib/Sample/Calculator.pm, so
+	# $tmpdir/lib is the root. The ATG lib/ must also be present for any
+	# ATG modules the generated script may load transitively.
+	my $lib_inc     = File::Spec->catdir($tmpdir, 'lib');
+	my $atg_lib_inc = File::Spec->catdir(
+		(File::Spec->splitpath(File::Spec->rel2abs($0)))[0,1], '..', 'lib');
 	my $outfile = File::Spec->catfile($tmpdir, 'bench.pl');
 	open my $fh, '>', $outfile or die $!;
 	print $fh $code;
 	close $fh;
-	is(system($^X, "-I$lib_inc", '-c', $outfile), 0,
+	is(system($^X, "-I$lib_inc", "-I$atg_lib_inc", '-c', $outfile), 0,
 		'generated benchmark script compiles cleanly (with sample module in @INC)');
 
 	ok(!%ledger, 'all documented BenchmarkGenerator cross-module interactions exercised')
