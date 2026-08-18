@@ -602,7 +602,7 @@ Approximate LCSAJ segments: 207<br>
 </span><span class="">  255:     printf &quot;Bugs found:       %d\n&quot;, $report-&gt;{bugs_found};
 </span><span class="">  256: 
 </span><span class="">  257: =head3 Arguments
-</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch.">  258: 
+</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  258: 
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
@@ -1030,7 +1030,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 </span><span class="">  635:       &acirc;&#136;&sect; every bug-triggering input survives minimization
 </span><span class="">  636: 
 </span><span class="">  637: =head3 PSEUDOCODE
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  638: 
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  638: 
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1080,7 +1080,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  664: 	while (%uncovered &amp;&amp; @with_cov) {
 </span><span class="">  665: 		my ($best, $best_idx, $best_n) = (undef, -1, 0);
 </span><span class="">  666: 		for my $i (0 .. $#with_cov) {
-</span><span class="survived-3 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  667: 			my $n = grep { $uncovered{$_} } keys %{ $with_cov[$i]{coverage} };
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  667: 			my $n = grep { $uncovered{$_} } keys %{ $with_cov[$i]{coverage} };
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -1246,7 +1246,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  738: 
+<span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  738: 
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1270,7 +1270,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 							</li></ul></details>
 <span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  739: # --------------------------------------------------
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  740: # _load_json_module
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  741: #
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  741: #
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1312,7 +1312,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  759: 		# Convert package name to file path &acirc;&#128;&#148; require $var does not
 </span><span class="">  760: 		# do the :: -&gt; / conversion that bareword require does
 </span><span class="">  761: 		(my $file = $mod) =~ s{::}{/}g;
-</span><span class="survived-3 tooltip" data-tooltip="Mutation survived. Add targeted tests to validate this branch. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  762: 		$file .= &#39;.pm&#39;;
+</span><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Mutation survived. Add targeted tests to validate this branch.">  762: 		$file .= &#39;.pm&#39;;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 4, Killed: 0, Survived: 4)</summary>
@@ -1482,7 +1482,7 @@ is( func(VALUE_AT_BOUNDARY), EXPECTED, &#39;Test boundary behaviour&#39; );
 							</li></ul></details>
 <span class="">  820: 		if(!defined($error) &amp;&amp; @warnings) {
 </span><span class="">  821: 			my $w = join &#39;&#39;, @warnings;
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  822: 			$error = &quot;warning: $w&quot;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  822: 			$error = &quot;warning: $w&quot;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -1650,7 +1650,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class="">  966: 	}
 </span><span class="">  967: 
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  968: 	# No coverage data &acirc;&#128;&#148; keep a random sample to grow the corpus
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="survived-3 tooltip" data-tooltip="Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one). Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  969: 	return rand() &lt; $RANDOM_KEEP_RATIO unless %{$coverage};
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="survived-3 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  969: 	return rand() &lt; $RANDOM_KEEP_RATIO unless %{$coverage};
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -1696,7 +1696,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </pre>
 								</div>
 							</li></ul></details>
-<span class="survived-3 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  970: 
+<span class="survived-3 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values. Boundary mutation survived. Add tests around edge values (e.g. min, max, off-by-one).">  970: 
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 5, Killed: 0, Survived: 5)</summary>
@@ -1800,7 +1800,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 1026: 	return undef unless defined $spec;
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."> 1027: 	return undef if $spec eq &#39;undef&#39;;
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class=""> 1028: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1029: 	my $type = ref($spec) ? ($spec-&gt;{type} // $TYPE_STRING) : $TYPE_STRING;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1029: 	my $type = ref($spec) ? ($spec-&gt;{type} // $TYPE_STRING) : $TYPE_STRING;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2033,7 +2033,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 1135: # Side effects: None.
 </span><span class=""> 1136: # --------------------------------------------------
 </span><span class=""> 1137: sub _rand_array {
-</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1138: 	my ($self, $spec) = @_;
+</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1138: 	my ($self, $spec) = @_;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
@@ -2075,7 +2075,7 @@ is( func(INPUT), EXPECTED, &#39;Verify correct return value&#39; );
 </span><span class=""> 1156: sub _rand_hash {
 </span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">1157 → 1162 → 1166</span></span> 1157: 	my ($self, $spec) = @_;
 </span><span class=""> 1158: 
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values."> 1159: 	my $props = $spec-&gt;{properties} // {};
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths."> 1159: 	my $props = $spec-&gt;{properties} // {};
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
