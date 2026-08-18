@@ -490,7 +490,7 @@ Approximate LCSAJ segments: 53<br>
 </span><span class="">  149: 
 </span><span class="">  150: C&lt;file&gt; was not supplied.
 </span><span class="">  151: 
-</span><span class="">  152: =item C&lt;file not found: $path&gt;
+</span><span class="">  152: =item C&lt;&lt; file not found: PATH &gt;&gt;
 </span><span class="">  153: 
 </span><span class="">  154: C&lt;file&gt; was supplied but does not exist on disk.
 </span><span class="">  155: 
@@ -580,464 +580,548 @@ Approximate LCSAJ segments: 53<br>
 </span><span class="">  239: 
 </span><span class="">  240: =over 4
 </span><span class="">  241: 
-</span><span class="">  242: =item C&lt;Unable to parse $file&gt;
+</span><span class="">  242: =item C&lt;&lt; Unable to parse FILE &gt;&gt;
 </span><span class="">  243: 
 </span><span class="">  244: PPI could not parse the source file (syntax error or unreadable file).
-</span><span class="">  245: 
-</span><span class="">  246: =item C&lt;$file: MUTANT_SKIP_BEGIN at line N with no prior MUTANT_SKIP_END&gt;
-</span><span class="">  247: 
-</span><span class="">  248: A C&lt;## MUTANT_SKIP_BEGIN&gt; marker was found while already inside a skip block.
-</span><span class="">  249: 
-</span><span class="">  250: =item C&lt;$file: MUTANT_SKIP_END at line N with no matching MUTANT_SKIP_BEGIN&gt;
-</span><span class="">  251: 
-</span><span class="">  252: A C&lt;## MUTANT_SKIP_END&gt; marker was found with no preceding C&lt;## MUTANT_SKIP_BEGIN&gt;.
-</span><span class="">  253: 
-</span><span class="">  254: =item C&lt;$file: MUTANT_SKIP_BEGIN at line N has no matching MUTANT_SKIP_END&gt;
-</span><span class="">  255: 
-</span><span class="">  256: The source file ended while still inside a skip block.
-</span><span class="">  257: 
-</span><span class="">  258: =back
-</span><span class="">  259: 
-</span><span class="">  260: =head3 FORMAL SPECIFICATION
-</span><span class="">  261: 
-</span><span class="">  262: Pre:  C&lt;prepare_workspace&gt; need not have been called before this method.
-</span><span class="">  263: 
-</span><span class="">  264: Post: C&lt;ref(result) eq &#39;ARRAY&#39;&gt;
-</span><span class="">  265:       &acirc;&#136;&sect; C&lt;&acirc;&#136;&#128; m &acirc;&#136;&#136; result: ref(m) eq &#39;App::Test::Generator::Mutant&#39;&gt;
-</span><span class="">  266:       &acirc;&#136;&sect; C&lt;&acirc;&#136;&#128; m &acirc;&#136;&#136; result: &Acirc;&not; skip_lines{m-&gt;line}&gt;
-</span><span class="">  267: 
-</span><span class="">  268: =head3 PSEUDOCODE
-</span><span class="">  269: 
-</span><span class="">  270:     parse file with PPI
-</span><span class="">  271:     scan lines for MUTANT_SKIP_BEGIN / MUTANT_SKIP_END pairs &acirc;&#134;&#146; skip_lines
-</span><span class="">  272:     for each registered mutation strategy:
-</span><span class="">  273:         skip if strategy does not apply_to(doc)
-</span><span class="">  274:         for each mutant from strategy-&gt;mutate(doc):
-</span><span class="">  275:             include unless mutant.line &acirc;&#136;&#136; skip_lines
-</span><span class="">  276:     if mutation_level == &#39;fast&#39;:
-</span><span class="">  277:         deduplicate and remove redundant mutants
-</span><span class="">  278:     return arrayref (or flat list in list context)
-</span><span class="">  279: 
-</span><span class="">  280: =cut
-</span><span class="">  281: 
-</span><span class="">  282: sub generate_mutants {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">283 → 294 → 316</span></span>  283: 	my $self = $_[0];
-</span><span class="">  284: 
-</span><span class="">  285: 	# Parse the target file into a PPI document
-</span><span class="">  286: 	my $doc = PPI::Document-&gt;new($self-&gt;{file}) or croak &quot;Unable to parse $self-&gt;{file}&quot;;
-</span><span class="">  287: 
-</span><span class="">  288: 	# Build set of lines excluded by ## MUTANT_SKIP_BEGIN / ## MUTANT_SKIP_END
-</span><span class="">  289: 	my %skip_lines;
-</span><span class="">  290: 	my $in_skip  = 0;
-</span><span class="">  291: 	my $skip_start = 0;
-</span><span class="">  292: 	my $line_num = 0;
-</span><span class="">  293: 
-</span><span class="">  294: 	for my $line (split /\n/, $doc-&gt;serialize()) {
-</span><span class="">  295: 		$line_num++;
-</span><span class="">  296: 
-</span><span class="">  297: 		# Match only lines where the annotation is the entire content &acirc;&#128;&#148;
-</span><span class="">  298: 		# prevents false positives in comments or POD that mention the tag
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  299: 		if($line =~ /^\s*##\s*MUTANT_SKIP_BEGIN\s*$/) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  300: 			croak &quot;$self-&gt;{file}: MUTANT_SKIP_BEGIN at line $line_num with no prior MUTANT_SKIP_END&quot;
-</span><span class="">  301: 				if $in_skip;
-</span><span class="">  302: 			$in_skip    = 1;
-</span><span class="">  303: 			$skip_start = $line_num;
-</span><span class="">  304: 		}
-</span><span class="">  305: 		$skip_lines{$line_num} = 1 if $in_skip;
-</span><span class="">  306: 
-</span><span class="">  307: 		# Match only lines where the annotation is the entire content &acirc;&#128;&#148;
-</span><span class="">  308: 		# prevents false positives in comments or POD that mention the tag
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  309: 		if($line =~ /^\s*##\s*MUTANT_SKIP_END\s*$/) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  310: 			croak &quot;$self-&gt;{file}: MUTANT_SKIP_END at line $line_num with no matching MUTANT_SKIP_BEGIN&quot;
-</span><span class="">  311: 				unless $in_skip;
-</span><span class="">  312: 			$in_skip = 0;
-</span><span class="">  313: 		}
-</span><span class="">  314: 	}
-</span><span class="">  315: 	# Unclosed MUTANT_SKIP_BEGIN is fatal
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">316 → 327 → 335</span></span>  316: 	croak &quot;$self-&gt;{file}: MUTANT_SKIP_BEGIN at line $skip_start has no matching MUTANT_SKIP_END&quot; if $in_skip;
-</span><span class="">  317: 
-</span><span class="">  318: 	# Store skip lines for use by the report generator
-</span><span class="">  319: 	$self-&gt;{skip_lines} = \%skip_lines;
-</span><span class="">  320: 
-</span><span class="">  321: 	my @mutants;
-</span><span class="">  322: 
-</span><span class="">  323: 	# Run each registered mutation strategy against the document,
-</span><span class="">  324: 	# excluding any candidates on skip-annotated lines. applies_to()
-</span><span class="">  325: 	# is a cheap pre-filter -- skip the mutate() walk entirely for
-</span><span class="">  326: 	# strategies that have nothing to match in this document.
-</span><span class="">  327: 	for my $mutation (@{$self-&gt;{mutations}}) {
-</span><span class="">  328: 		next unless $mutation-&gt;applies_to($doc);
-</span><span class="">  329: 		push @mutants, grep { !$skip_lines{$_-&gt;line} } $mutation-&gt;mutate($doc);
-</span><span class="">  330: 	}
-</span><span class="">  331: 
-</span><span class="">  332: 	# In fast mode deduplicate and remove redundant mutants before returning.
-</span><span class="">  333: 	# Returns arrayref in scalar context and a flat list in list context so
-</span><span class="">  334: 	# existing callers (my @m = generate_mutants()) continue to work unchanged.
-</span><span class="">  335: 	my $result = $self-&gt;{mutation_level} eq $LEVEL_FAST
-</span><span class="">  336: 		? _dedup_mutants(\@mutants)
-</span><span class="">  337: 		: \@mutants;
-</span><span class="">  338: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  339: 	return wantarray ? @{$result} : $result;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  340: }
-</span><span class="">  341: 
-</span><span class="">  342: =head2 prepare_workspace
-</span><span class="">  343: 
-</span><span class="">  344: Prepare an isolated temporary workspace for a single mutation test run.
-</span><span class="">  345: 
-</span><span class="">  346: The entire C&lt;lib_dir&gt; tree is copied into the workspace so that all module
-</span><span class="">  347: dependencies resolve correctly when the test suite runs against the mutant.
-</span><span class="">  348: Only after this copy is complete is the single target file overwritten by
-</span><span class="">  349: C&lt;apply_mutant&gt;.
-</span><span class="">  350: 
-</span><span class="">  351:     my $workspace = $mutator-&gt;prepare_workspace();
-</span><span class="">  352:     $mutator-&gt;apply_mutant($mutant);
-</span><span class="">  353:     local $ENV{PERL5LIB} = &quot;$workspace/lib&quot;;
-</span><span class="">  354:     my $survived = (system(&#39;prove&#39;, &#39;t&#39;) == 0);
-</span><span class="">  355: 
-</span><span class="">  356: =head3 Arguments
-</span><span class="">  357: 
-</span><span class="">  358: None beyond C&lt;$self&gt;.
-</span><span class="">  359: 
-</span><span class="">  360: =head3 Returns
-</span><span class="">  361: 
-</span><span class="">  362: A string containing the absolute path to the temporary directory created.
-</span><span class="">  363: The directory is automatically removed when the object goes out of scope
-</span><span class="">  364: via L&lt;File::Temp&gt;&#39;s C&lt;CLEANUP =E&lt;gt&gt; 1&gt; behaviour.
-</span><span class="">  365: 
-</span><span class="">  366: =head3 Side effects
-</span><span class="">  367: 
-</span><span class="">  368: Creates a temporary directory. Recursively copies C&lt;lib_dir&gt; into it.
-</span><span class="">  369: Sets C&lt;&lt; $self-&gt;{_workspace} &gt;&gt;, C&lt;&lt; $self-&gt;{_relative} &gt;&gt;, and
-</span><span class="">  370: C&lt;&lt; $self-&gt;{_lib_basename} &gt;&gt;. Does not modify C&lt;&lt; $self-&gt;{lib_dir} &gt;&gt;.
-</span><span class="">  371: 
-</span><span class="">  372: =head3 Notes
-</span><span class="">  373: 
-</span><span class="">  374: Call C&lt;prepare_workspace&gt; once per file, then C&lt;apply_mutant&gt; once per
-</span><span class="">  375: mutant within that file. Do not store the returned path beyond the
-</span><span class="">  376: lifetime of the enclosing scope.
-</span><span class="">  377: 
-</span><span class="">  378: =head3 API specification
-</span><span class="">  379: 
-</span><span class="">  380: =head4 input
-</span><span class="">  381: 
-</span><span class="">  382:     {
-</span><span class="">  383:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutator&#39; },
-</span><span class="">  384:     }
-</span><span class="">  385: 
-</span><span class="">  386: =head4 output
-</span><span class="">  387: 
-</span><span class="">  388:     {
-</span><span class="">  389:         type =&gt; SCALAR,
-</span><span class="">  390:     }
-</span><span class="">  391: 
-</span><span class="">  392: =head3 EXAMPLE
-</span><span class="">  393: 
-</span><span class="">  394:     my $workspace = $mutator-&gt;prepare_workspace();
-</span><span class="">  395:     # workspace is an absolute temp dir path
-</span><span class="">  396:     # original lib_dir value is unchanged
-</span><span class="">  397:     printf &quot;original lib_dir still: %s\n&quot;, $mutator-&gt;{lib_dir};
-</span><span class="">  398: 
-</span><span class="">  399: =head3 MESSAGES
-</span><span class="">  400: 
-</span><span class="">  401: =over 4
-</span><span class="">  402: 
-</span><span class="">  403: =item C&lt;dircopy failed: $!&gt;
-</span><span class="">  404: 
-</span><span class="">  405: The C&lt;lib_dir&gt; tree could not be copied into the temporary workspace directory,
-</span><span class="">  406: usually a permissions error.
-</span><span class="">  407: 
-</span><span class="">  408: =back
-</span><span class="">  409: 
-</span><span class="">  410: =head3 FORMAL SPECIFICATION
-</span><span class="">  411: 
-</span><span class="">  412: Pre:  C&lt;-d self-E&lt;gt&gt;{lib_dir}&gt;
-</span><span class="">  413:       &acirc;&#136;&sect; C&lt;self-E&lt;gt&gt;{file}&gt; begins with C&lt;self-E&lt;gt&gt;{lib_dir}&gt;
-</span><span class="">  414: 
-</span><span class="">  415: Post: C&lt;-d result&gt;
-</span><span class="">  416:       &acirc;&#136;&sect; C&lt;self-E&lt;gt&gt;{_workspace} eq result&gt;
-</span><span class="">  417:       &acirc;&#136;&sect; C&lt;self-E&lt;gt&gt;{lib_dir}&gt; unchanged
-</span><span class="">  418: 
-</span><span class="">  419: =cut
-</span><span class="">  420: 
-</span><span class="">  421: sub prepare_workspace {
-</span><span class="">  422: 	my $self = $_[0];
-</span><span class="">  423: 
-</span><span class="">  424: 	# Create a self-cleaning temporary directory
-</span><span class="">  425: 	my $tmp = tempdir(CLEANUP =&gt; 1);
-</span><span class="">  426: 
-</span><span class="">  427: 	# Normalise lib_dir to its final component so workspace paths
-</span><span class="">  428: 	# are relative regardless of whether an absolute path was passed in
-</span><span class="">  429: 	my $lib_basename = (File::Spec-&gt;splitdir($self-&gt;{lib_dir}))[-1];
-</span><span class="">  430: 
-</span><span class="">  431: 	# Derive the file&#39;s path relative to lib_dir for use by apply_mutant
-</span><span class="">  432: 	my $relative = $self-&gt;{file};
-</span><span class="">  433: 	$relative =~ s/^\Q$self-&gt;{lib_dir}\E\/?//;
-</span><span class="">  434: 
-</span><span class="">  435: 	# Copy the entire lib tree so all dependencies resolve in the workspace
-</span><span class="">  436: 	dircopy($self-&gt;{lib_dir}, File::Spec-&gt;catfile($tmp, $lib_basename)) or croak &quot;dircopy failed: $!&quot;;
-</span><span class="">  437: 
-</span><span class="">  438: 	# Store normalised state under private keys &acirc;&#128;&#148; do NOT mutate lib_dir,
-</span><span class="">  439: 	# which callers may inspect after this call expecting the original value.
-</span><span class="">  440: 	$self-&gt;{_workspace}    = $tmp;
-</span><span class="">  441: 	$self-&gt;{_relative}     = $relative;
-</span><span class="">  442: 	$self-&gt;{_lib_basename} = $lib_basename;
-</span><span class="">  443: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  444: 	return $tmp;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  445: }
-</span><span class="">  446: 
-</span><span class="">  447: =head2 apply_mutant
-</span><span class="">  448: 
-</span><span class="">  449: Apply a single mutant&#39;s transform to the target file in the workspace.
-</span><span class="">  450: 
-</span><span class="">  451:     $mutator-&gt;apply_mutant($mutant);
-</span><span class="">  452: 
-</span><span class="">  453: =head3 Arguments
-</span><span class="">  454: 
-</span><span class="">  455: =over 4
-</span><span class="">  456: 
-</span><span class="">  457: =item * C&lt;$mutant&gt;
-</span><span class="">  458: 
-</span><span class="">  459: An L&lt;App::Test::Generator::Mutant&gt; object whose C&lt;transform&gt; closure
-</span><span class="">  460: will be applied to the workspace copy of the target file.
-</span><span class="">  461: 
-</span><span class="">  462: =back
-</span><span class="">  463: 
-</span><span class="">  464: =head3 Returns
-</span><span class="">  465: 
-</span><span class="">  466: Nothing. Modifies the workspace copy of the target file in place.
-</span><span class="">  467: 
-</span><span class="">  468: =head3 Side effects
-</span><span class="">  469: 
-</span><span class="">  470: Overwrites the target file in the workspace with the mutated version.
-</span><span class="">  471: 
-</span><span class="">  472: =head3 API specification
-</span><span class="">  473: 
-</span><span class="">  474: =head4 input
-</span><span class="">  475: 
-</span><span class="">  476:     {
-</span><span class="">  477:         self   =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutator&#39; },
-</span><span class="">  478:         mutant =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutant&#39;  },
-</span><span class="">  479:     }
-</span><span class="">  480: 
-</span><span class="">  481: =head4 output
-</span><span class="">  482: 
-</span><span class="">  483:     { type =&gt; UNDEF }
-</span><span class="">  484: 
-</span><span class="">  485: =cut
-</span><span class="">  486: 
-</span><span class="">  487: sub apply_mutant {
-</span><span class="">  488: 	my ($self, $mutant) = @_;
-</span><span class="">  489: 
-</span><span class="">  490: 	# Workspace must be prepared before applying any mutant
-</span><span class="">  491: 	my $workspace = $self-&gt;{_workspace}
-</span><span class="">  492: 		or croak $ERR_WORKSPACE_NOT_SET;
+</span><span class="">  245: FILE is the path passed to C&lt;new&gt;.
+</span><span class="">  246: 
+</span><span class="">  247: =item C&lt;&lt; FILE: MUTANT_SKIP_BEGIN at line N with no prior MUTANT_SKIP_END &gt;&gt;
+</span><span class="">  248: 
+</span><span class="">  249: A C&lt;## MUTANT_SKIP_BEGIN&gt; marker was found while already inside a skip block.
+</span><span class="">  250: 
+</span><span class="">  251: =item C&lt;&lt; FILE: MUTANT_SKIP_END at line N with no matching MUTANT_SKIP_BEGIN &gt;&gt;
+</span><span class="">  252: 
+</span><span class="">  253: A C&lt;## MUTANT_SKIP_END&gt; marker was found with no preceding C&lt;## MUTANT_SKIP_BEGIN&gt;.
+</span><span class="">  254: 
+</span><span class="">  255: =item C&lt;&lt; FILE: MUTANT_SKIP_BEGIN at line N has no matching MUTANT_SKIP_END &gt;&gt;
+</span><span class="">  256: 
+</span><span class="">  257: The source file ended while still inside a skip block.
+</span><span class="">  258: 
+</span><span class="">  259: =back
+</span><span class="">  260: 
+</span><span class="">  261: =head3 FORMAL SPECIFICATION
+</span><span class="">  262: 
+</span><span class="">  263: Pre:  C&lt;prepare_workspace&gt; need not have been called before this method.
+</span><span class="">  264: 
+</span><span class="">  265: Post: C&lt;ref(result) eq &#39;ARRAY&#39;&gt;
+</span><span class="">  266:       &acirc;&#136;&sect; C&lt;&acirc;&#136;&#128; m &acirc;&#136;&#136; result: ref(m) eq &#39;App::Test::Generator::Mutant&#39;&gt;
+</span><span class="">  267:       &acirc;&#136;&sect; C&lt;&acirc;&#136;&#128; m &acirc;&#136;&#136; result: &Acirc;&not; skip_lines{m-&gt;line}&gt;
+</span><span class="">  268: 
+</span><span class="">  269: =head3 PSEUDOCODE
+</span><span class="">  270: 
+</span><span class="">  271:     parse file with PPI
+</span><span class="">  272:     scan lines for MUTANT_SKIP_BEGIN / MUTANT_SKIP_END pairs &acirc;&#134;&#146; skip_lines
+</span><span class="">  273:     for each registered mutation strategy:
+</span><span class="">  274:         skip if strategy does not apply_to(doc)
+</span><span class="">  275:         for each mutant from strategy-&gt;mutate(doc):
+</span><span class="">  276:             include unless mutant.line &acirc;&#136;&#136; skip_lines
+</span><span class="">  277:     if mutation_level == &#39;fast&#39;:
+</span><span class="">  278:         deduplicate and remove redundant mutants
+</span><span class="">  279:     return arrayref (or flat list in list context)
+</span><span class="">  280: 
+</span><span class="">  281: =cut
+</span><span class="">  282: 
+</span><span class="">  283: sub generate_mutants {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">284 → 295 → 317</span></span>  284: 	my $self = $_[0];
+</span><span class="">  285: 
+</span><span class="">  286: 	# Parse the target file into a PPI document
+</span><span class="">  287: 	my $doc = PPI::Document-&gt;new($self-&gt;{file}) or croak &quot;Unable to parse $self-&gt;{file}&quot;;
+</span><span class="">  288: 
+</span><span class="">  289: 	# Build set of lines excluded by ## MUTANT_SKIP_BEGIN / ## MUTANT_SKIP_END
+</span><span class="">  290: 	my %skip_lines;
+</span><span class="">  291: 	my $in_skip  = 0;
+</span><span class="">  292: 	my $skip_start = 0;
+</span><span class="">  293: 	my $line_num = 0;
+</span><span class="">  294: 
+</span><span class="">  295: 	for my $line (split /\n/, $doc-&gt;serialize()) {
+</span><span class="">  296: 		$line_num++;
+</span><span class="">  297: 
+</span><span class="">  298: 		# Match only lines where the annotation is the entire content &acirc;&#128;&#148;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  299: 		# prevents false positives in comments or POD that mention the tag
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  300: 		if($line =~ /^\s*##\s*MUTANT_SKIP_BEGIN\s*$/) {
+</span><span class="">  301: 			croak &quot;$self-&gt;{file}: MUTANT_SKIP_BEGIN at line $line_num with no prior MUTANT_SKIP_END&quot;
+</span><span class="">  302: 				if $in_skip;
+</span><span class="">  303: 			$in_skip    = 1;
+</span><span class="">  304: 			$skip_start = $line_num;
+</span><span class="">  305: 		}
+</span><span class="">  306: 		$skip_lines{$line_num} = 1 if $in_skip;
+</span><span class="">  307: 
+</span><span class="">  308: 		# Match only lines where the annotation is the entire content &acirc;&#128;&#148;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  309: 		# prevents false positives in comments or POD that mention the tag
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  310: 		if($line =~ /^\s*##\s*MUTANT_SKIP_END\s*$/) {
+</span><span class="">  311: 			croak &quot;$self-&gt;{file}: MUTANT_SKIP_END at line $line_num with no matching MUTANT_SKIP_BEGIN&quot;
+</span><span class="">  312: 				unless $in_skip;
+</span><span class="">  313: 			$in_skip = 0;
+</span><span class="">  314: 		}
+</span><span class="">  315: 	}
+</span><span class="">  316: 	# Unclosed MUTANT_SKIP_BEGIN is fatal
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">317 → 328 → 336</span></span>  317: 	croak &quot;$self-&gt;{file}: MUTANT_SKIP_BEGIN at line $skip_start has no matching MUTANT_SKIP_END&quot; if $in_skip;
+</span><span class="">  318: 
+</span><span class="">  319: 	# Store skip lines for use by the report generator
+</span><span class="">  320: 	$self-&gt;{skip_lines} = \%skip_lines;
+</span><span class="">  321: 
+</span><span class="">  322: 	my @mutants;
+</span><span class="">  323: 
+</span><span class="">  324: 	# Run each registered mutation strategy against the document,
+</span><span class="">  325: 	# excluding any candidates on skip-annotated lines. applies_to()
+</span><span class="">  326: 	# is a cheap pre-filter -- skip the mutate() walk entirely for
+</span><span class="">  327: 	# strategies that have nothing to match in this document.
+</span><span class="">  328: 	for my $mutation (@{$self-&gt;{mutations}}) {
+</span><span class="">  329: 		next unless $mutation-&gt;applies_to($doc);
+</span><span class="">  330: 		push @mutants, grep { !$skip_lines{$_-&gt;line} } $mutation-&gt;mutate($doc);
+</span><span class="">  331: 	}
+</span><span class="">  332: 
+</span><span class="">  333: 	# In fast mode deduplicate and remove redundant mutants before returning.
+</span><span class="">  334: 	# Returns arrayref in scalar context and a flat list in list context so
+</span><span class="">  335: 	# existing callers (my @m = generate_mutants()) continue to work unchanged.
+</span><span class="">  336: 	my $result = $self-&gt;{mutation_level} eq $LEVEL_FAST
+</span><span class="">  337: 		? _dedup_mutants(\@mutants)
+</span><span class="">  338: 		: \@mutants;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  339: 
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  340: 	return wantarray ? @{$result} : $result;
+</span><span class="">  341: }
+</span><span class="">  342: 
+</span><span class="">  343: =head2 prepare_workspace
+</span><span class="">  344: 
+</span><span class="">  345: Prepare an isolated temporary workspace for a single mutation test run.
+</span><span class="">  346: 
+</span><span class="">  347: The entire C&lt;lib_dir&gt; tree is copied into the workspace so that all module
+</span><span class="">  348: dependencies resolve correctly when the test suite runs against the mutant.
+</span><span class="">  349: Only after this copy is complete is the single target file overwritten by
+</span><span class="">  350: C&lt;apply_mutant&gt;.
+</span><span class="">  351: 
+</span><span class="">  352:     my $workspace = $mutator-&gt;prepare_workspace();
+</span><span class="">  353:     $mutator-&gt;apply_mutant($mutant);
+</span><span class="">  354:     local $ENV{PERL5LIB} = &quot;$workspace/lib&quot;;
+</span><span class="">  355:     my $survived = (system(&#39;prove&#39;, &#39;t&#39;) == 0);
+</span><span class="">  356: 
+</span><span class="">  357: =head3 Arguments
+</span><span class="">  358: 
+</span><span class="">  359: None beyond C&lt;$self&gt;.
+</span><span class="">  360: 
+</span><span class="">  361: =head3 Returns
+</span><span class="">  362: 
+</span><span class="">  363: A string containing the absolute path to the temporary directory created.
+</span><span class="">  364: The directory is automatically removed when the object goes out of scope
+</span><span class="">  365: via L&lt;File::Temp&gt;&#39;s C&lt;CLEANUP =E&lt;gt&gt; 1&gt; behaviour.
+</span><span class="">  366: 
+</span><span class="">  367: =head3 Side effects
+</span><span class="">  368: 
+</span><span class="">  369: Creates a temporary directory. Recursively copies C&lt;lib_dir&gt; into it.
+</span><span class="">  370: Sets C&lt;&lt; $self-&gt;{_workspace} &gt;&gt;, C&lt;&lt; $self-&gt;{_relative} &gt;&gt;, and
+</span><span class="">  371: C&lt;&lt; $self-&gt;{_lib_basename} &gt;&gt;. Does not modify C&lt;&lt; $self-&gt;{lib_dir} &gt;&gt;.
+</span><span class="">  372: 
+</span><span class="">  373: =head3 Notes
+</span><span class="">  374: 
+</span><span class="">  375: Call C&lt;prepare_workspace&gt; once per file, then C&lt;apply_mutant&gt; once per
+</span><span class="">  376: mutant within that file. Do not store the returned path beyond the
+</span><span class="">  377: lifetime of the enclosing scope.
+</span><span class="">  378: 
+</span><span class="">  379: =head3 API specification
+</span><span class="">  380: 
+</span><span class="">  381: =head4 input
+</span><span class="">  382: 
+</span><span class="">  383:     {
+</span><span class="">  384:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutator&#39; },
+</span><span class="">  385:     }
+</span><span class="">  386: 
+</span><span class="">  387: =head4 output
+</span><span class="">  388: 
+</span><span class="">  389:     {
+</span><span class="">  390:         type =&gt; SCALAR,
+</span><span class="">  391:     }
+</span><span class="">  392: 
+</span><span class="">  393: =head3 EXAMPLE
+</span><span class="">  394: 
+</span><span class="">  395:     my $workspace = $mutator-&gt;prepare_workspace();
+</span><span class="">  396:     # workspace is an absolute temp dir path
+</span><span class="">  397:     # original lib_dir value is unchanged
+</span><span class="">  398:     printf &quot;original lib_dir still: %s\n&quot;, $mutator-&gt;{lib_dir};
+</span><span class="">  399: 
+</span><span class="">  400: =head3 MESSAGES
+</span><span class="">  401: 
+</span><span class="">  402: =over 4
+</span><span class="">  403: 
+</span><span class="">  404: =item C&lt;dircopy failed: $!&gt;
+</span><span class="">  405: 
+</span><span class="">  406: The C&lt;lib_dir&gt; tree could not be copied into the temporary workspace directory,
+</span><span class="">  407: usually a permissions error.
+</span><span class="">  408: 
+</span><span class="">  409: =back
+</span><span class="">  410: 
+</span><span class="">  411: =head3 FORMAL SPECIFICATION
+</span><span class="">  412: 
+</span><span class="">  413: Pre:  C&lt;-d self-E&lt;gt&gt;{lib_dir}&gt;
+</span><span class="">  414:       &acirc;&#136;&sect; C&lt;self-E&lt;gt&gt;{file}&gt; begins with C&lt;self-E&lt;gt&gt;{lib_dir}&gt;
+</span><span class="">  415: 
+</span><span class="">  416: Post: C&lt;-d result&gt;
+</span><span class="">  417:       &acirc;&#136;&sect; C&lt;self-E&lt;gt&gt;{_workspace} eq result&gt;
+</span><span class="">  418:       &acirc;&#136;&sect; C&lt;self-E&lt;gt&gt;{lib_dir}&gt; unchanged
+</span><span class="">  419: 
+</span><span class="">  420: =cut
+</span><span class="">  421: 
+</span><span class="">  422: sub prepare_workspace {
+</span><span class="">  423: 	my $self = $_[0];
+</span><span class="">  424: 
+</span><span class="">  425: 	# Create a self-cleaning temporary directory
+</span><span class="">  426: 	my $tmp = tempdir(CLEANUP =&gt; 1);
+</span><span class="">  427: 
+</span><span class="">  428: 	# Normalise lib_dir to its final component so workspace paths
+</span><span class="">  429: 	# are relative regardless of whether an absolute path was passed in
+</span><span class="">  430: 	my $lib_basename = (File::Spec-&gt;splitdir($self-&gt;{lib_dir}))[-1];
+</span><span class="">  431: 
+</span><span class="">  432: 	# Derive the file&#39;s path relative to lib_dir for use by apply_mutant
+</span><span class="">  433: 	my $relative = $self-&gt;{file};
+</span><span class="">  434: 	$relative =~ s/^\Q$self-&gt;{lib_dir}\E\/?//;
+</span><span class="">  435: 
+</span><span class="">  436: 	# Copy the entire lib tree so all dependencies resolve in the workspace
+</span><span class="">  437: 	dircopy($self-&gt;{lib_dir}, File::Spec-&gt;catfile($tmp, $lib_basename)) or croak &quot;dircopy failed: $!&quot;;
+</span><span class="">  438: 
+</span><span class="">  439: 	# Store normalised state under private keys &acirc;&#128;&#148; do NOT mutate lib_dir,
+</span><span class="">  440: 	# which callers may inspect after this call expecting the original value.
+</span><span class="">  441: 	$self-&gt;{_workspace}    = $tmp;
+</span><span class="">  442: 	$self-&gt;{_relative}     = $relative;
+</span><span class="">  443: 	$self-&gt;{_lib_basename} = $lib_basename;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  444: 
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  445: 	return $tmp;
+</span><span class="">  446: }
+</span><span class="">  447: 
+</span><span class="">  448: =head2 apply_mutant
+</span><span class="">  449: 
+</span><span class="">  450: Apply a single mutant&#39;s transform to the target file in the workspace.
+</span><span class="">  451: 
+</span><span class="">  452:     $mutator-&gt;apply_mutant($mutant);
+</span><span class="">  453: 
+</span><span class="">  454: =head3 Arguments
+</span><span class="">  455: 
+</span><span class="">  456: =over 4
+</span><span class="">  457: 
+</span><span class="">  458: =item * C&lt;$mutant&gt;
+</span><span class="">  459: 
+</span><span class="">  460: An L&lt;App::Test::Generator::Mutant&gt; object whose C&lt;transform&gt; closure
+</span><span class="">  461: will be applied to the workspace copy of the target file.
+</span><span class="">  462: 
+</span><span class="">  463: =back
+</span><span class="">  464: 
+</span><span class="">  465: =head3 Returns
+</span><span class="">  466: 
+</span><span class="">  467: Nothing. Modifies the workspace copy of the target file in place.
+</span><span class="">  468: 
+</span><span class="">  469: =head3 Side effects
+</span><span class="">  470: 
+</span><span class="">  471: Overwrites the target file in the workspace with the mutated version.
+</span><span class="">  472: 
+</span><span class="">  473: =head3 API specification
+</span><span class="">  474: 
+</span><span class="">  475: =head4 input
+</span><span class="">  476: 
+</span><span class="">  477:     {
+</span><span class="">  478:         self   =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutator&#39; },
+</span><span class="">  479:         mutant =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutant&#39;  },
+</span><span class="">  480:     }
+</span><span class="">  481: 
+</span><span class="">  482: =head4 output
+</span><span class="">  483: 
+</span><span class="">  484:     { type =&gt; UNDEF }
+</span><span class="">  485: 
+</span><span class="">  486: =head3 EXAMPLE
+</span><span class="">  487: 
+</span><span class="">  488:     $mutator-&gt;prepare_workspace();
+</span><span class="">  489:     for my $m (@{$mutants}) {
+</span><span class="">  490:         $mutator-&gt;apply_mutant($m);
+</span><span class="">  491:         # workspace file is now mutated; run tests against it
+</span><span class="">  492:     }
 </span><span class="">  493: 
-</span><span class="">  494: 	my $relative  = $self-&gt;{_relative}
-</span><span class="">  495: 		or croak $ERR_RELATIVE_NOT_SET;
-</span><span class="">  496: 
-</span><span class="">  497: 	# Construct the full path to the file in the workspace
-</span><span class="">  498: 	my $target = File::Spec-&gt;catfile(
-</span><span class="">  499: 		$workspace,
-</span><span class="">  500: 		$self-&gt;{_lib_basename},
-</span><span class="">  501: 		$relative,
-</span><span class="">  502: 	);
+</span><span class="">  494: =head3 MESSAGES
+</span><span class="">  495: 
+</span><span class="">  496: =over 4
+</span><span class="">  497: 
+</span><span class="">  498: =item C&lt;Workspace not prepared -- call prepare_workspace first&gt;
+</span><span class="">  499: 
+</span><span class="">  500: C&lt;apply_mutant&gt; was called before C&lt;prepare_workspace&gt;.
+</span><span class="">  501: 
+</span><span class="">  502: =item C&lt;Relative path not set -- call prepare_workspace first&gt;
 </span><span class="">  503: 
-</span><span class="">  504: 	# Parse the workspace copy and apply the mutation transform
-</span><span class="">  505: 	my $doc = PPI::Document-&gt;new($target) or croak &quot;Failed to parse $target&quot;;
-</span><span class="">  506: 
-</span><span class="">  507: 	$mutant-&gt;transform-&gt;($doc);
-</span><span class="">  508: 
-</span><span class="">  509: 	$doc-&gt;save($target);
-</span><span class="">  510: }
+</span><span class="">  504: Internal: the relative-path field was not set by C&lt;prepare_workspace&gt;.
+</span><span class="">  505: 
+</span><span class="">  506: =item C&lt;&lt; Failed to parse TARGET &gt;&gt;
+</span><span class="">  507: 
+</span><span class="">  508: PPI could not parse the workspace copy of the target file.
+</span><span class="">  509: 
+</span><span class="">  510: =back
 </span><span class="">  511: 
-</span><span class="">  512: =head2 run_tests
+</span><span class="">  512: =head3 FORMAL SPECIFICATION
 </span><span class="">  513: 
-</span><span class="">  514: Run the test suite against the current workspace and return whether all
-</span><span class="">  515: tests passed.
+</span><span class="">  514: Pre:  C&lt;self-E&lt;gt&gt;{_workspace}&gt; is defined &acirc;&#136;&sect; C&lt;self-E&lt;gt&gt;{_relative}&gt; is defined
+</span><span class="">  515:       &acirc;&#136;&sect; C&lt;ref(mutant-E&lt;gt&gt;{transform}) eq &#39;CODE&#39;&gt;
 </span><span class="">  516: 
-</span><span class="">  517:     my $survived = $mutator-&gt;run_tests();
+</span><span class="">  517: Post: workspace copy of target file contains the mutated content
 </span><span class="">  518: 
-</span><span class="">  519: =head3 Arguments
+</span><span class="">  519: =cut
 </span><span class="">  520: 
-</span><span class="">  521: None beyond C&lt;$self&gt;.
-</span><span class="">  522: 
-</span><span class="">  523: =head3 Returns
-</span><span class="">  524: 
-</span><span class="">  525: 1 if all tests passed (mutant survived), 0 if any test failed (mutant
-</span><span class="">  526: killed).
+</span><span class="">  521: sub apply_mutant {
+</span><span class="">  522: 	my ($self, $mutant) = @_;
+</span><span class="">  523: 
+</span><span class="">  524: 	# Workspace must be prepared before applying any mutant
+</span><span class="">  525: 	my $workspace = $self-&gt;{_workspace}
+</span><span class="">  526: 		or croak $ERR_WORKSPACE_NOT_SET;
 </span><span class="">  527: 
-</span><span class="">  528: =head3 Side effects
-</span><span class="">  529: 
-</span><span class="">  530: Executes an external process running the test suite.
-</span><span class="">  531: 
-</span><span class="">  532: =head3 Notes
-</span><span class="">  533: 
-</span><span class="">  534: Uses C&lt;prove&gt; found on PATH. Sets C&lt;PERL5LIB&gt; to include the workspace
-</span><span class="">  535: lib directory before running.
-</span><span class="">  536: 
-</span><span class="">  537: =head3 API specification
-</span><span class="">  538: 
-</span><span class="">  539: =head4 input
+</span><span class="">  528: 	my $relative  = $self-&gt;{_relative}
+</span><span class="">  529: 		or croak $ERR_RELATIVE_NOT_SET;
+</span><span class="">  530: 
+</span><span class="">  531: 	# Construct the full path to the file in the workspace
+</span><span class="">  532: 	my $target = File::Spec-&gt;catfile(
+</span><span class="">  533: 		$workspace,
+</span><span class="">  534: 		$self-&gt;{_lib_basename},
+</span><span class="">  535: 		$relative,
+</span><span class="">  536: 	);
+</span><span class="">  537: 
+</span><span class="">  538: 	# Parse the workspace copy and apply the mutation transform
+</span><span class="">  539: 	my $doc = PPI::Document-&gt;new($target) or croak &quot;Failed to parse $target&quot;;
 </span><span class="">  540: 
-</span><span class="">  541:     {
-</span><span class="">  542:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutator&#39; },
-</span><span class="">  543:     }
-</span><span class="">  544: 
-</span><span class="">  545: =head4 output
-</span><span class="">  546: 
-</span><span class="">  547:     { type =&gt; SCALAR }
-</span><span class="">  548: 
-</span><span class="">  549: =cut
+</span><span class="">  541: 	$mutant-&gt;transform-&gt;($doc);
+</span><span class="">  542: 
+</span><span class="">  543: 	$doc-&gt;save($target);
+</span><span class="">  544: }
+</span><span class="">  545: 
+</span><span class="">  546: =head2 run_tests
+</span><span class="">  547: 
+</span><span class="">  548: Run the test suite against the current workspace and return whether all
+</span><span class="">  549: tests passed.
 </span><span class="">  550: 
-</span><span class="">  551: sub run_tests {
-</span><span class="">  552: 	my $self = $_[0];
-</span><span class="">  553: 
-</span><span class="">  554: 	# Derive prove from $^X so CPAN smokers that install to a non-PATH
-</span><span class="">  555: 	# location still resolve the correct perl/prove pair.  Config{bin}
-</span><span class="">  556: 	# is a reliable fallback; bare &#39;prove&#39; is last resort only.
-</span><span class="">  557: 	my ($vol, $dir) = File::Spec-&gt;splitpath($^X);
-</span><span class="">  558: 	my $prove       = File::Spec-&gt;catpath($vol, $dir, &#39;prove&#39;);
-</span><span class="">  559: 	$prove          = File::Spec-&gt;catfile($Config{bin}, &#39;prove&#39;) unless -x $prove;
-</span><span class="">  560: 	$prove          = &#39;prove&#39; unless -x $prove;
+</span><span class="">  551:     my $survived = $mutator-&gt;run_tests();
+</span><span class="">  552: 
+</span><span class="">  553: =head3 Arguments
+</span><span class="">  554: 
+</span><span class="">  555: None beyond C&lt;$self&gt;.
+</span><span class="">  556: 
+</span><span class="">  557: =head3 Returns
+</span><span class="">  558: 
+</span><span class="">  559: 1 if all tests passed (mutant survived), 0 if any test failed (mutant
+</span><span class="">  560: killed).
 </span><span class="">  561: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  562: 	return system($prove, &#39;-l&#39;, &#39;t&#39;) == 0;
-</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="">  563: }
-</span><span class="">  564: 
-</span><span class="">  565: # --------------------------------------------------
-</span><span class="">  566: # _dedup_mutants
-</span><span class="">  567: #
-</span><span class="">  568: # Purpose:    Remove duplicate and redundant mutants
-</span><span class="">  569: #             from a list, used in fast mutation mode
-</span><span class="">  570: #             to reduce the number of mutants to run.
-</span><span class="">  571: #
-</span><span class="">  572: # Entry:      $mutants - arrayref of Mutant objects.
-</span><span class="">  573: #
-</span><span class="">  574: # Exit:       Returns an arrayref of deduplicated
-</span><span class="">  575: #             Mutant objects.
-</span><span class="">  576: #
-</span><span class="">  577: # Side effects: None.
-</span><span class="">  578: #
-</span><span class="">  579: # Notes:      Deduplication key uses line, original,
-</span><span class="">  580: #             and description rather than the transform
-</span><span class="">  581: #             coderef, which is not stable as a string.
-</span><span class="">  582: # --------------------------------------------------
-</span><span class="">  583: sub _dedup_mutants {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">584 → 588 → 601</span></span>  584: 	my ($mutants) = @_;
-</span><span class="">  585: 	my @rc;
-</span><span class="">  586: 	my %seen;
-</span><span class="">  587: 
-</span><span class="">  588: 	for my $m (@{$mutants}) {
-</span><span class="">  589: 		# Build a stable key from metadata &acirc;&#128;&#148; not from the coderef
-</span><span class="">  590: 		my $key = join &#39;|&#39;,
-</span><span class="">  591: 			$m-&gt;line        // &#39;&#39;,
-</span><span class="">  592: 			$m-&gt;original    // &#39;&#39;,
-</span><span class="">  593: 			$m-&gt;description // &#39;&#39;;
-</span><span class="">  594: 
-</span><span class="">  595: 		next if $seen{$key}++;
-</span><span class="">  596: 		next if _is_redundant_mutation($m);
-</span><span class="">  597: 
-</span><span class="">  598: 		push @rc, $m;
-</span><span class="">  599: 	}
-</span><span class="">  600: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  601: 	return \@rc;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  602: }
-</span><span class="">  603: 
-</span><span class="">  604: # --------------------------------------------------
-</span><span class="">  605: # _is_redundant_mutation
-</span><span class="">  606: #
-</span><span class="">  607: # Return true if a mutant is considered
-</span><span class="">  608: #     redundant and should be skipped in fast
-</span><span class="">  609: #     mutation mode.
-</span><span class="">  610: #
-</span><span class="">  611: # Entry:      $m - a Mutant object.
-</span><span class="">  612: #
-</span><span class="">  613: # Exit:       Returns 1 if redundant, 0 otherwise.
-</span><span class="">  614: #
-</span><span class="">  615: # Notes:      Checks for arithmetic no-ops, double
-</span><span class="">  616: #             negation inside conditionals, boolean
-</span><span class="">  617: #             literal flips, mutations inside comments,
-</span><span class="">  618: #             and equivalent numeric comparisons.
-</span><span class="">  619: #             Does not compare transform coderefs &acirc;&#128;&#148;
-</span><span class="">  620: #             they are not meaningful as strings.
-</span><span class="">  621: # --------------------------------------------------
-</span><span class="">  622: sub _is_redundant_mutation {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">623 → 633 → 638</span></span>  623: 	my ($m) = @_;
-</span><span class="">  624: 
-</span><span class="">  625: 	my $orig = $m-&gt;original // &#39;&#39;;
-</span><span class="">  626: 
-</span><span class="">  627: 	# Arithmetic no-ops add nothing to mutation coverage
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  628: 	return 1 if $orig =~ /\+\s*0$/;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  629: 	return 1 if $orig =~ /-\s*0$/;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  630: 
-</span><span class="">  631: 	# Double negation inside conditionals forces boolean context
-</span><span class="">  632: 	# in Perl and is not a meaningful mutation
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  633: 	if($m-&gt;context &amp;&amp; $m-&gt;context eq &#39;conditional&#39;) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  634: 		return 1 if $orig =~ /^\!\!/;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  635: 	}
-</span><span class="">  636: 
-</span><span class="">  637: 	# Boolean literal flip on a standalone 1 or 0 is trivial
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  638: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  639: 
-</span><span class="">  640: 	# Mutations inside comments are unreachable code
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  641: 	return 1 if $m-&gt;line_content &amp;&amp; $m-&gt;line_content =~ /^\s*#/;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  562: =head3 Side effects
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="">  563: 
+</span><span class="">  564: Executes an external process running the test suite.
+</span><span class="">  565: 
+</span><span class="">  566: =head3 Notes
+</span><span class="">  567: 
+</span><span class="">  568: Uses C&lt;prove&gt; found on PATH. Sets C&lt;PERL5LIB&gt; to include the workspace
+</span><span class="">  569: lib directory before running.
+</span><span class="">  570: 
+</span><span class="">  571: =head3 API specification
+</span><span class="">  572: 
+</span><span class="">  573: =head4 input
+</span><span class="">  574: 
+</span><span class="">  575:     {
+</span><span class="">  576:         self =&gt; { type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::Mutator&#39; },
+</span><span class="">  577:     }
+</span><span class="">  578: 
+</span><span class="">  579: =head4 output
+</span><span class="">  580: 
+</span><span class="">  581:     { type =&gt; SCALAR }
+</span><span class="">  582: 
+</span><span class="">  583: =head3 EXAMPLE
+</span><span class="">  584: 
+</span><span class="">  585:     my $survived = $mutator-&gt;run_tests();
+</span><span class="">  586:     if($survived) {
+</span><span class="">  587:         print &quot;mutant survived\n&quot;;
+</span><span class="">  588:     } else {
+</span><span class="">  589:         print &quot;mutant killed\n&quot;;
+</span><span class="">  590:     }
+</span><span class="">  591: 
+</span><span class="">  592: =head3 FORMAL SPECIFICATION
+</span><span class="">  593: 
+</span><span class="">  594: Post: C&lt;result &acirc;&#136;&#136; {0, 1}&gt;
+</span><span class="">  595:       &acirc;&#136;&sect; C&lt;result == 1&gt; &acirc;&#159;&ordm; all tests in C&lt;t/&gt; passed against current C&lt;lib/&gt;
+</span><span class="">  596: 
+</span><span class="">  597: =cut
+</span><span class="">  598: 
+</span><span class="">  599: sub run_tests {
+</span><span class="">  600: 	my $self = $_[0];
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  601: 
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  602: 	# Derive prove from $^X so CPAN smokers that install to a non-PATH
+</span><span class="">  603: 	# location still resolve the correct perl/prove pair.  Config{bin}
+</span><span class="">  604: 	# is a reliable fallback; bare &#39;prove&#39; is last resort only.
+</span><span class="">  605: 	my ($vol, $dir) = File::Spec-&gt;splitpath($^X);
+</span><span class="">  606: 	my $prove       = File::Spec-&gt;catpath($vol, $dir, &#39;prove&#39;);
+</span><span class="">  607: 	$prove          = File::Spec-&gt;catfile($Config{bin}, &#39;prove&#39;) unless -x $prove;
+</span><span class="">  608: 	$prove          = &#39;prove&#39; unless -x $prove;
+</span><span class="">  609: 
+</span><span class="">  610: 	return system($prove, &#39;-l&#39;, &#39;t&#39;) == 0;
+</span><span class="">  611: }
+</span><span class="">  612: 
+</span><span class="">  613: # --------------------------------------------------
+</span><span class="">  614: # _dedup_mutants
+</span><span class="">  615: #
+</span><span class="">  616: # Purpose:    Remove duplicate and redundant mutants
+</span><span class="">  617: #             from a list, used in fast mutation mode
+</span><span class="">  618: #             to reduce the number of mutants to run.
+</span><span class="">  619: #
+</span><span class="">  620: # Entry:      $mutants - arrayref of Mutant objects.
+</span><span class="">  621: #
+</span><span class="">  622: # Exit:       Returns an arrayref of deduplicated
+</span><span class="">  623: #             Mutant objects.
+</span><span class="">  624: #
+</span><span class="">  625: # Side effects: None.
+</span><span class="">  626: #
+</span><span class="">  627: # Notes:      Deduplication key uses line, original,
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  628: #             and description rather than the transform
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  629: #             coderef, which is not stable as a string.
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  630: # --------------------------------------------------
+</span><span class="">  631: sub _dedup_mutants {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">632 → 636 → 649</span></span>  632: 	my ($mutants) = @_;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  633: 	my @rc;
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  634: 	my %seen;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  635: 
+</span><span class="">  636: 	for my $m (@{$mutants}) {
+</span><span class="">  637: 		# Build a stable key from metadata &acirc;&#128;&#148; not from the coderef
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  638: 		my $key = join &#39;|&#39;,
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  639: 			$m-&gt;line        // &#39;&#39;,
+</span><span class="">  640: 			$m-&gt;original    // &#39;&#39;,
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  641: 			$m-&gt;description // &#39;&#39;;
 </span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  642: 
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  643: 	return 0;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  644: }
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  643: 		next if $seen{$key}++;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  644: 		next if _is_redundant_mutation($m);
 </span><span class="">  645: 
-</span><span class="">  646: =head1 LIMITATIONS
-</span><span class="">  647: 
-</span><span class="">  648: =over 4
-</span><span class="">  649: 
-</span><span class="">  650: =item * Single strategy registry
+</span><span class="">  646: 		push @rc, $m;
+</span><span class="">  647: 	}
+</span><span class="">  648: 
+</span><span class="">  649: 	return \@rc;
+</span><span class="">  650: }
 </span><span class="">  651: 
-</span><span class="">  652: The four built-in mutation strategies are hardcoded in C&lt;new&gt;. There is no
-</span><span class="">  653: plugin mechanism for registering additional strategies without subclassing.
-</span><span class="">  654: A future version should accept a C&lt;strategies&gt; arrayref argument.
-</span><span class="">  655: 
-</span><span class="">  656: =item * No parallelism
-</span><span class="">  657: 
-</span><span class="">  658: C&lt;run_tests&gt; is synchronous. For large test suites or large mutant sets,
-</span><span class="">  659: wall-clock time scales linearly. The in-place mutation strategy also
-</span><span class="">  660: serialises all mutants behind a single file lock.
-</span><span class="">  661: 
-</span><span class="">  662: =item * PPI re-parse per apply_mutant call
-</span><span class="">  663: 
-</span><span class="">  664: C&lt;apply_mutant&gt; re-parses the workspace copy of the target file for every
-</span><span class="">  665: mutant. For very large single-file modules the PPI parse time may dominate.
-</span><span class="">  666: 
-</span><span class="">  667: =item * apply_mutant does not restore on abnormal exit
-</span><span class="">  668: 
-</span><span class="">  669: If the process is killed between the write and restore in
-</span><span class="">  670: C&lt;bin/test-generator-mutate&gt;, the project file is left mutated.
-</span><span class="">  671: A C&lt;git restore lib/...&gt; recovers it.
+</span><span class="">  652: # --------------------------------------------------
+</span><span class="">  653: # _is_redundant_mutation
+</span><span class="">  654: #
+</span><span class="">  655: # Return true if a mutant is considered
+</span><span class="">  656: #     redundant and should be skipped in fast
+</span><span class="">  657: #     mutation mode.
+</span><span class="">  658: #
+</span><span class="">  659: # Entry:      $m - a Mutant object.
+</span><span class="">  660: #
+</span><span class="">  661: # Exit:       Returns 1 if redundant, 0 otherwise.
+</span><span class="">  662: #
+</span><span class="">  663: # Notes:      Checks for arithmetic no-ops, double
+</span><span class="">  664: #             negation inside conditionals, boolean
+</span><span class="">  665: #             literal flips, mutations inside comments,
+</span><span class="">  666: #             and equivalent numeric comparisons.
+</span><span class="">  667: #             Does not compare transform coderefs &acirc;&#128;&#148;
+</span><span class="">  668: #             they are not meaningful as strings.
+</span><span class="">  669: # --------------------------------------------------
+</span><span class="">  670: sub _is_redundant_mutation {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">671 → 681 → 686</span></span>  671: 	my ($m) = @_;
 </span><span class="">  672: 
-</span><span class="">  673: =back
+</span><span class="">  673: 	my $orig = $m-&gt;original // &#39;&#39;;
 </span><span class="">  674: 
-</span><span class="">  675: =head1 SEE ALSO
-</span><span class="">  676: 
-</span><span class="">  677: =over 4
+</span><span class="">  675: 	# Arithmetic no-ops add nothing to mutation coverage
+</span><span class="">  676: 	return 1 if $orig =~ /\+\s*0$/;
+</span><span class="">  677: 	return 1 if $orig =~ /-\s*0$/;
 </span><span class="">  678: 
-</span><span class="">  679: =item C&lt;bin/test-generator-mutate&gt;
-</span><span class="">  680: 
-</span><span class="">  681: =item L&lt;Devel::Mutator&gt;
-</span><span class="">  682: 
-</span><span class="">  683: =back
+</span><span class="">  679: 	# Double negation inside conditionals forces boolean context
+</span><span class="">  680: 	# in Perl and is not a meaningful mutation
+</span><span class="">  681: 	if($m-&gt;context &amp;&amp; $m-&gt;context eq &#39;conditional&#39;) {
+</span><span class="">  682: 		return 1 if $orig =~ /^\!\!/;
+</span><span class="">  683: 	}
 </span><span class="">  684: 
-</span><span class="">  685: =head1 AUTHOR
-</span><span class="">  686: 
-</span><span class="">  687: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
-</span><span class="">  688: 
-</span><span class="">  689: =head1 LICENCE AND COPYRIGHT
+</span><span class="">  685: 	# Boolean literal flip on a standalone 1 or 0 is trivial
+</span><span class="">  686: 	return 1 if $orig =~ /^\s*(?:1|0)\s*$/;
+</span><span class="">  687: 
+</span><span class="">  688: 	# Mutations inside comments are unreachable code
+</span><span class="">  689: 	return 1 if $m-&gt;line_content &amp;&amp; $m-&gt;line_content =~ /^\s*#/;
 </span><span class="">  690: 
-</span><span class="">  691: Copyright 2026 Nigel Horne.
-</span><span class="">  692: 
-</span><span class="">  693: Usage is subject to the terms of GPL2.
-</span><span class="">  694: If you use it,
-</span><span class="">  695: please let me know.
-</span><span class="">  696: 
-</span><span class="">  697: =cut
-</span><span class="">  698: 
-</span><span class="">  699: 1;
+</span><span class="">  691: 	return 0;
+</span><span class="">  692: }
+</span><span class="">  693: 
+</span><span class="">  694: =head1 COMMON PITFALLS
+</span><span class="">  695: 
+</span><span class="">  696: =over 4
+</span><span class="">  697: 
+</span><span class="">  698: =item Calling C&lt;apply_mutant&gt; before C&lt;prepare_workspace&gt;
+</span><span class="">  699: 
+</span><span class="">  700: C&lt;apply_mutant&gt; requires C&lt;prepare_workspace&gt; to have been called first. The
+</span><span class="">  701: workspace holds the isolated copy of C&lt;lib/&gt; that receives mutations.
+</span><span class="">  702: 
+</span><span class="">  703: =item Passing an absolute path as C&lt;lib_dir&gt;
+</span><span class="">  704: 
+</span><span class="">  705: C&lt;lib_dir&gt; must be a B&lt;relative&gt; path (e.g. C&lt;lib&gt;). An absolute path causes
+</span><span class="">  706: C&lt;apply_mutant&gt; to construct a doubled directory under the workspace and then
+</span><span class="">  707: fail to find the target file.
+</span><span class="">  708: 
+</span><span class="">  709: =item Checking C&lt;&lt; $mutator-&gt;{workspace} &gt;&gt; after the refactor
+</span><span class="">  710: 
+</span><span class="">  711: Internal workspace state is stored in C&lt;_workspace&gt;, C&lt;_relative&gt;, and
+</span><span class="">  712: C&lt;_lib_basename&gt; (note the underscore prefix). The original C&lt;lib_dir&gt; value
+</span><span class="">  713: is never overwritten. Old code that reads C&lt;&lt; $mutator-&gt;{workspace} &gt;&gt; or
+</span><span class="">  714: C&lt;&lt; $mutator-&gt;{relative} &gt;&gt; (without underscores) will not find these keys.
+</span><span class="">  715: 
+</span><span class="">  716: =item Forgetting that C&lt;run_tests&gt; drives C&lt;prove&gt; from C&lt;$^X&gt;
+</span><span class="">  717: 
+</span><span class="">  718: C&lt;run_tests&gt; resolves C&lt;prove&gt; from the same Perl binary used to run the script.
+</span><span class="">  719: If you shell out to C&lt;prove&gt; directly in your own integration code, make sure
+</span><span class="">  720: you are using the matching C&lt;prove&gt;.
+</span><span class="">  721: 
+</span><span class="">  722: =item C&lt;generate_mutants&gt; in list vs scalar context
+</span><span class="">  723: 
+</span><span class="">  724: C&lt;generate_mutants&gt; returns a flat list in list context and an arrayref in
+</span><span class="">  725: scalar context.  Assign to an arrayref (C&lt;my $m = $mutator-E&lt;gt&gt;generate_mutants()&gt;)
+</span><span class="">  726: to guarantee you always get a reference regardless of calling context.
+</span><span class="">  727: 
+</span><span class="">  728: =back
+</span><span class="">  729: 
+</span><span class="">  730: =head1 LIMITATIONS
+</span><span class="">  731: 
+</span><span class="">  732: =over 4
+</span><span class="">  733: 
+</span><span class="">  734: =item * Single strategy registry
+</span><span class="">  735: 
+</span><span class="">  736: The four built-in mutation strategies are hardcoded in C&lt;new&gt;. There is no
+</span><span class="">  737: plugin mechanism for registering additional strategies without subclassing.
+</span><span class="">  738: A future version should accept a C&lt;strategies&gt; arrayref argument.
+</span><span class="">  739: 
+</span><span class="">  740: =item * No parallelism
+</span><span class="">  741: 
+</span><span class="">  742: C&lt;run_tests&gt; is synchronous. For large test suites or large mutant sets,
+</span><span class="">  743: wall-clock time scales linearly. The in-place mutation strategy also
+</span><span class="">  744: serialises all mutants behind a single file lock.
+</span><span class="">  745: 
+</span><span class="">  746: =item * PPI re-parse per apply_mutant call
+</span><span class="">  747: 
+</span><span class="">  748: C&lt;apply_mutant&gt; re-parses the workspace copy of the target file for every
+</span><span class="">  749: mutant. For very large single-file modules the PPI parse time may dominate.
+</span><span class="">  750: 
+</span><span class="">  751: =item * apply_mutant does not restore on abnormal exit
+</span><span class="">  752: 
+</span><span class="">  753: If the process is killed between the write and restore in
+</span><span class="">  754: C&lt;bin/test-generator-mutate&gt;, the project file is left mutated.
+</span><span class="">  755: A C&lt;git restore lib/...&gt; recovers it.
+</span><span class="">  756: 
+</span><span class="">  757: =back
+</span><span class="">  758: 
+</span><span class="">  759: =head1 SEE ALSO
+</span><span class="">  760: 
+</span><span class="">  761: =over 4
+</span><span class="">  762: 
+</span><span class="">  763: =item C&lt;bin/test-generator-mutate&gt;
+</span><span class="">  764: 
+</span><span class="">  765: =item L&lt;Devel::Mutator&gt;
+</span><span class="">  766: 
+</span><span class="">  767: =back
+</span><span class="">  768: 
+</span><span class="">  769: =head1 AUTHOR
+</span><span class="">  770: 
+</span><span class="">  771: Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  772: 
+</span><span class="">  773: =head1 LICENCE AND COPYRIGHT
+</span><span class="">  774: 
+</span><span class="">  775: Copyright 2026 Nigel Horne.
+</span><span class="">  776: 
+</span><span class="">  777: Usage is subject to the terms of GPL2.
+</span><span class="">  778: If you use it,
+</span><span class="">  779: please let me know.
+</span><span class="">  780: 
+</span><span class="">  781: =cut
+</span><span class="">  782: 
+</span><span class="">  783: 1;
 </span></pre>
 
 <script>
