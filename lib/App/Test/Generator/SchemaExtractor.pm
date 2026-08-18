@@ -2699,6 +2699,7 @@ sub _extract_pvs_schema {
 			next unless defined $next;
 			if($next->content() =~ /schema\s*=>\s*(\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\})/s) {
 				my $schema_text = $1;
+				next if $schema_text =~ $UNSAFE_KEYWORD_RE;
 				my $compartment = Safe->new();
 				$compartment->permit_only(qw(:base_core :base_mem :base_orig));
 
@@ -2762,7 +2763,7 @@ sub _extract_pv_schema {
 			my $next = $call->next_sibling();
 			my ($arglist, $schema_text) = $self->_parse_pv_call($next);
 
-			if($schema_text) {
+			if($schema_text && $schema_text !~ $UNSAFE_KEYWORD_RE) {
 				my $compartment = Safe->new();
 				$compartment->permit_only(qw(:base_core :base_mem :base_orig));
 
@@ -2904,7 +2905,7 @@ sub _extract_moosex_params_schema
 			my $next = $call->next_sibling();
 			my ($arglist, $schema_text) = $self->_parse_pv_call($next);
 
-			if($schema_text) {
+			if($schema_text && $schema_text !~ $UNSAFE_KEYWORD_RE) {
 				my $compartment = Safe->new();
 				$compartment->permit_only(qw(:base_core :base_mem :base_orig));
 

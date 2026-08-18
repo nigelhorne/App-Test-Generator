@@ -219,14 +219,15 @@ From Perl:
     output_dir => '/tmp',
   );
   my $schemas = $extractor->extract_all();
+  use File::Temp qw(tempfile);
   foreach my $schema(keys %{$schemas}) {
-    my $tempfile = '/var/tmp/foo.t';	# Use File::Temp in real life
+    my ($fh, $tempfile) = tempfile(SUFFIX => '.t', UNLINK => 1);
+    close $fh;
     App::Test::Generator->generate(
       schema => $schemas->{$schema},
       output_file => $tempfile,
     );
-    system("$^X -Ilib $tempfile");
-    unlink $tempfile;
+    system($^X, '-Ilib', $tempfile);
   }
 
 =head1 OVERVIEW
