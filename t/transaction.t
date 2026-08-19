@@ -32,7 +32,7 @@ Readonly my $TARGET_SUB => sub {
 
 Readonly my $BUG_SUB => sub {
 	my ($n) = @_;
-	die "bug: got $n" if defined $n && $n == 0;
+	die "bug: got $n" if defined $n && $n =~ /^-?\d+$/ && $n == 0;
 	return $n;
 };
 
@@ -173,18 +173,21 @@ subtest 'T3: bug inputs survive minimize_corpus() unconditionally' => sub {
 	$f->run();
 
 	my @bugs_before = @{ $f->bugs() };
-	skip 'No bugs triggered in this run — seed/schema did not hit 0', 1
-		unless @bugs_before;
 
-	$f->minimize_corpus();
+	SKIP: {
+		skip 'No bugs triggered in this run — seed/schema did not hit 0', 1
+			unless @bugs_before;
 
-	my %corpus_inputs = map { _canonical($_->{input}) => 1 } @{ $f->corpus() };
-	for my $bug (@bugs_before) {
-		ok($corpus_inputs{ _canonical($bug->{input}) },
-			'bug input retained in corpus after minimize');
+		$f->minimize_corpus();
+
+		my %corpus_inputs = map { _canonical($_->{input}) => 1 } @{ $f->corpus() };
+		for my $bug (@bugs_before) {
+			ok($corpus_inputs{ _canonical($bug->{input}) },
+				'bug input retained in corpus after minimize');
+		}
+
+		diag("bugs: ${\scalar @bugs_before}") if $ENV{TEST_VERBOSE};
 	}
-
-	diag("bugs: ${\scalar @bugs_before}") if $ENV{TEST_VERBOSE};
 };
 
 # canonical stringification for input comparison
@@ -286,13 +289,16 @@ END_PM
 
 	my $mut = App::Test::Generator::Mutator->new(file => $path);
 	my @mutants = $mut->generate_mutants();
-	skip 'No mutants generated', 1 unless @mutants;
 
-	throws_ok(
-		sub { $mut->apply_mutant($mutants[0]) },
-		qr/Workspace not prepared/,
-		'apply_mutant without prepare_workspace croaks',
-	);
+	SKIP: {
+		skip 'No mutants generated', 1 unless @mutants;
+
+		throws_ok(
+			sub { $mut->apply_mutant($mutants[0]) },
+			qr/Workspace not prepared/,
+			'apply_mutant without prepare_workspace croaks',
+		);
+	}
 };
 
 subtest 'T6b: generate_mutants → prepare_workspace → apply_mutant modifies workspace file' => sub {
@@ -323,20 +329,23 @@ END_PM
 	);
 
 	my @mutants = $mut->generate_mutants();
-	skip 'No mutants generated', 3 unless @mutants;
 
-	my $ws = $mut->prepare_workspace();
-	ok(-d $ws, 'workspace directory exists');
+	SKIP: {
+		skip 'No mutants generated', 3 unless @mutants;
 
-	$mut->apply_mutant($mutants[0]);
+		my $ws = $mut->prepare_workspace();
+		ok(-d $ws, 'workspace directory exists');
 
-	# workspace layout: $ws / basename($lib_dir) / Trans6b.pm
-	my $ws_path = File::Spec->catfile($ws, File::Basename::basename($lib_dir), $pm_name);
-	my $mutated = do { local $/; open my $fh, '<', $ws_path; <$fh> };
+		$mut->apply_mutant($mutants[0]);
 
-	isnt($mutated, $original, 'workspace copy differs from original after apply_mutant');
-	my $after_orig = do { local $/; open my $fh, '<', $path; <$fh> };
-	is($after_orig, $original, 'original project file is unmodified after apply_mutant');
+		# workspace layout: $ws / basename($lib_dir) / Trans6b.pm
+		my $ws_path = File::Spec->catfile($ws, File::Basename::basename($lib_dir), $pm_name);
+		my $mutated = do { local $/; open my $fh, '<', $ws_path; <$fh> };
+
+		isnt($mutated, $original, 'workspace copy differs from original after apply_mutant');
+		my $after_orig = do { local $/; open my $fh, '<', $path; <$fh> };
+		is($after_orig, $original, 'original project file is unmodified after apply_mutant');
+	}
 };
 
 # ==================================================================
@@ -540,6 +549,327 @@ subtest 'T10: extract_all() creates a missing output dir and writes YAML files' 
 	ok(-d $new_dir, 'extract_all() created the output dir');
 	my @yamls = glob(File::Spec->catfile($new_dir, '*.yml'));
 	ok(@yamls > 0, 'at least one YAML file written');
+};
+
+# ==================================================================
+# T11: BenchmarkGenerator schema→generate→compile lifecycle
+#
+# Walks the full BenchmarkGenerator lifecycle: hand-craft a schema,
+# call generate(), write the output to a temp file, compile it with
+# perl -c, and assert the result is deterministic (second call == first).
+# ==================================================================
+
+subtest 'T11a: BenchmarkGenerator generate() produces compilable output' => sub {
+	require App::Test::Generator::BenchmarkGenerator;
+
+	Readonly my %BENCH_SCHEMA => (
+		module   => 'builtin',
+		function => 'abs',
+		input    => { n => { type => 'integer', position => 0 } },
+	);
+
+	my $bg   = App::Test::Generator::BenchmarkGenerator->new(schema => {%BENCH_SCHEMA});
+	my $code;
+	lives_ok(sub { $code = $bg->generate() }, 'generate() lives');
+	ok(defined $code && length($code) > 0, 'generate() returns non-empty string');
+	like($code, qr/use Benchmark/,  'output contains use Benchmark');
+	like($code, qr/cmpthese/,       'output contains cmpthese call');
+
+	my ($fh, $path) = tempfile(SUFFIX => '.pl', UNLINK => 1);
+	print {$fh} $code;
+	close $fh;
+
+	# Compile with perl -c — no external modules needed for builtin schema
+	my $exit = system($^X, '-c', $path);
+	is($exit, 0, 'generated benchmark script compiles cleanly');
+
+	done_testing();
+};
+
+subtest 'T11b: BenchmarkGenerator generate() is deterministic (idempotent output)' => sub {
+	require App::Test::Generator::BenchmarkGenerator;
+
+	Readonly my %BENCH_SCHEMA => (
+		module   => 'builtin',
+		function => 'length',
+		input    => { s => { type => 'string', position => 0 } },
+	);
+
+	my $bg    = App::Test::Generator::BenchmarkGenerator->new(schema => {%BENCH_SCHEMA});
+	my $first = $bg->generate();
+	my $second = $bg->generate();
+	is($first, $second, 'two generate() calls produce identical output');
+
+	done_testing();
+};
+
+# ==================================================================
+# T12: PodExampleExtractor → eval pipeline
+#
+# Write a .pm file containing both a verbatim SYNOPSIS block and an
+# annotated inline example.  Run extract(), confirm the structural
+# split, then simulate the pod-example-tester eval loop by evaluating
+# each annotated bare_expr and comparing to expected.
+# ==================================================================
+
+subtest 'T12: PodExampleExtractor extract → eval pipeline' => sub {
+	require App::Test::Generator::PodExampleExtractor;
+
+	my ($fh, $pm) = tempfile(SUFFIX => '.pm', UNLINK => 1);
+	print {$fh} <<'PODPM';
+package ExampleTest;
+
+=head1 SYNOPSIS
+
+    my $x = 2 + 2;
+
+=head1 METHODS
+
+=head2 double
+
+    my $result = double(3);   # => 6
+
+=cut
+
+sub double { return $_[0] * 2 }
+
+1;
+PODPM
+	close $fh;
+
+	my $ex  = App::Test::Generator::PodExampleExtractor->new(file => $pm);
+	my $res = $ex->extract();
+	is(ref($res), 'ARRAY', 'extract() returns arrayref');
+
+	# At least one entry should be verbatim (undef expected)
+	my @verbatim  = grep { !defined $_->{expected} } @$res;
+	my @annotated = grep {  defined $_->{expected} } @$res;
+
+	ok(scalar @verbatim  > 0, 'at least one verbatim block (expected => undef)');
+	ok(scalar @annotated > 0, 'at least one annotated line (expected defined)');
+
+	# Simulate pod-example-tester: eval bare_expr, compare to expected.
+	# Load the temp module first so functions like double() are defined.
+	require $pm;
+
+	for my $entry (@annotated) {
+		my $expr     = $entry->{annotated_line} // $entry->{code};
+		my $expected = $entry->{expected};
+		# Strip any leading assignment so eval returns the value
+		$expr =~ s/^\s*(?:my\s+\$\w+\s*=\s*)//;
+		my $got = eval "ExampleTest::$expr";  ## no critic (BuiltinFunctions::ProhibitStringyEval)
+		is($got, $expected, "annotated eval: '$expr' == '$expected'");
+	}
+
+	done_testing();
+};
+
+# ==================================================================
+# T13: Planner full pipeline — build_plan() → plan_all() consistency
+#
+# Instantiate Planner with a minimal schema that has _analysis keys.
+# Assert build_plan() returns all five expected keys and plan_all()
+# returns a method-keyed hashref.  Run both twice to verify
+# idempotency.
+# ==================================================================
+
+subtest 'T13: Planner build_plan() + plan_all() lifecycle and idempotency' => sub {
+	require App::Test::Generator::Planner;
+
+	Readonly my %METHOD_SCHEMA => (
+		greet => {
+			input    => { name => { type => 'string', position => 0 } },
+			output   => { type => 'string' },
+			_analysis => {
+				side_effects  => { purity_level => 'pure', calls_external => 0, performs_io => 0 },
+				dependencies  => {},
+				complexity    => { cyclomatic_score => 1, complexity_level => 'low' },
+			},
+		},
+	);
+
+	my $planner = App::Test::Generator::Planner->new(
+		schemas => {%METHOD_SCHEMA},
+		package => 'Sample::Greeter',
+	);
+
+	my $plan1;
+	lives_ok(sub { $plan1 = $planner->build_plan() }, 'build_plan() lives');
+	for my $key (qw(strategy isolation fixture mock groups)) {
+		ok(exists $plan1->{$key}, "build_plan() result has '$key' key");
+	}
+
+	my $all1;
+	lives_ok(sub { $all1 = $planner->plan_all() }, 'plan_all() lives');
+	ok(ref($all1) eq 'HASH', 'plan_all() returns a hashref');
+	ok(exists $all1->{greet}, 'plan_all() keyed by method name');
+
+	# Idempotency
+	my $plan2 = $planner->build_plan();
+	my $all2  = $planner->plan_all();
+	is_deeply($plan2, $plan1, 'build_plan() is idempotent');
+	is_deeply($all2,  $all1,  'plan_all() is idempotent');
+
+	done_testing();
+};
+
+# ==================================================================
+# T14: Analyzer trio sequential composition → Model::Method
+#
+# Pass a method body through Complexity, SideEffect, and Return
+# analyzers in sequence, feeding all evidence into a Model::Method.
+# Verify the final resolve_return_type and resolve_confidence are
+# consistent with the combined signal set.
+# Mid-flight: mock SideEffect to return empty → fewer evidence entries.
+# ==================================================================
+
+subtest 'T14: Complexity + SideEffect + Return → Model::Method evidence pipeline' => sub {
+	require App::Test::Generator::Analyzer::Complexity;
+	require App::Test::Generator::Analyzer::SideEffect;
+	require App::Test::Generator::Analyzer::Return;
+	require App::Test::Generator::Model::Method;
+
+	Readonly my $BODY => <<'BODY';
+sub process {
+    my ($self, $val) = @_;
+    if ($val > 0) {
+        print "positive\n";
+        $self->{count}++;
+    }
+    return $self;
+}
+BODY
+
+	my $method_hr = { name => 'process', source => $BODY, body => $BODY };
+
+	my $complexity = new_ok('App::Test::Generator::Analyzer::Complexity');
+	my $sideeffect = new_ok('App::Test::Generator::Analyzer::SideEffect');
+	my $return_an  = new_ok('App::Test::Generator::Analyzer::Return');
+
+	my $c_result = $complexity->analyze($method_hr);
+	my $s_result = $sideeffect->analyze($method_hr);
+
+	# Build a Model::Method and add evidence from each analyzer
+	my $mm = App::Test::Generator::Model::Method->new(
+		name   => 'process',
+		source => $BODY,
+	);
+
+	# Add complexity evidence via input_typed signal when score > 1
+	$mm->add_evidence(
+		category => 'input',
+		signal   => 'input_typed',
+		weight   => 1,
+	) if ($c_result->{cyclomatic_score} // 0) > 1;
+
+	# Add side-effect evidence
+	$mm->add_evidence(
+		category => 'effect',
+		signal   => 'mutates_self',
+		weight   => 2,
+	) if $s_result->{mutates_self};
+
+	# Add return-type evidence by running the Return analyzer on the Method object
+	$return_an->analyze($mm);
+
+	my @ev_full = $mm->evidence();
+	ok(scalar @ev_full > 0, 'evidence accumulated after three-analyzer pass');
+	my $return_type = $mm->resolve_return_type();
+	my $confidence  = $mm->resolve_confidence();
+	ok(defined $return_type, 'resolve_return_type() returns a value');
+	ok(defined $confidence,  'resolve_confidence() returns a value');
+	# return $self pattern → should yield 'object'
+	is($return_type, 'object', 'three-analyzer pipeline resolves return_type to object');
+
+	# Mid-flight failure: SideEffect mocked to empty → fewer evidence entries
+	my $mm2 = App::Test::Generator::Model::Method->new(
+		name   => 'process',
+		source => $BODY,
+	);
+	# Only Return analyzer runs (simulating SideEffect unavailable)
+	$return_an->analyze($mm2);
+	my @ev_partial = $mm2->evidence();
+	ok(scalar @ev_partial <= scalar @ev_full,
+		'degraded pipeline has <= evidence entries vs full pipeline');
+
+	done_testing();
+};
+
+# ==================================================================
+# T15: Exporter::YAML write → reload → re-export round-trip
+#
+# Export a plan to a temp file; reload with YAML::XS::LoadFile;
+# assert is_deeply equality.  Re-export the reloaded plan to a second
+# file and assert byte-for-byte identity between the two YAML files.
+# Mid-flight: simulate DumpFile failure on the second call and verify
+# the first file is intact.
+# ==================================================================
+
+subtest 'T15: Exporter::YAML export → reload → re-export byte-for-byte round-trip' => sub {
+	require App::Test::Generator::Exporter::YAML;
+	require YAML::XS;
+	require Test::Mockingbird;
+
+	Readonly my %PLAN => (
+		strategy => { greet => { getter_test => 1 } },
+		mock     => {},
+	);
+
+	my ($fh1, $path1) = tempfile(SUFFIX => '.yml', UNLINK => 1);
+	close $fh1;
+	my ($fh2, $path2) = tempfile(SUFFIX => '.yml', UNLINK => 1);
+	close $fh2;
+
+	my $exporter = bless {}, 'App::Test::Generator::Exporter::YAML';
+
+	# First export
+	lives_ok(sub { $exporter->export({%PLAN}, $path1) }, 'first export() lives');
+	ok(-s $path1, 'first export wrote a non-empty file');
+
+	# Reload and verify equality
+	my $reloaded = YAML::XS::LoadFile($path1);
+	is_deeply($reloaded, {%PLAN}, 'reloaded YAML is_deeply equal to original plan');
+
+	# Re-export to second file
+	lives_ok(sub { $exporter->export($reloaded, $path2) }, 're-export to second file lives');
+
+	# Byte-for-byte comparison between the two files
+	local $/;
+	open my $f1, '<', $path1 or die $!;
+	my $bytes1 = <$f1>;
+	close $f1;
+	open my $f2, '<', $path2 or die $!;
+	my $bytes2 = <$f2>;
+	close $f2;
+	is($bytes1, $bytes2, 'two exports of the same data are byte-for-byte identical');
+
+	# Mid-flight failure: second DumpFile call croaks; first file must remain intact
+	my ($fh3, $path3) = tempfile(SUFFIX => '.yml', UNLINK => 1);
+	close $fh3;
+	my ($fh4, $path4) = tempfile(SUFFIX => '.yml', UNLINK => 1);
+	close $fh4;
+
+	$exporter->export({%PLAN}, $path3);  # first succeeds
+	ok(-s $path3, 'first file written before mock failure');
+
+	Test::Mockingbird::mock(
+		'YAML::XS::DumpFile',
+		sub { die "simulated disk full\n" },
+	);
+	throws_ok(
+		sub { $exporter->export({%PLAN}, $path4) },
+		qr/simulated disk full/,
+		'second export croaks when DumpFile fails',
+	);
+	Test::Mockingbird::unmock('YAML::XS::DumpFile');
+
+	# First file must still be intact
+	open my $f3, '<', $path3 or die $!;
+	my $bytes3 = <$f3>;
+	close $f3;
+	is($bytes3, $bytes1, 'first file is unmodified after mid-flight failure on second export');
+
+	done_testing();
 };
 
 done_testing();
