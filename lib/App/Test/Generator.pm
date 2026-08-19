@@ -3,6 +3,10 @@ package App::Test::Generator;
 # TODO: Test validator from Params::Validate::Strict 0.16
 # TODO: $seed should be passed to Data::Random::String::Matches
 # TODO: positional args - when config_undef is set, see what happens when not all args are given
+# TODO: The Dup and TER1/2/3 columns should be moved from the Mutation table
+#	to a new table called Metrics.  Add Halstead and McCabes metrics to
+#	this new Metrics table.  Include links to the definitions of TER1/2/3,
+#	Halstead and McCabes metrics, perhaps from Wikipedia
 
 use 5.036;
 
@@ -34,7 +38,7 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
-our $VERSION = '0.45';
+our $VERSION = '0.46';
 
 Readonly my $DEFAULT_ITERATIONS      => 30;
 Readonly my $DEFAULT_PROPERTY_TRIALS => 1000;
@@ -155,7 +159,7 @@ App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Da
 
 =head1 VERSION
 
-Version 0.45
+Version 0.46
 
 =head1 SYNOPSIS
 
