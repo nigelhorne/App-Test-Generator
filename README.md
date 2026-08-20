@@ -4,7 +4,7 @@ App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Da
 
 # VERSION
 
-Version 0.45
+Version 0.46
 
 # SYNOPSIS
 
@@ -57,14 +57,15 @@ From Perl:
       output_dir => '/tmp',
     );
     my $schemas = $extractor->extract_all();
+    use File::Temp qw(tempfile);
     foreach my $schema(keys %{$schemas}) {
-      my $tempfile = '/var/tmp/foo.t';    # Use File::Temp in real life
+      my ($fh, $tempfile) = tempfile(SUFFIX => '.t', UNLINK => 1);
+      close $fh;
       App::Test::Generator->generate(
         schema => $schemas->{$schema},
         output_file => $tempfile,
       );
-      system("$^X -Ilib $tempfile");
-      unlink $tempfile;
+      system($^X, '-Ilib', $tempfile);
     }
 
 # OVERVIEW
@@ -91,6 +92,13 @@ The distribution ships the following command-line tools:
 
 - [benchmark-generator](https://metacpan.org/pod/benchmark-generator) - generate a self-contained [Benchmark](https://metacpan.org/pod/Benchmark) `cmpthese` script from a YAML schema. Each transform in the schema becomes one named variant; representative input values are derived from each parameter's type and range constraints.
 - [deploy-workflows](https://metacpan.org/pod/deploy-workflows) - copy `dashboard.yml` and `mutate.yml` into the target repository's `.github/workflows/` directory. Both files are embedded verbatim in the script, so no ATG source tree is needed after installation. Supports `--target`, `--force`, and `--dry-run`.
+
+    To add a test dashboard to your CPAN module: copy these scripts into your `.github/workflows` directory,
+    then commit the changes to GitHub and enable the page through `Settings-`Pages->branch = gh\_pages>:
+
+    - [https://github.com/nigelhorne/App-Test-Generator/blob/master/.github/workflows/dashboard.yml](https://github.com/nigelhorne/App-Test-Generator/blob/master/.github/workflows/dashboard.yml)
+    - [https://github.com/nigelhorne/App-Test-Generator/blob/master/.github/workflows/mutate.yml](https://github.com/nigelhorne/App-Test-Generator/blob/master/.github/workflows/mutate.yml)
+
 - [extract-schemas](https://metacpan.org/pod/extract-schemas) - heuristically extract YAML parameter schemas from a `.pm` file, with optional coverage-guided fuzzing (`--fuzz`) and corpus minimization (`--minimize-corpus`).
 - [fuzz-harness-generator](https://metacpan.org/pod/fuzz-harness-generator) - generate a `Test::Most` fuzzing harness from a YAML schema.
 - [pod-example-tester](https://metacpan.org/pod/pod-example-tester) - generate a `Test::Most` round-trip test file from a module's POD code examples. Annotated examples (`# returns value` / `# => value`) get `is()` assertions; unannotated verbatim blocks are wrapped in `eval{}` and checked for no exception.
