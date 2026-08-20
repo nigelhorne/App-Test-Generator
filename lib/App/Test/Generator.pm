@@ -267,7 +267,7 @@ The distribution ships the following command-line tools:
 =item * L<deploy-workflows> - copy C<dashboard.yml> and C<mutate.yml> into the target repository's C<.github/workflows/> directory. Both files are embedded verbatim in the script, so no ATG source tree is needed after installation. Supports C<--target>, C<--force>, and C<--dry-run>.
 
 To add a test dashboard to your CPAN module: copy these scripts into your C<.github/workflows> directory,
-then commit the changes to GitHub and enable the page through C<Settings->Pages->branch = gh_pages>:
+then commit the changes to GitHub and enable the page through C<Settings-Pages-branch = gh_pages>:
 
 =over 4
 

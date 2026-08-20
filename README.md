@@ -94,7 +94,7 @@ The distribution ships the following command-line tools:
 - [deploy-workflows](https://metacpan.org/pod/deploy-workflows) - copy `dashboard.yml` and `mutate.yml` into the target repository's `.github/workflows/` directory. Both files are embedded verbatim in the script, so no ATG source tree is needed after installation. Supports `--target`, `--force`, and `--dry-run`.
 
     To add a test dashboard to your CPAN module: copy these scripts into your `.github/workflows` directory,
-    then commit the changes to GitHub and enable the page through `Settings-`Pages->branch = gh\_pages>:
+    then commit the changes to GitHub and enable the page through `Settings-Pages-branch = gh_pages`:
 
     - [https://github.com/nigelhorne/App-Test-Generator/blob/master/.github/workflows/dashboard.yml](https://github.com/nigelhorne/App-Test-Generator/blob/master/.github/workflows/dashboard.yml)
     - [https://github.com/nigelhorne/App-Test-Generator/blob/master/.github/workflows/mutate.yml](https://github.com/nigelhorne/App-Test-Generator/blob/master/.github/workflows/mutate.yml)
