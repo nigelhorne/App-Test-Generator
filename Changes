@@ -1,5 +1,20 @@
 Revision history for App-Test-Generator
 
+0.47	Thu Aug 28 2026
+	[Bug fixes]
+	- Fix SchemaExtractor treating $pkg (and $proto, $klass) as a user-facing
+	  input parameter instead of a class invocant. The invocant-skip filter
+	  previously only covered $self and $class; $pkg (used in import()),
+	  $proto (older constructor idiom), and $klass (alternate class spelling)
+	  were all passed through as position-0 string parameters, producing
+	  schema entries like "pkg: {type: string}" for import() subroutines.
+	  The fix extends every invocant regex — ten extraction-loop guards, the
+	  _validate_pod_code_agreement special-case block, and the inline body
+	  guard — to the full set (self|class|pkg|proto|klass). The position-0
+	  detection logic in _analyze_code Style 1/2/3 is also simplified to a
+	  single regex rather than separate eq-'class'/eq-'self' branches.
+	  Three regression tests added to t/SchemaExtractor_unit.t.
+
 0.46	Tue Aug 18 08:51:10 PM EDT 2026
 	[Enhancements]
 	- Add CPD drill-down pages (cover_html/cpd_html/): per-file HTML showing

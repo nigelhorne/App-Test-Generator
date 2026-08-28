@@ -3499,7 +3499,7 @@ sub _analyze_pod {
 		my @sig_params = $sig =~ /\$(\w+)/g;
 
 		# Skip $self or $class
-		shift @sig_params if @sig_params && $sig_params[0] =~ /^(self|class)$/i;
+		shift @sig_params if @sig_params && $sig_params[0] =~ /^(self|class|pkg|proto|klass)$/i;
 
 		# Assign positions
 		foreach my $param (@sig_params) {
@@ -3541,7 +3541,7 @@ sub _analyze_pod {
 				$desc =~ s/^\s+|\s+$//g if $desc;
 
 				# Skip common non-parameters
-				next if $name =~ /^(self|class|return|returns?)$/i;
+				next if $name =~ /^(self|class|pkg|proto|klass|return|returns?)$/i;
 
 				$params{$name} ||= { _source => 'pod' };
 
@@ -3606,7 +3606,7 @@ sub _analyze_pod {
 		$desc =~ s/^\s+|\s+$//g if $desc;
 
 		# Skip common words that aren't parameters
-		next if $name =~ /^(self|class|return|returns?)$/i;
+		next if $name =~ /^(self|class|pkg|proto|klass|return|returns?)$/i;
 
 		$params{$name} ||= { _source => 'pod' };
 
@@ -3654,7 +3654,7 @@ sub _analyze_pod {
 		$desc =~ s/^\s+|\s+$//g;
 
 		# Skip common non-parameters
-		next if $name =~ /^(self|class|return|returns?)$/i;
+		next if $name =~ /^(self|class|pkg|proto|klass|return|returns?)$/i;
 
 		$params{$name} ||= { _source => 'pod' };
 
@@ -3722,7 +3722,7 @@ sub _analyze_pod {
 
 	# Default undocumented optionality: documented params are REQUIRED unless stated otherwise
 	for my $name (keys %params) {
-		next if $name =~ /^(self|class)$/i;
+		next if $name =~ /^(self|class|pkg|proto|klass)$/i;
 
 		# TODO: if optionality was never explicitly set, assume required.
 		# Currently disabled as it breaks some schemas — revisit in a future pass.
@@ -3763,7 +3763,7 @@ sub _analyze_pod {
 			# Named format: each 'name => {…}' entry maps directly by name.
 			while ($block =~ /\b(\w+)\s*=>\s*\{([^}]*)\}/g) {
 				my ($name, $spec) = ($1, $2);
-				next if $name =~ /^(self|class)$/i;
+				next if $name =~ /^(self|class|pkg|proto|klass)$/i;
 				$params{$name} //= { _source => 'pod' };
 				$params{$name}{_from_input_spec} = 1;
 				if (my $t = $self->_map_formal_input_type($spec)) {
@@ -5110,7 +5110,7 @@ sub _analyze_code {
 		my $pos = scalar keys %params;
 		while($code =~ /get_params\s*\(\s*['"](\w+)['"]/g) {
 			my $name = $1;
-			next if $name =~ /^(self|class)$/i;
+			next if $name =~ /^(self|class|pkg|proto|klass)$/i;
 			$params{$name} //= { _source => 'code', position => $pos++ };
 			$self->_log("  CODE: Found Params::Get parameter '$name'");
 		}
@@ -5889,7 +5889,7 @@ sub _extract_parameters_from_signature {
 		my $pos = 0;
 		while($code =~ /my\s+\$(\w+)\s*=\s*\$_\[(\d+)\]/g) {
 			my $name = $1;
-			next if $name =~ /^(self|class)$/i;
+			next if $name =~ /^(self|class|pkg|proto|klass)$/i;
 			$params->{$name} //= { _source => 'code', optional => 1, position => $pos++ };
 			$self->_log("  CODE: Found direct-index parameter '\$$name' at \$_[$2]");
 		}
@@ -5904,7 +5904,7 @@ sub _extract_parameters_from_signature {
 		while ($sig =~ /\$(\w+)/g) {
 			my $name = $1;
 
-			next if $name =~ /^(self|class)$/i;
+			next if $name =~ /^(self|class|pkg|proto|klass)$/i;
 
 			$params->{$name} //= {
 				_source => 'code',
@@ -5922,7 +5922,7 @@ sub _extract_parameters_from_signature {
 		while ($code =~ /my\s+\$(\w+)\s*=\s*shift/g) {
 			push @shifts, $1;
 		}
-		shift @shifts if @shifts && $shifts[0] =~ /^(self|class)$/i;
+		shift @shifts if @shifts && $shifts[0] =~ /^(self|class|pkg|proto|klass)$/i;
 		my $pos = 0;
 		foreach my $param (@shifts) {
 			$params->{$param} ||= { _source => 'code', optional => 1, position => $pos++ };
@@ -5936,7 +5936,7 @@ sub _extract_parameters_from_signature {
 		my @param_names = $sig =~ /\$(\w+)/g;
 		my $pos = 0;
 		foreach my $param (@param_names) {
-			next if $param =~ /^(self|class)$/i;
+			next if $param =~ /^(self|class|pkg|proto|klass)$/i;
 			$params->{$param} ||= { _source => 'code', optional => 1, position => $pos++ };
 		}
 	}
@@ -6016,7 +6016,7 @@ sub _parse_modern_signature {
 			my $name = $param_info->{name};
 
 			# Skip self/class
-			if ($name =~ /^(self|class)$/i) {
+			if ($name =~ /^(self|class|pkg|proto|klass)$/i) {
 				next;
 			}
 
@@ -6608,19 +6608,16 @@ sub _extract_defaults_from_code {
 	# whose empty %params would otherwise trigger this fallback and pick up
 	# my (...) = @_ from inner closures as if they were method params.
 	# TODO:  On constructors, use $class to help to determine the output type
-	if (!keys %{$params} && $code !~ /my\s+\$(?:self|class)\s*=\s*\$_\[0\]/) {
+	if (!keys %{$params} && $code !~ /my\s+\$(?:self|class|pkg|proto|klass)\s*=\s*\$_\[0\]/) {
 		my $position = 0;
 
 		# Style 1: my ($a, $b) = @_;
 		while ($code =~ /my\s*\(\s*([^)]+)\s*\)\s*=\s*\@_/g) {
 			my @vars = $1 =~ /\$(\w+)/g;
 			foreach my $var (@vars) {
-				if(($var eq 'class') && ($position == 0) && ($method->{name} eq 'new')) {
-					# Don't include "class" in the variable names of the constructor
-					delete $params->{'class'};
-				} elsif(($var eq 'self') && ($position == 0) && ($method->{name} ne 'new')) {
-					# Don't include "self" in the variable names
-					delete $params->{'self'};
+				if(($position == 0) && ($var =~ /^(self|class|pkg|proto|klass)$/i)) {
+					# Invocant — skip it
+					delete $params->{$var};
 				} else {
 					$params->{$var} ||= { position => $position++ };
 					$self->_log("  CODE: $var extracted from \@_ list assignment");
@@ -6631,12 +6628,9 @@ sub _extract_defaults_from_code {
 		# Style 2: my $x = shift;
 		while ($code =~ /my\s+\$(\w+)\s*=\s*shift\b/g) {
 			my $var = $1;
-			if(($var eq 'class') && ($position == 0) && ($method->{name} eq 'new')) {
-				# Don't include "class" in the variable names of the constructor
-				delete $params->{'class'};
-			} elsif(($var eq 'self') && ($position == 0) && ($method->{name} ne 'new')) {
-				# Don't include "self" in the variable names
-				delete $params->{'self'};
+			if(($position == 0) && ($var =~ /^(self|class|pkg|proto|klass)$/i)) {
+				# Invocant — skip it
+				delete $params->{$var};
 			} else {
 				$params->{$var} ||= { position => $position++ };
 				$self->_log("  CODE: $var is extracted from shift");
@@ -6646,7 +6640,7 @@ sub _extract_defaults_from_code {
 		# Style 3: my $x = $_[0];
 		while ($code =~ /my\s+\$(\w+)\s*=\s*\$_\[(\d+)\]/g) {
 			my ($var, $index) = ($1, $2);
-			if(($var ne 'class') || ($position > 0) || ($method->{name} ne 'new')) {
+			if(($index > 0) || ($var !~ /^(self|class|pkg|proto|klass)$/i)) {
 				$params->{$var} ||= { position => $index };
 				$self->_log("  CODE: $var is extracted from \$_\[$index\]");
 			}
@@ -8976,7 +8970,7 @@ sub _detect_constructor_requirements {
 		push @shift_params, $1;
 	}
 	# Remove $self or $class if present
-	@shift_params = grep { $_ !~ /^(self|class)$/i } @shift_params;
+	@shift_params = grep { $_ !~ /^(self|class|pkg|proto|klass)$/i } @shift_params;
 
 	if (@shift_params) {
 		$requirements{parameters} = \@shift_params;
@@ -9712,12 +9706,12 @@ sub _validate_pod_code_agreement {
 		}
 
 		if(!exists $pod_params->{$param} && exists $code_params->{$param}) {
-			if($param eq 'class') {
-				# $class is the class invocant, not a user-facing parameter
+			if($param =~ /^(class|pkg|proto|klass)$/i) {
+				# class invocant, not a user-facing parameter
 				next;
 			}
 			if($param eq 'self') {
-				# $self is the instance invocant, not a user-facing parameter
+				# instance invocant, not a user-facing parameter
 				next;
 			}
 			push @errors, "Parameter '\$$param' found in code but not documented in POD";
