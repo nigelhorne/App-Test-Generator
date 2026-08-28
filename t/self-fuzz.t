@@ -31,6 +31,10 @@ my $VERBOSE = $ENV{TEST_VERBOSE} // 0;
 my $extract_bin = File::Spec->catfile($Bin, '..', 'bin', 'extract-schemas');
 my $fuzz_bin    = File::Spec->catfile($Bin, '..', 'bin', 'fuzz-harness-generator');
 
+# Populated during the run; each entry: { module, func, tests, status }
+# status: 'ok' | 'failed' | 'private' | 'no_fuzz' | 'oop' | 'no_can'
+my @fuzz_report;
+
 # Functions that cannot be fuzz-tested via this CLI pipeline.
 # When adding an entry here, first check whether extract-schemas produces a
 # wrong schema (fix SchemaExtractor) before resorting to a skip.
@@ -71,7 +75,13 @@ find(
 diag(scalar(@pm_files) . ' .pm files to self-test') if $VERBOSE;
 
 for my $pm_file (@pm_files) {
-	subtest "self-fuzz: $pm_file" => sub {
+	# Derive a readable module name from the file path
+	my $module = $pm_file;
+	$module =~ s{.*\blib/}{};
+	$module =~ s/\.pm$//;
+	$module =~ s{/}{::}g;
+
+	subtest "self-fuzz: $module" => sub {
 		my $tmpdir = File::Temp::tempdir(CLEANUP => 0);
 		my $failed = 0;
 
@@ -116,11 +126,13 @@ for my $pm_file (@pm_files) {
 			# Private functions lack input validation; the harness generates
 			# "dies on bad type" tests that always fail for them.
 			if ($func =~ /^_/) {
+				push @fuzz_report, { module => $module, func => $func, status => 'private' };
 				pass("$func: skipped (private)");
 				next;
 			}
 
 			if ($no_fuzz{$func}) {
+				push @fuzz_report, { module => $module, func => $func, status => 'no_fuzz' };
 				pass("$func: skipped (in no_fuzz list)");
 				next;
 			}
@@ -133,11 +145,13 @@ for my $pm_file (@pm_files) {
 			if ($@) {
 				fail("$func: cannot load schema YAML");
 				diag($@);
+				push @fuzz_report, { module => $module, func => $func, status => 'failed' };
 				$failed++;
 				next;
 			}
 
 			if (exists $schema->{new}) {
+				push @fuzz_report, { module => $module, func => $func, status => 'oop' };
 				pass("$func: skipped (OOP instance method)");
 				next;
 			}
@@ -154,6 +168,7 @@ for my $pm_file (@pm_files) {
 					}
 				}
 				if ($skip) {
+					push @fuzz_report, { module => $module, func => $func, status => 'no_can' };
 					pass("$func: skipped (mandatory object param without 'can')");
 					next;
 				}
@@ -173,10 +188,13 @@ for my $pm_file (@pm_files) {
 				diag("output:\n$fuzz_out") if $fuzz_out;
 				diag("stderr:\n$fuzz_err") if $fuzz_err;
 				diag("Schema kept in: $yml_file");
+				push @fuzz_report, { module => $module, func => $func, status => 'failed' };
 				$failed++;
 				last;
 			} else {
-				pass("$func: fuzz harness passed");
+				my $n = ($fuzz_out =~ /Tests=(\d+)/) ? $1 : 0;
+				push @fuzz_report, { module => $module, func => $func, status => 'ok', tests => $n };
+				pass("$func: fuzz harness passed ($n tests)");
 			}
 		}
 
@@ -184,6 +202,31 @@ for my $pm_file (@pm_files) {
 
 		done_testing();
 	};
+}
+
+if (@fuzz_report) {
+	my $mw = (sort { $b <=> $a } map { length($_->{module}) } @fuzz_report)[0];
+	my $fw = (sort { $b <=> $a } map { length($_->{func})   } @fuzz_report)[0];
+	$mw = 30 if $mw < 30;
+	$fw = 24 if $fw < 24;
+
+	my $total = 0;
+	diag('');
+	diag('Fuzz test summary:');
+	diag(sprintf '  %-*s  %-*s  %s', $mw, 'Module', $fw, 'Routine', 'Tests');
+	diag(sprintf '  %-*s  %-*s  %s', $mw, '-' x $mw, $fw, '-' x $fw, '-----');
+	for my $r (sort { $a->{module} cmp $b->{module} || $a->{func} cmp $b->{func} } @fuzz_report) {
+		my $tests_col =
+			$r->{status} eq 'ok'      ? $r->{tests}                          :
+			$r->{status} eq 'failed'  ? 'FAILED'                              :
+			$r->{status} eq 'private' ? 'skipped (internal helper)'           :
+			$r->{status} eq 'no_fuzz' ? 'skipped (excluded from fuzz list)'   :
+			$r->{status} eq 'oop'     ? 'skipped (instance method, needs $self)' :
+			$r->{status} eq 'no_can'  ? 'skipped (object param without can:)' : '?';
+		diag(sprintf '  %-*s  %-*s  %s', $mw, $r->{module}, $fw, $r->{func}, $tests_col);
+		$total += $r->{tests} // 0;
+	}
+	diag(sprintf '  %-*s  %-*s  %d', $mw, '', $fw, 'TOTAL', $total);
 }
 
 done_testing();
