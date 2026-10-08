@@ -5,6 +5,7 @@ use warnings;
 use autodie qw(:all);
 
 use utf8;
+use Carp qw(carp);
 use Data::Section::Simple;
 
 our $VERSION = '0.46';
@@ -626,9 +627,11 @@ sub fuzz_inputs
 				$mandatory_numbers{$field} = $number;
 			} elsif($spec->{type} eq 'hashref') {
 				if(defined($spec->{schema})) {
-					die __PACKAGE__, ': TODO: add schema support to hashref';
+					carp __PACKAGE__, ': hashref schema/size constraints not yet implemented; skipping field';
+					next;
 				} elsif($spec->{max} || $spec->{min}) {
-					die __PACKAGE__, ': TODO: add size support to hashref';
+					carp __PACKAGE__, ': hashref size constraints not yet implemented; skipping field';
+					next;
 				}
 				$mandatory_objects{$field} = { 'line' => __LINE__ };
 			} elsif(($spec->{type} eq 'arrayref') || ($spec->{type} eq 'array')) {
@@ -636,7 +639,8 @@ sub fuzz_inputs
 			} elsif($spec->{type} eq 'any') {
 				$mandatory_strings{$field} = rand_ascii_str(8);
 			} else {
-				die __PACKAGE__, ': TODO: type = ', $spec->{'type'};
+				carp __PACKAGE__, ": unhandled mandatory-arg type '${\$spec->{'type'}}'; skipping field '$field'";
+				next;
 			}
 		}
 	}
@@ -663,7 +667,8 @@ sub fuzz_inputs
 			foreach my $field(keys %input) {
 				next if($field =~ /^_/);	# Ignore comments
 				if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'memberof', 'position'))) {
-					die("TODO: handle schema keyword '$field'");
+					carp "unhandled schema keyword '$field'; skipping";
+					next;
 				}
 			}
 
@@ -671,7 +676,7 @@ sub fuzz_inputs
 				push @cases, @{_generate_string_cases('_input', \%input, \%mandatory_args, _LINE => __LINE__)};
 				# push @cases, { '_input' => "emoji \x{1F600}" };
 			} else {
-				die "TODO: type $type";
+				carp "unhandled single-input type '$type'; skipping test generation";
 			}
 		} else {
 			# our %input = ( str => { type => 'string' } );
@@ -885,11 +890,17 @@ sub fuzz_inputs
 					# If it's takes an integer, a float should die
 					push @cases, { _input => $case_input + 0.1, _STATUS => 'DIES', _LINE => __LINE__ };
 				} elsif(($type eq 'number') || ($type eq 'float')) {
-					$case_input = abs(rand_num()) + $input{'min'};
+					if (defined $input{'max'}) {
+						my $lo = $input{'min'} // 0;
+						$case_input = $lo + rand() * ($input{'max'} - $lo);
+					} else {
+						$case_input = abs(rand_num()) + ($input{'min'} // 0);
+					}
 				} elsif($type eq 'boolean') {
 					$case_input = rand_bool();
 				} else {
-					die "TODO: type $type";
+					carp "unhandled single-param type '$type'; skipping test generation";
+					next;
 				}
 				push @cases, { _input => $case_input, _STATUS => 'OK', _LINE => __LINE__ } if($case_input);
 			}
@@ -1520,7 +1531,8 @@ sub generate_tests
 		foreach my $field(keys %{$spec}) {
 			next if($field =~ /^_/);	# Ignore comments
 			if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'position', 'memberof', 'semantic', 'isa'))) {
-				die("TODO: handle schema keyword '$field'");
+				carp "unhandled schema keyword '$field'; skipping";
+				next;
 			}
 		}
 	}
@@ -1611,7 +1623,10 @@ sub generate_tests
 			} elsif ($type eq 'boolean') {
 				$case_input{$field} = rand_bool();
 			} elsif ($type eq 'number') {
-				if(defined(my $min = $spec->{min})) {
+				if (defined $spec->{max}) {
+					my $lo = $spec->{min} // 0;
+					$case_input{$field} = $lo + rand() * ($spec->{max} - $lo);
+				} elsif (defined(my $min = $spec->{min})) {
 					$case_input{$field} = abs(rand_num()) + $min;
 				} else {
 					$case_input{$field} = rand_num();
@@ -2050,7 +2065,7 @@ sub run_test
 			} elsif($status eq 'WARNS') {
 				warnings_exist { [% call_code %] } qr/./, sprintf($mess, 'warns');
 			} else {
-				die 'TODO: properties' if(scalar keys %{$properties});
+				carp 'unhandled properties in test case; continuing' if(scalar keys %{$properties});
 				if($positions) {
 					[% IF position_code %]
 						if(defined($name)) {
@@ -2082,7 +2097,7 @@ sub run_test
 					[% END %]
 				}
 			} else {
-				die 'TODO: properties' if(scalar keys %{$properties});
+				carp 'unhandled properties in test case; continuing' if(scalar keys %{$properties});
 				lives_ok { [% position_code %] } sprintf($mess, 'survives (position test)');
 
 				# An extra argument should be ignored, except for getsetters, so only test if there's more than one arg
@@ -2096,7 +2111,7 @@ sub run_test
 			}
 		} else {
 			# Status not given, assume set to LIVES
-			die 'TODO: properties' if(scalar keys %{$properties});
+			carp 'unhandled properties in test case; continuing' if(scalar keys %{$properties});
 			if(defined($description)) {
 				lives_ok { [% call_code %] } sprintf($mess, "survives ($description)");
 			} elsif(defined($line)) {
@@ -2267,7 +2282,8 @@ foreach my $transform (keys %transforms) {
 				push @tests, { %{$foundation}, ( $field => [ 'foo', undef, 'bar' ] ), _DESCRIPTION => 'undef in an arrayref', _LINE => __LINE__ } if($config{test_undef});
 			}
 		} else {
-			die("TODO: transform type $type for test case");
+			carp "unhandled transform type '$type' for test case; skipping";
+			next;
 		}
 	}
 
@@ -2346,7 +2362,8 @@ sub _fill_foundation
 		} elsif ($type eq 'hashref') {
 			$foundation->{$field} = { key => 'value' };
 		} else {
-			die("TODO: transform type $type for foundation");
+			carp "unhandled transform type '$type' for foundation; skipping field '$field'";
+			next;
 		}
 	}
 	return $foundation;

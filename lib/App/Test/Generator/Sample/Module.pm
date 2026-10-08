@@ -401,7 +401,7 @@ C<'Fail'> otherwise. Croaks on invalid input.
 
     {
         self  => { type => OBJECT, isa => 'App::Test::Generator::Sample::Module' },
-        score => { type => SCALAR, min => 0.0, max => 100.0 },
+        score => { type => 'number', min => 0.0, max => 100.0 },
     }
 
 =head4 output

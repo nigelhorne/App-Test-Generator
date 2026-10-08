@@ -68,6 +68,64 @@ run builds on the last, probing deeper into your code each time.
 Otherwise, for each of the functions in MyModule.pm,
 C<fuzz-harness-generator -r schemas/function.yml>
 
+=head1 OPTIONS
+
+=over 4
+
+=item B<--output-dir|-o> I<DIR>
+
+Directory to write generated YAML schema files. Defaults to C<schemas/>.
+
+=item B<--strict-pod|-s> I<MODE>
+
+How to handle disagreements between POD and code analysis.
+C<0> (off), C<1> (warn), or C<fatal> (croak on disagreement).
+
+=item B<--function|-F> I<NAME>
+
+Extract schema for only the named function; delete all other generated YAMLs
+and restrict the fuzz run to that one routine.
+
+=item B<--verbose|-v>
+
+Print extra diagnostic information during extraction and fuzzing.
+
+=item B<--version|-V>
+
+Print the C<App::Test::Generator::SchemaExtractor> version and exit.
+
+=item B<--fuzz|-f>
+
+After extraction, run C<App::Test::Generator::CoverageGuidedFuzzer> against
+each method using the generated schema.
+
+=item B<--fuzz-all>
+
+Like C<--fuzz>, but also fuzzes methods that have no extractable schema.
+
+=item B<--fuzz-iters> I<N>
+
+Number of fuzzing iterations per method (default: 100).
+
+=item B<--corpus-dir|-c> I<DIR>
+
+Directory for loading and saving the fuzzing corpus between runs.
+
+=item B<--minimize-corpus>
+
+After fuzzing, run C<minimize_corpus()> to reduce the saved corpus to the
+smallest subset that still covers every branch discovered in this run.
+
+=item B<--help|-h>
+
+Print a short usage summary and exit.
+
+=item B<--man|-m>
+
+Print the full manual page and exit.
+
+=back
+
 =head1 DESCRIPTION
 
 This tool analyzes a Perl module and generates YAML schema files for each

@@ -7,6 +7,21 @@ package App::Test::Generator;
 #	to a new table called Metrics.  Add Halstead and McCabes metrics to
 #	this new Metrics table.  Include links to the definitions of TER1/2/3,
 #	Halstead and McCabes metrics, perhaps from Wikipedia
+# TODO: Template.pm - $spec->{schema} support for nested hashref/arrayref not implemented
+#	(Template.pm ~line 629-631); the hashref case currently skips the field with a carp
+# TODO: Template.pm public API (27/28 subs) lacks POD documentation; add =head2 sections
+#	with =head4 input / =head4 output formal specs for each public sub
+# TODO: SchemaExtractor does not traverse @ISA for inherited constructors; if a module's
+#	constructor is defined in a parent class, extract_all() may miss representative
+#	constructor args and emit new:~ (unenrichable) instead of inferring from the base class
+# TODO: Magic-number probability constants in Template.pm (e.g. rand() < 0.3) should be
+#	Readonly module-level constants with ALL_CAPS_SNAKE names for maintainability
+# TODO: Difficulty constants are duplicated between bin/test-generator-mutate and Mutator.pm;
+#	consolidate into a single source of truth (e.g. Readonly constants in Mutator.pm,
+#	imported by the CLI)
+# TODO: validate_email in Sample::Module needs a matches: regex in its formal input spec
+#	so fuzz-harness-generator can generate structurally valid email inputs and the harness
+#	can be removed from %no_fuzz in t/self-fuzz.t
 
 use 5.036;
 

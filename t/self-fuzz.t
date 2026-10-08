@@ -68,8 +68,6 @@ my @fuzz_report;
 #                    output spec says 'arrayref' but harness captures in scalar context
 #   validate_email - requires valid email format (regex with @); harness generates random
 #                    strings that don't satisfy the format check; enum-like semantic
-#   validate_score - requires numeric value 0-100; schema says type:string (from SCALAR)
-#                    so harness generates random strings that fail the numeric regex check
 #   return_type    - getter returning undef until resolve_return_type() called; output
 #                    spec says string but freshly-constructed objects have return_type=undef
 #
@@ -100,7 +98,6 @@ my %no_fuzz = map { $_ => 1 } qw(
 	classification
 	evidence
 	validate_email
-	validate_score
 	return_type
 	load_corpus
 	minimize_corpus

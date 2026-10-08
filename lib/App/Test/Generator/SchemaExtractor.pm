@@ -8342,11 +8342,19 @@ sub _serialize_parameter_for_yaml {
 			$cleaned{type} = 'coderef';
 			$cleaned{_note} = 'CODE reference - provide sub { } in tests';
 		} elsif ($semantic eq 'enum') {
-			# Enum: keep as string but add valid values
-			$cleaned{type} = 'string';
-			if ($param->{enum} && ref($param->{enum}) eq 'ARRAY') {
-				$cleaned{enum} = $param->{enum};
-				$cleaned{_note} = 'Must be one of: ' . join(', ', @{$param->{enum}});
+			# Enum: keep as string but add valid values.
+			# If the formal input spec explicitly declared a different type, honour
+			# it — the enum values from code analysis are regex-internal alternates
+			# (e.g. numeric format variants) that are meaningless as string choices.
+			if ($param->{_from_input_spec} && defined $param->{type} && $param->{type} ne 'string') {
+				# Formal spec wins; suppress spurious regex-derived enum.
+				delete $cleaned{enum};
+			} else {
+				$cleaned{type} = 'string';
+				if ($param->{enum} && ref($param->{enum}) eq 'ARRAY') {
+					$cleaned{enum} = $param->{enum};
+					$cleaned{_note} = 'Must be one of: ' . join(', ', @{$param->{enum}});
+				}
 			}
 		}
 	}
@@ -8354,7 +8362,10 @@ sub _serialize_parameter_for_yaml {
 	# Handle memberof even if not marked with semantic.
 	# enum and memberof are mutually exclusive — only set memberof when enum
 	# is not already being output (avoids the "has both" validation error).
-	if($param->{enum} && ref($param->{enum}) eq 'ARRAY' && !$cleaned{enum}) {
+	# Also suppress when the formal input spec declared a non-string type —
+	# the enum values are regex-internal alternates, not valid string members.
+	my $formal_non_string = $param->{_from_input_spec} && defined $param->{type} && $param->{type} ne 'string';
+	if($param->{enum} && ref($param->{enum}) eq 'ARRAY' && !$cleaned{enum} && !$formal_non_string) {
 		$cleaned{memberof} = $param->{enum};
 	}
 	if($param->{memberof} && ref($param->{memberof}) eq 'ARRAY') {
