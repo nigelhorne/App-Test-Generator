@@ -8453,11 +8453,18 @@ sub _ctor_representative_args {
 	for my $param_name (keys %$input) {
 		my $spec = $input->{$param_name} // {};
 		next if $spec->{optional};
-		# File-path params require a real file to exist; 'test' is not a valid
-		# path — return undef so the constructor is treated as unenrichable.
-		return undef if $param_name =~ /(?:file|path|dir|filename)/i;
+		# File-path params require a real file to exist, and object/coderef params
+		# cannot be represented as plain YAML scalars.  Fall back to a no-arg
+		# constructor ({}) rather than returning undef: the constructor may still
+		# work fine with no arguments, and the fuzz harness will discover at
+		# runtime whether new() truly requires the param.
+		if ($param_name =~ /(?:file|path|dir|filename)/i) {
+			return {};
+		}
 		my $type = $spec->{type} // 'string';
-		return undef unless exists $REP{$type};
+		unless (exists $REP{$type}) {
+			return {};
+		}
 		$args{$param_name} = $REP{$type};
 	}
 	return \%args;

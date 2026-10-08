@@ -72,6 +72,20 @@ my @fuzz_report;
 #                    so harness generates random strings that fail the numeric regex check
 #   return_type    - getter returning undef until resolve_return_type() called; output
 #                    spec says string but freshly-constructed objects have return_type=undef
+#
+# The following methods belong to classes whose new() requires mandatory arguments
+# (schema+target_sub, file+lib_dir, or file) that cannot be synthesised
+# automatically.  SchemaExtractor now emits new:{} (no-arg fallback) instead of
+# new:~ for these, but the harness discovers at runtime that new() dies without
+# its required args.
+#   load_corpus / minimize_corpus / run / save_corpus
+#                  - CoverageGuidedFuzzer::new requires schema (hashref) and
+#                    target_sub (coderef); new() with no args croaks immediately
+#   apply_mutant / generate_mutants / prepare_workspace / run_tests
+#                  - Mutator::new requires file and lib_dir; new() with no args croaks
+#   extract        - PodExampleExtractor::new requires file; new() with no args croaks
+#   extract_all / generate_pod_validation_report
+#                  - SchemaExtractor::new requires input_file; new() with no args croaks
 my %no_fuzz = map { $_ => 1 } qw(
 	generate
 	DB::DB
@@ -88,6 +102,17 @@ my %no_fuzz = map { $_ => 1 } qw(
 	validate_email
 	validate_score
 	return_type
+	load_corpus
+	minimize_corpus
+	run
+	save_corpus
+	apply_mutant
+	generate_mutants
+	prepare_workspace
+	run_tests
+	extract
+	extract_all
+	generate_pod_validation_report
 );
 
 # Collect every .pm under lib/
