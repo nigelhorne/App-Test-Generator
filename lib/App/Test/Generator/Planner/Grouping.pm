@@ -137,6 +137,7 @@ sub plan {
 	);
 
 	for my $method (keys %{$schema}) {
+		next unless ref($schema->{$method}) eq 'HASH';
 		# Default to empty string if purity_level is absent —
 		# missing metadata falls through to the impure group
 		my $level = $schema->{$method}{_analysis}{side_effects}{purity_level} // '';

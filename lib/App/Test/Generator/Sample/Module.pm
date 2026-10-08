@@ -102,7 +102,7 @@ String (C<$MIN_EMAIL_LEN>-C<$MAX_EMAIL_LEN> chars). Required.
 
 =head4 output
 
-    { type => SCALAR, value => 1 }
+    { type => SCALAR }
 
 =cut
 
@@ -255,7 +255,7 @@ Hashref of configuration options. Required.
 
 =head4 output
 
-    { type => SCALAR, value => 1 }
+    { type => SCALAR }
 
 =cut
 
@@ -357,7 +357,7 @@ Boolean scalar.
 
     {
         self    => { type => OBJECT, isa => 'App::Test::Generator::Sample::Module' },
-        enabled => { type => SCALAR },
+        enabled => { type => 'any', optional => 1 },
     }
 
 =head4 output

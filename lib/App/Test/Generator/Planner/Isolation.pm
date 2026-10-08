@@ -103,8 +103,8 @@ and C<network> keys where relevant dependencies were detected.
 
     {
         self     => { type => OBJECT,  isa  => 'App::Test::Generator::Planner::Isolation' },
-        schema   => { type => HASHREF },
-        strategy => { type => HASHREF },
+        schema   => { type => HASHREF, optional => 1 },
+        strategy => { type => HASHREF, optional => 0 },
     }
 
 =head4 output
@@ -130,15 +130,17 @@ and C<network> keys where relevant dependencies were detected.
 sub plan {
 	my ($self, $schema, $strategy) = @_;
 
-	# Validate that strategy is a hashref before iterating its keys
+	croak 'schema must be a hashref'   if defined($schema) && ref($schema) ne 'HASH';
 	croak 'strategy must be a hashref' unless ref($strategy) eq 'HASH';
 
 	my %isolation;
 
 	for my $method (keys %{$strategy}) {
 		# Extract side effect and dependency analysis from schema
-		# if present — default to empty hashrefs if not available
-		my $analysis = $schema->{$method}{_analysis} || {};
+		# if present — degrade to empty analysis (most defensive) when schema is absent
+		my $analysis = (ref($schema) eq 'HASH' && ref($schema->{$method}) eq 'HASH')
+			? ($schema->{$method}{_analysis} || {})
+			: {};
 		my $effects  = $analysis->{side_effects}     || {};
 		my $deps     = $analysis->{dependencies}     || {};
 

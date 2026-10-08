@@ -125,6 +125,7 @@ sub plan {
 	my %mock_plan;
 
 	for my $method (keys %{$schema}) {
+		next unless ref($schema->{$method}) eq 'HASH';
 		# Extract side effect analysis if present —
 		# default to empty hashref if not available
 		my $effects = $schema->{$method}{_analysis}{side_effects} || {};

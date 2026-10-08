@@ -2001,7 +2001,7 @@ sub generate
 		if($new_code eq '') {
 			$new_code = "new_ok('$module')";
 		} else {
-			$new_code = "new_ok('$module' => [ { $new_code } ] )";
+			$new_code = "new_ok('$module' => [ $new_code ] )";
 		}
 		$setup_code .= "\nmy \$obj = $new_code;";
 		if($has_positions) {

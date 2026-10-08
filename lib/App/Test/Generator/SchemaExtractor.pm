@@ -1480,10 +1480,31 @@ sub extract_all {
 		my $schema = $self->_analyze_method($method);
 		$schemas{$method->{name}} = $schema;
 		$schema->{'module'} = $package_name;
+	}
 
-		# Write individual schema file
-		# Only write schema files if no_write is not set
-		$self->_write_schema($method->{name}, $schema) unless $params->{no_write};
+	# Second pass: enrich instance-method schemas with constructor args so the
+	# fuzz harness can build $self automatically.  The new() schema (if present)
+	# provides type info; we generate one representative value per required param.
+	# Enrichable: new: {} (no-arg ctor) or new: {hash} (with args).
+	# Unenrichable (coderef/object params): leave new: as the package-name string
+	# so _write_schema still emits new: ~ and self-fuzz.t keeps skipping those.
+	if (exists $schemas{new}) {
+		my $ctor_args = $self->_ctor_representative_args($schemas{new});
+		if (defined $ctor_args) {
+			for my $method_name (keys %schemas) {
+				next if $method_name eq 'new';
+				my $schema = $schemas{$method_name};
+				next unless exists $schema->{new} && defined $schema->{new};
+				$schema->{new} = $ctor_args;
+				$self->_log("  ENRICH: $method_name new: enriched with ctor args");
+			}
+		}
+	}
+
+	unless ($params->{no_write}) {
+		for my $method_name (keys %schemas) {
+			$self->_write_schema($method_name, $schemas{$method_name});
+		}
 	}
 
 	return \%schemas;
@@ -3947,6 +3968,10 @@ sub _analyze_output_from_pod {
 			} elsif($block =~ /^\{/) {
 				if($block =~ /type\s*=>\s*['"]?(\w[\w:]*?)['"]?\s*[,}]/i) {
 					my $type = lc($1);
+					$type = 'string'   if $type eq 'scalar' || $type eq 'scalarref' || $type eq 'str';
+					$type = 'integer'  if $type eq 'int';
+					$type = 'number'   if $type eq 'float' || $type eq 'num';
+					$type = 'boolean'  if $type eq 'bool';
 					$type = 'hashref'  if $type eq 'hash';
 					$type = 'arrayref' if $type eq 'array';
 					if($VALID_OUTPUT_TYPES{$type}) {
@@ -8052,7 +8077,10 @@ sub _write_schema {
 		if((ref($schema->{output}{_error_handling}) eq 'HASH') && (scalar(keys %{$schema->{output}{_error_handling}}) == 0)) {
 			delete $schema->{output}{_error_handling};
 		}
-		$output->{'output'} = $schema->{'output'};
+		# value/alt_value are inference metadata; Return::Set does not recognise them as validation rules
+		my %out_spec = %{$schema->{'output'}};
+		delete @out_spec{qw(value alt_value)};
+		$output->{'output'} = \%out_spec;
 	}
 
 	if($schema->{'output'}{'type'} && ($schema->{'output'}{'type'} eq 'scalar')) {
@@ -8391,6 +8419,50 @@ sub _format_relationship {
 # _needs_object_instantiation
 #
 # Purpose:    Determine whether a method requires
+# --------------------------------------------------
+# _ctor_representative_args
+#
+# Purpose:    Given a new() method schema, return a
+#             hashref of representative values for its
+#             required parameters, suitable for use as
+#             the new: key in an instance-method schema.
+#             Returns {} for a no-arg constructor.
+#             Returns undef when any required param is
+#             of a type that cannot be represented as a
+#             plain YAML scalar (e.g. coderef, object).
+#
+# Entry:      $ctor_schema - schema hashref for new().
+#
+# Exit:       Hashref of {param => value} or undef.
+# --------------------------------------------------
+sub _ctor_representative_args {
+	my ($self, $ctor_schema) = @_;
+
+	my %REP = (
+		string   => 'test',
+		integer  => 42,
+		float    => 3.14,
+		boolean  => 1,
+		hashref  => {},
+		arrayref => [],
+		any      => 'test',
+	);
+
+	my $input = $ctor_schema->{input} // {};
+	my %args;
+	for my $param_name (keys %$input) {
+		my $spec = $input->{$param_name} // {};
+		next if $spec->{optional};
+		# File-path params require a real file to exist; 'test' is not a valid
+		# path — return undef so the constructor is treated as unenrichable.
+		return undef if $param_name =~ /(?:file|path|dir|filename)/i;
+		my $type = $spec->{type} // 'string';
+		return undef unless exists $REP{$type};
+		$args{$param_name} = $REP{$type};
+	}
+	return \%args;
+}
+
 #             an object to be instantiated before
 #             it can be called, and if so return
 #             the package name to instantiate.

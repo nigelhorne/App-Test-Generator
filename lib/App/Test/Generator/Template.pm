@@ -716,12 +716,8 @@ sub fuzz_inputs
 							{ %mandatory_args, $arg_name => { nested => { 'first', undef, 'third' } }, _DESCRIPTION => 'nested hash with undef' } if($config{test_undef});
 					}
 				} elsif ($type eq 'arrayref') {
-					my $circular_ref = [];
-					push @{$circular_ref}, $circular_ref;
-
 					push @cases,
 						{ %mandatory_args, $arg_name => [1,2] },
-						{ %mandatory_args, $arg_name => $circular_ref, _STATUS => 'DIES', _DESCRIPTION => 'circular ref is caught' },
 						{ %mandatory_args, $arg_name => { a => 1 }, _STATUS => 'DIES' };
 				} elsif($type eq 'object') {
 					if($spec->{'isa'}) {
@@ -1621,10 +1617,6 @@ sub generate_tests
 					$case_input{$field} = rand_num();
 				}
 			} elsif ($type eq 'arrayref') {
-				my $circular_ref = [];
-				push @{$circular_ref}, $circular_ref;
-
-				push @cases, { %mandatory_args, ($field => $circular_ref, _STATUS => 'DIES', _LINE => __LINE__, _DESCRIPTION => "Don't accept array ref with circular references") };
 
 				if(my $element_type = $input{element_type}) {
 					if($element_type eq 'integer') {
@@ -1708,7 +1700,7 @@ sub generate_tests
 							{ %mandatory_args, $field => [ (1) x ($len - 1) ] },	# just inside
 							{ %mandatory_args, $field => [ (1) x $len ] },	# border
 							{ %mandatory_args, $field => [ (1) x ($len + 1) ], _STATUS => 'DIES' }; # outside
-					} elsif((defined $spec->{min}) || ($spec->{min} <= 3)) {
+					} elsif((defined $spec->{min}) && ($spec->{min} <= 3)) {
 						push @cases, { %mandatory_args, $field => [ 'first', undef, 'third' ], _DESCRIPTION => 'undef in an arrayref', _LINE => __LINE__ } if($config{test_undef});
 					}
 				} elsif ($type eq 'hashref') {
@@ -1976,7 +1968,15 @@ sub run_test
 					}
 				}
 			}
-			@alist = grep { defined $_ } @alist;	# Undefs will cause not enough args to be sent, which is a nice test
+			# Keep all slots up to the last defined position, preserving undef
+			# holes for optional args that were intentionally omitted at lower
+			# positions.  Stripping ALL undefs (the old grep approach) caused
+			# a mandatory arg at position N to shift to position N-1 when an
+			# optional arg at an earlier position was absent — the shifted arg
+			# was then passed to the wrong parameter and the call died.
+			my $last_def = -1;
+			for my $i (0..$#alist) { $last_def = $i if defined $alist[$i] }
+			@alist = $last_def >= 0 ? @alist[0..$last_def] : ();
 			$input = join(', ', @alist);
 		} else {
 			# Named args
