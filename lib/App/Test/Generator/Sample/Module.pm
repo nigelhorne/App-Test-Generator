@@ -5,7 +5,7 @@ use warnings;
 use Carp    qw(croak);
 use Readonly;
 
-our $VERSION = '0.46';
+our $VERSION = '0.47';
 
 # --------------------------------------------------
 # Validation constants — centralised so that changes
