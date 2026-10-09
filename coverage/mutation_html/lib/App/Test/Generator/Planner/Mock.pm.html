@@ -294,9 +294,9 @@ a.intra-dot:hover { color: #7700bb; }
  <a href="../Template.pm.html">Next ➡</a></div><div class='summary'>
 <strong>Structural Coverage (Approximate)</strong><p>
 TER1 (Statement): 100.00%<br>
-TER2 (Branch): 100.00%<br>
+TER2 (Branch): 90.00%<br>
 TER3 (LCSAJ): 100.0% (1/1)<br>
-Approximate LCSAJ segments: 9<br>
+Approximate LCSAJ segments: 11<br>
 </div>
 
     <div class="legend">
@@ -356,11 +356,11 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">   15: Readonly my $MOCK_SYSTEM     =&gt; &#39;mock_system&#39;;
 </span><span class="">   16: Readonly my $MOCK_CAPTURE_IO =&gt; &#39;capture_io&#39;;
 </span><span class="">   17: 
-</span><span class="">   18: our $VERSION = &#39;0.46&#39;;
+</span><span class="">   18: our $VERSION = &#39;0.47&#39;;
 </span><span class="">   19: 
 </span><span class="">   20: =head1 VERSION
 </span><span class="">   21: 
-</span><span class="">   22: Version 0.46
+</span><span class="">   22: Version 0.47
 </span><span class="">   23: 
 </span><span class="">   24: =head1 DESCRIPTION
 </span><span class="">   25: 
@@ -458,7 +458,7 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">  117: =cut
 </span><span class="">  118: 
 </span><span class="">  119: sub plan {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">120 → 127 → 147</span></span>  120: 	my ($self, $schema) = @_;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">120 → 127 → 148</span></span>  120: 	my ($self, $schema) = @_;
 </span><span class="">  121: 
 </span><span class="">  122: 	# Validate that schema is a hashref before iterating
 </span><span class="">  123: 	croak &#39;schema must be a hashref&#39; unless ref($schema) eq &#39;HASH&#39;;
@@ -466,29 +466,30 @@ Approximate LCSAJ segments: 9<br>
 </span><span class="">  125: 	my %mock_plan;
 </span><span class="">  126: 
 </span><span class="">  127: 	for my $method (keys %{$schema}) {
-</span><span class="">  128: 		# Extract side effect analysis if present &acirc;&#128;&#148;
-</span><span class="">  129: 		# default to empty hashref if not available
-</span><span class="">  130: 		my $effects = $schema-&gt;{$method}{_analysis}{side_effects} || {};
-</span><span class="">  131: 
-</span><span class="">  132: 		# --------------------------------------------------
-</span><span class="">  133: 		# Assign mock strategy based on detected side effects.
-</span><span class="">  134: 		# A method needing both gets an arrayref of both labels
-</span><span class="">  135: 		# rather than silently dropping one of them.
-</span><span class="">  136: 		# --------------------------------------------------
-</span><span class="">  137: 		if($effects-&gt;{calls_external} &amp;&amp; $effects-&gt;{performs_io}) {
-</span><span class="">  138: 			$mock_plan{$method} = [$MOCK_SYSTEM, $MOCK_CAPTURE_IO];
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  139: 		} elsif($effects-&gt;{calls_external}) {
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  140: 			$mock_plan{$method} = $MOCK_SYSTEM;
-</span><span class="">  141: 		} elsif($effects-&gt;{performs_io}) {
-</span><span class="">  142: 			$mock_plan{$method} = $MOCK_CAPTURE_IO;
-</span><span class="">  143: 		}
-</span><span class="">  144: 		# Pure methods require no mocking &acirc;&#128;&#148; omit from plan
-</span><span class="">  145: 	}
-</span><span class="">  146: 
-</span><span class="">  147: 	return \%mock_plan;
-</span><span class="">  148: }
-</span><span class="">  149: 
-</span><span class="">  150: 1;
+</span><span class="">  128: 		next unless ref($schema-&gt;{$method}) eq &#39;HASH&#39;;
+</span><span class="">  129: 		# Extract side effect analysis if present &acirc;&#128;&#148;
+</span><span class="">  130: 		# default to empty hashref if not available
+</span><span class="">  131: 		my $effects = $schema-&gt;{$method}{_analysis}{side_effects} || {};
+</span><span class="">  132: 
+</span><span class="">  133: 		# --------------------------------------------------
+</span><span class="">  134: 		# Assign mock strategy based on detected side effects.
+</span><span class="">  135: 		# A method needing both gets an arrayref of both labels
+</span><span class="">  136: 		# rather than silently dropping one of them.
+</span><span class="">  137: 		# --------------------------------------------------
+</span><span class="">  138: 		if($effects-&gt;{calls_external} &amp;&amp; $effects-&gt;{performs_io}) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  139: 			$mock_plan{$method} = [$MOCK_SYSTEM, $MOCK_CAPTURE_IO];
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  140: 		} elsif($effects-&gt;{calls_external}) {
+</span><span class="">  141: 			$mock_plan{$method} = $MOCK_SYSTEM;
+</span><span class="">  142: 		} elsif($effects-&gt;{performs_io}) {
+</span><span class="">  143: 			$mock_plan{$method} = $MOCK_CAPTURE_IO;
+</span><span class="">  144: 		}
+</span><span class="">  145: 		# Pure methods require no mocking &acirc;&#128;&#148; omit from plan
+</span><span class="">  146: 	}
+</span><span class="">  147: 
+</span><span class="">  148: 	return \%mock_plan;
+</span><span class="">  149: }
+</span><span class="">  150: 
+</span><span class="">  151: 1;
 </span></pre>
 
 <script>
