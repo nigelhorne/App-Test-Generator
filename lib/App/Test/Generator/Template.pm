@@ -2062,6 +2062,7 @@ sub run_test
 	my $line = delete $case->{'_LINE'};
 	my %ENV_before = %ENV;
 	my $cwd_before = Cwd::getcwd();
+	my $globals_before = _volatile_globals();
 	my %cwd_files_before = map { $_ => 1 } do { opendir(my $dh, '.') or die $!; readdir($dh) };
 
 	local $SIG{ALRM} = sub { die '__TIMEOUT__' };
@@ -2174,6 +2175,14 @@ sub run_test
 	diag($@) if($@);
 	ok((!defined($@)) || (length($@) == 0));
 
+	# Destructive testing: the call must not leave the caller's globals
+	# changed.  These are the ones a routine can clobber without any error
+	# showing up: $_ left behind by a while() loop, $/ from slurping a file,
+	# and $, and $; from an assignment that should have been local.  A
+	# routine that does this silently changes every later call in the test
+	# file, so the call is not safe to repeat.
+	is(_globals_changed($globals_before), '', 'caller globals unmodified');
+
 	# Global side effect detection
 	is(Cwd::getcwd(), $cwd_before, 'cwd not modified');
 	is_deeply(_filtered_env(\%ENV), _filtered_env(\%ENV_before), 'ENV not modified');
@@ -2198,8 +2207,37 @@ sub run_test
 	}
 }
 
-# On Windows $PWD etc are not stable
-sub _filtered_env {
+# On Windows $PWD etc are not stable# Snapshot of the globals a routine can clobber without returning anything
+# obviously wrong.  Values are stringified so a change is visible even when
+# the replacement looks interchangeable; undef is kept distinct from ''.
+sub _volatile_globals
+{
+	my %state;
+	$state{'$_'} = defined($_) ? "$_" : undef;
+	$state{'$/'} = defined($/) ? "$/" : undef;
+	$state{'$,'} = defined($,) ? "$," : undef;
+	$state{'$;'} = defined($;) ? "$;" : undef;
+	$state{'@ARGV'} = join("\x1f", @ARGV);
+
+	return \%state;
+}
+
+# Returns a comma-separated list of the globals whose value changed.
+sub _globals_changed
+{
+	my ($before) = @_;
+
+	my $after = _volatile_globals();
+	my @changed = sort grep {
+		my ($was, $is) = ($before->{$_}, $after->{$_});
+		defined($was) != defined($is) || (defined($was) && $was ne $is)
+	} keys %{$before};
+
+	return join(', ', @changed);
+}
+
+sub _filtered_env
+{
 	my %env = %{ shift() };
 
 	if($^O eq 'MSWin32') {
