@@ -1472,4 +1472,60 @@ PM
 	done_testing();
 };
 
+# A wrapper that only forwards \@_ has the forwarded-to method's input
+# contract. CGI::Info::get_cookie is `return $self->cookie(\@_);`, and
+# without this the schema had no input, so the harness called it with no
+# arguments and died on the required cookie_name.
+subtest 'forwarder inherits the forwarded-to input schema' => sub {
+	my $source = <<'PM';
+package Forward;
+
+sub cookie {
+	my $self = shift;
+	my $params = Params::Validate::Strict::validate_strict({
+		args => Params::Get::get_params('cookie_name', @_),
+		schema => {
+			cookie_name => {
+				type => 'string',
+				min => 1
+			}
+		}
+	});
+
+	return $params->{cookie_name};
+}
+
+sub get_cookie {
+	my $self = shift;
+
+	return $self->cookie(\@_);
+}
+
+sub logdir {
+	my $self = shift;
+	my $name = shift;
+
+	return $self->cookie($name);
+}
+
+1;
+PM
+
+	my $e = _extractor($source);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	ok(exists $schemas->{get_cookie}{input}{cookie_name},
+		'forwarder gets the forwarded-to parameter');
+	is($schemas->{get_cookie}{input}{cookie_name}{type}, 'string',
+		'inherited parameter keeps its type');
+	is($schemas->{get_cookie}{input}{cookie_name}{min}, 1,
+		'inherited parameter keeps its constraint');
+
+	# logdir() names a parameter of its own, so it is not a bare forwarder
+	ok(!exists $schemas->{logdir}{input}{cookie_name},
+		'a routine that handles its own arguments inherits nothing');
+
+	done_testing();
+};
+
 done_testing();

@@ -1474,12 +1474,16 @@ sub extract_all {
 	$self->_log('Found ' . scalar(@$methods) . ' methods (pre-dedup)');
 
 	my %schemas;
+	my %delegates;
 	foreach my $method (@{$methods}) {
 		$self->_log("\nAnalyzing method: $method->{name}");
 
 		my $schema = $self->_analyze_method($method);
 		$schemas{$method->{name}} = $schema;
 		$schema->{'module'} = $package_name;
+
+		my $target = $self->_delegated_method($method->{body});
+		$delegates{$method->{name}} = $target if defined($target);
 	}
 
 	# Second pass: enrich instance-method schemas with constructor args so the
@@ -1499,6 +1503,30 @@ sub extract_all {
 				$self->_log("  ENRICH: $method_name new: enriched with ctor args");
 			}
 		}
+	}	# Third pass: a routine whose whole body is `return $self->other(\@_)` has
+	# exactly other()'s input contract. CGI::Info::get_cookie is such a
+	# forwarder, and without this it looked like it took no parameters at all,
+	# so the harness called it with none and died on the required cookie_name.
+	for my $method_name (sort keys %delegates) {
+		my $target = $delegates{$method_name};
+		next if $method_name eq $target;
+		my $target_schema = $schemas{$target};
+		next unless $target_schema && ref($target_schema->{input}) eq 'HASH'
+			&& scalar(keys %{$target_schema->{input}});
+
+		my $schema = $schemas{$method_name};
+		next unless $schema;
+		next if ref($schema->{input}) eq 'HASH' && scalar(keys %{$schema->{input}});
+
+		$schema->{input} = {
+			map { $_ => { %{$target_schema->{input}{$_}} } } sort keys %{$target_schema->{input}}
+		};
+		$schema->{_confidence}{input} = {
+			'level' => 'medium',
+			'factors' => [ "Forwarded to $target()" ]
+		};
+		push @{$schema->{_notes}}, "input inherited from $target(), which this routine forwards \@_ to";
+		$self->_log("  DELEGATE: $method_name input inherited from $target");
 	}
 
 	unless ($params->{no_write}) {
@@ -1508,6 +1536,39 @@ sub extract_all {
 	}
 
 	return \%schemas;
+}
+
+# --------------------------------------------------
+# _delegated_method
+#
+# Purpose:    Detect a routine whose whole body
+#             forwards its arguments to another
+#             method of the same object.
+#
+# Entry:      $code - the subroutine's source text.
+#
+# Exit:       Returns the name of the method it
+#             forwards to, or undef when the routine
+#             does anything else.
+#
+# Side effects: None.
+#
+# Notes:      Only the bare `return $self->other(\@_)`
+#             shape counts. Such a forwarder has
+#             exactly the target's input contract,
+#             which extract_all() copies so that the
+#             harness passes the right arguments
+#             (CGI::Info::get_cookie -> cookie).
+# --------------------------------------------------
+sub _delegated_method {
+	my ($self, $code) = @_;
+
+	return unless defined($code);
+
+	(my $body = $code) =~ s/\A\s*sub\s+\w+\s*//;
+	$body =~ s/\s+/ /g;
+
+	return $body =~ /\A\{ (?:my \$self = shift; )?return \$self->(\w+)\(\s*\\\@_\s*\); \}\z/ ? $1 : undef;
 }
 
 # --------------------------------------------------
@@ -4381,9 +4442,14 @@ sub _analyze_output_from_code
 				}
 				# Variables/expressions
 				elsif ($ret =~ /\$\w+/) {
-					if ($ret =~ /\\\@/) {
+					# \@_ is this routine's own argument list being passed
+					# along, not an arrayref being returned. CGI::Info::get_cookie
+					# returns $self->cookie(\@_) and was typed as returning an
+					# arrayref because of it.
+					(my $ref_ret = $ret) =~ s/\\\@_\b//g;
+					if ($ref_ret =~ /\\\@/) {
 						$return_types{arrayref}++;
-					} elsif ($ret =~ /\\\%/) {
+					} elsif ($ref_ret =~ /\\\%/) {
 						$return_types{hashref}++;
 					} elsif ($ret =~ /bless/) {
 						$return_types{object} += 2;	# Heigher weight

@@ -473,6 +473,32 @@ END_MODULE
 	done_testing();
 };
 
+# Forwarding \@_ along is not returning an arrayref.
+# CGI::Info::get_cookie is `return $self->cookie(\@_);` and was typed as
+# returning an arrayref, because \@_ looks like one.
+
+subtest 'forwarded arguments are not an arrayref return' => sub {
+	my $module = <<'END_MODULE';
+package ForwardTest;
+
+sub get_cookie {
+	my $self = shift;
+
+	return $self->cookie(\@_);
+}
+
+1;
+END_MODULE
+
+	my $extractor = create_extractor($module);
+	my $schemas = $extractor->extract_all();
+
+	isnt($schemas->{get_cookie}{output}{type}, 'arrayref',
+		'\@_ forwarded to another method is not taken as a returned arrayref');
+
+	done_testing();
+};
+
 # =head4 Output formal spec overrides heuristic code analysis
 subtest '=head4 Output type takes precedence over code inference' => sub {
 	my $module = <<'END_MODULE';

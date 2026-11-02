@@ -71,6 +71,26 @@ Revision history for App-Test-Generator
 	  is typed as returning a string. t/return.t covers both this and a
 	  genuine numeric return.
 
+	- Fix wrapper routines being documented as taking no parameters, and as
+	  returning an arrayref. A routine whose whole body forwards its
+	  arguments to another method of the same object, such as
+	  CGI::Info::get_cookie
+
+	    sub get_cookie {
+		return $self->cookie(\@_);
+	    }
+
+	  has exactly cookie()'s input contract, but nothing looked at the target:
+	  the schema had no input at all, the harness generated a "Takes no
+	  input" case and called get_cookie() with no arguments, which died on
+	  the required cookie_name. The extracted input schema is now inherited
+	  from the forwarded-to method (input confidence medium, with a note
+	  naming it), and only when the wrapper declares no parameters of its
+	  own. Separately, the forwarded \@_ was read as an arrayref being
+	  returned, so get_cookie was typed as returning an arrayref; \@_ is now
+	  discounted when inferring the return type. Regression tests added to
+	  t/SchemaExtractor.t and t/return.t.
+
 0.47	Wed Oct  7 09:29:14 PM EDT 2026
 	[Enhancements]
 	- Bump actions-setup-perl to 1.44.0
