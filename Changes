@@ -1,6 +1,6 @@
 Revision history for App-Test-Generator
 
-0.48	Sun Nov  1 09:55:46 PM EST 2026
+0.48
 	[Bug fixes]
 	- Fix SchemaExtractor not recognising get/set accessors that guard on a
 	  named argument instead of on @_. _detect_accessor_methods only matched
@@ -127,6 +127,16 @@ Revision history for App-Test-Generator
 	  CGI::Info::status did, about once in forty runs. Accessors whose
 	  parameter is an integer, number or float are now compared with ==, which
 	  is the contract a numeric accessor has; string accessors still use eq.
+
+	- Stop reading every if($x) as an argument guard when typing accessors.
+	  CGI::Info::protocol takes no argument: it computes its value from %ENV
+	  and caches it. Its if($ENV{'SCRIPT_URI'}) branch was taken as evidence
+	  that an argument had been supplied, so the routine was typed as a getset
+	  accessor, and the generated harness set values protocol() never looks at
+	  - 1502 failing tests. The guard must now test @_ or a lexical filled
+	  from shift, and $self no longer counts as an argument; protocol is left
+	  with no parameters. Covered by the environment-driven getter fixture in
+	  t/getset_accessor.t.
 
 0.47	Wed Oct  7 09:29:14 PM EDT 2026
 	[Enhancements]

@@ -123,6 +123,25 @@ sub is_tablet {
 	return $self->{is_tablet};
 }
 
+# Mirrors CGI::Info::protocol: the value is computed from %ENV and cached, so
+# the method takes no argument at all. Its conditions test $ENV and $self, and
+# neither is evidence that an argument was supplied.
+sub protocol {
+	my $self = shift;
+
+	return $self->{protocol} if ref($self) && exists $self->{protocol};
+
+	my $result;
+	if($ENV{'SCRIPT_URI'} && ($ENV{'SCRIPT_URI'} =~ /^([a-zA-Z][a-zA-Z0-9+\-.]*):\/\//)) {
+		$result = $1;
+	} elsif($ENV{'SERVER_PORT'} && ($ENV{'SERVER_PORT'} == 443)) {
+		$result = 'https';
+	}
+
+	$self->{protocol} = $result if ref($self);
+	return $result;
+}
+
 =head2 status($status)
 
 Sets or returns the status of the object,
@@ -356,6 +375,12 @@ is($schemas->{is_tablet}{accessor}{type}, 'getter', 'is_tablet method detected a
 
 # CGI::Info::status stores its argument only when one is given, and returns
 # the stored value otherwise. This is a get/set accessor, not a plain function.
+# CGI::Info::protocol's condition on %ENV must not be read as an argument
+# guard: doing so typed it as a getset accessor and the harness set a value
+# that protocol() never looks at.
+isnt($schemas->{protocol}{accessor}{type}, 'getset', 'Environment-driven getter is not a getset accessor');
+is(scalar(keys %{ $schemas->{protocol}{input} // {} }), 0, 'Environment-driven getter takes no parameters');
+
 is($schemas->{status}{accessor}{type}, 'getset', 'Conditional setter/return detected as getset');
 is($schemas->{status}{accessor}{property}, 'status', 'Conditional accessor property detected');
 is($schemas->{status}{input}{status}{type}, 'integer', 'POD-declared integer input preserved');

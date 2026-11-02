@@ -2321,14 +2321,22 @@ sub _detect_accessor_methods {
 	my $conditional_arg = 0;
 	while($code =~ /\bmy\s+\$(\w+)\s*=\s*shift\b/g) {
 		my $arg = $1;
-		if($code =~ /(?:if|unless)\s*\(?\s*defined\s*\(?\s*\$\Q$arg\E\b/) {
+		# The invocant is shifted too, but a test on $self says nothing
+		# about whether an argument was supplied.
+		next if($arg eq 'self');
+		if($code =~ /(?:if|unless)\s*\(?\s*(?:defined\s*\(?\s*)?\$\Q$arg\E\b/) {
 			$conditional_arg = 1;
 			last;
 		}
 	}
 	# `if (@_)` stays the strongest signal; a named-argument guard is
 	# weaker evidence and must not turn a heuristic miss into a croak.
-	my $arg_guard = ($code =~ /if\s*\(\s*(?:\@_|[\$]\w+)/) ? 1 : 0;
+	# The guard must test the argument itself: CGI::Info::protocol reads
+	# if($ENV{'SCRIPT_URI'}) and stores a value it computed, which says
+	# nothing about how the method is called. Reading any `if($x)` as an
+	# argument guard typed it as a getset accessor, and the harness then
+	# set a value the routine never looks at.
+	my $arg_guard = ($code =~ /\bif\s*\(\s*(?:\@_|scalar\s*\(\s*\@_\s*\))/) ? 1 : 0;
 
 	# -------------------------------
 	# Getter/Setter combo
