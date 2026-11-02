@@ -3883,6 +3883,14 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'SHA-256 hashes (64 hex characters)',
+		}, directory => {
+			code => q{
+				Gen {
+					require File::Temp;
+					File::Temp::tempdir(CLEANUP => 1);
+				}
+			},
+			description => 'Paths to existing writable directories',
 		}, unix_timestamp => {
 			code => q{
 				Gen {

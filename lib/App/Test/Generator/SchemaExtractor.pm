@@ -5650,11 +5650,18 @@ sub _detect_filehandle_type {
 		return;
 	}
 
-	# File test operators
+	# File test operators.  A -d test is a directory requirement: the value
+	# has to name an existing directory, which no spelling pattern can
+	# capture, so it gets its own semantic rather than a filepath pattern.
 	if ($code =~ /(?:-[frwxoOeszlpSbctugkTBMAC])\s+\$$param/) {
 		$p->{type} = 'string';
-		$p->{semantic} = 'filepath';
-		$self->_log("  ADVANCED: $param is tested as file path");
+		if ($code =~ /-d\s+\$$param/) {
+			$p->{semantic} = 'directory';
+			$self->_log("  ADVANCED: $param is tested as a directory");
+		} else {
+			$p->{semantic} = 'filepath';
+			$self->_log("  ADVANCED: $param is tested as file path");
+		}
 		return;
 	}
 
@@ -7041,6 +7048,14 @@ sub _analyze_parameter_validation {
 				$self->_log("  CODE: $param has unconditional default: $possible_default");
 			}
 		}
+	}
+
+	# A bare truthiness test ("if($dir) {...}") is a presence test: the
+	# routine does something different when nothing was passed, so the
+	# argument can be omitted.  An explicit required check wins over this.
+	if (!$is_required && ($code =~ /\b(?:if|unless)\s*\(\s*\$$param\s*\)/)) {
+		$p->{optional} = 1;
+		$self->_log("  CODE: $param is optional (only used when truthy)");
 	}
 
 	# Explicit required check overrides default detection
@@ -8456,6 +8471,14 @@ sub _serialize_parameter_for_yaml {
 			$cleaned{type} = 'string';
 			$cleaned{matches} ||= '/^[\\w\\/.\\-_]+$/';
 			$cleaned{_note} = 'File path';
+		} elsif ($semantic eq 'directory') {
+			# The value must name an existing directory.  No pattern can
+			# express that and any generated path would fail the -d test,
+			# so keep the semantic for the harness to act on instead of
+			# guessing at the spelling.
+			$cleaned{type} = 'string';
+			$cleaned{semantic} = 'directory';
+			$cleaned{_note} = 'Existing directory';
 		} elsif ($semantic eq 'callback') {
 			# Coderefs: mark as special type
 			$cleaned{type} = 'coderef';
@@ -8501,10 +8524,27 @@ sub _serialize_parameter_for_yaml {
 		$cleaned{_format} = $param->{format};
 	}
 
-	# Remove internal fields
+	# Patterns harvested from source or POD arrive as slash-delimited
+	# literals ('/^abc$/').  Consumers compile what they are given with
+	# qr//, which would take the delimiters to be part of the pattern, so
+	# no generated string could ever match.  Hand them a compiled Regexp.
+	if(defined(my $pattern = $cleaned{matches})) {
+		if(!ref($pattern)) {
+			(my $body = $pattern) =~ s{^/(.+)/$}{$1}s;
+			my $compiled = eval { qr/$body/ };
+			if($@) {
+				$self->_log("  invalid matches pattern '$pattern': $@");
+			} else {
+				$cleaned{matches} = $compiled;
+			}
+		}
+	}
+
+	# Remove internal fields.  The directory semantic is kept: the harness
+	# needs it to supply a path that exists.
 	delete $cleaned{_source};
 	delete $cleaned{_from_input_spec};
-	delete $cleaned{semantic};
+	delete $cleaned{semantic} unless(($cleaned{semantic} // '') eq 'directory');
 
 	return \%cleaned;
 }

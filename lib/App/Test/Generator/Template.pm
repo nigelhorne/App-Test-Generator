@@ -155,6 +155,19 @@ my %input = (
 [% input_code %]
 );
 
+# A parameter the routine tests with -d must name an existing directory:
+# nothing generated from a string pattern can satisfy that, so point the
+# field at a real temporary directory and let the value set do the work.
+foreach my $field (keys %input) {
+	my $spec = $input{$field};
+	next unless(ref($spec) eq 'HASH');
+	next unless(($spec->{'semantic'} // '') eq 'directory');
+	require File::Temp;
+	$spec->{'memberof'} = [ File::Temp::tempdir(CLEANUP => 1) ];
+	delete $spec->{$_} for qw(matches min max semantic);
+	$spec->{'_directory'} = 1;
+}
+
 my %output = (
 [% output_code %]
 );
@@ -1307,7 +1320,7 @@ sub _generate_string_cases
 				}
 			}
 		}
-	} elsif($config{'test_empty'}) {
+	} elsif($config{'test_empty'} && !$spec->{'_directory'}) {
 		# No min, empty string should be allowable
 		if(defined($spec->{'memberof'}) && (!grep { $_ eq '' } @{$spec->{'memberof'}})) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => '', _LINE => __LINE__, _STATUS => 'DIES' ) };

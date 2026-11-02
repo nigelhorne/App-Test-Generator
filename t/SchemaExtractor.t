@@ -962,6 +962,23 @@ subtest '_serialize_parameter_for_yaml' => sub {
 	$result = $fn->({ type => 'string', semantic => 'filepath' });
 	is($result->{type}, 'string', 'filepath semantic keeps string type');
 	like($result->{_note}, qr/path/i, 'filepath gets path note');
+	is(ref($result->{matches}), 'Regexp', 'filepath pattern is compiled, not a string');
+	like('/usr/local/bin', $result->{matches}, 'filepath pattern matches a path');
+
+	# A directory requirement cannot be described by a pattern, so the
+	# semantic is kept and no matches key is invented
+	$result = $fn->({ type => 'string', semantic => 'directory' });
+	is($result->{type},     'string',    'directory semantic keeps string type');
+	is($result->{semantic}, 'directory', 'directory semantic reaches the harness');
+	ok(!exists $result->{matches}, 'directory semantic adds no matches pattern');
+
+	# A pattern written as a regex literal must reach the harness compiled:
+	# compiled from the raw string, qr// would treat the delimiters as part of
+	# the pattern and nothing generated could ever match
+	$result = $fn->({ type => 'string', matches => '/^[a-z]+$/' });
+	is(ref($result->{matches}), 'Regexp', 'slash-delimited matches is compiled');
+	like('abc', $result->{matches}, 'pattern body matches without the delimiters');
+	unlike('/abc/', $result->{matches}, 'the delimiters are not part of the pattern');
 
 	# unix_timestamp semantic sets integer type and bounds
 	$result = $fn->({ type => 'integer', semantic => 'unix_timestamp' });
@@ -1526,6 +1543,47 @@ PM
 		'a routine that handles its own arguments inherits nothing');
 
 	done_testing();
+};
+
+# A parameter the routine tests with -d has to name an existing directory, a
+# property no pattern can express: every generated path fails the check, so
+# the semantic is recorded instead of a matches pattern and the harness
+# supplies a real directory.  The parameter is also optional when the routine
+# only acts on it inside a truthiness test.  CGI::Info::logdir is this shape.
+subtest 'a -d check gives a directory semantic, not a path pattern' => sub {
+	my $source = <<'PM';
+package DirCheck;
+
+sub logdir {
+	my $self = shift;
+	my $dir = shift;
+
+	if(!ref($self)) {
+		$self = __PACKAGE__->new();
+	}
+
+	if($dir) {
+		if(length($dir) && (-d $dir) && (-w $dir)) {
+			return $self->{'logdir'} = $dir;
+		}
+		Carp::croak("Invalid logdir: $dir");
+	}
+
+	return $self->{'logdir'};
+}
+
+1;
+PM
+
+	my $e = _extractor($source);
+	my $schemas = $e->extract_all(no_write => 1);
+	my $input = $schemas->{logdir}{input};
+
+	ok($input, 'logdir schema extracted');
+	is($input->{dir}{type}, 'string', 'a directory path is a string');
+	is($input->{dir}{semantic}, 'directory', 'a -d check gives the directory semantic');
+	ok(!defined($input->{dir}{matches}), 'no spelling pattern is invented for a directory');
+	is($input->{dir}{optional}, 1, 'a parameter only used when truthy is optional');
 };
 
 done_testing();

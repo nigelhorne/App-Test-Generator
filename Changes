@@ -91,6 +91,33 @@ Revision history for App-Test-Generator
 	  discounted when inferring the return type. Regression tests added to
 	  t/SchemaExtractor.t and t/return.t.
 
+	- Fix matches patterns harvested from source or POD being emitted as
+	  slash-delimited strings. A pattern was stored as written, so the schema
+	  contained '/^[\\w\\/.-]+$/', and the harness compiles what it is given
+	  with qr//: the delimiters became part of the pattern, no generated
+	  string could match, and Data::Random::String::Matches gave up with
+	  "Failed to generate matching string after 1000 attempts". Patterns are
+	  now compiled to Regexp objects before serialisation, the form in which
+	  the cookie() pattern already travelled. Regression test added to
+	  t/SchemaExtractor.t.
+
+	- Fix a parameter the routine tests with -d being described as a plain
+	  string with a path pattern. Such a parameter has to name an existing
+	  directory, which no pattern can express, so every generated path was
+	  rejected by the routine's own check and the harness reported failures
+	  that said nothing about the code. A -d check now yields
+	  semantic: directory with no matches, and the generated harness points
+	  the field at a real temporary directory (the new directory semantic)
+	  instead of inventing strings. CGI::Info::logdir is this shape; the
+	  extracted logdir.yml changes and its harness passes.
+
+	- Fix a parameter used only inside a truthiness test ("if($dir) {...}")
+	  being declared required. A routine that acts on the value only when it
+	  is truthy works with no argument at all - logdir() returns the ambient
+	  log directory - so code analysis now marks it optional. An explicit
+	  croak-unless check still wins, and an explicit POD declaration keeps
+	  its precedence. Covered by the new -d subtest in t/SchemaExtractor.t.
+
 0.47	Wed Oct  7 09:29:14 PM EDT 2026
 	[Enhancements]
 	- Bump actions-setup-perl to 1.44.0
