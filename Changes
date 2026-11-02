@@ -118,6 +118,16 @@ Revision history for App-Test-Generator
 	  croak-unless check still wins, and an explicit POD declaration keeps
 	  its precedence. Covered by the new -d subtest in t/SchemaExtractor.t.
 
+	- Fix generated getset round-trip checks failing for numerically equal
+	  values. The check compared with eq, but a numeric scalar has no single
+	  string form: one and the same integer stringifies as "5967331536404480"
+	  when held as an IV and as "5.96733153640448e+15" when held as an NV, and
+	  the large integers the fuzzer generates can arrive either way. A routine
+	  that returns exactly what it was given then failed its own harness -
+	  CGI::Info::status did, about once in forty runs. Accessors whose
+	  parameter is an integer, number or float are now compared with ==, which
+	  is the contract a numeric accessor has; string accessors still use eq.
+
 0.47	Wed Oct  7 09:29:14 PM EDT 2026
 	[Enhancements]
 	- Bump actions-setup-perl to 1.44.0

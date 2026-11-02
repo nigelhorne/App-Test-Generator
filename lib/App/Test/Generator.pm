@@ -2011,6 +2011,18 @@ sub generate
 	my $call_code;	# Code to call the function being test when used with named arguments
 	my $position_code;	# Code to call the function being test when used with position arguments
 	my $has_positions = _has_positions(\%input);
+
+	# Numeric values have no single string form: one and the same integer can
+	# stringify as "5967331536404480" (an IV) or "5.96733153640448e+15" (an
+	# NV), so a getset round trip on an integer or number parameter is compared
+	# numerically.  The routine returns the value unchanged, yet eq failed on
+	# the harness's own input about once in forty runs.
+	my $cmp_op = 'eq';
+	if(scalar(keys %input) == 1) {
+		my ($spec) = values %input;
+		my $type = (ref($spec) eq 'HASH') ? $spec->{type} : $spec;
+		$cmp_op = '==' if(defined($type) && !ref($type) && ($type =~ /^(?:integer|number|float)$/));
+	}
 	if(defined($new) && defined($module)) {
 		# keep use_ok regardless (user found earlier issue)
 		if($new_code eq '') {
@@ -2026,13 +2038,13 @@ sub generate
 					$position_code .= "my \$prev_value = \$obj->{$accessor{property}};";
 				} elsif($accessor{type} eq 'getset') {
 					$position_code .= 'if(scalar(@alist) == 1) { ';
-					$position_code .= "cmp_ok(\$result, 'eq', \$alist[0], 'getset function returns what was put in'); ok(\$obj->$function() eq \$result, 'test getset accessor');";
+					$position_code .= "cmp_ok(\$result, '$cmp_op', \$alist[0], 'getset function returns what was put in'); ok(\$obj->$function() $cmp_op \$result, 'test getset accessor');";
 					$position_code .= '}';
 				}
 				if(($accessor{type} eq 'getset') || ($accessor{type} eq 'getter')) {
 					# Since Perl doesn't support data encapsulation, we can test the getter returns the correct item
 					$position_code .= 'if(scalar(@alist) == 1) { ';
-					$position_code .= "cmp_ok(\$result, 'eq', \$obj->{$accessor{property}}, 'getset function returns correct item');";
+					$position_code .= "cmp_ok(\$result, '$cmp_op', \$obj->{$accessor{property}}, 'getset function returns correct item');";
 					if($accessor{type} eq 'getter') {
 						$position_code .= "if(defined(\$prev_value)) { cmp_ok(\$result, 'eq', \$prev_value, 'getter does not change value'); } ";
 					}
@@ -2047,7 +2059,7 @@ sub generate
 			if($output{'_returns_self'}) {
 				$call_code .= "ok(defined(\$result)); ok(\$result eq \$obj, '$function returns self')";
 			} elsif(defined($accessor{type}) && ($accessor{type} eq 'getset')) {
-				$call_code .= "ok(\$obj->$function() eq \$result, 'test getset accessor');"
+				$call_code .= "ok(\$obj->$function() $cmp_op \$result, 'test getset accessor');"
 			}
 			if(scalar(keys %input) == 0) {
 				if(defined($accessor{type}) && ($accessor{type} eq 'getter')) {
