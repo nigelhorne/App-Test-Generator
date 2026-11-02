@@ -1,5 +1,48 @@
 Revision history for App-Test-Generator
 
+0.48	Sun Nov  1 09:55:46 PM EST 2026
+	[Bug fixes]
+	- Fix SchemaExtractor not recognising get/set accessors that guard on a
+	  named argument instead of on @_. _detect_accessor_methods only matched
+	  shapes requiring a literal "if (@_)", so a method written as
+
+	    my $status = shift;
+	    return $self->{status} = $status if(defined($status));
+	    ...
+	    return $self->{status} || 200;
+
+	  fell through every branch and was emitted as an ordinary function: the
+	  POD input/output types were kept but no accessor block was produced, so
+	  the generated harness never tested the get/set round trip. CGI::Info's
+	  status() is exactly this shape. The detector now treats a lexical
+	  assigned from shift and then tested with defined() (if, unless, or the
+	  statement-modifier form) as equivalent evidence to "if (@_)", still
+	  preferring "if (@_)" when both are present. When the named-argument
+	  guard is the only evidence and the method declares more than one
+	  parameter, detection is skipped with a log line rather than reaching
+	  the multi-argument croak, so a heuristic miss cannot become a fatal
+	  error on another distribution's code.
+	  Regression test added to t/getset_accessor.t using the CGI::Info::status
+	  shape; re-extracting CGI::Info changes only status.yml, which now gains
+	  accessor: {property: status, type: getset}.
+
+	- Fix generated harnesses never passing a scalar _input case to the routine
+	  under test. When the schema gave the parameter a position, the call was
+	  assembled from @alist, but the scalar _input branch only filled in the
+	  test's name and left @alist empty. A case reported as "status(8.2) dies"
+	  therefore called status() with no argument and could never die, so the
+	  case tested nothing while still appearing in the output by name. A
+	  single-parameter routine now receives the value at position 0.
+
+	- Fix integer edge cases in generated harnesses that no correct routine
+	  could satisfy. The "a float should die" case was built as rand_int() +
+	  0.2, which is integral once the value exceeds 2**53, so the harness
+	  demanded rejection of an integer; the case is now only emitted when the
+	  fractional part actually survives floating point. The integer edge cases
+	  also expected the strings "0x10" and "1_000" to be accepted, which
+	  Scalar::Util::looks_like_number (and therefore Params::Validate::Strict)
+	  rejects; they are now expected to die like any other non-numeric string.
+
 0.47	Wed Oct  7 09:29:14 PM EDT 2026
 	[Enhancements]
 	- Bump actions-setup-perl to 1.44.0

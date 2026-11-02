@@ -887,7 +887,12 @@ sub fuzz_inputs
 
 					$case_input = int(rand_int() + $min);
 					# If it's takes an integer, a float should die
-					push @cases, { _input => $case_input + 0.1, _STATUS => 'DIES', _LINE => __LINE__ };
+					# Adding 0.1 to a large integer is lost to floating point
+					# precision, so only claim the value is a non-integer when
+					# it actually is one.
+					my $float_input = $case_input + 0.1;
+					push @cases, { _input => $float_input, _STATUS => 'DIES', _LINE => __LINE__ }
+						if($float_input != int($float_input));
 				} elsif(($type eq 'number') || ($type eq 'float')) {
 					if (defined $input{'max'}) {
 						my $lo = $input{'min'} // 0;
@@ -1610,13 +1615,21 @@ sub generate_tests
 						$case_input{$field} = int(abs(rand_int()));
 					}
 				} else {
+					# Only claim a float when the fraction survives floating point:
+					# rand_int() can return values large enough for +0.2 to be lost,
+					# which would demand that an integral value be rejected.
+					my $float_input = rand_int() + 0.2;
 					push @cases,
 						# If it's takes an integer, a float should die
-						{ _input => rand_int() + 0.2, _STATUS => 'DIES', _LINE => __LINE__ },
+						($float_input == int($float_input)) ? () : ({ _input => $float_input, _STATUS => 'DIES', _LINE => __LINE__ }),
 						# Integers passed as a string
 						{ _input => "007", _STATUS => 'OK', _LINE => __LINE__ },
-						{ _input => "0x10", _STATUS => 'OK', _LINE => __LINE__ },
-						{ _input => "1_000", _STATUS => 'OK', _LINE => __LINE__ };
+						# Not integer literals to Perl's number parser, so they must be
+						# rejected; they were previously expected to survive, which no
+						# validator that uses looks_like_number (Params::Validate::Strict
+						# included) can satisfy
+						{ _input => "0x10", _STATUS => 'DIES', _LINE => __LINE__ },
+						{ _input => "1_000", _STATUS => 'DIES', _LINE => __LINE__ };
 					$case_input{$field} = rand_int();
 				}
 			} elsif ($type eq 'boolean') {
@@ -1971,6 +1984,11 @@ sub run_test
 		} else {
 			$mess = "[% function %]('$safe_input') %s";
 		}
+		# A scalar _input case is the only argument of a single-parameter
+		# routine, so it has to be passed as that argument. Without this the
+		# call below dropped @alist and invoked the routine with no arguments,
+		# so the case tested nothing while still being reported by name.
+		$alist[0] = $input if($positions && (scalar(keys %{$positions}) == 1));
 	} elsif(defined($input)) {
 		if($positions) {
 			# Positional args

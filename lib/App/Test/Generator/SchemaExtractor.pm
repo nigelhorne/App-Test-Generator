@@ -2247,6 +2247,28 @@ sub _detect_accessor_methods {
 		return;
 	}
 
+	# A store guarded by the presence of an argument is the same get/set
+	# idiom as `if (@_)`, just written against a named lexical:
+	#
+	#   my $status = shift;
+	#   return $self->{status} = $status if(defined($status));
+	#   ...
+	#   return $self->{status} || 200;
+	#
+	# CGI::Info::status is this shape, and it was being typed as a plain
+	# function because every branch below only looked for `if (@_)`.
+	my $conditional_arg = 0;
+	while($code =~ /\bmy\s+\$(\w+)\s*=\s*shift\b/g) {
+		my $arg = $1;
+		if($code =~ /(?:if|unless)\s*\(?\s*defined\s*\(?\s*\$\Q$arg\E\b/) {
+			$conditional_arg = 1;
+			last;
+		}
+	}
+	# `if (@_)` stays the strongest signal; a named-argument guard is
+	# weaker evidence and must not turn a heuristic miss into a croak.
+	my $arg_guard = ($code =~ /if\s*\(\s*(?:\@_|[\$]\w+)/) ? 1 : 0;
+
 	# -------------------------------
 	# Getter/Setter combo
 	# -------------------------------
@@ -2298,7 +2320,7 @@ sub _detect_accessor_methods {
 				};
 			}
 		}
-	} elsif($code =~ /if\s*\(\s*(?:\@_|[\$]\w+)/ &&
+	} elsif(($arg_guard || $conditional_arg) &&
 	    $code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=\s*(?:shift|\@_|\$_\[\d+\]|\$\w+)\b/x &&
 	    $code =~ /return\b/
 	) {
@@ -2306,6 +2328,15 @@ sub _detect_accessor_methods {
 		# Getter/Setter (validated input)
 		# -------------------------------
 		my $property = $1;
+
+		# A named-argument guard is weaker evidence than `if (@_)`, so when
+		# the method declares more than one parameter assume this is not an
+		# accessor rather than croaking further down on an ambiguous match.
+		if($conditional_arg && !$arg_guard &&
+		   (ref($schema->{input}) eq 'HASH') && (scalar(keys %{$schema->{input}}) > 1)) {
+			$self->_log("  Skipping conditional accessor: more than one argument");
+			return;
+		}
 
 		if(!defined($property)) {
 			if($code =~ /\$self\s*->\s*\{\s*['"]?([^}'"]+)['"]?\s*\}\s*=/) {

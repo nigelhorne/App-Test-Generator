@@ -107,6 +107,45 @@ sub is_tablet {
 	return $self->{is_tablet};
 }
 
+=head2 status($status)
+
+Sets or returns the status of the object,
+200 for OK,
+otherwise an HTTP error code
+
+=over 4
+
+=item $status
+
+Optional integer value to be set or retrieved.
+If omitted, the value is retrieved.
+
+=back
+
+=cut
+
+sub status
+{
+	my $self = shift;
+	my $status = shift;
+
+	# Set status if provided
+	return $self->{status} = $status if(defined($status));
+
+	# Determine status based on request method if status is not set
+	unless (defined $self->{status}) {
+		my $method = $ENV{'REQUEST_METHOD'};
+
+		return 405 if $method && ($method eq 'OPTIONS' || $method eq 'DELETE');
+		return 411 if $method && ($method eq 'POST' && !defined $ENV{'CONTENT_LENGTH'});
+
+		return 200;
+	}
+
+	# Return current status or 200 by default
+	return $self->{status} || 200;
+}
+
 1;
 PERL
 
@@ -292,5 +331,12 @@ ok(!exists $schemas->{mutator}{accessor});
 
 # is_tablet should be detected as getter
 is($schemas->{is_tablet}{accessor}{type}, 'getter', 'is_tablet method detected as getter');
+
+# CGI::Info::status stores its argument only when one is given, and returns
+# the stored value otherwise. This is a get/set accessor, not a plain function.
+is($schemas->{status}{accessor}{type}, 'getset', 'Conditional setter/return detected as getset');
+is($schemas->{status}{accessor}{property}, 'status', 'Conditional accessor property detected');
+is($schemas->{status}{input}{status}{type}, 'integer', 'POD-declared integer input preserved');
+is($schemas->{status}{input}{status}{position}, 0, 'Conditional accessor argument keeps position 0');
 
 done_testing();
