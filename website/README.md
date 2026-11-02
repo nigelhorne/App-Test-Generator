@@ -58,3 +58,30 @@ every page's footer.
 - Add a page by copying an existing one, updating the `<title>`, the
   `<meta name="description">`, the `rel="canonical"`, the `<h1>` and the
   `current` class, then adding a nav entry to every page.
+
+## Shared conventions
+
+This site is one of four with the same look and feel — the others are
+App::Actions, App::FileSync and Database::BI. `css/site.css` is
+**byte-identical in all four**; a change to it belongs in all four at once, or
+the sites drift apart again.
+
+Every page carries the same `<head>` furniture:
+
+- `<meta name="viewport" content="width=device-width, initial-scale=1">`
+- a unique `<title>` and `<meta name="description">` per page
+- `<link rel="canonical" href="<this file's name>">`
+- the two `theme-color` hints (light and dark)
+- `og:type`, `og:site_name`, `og:title`, `og:description` and `twitter:card`
+- `application/ld+json` on the home page only
+
+The top-level `index.html` is a redirect stub: it carries `noindex, follow` so
+it cannot compete in search results with the real home page.
+
+## Mobile
+
+Desktop is the primary target. Below 46rem the navigation becomes a single
+horizontally scrolling row inside the sticky header; below 34rem the cards
+become one column and the page gutters tighten. Tables live in
+`<div class="table-wrap">` so a wide one scrolls sideways instead of pushing
+the page out.
