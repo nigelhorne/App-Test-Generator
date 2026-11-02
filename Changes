@@ -43,6 +43,21 @@ Revision history for App-Test-Generator
 	  Scalar::Util::looks_like_number (and therefore Params::Validate::Strict)
 	  rejects; they are now expected to die like any other non-numeric string.
 
+	- Fix setter accessors being typed as "string" when the setter wraps its
+	  argument before storing it. CGI::Info::set_logger does
+
+	    $self->{'logger'} = Log::Abstraction->new($logger);
+
+	  so the argument may be anything the wrapper accepts, including the code
+	  and array references its documentation promises. Declaring it a string
+	  made the generated harness require hash, array and code references to
+	  die, which the setter rightly accepts, so every such case failed. A
+	  setter whose only non-direct assignment passes the argument to a call is
+	  now declared type "any" instead of being guessed as a string, and the
+	  harness stops asserting a contract the setter never had. Setters that
+	  store the argument itself are still typed "string"; both shapes are
+	  covered by t/getset_accessor.t.
+
 0.47	Wed Oct  7 09:29:14 PM EDT 2026
 	[Enhancements]
 	- Bump actions-setup-perl to 1.44.0

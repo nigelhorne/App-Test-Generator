@@ -53,6 +53,22 @@ sub setter_only {
 	return $self;
 }
 
+# Mirrors CGI::Info::set_logger: the argument is stored as given when it is
+# already a reference, otherwise it is handed to another class's constructor,
+# so the setter accepts whatever that constructor accepts.
+sub set_wrapped {
+	my $self = shift;
+	my $thing = shift;
+
+	if(ref($thing)) {
+		$self->{thing} = $thing;
+	} else {
+		$self->{thing} = Wrapper->new($thing);
+	}
+
+	return $self;
+}
+
 sub mutator {
 	my $self = shift;
 	$self->{bar} = shift;
@@ -246,6 +262,12 @@ is(
 	$schemas->{setter_only}{input}{foo}{type},
 	'string',
 	'Setter-only input defaulted sanely'
+);
+
+is(
+	$schemas->{set_wrapped}{input}{thing}{type},
+	'any',
+	'Setter that wraps its argument is not typed as a string'
 );
 
 is(

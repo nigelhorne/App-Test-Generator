@@ -2463,8 +2463,25 @@ sub _detect_accessor_methods {
 
 		$self->_log("  Detected setter accessor for property: $property");
 
+		# A setter that hands the argument to something else before storing
+		# it, such as CGI::Info::set_logger's
+		#
+		#   $self->{'logger'} = Log::Abstraction->new($logger);
+		#
+		# does not constrain what the argument may be, so the 'string' default
+		# would invent cases like "a hash ref must die" that the routine
+		# rightly accepts. Claim 'string' only when every assignment stores the
+		# argument itself.
+		my $param_type = 'string';
+		while($code =~ /\$self\s*->\s*\{\s*['"]?\Q$property\E['"]?\s*\}\s*=\s*([^;]+);/g) {
+			if($1 =~ /(?:->|::)\w+\s*\([^)]*\$\Q$param\E\b/) {
+				$param_type = 'any';
+				last;
+			}
+		}
+
 		$schema->{input} = {
-			$param => { type => 'string' }, # safe default
+			$param => { type => $param_type }, # safe default
 		};
 		$schema->{input_style} = 'hash';
 
