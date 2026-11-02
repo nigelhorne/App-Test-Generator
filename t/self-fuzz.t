@@ -6,22 +6,14 @@ use warnings;
 # self-fuzz.t - black-box testing of every public routine in this
 # distribution, generated from the source code by App::Test::Generator.
 #
-# This is the master copy of the test shipped as t/all-fuzz.t in the
-# distributions that App::Test::Generator is used to test.  Keep the two
-# in step: the body below is meant to stay identical, so that a diff of
-# the two files shows only the plumbing that makes this copy test the
-# working tree instead of an installed release:
+# The master copy of t/all-fuzz.t, the test shipped to the distributions
+# this module tests.  Run it from the distribution root with:
 #
-#   * it runs $root/bin/extract-schemas and $root/bin/fuzz-harness-generator
-#     with $root/lib first in every child's @INC, so this checkout's code
-#     is what gets extracted and exercised, before "make install"
-#   * for the same reason Test::Which locates those programs here rather
-#     than t/all-fuzz.t's own search of PATH
-#   * %no_fuzz is this distribution's list of routines that this pipeline
-#     cannot test
+#     make EXTENDED_TESTING=1 TEST_FILES=t/self-fuzz.t
 #
-# Requires EXTENDED_TESTING=1.  Set TEST_VERBOSE=1 for per-step output and
-# ALL_FUZZ_TIMEOUT=N for a different per-routine limit (default 180s).
+# or, without ExtUtils::MakeMaker in the way:
+#
+#     EXTENDED_TESTING=1 prove -Ilib t/self-fuzz.t
 #
 # For every .pm under lib/ it runs the CLI pipeline
 #
@@ -41,6 +33,12 @@ use warnings;
 #   object param without can  a mandatory object parameter that the
 #                             harness cannot mock
 #   no result in $TIMEOUT s   the routine did not finish; see below
+#
+# Environment:
+#
+#   EXTENDED_TESTING=1   required; the file runs nothing without it
+#   TEST_VERBOSE=1       per-step diagnostics
+#   ALL_FUZZ_TIMEOUT=N   seconds allowed per routine (default 180)
 #
 # A routine that talks to the network or sleeps can take longer than any
 # useful test run, so each harness gets a hard limit and the whole process
@@ -75,33 +73,35 @@ use IPC::Run3;
 use POSIX qw(_exit);
 use YAML::XS qw(LoadFile);
 
+# Unlike t/all-fuzz.t, run this checkout's bin/ rather than whatever copy an
+# installed release left on PATH, so that the code under test is the code in
+# this working tree.
+BEGIN {
+	$ENV{'PATH'} = join($Config{'path_sep'},
+		File::Spec->catdir(File::Spec->rel2abs(File::Spec->catdir($FindBin::Bin, File::Spec->updir())), 'bin'),
+		$ENV{'PATH'} // '');
+}
+
+use Test::Which 'extract-schemas', 'fuzz-harness-generator';
+
+my $VERBOSE = $ENV{TEST_VERBOSE} // 0;
+my $TIMEOUT = $ENV{ALL_FUZZ_TIMEOUT} // 180;
+
 # t/ is a direct child of the distribution root in every CPAN layout
 my $root    = File::Spec->rel2abs(File::Spec->catdir($Bin, File::Spec->updir()));
 my $lib_dir = File::Spec->catdir($root, 'lib');
 
 plan skip_all => "self-fuzz: no lib/ directory under $root" unless(-d $lib_dir);
 
-# Put this checkout's bin/ ahead of any installed copy, so that the two
-# programs Test::Which checks next are the ones built from this working tree.
-BEGIN {
-	my $checkout = File::Spec->rel2abs(File::Spec->catdir($FindBin::Bin, File::Spec->updir()));
-	$ENV{'PATH'} = join($Config{'path_sep'},
-		File::Spec->catdir($checkout, 'bin'), $ENV{'PATH'} // '');
-}
-
-use Test::Which 'extract-schemas', 'fuzz-harness-generator';
-
-# Resolved through the PATH set above: Test::Which has just verified both.
+# Test::Which has just confirmed both are on PATH; the generated harnesses
+# run them by their bare names.
 my $extract_bin = 'extract-schemas';
 my $fuzz_bin    = 'fuzz-harness-generator';
 
-my $VERBOSE = $ENV{TEST_VERBOSE} // 0;
-my $TIMEOUT = $ENV{ALL_FUZZ_TIMEOUT} // 180;
-
 # The harness runs in a child process with a scratch cwd, so the module
 # under test is found through PERL5LIB rather than through "prove -l".
-# The checkout's own lib/ has to come first: this distribution is the
-# module under test, and an installed copy must not shadow it.
+# Unlike t/all-fuzz.t the checkout's own lib/ must come first, or an
+# installed release would shadow the code being tested.
 my @inc_dirs = grep { -d } map { File::Spec->catdir($root, $_) } qw(lib blib/lib);
 
 # Populated during the run; each entry: { module, func, tests, status }
@@ -112,51 +112,26 @@ my @fuzz_report;
 # When adding an entry here, first check whether extract-schemas produces a
 # wrong schema (fix SchemaExtractor) before resorting to a skip.
 #
-#   generate       - requires schemas/generate.yml on disk (memberof path) and
-#                    takes 40+ s; tested separately via fuzz-harness-generator
-#   DB::DB         - Perl debugger hook; auto-filtered by SchemaExtractor since
-#                    0.45 (cross-package subs skipped); kept here as a belt-and-
-#                    suspenders guard in case the schema somehow surfaces it
-#   get_data_section - returns a ref type that Test::Returns cannot validate
-#   new            - constructors need properly typed args (hashref/object);
-#                    SchemaExtractor infers 'string' and the harness sends
-#                    random strings, crashing every call
-#   merge          - requires valid file paths that exist on disk
-#   mutate         - requires a live PPI::Document object; schema has new: ~
-#                    so auto-detected as OOP, but kept here for clarity
-#   applies_to     - requires a live PPI::Document object; same as mutate
-#   absorb_legacy_output - silently returns for non-hashref input rather than
-#                    croaking; harness generates DIES tests that always fail
-#   calculate_age  - integer min constraint causes rand() to generate sub-minimum
-#                    values (e.g. 0..1899) that die with "Birth year out of range";
-#                    harness expects survival but the function dies
-#   add_evidence   - category and signal accept only specific enum values; schema
-#                    says 'string' so harness sends random strings which croak with
-#                    "Invalid evidence category '...'" — enum constraints not yet
-#                    supported in the schema format
-#   classification - getter that returns undef until resolve_classification() is
-#                    called; output spec says 'string' but freshly-constructed
-#                    objects have classification=undef; Return::Set validation fails
-#   evidence       - returns a list (not a reference), so scalar context gives 0;
-#                    output spec says 'arrayref' but harness captures in scalar context
-#   validate_email - requires valid email format (regex with @); harness generates random
-#                    strings that don't satisfy the format check; enum-like semantic
-#   return_type    - getter returning undef until resolve_return_type() called; output
-#                    spec says string but freshly-constructed objects have return_type=undef
-#
-# The following methods belong to classes whose new() requires mandatory arguments
-# (schema+target_sub, file+lib_dir, or file) that cannot be synthesised
-# automatically.  SchemaExtractor now emits new:{} (no-arg fallback) instead of
-# new:~ for these, but the harness discovers at runtime that new() dies without
-# its required args.
-#   load_corpus / minimize_corpus / run / save_corpus
-#                  - CoverageGuidedFuzzer::new requires schema (hashref) and
-#                    target_sub (coderef); new() with no args croaks immediately
-#   apply_mutant / generate_mutants / prepare_workspace / run_tests
-#                  - Mutator::new requires file and lib_dir; new() with no args croaks
-#   extract        - PodExampleExtractor::new requires file; new() with no args croaks
-#   extract_all / generate_pod_validation_report
-#                  - SchemaExtractor::new requires input_file; new() with no args croaks
+#   generate             needs schemas/generate.yml on disk, and 40+ seconds
+#   DB::DB               Perl debugger hook; SchemaExtractor already drops it
+#   new                  constructors need typed args, inferred as 'string'
+#   merge                needs file paths that exist on disk
+#   mutate, applies_to   need a live PPI::Document
+#   calculate_age        integer min constraint rejected by the harness
+#   add_evidence         enum-valued arguments recorded as 'string'
+#   validate_email       format-checked argument recorded as 'string'
+#   classification,      getters that return undef until a resolver has been
+#   return_type          called, though their output is declared 'string'
+#   evidence             returns a list, captured in scalar context
+#   get_data_section     returns a reference the output spec cannot describe
+#   absorb_legacy_output silently returns on bad input instead of dying
+#   load_corpus, minimize_corpus, run, save_corpus
+#                        CoverageGuidedFuzzer->new needs schema and target_sub
+#   apply_mutant, generate_mutants, prepare_workspace, run_tests
+#                        Mutator->new needs file and lib_dir
+#   extract              PodExampleExtractor->new needs file
+#   extract_all, generate_pod_validation_report
+#                        SchemaExtractor->new needs input_file
 my %no_fuzz = map { $_ => 1 } qw(
 	generate
 	DB::DB
