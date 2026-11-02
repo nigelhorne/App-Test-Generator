@@ -2003,6 +2003,13 @@ sub _analyze_method {
 			$schema->{input}{$name}{min}       = $pod_p->{min}       if defined $pod_p->{min};
 			$schema->{input}{$name}{max}       = $pod_p->{max}       if defined $pod_p->{max};
 		}
+
+		# The routine validates its arguments, so a reference handed to a
+		# string parameter is rejected at runtime and the harness may assert
+		# that it dies.  Types that come only from POD or from code
+		# heuristics get no such mark: those describe intent, and nothing in
+		# the routine necessarily checks them.
+		$schema->{input}{$_}{_type_checked} = 1 for keys %{$schema->{input}};
 	} else {
 		# Merge field declarations into code_params before merging analyses
 		if (keys %$fields) {
@@ -2843,7 +2850,7 @@ sub _extract_pvs_schema {
 
 				my $schema_str = "my \$schema = $schema_text";
 				my $schema = $compartment->reval($schema_str);
-				if(scalar keys %{$schema}) {
+				if($self->_usable_validator_schema($schema)) {
 					return {
 						input => $schema,
 						style => 'hash',
@@ -2908,7 +2915,7 @@ sub _extract_pv_schema {
 				my $schema_str = "my \$schema = $schema_text";
 				my $schema = $compartment->reval($schema_str);
 
-				if(scalar keys %{$schema}) {
+				if($self->_usable_validator_schema($schema)) {
 					foreach my $arg(keys %{$schema}) {
 						my $field = $schema->{$arg};
 						if(my $type = $field->{'type'}) {
@@ -3051,7 +3058,7 @@ sub _extract_moosex_params_schema
 				$schema_str =~ s/ArrayRef\[(.+?)\]/arrayref, element_type => $1/g;
 				my $schema = $compartment->reval($schema_str);
 
-				if(scalar keys %{$schema}) {
+				if($self->_usable_validator_schema($schema)) {
 					foreach my $arg(keys %{$schema}) {
 						my $field = $schema->{$arg};
 						if(my $isa = delete $field->{'isa'}) {
@@ -3131,6 +3138,58 @@ sub _extract_schema_hash_from_block {
 	return unless $result && ref($result) eq 'HASH' && $result->{input};
 
 	return $result->{input};
+}
+
+# --------------------------------------------------
+# _usable_validator_schema
+#
+# Purpose:    Decide whether a schema hash evaluated
+#             from source code is a real parameter
+#             schema, or the remains of a runtime
+#             expression that was never meant to be
+#             evaluated at all.
+#
+# Entry:      $schema - value returned by
+#                       Safe->reval() on the schema
+#                       text found in the call.
+#
+# Exit:       Returns true when the schema is a
+#             non-empty hash of named parameters to
+#             spec hashes, false otherwise.
+#
+# Side effects: None.
+#
+# Notes:      CGI::Info::params validates each
+#             parameter inside a loop with
+#
+#               validate_strict({
+#                   schema => { $key => $schema },
+#                   args   => { $key => $value },
+#               });
+#
+#             Evaluating { $key => $schema } with
+#             both lexicals undefined yields
+#             { '' => undef }. Accepting that as the
+#             method's input gave the schema an empty
+#             parameter name, which the harness
+#             generator rightly refuses to turn into
+#             a Perl variable, so no harness could be
+#             generated for the routine at all.
+# --------------------------------------------------
+sub _usable_validator_schema {
+	my ($self, $schema) = @_;
+
+	return 0 unless ref($schema) eq 'HASH';
+
+	my @names = keys %$schema;
+	return 0 unless @names;
+
+	for my $name (@names) {
+		return 0 unless length($name);
+		return 0 unless ref($schema->{$name}) eq 'HASH';
+	}
+
+	return 1;
 }
 
 # --------------------------------------------------
@@ -8547,6 +8606,11 @@ sub _serialize_parameter_for_yaml {
 			}
 		}
 	}
+
+	# Keep the marker saying the routine's own validator enforces these
+	# types.  The harness uses it to decide whether wrong-typed values are
+	# expected to die.
+	$cleaned{_type_checked} = 1 if($param->{_type_checked});
 
 	# Remove internal fields.  The directory semantic is kept: the harness
 	# needs it to supply a path that exists.

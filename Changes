@@ -138,6 +138,31 @@ Revision history for App-Test-Generator
 	  with no parameters. Covered by the environment-driven getter fixture in
 	  t/getset_accessor.t.
 
+	- Fix a validator schema evaluated from runtime lexicals being taken as a
+	  method's input spec. CGI::Info::params validates each parameter inside a
+	  loop with validate_strict({ schema => { $key => $schema }, ... }); the
+	  extractor found that call, evaluated { $key => $schema } in Safe with
+	  both lexicals undefined, and kept the result { '' => undef }. The schema
+	  therefore carried an empty parameter name and the harness generator
+	  refused it outright ("Empty input parameter name"), so no harness was
+	  generated for the routine and all-fuzz reported it as FAILED rather
+	  than running anything. A schema read from source is now accepted only
+	  when it is a non-empty hash of named parameters to spec hashes.
+	  Regression test added to t/params_validate_strict.t using the
+	  runtime-built schema shape.
+
+	- Only assert that a wrong-typed argument dies when the routine's own
+	  validator enforces the declared type. The harness generated
+	  wrong-data-type cases for every documented parameter, so a routine
+	  that merely documents a string field (CGI::Info::param's optional
+	  field) was required to reject a hashref, arrayref, scalar ref, coderef
+	  or object. param simply uses the value as a hash key and has no
+	  reason to die, which accounted for all 732 remaining failures in the
+	  all-fuzz run. A type read from POD or inferred from code describes
+	  intent, not enforcement, so the extractor now marks validator-backed
+	  input specs with _type_checked and the harness emits the wrong-type
+	  cases only for those.
+
 0.47	Wed Oct  7 09:29:14 PM EDT 2026
 	[Enhancements]
 	- Bump actions-setup-perl to 1.44.0

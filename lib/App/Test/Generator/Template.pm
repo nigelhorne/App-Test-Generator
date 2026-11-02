@@ -1465,7 +1465,12 @@ sub _generate_string_cases
 	}
 
 	[% IF module %]
-		# Send wrong data type - builtins aren't good at checking this
+		# Send wrong data type - builtins aren't good at checking this,
+		# and only where the routine's own validator enforces the type.
+		# A type declared in POD is documentation, not a promise to
+		# reject a reference, so asserting that it dies invents a
+		# contract the routine never made.
+		if($spec->{'_type_checked'}) {
 		if($config{'test_nuls'}) {
 			push @cases,
 				{ %{$mandatory_args}, $arg_name => "\0", _STATUS => 'DIES', _LINE => __LINE__ },
@@ -1496,6 +1501,7 @@ sub _generate_string_cases
 			{ %{$mandatory_args}, ( $arg_name => bless({}, 'Evil::Class'), _STATUS => 'DIES', _LINE => __LINE__ ) },
 			# { %{$mandatory_args}, ( $arg_name => [1, 2, 3], _STATUS => 'DIES', _LINE => __LINE__ ) },	# Generates false positives. Why?
 			{ %{$mandatory_args}, ( $arg_name => { a => 1 }, _STATUS => 'DIES', _LINE => __LINE__ ) };
+		}
 	[% END %]
 
 	return \@cases;
