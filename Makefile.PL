@@ -86,6 +86,7 @@ WriteMakefile(
 		'Test::Most' => 0,
 		'Test::Needs' => 0,
 		'Test::Returns' => 0.03,
+		'Test::Which' => 0,
 		'Test::Without::Module' => 0,
 		'Unicode::Normalize' => 0,
 		'Symbol' => 0,
