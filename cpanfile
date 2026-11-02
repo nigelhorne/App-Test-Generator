@@ -19,6 +19,7 @@ requires 'File::Spec';
 requires 'File::Temp';
 requires 'Getopt::Long';
 requires 'HTML::Entities';
+requires 'HTTP::Tiny';
 requires 'IPC::Open3';
 requires 'IPC::Run3';
 requires 'JSON::MaybeXS';
@@ -33,14 +34,19 @@ requires 'Readonly::Values::Boolean';
 requires 'Return::Set', '0.03';
 requires 'Safe';
 requires 'Template';
+requires 'Test::Exception';
 requires 'Text::Balanced';
+requires 'Time::HiRes';
 requires 'URI';
 requires 'UUID::Tiny';
 requires 'Unicode::GCString';
 requires 'WWW::RT::CPAN';
 requires 'YAML::XS';
 requires 'autodie';
+recommends 'BSD::Resource';
 recommends 'Devel::Cover', '1.51';
+recommends 'Type::Params';
+recommends 'Types::Common';
 
 on 'test' => sub {
 	requires 'Encode';
