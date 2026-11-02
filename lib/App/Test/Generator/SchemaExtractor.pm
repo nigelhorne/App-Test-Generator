@@ -4366,8 +4366,13 @@ sub _analyze_output_from_code
 					$return_types{integer}++;
 				} elsif ($ret =~ /=/ && $ret =~ /\$\w+/) {
 					# Assignment returning a value (e.g. $self->{status} = $status)
-					# If assignment involves a numeric literal or variable, assume numeric intent
-					if ($ret =~ /\b\d+\b/) {
+					# If assignment involves a numeric literal or variable, assume numeric intent.
+					# $1, $2 and friends are regex captures - strings, not numeric
+					# literals - so drop them before looking for digits. CGI::Info::script_dir
+					# returns "$self->{script_path} =~ $dir_regex ? $1 : ..." and the
+					# "1" in $1 was being read as a numeric literal.
+					(my $numeric_ret = $ret) =~ s/\$\d+//g;
+					if ($numeric_ret =~ /\b\d+\b/) {
 						$return_types{integer} += 2;
 						$self->_log("  OUTPUT: Assignment with numeric value detected");
 					} else {

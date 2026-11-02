@@ -436,6 +436,43 @@ END_MODULE
 	done_testing();
 };
 
+# A regex capture in a returned expression is a string, not a number.
+# CGI::Info::script_dir returns "$self->{script_path} =~ $dir_regex ? $1 : ..."
+# and the "1" in $1 used to be read as a numeric literal, which typed the
+# routine as returning an integer.
+
+subtest 'regex capture in a returned expression is not numeric' => sub {
+	my $module = <<'END_MODULE';
+package CaptureTest;
+
+sub script_dir {
+	my $self = shift;
+	my $dir_regex = qr{(.+)/};
+
+	return $self->{script_path} =~ $dir_regex ? $1 : $self->{script_path};
+}
+
+sub start_year {
+	my $self = shift;
+
+	return $self->{year} = 2026;
+}
+
+1;
+END_MODULE
+
+	my $extractor = create_extractor($module);
+	my $schemas = $extractor->extract_all();
+
+	is($schemas->{script_dir}{output}{type}, 'string',
+		'regex capture return is typed as a string, not an integer');
+
+	is($schemas->{start_year}{output}{type}, 'integer',
+		'an assignment of a numeric literal is still typed as an integer');
+
+	done_testing();
+};
+
 # =head4 Output formal spec overrides heuristic code analysis
 subtest '=head4 Output type takes precedence over code inference' => sub {
 	my $module = <<'END_MODULE';

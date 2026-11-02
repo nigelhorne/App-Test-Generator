@@ -58,6 +58,19 @@ Revision history for App-Test-Generator
 	  store the argument itself are still typed "string"; both shapes are
 	  covered by t/getset_accessor.t.
 
+	- Fix returns built from a regex capture being typed as integers. The
+	  assignment heuristic looked for a digit anywhere in the returned
+	  expression, so CGI::Info::script_dir's
+
+	    return $self->{script_path} =~ $dir_regex ? $1 : $self->{script_path};
+
+	  read the "1" of $1 as a numeric literal and the schema claimed an
+	  integer return. The generated harness then rejected the directory the
+	  routine really returns ("'/tmp/user/1000' must be an integer"). Capture
+	  variables are now stripped before the numeric check, so such a routine
+	  is typed as returning a string. t/return.t covers both this and a
+	  genuine numeric return.
+
 0.47	Wed Oct  7 09:29:14 PM EDT 2026
 	[Enhancements]
 	- Bump actions-setup-perl to 1.44.0
