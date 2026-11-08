@@ -31,7 +31,9 @@ Revision history for App-Test-Generator
 	  deletes something else is reported as "setter changes nothing but its
 	  property".  The property is excluded because changing it is the point, and
 	  values filled in where it was handed undef are ignored along with keys it
-	  adds, so lazy initialisation is not reported as damage.
+	  adds, so lazy initialisation is not reported as damage.  Regression test
+	  added to t/accessor_state_checks.t, which generates its own getter and
+	  getset harnesses and runs them.
 
 	[Bug fixes]
 	- Fix SchemaExtractor not recognising get/set accessors that guard on a

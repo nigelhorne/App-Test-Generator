@@ -2127,7 +2127,7 @@ sub generate
 		# `my ($self, $val) = @_` would store it as if it were a value.
 		foreach my $code (\$call_code, \$position_code) {
 			next unless(defined($$code));
-			$$code =~ s/\Q($function)\E\(\$input\)/$function()/g;
+			$$code =~ s/\Q$function\E\(\$input\)/$function()/g;
 		}
 		my $snapshot = 'my $getter_copy = eval { require Storable; Storable::dclone($obj) }; ';
 		my $check = 'if(defined($getter_copy) && eval { scalar(keys %{$getter_copy}); 1 }) {'
