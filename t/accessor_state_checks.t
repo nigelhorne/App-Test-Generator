@@ -151,7 +151,8 @@ close $module_fh or die "$module_file: $!";
 # ---------------------------------------------------------------
 sub _getter_schema
 {
-	my ($function, $property) = @_;
+	my ($function, $property, $extra_config) = @_;
+	$extra_config //= '';
 
 	return <<"YAML";
 ---
@@ -166,6 +167,7 @@ accessor:
 config:
   test_undef: no
   test_empty: no
+$extra_config
 
 output:
   type: integer
@@ -174,7 +176,8 @@ YAML
 
 sub _getset_schema
 {
-	my ($function) = @_;
+	my ($function, $extra_config) = @_;
+	$extra_config //= '';
 
 	return <<"YAML";
 ---
@@ -185,6 +188,7 @@ new: StateCheck::Cfg
 config:
   test_undef: no
   test_empty: no
+$extra_config
 
 accessor:
   type: getset
@@ -234,6 +238,9 @@ sub _generate
 	close $schema_fh or die "$schema: $!";
 
 	my $harness = File::Spec->catfile($out_dir, "$name.t");
+	# Let the generator see the fixture module, so that it does not warn that
+	# the module under test is missing when it inspects the schema
+	local @INC = (@INC, $lib_dir);
 	App::Test::Generator->generate($schema, $harness);
 	die "harness $name.t was not written" unless -s $harness;
 
@@ -264,6 +271,10 @@ foreach my $function (qw(clean dirty)) {
 	$harness{$function} = _generate($function, _getset_schema($function));
 }
 $harness{twice} = _generate('twice', _function_schema());
+
+# The same two routines with the checks switched off
+$harness{clobber_gated} = _generate('clobber_gated', _getter_schema('clobber', 'count', "  check_accessors: no\n"));
+$harness{dirty_gated}   = _generate('dirty_gated', _getset_schema('dirty', "  check_accessors: no\n"));
 
 # ---------------------------------------------------------------
 # What the generator emits
@@ -319,6 +330,15 @@ subtest 'a getset that changes only its property is not reported' => sub {
 subtest 'a getset that changes other state is reported' => sub {
 	like($harness{dirty}{out}, qr/^not ok \d+ - \Q$SETTER_MESSAGE\E/m, 'other state change is reported');
 	like($harness{dirty}{out}, qr/\$got->\{count\} = '99'/, 'the changed value is named');
+};
+
+subtest 'the accessor state checks can be turned off' => sub {
+	unlike($harness{clobber_gated}{code}, qr/Storable::dclone/, 'no object copy is taken');
+	unlike($harness{clobber_gated}{out}, qr/^not ok \d+ - \Q$GETTER_MESSAGE\E/m, 'no getter state check is made');
+	like($harness{clobber_gated}{out}, qr/^1\.\.\d+/m, 'getter harness ran to completion');
+
+	unlike($harness{dirty_gated}{out}, qr/^not ok \d+ - \Q$SETTER_MESSAGE\E/m, 'no setter state check is made');
+	like($harness{dirty_gated}{out}, qr/^1\.\.\d+/m, 'getset harness ran to completion');
 };
 
 done_testing();

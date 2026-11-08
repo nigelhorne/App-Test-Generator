@@ -383,6 +383,32 @@ The current supported variables are
 
     Setting this to 0 disables timeout testing.
 
+- `check_files`, assert the routine leaves no files in the working
+ directory (default: 1)
+
+    Every call is checked for files it created.  They are removed afterwards
+    whatever the setting, so a routine that writes a file cannot break the cases
+    that follow it; set this to 0 for a routine whose purpose is to write one.
+
+- `check_fds`, assert the routine leaks no file descriptors
+ (default: 1)
+
+    Only checked where `/proc/self/fd` exists.  Set this to 0 for a routine that
+    returns a filehandle to its caller, which still holds a descriptor.
+
+- `check_accessors`, assert an accessor leaves the object it was called
+ on alone (default: 1)
+
+    The object is deep copied before each call and the state it was handed
+    compared afterwards.  A getter that overwrites or deletes that state fails
+    "getter leaves its object unmodified"; a getset that changes anything but the
+    property it is named for fails "setter changes nothing but its property".
+    Values the call fills in where it was handed undef, and keys it adds, are
+    ignored, so a getter that memoises what it computed is not reported.  Set this
+    to 0 for an accessor whose purpose is to change state, such as an iterator's
+    `next()`; a getter that declares no input is called with no arguments either
+    way.
+
 - `dedup`, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 - `properties`, enable [Test::LectroTest](https://metacpan.org/pod/Test%3A%3ALectroTest) Property tests (default: 0)
 

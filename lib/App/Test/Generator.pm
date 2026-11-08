@@ -61,7 +61,7 @@ Readonly my $DEFAULT_PROPERTY_TRIALS => 1000;
 # Hash for O(1) lookup rather than a list needing grep O(n)
 Readonly my %VALID_CONFIG_KEYS => map { $_ => 1 } qw(
 	test_nuls test_undef test_empty test_non_ascii
-	dedup properties close_stdin test_security timeout check_files check_fds
+	dedup properties close_stdin test_security timeout check_files check_fds check_accessors
 );
 
 # --------------------------------------------------
@@ -608,6 +608,19 @@ that follow it; set this to 0 for a routine whose purpose is to write one.
 
 Only checked where F</proc/self/fd> exists.  Set this to 0 for a routine that
 returns a filehandle to its caller, which still holds a descriptor.
+
+=item * C<check_accessors>, assert an accessor leaves the object it was called
+ on alone (default: 1)
+
+The object is deep copied before each call and the state it was handed
+compared afterwards.  A getter that overwrites or deletes that state fails
+"getter leaves its object unmodified"; a getset that changes anything but the
+property it is named for fails "setter changes nothing but its property".
+Values the call fills in where it was handed undef, and keys it adds, are
+ignored, so a getter that memoises what it computed is not reported.  Set this
+to 0 for an accessor whose purpose is to change state, such as an iterator's
+C<next()>; a getter that declares no input is called with no arguments either
+way.
 
 =item * C<dedup>, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 
@@ -2135,7 +2148,7 @@ sub generate
 			. ' is_deeply({ map { $_ => $obj->{$_} } grep { exists($obj->{$_}) } keys %getter_state }, \\%getter_state, q{getter leaves its object unmodified});'
 			. ' }';
 		foreach my $code (\$call_code, \$position_code) {
-			next unless(defined($$code));
+			next unless(defined($$code) && ($config{'check_accessors'} // 1));
 			$$code = $snapshot . $$code . ' ' . $check;
 		}
 	}
@@ -2154,7 +2167,7 @@ sub generate
 			. ' is_deeply({ map { $_ => $obj->{$_} } grep { exists($obj->{$_}) } keys %setter_state }, \\%setter_state, q{setter changes nothing but its property});'
 			. ' }';
 		foreach my $code (\$call_code, \$position_code) {
-			next unless(defined($$code));
+			next unless(defined($$code) && ($config{'check_accessors'} // 1));
 			$$code = $snapshot . $$code . ' ' . $check;
 		}
 	}

@@ -33,7 +33,9 @@ Revision history for App-Test-Generator
 	  values filled in where it was handed undef are ignored along with keys it
 	  adds, so lazy initialisation is not reported as damage.  Regression test
 	  added to t/accessor_state_checks.t, which generates its own getter and
-	  getset harnesses and runs them.
+	  getset harnesses and runs them.  Both checks are controlled by the new
+	  config key check_accessors: set it to 0 for an accessor that is meant to
+	  change state, such as an iterator's next().
 
 	[Bug fixes]
 	- Fix SchemaExtractor not recognising get/set accessors that guard on a
