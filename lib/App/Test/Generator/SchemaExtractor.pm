@@ -1475,12 +1475,14 @@ sub extract_all {
 
 	my %schemas;
 	my %delegates;
+	my $ctor_body;
 	foreach my $method (@{$methods}) {
 		$self->_log("\nAnalyzing method: $method->{name}");
 
 		my $schema = $self->_analyze_method($method);
 		$schemas{$method->{name}} = $schema;
 		$schema->{'module'} = $package_name;
+		$ctor_body = $method->{body} if($method->{name} eq 'new');
 
 		my $target = $self->_delegated_method($method->{body});
 		$delegates{$method->{name}} = $target if defined($target);
@@ -1503,7 +1505,28 @@ sub extract_all {
 				$self->_log("  ENRICH: $method_name new: enriched with ctor args");
 			}
 		}
-	}	# Third pass: a routine whose whole body is `return $self->other(\@_)` has
+	}
+
+	# A constructor can refuse to build the package itself: an abstract base
+	# class croaks on direct instantiation, and a constructor that croaks over
+	# an argument the extractor cannot supply cannot be built either.  Either
+	# way no harness can get a $self, so the instance methods are not fuzzable
+	# this way: leaving new: as the package name makes _write_schema emit
+	# new: ~, which callers report as skipped rather than failed.
+	if($ctor_body && $schemas{new} && _constructor_refuses_direct_instantiation($ctor_body, $schemas{new})) {
+		# The class itself cannot be constructed, so its new() is expected to
+		# die rather than return an object.
+		$schemas{new}{output} = { _STATUS => 'DIES' };
+		for my $method_name (keys %schemas) {
+			next if($method_name eq 'new');
+			my $schema = $schemas{$method_name};
+			next unless(exists($schema->{new}) && defined($schema->{new}));
+			$schema->{new} = $package_name;
+			$self->_log("  UNBUILDABLE: $method_name new: ~ ($package_name refuses to be built)");
+		}
+	}
+
+	# Third pass: a routine whose whole body is `return $self->other(\@_)` has
 	# exactly other()'s input contract. CGI::Info::get_cookie is such a
 	# forwarder, and without this it looked like it took no parameters at all,
 	# so the harness called it with none and died on the required cookie_name.
@@ -8677,6 +8700,30 @@ sub _format_relationship {
 #
 # Exit:       Hashref of {param => value} or undef.
 # --------------------------------------------------
+
+# True when the constructor refuses to build the package itself.  Two idioms
+# are recognised: an explicit abstract-class check (Class::Abstract and
+# friends), and a croak over a constructor argument that the schema does not
+# describe, which the harness therefore cannot pass.
+sub _constructor_refuses_direct_instantiation
+{
+	my ($body, $ctor_schema) = @_;
+
+	# _find_methods() keeps the body as source text, but accept a PPI node too.
+	my $content = ref($body) ? eval { $body->content } : $body;
+	return 0 unless(defined($content) && length($content));
+
+	return 1 if($content =~ /\bcheck_abstract\s*\(/);
+	return 1 if(($content =~ /\bcroak\b/) && ($content =~ /\beq\s+__PACKAGE__\b/));
+
+	my %declared = (ref($ctor_schema->{input}) eq 'HASH') ? %{$ctor_schema->{input}} : ();
+	while($content =~ /\$args\{\s*(['"]?)([\w:]+)\1\s*\}\s*or\s+croak\b/sg) {
+		return 1 unless(exists($declared{$2}));
+	}
+
+	return 0;
+}
+
 sub _ctor_representative_args {
 	my ($self, $ctor_schema) = @_;
 

@@ -37,6 +37,15 @@ Revision history for App-Test-Generator
 	  config key check_accessors: set it to 0 for an accessor that is meant to
 	  change state, such as an iterator's next().
 
+	- extract-schemas no longer claims a class can be built when its constructor
+	  refuses: an abstract base class (Class::Abstract and friends), or a
+	  constructor that croaks over an argument the schema does not describe,
+	  now yields new: ~ for the instance methods and _STATUS: DIES for new().
+	  Before this every generated harness for such a class failed in setup, so
+	  all-fuzz.t reported each routine as FAILED rather than skipping it
+	  (Database::Abstraction hit this on 31 routines).  Covered by
+	  t/unbuildable_constructor.t.
+
 	[Bug fixes]
 	- Fix SchemaExtractor not recognising get/set accessors that guard on a
 	  named argument instead of on @_. _detect_accessor_methods only matched
