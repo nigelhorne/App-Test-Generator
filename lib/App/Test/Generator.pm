@@ -61,7 +61,7 @@ Readonly my $DEFAULT_PROPERTY_TRIALS => 1000;
 # Hash for O(1) lookup rather than a list needing grep O(n)
 Readonly my %VALID_CONFIG_KEYS => map { $_ => 1 } qw(
 	test_nuls test_undef test_empty test_non_ascii
-	dedup properties close_stdin test_security timeout
+	dedup properties close_stdin test_security timeout check_files check_fds
 );
 
 # --------------------------------------------------
@@ -595,6 +595,19 @@ With this test enabled, the function is expected to die when a NUL byte is passe
 =item * C<timeout>, ensure tests don't hang (default: 10)
 
 Setting this to 0 disables timeout testing.
+
+=item * C<check_files>, assert the routine leaves no files in the working
+ directory (default: 1)
+
+Every call is checked for files it created.  They are removed afterwards
+whatever the setting, so a routine that writes a file cannot break the cases
+that follow it; set this to 0 for a routine whose purpose is to write one.
+
+=item * C<check_fds>, assert the routine leaks no file descriptors
+ (default: 1)
+
+Only checked where F</proc/self/fd> exists.  Set this to 0 for a routine that
+returns a filehandle to its caller, which still holds a descriptor.
 
 =item * C<dedup>, fuzzing can create duplicate tests, go some way to remove duplicates (default: 1)
 
@@ -2097,6 +2110,52 @@ sub generate
 		}
 		if(defined($position_code)) {
 			$position_code =~ s/\A\$result = ([^;]+);/my \@_r = ($1); \$result = \\\@_r;/;
+		}
+	}
+
+	# A getter is called for its return value, so it must not change the state
+	# of the object it was handed.  The object is deep copied before the call
+	# and its existing state compared afterwards; values it fills in where it
+	# was handed undef are ignored along with keys it adds, because a getter
+	# that caches the value it worked out is doing its job, while one that
+	# overwrites or removes state it was given is not
+	# - the change is invisible to the caller, which still holds the object,
+	# and the next call sees different behaviour for the same input.
+	if(defined($accessor{type}) && ($accessor{type} eq 'getter')) {
+		# A getter with no declared input must be called with no arguments:
+		# $input is the schema's own hashref, and a getter written as
+		# `my ($self, $val) = @_` would store it as if it were a value.
+		foreach my $code (\$call_code, \$position_code) {
+			next unless(defined($$code));
+			$$code =~ s/\Q($function)\E\(\$input\)/$function()/g;
+		}
+		my $snapshot = 'my $getter_copy = eval { require Storable; Storable::dclone($obj) }; ';
+		my $check = 'if(defined($getter_copy) && eval { scalar(keys %{$getter_copy}); 1 }) {'
+			. ' my %getter_state = map { $_ => $getter_copy->{$_} } grep { defined($getter_copy->{$_}) } keys %{$getter_copy};'
+			. ' is_deeply({ map { $_ => $obj->{$_} } grep { exists($obj->{$_}) } keys %getter_state }, \\%getter_state, q{getter leaves its object unmodified});'
+			. ' }';
+		foreach my $code (\$call_code, \$position_code) {
+			next unless(defined($$code));
+			$$code = $snapshot . $$code . ' ' . $check;
+		}
+	}
+
+	# A setter is called to change one property, so everything else the object
+	# was handed must come back untouched.  The object is deep copied before the
+	# call and the rest of its state compared afterwards; the property itself is
+	# excluded, since changing that is the point, and values it fills in where it
+	# was handed undef are ignored along with keys it adds, so that lazy
+	# initialisation is not reported as damage.
+	if(defined($accessor{type}) && ($accessor{type} eq 'getset') && defined($accessor{property})) {
+		my $property = perl_quote($accessor{property});
+		my $snapshot = 'my $setter_copy = eval { require Storable; Storable::dclone($obj) }; ';
+		my $check = 'if(defined($setter_copy) && eval { scalar(keys %{$setter_copy}); 1 }) {'
+			. ' my %setter_state = map { $_ => $setter_copy->{$_} } grep { defined($setter_copy->{$_}) && ($_ ne ' . $property . ') } keys %{$setter_copy};'
+			. ' is_deeply({ map { $_ => $obj->{$_} } grep { exists($obj->{$_}) } keys %setter_state }, \\%setter_state, q{setter changes nothing but its property});'
+			. ' }';
+		foreach my $code (\$call_code, \$position_code) {
+			next unless(defined($$code));
+			$$code = $snapshot . $$code . ' ' . $check;
 		}
 	}
 

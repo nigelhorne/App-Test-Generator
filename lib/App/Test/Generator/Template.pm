@@ -2064,6 +2064,7 @@ sub run_test
 	my $cwd_before = Cwd::getcwd();
 	my $globals_before = _volatile_globals();
 	my %cwd_files_before = map { $_ => 1 } do { opendir(my $dh, '.') or die $!; readdir($dh) };
+	my $fds_before = _open_fd_count();
 
 	local $SIG{ALRM} = sub { die '__TIMEOUT__' };
 	if((!defined($config{timeout})) || ($config{timeout} > 0)) {
@@ -2166,10 +2167,11 @@ sub run_test
 
 	alarm 0;
 
-	# Clean up any files the function created in cwd
-	for my $f (do { opendir(my $dh, '.') or die $!; readdir($dh) }) {
-		unlink $f if !$cwd_files_before{$f} && -f $f;
-	}
+	# Clean up any files the function created in cwd, keeping the list so the
+	# test can report them.  They are removed either way, so a routine that
+	# writes the file it was asked to write cannot break the cases after it.
+	my @leftovers = grep { !$cwd_files_before{$_} && -f $_ } do { opendir(my $dh, '.') or die $!; readdir($dh) };
+	unlink @leftovers;
 
 	# Check the test did not timeout
 	diag($@) if($@);
@@ -2189,6 +2191,17 @@ sub run_test
 	is($SIG{__WARN__}, $old_warn, 'warn handler is not changed');
 	is($SIG{__DIE__}, $old_die, 'die handler is not changed');
 
+	# Destructive testing: what the routine leaves behind.  A routine whose job
+	# is to write a file has to fail here, so a schema can set 'check_files: 0'
+	# (or 'check_fds: 0' for one that hands a filehandle back to its caller).
+	if($config{'check_files'} // 1) {
+		is_deeply(\@leftovers, [], 'no files left in cwd');
+	}
+	my $fds_after = _open_fd_count();
+	if(defined($fds_before) && defined($fds_after) && ($config{'check_fds'} // 1)) {
+		is($fds_after, $fds_before, 'no file descriptors leaked');
+	}
+
 	delete local $output->{'_STATUS'};
 
 	if(scalar keys %{$output}) {
@@ -2207,7 +2220,21 @@ sub run_test
 	}
 }
 
-# On Windows $PWD etc are not stable# Snapshot of the globals a routine can clobber without returning anything
+# Number of file descriptors this process holds, or undef where the platform
+# offers no way to ask.  A routine that opens files and never closes them
+# costs every later call in the same test file a descriptor, which eventually
+# fails an unrelated case.
+sub _open_fd_count
+{
+	return unless -d '/proc/self/fd';
+	opendir(my $dh, '/proc/self/fd') or return;
+	my $count = () = readdir($dh);
+	closedir($dh);
+
+	return $count;
+}
+
+# Snapshot of the globals a routine can clobber without returning anything
 # obviously wrong.  Values are stringified so a change is visible even when
 # the replacement looks interchangeable; undef is kept distinct from ''.
 sub _volatile_globals
@@ -2236,6 +2263,7 @@ sub _globals_changed
 	return join(', ', @changed);
 }
 
+# On Windows $PWD etc are not stable
 sub _filtered_env
 {
 	my %env = %{ shift() };

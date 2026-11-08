@@ -9,7 +9,29 @@ Revision history for App-Test-Generator
 	  routine that leaves $_ set by a while() loop, or $/ changed after
 	  slurping a file, changes every later call in the test file, so the
 	  previous checks - cwd, %ENV, $SIG{__WARN__} and $SIG{__DIE__} - missed
-	  the damage the routine could do to the test itself.
+	  the damage the routine could do to the test itself.  Every call is also
+	  checked for files it leaves in the working directory (still unlinked, so
+	  the cases after it are unaffected) and for file descriptors it fails to
+	  close, which show up as "no files left in cwd" and "no file descriptors
+	  leaked".  Both are gated by new config keys, check_files and check_fds,
+	  for routines whose job is to write a file or hand a handle back.
+	- A getter accessor is now tested destructively too.  The object is deep
+	  copied before each call and the state it was handed compared afterwards,
+	  so a getter that overwrites or deletes it is reported as "getter leaves
+	  its object unmodified".  Keys the call adds, and values it fills in where
+	  it was handed undef, are ignored: a getter that memoises what it computed
+	  is doing its job, and CGI::Info's host_name(), script_name() and
+	  is_tablet() all cache on read.  A getter that declares no input is now
+	  called with no arguments; the harness used to pass it the schema's own
+	  input hashref, which a getter written as `my ($self, $val) = @_` stored as
+	  if it were a value (App::Test::Generator::Model::Method::confidence).
+	- A getset accessor is now checked to change only the property it is named
+	  for.  Its object is deep copied before the call and the rest of its
+	  defined state compared afterwards, so a setter that also overwrites or
+	  deletes something else is reported as "setter changes nothing but its
+	  property".  The property is excluded because changing it is the point, and
+	  values filled in where it was handed undef are ignored along with keys it
+	  adds, so lazy initialisation is not reported as damage.
 
 	[Bug fixes]
 	- Fix SchemaExtractor not recognising get/set accessors that guard on a
