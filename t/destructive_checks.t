@@ -62,13 +62,17 @@ sub litter
 	return $n * 2;
 }
 
-# Keeps a filehandle open after it returns
+# Keeps a filehandle open after it returns.  Only the first few calls leak:
+# a harness makes thousands of calls, and one descriptor each would run into
+# the per-process limit (256 on macOS) and kill the harness with EMFILE.
 sub hoard
 {
 	my $n = shift;
 
-	open(my $fh, '<', $INC{'Destructive/Fixture.pm'}) or die "$!";
-	push @held, $fh;
+	if(@held < 4) {
+		open(my $fh, '<', $INC{'Destructive/Fixture.pm'}) or die "$!";
+		push @held, $fh;
+	}
 	return $n * 2;
 }
 
