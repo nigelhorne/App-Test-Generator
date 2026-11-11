@@ -2,242 +2,55 @@ Revision history for App-Test-Generator
 
 0.48
 	[Enhancements]
-	- Test generated harnesses destructively: every call made by a harness now
-	  checks that the routine left the caller's globals alone. $_, $/, $, and
-	  $; are snapshotted before the call and compared after it, and a call
-	  that changes one is reported by name ("caller globals unmodified").  A
-	  routine that leaves $_ set by a while() loop, or $/ changed after
-	  slurping a file, changes every later call in the test file, so the
-	  previous checks - cwd, %ENV, $SIG{__WARN__} and $SIG{__DIE__} - missed
-	  the damage the routine could do to the test itself.  Every call is also
-	  checked for files it leaves in the working directory (still unlinked, so
-	  the cases after it are unaffected) and for file descriptors it fails to
-	  close, which show up as "no files left in cwd" and "no file descriptors
-	  leaked".  Both are gated by new config keys, check_files and check_fds,
-	  for routines whose job is to write a file or hand a handle back.
-	- A getter accessor is now tested destructively too.  The object is deep
-	  copied before each call and the state it was handed compared afterwards,
-	  so a getter that overwrites or deletes it is reported as "getter leaves
-	  its object unmodified".  Keys the call adds, and values it fills in where
-	  it was handed undef, are ignored: a getter that memoises what it computed
-	  is doing its job, and CGI::Info's host_name(), script_name() and
-	  is_tablet() all cache on read.  A getter that declares no input is now
-	  called with no arguments; the harness used to pass it the schema's own
-	  input hashref, which a getter written as `my ($self, $val) = @_` stored as
-	  if it were a value (App::Test::Generator::Model::Method::confidence).
-	- A getset accessor is now checked to change only the property it is named
-	  for.  Its object is deep copied before the call and the rest of its
-	  defined state compared afterwards, so a setter that also overwrites or
-	  deletes something else is reported as "setter changes nothing but its
-	  property".  The property is excluded because changing it is the point, and
-	  values filled in where it was handed undef are ignored along with keys it
-	  adds, so lazy initialisation is not reported as damage.  Regression test
-	  added to t/accessor_state_checks.t, which generates its own getter and
-	  getset harnesses and runs them.  Both checks are controlled by the new
-	  config key check_accessors: set it to 0 for an accessor that is meant to
-	  change state, such as an iterator's next().
-
-	- extract-schemas no longer claims a class can be built when its constructor
-	  refuses: an abstract base class (Class::Abstract and friends), or a
-	  constructor that croaks over an argument the schema does not describe,
-	  now yields new: ~ for the instance methods and _STATUS: DIES for new().
-	  Before this every generated harness for such a class failed in setup, so
-	  all-fuzz.t reported each routine as FAILED rather than skipping it
-	  (Database::Abstraction hit this on 31 routines).  Covered by
-	  t/unbuildable_constructor.t.
+	- Generated harnesses check that each call leaves the caller's globals
+	  ($_, $/, $, and $;) unmodified
+	- Generated harnesses report files left in the working directory and leaked
+	  file descriptors (new config keys check_files and check_fds)
+	- Getter and getset accessors are checked for unwanted changes to their
+	  object's state (new config key check_accessors)
+	- extract-schemas marks classes whose constructor refuses (e.g. abstract
+	  base classes) as unbuildable, so their routines are skipped, not FAILED
+	- New "directory" semantic: a parameter tested with -d is given a real
+	  temporary directory rather than an invented string
 
 	[Bug fixes]
-	- CoverageGuidedFuzzer: a die on a hashref input described with
-	  type: hashref and properties is now recorded as a bug.  The validity
-	  check read the spec's own "properties" key as a required parameter, so
-	  every such input was judged invalid and the failure thrown away.
-	  Properties are now validated one by one.
-	- CoverageGuidedFuzzer: coverage guidance now works.  _snapshot_cover
-	  called Devel::Cover::get_coverage(), which returns the names of the
-	  criteria being collected, not the counters, so branches_covered was
-	  always 0 and every run was random-only.  It now reads the live branch
-	  and condition counters from Devel::Cover::coverage(0).  The program
-	  must be started under Devel::Cover (perl -MDevel::Cover ...).
-	- CoverageGuidedFuzzer: save_corpus()/load_corpus() write and read UTF-8,
-	  so inputs holding characters above U+00FF round-trip instead of being
-	  corrupted with a "Wide character in print" warning.  Corpus files
-	  written by earlier versions are still readable.
-	- CoverageGuidedFuzzer: warnings matching the soft-bug patterns are now
-	  recorded as bugs when Devel::Cover is loaded too; before, only the
-	  no-coverage code path caught them.
-	- BenchmarkGenerator: transform names, parameter names and constructor
-	  argument names are quoted and escaped in the generated script.  A
-	  transform named "it's" used to produce a script that did not compile.
-	- BenchmarkGenerator: generate() no longer dies with "Can't use string
-	  ("undef") as a HASH ref" on a schema, or a transform, with input: undef.
-	- BenchmarkGenerator: constructor values are written as valid literals.
-	  'Inf', 'NaN' and padded numbers are quoted, a trailing backslash is
-	  escaped, and nested arrayrefs/hashrefs are written out rather than
-	  stringified as 'HASH(0x...)'.  A code reference or object now croaks.
-	- BenchmarkGenerator: a parameter whose spec is undef is passed as undef
-	  rather than as 'hello'.
-	- Regression tests for all of the above added to
-	  t/CoverageGuided_Fuzzer_unit.t and t/BenchmarkGenerator_unit.t.
-	- Fix SchemaExtractor not recognising get/set accessors that guard on a
-	  named argument instead of on @_. _detect_accessor_methods only matched
-	  shapes requiring a literal "if (@_)", so a method written as
-
-	    my $status = shift;
-	    return $self->{status} = $status if(defined($status));
-	    ...
-	    return $self->{status} || 200;
-
-	  fell through every branch and was emitted as an ordinary function: the
-	  POD input/output types were kept but no accessor block was produced, so
-	  the generated harness never tested the get/set round trip. CGI::Info's
-	  status() is exactly this shape. The detector now treats a lexical
-	  assigned from shift and then tested with defined() (if, unless, or the
-	  statement-modifier form) as equivalent evidence to "if (@_)", still
-	  preferring "if (@_)" when both are present. When the named-argument
-	  guard is the only evidence and the method declares more than one
-	  parameter, detection is skipped with a log line rather than reaching
-	  the multi-argument croak, so a heuristic miss cannot become a fatal
-	  error on another distribution's code.
-	  Regression test added to t/getset_accessor.t using the CGI::Info::status
-	  shape; re-extracting CGI::Info changes only status.yml, which now gains
-	  accessor: {property: status, type: getset}.
-
-	- Fix generated harnesses never passing a scalar _input case to the routine
-	  under test. When the schema gave the parameter a position, the call was
-	  assembled from @alist, but the scalar _input branch only filled in the
-	  test's name and left @alist empty. A case reported as "status(8.2) dies"
-	  therefore called status() with no argument and could never die, so the
-	  case tested nothing while still appearing in the output by name. A
-	  single-parameter routine now receives the value at position 0.
-
-	- Fix integer edge cases in generated harnesses that no correct routine
-	  could satisfy. The "a float should die" case was built as rand_int() +
-	  0.2, which is integral once the value exceeds 2**53, so the harness
-	  demanded rejection of an integer; the case is now only emitted when the
-	  fractional part actually survives floating point. The integer edge cases
-	  also expected the strings "0x10" and "1_000" to be accepted, which
-	  Scalar::Util::looks_like_number (and therefore Params::Validate::Strict)
-	  rejects; they are now expected to die like any other non-numeric string.
-
-	- Fix setter accessors being typed as "string" when the setter wraps its
-	  argument before storing it. CGI::Info::set_logger does
-
-	    $self->{'logger'} = Log::Abstraction->new($logger);
-
-	  so the argument may be anything the wrapper accepts, including the code
-	  and array references its documentation promises. Declaring it a string
-	  made the generated harness require hash, array and code references to
-	  die, which the setter rightly accepts, so every such case failed. A
-	  setter whose only non-direct assignment passes the argument to a call is
-	  now declared type "any" instead of being guessed as a string, and the
-	  harness stops asserting a contract the setter never had. Setters that
-	  store the argument itself are still typed "string"; both shapes are
-	  covered by t/getset_accessor.t.
-
-	- Fix returns built from a regex capture being typed as integers. The
-	  assignment heuristic looked for a digit anywhere in the returned
-	  expression, so CGI::Info::script_dir's
-
-	    return $self->{script_path} =~ $dir_regex ? $1 : $self->{script_path};
-
-	  read the "1" of $1 as a numeric literal and the schema claimed an
-	  integer return. The generated harness then rejected the directory the
-	  routine really returns ("'/tmp/user/1000' must be an integer"). Capture
-	  variables are now stripped before the numeric check, so such a routine
-	  is typed as returning a string. t/return.t covers both this and a
-	  genuine numeric return.
-
-	- Fix wrapper routines being documented as taking no parameters, and as
-	  returning an arrayref. A routine whose whole body forwards its
-	  arguments to another method of the same object, such as
-	  CGI::Info::get_cookie
-
-	    sub get_cookie {
-		return $self->cookie(\@_);
-	    }
-
-	  has exactly cookie()'s input contract, but nothing looked at the target:
-	  the schema had no input at all, the harness generated a "Takes no
-	  input" case and called get_cookie() with no arguments, which died on
-	  the required cookie_name. The extracted input schema is now inherited
-	  from the forwarded-to method (input confidence medium, with a note
-	  naming it), and only when the wrapper declares no parameters of its
-	  own. Separately, the forwarded \@_ was read as an arrayref being
-	  returned, so get_cookie was typed as returning an arrayref; \@_ is now
-	  discounted when inferring the return type. Regression tests added to
-	  t/SchemaExtractor.t and t/return.t.
-
-	- Fix matches patterns harvested from source or POD being emitted as
-	  slash-delimited strings. A pattern was stored as written, so the schema
-	  contained '/^[\\w\\/.-]+$/', and the harness compiles what it is given
-	  with qr//: the delimiters became part of the pattern, no generated
-	  string could match, and Data::Random::String::Matches gave up with
-	  "Failed to generate matching string after 1000 attempts". Patterns are
-	  now compiled to Regexp objects before serialisation, the form in which
-	  the cookie() pattern already travelled. Regression test added to
-	  t/SchemaExtractor.t.
-
-	- Fix a parameter the routine tests with -d being described as a plain
-	  string with a path pattern. Such a parameter has to name an existing
-	  directory, which no pattern can express, so every generated path was
-	  rejected by the routine's own check and the harness reported failures
-	  that said nothing about the code. A -d check now yields
-	  semantic: directory with no matches, and the generated harness points
-	  the field at a real temporary directory (the new directory semantic)
-	  instead of inventing strings. CGI::Info::logdir is this shape; the
-	  extracted logdir.yml changes and its harness passes.
-
-	- Fix a parameter used only inside a truthiness test ("if($dir) {...}")
-	  being declared required. A routine that acts on the value only when it
-	  is truthy works with no argument at all - logdir() returns the ambient
-	  log directory - so code analysis now marks it optional. An explicit
-	  croak-unless check still wins, and an explicit POD declaration keeps
-	  its precedence. Covered by the new -d subtest in t/SchemaExtractor.t.
-
-	- Fix generated getset round-trip checks failing for numerically equal
-	  values. The check compared with eq, but a numeric scalar has no single
-	  string form: one and the same integer stringifies as "5967331536404480"
-	  when held as an IV and as "5.96733153640448e+15" when held as an NV, and
-	  the large integers the fuzzer generates can arrive either way. A routine
-	  that returns exactly what it was given then failed its own harness -
-	  CGI::Info::status did, about once in forty runs. Accessors whose
-	  parameter is an integer, number or float are now compared with ==, which
-	  is the contract a numeric accessor has; string accessors still use eq.
-
-	- Stop reading every if($x) as an argument guard when typing accessors.
-	  CGI::Info::protocol takes no argument: it computes its value from %ENV
-	  and caches it. Its if($ENV{'SCRIPT_URI'}) branch was taken as evidence
-	  that an argument had been supplied, so the routine was typed as a getset
-	  accessor, and the generated harness set values protocol() never looks at
-	  - 1502 failing tests. The guard must now test @_ or a lexical filled
-	  from shift, and $self no longer counts as an argument; protocol is left
-	  with no parameters. Covered by the environment-driven getter fixture in
-	  t/getset_accessor.t.
-
-	- Fix a validator schema evaluated from runtime lexicals being taken as a
-	  method's input spec. CGI::Info::params validates each parameter inside a
-	  loop with validate_strict({ schema => { $key => $schema }, ... }); the
-	  extractor found that call, evaluated { $key => $schema } in Safe with
-	  both lexicals undefined, and kept the result { '' => undef }. The schema
-	  therefore carried an empty parameter name and the harness generator
-	  refused it outright ("Empty input parameter name"), so no harness was
-	  generated for the routine and all-fuzz reported it as FAILED rather
-	  than running anything. A schema read from source is now accepted only
-	  when it is a non-empty hash of named parameters to spec hashes.
-	  Regression test added to t/params_validate_strict.t using the
-	  runtime-built schema shape.
-
-	- Only assert that a wrong-typed argument dies when the routine's own
-	  validator enforces the declared type. The harness generated
-	  wrong-data-type cases for every documented parameter, so a routine
-	  that merely documents a string field (CGI::Info::param's optional
-	  field) was required to reject a hashref, arrayref, scalar ref, coderef
-	  or object. param simply uses the value as a hash key and has no
-	  reason to die, which accounted for all 732 remaining failures in the
-	  all-fuzz run. A type read from POD or inferred from code describes
-	  intent, not enforcement, so the extractor now marks validator-backed
-	  input specs with _type_checked and the harness emits the wrong-type
-	  cases only for those.
+	- CoverageGuidedFuzzer: coverage guidance now works; the program must be
+	  started under Devel::Cover
+	- CoverageGuidedFuzzer: a die on a hashref input with properties is now
+	  recorded as a bug
+	- CoverageGuidedFuzzer: corpus files are read and written as UTF-8
+	- CoverageGuidedFuzzer: soft-bug warnings are also caught under Devel::Cover
+	- BenchmarkGenerator: names and constructor values are quoted and escaped,
+	  so the generated script always compiles
+	- BenchmarkGenerator: no longer dies on input: undef, and an undef parameter
+	  spec is passed as undef
+	- SchemaExtractor: recognise get/set accessors that guard on defined($arg)
+	  rather than on @_
+	- SchemaExtractor: a getter driven by %ENV is no longer typed as a getset
+	  accessor
+	- SchemaExtractor: a setter that wraps its argument before storing it is
+	  typed "any", not "string"
+	- SchemaExtractor: a return built from a regex capture ($1) is no longer
+	  typed as an integer
+	- SchemaExtractor: a wrapper that forwards @_ inherits the target's input
+	  schema and is no longer typed as returning an arrayref
+	- SchemaExtractor: matches patterns are emitted as Regexp objects, not
+	  slash-delimited strings
+	- SchemaExtractor: a parameter used only in a truthiness test is optional
+	- SchemaExtractor: ignore validator schemas built from runtime lexicals,
+	  which gave "Empty input parameter name"
+	- Harness: scalar _input cases are now passed to a positional routine
+	- Harness: integer edge cases no longer expect very large "floats" to die
+	  or "0x10" and "1_000" to be accepted
+	- Harness: numeric getset round trips are compared with ==, not eq
+	- Harness: a getter that declares no input is called with no arguments
+	- Harness: wrong-type cases are only generated when the routine's own
+	  validator enforces the type
+	- deploy-workflows: the embedded dashboard.yml and mutate.yml had fallen
+	  behind the master copies
+	- Modules needed by a generated harness (Test::Most, Test::Returns,
+	  Test::LectroTest) are now runtime prerequisites; added Capture::Tiny
+	  to the test prerequisites
 
 0.47	Wed Oct  7 09:29:14 PM EDT 2026
 	[Enhancements]

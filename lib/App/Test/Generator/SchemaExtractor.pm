@@ -80,11 +80,11 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 
 =head1 VERSION
 
-Version 0.47
+Version 0.48
 
 =cut
 
-our $VERSION = '0.47';
+our $VERSION = '0.48';
 
 =head1 SYNOPSIS
 
@@ -2051,9 +2051,9 @@ sub _analyze_method {
 # ----------------------------------------
 
 $schema->{output} = $self->_analyze_output(
-    $method->{pod},
-    $method->{body},
-    $method->{name}
+	$method->{pod},
+	$method->{body},
+	$method->{name}
 );
 
 
@@ -6374,30 +6374,30 @@ sub _parse_signature_parameter {
 	return \%info;
 	}
 
-    # Pattern 4: Plain parameter: $name
-    elsif ($part =~ /^\$(\w+)$/s) {
-        $info{name} = $1;
-        $info{optional} = 0;
-        return \%info;
-    }
+	# Pattern 4: Plain parameter: $name
+	elsif ($part =~ /^\$(\w+)$/s) {
+		$info{name} = $1;
+		$info{optional} = 0;
+		return \%info;
+	}
 
-    # Pattern 5: Array parameter: @name
-    elsif ($part =~ /^\@(\w+)$/s) {
-        $info{name} = $1;
-        $info{type} = 'array';
-        $info{slurpy} = 1;
-        $info{optional} = 1;
-        return \%info;
-    }
+	# Pattern 5: Array parameter: @name
+	elsif ($part =~ /^\@(\w+)$/s) {
+		$info{name} = $1;
+		$info{type} = 'array';
+		$info{slurpy} = 1;
+		$info{optional} = 1;
+		return \%info;
+	}
 
-    # Pattern 6: Hash parameter: %name
-    elsif ($part =~ /^\%(\w+)$/s) {
-        $info{name} = $1;
-        $info{type} = 'hash';
-        $info{slurpy} = 1;
-        $info{optional} = 1;
-        return \%info;
-    }
+	# Pattern 6: Hash parameter: %name
+	elsif ($part =~ /^\%(\w+)$/s) {
+		$info{name} = $1;
+		$info{type} = 'hash';
+		$info{slurpy} = 1;
+		$info{optional} = 1;
+		return \%info;
+	}
 
 	return undef;
 }
@@ -6630,7 +6630,7 @@ sub _extract_field_declarations {
 			$self->_log("  FIELD: $name maps to parameter: $field_info{param_name}");
 		}
 
-        # Check for default value - must come before type constraint check
+		# Check for default value - must come before type constraint check
 	if ($modifiers =~ /=\s*([^:;]+)(?::|;|$)/) {
 		my $default = $1;
 		$default =~ s/\s+$//;
