@@ -58,9 +58,13 @@
 		an object when <code>new:</code> is present, but it does not set up a
 		database, a fixture or a sequence of calls. Behaviour that only appears
 		after three operations stays untested.</li>
-		<li><strong>Side effects.</strong> The harness checks the return value and
-		whether the call died. It does not assert what was written to a file,
-		sent over a socket, or stored in a global.</li>
+		<li><strong>Most side effects.</strong> The harness checks the return
+		value, whether the call died, and a fixed list of things a call must leave
+		alone: <code>$_</code>, <code>$/</code>, <code>$,</code> and
+		<code>$;</code>, the working directory, <code>%ENV</code>, the warn and
+		die handlers, stray files, open file descriptors and an accessor's
+		object. It does not assert what was written to a file, sent over a
+		socket, or stored in any other global.</li>
 		<li><strong>Concurrency and timing.</strong> Tests run one call at a time;
 		races are out of scope.</li>
 	</ul>
@@ -117,7 +121,8 @@
 	<ul>
 		<li>The suite runs twice — once under Devel::Cover, once under the LCSAJ
 		debugger. On a large module this dominates CI time.</li>
-		<li>Coverage-guided fuzzing needs <code>Devel::Cover</code>. Without it,
+		<li>Coverage-guided fuzzing needs the program to be started under
+		<code>Devel::Cover</code>; having it installed is not enough. Without it,
 		fuzzing still runs but gets no branch feedback and no corpus
 		minimisation benefit.</li>
 		<li>Property tests need <code>Test::LectroTest</code> and
@@ -134,6 +139,10 @@
 
 	<h2>Platform and portability</h2>
 	<ul>
+		<li><strong>Perl 5.44.0.</strong> Two of the distribution's own test files
+		abort after every subtest has passed, because of a bug in the Perl core
+		(<a href="https://github.com/Perl/perl5/issues/24933">Perl/perl5#24933</a>),
+		fixed in 5.45.5. The failure is not in this module.</li>
 		<li><strong>Perl 5.036 or later.</strong> Not negotiable; the code does not
 		compile on older perls.</li>
 		<li><strong>Windows.</strong> The <code>close_stdin</code> option is
@@ -189,7 +198,7 @@
 
 <footer class="site-footer">
 	<div class="wrap">
-		<p>App::Test::Generator 0.47 — Copyright 2025&ndash;2026 Nigel Horne. Released under the GNU General Public License, version 2.</p>
+		<p>App::Test::Generator 0.48 — Copyright 2025&ndash;2026 Nigel Horne. Released under the GNU General Public License, version 2.</p>
 		<p>
 			<a href="https://metacpan.org/dist/App-Test-Generator">MetaCPAN</a> ·
 			<a href="https://github.com/nigelhorne/App-Test-Generator">Source</a> ·

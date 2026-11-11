@@ -162,6 +162,7 @@ output:
 				<tr><td><code>semantic</code></td><td>string</td><td>A realistic data generator instead of random characters — see below.</td></tr>
 				<tr><td><code>can</code></td><td>object</td><td>Methods the stub object must provide. Without it, a mandatory object parameter makes the routine untestable and it is skipped.</td></tr>
 				<tr><td><code>isa</code></td><td>object</td><td>Class name; the harness emits <code>use_ok</code> and <code>new_ok</code> for it.</td></tr>
+				<tr><td><code>_type_checked</code></td><td>all</td><td>Set to <code>1</code> when the routine's own validator enforces the declared type. Only then does the harness assert that a wrong-typed argument dies. <code>extract-schemas</code> sets it for validator-backed specs; add it by hand where the routine does check its types.</td></tr>
 			</tbody>
 		</table>
 	</div>
@@ -208,6 +209,7 @@ output:
 				<tr><td><code>json</code>, <code>base64</code></td><td>Simple JSON objects; base64 strings</td></tr>
 				<tr><td><code>md5</code>, <code>sha256</code></td><td>Hex hashes of the right length</td></tr>
 				<tr><td><code>unix_timestamp</code></td><td>Epoch seconds</td></tr>
+				<tr><td><code>directory</code></td><td>The path of a real temporary directory. Set by <code>extract-schemas</code> for a parameter the routine tests with <code>-d</code></td></tr>
 			</tbody>
 		</table>
 	</div>
@@ -270,6 +272,9 @@ output: undef
 				<tr><td><code>test_non_ascii</code></td><td>1</td><td>Try strings containing non-ASCII characters.</td></tr>
 				<tr><td><code>timeout</code></td><td>10</td><td>Seconds before a call is abandoned. <code>0</code> disables the guard.</td></tr>
 				<tr><td><code>dedup</code></td><td>1</td><td>Remove duplicate generated cases.</td></tr>
+				<tr><td><code>check_files</code></td><td>1</td><td>Fail a call that leaves a file in the working directory. The file is removed either way. Turn it off for a routine whose job is to write one.</td></tr>
+				<tr><td><code>check_fds</code></td><td>1</td><td>Fail a call that leaks a file descriptor. Only checked where <code>/proc/self/fd</code> exists. Turn it off for a routine that returns a filehandle.</td></tr>
+				<tr><td><code>check_accessors</code></td><td>1</td><td>Fail a getter that changes its object, or a getset that changes anything but its own property. Memoised values and lazily filled <code>undef</code> slots are ignored. Turn it off for an accessor that is meant to change state, such as an iterator's <code>next()</code>.</td></tr>
 				<tr><td><code>properties</code></td><td>0</td><td>Property-based tests. Either <code>1</code>, or a hashref with <code>enable</code> and <code>trials</code>.</td></tr>
 				<tr><td><code>test_security</code></td><td>0</td><td>Add security-shaped strings: SQL fragments, markup, control characters.</td></tr>
 			</tbody>
@@ -483,7 +488,7 @@ iterations: 200
 
 <footer class="site-footer">
 	<div class="wrap">
-		<p>App::Test::Generator 0.47 — Copyright 2025&ndash;2026 Nigel Horne. Released under the GNU General Public License, version 2.</p>
+		<p>App::Test::Generator 0.48 — Copyright 2025&ndash;2026 Nigel Horne. Released under the GNU General Public License, version 2.</p>
 		<p>
 			<a href="https://metacpan.org/dist/App-Test-Generator">MetaCPAN</a> ·
 			<a href="https://github.com/nigelhorne/App-Test-Generator">Source</a> ·
