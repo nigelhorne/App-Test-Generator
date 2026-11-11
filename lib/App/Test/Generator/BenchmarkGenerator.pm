@@ -2,6 +2,7 @@ package App::Test::Generator::BenchmarkGenerator;
 
 use 5.036;
 use Carp qw(croak);
+use Data::Dumper ();
 use Params::Get qw(get_params);
 use Readonly;
 use Scalar::Util qw(looks_like_number);
@@ -17,6 +18,12 @@ Readonly my %TYPE_DEFAULTS => (
 	arrayref => '[]',
 	hashref  => '{}',
 );
+
+Readonly my $BAREWORD_RE => qr/^[A-Za-z_]\w*\z/a;
+
+# Narrower than looks_like_number(), which also accepts Inf, NaN and
+# surrounding whitespace - none of which are valid unquoted Perl source.
+Readonly my $NUMERIC_LITERAL_RE => qr/^-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?\z/a;
 
 =encoding utf8
 
@@ -236,6 +243,12 @@ The special name C<builtin> is always accepted.
 
 The C<function> value is not a Perl name such as C<greet> or C<My::Module::greet>.
 
+=item C<BenchmarkGenerator: cannot write a TYPE reference as a literal>
+
+A value under C<new> is a code reference, an object or another kind of
+reference that cannot be written as Perl source.  Plain values, arrayrefs
+and hashrefs are accepted.
+
 =back
 
 =head3 API SPECIFICATION
@@ -281,8 +294,8 @@ sub generate {
 	croak("BenchmarkGenerator: function '$function' is not a valid Perl identifier")
 		unless $function =~ /^[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*\z/;
 	my $has_new  = exists $schema->{new};
-	my %input    = %{ $schema->{input} // {} };
-	my %xforms   = %{ $schema->{transforms} // {} };
+	my %input    = %{ _hash_or_empty($schema->{input}) };
+	my %xforms   = %{ _hash_or_empty($schema->{transforms}) };
 
 	my $is_builtin = ($module eq 'builtin');
 
@@ -310,7 +323,7 @@ sub generate {
 	if($has_new && !$is_builtin) {
 		my $new_spec = $schema->{new};
 		if(ref $new_spec eq 'HASH' && %$new_spec) {
-			my $args = join(', ', map { "$_ => " . _quote_value($new_spec->{$_}) } sort keys %$new_spec);
+			my $args = join(', ', map { _quote_key($_) . ' => ' . _quote_value($new_spec->{$_}) } sort keys %$new_spec);
 			push @lines, "my \$obj = ${module}->new($args);";
 		} else {
 			push @lines, "my \$obj = ${module}->new();";
@@ -323,17 +336,21 @@ sub generate {
 	my %variants;
 	if(%xforms) {
 		for my $name (sort keys %xforms) {
-			my %xinput = %{ $xforms{$name}{input} // \%input };
-			$variants{$name} = _build_call($module, $function, $has_new, \%xinput);
+			my $xform  = _hash_or_empty($xforms{$name});
+			my $xinput = exists $xform->{input} && defined $xform->{input}
+				? _hash_or_empty($xform->{input})
+				: \%input;
+			$variants{$name} = _build_call($module, $function, $has_new, $xinput);
 		}
 	} else {
 		$variants{'default'} = _build_call($module, $function, $has_new, \%input);
 	}
 
 	push @lines, 'cmpthese($COUNT, {';
-	my $name_width = length((sort { length($b) <=> length($a) } keys %variants)[0]);
+	my %label = map { $_ => _quote_string($_) } keys %variants;
+	my $name_width = (sort { $b <=> $a } map { length } values %label)[0];
 	for my $name (sort keys %variants) {
-		my $padded = sprintf "%-*s", $name_width, "'$name'";
+		my $padded = sprintf "%-*s", $name_width, $label{$name};
 		push @lines, "\t$padded => sub { $variants{$name} },";
 	}
 	push @lines, '});', q{};
@@ -358,19 +375,21 @@ sub generate {
 sub _build_call {
 	my ($module, $function, $has_new, $input) = @_;
 
-	my $has_positions = grep { defined $_->{position} } values %$input;
+	# ref() guard: dereferencing an undef spec here would autovivify
+	# it into {} inside the caller's schema.
+	my $has_positions = grep { ref($_) eq 'HASH' && defined $_->{position} } values %$input;
 	my $call;
 
 	if($has_positions) {
 		my @positional = sort { $a->{position} <=> $b->{position} }
-		                 grep { defined $_->{position} }
+		                 grep { ref($_) eq 'HASH' && defined $_->{position} }
 		                 values %$input;
 		my $args = join(', ', map { _representative_value($_) } @positional);
 		$call = $has_new ? "\$obj->$function($args)"
 		                 : ($module eq 'builtin' ? "$function($args)"
 		                                         : "${module}::$function($args)");
 	} else {
-		my @pairs = map { "$_ => " . _representative_value($input->{$_}) }
+		my @pairs = map { _quote_key($_) . ' => ' . _representative_value($input->{$_}) }
 		            sort keys %$input;
 		my $args = join(', ', @pairs);
 		$call = $has_new ? "\$obj->$function($args)"
@@ -394,6 +413,7 @@ sub _build_call {
 sub _representative_value {
 	my ($spec) = @_;
 	return 'undef' unless defined $spec;
+	$spec = {} unless ref($spec) eq 'HASH';
 
 	my $type = lc($spec->{type} // 'string');
 
@@ -423,16 +443,74 @@ sub _representative_value {
 #
 # Purpose:    Quote a scalar value for use in generated Perl source.
 #
-# Entry:      $v - scalar value (undef, number, or string)
+# Entry:      $v - undef, number, string, arrayref or hashref
 #
 # Exit:       Returns a Perl literal string.
+#             Croaks on any other kind of reference.
 # --------------------------------------------------
 sub _quote_value {
 	my ($v) = @_;
 	return 'undef' unless defined $v;
-	return $v if looks_like_number($v);
-	(my $escaped = $v) =~ s/'/\\'/g;
+
+	if(my $type = ref $v) {
+		croak "BenchmarkGenerator: cannot write a $type reference as a literal"
+			unless $type eq 'HASH' || $type eq 'ARRAY';
+		local $Data::Dumper::Terse    = 1;
+		local $Data::Dumper::Indent   = 0;
+		local $Data::Dumper::Sortkeys = 1;
+		return Data::Dumper::Dumper($v);
+	}
+
+	return $v if $v =~ $NUMERIC_LITERAL_RE;
+	return _quote_string($v);
+}
+
+# --------------------------------------------------
+# _quote_string
+#
+# Purpose:    Single-quote a string for generated Perl source.
+#
+# Entry:      $s - defined string
+#
+# Exit:       Returns the quoted literal.
+# --------------------------------------------------
+sub _quote_string {
+	my ($s) = @_;
+	(my $escaped = $s) =~ s/([\\'])/\\$1/g;
 	return "'$escaped'";
+}
+
+# --------------------------------------------------
+# _quote_key
+#
+# Purpose:    Render a hash key for the left side of '=>'.
+#
+# Entry:      $key - parameter or constructor argument name
+#
+# Exit:       Returns the name unchanged when it is a plain
+#             identifier, otherwise a quoted literal.
+# --------------------------------------------------
+sub _quote_key {
+	my ($key) = @_;
+	return $key =~ $BAREWORD_RE ? $key : _quote_string($key);
+}
+
+# --------------------------------------------------
+# _hash_or_empty
+#
+# Purpose:    Read a schema section that should be a hashref.
+#
+# Entry:      $v - any value
+#
+# Exit:       Returns $v when it is a hashref, else a new
+#             empty hashref.
+#
+# Notes:      ATG schemas write "no input" as the string
+#             'undef' (input: undef), which is not a hashref.
+# --------------------------------------------------
+sub _hash_or_empty {
+	my ($v) = @_;
+	return ref($v) eq 'HASH' ? $v : {};
 }
 
 =head1 COMMON PITFALLS
@@ -471,11 +549,11 @@ C<input> has only C<a>, then that variant is called with C<a> alone.
 C<b> is not copied from the base.  Repeat every parameter you need inside
 each transform.
 
-=item Nested data in C<new> is not supported
+=item Only plain data is allowed under C<new>
 
-Each value under C<new> must be a plain number or string.  A hashref or
-arrayref value is turned into useless text such as C<'HASH(0x55d0...)'>
-in the generated script.  No error is raised.
+A value under C<new> can be a number, a string, C<undef>, an arrayref or
+a hashref, nested to any depth.  A code reference or an object makes
+C<generate> croak.
 
 =item How C<undef> is handled
 
@@ -493,32 +571,32 @@ constructor".  The script calls C<< Module->new() >> with no arguments.
 
 =item * An C<undef> value B<inside> C<new> is written as the Perl word C<undef>.
 
-=item * A parameter whose specification is C<undef> is treated as a string
-and gets the value C<'hello'>.  Note that C<generate> also replaces that
-C<undef> with an empty hashref inside your schema.
+=item * A parameter whose specification is C<undef> is passed as the
+Perl word C<undef>.
 
 =back
 
-=item The text C<undef> is not the same as a missing C<input>
+=item The text C<undef> means "no input"
 
 Some ATG schema files contain C<input: undef>.  YAML reads this as the
-five-letter string C<"undef">, not as a missing value.  C<generate> then
-stops with the Perl error C<Can't use string ("undef") as a HASH ref>.
-Delete the key, or use C<input: {}>, before you call C<generate>.
+five-letter string C<"undef">.  C<generate> treats that string, and any
+other C<input> or C<transforms> value that is not a hashref, as "no
+parameters".  Inside a transform, C<input: undef> gives a call with no
+arguments; it does B<not> fall back to the base C<input>.
 
-=item Names are copied into the script without escaping
+=item Names that are not plain words are quoted for you
 
-Transform names and parameter names are written into the generated script
-exactly as they are.  Only C<module> and C<function> are checked.  A
-transform named C<it's> produces a script that does not compile.  Use only
-letters, digits and underscores in these names, and never build a schema
-from text that you do not trust.
+Transform names, parameter names and the keys under C<new> can contain
+any characters.  They are quoted and escaped in the generated script when
+needed.  Only C<module> and C<function> must be valid Perl names.
 
-=item Text that looks like a number is not quoted
+=item Which text is written as a number
 
-A value under C<new> that Perl accepts as a number is written without
-quotes.  This includes C<'Inf'> and C<'NaN'>, which then appear as bare
-words and stop the generated script from compiling under C<use strict>.
+A string under C<new> is written without quotes only when it is a plain
+decimal number such as C<42>, C<-1.5> or C<2e10>.  Everything else,
+including C<'Inf'>, C<'NaN'> and C<' 12'>, is written as a quoted string.
+Be careful with a leading zero: C<'007'> is written as C<007>, which Perl
+reads as an octal number.
 
 =back
 
@@ -532,11 +610,7 @@ Use ASCII letters, digits, underscores and C<::> only.  Non-ASCII letters
 may pass the name check, but the generated script has no C<use utf8> line,
 so Perl will not read such names correctly.
 
-=item * Transform names and parameter names
-
-Use ASCII only, for the same reason.
-
-=item * String values under C<new>
+=item * Transform names, parameter names and string values under C<new>
 
 Full UTF-8 text, including non-ASCII letters and emojis, is copied into
 the script unchanged.  This is safe only if you take two steps yourself:
@@ -684,9 +758,7 @@ to use and it never changes afterwards.
                 +-------------+
 
 Side effects: C<new> and C<generate> write no files and print nothing.
-The only change outside the object is described in L</COMMON PITFALLS>:
-a parameter specification that is C<undef> becomes an empty hashref in
-the caller's schema.
+The schema that you passed to C<new> is never changed.
 
 =head1 LICENCE AND COPYRIGHT
 

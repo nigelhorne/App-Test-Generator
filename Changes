@@ -47,6 +47,37 @@ Revision history for App-Test-Generator
 	  t/unbuildable_constructor.t.
 
 	[Bug fixes]
+	- CoverageGuidedFuzzer: a die on a hashref input described with
+	  type: hashref and properties is now recorded as a bug.  The validity
+	  check read the spec's own "properties" key as a required parameter, so
+	  every such input was judged invalid and the failure thrown away.
+	  Properties are now validated one by one.
+	- CoverageGuidedFuzzer: coverage guidance now works.  _snapshot_cover
+	  called Devel::Cover::get_coverage(), which returns the names of the
+	  criteria being collected, not the counters, so branches_covered was
+	  always 0 and every run was random-only.  It now reads the live branch
+	  and condition counters from Devel::Cover::coverage(0).  The program
+	  must be started under Devel::Cover (perl -MDevel::Cover ...).
+	- CoverageGuidedFuzzer: save_corpus()/load_corpus() write and read UTF-8,
+	  so inputs holding characters above U+00FF round-trip instead of being
+	  corrupted with a "Wide character in print" warning.  Corpus files
+	  written by earlier versions are still readable.
+	- CoverageGuidedFuzzer: warnings matching the soft-bug patterns are now
+	  recorded as bugs when Devel::Cover is loaded too; before, only the
+	  no-coverage code path caught them.
+	- BenchmarkGenerator: transform names, parameter names and constructor
+	  argument names are quoted and escaped in the generated script.  A
+	  transform named "it's" used to produce a script that did not compile.
+	- BenchmarkGenerator: generate() no longer dies with "Can't use string
+	  ("undef") as a HASH ref" on a schema, or a transform, with input: undef.
+	- BenchmarkGenerator: constructor values are written as valid literals.
+	  'Inf', 'NaN' and padded numbers are quoted, a trailing backslash is
+	  escaped, and nested arrayrefs/hashrefs are written out rather than
+	  stringified as 'HASH(0x...)'.  A code reference or object now croaks.
+	- BenchmarkGenerator: a parameter whose spec is undef is passed as undef
+	  rather than as 'hello'.
+	- Regression tests for all of the above added to
+	  t/CoverageGuided_Fuzzer_unit.t and t/BenchmarkGenerator_unit.t.
 	- Fix SchemaExtractor not recognising get/set accessors that guard on a
 	  named argument instead of on @_. _detect_accessor_methods only matched
 	  shapes requiring a literal "if (@_)", so a method written as

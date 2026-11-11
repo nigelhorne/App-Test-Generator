@@ -52,6 +52,12 @@ Readonly my $TYPE_STRING  => 'string';
 # --------------------------------------------------
 Readonly my @JSON_MODULES => qw(JSON::MaybeXS JSON);
 
+# Devel::Cover files a branch with no else/elsif, and every && / ||,
+# under 'condition' rather than 'branch', so both must be read.
+Readonly my @COVER_CRITERIA => qw(branch condition);
+
+Readonly my $SOFT_BUG_WARNING_RE => qr/uninitialized|undefined|blessed|invalid/i;
+
 our $VERSION = '0.47';
 
 =encoding utf8
@@ -496,7 +502,7 @@ available.
 
 Writes a JSON file to C<$path>.  An existing file is replaced.
 The file holds the seed, the corpus inputs and the bugs.
-Branch data is not saved.
+Branch data is not saved.  The file is UTF-8.
 
 =head3 API SPECIFICATION
 
@@ -536,7 +542,8 @@ Neither C<JSON::MaybeXS> nor C<JSON> is installed.
 =item C<encountered object ...> or C<encountered CODE ...>
 
 Raised by the JSON module.  A corpus input or bug input holds an object
-or a code reference, which JSON cannot store.
+or a code reference, which JSON cannot store.  This check happens after
+the file has been opened, so the file is left empty.
 
 =back
 
@@ -551,10 +558,10 @@ sub save_corpus {
 
 	my $json = _load_json_module();
 
-	open my $fh, '>', $path
+	open my $fh, '>:raw', $path
 		or croak "Cannot write corpus to $path: $!";
 
-	print $fh $json->new->pretty->encode({
+	print $fh $json->new->utf8->pretty->encode({
 		seed   => $self->{seed},
 		corpus => [ map { { input => $_->{input} } } @{ $self->{corpus} } ],
 		bugs   => $self->{bugs},
@@ -649,11 +656,16 @@ sub load_corpus {
 
 	my $json = _load_json_module();
 
-	open my $fh, '<', $path
+	open my $fh, '<:raw', $path
 		or croak "Cannot read corpus from $path: $!";
 
-	my $data = $json->new->decode(do { local $/; <$fh> });
+	my $text = do { local $/; <$fh> };
 	close $fh;
+
+	# Files written before 0.48 hold Latin-1 bytes rather than UTF-8;
+	# those fail the UTF-8 decode and are read the old way instead.
+	my $data = eval { $json->new->utf8->decode($text) }
+		// $json->new->decode($text);
 
 	# Load corpus entries with empty coverage — coverage state from a
 	# previous process cannot be restored, only the inputs themselves
@@ -870,32 +882,7 @@ sub _run_one {
 		$coverage = $self->_run_with_cover($input, \$result, \$error);
 	} else {
 		$coverage = {};
-
-		# Include instance as invocant for method calls
-		my @call_args = defined($self->{instance})
-			? ($self->{instance}, $input)
-			: ($input);
-
-		my @warnings;
-		eval {
-			local $SIG{__WARN__} = sub { push @warnings, @_ };
-			local $SIG{__DIE__};
-			# A hanging target_sub call would otherwise hang the
-			# whole fuzzing run — alarm() bounds it and surfaces
-			# the timeout as a recorded bug instead.
-			local $SIG{ALRM} = sub { die "target_sub timed out after $self->{timeout}s\n" };
-			alarm($self->{timeout}) if $self->{timeout};
-			$result = $self->{target_sub}->(@call_args);
-		};
-		alarm(0) if $self->{timeout};
-		$error = $@ if $@;
-
-		# Treat unexpected warnings matching known bad patterns as soft bugs
-		if(!defined($error) && @warnings) {
-			my $w = join '', @warnings;
-			$error = "warning: $w"
-				if $w =~ /uninitialized|undefined|blessed|invalid/i;
-		}
+		($result, $error) = $self->_call_target($input);
 	}
 
 	# Record bugs — only when the input was valid per the schema.
@@ -911,6 +898,51 @@ sub _run_one {
 		$self->_update_covered($coverage);
 		$self->{stats}{interesting}++;
 	}
+}
+
+# --------------------------------------------------
+# _call_target
+#
+# Purpose:    Call the target sub once with a single
+#             input, bounded by the timeout.
+#
+# Entry:      $input - value to pass to target_sub.
+#
+# Exit:       Returns ($result, $error). $error is undef
+#             when the call neither died nor warned in
+#             a way that counts as a soft bug.
+#
+# Side effects: Calls target_sub. Uses alarm().
+#
+# Notes:      A hanging target_sub would otherwise hang
+#             the whole fuzzing run; alarm() bounds it
+#             and surfaces the timeout as an error.
+# --------------------------------------------------
+sub _call_target {
+	my ($self, $input) = @_;
+
+	# Include instance as invocant for method calls
+	my @call_args = defined($self->{instance})
+		? ($self->{instance}, $input)
+		: ($input);
+
+	my ($result, $error, @warnings);
+	eval {
+		local $SIG{__WARN__} = sub { push @warnings, @_ };
+		local $SIG{__DIE__};
+		local $SIG{ALRM} = sub { die "target_sub timed out after $self->{timeout}s\n" };
+		alarm($self->{timeout}) if $self->{timeout};
+		$result = $self->{target_sub}->(@call_args);
+	};
+	alarm(0) if $self->{timeout};
+	$error = $@ if $@;
+
+	if(!defined($error) && @warnings) {
+		my $w = join '', @warnings;
+		$error = "warning: $w" if $w =~ $SOFT_BUG_WARNING_RE;
+	}
+
+	return ($result, $error);
 }
 
 # --------------------------------------------------
@@ -947,21 +979,8 @@ sub _run_with_cover {
 	my $before_ref = $self->{_last_cover_snapshot} || {};
 	my %before = %{$before_ref};
 
-	# Include instance as invocant for method calls
-	my @call_args = defined($self->{instance})
-		? ($self->{instance}, $input)
-		: ($input);
-
-	eval {
-		local $SIG{__DIE__};
-		# See _run_one() — bound the call so a hanging target_sub
-		# cannot hang the whole fuzzing run.
-		local $SIG{ALRM} = sub { die "target_sub timed out after $self->{timeout}s\n" };
-		alarm($self->{timeout}) if $self->{timeout};
-		$$result_ref = $self->{target_sub}->(@call_args);
-	};
-	alarm(0) if $self->{timeout};
-	$$error_ref = $@ if $@;
+	($$result_ref, my $error) = $self->_call_target($input);
+	$$error_ref = $error if defined $error;
 
 	my $after = $self->_snapshot_cover();
 	$self->{_last_cover_snapshot} = $after;
@@ -983,7 +1002,7 @@ sub _run_with_cover {
 #             currently hit branches from Devel::Cover.
 #
 # Entry:      None beyond $self.
-# Exit:       Returns a hash of "file:line:branch" keys.
+# Exit:       Returns a hashref of "criterion:op:slot" keys.
 #
 # Side effects: Reads Devel::Cover internal state.
 #
@@ -997,15 +1016,23 @@ sub _snapshot_cover {
 	my %snap;
 
 	eval {
-		my $cover = Devel::Cover::get_coverage();
-		return unless $cover;
+		# coverage() is the XS accessor for the live counters. It only
+		# exists when the program was started under Devel::Cover; a
+		# late require leaves it undefined and nothing is collected.
+		# (get_coverage() returns the criteria names, not the data.)
+		return unless defined &Devel::Cover::coverage;
+		my $cover = Devel::Cover::coverage(0) or return;
 
-		for my $file (keys %{$cover}) {
-			my $branch = $cover->{$file}{branch} or next;
-			for my $line (keys %{$branch}) {
-				for my $b (0 .. $#{ $branch->{$line} }) {
-					$snap{"$file:$line:$b"} = 1
-						if $branch->{$line}[$b];
+		for my $criterion (@COVER_CRITERIA) {
+			my $data = $cover->{$criterion} or next;
+			for my $key (keys %{$data}) {
+				my $counts = $data->{$key};
+				next unless ref($counts) eq 'ARRAY';
+
+				# Keys are packed op addresses; hex keeps them printable
+				my $id = unpack('H*', $key);
+				for my $i (0 .. $#{$counts}) {
+					$snap{"$criterion:$id:$i"} = 1 if $counts->[$i];
 				}
 			}
 		}
@@ -1262,9 +1289,15 @@ sub _input_is_valid {
 	# No schema means we cannot judge validity
 	return 1 unless defined $spec && ref($spec);
 
+	# A scalar 'type' makes $spec the description of one value. Without
+	# it $spec is a map of named parameters, where a parameter may
+	# itself be called 'type' (its spec is then a hashref).
+	my $is_value_spec = ref($spec) eq 'HASH'
+		&& defined($spec->{type}) && !ref($spec->{type});
+
 	my $input_style = $self->{schema}{input_style} // '';
 
-	if($input_style eq 'hash' || ref($input) eq 'HASH') {
+	if(!$is_value_spec && ($input_style eq 'hash' || ref($input) eq 'HASH')) {
 		return $self->_validate_hash_input($input, $spec);
 	}
 
@@ -1375,6 +1408,9 @@ sub _validate_value {
 	}
 	elsif($type eq $TYPE_HASH || $type eq 'hash') {
 		return 0 unless ref($value) eq 'HASH';
+		if(ref($spec->{properties}) eq 'HASH') {
+			return 0 unless $self->_validate_hash_input($value, $spec->{properties});
+		}
 	}
 
 	return 1;
@@ -1690,15 +1726,6 @@ generated, not a hash.  To pass a hashref, describe it:
         properties => { age => { type => 'integer', min => 0 } },
     }
 
-=item Failures are not recorded for C<hashref> inputs with C<properties>
-
-When a call dies, the input is first checked against the schema, because
-a failure on invalid input is not a bug.  For an input described with
-C<< type => 'hashref' >> and C<properties>, this check currently always
-answers "invalid".  The result is that C<bugs> stays empty for such
-schemas even when C<target_sub> dies.  Until this is changed, catch
-failures inside your own C<target_sub> if you fuzz hashref inputs.
-
 =item How C<undef> and other false values are handled
 
 =over 4
@@ -1745,18 +1772,27 @@ The corpus grows by at least five entries per C<run> call.  Call
 C<minimize_corpus> before C<save_corpus> if the object is used for many
 runs.
 
-=item Warnings are only treated as bugs when C<Devel::Cover> is missing
+=item Some warnings are recorded as bugs
 
-Without C<Devel::Cover>, a warning from C<target_sub> that contains the
-word C<uninitialized>, C<undefined>, C<blessed> or C<invalid> is recorded
-as a bug.  With C<Devel::Cover> installed, warnings are not caught and
-are printed as usual.
+A warning from C<target_sub> that contains the word C<uninitialized>,
+C<undefined>, C<blessed> or C<invalid> is recorded as a bug, even though
+the call did not die.  Warnings are caught during the call, so they are
+not printed.  Other warnings are thrown away.
 
 =item C<branches_covered> is 0
 
-This means that no branch data was received from C<Devel::Cover>, even if
-it is installed.  The run was then a random-only run.  Do not read a
-value of 0 as "the target has no branches".
+This means that no branch data was received.  Branch data is only
+available when the whole program is started under C<Devel::Cover>, for
+example with C<perl -MDevel::Cover script.pl>.  Having the module
+installed is not enough.  Without it the run is random-only.  Do not read
+a value of 0 as "the target has no branches".
+
+=item Branch counts include more than your target
+
+C<Devel::Cover> counts every branch in the program.  A few of the
+branches counted in C<branches_covered> belong to the fuzzer and to other
+modules, not to C<target_sub>.  Use the number to compare two runs, not
+as an exact size.
 
 =back
 
@@ -1784,26 +1820,10 @@ Lengths are counted in characters, not bytes.
 
 =item * C<save_corpus> and C<load_corpus>
 
-These are safe for ASCII text only.  The file is written and read without
-a UTF-8 layer:
-
-=over 4
-
-=item - ASCII inputs are stored and loaded exactly.
-
-=item - Inputs with characters from 128 to 255 only come back unchanged
-when loaded by this module, but the file is Latin-1, not valid UTF-8
-JSON.  Other tools may reject it.
-
-=item - Inputs with any character above 255 (most non-Latin scripts and
-all emojis) cause a C<Wide character in print> warning and do B<not>
-come back the same.  Each such character is loaded as several wrong
-characters.
-
-=back
-
-If you need non-ASCII inputs in every run, put them in C<edge_case_array>
-and do not rely on the saved corpus for them.
+Full Unicode is supported.  The file is written as UTF-8 JSON, and every
+string, including non-ASCII letters and emojis, is loaded back exactly as
+it was saved.  A corpus file written by version 0.47 or earlier, which
+could hold Latin-1 bytes, is still read correctly.
 
 =item * The C<path> argument
 
