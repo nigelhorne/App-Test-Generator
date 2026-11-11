@@ -1,5 +1,13 @@
 Revision history for App-Test-Generator
 
+0.49
+	[Bug fixes]
+	- Generated harnesses no longer report a leaked file descriptor when an
+	  object opens a file on first use and keeps it (e.g. a logger); a
+	  descriptor is reported when the same target is opened again
+	- Generated harnesses no longer expect a "directory" parameter to die on
+	  an empty string
+
 0.48	Wed Nov 11 09:42:47 AM EST 2026
 	[Enhancements]
 	- Generated harnesses check that each call leaves the caller's globals

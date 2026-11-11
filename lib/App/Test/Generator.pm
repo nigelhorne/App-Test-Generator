@@ -619,6 +619,11 @@ that follow it; set this to 0 for a routine whose purpose is to write one.
 Only checked where F</proc/self/fd> exists.  Set this to 0 for a routine that
 returns a filehandle to its caller, which still holds a descriptor.
 
+The first descriptor a call opens on a given file (or its first socket or
+pipe) is taken as a resource held on purpose, such as a log file an object
+opens on first use, and is not reported.  A later call that opens the same
+target again is.
+
 =item * C<check_accessors>, assert an accessor leaves the object it was called
  on alone (default: 1)
 
@@ -957,6 +962,8 @@ other fuzz testing support for C<semantic> entries is being developed.
 
 The harness creates a temporary directory and passes its path, because no
 pattern can describe "a directory that exists".
+No empty-string case is generated for such a parameter, since routines
+commonly read an empty path as "not given".
 L<App::Test::Generator::SchemaExtractor> sets this for a parameter that the
 routine tests with C<-d>.
 

@@ -132,6 +132,9 @@ my @edge_case_array = (
 my %type_edge_cases = (
 [% type_edge_cases_code %]
 );
+# Descriptor targets _leaked_fds() has accepted as held open on purpose
+my %fds_held;
+
 my %config = (
 [% config_code %]
 );
@@ -1371,7 +1374,9 @@ sub _generate_string_cases
 		}
 	}
 
-	if((!exists($spec->{min})) || ($spec->{min} == 0)) {
+	# A directory parameter gets no '' case: routines commonly read an empty
+	# path as "not given" rather than as a directory that does not exist.
+	if((!$spec->{'_directory'}) && ((!exists($spec->{min})) || ($spec->{min} == 0))) {
 		# '' should die unless it's in the memberof list
 		if(defined($spec->{'memberof'}) && (!grep { $_ eq '' } @{$spec->{'memberof'}})) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => '', _NAME => $arg_name, _STATUS => 'DIES', _LINE => __LINE__ ) }
@@ -2064,7 +2069,7 @@ sub run_test
 	my $cwd_before = Cwd::getcwd();
 	my $globals_before = _volatile_globals();
 	my %cwd_files_before = map { $_ => 1 } do { opendir(my $dh, '.') or die $!; readdir($dh) };
-	my $fds_before = _open_fd_count();
+	my $fds_before = _open_fds();
 
 	local $SIG{ALRM} = sub { die '__TIMEOUT__' };
 	if((!defined($config{timeout})) || ($config{timeout} > 0)) {
@@ -2197,9 +2202,9 @@ sub run_test
 	if($config{'check_files'} // 1) {
 		is_deeply(\@leftovers, [], 'no files left in cwd');
 	}
-	my $fds_after = _open_fd_count();
+	my $fds_after = _open_fds();
 	if(defined($fds_before) && defined($fds_after) && ($config{'check_fds'} // 1)) {
-		is($fds_after, $fds_before, 'no file descriptors leaked');
+		is(join(', ', _leaked_fds($fds_before, $fds_after)), '', 'no file descriptors leaked');
 	}
 
 	delete local $output->{'_STATUS'};
@@ -2220,18 +2225,51 @@ sub run_test
 	}
 }
 
-# Number of file descriptors this process holds, or undef where the platform
-# offers no way to ask.  A routine that opens files and never closes them
-# costs every later call in the same test file a descriptor, which eventually
-# fails an unrelated case.
-sub _open_fd_count
+# What this process's file descriptors point at, as a map of target to the
+# number of descriptors open on it, or undef where the platform offers no way
+# to ask.  A routine that opens files and never closes them costs every later
+# call in the same test file a descriptor, which eventually fails an unrelated
+# case.
+sub _open_fds
 {
 	return unless -d '/proc/self/fd';
 	opendir(my $dh, '/proc/self/fd') or return;
-	my $count = () = readdir($dh);
+	my %targets;
+	foreach my $fd (readdir($dh)) {
+		next if($fd =~ /^\./);
+		my $target = readlink("/proc/self/fd/$fd") // 'unknown';
+		# socket:[12345] and pipe:[12345] differ on every open
+		$target =~ s/:\[\d+\]$//;
+		$targets{$target}++;
+	}
 	closedir($dh);
 
-	return $count;
+	return \%targets;
+}
+
+# The targets that gained descriptors between two _open_fds() snapshots.
+# The first descriptor ever opened on a target is not a leak: an object that
+# opens its log file or its connection on first use and keeps it is holding a
+# resource, not losing one.  A leak opens the same thing again, so a target
+# that gains a descriptor a second time is reported, as is anything beyond a
+# handful of distinct targets (a new temporary file leaked on every call).
+sub _leaked_fds
+{
+	my ($before, $after) = @_;
+
+	my @leaked;
+	foreach my $target (sort keys %{$after}) {
+		my $was = $before->{$target} // 0;
+		next if($after->{$target} <= $was);
+		if(($was == 0) && ($after->{$target} == 1) && !$fds_held{$target} && (scalar(keys %fds_held) < 8)) {
+			$fds_held{$target} = 1;
+			diag("descriptor on $target opened and kept; taken as held, not leaked") if($ENV{'TEST_VERBOSE'});
+			next;
+		}
+		push @leaked, $target;
+	}
+
+	return @leaked;
 }
 
 # Snapshot of the globals a routine can clobber without returning anything
