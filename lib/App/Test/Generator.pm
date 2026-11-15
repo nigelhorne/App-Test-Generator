@@ -993,6 +993,14 @@ This case should succeed, since it meets the constraint exactly.
 This case is annotated with C<_STATUS = 'DIES'> in the corpus and
 should cause the harness to fail validation or croak.
 
+A bound that came only from L<extract-schemas> reading POD (marked
+C<_bounds_unverified> in the generated schema) is a claim about valid
+input, not necessarily a check the routine has been seen to make, so the
+harness accepts either outcome: a clean croak, or a normal return.  A
+bound written by hand in a schema is still required to die.  Without this,
+a routine whose POD says C<min =E<gt> 1> but which accepts an empty list
+failed every harness run.
+
 =back
 
 Supported constraint types:

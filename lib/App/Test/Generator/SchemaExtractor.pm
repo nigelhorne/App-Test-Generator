@@ -2039,27 +2039,10 @@ sub _analyze_method {
 			$self->_merge_field_declarations($code_params, $fields);
 		}
 
-		# A single documented input parameter may be the whole argument
-		# list under another name, so the documented name describes a
-		# position and not a hash key.  Lingua::EN::NameCase::nc documents
-		# "name" but reads $_[0]; calling it as nc(name => ...) is two
-		# arguments, which the routine rejects, and NameCase documents
-		# "names" for the list it is handed.  Code that reads an argument
-		# hash keeps the named style.
-		if(my $only = $self->_single_positional_pod_input($pod_params, $code)) {
-			# The code analysis describes the same argument under whatever
-			# name the body gave it, so carry its facts (a directory tested
-			# with -d, for one) over to the documented name instead of
-			# dropping them.
-			my @code_names = sort {
-				($code_params->{$a}{position} // 999) <=> ($code_params->{$b}{position} // 999)
-			} keys %$code_params;
-			my $source = exists($code_params->{$only}) ? $only
-				: ((scalar(@code_names) == 1) ? $code_names[0] : undef);
-
-			$code_params = $source ? { $only => $code_params->{$source} } : {};
-			$pod_params = { $only => $pod_params->{$only} };
-		}
+		# A lone documented input parameter may be the whole argument list
+		# under another name; the helper decides from the body and folds the
+		# code's facts about that argument onto the documented name.
+		$self->_positional_pod_input($pod_params, $code_params, $code);
 
 		# Merge analyses
 		$schema->{input} = $self->_merge_parameter_analyses(
@@ -4003,13 +3986,11 @@ sub _analyze_pod {
 			}
 		} elsif ($block =~ /\A\{/) {
 			# Named format: each 'name => {…}' entry maps directly by name.
-			my $spec_order = 0;
 			while ($block =~ /\b(\w+)\s*=>\s*\{([^}]*)\}/g) {
 				my ($name, $spec) = ($1, $2);
 				next if $name =~ /^(self|class|pkg|proto|klass)$/i;
 				$params{$name} //= { _source => 'pod' };
 				$params{$name}{_from_input_spec} = 1;
-				$params{$name}{_input_spec_order} = $spec_order++;
 				if (my $t = $self->_map_formal_input_type($spec)) {
 					$params{$name}{type} = $t;
 					$self->_log("  POD: $name type '$t' from =head Input (named)");
@@ -4027,9 +4008,15 @@ sub _analyze_pod {
 				}
 				if ($spec =~ /\bmin\s*=>\s*(\d+)/i) {
 					$params{$name}{min} = $1 + 0;
+					# A documented size is a claim about valid input, not
+					# necessarily a check the routine makes: NameCase's
+					# spec says min => 1 and its code accepts [].  The
+					# harness tests the bound but accepts either outcome.
+					$params{$name}{_bounds_unverified} = 1;
 				}
 				if ($spec =~ /\bmax\s*=>\s*(\d+)/i) {
 					$params{$name}{max} = $1 + 0;
+					$params{$name}{_bounds_unverified} = 1;
 				}
 				if ($spec =~ /\bisa\s*=>\s*['"]([^'"]+)['"]/i) {
 					$params{$name}{isa} = $1;
@@ -7184,38 +7171,82 @@ sub _analyze_parameter_validation {
 }
 
 # --------------------------------------------------
-# _single_positional_pod_input
+# _positional_pod_input
 #
-# Purpose:    Decide whether a lone documented input parameter is really the
-#             first positional argument.
+# Purpose:    Recognise a lone documented input parameter that is really the
+#             first positional argument under another name.
 #
-# Entry:      $pod - hashref of parameters from _analyze_pod.
-#             $code - the subroutine body as source text.
+# Entry:      $pod        - parameters from _analyze_pod; mutated.
+#             $code_params - parameters from code analysis; mutated.
+#             $code       - the subroutine body as source text.
 #
-# Exit:       Returns the documented parameter name when it should be
-#             treated as position 0, otherwise undef.
+# Exit:       Returns the documented name when it is treated as position 0,
+#             otherwise undef.
 #
-# Notes:      Only a single documented name can be a positional argument
-#             wearing another name: with two or more names the module is
-#             describing a hash of arguments.  Code that reads such a hash
-#             (my %args = @_, $args->{...}, $_[0]{...}) keeps the named
-#             style even for one documented name.
+# Notes:      Two or more documented names describe a hash of arguments, and
+#             a body that reads an argument hash (my %args = @_, $args->{...},
+#             $_[0]{...}) keeps the named style even with one name.  A body
+#             that shows no positional use at all -- a wrapper forwarding @_,
+#             say -- proves nothing either way, so it stays named rather than
+#             guessing.
 #
-# Side effects: Sets position 0 on the parameter it returns.
+# Side effects: On success sets position 0, drops stray documented names and
+#             replaces the code analysis with the one argument, renamed.
 # --------------------------------------------------
-sub _single_positional_pod_input {
-	my ($self, $pod, $code) = @_;
+sub _positional_pod_input {
+	my ($self, $pod, $code_params, $code) = @_;
 
 	my @documented = grep { $pod->{$_}{_from_input_spec} } keys %$pod;
 	return undef unless @documented == 1;
-
 	return undef if $self->_reads_named_arguments($code);
+	return undef unless $self->_reads_positional_argument($code);
 
 	my ($name) = @documented;
 	$pod->{$name}{position} = 0;
+
+	# The body names the same argument however it likes, so carry its facts
+	# (a directory tested with -d, say) to the documented name.
+	my @code_names = keys %$code_params;
+	my $source = $code_params->{$name} ? $name
+		: (@code_names == 1 ? $code_names[0] : undef);
+
+	%$code_params = $source ? ($name => $code_params->{$source}) : {};
+	%$pod = ($name => $pod->{$name});
 	$self->_log("  POD: single Input spec '$name' describes a positional argument");
 
 	return $name;
+}
+
+# --------------------------------------------------
+# _reads_positional_argument
+#
+# Purpose:    Tell whether a subroutine uses its arguments positionally.
+#
+# Entry:      $code - the subroutine body as source text.
+#
+# Exit:       Returns 1 when the body reads a positional argument, else 0.
+#
+# Notes:      Deliberately conservative: a bare @_ forwarded to another
+#             routine is not evidence, so such a module keeps the named style
+#             it had before this heuristic existed.  An invocant shift is not
+#             an argument either.
+#
+# Side effects: None.
+# --------------------------------------------------
+sub _reads_positional_argument {
+	my ($self, $code) = @_;
+
+	return 0 unless defined $code;
+
+	my $body = $code;
+	$body =~ s/\$self\s*->\s*\{[^}]*\}//g;
+	$body =~ s/\bmy\s+\$(?:self|class)\s*=\s*shift\b;//g;
+
+	return 1 if($body =~ /\$_\s*\[\s*\d+\s*\]/);
+	return 1 if($body =~ /\bmy\s*\$\w+\s*=\s*shift\b/);
+	return 1 if($body =~ /\bmy\s*\((?!\s*\$(?:self|class)\s*\))[^)]*\)\s*=\s*\@_/s);
+
+	return 0;
 }
 
 # --------------------------------------------------
@@ -8616,6 +8647,10 @@ sub _serialize_parameter_for_yaml {
 	foreach my $field (qw(type position optional min max matches default)) {
 		$cleaned{$field} = $param->{$field} if defined $param->{$field};
 	}
+
+	# A bound that only the documentation states: the harness tests it but
+	# accepts the routine either enforcing it or ignoring it.
+	$cleaned{_bounds_unverified} = 1 if $param->{_bounds_unverified};
 
 	# Handle advanced type mappings
 	if(my $semantic = $param->{semantic}) {
@@ -10384,6 +10419,14 @@ C<SchemaExtractor> uses heuristic analysis of Perl source and POD to infer
 parameter types and constraints. Inference accuracy improves with
 well-documented modules; C<=head3 Input> / C<=head4 Input> formal specs are
 parsed at highest priority and override all heuristics.
+
+A lone name in a C<=head4 input> block is treated as the first positional
+argument when the body reads a positional argument (C<< $_[0] >>, a list
+assignment from C<@_>, or a C<shift>) and does not read an argument hash
+(C<my %args = @_>, a hashref dereference, or C<< $_[0]{...} >>); the
+documented name is then a label for that argument, as C<name> is for
+C<$_[0]> in L<Lingua::EN::NameCase/nc>.  Two or more names, and a body that
+only forwards C<@_>, remain named arguments.
 
 The output is always a best-effort schema suitable as a starting template;
 review and augment the generated YAML before using it as a definitive

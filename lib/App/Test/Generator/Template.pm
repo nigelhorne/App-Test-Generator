@@ -650,7 +650,11 @@ sub fuzz_inputs
 				}
 				$mandatory_objects{$field} = { 'line' => __LINE__ };
 			} elsif(($spec->{type} eq 'arrayref') || ($spec->{type} eq 'array')) {
-				$mandatory_objects{$field} = [];
+				# A filler must satisfy the declared minimum: an empty array
+				# here contradicted the below-minimum cases, so a routine that
+				# enforces min => 1 failed a case it was never given a chance
+				# to pass.
+				$mandatory_objects{$field} = $spec->{min} ? [ (1) x $spec->{min} ] : [];
 			} elsif($spec->{type} eq 'any') {
 				$mandatory_strings{$field} = rand_ascii_str(8);
 			} else {
@@ -996,7 +1000,7 @@ sub fuzz_inputs
 					my $len = $input{min};
 					push @cases, { _input => [ (1) x ($len + 1) ] };	# just inside
 					push @cases, { _input => [ (1) x $len ] };	# border
-					push @cases, { _input => [ (1) x ($len - 1) ], _STATUS => 'DIES' } if $len > 0; # outside
+					push @cases, { _input => [ (1) x ($len - 1) ], _STATUS => ($input{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') } if $len > 0; # outside
 				} else {
 					push @cases, { _input => [] } if($config{'test_empty'});	# No min, empty array should be allowable
 				}
@@ -1004,14 +1008,14 @@ sub fuzz_inputs
 					my $len = $input{max};
 					push @cases, { _input => [ (1) x ($len - 1) ] };	# just inside
 					push @cases, { _input => [ (1) x $len ] };	# border
-					push @cases, { _input => [ (1) x ($len + 1) ], _STATUS => 'DIES' }; # outside
+					push @cases, { _input => [ (1) x ($len + 1) ], _STATUS => ($input{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') }; # outside
 				}
 			} elsif ($type eq 'hashref') {
 				if (defined $input{min}) {
 					my $len = $input{min};
 					push @cases, { _input => { map { "k$_" => 1 }, 1 .. ($len + 1) } };
 					push @cases, { _input => { map { "k$_" => 1 }, 1 .. $len } };
-					push @cases, { _input => { map { "k$_" => 1 }, 1 .. ($len - 1) }, _STATUS => 'DIES' } if $len > 0;
+					push @cases, { _input => { map { "k$_" => 1 }, 1 .. ($len - 1) }, _STATUS => ($input{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') } if $len > 0;
 				} else {
 					push @cases, { _input => {} } if($config{'test_empty'});	# No min, empty hash should be allowable
 				}
@@ -1019,7 +1023,7 @@ sub fuzz_inputs
 					my $len = $input{max};
 					push @cases, { _input => { map { "k$_" => 1 }, 1 .. ($len - 1) } };
 					push @cases, { _input => { map { "k$_" => 1 }, 1 .. $len } };
-					push @cases, { _input => { map { "k$_" => 1 }, 1 .. ($len + 1) }, _STATUS => 'DIES' };
+					push @cases, { _input => { map { "k$_" => 1 }, 1 .. ($len + 1) }, _STATUS => ($input{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') };
 				}
 			} elsif ($type eq 'boolean') {
 				push @cases, @{_generate_boolean_cases('_input', \%input, \%mandatory_args)};
@@ -1741,7 +1745,7 @@ sub generate_tests
 						push @cases,
 							{ %mandatory_args, $field => [ (1) x ($len + 1) ] },	# just inside
 							{ %mandatory_args, $field => [ (1) x $len ] };	# border
-						push @cases, { %mandatory_args, $field => [ (1) x ($len - 1) ], _STATUS => 'DIES' } if $len > 0; # outside
+						push @cases, { %mandatory_args, $field => [ (1) x ($len - 1) ], _STATUS => ($spec->{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') } if $len > 0; # outside
 					} else {
 						push @cases, { %mandatory_args, $field => [] } if($config{'test_empty'});	# No min, empty array should be allowable
 					}
@@ -1750,7 +1754,7 @@ sub generate_tests
 						push @cases,
 							{ %mandatory_args, $field => [ (1) x ($len - 1) ] },	# just inside
 							{ %mandatory_args, $field => [ (1) x $len ] },	# border
-							{ %mandatory_args, $field => [ (1) x ($len + 1) ], _STATUS => 'DIES' }; # outside
+							{ %mandatory_args, $field => [ (1) x ($len + 1) ], _STATUS => ($spec->{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') }; # outside
 					} elsif((defined $spec->{min}) && ($spec->{min} <= 3)) {
 						push @cases, { %mandatory_args, $field => [ 'first', undef, 'third' ], _DESCRIPTION => 'undef in an arrayref', _LINE => __LINE__ } if($config{test_undef});
 					}
@@ -1760,7 +1764,7 @@ sub generate_tests
 						push @cases,
 							{ %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. ($len + 1) } },
 							{ %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. $len } };
-						push @cases, { %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. ($len - 1) }, _STATUS => 'DIES' } if $len > 0;
+						push @cases, { %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. ($len - 1) }, _STATUS => ($spec->{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') } if $len > 0;
 					} else {
 						push @cases, { %mandatory_args, $field => {} } if($config{'test_empty'});	# No min, empty hash should be allowable
 					}
@@ -1769,7 +1773,7 @@ sub generate_tests
 						push @cases,
 							{ %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. ($len - 1) } },
 							{ %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. $len } },
-							{ %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. ($len + 1) }, _STATUS => 'DIES' };
+							{ %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. ($len + 1) }, _STATUS => ($spec->{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') };
 					}
 				} elsif ($type eq 'boolean') {
 					push @cases, @{_generate_boolean_cases($field, $spec, \%mandatory_args)};
@@ -2106,6 +2110,24 @@ sub run_test
 					unlike($err, qr/unitialized/, "Test doesn't involve an uninitialized variable");
 				}
 				return;	# There should be no output to validate
+			} elsif($status eq 'MAY_DIE') {
+				# A bound taken from POD is a claim about valid input, not
+				# necessarily a check the routine makes (an empty array may
+				# be fine).  Either outcome is acceptable; a crash with a
+				# reference for an error is not.
+				my $err;
+				if($positions) {
+					[% IF position_code %]
+						eval { [% position_code %] };
+					[% ELSE %]
+						ok(0, 'position_code not defined');
+					[% END %]
+				} else {
+					eval { [% call_code %] };
+				}
+				$err = $@;
+				ok((!$err) || (!ref($err) && length($err)), sprintf($mess, 'dies or survives (documented bound)'));
+				return;
 			} elsif($status eq 'WARNS') {
 				warnings_exist { [% call_code %] } qr/./, sprintf($mess, 'warns');
 			} else {
