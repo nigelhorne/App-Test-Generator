@@ -954,9 +954,10 @@ subtest '_serialize_parameter_for_yaml' => sub {
 	is($result->{type},     'string', 'type preserved');
 	is($result->{optional}, 1,        'optional preserved');
 
-	# Internal _source key must be stripped from output
+	# The source survives into the generated schema: it is the single
+	# provenance value the harness uses for tolerance decisions.
 	$result = $fn->({ type => 'string', _source => 'pod' });
-	ok(!exists $result->{_source}, '_source key stripped');
+	is($result->{_source}, 'pod', '_source key preserved');
 
 	# filepath semantic keeps string type and adds a path note
 	$result = $fn->({ type => 'string', semantic => 'filepath' });

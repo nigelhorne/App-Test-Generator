@@ -162,7 +162,7 @@ output:
 				<tr><td><code>semantic</code></td><td>string</td><td>A realistic data generator instead of random characters — see below.</td></tr>
 				<tr><td><code>can</code></td><td>object</td><td>Methods the stub object must provide. Without it, a mandatory object parameter makes the routine untestable and it is skipped.</td></tr>
 				<tr><td><code>isa</code></td><td>object</td><td>Class name; the harness emits <code>use_ok</code> and <code>new_ok</code> for it.</td></tr>
-				<tr><td><code>_type_checked</code></td><td>all</td><td>Set to <code>1</code> when the routine's own validator enforces the declared type. Only then does the harness assert that a wrong-typed argument dies. <code>extract-schemas</code> sets it for validator-backed specs; add it by hand where the routine does check its types.</td></tr>
+				<tr><td><code>_source</code></td><td>all</td><td>One provenance value: <code>validator</code>, <code>input_spec</code>, <code>pod</code>, <code>code</code>, <code>signature</code> or <code>field</code>. A <code>validator</code> source makes wrong-typed arguments expected to die; <code>pod</code> and <code>input_spec</code> make constraints documentation-only. <code>extract-schemas</code> sets it; add it by hand where needed.</td></tr>
 			</tbody>
 		</table>
 	</div>

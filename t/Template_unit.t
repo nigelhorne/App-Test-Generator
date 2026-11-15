@@ -95,4 +95,21 @@ subtest '_dedup_cases removes duplicate cases' => sub {
 	is(scalar(@{$deduped}), 2, 'duplicate case was removed');
 };
 
+# ==================================================================
+# Regression: an integer edge case for one named parameter of a
+# multi-parameter (hash-style) API must carry that parameter's name.
+# Passing it as _input called the routine with a single positional
+# value, so the routine died on the argument count instead of on the
+# value's type.
+# ==================================================================
+
+subtest 'named integer edge cases keep the parameter name' => sub {
+	my $template = ${ App::Test::Generator::Template->get_data_section('test.tt') };
+
+	unlike($template, qr/\{ _input => "007"/,
+		'integer-as-string case is not a bare positional input');
+	like($template, qr/\{ %case_input, \(\$field => "007"\)/,
+		'integer-as-string case is passed as a named parameter');
+};
+
 done_testing();

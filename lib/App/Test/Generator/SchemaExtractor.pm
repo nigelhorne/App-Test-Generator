@@ -1102,7 +1102,7 @@ All modern Perl feature detection is optional and automatic:
 
 =item * Modern features are additive - they enhance rather than replace existing extraction
 
-=item * Schemas include C<_source> field indicating where parameter info came from
+=item * Each parameter carries one C<_source> value -- C<validator>, C<input_spec>, C<pod>, C<code>, C<signature> or C<field> -- which the harness uses for its type-checking and documentation-tolerance decisions
 
 =back
 
@@ -1903,6 +1903,39 @@ sub _extract_pod_before {
 }
 
 # --------------------------------------------------
+# _pod_documents_file_write
+#
+# Purpose:    Decide whether a routine's POD documents
+#             creating or writing a file as part of
+#             its contract, so the generated schema can
+#             turn off the harness's leftover-file
+#             check for it.
+# Entry:      $pod - the routine's raw POD text, or
+#                    undef when it has none.
+# Exit:       Returns 1 if the SIDE EFFECTS section
+#             says a file is created, written,
+#             overwritten or updated; 0 otherwise.
+# Side effects: None.
+# Notes:      Only the SIDE EFFECTS section is examined.
+#             A file mentioned while describing an
+#             argument or an example is not a
+#             documented side effect.
+# --------------------------------------------------
+sub _pod_documents_file_write {
+	my ($self, $pod) = @_;
+
+	return 0 unless defined($pod) && length($pod);
+
+	my ($section) = $pod =~ /^=head[1-4]\s+SIDE\s+EFFECTS\b(.*?)(?=^=head[1-4]\b|\z)/mis;
+	return 0 unless defined($section) && length($section);
+
+	return 1 if $section =~ /\b(?:creates?|writes?|rewrites?|overwrites?|updates?)\b[^.\n]*\bfiles?\b/i;
+	return 1 if $section =~ /\bfiles?\b[^.\n]*\b(?:is|are)\s+(?:created|written|rewritten|overwritten|updated)\b/i;
+
+	return 0;
+}
+
+# --------------------------------------------------
 # _analyze_method
 #
 # Purpose:    Perform full multi-source analysis of
@@ -1970,6 +2003,10 @@ sub _analyze_method {
 	my $pod_params = $self->_analyze_pod($pod);
 	my $code_params = $self->_analyze_code($code, $method);
 
+	# Neither analysis may hand a reference string to the schema as a parameter.
+	$self->_sanitize_parameter_names($pod_params, 'POD analysis');
+	$self->_sanitize_parameter_names($code_params, 'code analysis');
+
 	# Validate POD/code agreement if strict mode is enabled.
 	# Skip when there is no POD at all — strict_pod checks accuracy of
 	# existing documentation, not whether every method is documented.
@@ -2016,7 +2053,7 @@ sub _analyze_method {
 		# the validator schema so authors can tune test constraints (optional,
 		# memberof, matches) without altering the runtime validation call.
 		for my $name (keys %$pod_params) {
-			next unless $pod_params->{$name}{_from_input_spec};
+			next unless ($pod_params->{$name}{_source} // '') eq 'input_spec';
 			my $pod_p = $pod_params->{$name};
 			$schema->{input}{$name} //= {};
 			$schema->{input}{$name}{optional}  = $pod_p->{optional}  if defined $pod_p->{optional};
@@ -2027,12 +2064,11 @@ sub _analyze_method {
 			$schema->{input}{$name}{max}       = $pod_p->{max}       if defined $pod_p->{max};
 		}
 
-		# The routine validates its arguments, so a reference handed to a
-		# string parameter is rejected at runtime and the harness may assert
-		# that it dies.  Types that come only from POD or from code
-		# heuristics get no such mark: those describe intent, and nothing in
-		# the routine necessarily checks them.
-		$schema->{input}{$_}{_type_checked} = 1 for keys %{$schema->{input}};
+		# Not every validator extractor fills in per-parameter provenance, so
+		# stamp the one source value here too.  The harness treats a
+		# 'validator' source as proof that the routine checks types; POD and
+		# code-derived sources describe intent only.
+		$schema->{input}{$_}{_source} //= 'validator' for keys %{$schema->{input}};
 	} else {
 		# Merge field declarations into code_params before merging analyses
 		if (keys %$fields) {
@@ -2227,6 +2263,14 @@ $schema->{output} = $self->_analyze_output(
 	my $effects = $se->analyze($method);
 
 	$schema->{_analysis}{side_effects} = $effects;
+
+	# A routine whose documented side effects include creating or writing a
+	# file is doing its job when it leaves that file behind, so the harness's
+	# leftover-file check must not report it.  Record the contract here for
+	# _write_schema to emit as check_files: 0.
+	if($self->_pod_documents_file_write($pod)) {
+		$schema->{_analysis}{side_effects}{writes_file} = 1;
+	}
 
 	# ----------------------------------------
 	# Complexity Analysis (Non-invasive)
@@ -3811,6 +3855,7 @@ sub _analyze_pod {
 				# Look for regex patterns
 				if ($desc && $desc =~ m{matches?\s+(/[^/]+/|qr/.+?/)}i) {
 					$params{$name}{matches} = $1;
+					$params{$name}{_source} = 'pod';	# documentation, not a check
 				}
 
 				$self->_log("  POD: Found parameter '$name' in parameters section, type=$type" .
@@ -3927,6 +3972,7 @@ sub _analyze_pod {
 		# Look for regex patterns
 		if ($desc =~ m{matches?\s+(/[^/]+/|qr/.+?/)}i) {
 			$params{$name}{matches} = $1;
+			$params{$name}{_source} = 'pod';	# documentation, not a check
 		}
 
 		$self->_log("  POD: Found parameter '$name' from =item list");
@@ -3973,7 +4019,7 @@ sub _analyze_pod {
 				my ($name) = grep { ($params{$_}{position} // -1) == $idx }
 				             keys %params;
 				if (defined $name) {
-					$params{$name}{_from_input_spec} = 1;
+					$params{$name}{_source} = 'input_spec';
 					if (my $t = $self->_map_formal_input_type($spec)) {
 						$params{$name}{type} = $t;
 						$self->_log("  POD: $name type '$t' from =head Input (positional $idx)");
@@ -3989,8 +4035,8 @@ sub _analyze_pod {
 			while ($block =~ /\b(\w+)\s*=>\s*\{([^}]*)\}/g) {
 				my ($name, $spec) = ($1, $2);
 				next if $name =~ /^(self|class|pkg|proto|klass)$/i;
-				$params{$name} //= { _source => 'pod' };
-				$params{$name}{_from_input_spec} = 1;
+				$params{$name} //= { _source => 'input_spec' };
+				$params{$name}{_source} = 'input_spec';
 				if (my $t = $self->_map_formal_input_type($spec)) {
 					$params{$name}{type} = $t;
 					$self->_log("  POD: $name type '$t' from =head Input (named)");
@@ -4004,7 +4050,11 @@ sub _analyze_pod {
 					while ($list_str =~ /['"]([^'"]*)['"]/g) {
 						push @vals, $1;
 					}
-					$params{$name}{memberof} = \@vals if @vals;
+					if(@vals) {
+						$params{$name}{memberof} = \@vals;
+						# The list is documentation: the code may accept more.
+						$params{$name}{_source} = 'input_spec';
+					}
 				}
 				if ($spec =~ /\bmin\s*=>\s*(\d+)/i) {
 					$params{$name}{min} = $1 + 0;
@@ -4017,7 +4067,7 @@ sub _analyze_pod {
 				# min => 1 while its code accepts [].  The harness still uses
 				# the bound to build valid data, but generates no outside case.
 				if(exists($params{$name}{min}) || exists($params{$name}{max})) {
-					$params{$name}{_bounds_unverified} = 1;
+					$params{$name}{_source} = 'input_spec';
 				}
 				if ($spec =~ /\bisa\s*=>\s*['"]([^'"]+)['"]/i) {
 					$params{$name}{isa} = $1;
@@ -4033,6 +4083,7 @@ sub _analyze_pod {
 		}
 	}
 
+	$self->_sanitize_parameter_names(\%params, 'POD analysis');
 	return \%params;
 }
 
@@ -5258,8 +5309,8 @@ sub _validate_output {
 #             place by setting min and/or max keys.
 #
 # Side effects: Logs min/max values to stdout when
-#               verbose is set, and marks the bounds as
-#               unverified (documentation only).
+#               verbose is set, and marks the constraints as
+#               documented (documentation only).
 # --------------------------------------------------
 sub _parse_constraints {
 	my ($self, $param, $constraint) = @_;
@@ -5316,7 +5367,7 @@ sub _parse_constraints {
 	# describe valid input rather than a check the code was seen to make, so
 	# the harness uses them as data hints and expects no croak outside them.
 	if(defined($param->{min}) || defined($param->{max})) {
-		$param->{_bounds_unverified} = 1;
+		$param->{_source} = 'pod';
 	}
 }
 
@@ -5473,6 +5524,7 @@ sub _analyze_code {
 		$self->_extract_error_constraints($p, $param, $code);
 	}
 
+	$self->_sanitize_parameter_names(\%params, 'code analysis');
 	return \%params;
 }
 
@@ -6937,6 +6989,39 @@ sub _format_default {
 	return $default;
 }
 
+# Resolve the right-hand side of a length comparison: a literal or a
+# Readonly/use-constant name.
+sub _length_constraint_value {
+	my ($self, $rhs) = @_;
+
+	return $rhs + 0 if $rhs =~ /^\d+$/;
+	return undef unless $rhs =~ /^\$(\w+)$/;
+	return $self->_module_constants()->{$1};
+}
+
+# Record the accepted length range.  When the comparison is an error
+# condition (an `if` guard), the accepted range is its negation.
+sub _record_length_constraint {
+	my ($self, $p, $op, $val, $invert) = @_;
+
+	if($invert) {
+		my %negated = ('<' => '>=', '<=' => '>', '>' => '<=', '>=' => '<');
+		$op = $negated{$op};
+	}
+
+	if($op eq '<') {
+		my $max = $val - 1;
+		$p->{max} = $max if !defined($p->{max}) || $max < $p->{max};
+	} elsif($op eq '<=') {
+		$p->{max} = $val if !defined($p->{max}) || $val < $p->{max};
+	} elsif($op eq '>') {
+		my $min = $val + 1;
+		$p->{min} = $min if !defined($p->{min}) || $min > $p->{min};
+	} elsif($op eq '>=') {
+		$p->{min} = $val if !defined($p->{min}) || $val > $p->{min};
+	}
+}
+
 # --------------------------------------------------
 # _module_constants
 #
@@ -7019,38 +7104,30 @@ sub _analyze_parameter_constraints {
 		$guarded = 1;
 	}
 
-	# Length checks for strings — literal numeric RHS
-	if ($code =~ /length\s*\(\s*\$$param\s*\)\s*([<>]=?)\s*(\d+)/) {
-		my ($op, $val) = ($1, $2);
-		$p->{type} ||= 'string';
-		if ($op eq '<') {
-			$p->{max} = $val - 1;
-		} elsif ($op eq '<=') {
-			$p->{max} = $val;
-		} elsif ($op eq '>') {
-			$p->{min} = $val + 1;
-		} elsif ($op eq '>=') {
-			$p->{min} = $val;
-		}
-		$self->_log("  CODE: $param length constraint $op $val");
+	# Length checks for strings.  A comparison only describes the accepted
+	# range when it guards an error: `croak ... unless length >= 5` accepts
+	# >= 5, while `croak ... if length < 5` also accepts >= 5.  Reading the
+	# second condition literally would invent a max of 4 and can contradict
+	# a min inferred from the first form.
+	$p->{type} ||= 'string' if $code =~ /length\s*\(\s*\$$param\s*\)/;
+
+	my $postfix_guards = $code;
+	while ($postfix_guards =~ /\b(?:croak|die|confess)\b[^;]*?\b(if|unless)\b\s*(?:\(\s*)?length\s*\(\s*\$$param\s*\)\s*([<>]=?)\s*(\d+|\$\w+)/g) {
+		my ($guard, $op, $rhs) = ($1, $2, $3);
+		my $val = $self->_length_constraint_value($rhs);
+		next unless defined $val;
+		$self->_record_length_constraint($p, $op, $val, ($guard eq 'if'));
+		$self->_log("  CODE: $param length constraint from $guard guard: $op $rhs");
 	}
 
-	# Length checks for strings — Readonly / use-constant RHS ($CONST_NAME)
-	while ($code =~ /length\s*\(\s*\$$param\s*\)\s*([<>]=?)\s*\$(\w+)/g) {
-		my ($op, $const) = ($1, $2);
-		my $val = $self->_module_constants()->{$const};
+	my $block_guards = $code;
+	while ($block_guards =~ /\b(if|unless)\s*\(\s*length\s*\(\s*\$$param\s*\)\s*([<>]=?)\s*(\d+|\$\w+)\s*\)\s*\{([^{}]*)\}/g) {
+		my ($guard, $op, $rhs, $block) = ($1, $2, $3, $4);
+		next unless $block =~ /\b(?:croak|die|confess)\b/;
+		my $val = $self->_length_constraint_value($rhs);
 		next unless defined $val;
-		$p->{type} ||= 'string';
-		if ($op eq '<') {
-			$p->{max} = $val - 1;
-		} elsif ($op eq '<=') {
-			$p->{max} = $val;
-		} elsif ($op eq '>') {
-			$p->{min} = $val + 1;
-		} elsif ($op eq '>=') {
-			$p->{min} = $val;
-		}
-		$self->_log("  CODE: $param length constraint $op \$$const ($val)");
+		$self->_record_length_constraint($p, $op, $val, ($guard eq 'if'));
+		$self->_log("  CODE: $param length constraint from $guard block: $op $rhs");
 	}
 
 	# Numeric range checks (only if NOT part of error guard)
@@ -7205,7 +7282,7 @@ sub _analyze_parameter_validation {
 sub _positional_pod_input {
 	my ($self, $pod, $code_params, $code) = @_;
 
-	my @documented = grep { $pod->{$_}{_from_input_spec} } keys %$pod;
+	my @documented = grep { ($pod->{$_}{_source} // '') eq 'input_spec' } keys %$pod;
 	return undef unless @documented == 1;
 	return undef unless $self->_argument_style($code) eq 'positional';
 
@@ -7295,12 +7372,53 @@ sub _argument_style {
 #             vote across all sources, with the
 #             lowest position winning ties. Optional
 #             status is determined by
-#             _determine_optional_status. Internal
-#             _source keys are stripped from the
-#             merged result.
+#             _determine_optional_status. The single
+#             _source provenance marker is retained on
+#             each merged parameter.
 # --------------------------------------------------
+# --------------------------------------------------
+# _sanitize_parameter_names
+#
+# Purpose:    Drop keys that cannot be parameter names, and report them.
+#
+# Entry:      $params - hashref keyed by parameter name; modified in place.
+#             $where  - the analysis stage, for the warning text.
+#
+# Exit:       Number of keys dropped.
+#
+# Notes:      A hashref used where a list of key/value pairs was meant
+#             stringifies to "HASH(0x...)" and silently becomes a parameter.
+#             Such a key is never a variable the routine can read, so the
+#             schema would test an argument that does not exist.  Perl hash
+#             keys are always strings, so the string form is what we see.
+#
+# Side effects: Emits a carp warning for each dropped key.
+# --------------------------------------------------
+sub _sanitize_parameter_names {
+	my ($self, $params, $where) = @_;
+
+	my $dropped = 0;
+	for my $name (keys %$params) {
+		my $invalid = ref($name)
+			|| $name =~ /\A(?:HASH|ARRAY|SCALAR|CODE|GLOB|REF|REGEXP|Regexp|LVALUE|VSTRING|FORMAT|IO)\(0x[0-9a-fA-F]+\)\z/
+			|| $name =~ /\s/;
+		next unless $invalid;
+
+		carp(__PACKAGE__ . ": ignoring parameter key '$name' from $where: not a parameter name");
+		delete $params->{$name};
+		$dropped++;
+	}
+
+	return $dropped;
+}
+
 sub _merge_parameter_analyses {
 	my ($self, $pod, $code, $sig) = @_;
+
+	# Belt and braces: every analysis should already be clean, but a merge is
+	# the last point before these keys become schema parameters.
+	$self->_sanitize_parameter_names($_, 'parameter merge')
+		for grep { ref($_) eq 'HASH' } ($pod, $code, $sig);
 
 	my %merged;
 
@@ -7327,6 +7445,7 @@ sub _merge_parameter_analyses {
 		# POD has highest priority for type info and explicit declarations
 		if ($pod->{$param}) {
 			%$p = (%$p, %{$pod->{$param}});
+			$p->{_source} //= 'pod';
 		}
 
 		# Code analysis adds concrete evidence (but doesn't override POD explicit types)
@@ -7337,7 +7456,7 @@ sub _merge_parameter_analyses {
 				# Formal input-spec declared this param without a type — author
 				# intentionally left it unconstrained; don't let code heuristics
 				# silently fill in a type that would cause wrong-type die tests.
-				next if $key eq 'type' && $pod->{$param} && $pod->{$param}{_from_input_spec} && !defined $pod->{$param}{type};
+				next if $key eq 'type' && $pod->{$param} && ($pod->{$param}{_source} // '') eq 'input_spec' && !defined $pod->{$param}{type};
 
 				# Only override if POD didn't provide this info or it's a stronger signal
 				my $from_pod = exists $pod->{$param};
@@ -7347,6 +7466,7 @@ sub _merge_parameter_analyses {
 					$p->{$key} = $code->{$param}{$key};
 				}
 			}
+			$p->{_source} //= $code->{$param}{_source};
 		}
 
 		# Signature fills in remaining gaps
@@ -7356,13 +7476,15 @@ sub _merge_parameter_analyses {
 				next if $key eq 'position';
 				$p->{$key} //= $sig->{$param}{$key};
 			}
+			$p->{_source} //= $sig->{$param}{_source};
 		}
+
+		# The source is the single provenance decision: validator-backed
+		# parameters are type-checked, POD/input-spec parameters are
+		# documentation, and code/signature/field parameters are inferred.
 
 		# Handle optional field with better logic
 		$self->_determine_optional_status($p, $pod->{$param}, $code->{$param});
-
-		# Clean up internal fields
-		delete $p->{_source};
 	}
 
 	# Debug logging
@@ -7788,7 +7910,7 @@ sub _generate_notes {
 
 	my @notes;
 
-	foreach my $param (keys %$params) {
+	foreach my $param (sort keys %$params) {
 		my $p = $params->{$param};
 
 		unless ($p->{type}) {
@@ -8346,8 +8468,10 @@ sub _write_schema {
 
 	my $filename = "$self->{output_dir}/${method_name}.yml";
 
-	# Configure YAML::XS to not quote numeric strings
+	# Configure YAML::XS to not quote numeric strings, and sort map keys so
+	# repeated runs over the same module produce identical files.
 	local $YAML::XS::QuoteNumericStrings = 0;
+	local $YAML::XS::SortKeys = 1;
 
 	# Extract package name for module field
 	my $package_name = '';
@@ -8372,12 +8496,18 @@ sub _write_schema {
 		}
 	};
 
+	# A file the POD documents the routine creating or writing is the
+	# requested result, not a leftover, so turn that destructive check off.
+	if($schema->{_analysis}{side_effects}{writes_file}) {
+		$output->{config}{check_files} = 0;
+	}
+
 	# Process input parameters with advanced type handling
 	if($schema->{'input'}) {
 		if(scalar(keys %{$schema->{'input'}})) {
 			$output->{'input'} = {};
 
-			foreach my $param_name (keys %{$schema->{'input'}}) {
+			foreach my $param_name (sort keys %{$schema->{'input'}}) {
 				my $param = $schema->{'input'}{$param_name};
 				if($param->{name}) {
 					my $name = delete $param->{name};
@@ -8395,8 +8525,8 @@ sub _write_schema {
 			# position state arises when a named-API method also happens to
 			# have a Params::Get positional-key call alongside =head4 Input
 			# named-block params that carry no position.
-			my @with_pos    = grep { defined $output->{input}{$_}{position} } keys %{$output->{input}};
-			my @without_pos = grep { !defined $output->{input}{$_}{position} } keys %{$output->{input}};
+			my @with_pos    = grep { defined $output->{input}{$_}{position} } sort keys %{$output->{input}};
+			my @without_pos = grep { !defined $output->{input}{$_}{position} } sort keys %{$output->{input}};
 			if (@with_pos && @without_pos) {
 				delete $output->{input}{$_}{position} for @with_pos;
 			}
@@ -8517,20 +8647,23 @@ sub _generate_schema_comments {
 		if (@param_notes) {
 			push @comments, '#';
 			push @comments, '# Parameter types detected:';
-			foreach my $note (@param_notes) {
+			foreach my $note (sort @param_notes) {
 				push @comments, "#   - $note";
 			}
 		}
 	}
 
-	# Add relationship notes
+	# Add relationship notes, sorted so their order does not depend on
+	# detection order.
 	if ($schema->{relationships} && @{$schema->{relationships}}) {
 		push @comments, (
 			'#',
 			'# Parameter relationships detected:'
 		);
-		foreach my $rel (@{$schema->{relationships}}) {
-			my $desc = $rel->{description} || _format_relationship($rel);
+		my @relationship_notes = map {
+			$_->{description} || _format_relationship($_)
+		} @{$schema->{relationships}};
+		foreach my $desc (sort @relationship_notes) {
 			push @comments, "#   - $desc";
 		}
 	}
@@ -8539,7 +8672,7 @@ sub _generate_schema_comments {
 	if ($schema->{_notes} && scalar(@{$schema->{_notes}})) {
 		push @comments, '#';
 		push @comments, '# Notes:';
-		foreach my $note (@{$schema->{_notes}}) {
+		foreach my $note (sort @{$schema->{_notes}}) {
 			push @comments, "#   - $note";
 		}
 	}
@@ -8565,7 +8698,7 @@ sub _generate_schema_comments {
 	# Add warnings for complex types
 	my @warnings;
 	if ($schema->{input}) {
-		foreach my $param_name (keys %{$schema->{input}}) {
+		foreach my $param_name (sort keys %{$schema->{input}}) {
 			my $p = $schema->{input}{$param_name};
 
 			if ($p->{type} && $p->{type} eq 'coderef') {
@@ -8585,7 +8718,7 @@ sub _generate_schema_comments {
 	if (@warnings) {
 		push @comments, '#';
 		push @comments, '# WARNINGS - Manual test setup may be required:';
-		foreach my $warning (@warnings) {
+		foreach my $warning (sort @warnings) {
 			push @comments, "#   ! $warning";
 		}
 	}
@@ -8632,9 +8765,8 @@ sub _serialize_parameter_for_yaml {
 		$cleaned{$field} = $param->{$field} if defined $param->{$field};
 	}
 
-	# A bound that only the documentation states: the harness tests it but
-	# accepts the routine either enforcing it or ignoring it.
-	$cleaned{_bounds_unverified} = 1 if $param->{_bounds_unverified};
+	# Provenance drives the harness's tolerance and type-check decisions.
+	$cleaned{_source} = $param->{_source} if defined($param->{_source}) && length($param->{_source});
 
 	# Handle advanced type mappings
 	if(my $semantic = $param->{semantic}) {
@@ -8691,7 +8823,7 @@ sub _serialize_parameter_for_yaml {
 			# If the formal input spec explicitly declared a different type, honour
 			# it — the enum values from code analysis are regex-internal alternates
 			# (e.g. numeric format variants) that are meaningless as string choices.
-			if ($param->{_from_input_spec} && defined $param->{type} && $param->{type} ne 'string') {
+			if (($param->{_source} // '') eq 'input_spec' && defined $param->{type} && $param->{type} ne 'string') {
 				# Formal spec wins; suppress spurious regex-derived enum.
 				delete $cleaned{enum};
 			} else {
@@ -8709,7 +8841,7 @@ sub _serialize_parameter_for_yaml {
 	# is not already being output (avoids the "has both" validation error).
 	# Also suppress when the formal input spec declared a non-string type —
 	# the enum values are regex-internal alternates, not valid string members.
-	my $formal_non_string = $param->{_from_input_spec} && defined $param->{type} && $param->{type} ne 'string';
+	my $formal_non_string = (($param->{_source} // '') eq 'input_spec') && defined $param->{type} && $param->{type} ne 'string';
 	if($param->{enum} && ref($param->{enum}) eq 'ARRAY' && !$cleaned{enum} && !$formal_non_string) {
 		$cleaned{memberof} = $param->{enum};
 	}
@@ -8743,15 +8875,8 @@ sub _serialize_parameter_for_yaml {
 		}
 	}
 
-	# Keep the marker saying the routine's own validator enforces these
-	# types.  The harness uses it to decide whether wrong-typed values are
-	# expected to die.
-	$cleaned{_type_checked} = 1 if($param->{_type_checked});
-
 	# Remove internal fields.  The directory semantic is kept: the harness
 	# needs it to supply a path that exists.
-	delete $cleaned{_source};
-	delete $cleaned{_from_input_spec};
 	delete $cleaned{semantic} unless(($cleaned{semantic} // '') eq 'directory');
 
 	return \%cleaned;
@@ -8856,16 +8981,16 @@ sub _ctor_representative_args {
 		my $spec = $input->{$param_name} // {};
 		next if $spec->{optional};
 		# File-path params require a real file to exist, and object/coderef params
-		# cannot be represented as plain YAML scalars.  Fall back to a no-arg
-		# constructor ({}) rather than returning undef: the constructor may still
-		# work fine with no arguments, and the fuzz harness will discover at
-		# runtime whether new() truly requires the param.
+		# cannot be represented as plain YAML scalars.  Such a constructor cannot
+		# be built by the harness: calling new() with no arguments leaves a
+		# required parameter missing, so the harness must skip the routine
+		# rather than fail on a call it could never have made correctly.
 		if ($param_name =~ /(?:file|path|dir|filename)/i) {
-			return {};
+			return undef;
 		}
 		my $type = $spec->{type} // 'string';
 		unless (exists $REP{$type}) {
-			return {};
+			return undef;
 		}
 		$args{$param_name} = $REP{$type};
 	}
@@ -10175,48 +10300,55 @@ sub _validate_pod_code_agreement {
 		my $pod = $pod_params->{$param} || {};
 		my $code = $code_params->{$param} || {};
 
-		# Params from a =head3|4 Input formal spec are the authoritative API
-		# definition — they are exempt from POD/code disagreement checks since
-		# the spec takes precedence over heuristic code analysis.
-		next if $pod->{_from_input_spec};
-
-		# Check if parameter exists in both
-		if (exists $pod_params->{$param} && !exists $code_params->{$param}) {
-			push @errors, "Parameter '\$$param' documented in POD but not found in code signature";
-			next;
-		}
-
-		if(!exists $pod_params->{$param} && exists $code_params->{$param}) {
-			if($param =~ /^(class|pkg|proto|klass)$/i) {
-				# class invocant, not a user-facing parameter
+		# A =head3|4 Input formal spec is authoritative for the parameter's
+		# existence, type, optionality and pattern: heuristic code analysis may
+		# legitimately disagree.  Its bounds are still checked below, because a
+		# formal minimum and a code maximum that do not overlap leave the merged
+		# schema with no valid value.
+		unless(($pod->{_source} // '') eq 'input_spec') {
+			# Check if parameter exists in both
+			if (exists $pod_params->{$param} && !exists $code_params->{$param}) {
+				push @errors, "Parameter '\$$param' documented in POD but not found in code signature";
 				next;
 			}
-			if($param eq 'self') {
-				# instance invocant, not a user-facing parameter
+
+			if(!exists $pod_params->{$param} && exists $code_params->{$param}) {
+				if($param =~ /^(class|pkg|proto|klass)$/i) {
+					# class invocant, not a user-facing parameter
+					next;
+				}
+				if($param eq 'self') {
+					# instance invocant, not a user-facing parameter
+					next;
+				}
+				push @errors, "Parameter '\$$param' found in code but not documented in POD";
 				next;
 			}
-			push @errors, "Parameter '\$$param' found in code but not documented in POD";
-			next;
-		}
 
-		# Compare types if both exist
-		if ($pod->{type} && $code->{type} && $pod->{type} ne $code->{type}) {
-			if (!$self->_types_are_compatible($pod->{type}, $code->{type})) {
-				push @errors, "Type mismatch for '\$$param': POD says '$pod->{type}', code suggests '$code->{type}' (incompatible)";
-			} else {
-				push @errors, "Type difference for '\$$param': POD says '$pod->{type}', code suggests '$code->{type}' (compatible)";
+			# Compare types if both exist
+			if ($pod->{type} && $code->{type} && $pod->{type} ne $code->{type}) {
+				if (!$self->_types_are_compatible($pod->{type}, $code->{type})) {
+					push @errors, "Type mismatch for '\$$param': POD says '$pod->{type}', code suggests '$code->{type}' (incompatible)";
+				} else {
+					push @errors, "Type difference for '\$$param': POD says '$pod->{type}', code suggests '$code->{type}' (compatible)";
+				}
+			}
+
+			# Compare optional status if both exist
+			if (exists $pod->{optional} && exists $code->{optional} &&
+				$pod->{optional} != $code->{optional}) {
+				my $pod_status = $pod->{optional} ? 'optional' : 'required';
+				my $code_status = $code->{optional} ? 'optional' : 'required';
+				push @errors, "Optional status mismatch for '\$$param': POD says '$pod_status', code suggests '$code_status'";
+			}
+
+			# Check regex patterns
+			if ($pod->{matches} && $code->{matches} && $pod->{matches} ne $code->{matches}) {
+				push @errors, "Pattern mismatch for '\$$param': POD says '$pod->{matches}', code suggests '$code->{matches}'";
 			}
 		}
 
-		# Compare optional status if both exist
-		if (exists $pod->{optional} && exists $code->{optional} &&
-			$pod->{optional} != $code->{optional}) {
-			my $pod_status = $pod->{optional} ? 'optional' : 'required';
-			my $code_status = $code->{optional} ? 'optional' : 'required';
-			push @errors, "Optional status mismatch for '\$$param': POD says '$pod_status', code suggests '$code_status'";
-		}
-
-		# Check constraints (min/max)
+		# Check constraints (min/max), including a formal spec's bounds.
 		if (defined $pod->{min} && defined $code->{min} && $pod->{min} != $code->{min}) {
 			push @errors, "Min constraint mismatch for '\$$param': POD says '$pod->{min}', code suggests '$code->{min}'";
 		}
@@ -10225,9 +10357,12 @@ sub _validate_pod_code_agreement {
 			push @errors, "Max constraint mismatch for '\$$param': POD says '$pod->{max}', code suggests '$code->{max}'";
 		}
 
-		# Check regex patterns
-		if ($pod->{matches} && $code->{matches} && $pod->{matches} ne $code->{matches}) {
-			push @errors, "Pattern mismatch for '\$$param': POD says '$pod->{matches}', code suggests '$code->{matches}'";
+		if (defined $pod->{min} && defined $code->{max} && $pod->{min} > $code->{max}) {
+			push @errors, "Constraint contradiction for '\$$param': POD says min '$pod->{min}', code suggests max '$code->{max}' (no valid value)";
+		}
+
+		if (defined $code->{min} && defined $pod->{max} && $code->{min} > $pod->{max}) {
+			push @errors, "Constraint contradiction for '\$$param': code suggests min '$code->{min}', POD says max '$pod->{max}' (no valid value)";
 		}
 	}
 

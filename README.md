@@ -389,6 +389,8 @@ The current supported variables are
     Every call is checked for files it created.  They are removed afterwards
     whatever the setting, so a routine that writes a file cannot break the cases
     that follow it; set this to 0 for a routine whose purpose is to write one.
+    `extract-schemas` sets it to 0 when the routine's POD documents creating or
+    writing a file in its SIDE EFFECTS section.
 
 - `check_fds`, assert the routine leaks no file descriptors
  (default: 1)
@@ -1366,12 +1368,12 @@ The generated test:
 - Asserts that a wrong-typed argument dies, where the type is enforced
 
     Passing a reference where a string is declared is only expected to die for a
-    parameter whose input spec sets `_type_checked: 1`.
-    [App::Test::Generator::SchemaExtractor](https://metacpan.org/pod/App%3A%3ATest%3A%3AGenerator%3A%3ASchemaExtractor) sets that key when the routine checks
+    parameter whose input spec sets `_source: validator`.
+    [App::Test::Generator::SchemaExtractor](https://metacpan.org/pod/App%3A%3ATest%3A%3AGenerator%3A%3ASchemaExtractor) sets that source when the routine checks
     its arguments with a validator such as [Params::Validate::Strict](https://metacpan.org/pod/Params%3A%3AValidate%3A%3AStrict).
     A type taken from POD, or inferred from the code, documents intent but does not
     promise rejection, so no such case is generated for it.
-    Add the key by hand to a schema whose routine does check its argument types.
+    Add the source by hand to a schema whose routine does check its argument types.
 
 - Validates outputs with [Return::Set](https://metacpan.org/pod/Return%3A%3ASet)
 - Runs static `is(... )` corpus tests from Perl and/or YAML corpus

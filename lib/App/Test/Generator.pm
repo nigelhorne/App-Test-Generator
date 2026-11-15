@@ -612,6 +612,8 @@ Setting this to 0 disables timeout testing.
 Every call is checked for files it created.  They are removed afterwards
 whatever the setting, so a routine that writes a file cannot break the cases
 that follow it; set this to 0 for a routine whose purpose is to write one.
+C<extract-schemas> sets it to 0 when the routine's POD documents creating or
+writing a file in its SIDE EFFECTS section.
 
 =item * C<check_fds>, assert the routine leaks no file descriptors
  (default: 1)
@@ -674,6 +676,13 @@ This is useful for testing functions that convert between formats, normalize dat
 or apply business logic transformations on a set of data to different set of data.
 It takes a list of subsets of the input and output definitions,
 and verifies that data from each input subset is correctly transformed into data from the matching output subset.
+
+A transform whose input names at least one field that the top-level input does not
+introduces its own call shape: its test cases are built from those fields rather
+than the top-level ones.  This lets one schema cover two calls, such as an
+arrayref argument and a list of scalar arguments.  A transform whose input only
+names fields that are already at the top level adjusts the top-level input and
+keeps the usual behaviour.
 
 =head4 Transform Validation Rules
 
@@ -993,18 +1002,31 @@ This case should succeed, since it meets the constraint exactly.
 This case is annotated with C<_STATUS = 'DIES'> in the corpus and
 should cause the harness to fail validation or croak.
 
-A bound that came only from L<extract-schemas> reading POD (marked
-C<_bounds_unverified> in the generated schema) is a claim about valid
-input, not a check the routine has been seen to make, so no case outside
-it is generated.  The bound still sizes the valid data that is generated.
-This applies to array and hash sizes, string lengths and numeric ranges
-alike, and to constraints parsed from POD prose (C<3-50>, C<at least 5>).
-A bound written by hand in a schema is still required to die outside it.
-Because
-tolerance reduces what the harness proves, every tolerated bound is
-reported with C<diag>, so a passing run never hides the concession.
-Without this, a routine whose POD says C<min =E<gt> 1> but which accepts
-an empty list failed every harness run.
+A constraint that came only from L<extract-schemas> reading POD (marked
+with C<_source: pod> for prose or C<_source: input_spec> for a formal spec)
+is a claim about valid input, not a check the routine has been seen to make.
+The constraint still sizes the valid data that is generated.  It also gets
+explicit out-of-bound probes: a probe that dies is accepted as enforcement
+of the documented limit, while one that survives is recorded as a
+documentation contradiction.  This applies to array and hash sizes, string
+lengths and numeric ranges, and to constraints parsed from POD prose
+(C<3-50>, C<at least 5>).  Other POD constraints such as C<memberof> lists
+and C<matches> patterns remain hints, and their outside cases are skipped.
+A constraint written by hand in a schema is still required to die outside
+it.  Because tolerance reduces what the
+harness proves, every tolerated bound is reported with C<diag>, so a
+passing run never hides the concession.  Without this, a routine whose POD
+says C<min =E<gt> 1> but which accepts an empty list failed every harness
+run.
+
+Fuzzing can still reveal a contradiction in either direction: a routine may
+reject a value inside the documented bound, or accept one outside it.  The
+harness records those observations and reports them together at the end of
+the run.  A normal run tolerates them, so a POD-derived bound cannot fail a
+routine that merely documents differently; pass C<--strict-documented> to
+C<fuzz-harness-generator> to make each recorded contradiction a failing
+test.  The strict choice is embedded in the generated harness, so a later
+C<prove> run behaves the same way.
 
 =back
 
@@ -1665,12 +1687,12 @@ The generated test:
 =item * Asserts that a wrong-typed argument dies, where the type is enforced
 
 Passing a reference where a string is declared is only expected to die for a
-parameter whose input spec sets C<_type_checked: 1>.
-L<App::Test::Generator::SchemaExtractor> sets that key when the routine checks
-its arguments with a validator such as L<Params::Validate::Strict>.
+parameter whose input spec sets C<_source: validator>.
+L<App::Test::Generator::SchemaExtractor> sets that source when the routine
+checks its arguments with a validator such as L<Params::Validate::Strict>.
 A type taken from POD, or inferred from the code, documents intent but does not
 promise rejection, so no such case is generated for it.
-Add the key by hand to a schema whose routine does check its argument types.
+Add the source by hand to a schema whose routine does check its argument types.
 
 =item * Validates outputs with L<Return::Set>
 
@@ -1705,6 +1727,7 @@ Takes a schema file and produces a test file (or STDOUT).
         schema_file => { type => 'string', optional => 0 },
         input_file  => { type => 'string', optional => 1 },
         output_file => { type => 'string', optional => 1, max => 255 },
+        strict_documented => { type => 'boolean', optional => 1 },
     }
 
 =head4 Output
@@ -1728,6 +1751,7 @@ sub generate
 	# Globals loaded from the user's conf (all optional except function maybe)
 	my ($module, $function, $new, $yaml_cases);
 	my ($seed, $iterations);
+	my $strict_documented = 0;
 
 	if((ref($_[0]) eq 'HASH') || defined($_[2])) {
 		# Modern API
@@ -1739,8 +1763,10 @@ sub generate
 				output_file => { type => 'string', optional => 1 },
 				schema => { type => 'hashref', optional => 1 },
 				quiet => { type => 'boolean', optional => 1 },	# Not yet used
+				strict_documented => { type => 'boolean', optional => 1 },
 			}
 		});
+		$strict_documented = $params->{'strict_documented'} ? 1 : 0;
 		if($params->{'schema_file'}) {
 			$schema_file = $params->{'schema_file'};
 		} elsif($params->{'input_file'}) {
@@ -1789,6 +1815,7 @@ sub generate
 	my %config = %{$schema->{config}} if(exists($schema->{config}));
 
 	_normalize_config(\%config);
+	$config{'strict_documented'} = $strict_documented;
 
 	# Guess module name from config file if not set
 	if(!$module) {
@@ -2132,7 +2159,7 @@ sub generate
 				}
 			}
 		} else {
-			$call_code = "\$result = \$obj->$function(\$input);";
+			$call_code = "\$result = \$obj->$function(_fuzz_args(\$input));";
 			if($output{'_returns_self'}) {
 				$call_code .= "ok(defined(\$result)); ok(\$result eq \$obj, '$function returns self')";
 			} elsif(defined($accessor{type}) && ($accessor{type} eq 'getset')) {
@@ -2149,20 +2176,20 @@ sub generate
 			if($has_positions) {
 				$position_code = "\$result = (scalar(\@alist) == 1) ? ${module}\->$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}\->$function() : ${module}\->$function(\@alist);";
 			} else {
-				$call_code = "\$result = ${module}\->$function(\$input);";
+				$call_code = "\$result = ${module}\->$function(_fuzz_args(\$input));";
 			}
 		} else {
 			if($has_positions) {
 				$position_code = "\$result = (scalar(\@alist) == 1) ? ${module}::$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}::$function() : ${module}::$function(\@alist);";
 			} else {
-				$call_code = "\$result = ${module}::$function(\$input);";
+				$call_code = "\$result = ${module}::$function(_fuzz_args(\$input));";
 			}
 		}
 	} else {
 		if($has_positions) {
 			$position_code = "\$result = $function(\@alist);";
 		} else {
-			$call_code = "\$result = $function(\$input);";
+			$call_code = "\$result = $function(_fuzz_args(\$input));";
 		}
 	}
 
@@ -2191,7 +2218,7 @@ sub generate
 		# an optional second argument would store it as if it were a value.
 		foreach my $code (\$call_code, \$position_code) {
 			next unless(defined($$code));
-			$$code =~ s/\Q$function\E\(\$input\)/$function()/g;
+			$$code =~ s/\Q$function\E\(_fuzz_args\(\$input\)\)/$function()/g;
 		}
 		my $snapshot = 'my $getter_copy = eval { require Storable; Storable::dclone($obj) }; ';
 		my $check = 'if(defined($getter_copy) && eval { scalar(keys %{$getter_copy}); 1 }) {'

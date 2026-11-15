@@ -25,7 +25,7 @@ fuzz-harness-generator - Generate fuzzing + corpus-based test harnesses from tes
 
 =head1 SYNOPSIS
 
-  fuzz-harness-generator [-r] [-o output_file] input.yaml
+  fuzz-harness-generator [-r] [--strict-documented] [-o output_file] input.yaml
   fuzz-harness-generator --dry-run input.yaml
   fuzz-harness-generator --replay-corpus schemas/corpus/ -o t/fuzz_replay.t
   fuzz-harness-generator --replay-corpus schemas/corpus/translate.json -o t/fuzz_replay.t
@@ -65,6 +65,12 @@ Validate the input configuration and schema extraction without writing any outpu
 Call C<prove> on the output file.
 
 C<fuzz-harness-generator -r t/conf/data_text_append.conf> will, therefore, dynamically create and run tests on the C<append> method of L<Data::Text>
+
+=item B<--strict-documented>
+
+Fail the generated harness when fuzzing finds a routine that contradicts a
+POD-derived bound.  By default such contradictions are recorded and reported
+at the end of the run but do not fail it.
 
 =item B<--replay-corpus> PATH
 
@@ -107,6 +113,7 @@ my $verbose;
 my $version;
 my $dry_run;
 my $replay_corpus;
+my $strict_documented;
 
 Getopt::Long::Configure('bundling');
 
@@ -116,6 +123,7 @@ GetOptions(
 	'dry-run|n'       => \$dry_run,
 	'output|o=s'      => \$outfile,
 	'run|r'           => \$run,
+	'strict-documented' => \$strict_documented,
 	'verbose|v'       => \$verbose,
 	'version|V'       => \$version,
 	'replay-corpus|R=s' => \$replay_corpus,
@@ -192,7 +200,7 @@ if($run && !$outfile) {
 	my ($fh, $tmp) = File::Temp::tempfile();
 	close $fh;
 
-	App::Test::Generator->generate($infile, $tmp);
+	_generate_harness($infile, $tmp, $strict_documented);
 
 	exit system($prove, '-l', $tmp) >> 8;
 }
@@ -202,7 +210,7 @@ if($dry_run) {
 	close $fh;
 
 	eval {
-		App::Test::Generator->generate($infile, $tmp);
+		_generate_harness($infile, $tmp, $strict_documented);
 		1;
 	} or do {
 		die "Dry-run failed for $infile: $@";
@@ -215,7 +223,7 @@ if($dry_run) {
 	warn "Overwriting existing file: $outfile";
 }
 
-App::Test::Generator->generate($infile, $outfile);
+_generate_harness($infile, $outfile, $strict_documented);
 
 if($outfile) {
 	chmod 0755, $outfile if($outfile =~ /\.(pl|cgi)$/);
@@ -226,6 +234,31 @@ if($outfile) {
 }
 
 exit 0;
+
+# --------------------------------------------------
+# _generate_harness
+#
+# Generate a fuzz harness, carrying the CLI's
+#     --strict-documented choice into the generated
+#     test file so that later prove runs behave
+#     the same way.
+#
+# Entry:      $infile  - schema file.
+#             $outfile - where to write the harness.
+#             $strict  - true to fail on documented-bound
+#                        contradictions.
+#
+# Exit:       Returns nothing; generate() may croak.
+# --------------------------------------------------
+sub _generate_harness {
+	my ($infile, $outfile, $strict) = @_;
+
+	return App::Test::Generator->generate({
+		input_file => $infile,
+		output_file => $outfile,
+		strict_documented => $strict ? 1 : 0,
+	});
+}
 
 # ---------------------------------------------------------------------------
 # Helpers for --replay-corpus

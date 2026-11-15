@@ -604,4 +604,75 @@ END_PM
 	ok(exists $input->{x}, 'real parameter $x is still extracted');
 };
 
+# ==================================================================
+# Documented file writes
+#
+# A routine whose POD documents creating a file is doing what it was
+# asked to do, so the generated schema must turn the harness's
+# leftover-file test off for it.
+# ==================================================================
+
+subtest '_pod_documents_file_write recognises a documented file write' => sub {
+	my $e = bless {}, 'App::Test::Generator::SchemaExtractor';
+	my $pod = <<'END_POD';
+=head3 SIDE EFFECTS
+
+=over 4
+
+=item * Creates or updates the local cache file on a successful download.
+
+=back
+END_POD
+
+	ok($e->_pod_documents_file_write($pod), 'creating a file counts as a file write');
+};
+
+subtest '_pod_documents_file_write ignores files named outside SIDE EFFECTS' => sub {
+	my $e = bless {}, 'App::Test::Generator::SchemaExtractor';
+	my $pod = <<'END_POD';
+=head3 ARGUMENTS
+
+=item * C<output_file> - the file to write.
+
+=head3 SIDE EFFECTS
+
+=item * Populates the in-memory lookup table.
+
+=back
+END_POD
+
+	ok(!$e->_pod_documents_file_write($pod), 'an argument description alone is not a side effect');
+};
+
+subtest '_pod_documents_file_write handles missing POD' => sub {
+	my $e = bless {}, 'App::Test::Generator::SchemaExtractor';
+	ok(!$e->_pod_documents_file_write(undef), 'no POD means no documented file write');
+};
+
+subtest '_write_schema emits check_files: 0 for a documented file writer' => sub {
+	my $dir = tempdir(CLEANUP => 1);
+	my $e = bless { output_dir => $dir }, 'App::Test::Generator::SchemaExtractor';
+	my $schema = {
+		function => 'write_cache',
+		input => {},
+		output => { type => 'hashref' },
+		_confidence => {
+			input  => { level => 'low' },
+			output => { level => 'low' },
+		},
+		_analysis => { side_effects => { writes_file => 1 } },
+	};
+
+	$e->_write_schema('write_cache', $schema);
+
+	my $yaml = do {
+		open my $fh, '<', File::Spec->catfile($dir, 'write_cache.yml') or die $!;
+		local $/;
+		<$fh>;
+	};
+
+	like($yaml, qr/^  check_files: 0$/m, 'check_files is off for the generated schema');
+};
+
 done_testing();
+
