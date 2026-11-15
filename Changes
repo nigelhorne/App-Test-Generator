@@ -2,11 +2,13 @@ Revision history for App-Test-Generator
 
 0.49
 	[Bug fixes]
-	- A size bound that only extract-schemas read from POD is tested either way:
-	  the routine may croak or return, since the documentation is a claim about
-	  valid input rather than a check the code was seen to make (NameCase
-	  documents min => 1 for an argument that accepts an empty array); a bound
-	  in a hand-written schema is still required to die
+	- A bound that only extract-schemas read from POD is treated as a hint for
+	  valid data, not a check the code was seen to make: no case outside it is
+	  generated, for string lengths, numeric ranges, array and hash sizes
+	  alike, whether the bound came from an input spec or from prose such as
+	  "3-50 chars" / "at least 5" (NameCase documents min => 1 for an
+	  argument that accepts an empty array); each tolerated bound is reported
+	  with diag, and a bound in a hand-written schema is still required to die
 	- A single documented input parameter is read as the first positional
 	  argument when the routine reads no hash of arguments (nc was called as
 	  nc(name => ...) and every harness case failed)

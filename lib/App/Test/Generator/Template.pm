@@ -183,6 +183,9 @@ my @relationships = (
 [% relationships_code %]
 );
 
+# Tolerance for documentation-only bounds is rare, so it must not be silent.
+my %_documented_bound_logged;
+
 # Candidates for regex comparisons
 my @candidate_good = ('123', 'abc', 'A1B2', '0');
 my @candidate_bad = (
@@ -899,6 +902,10 @@ sub fuzz_inputs
 				} elsif($type eq 'string') {
 					if($input{matches}) {
 						$case_input = Data::Random::String::Matches->create_random_string({ regex => $input{'matches'} });
+					} elsif(my $len = $input{min} // $input{max}) {
+						# Generated data stays inside a declared bound, so a
+						# routine that enforces it is not failed on our own input.
+						$case_input = rand_str($len);
 					} else {
 						$case_input = rand_str();
 					}
@@ -996,11 +1003,14 @@ sub fuzz_inputs
 			} elsif ($type eq 'string') {
 				push @cases, @{_generate_string_cases('_input', \%input, \%mandatory_args, _LINE => __LINE__)};
 			} elsif ($type eq 'arrayref') {
+				_documented_bound_note('_input') if $input{'_bounds_unverified'};
 				if (defined $input{min}) {
 					my $len = $input{min};
 					push @cases, { _input => [ (1) x ($len + 1) ] };	# just inside
 					push @cases, { _input => [ (1) x $len ] };	# border
-					push @cases, { _input => [ (1) x ($len - 1) ], _STATUS => ($input{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') } if $len > 0; # outside
+					# A documented-only bound gets no outside case: it is a hint
+					# for valid data, not a promise the routine croaks.
+					push @cases, { _input => [ (1) x ($len - 1) ], _STATUS => 'DIES' } if($len > 0) && !$input{'_bounds_unverified'}; # outside
 				} else {
 					push @cases, { _input => [] } if($config{'test_empty'});	# No min, empty array should be allowable
 				}
@@ -1008,14 +1018,15 @@ sub fuzz_inputs
 					my $len = $input{max};
 					push @cases, { _input => [ (1) x ($len - 1) ] };	# just inside
 					push @cases, { _input => [ (1) x $len ] };	# border
-					push @cases, { _input => [ (1) x ($len + 1) ], _STATUS => ($input{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') }; # outside
+					push @cases, { _input => [ (1) x ($len + 1) ], _STATUS => 'DIES' } unless $input{'_bounds_unverified'}; # outside
 				}
 			} elsif ($type eq 'hashref') {
+				_documented_bound_note('_input') if $input{'_bounds_unverified'};
 				if (defined $input{min}) {
 					my $len = $input{min};
 					push @cases, { _input => { map { "k$_" => 1 }, 1 .. ($len + 1) } };
 					push @cases, { _input => { map { "k$_" => 1 }, 1 .. $len } };
-					push @cases, { _input => { map { "k$_" => 1 }, 1 .. ($len - 1) }, _STATUS => ($input{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') } if $len > 0;
+					push @cases, { _input => { map { "k$_" => 1 }, 1 .. ($len - 1) }, _STATUS => 'DIES' } if($len > 0) && !$input{'_bounds_unverified'};
 				} else {
 					push @cases, { _input => {} } if($config{'test_empty'});	# No min, empty hash should be allowable
 				}
@@ -1023,7 +1034,7 @@ sub fuzz_inputs
 					my $len = $input{max};
 					push @cases, { _input => { map { "k$_" => 1 }, 1 .. ($len - 1) } };
 					push @cases, { _input => { map { "k$_" => 1 }, 1 .. $len } };
-					push @cases, { _input => { map { "k$_" => 1 }, 1 .. ($len + 1) }, _STATUS => ($input{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') };
+					push @cases, { _input => { map { "k$_" => 1 }, 1 .. ($len + 1) }, _STATUS => 'DIES' } unless $input{'_bounds_unverified'};
 				}
 			} elsif ($type eq 'boolean') {
 				push @cases, @{_generate_boolean_cases('_input', \%input, \%mandatory_args)};
@@ -1055,10 +1066,15 @@ sub _generate_integer_cases {
 	my ($arg_name, $spec, $mandatory_args) = @_;
 	my @cases;
 
+	# Same rule as strings and arrays: a documented-only bound sizes valid
+	# data and does not make an outside value an error.
+	my $bounds_checked = !$spec->{'_bounds_unverified'};
+	_documented_bound_note($arg_name) unless $bounds_checked;
+
 	foreach my $i (-42, -1, 42) {
 		if(((!defined $spec->{min}) || ($spec->{min} <= $i)) && ((!defined($spec->{max})) || ($spec->{max} >= $i))) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => $i ) };
-		} else {
+		} elsif($bounds_checked) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => $i, _STATUS => 'DIES' ) };
 		}
 	}
@@ -1078,8 +1094,8 @@ sub _generate_integer_cases {
 	# min/max numeric boundaries
 	if (defined $spec->{min}) {
 		my $min = $spec->{min};
+		push @cases, { %{$mandatory_args}, ( $arg_name => $min - 1, _STATUS => 'DIES' ) } if $bounds_checked;
 		push @cases,
-			{ %{$mandatory_args}, ( $arg_name => $min - 1, _STATUS => 'DIES' ) },
 			{ %{$mandatory_args}, ( $arg_name => "  $min  ", _LINE => __LINE__ ) },	# border, padded integer
 			{ %{$mandatory_args}, ( $arg_name => $min, _LINE => __LINE__ ) },	# border
 			{ %{$mandatory_args}, ( $arg_name => $min + 1 ) };	# just inside
@@ -1101,8 +1117,8 @@ sub _generate_integer_cases {
 		my $max = $spec->{max};
 		push @cases,
 			{ %{$mandatory_args}, ( $arg_name => $max - 1 ) },
-			{ %{$mandatory_args}, ( $arg_name => $max ) },
-			{ %{$mandatory_args}, ( $arg_name => $max + 1, _STATUS => 'DIES' ) };
+			{ %{$mandatory_args}, ( $arg_name => $max ) };
+		push @cases, { %{$mandatory_args}, ( $arg_name => $max + 1, _STATUS => 'DIES' ) } if $bounds_checked;
 
 		if(defined $spec->{min}) {
 			# Test 0 if it's in range
@@ -1130,6 +1146,9 @@ sub _generate_float_cases {
 	my ($arg_name, $spec, $mandatory_args) = @_;
 	my @cases;
 
+	my $bounds_checked = !$spec->{'_bounds_unverified'};
+	_documented_bound_note($arg_name) unless $bounds_checked;
+
 	if((!defined $spec->{min}) || ($spec->{min} <= -0.1)) {
 		push @cases, { %{$mandatory_args}, ( $arg_name => -0.1, _LINE => __LINE__ ) };
 	}
@@ -1152,13 +1171,13 @@ sub _generate_float_cases {
 	# min/max numeric boundaries
 	if (defined $spec->{min}) {
 		my $min = $spec->{min};
+		push @cases, { %{$mandatory_args}, ( $arg_name => $min - 0.001, _STATUS => 'DIES' ), _DESCRIPTION => 'float below minimum value is denied' } if $bounds_checked;
 		push @cases,
-			{ %{$mandatory_args}, ( $arg_name => $min - 0.001, _STATUS => 'DIES' ), _DESCRIPTION => 'float below minimum value is denied' },
 			{ %{$mandatory_args}, ( $arg_name => $min, _LINE => __LINE__ ), _DESCRIPTION => 'float minimum value is allowed' },	# border
 			{ %{$mandatory_args}, ( $arg_name => $min + 0.001 ), _DESCRIPTION => 'float above minimum value is allowed' };	# just inside
 
 		[% IF module %]
-			push @cases, { %{$mandatory_args}, ( $arg_name => "-inf", _STATUS => 'DIES' ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => "-inf", _STATUS => 'DIES' ) } if $bounds_checked;
 		[% END %]
 
 		if(!defined $spec->{max}) {
@@ -1173,13 +1192,13 @@ sub _generate_float_cases {
 		my $max = $spec->{max};
 		push @cases,
 			{ %{$mandatory_args}, ( $arg_name => $max - 0.000001 ) },
-			{ %{$mandatory_args}, ( $arg_name => $max ) },
-			{ %{$mandatory_args}, ( $arg_name => $max + 0.000001, _STATUS => 'DIES' ) };
+			{ %{$mandatory_args}, ( $arg_name => $max ) };
+		push @cases, { %{$mandatory_args}, ( $arg_name => $max + 0.000001, _STATUS => 'DIES' ) } if $bounds_checked;
 
 		[% IF module %]
 			push @cases,
 				{ %{$mandatory_args}, ( $arg_name => "inf", _STATUS => 'DIES' ) },
-				{ %{$mandatory_args}, ( $arg_name => 9**9**9, _STATUS => 'DIES' ) };
+				{ %{$mandatory_args}, ( $arg_name => 9**9**9, _STATUS => 'DIES' ) } if $bounds_checked;
 		[% END %]
 
 		if(defined $spec->{min}) {
@@ -1239,11 +1258,29 @@ sub _generate_boolean_cases {
 	return \@cases;
 }
 
+# Documented-only bounds are a concession: record each one, so that a
+# passing run still shows where the harness declined to hold the routine to
+# its POD rather than quietly testing less.
+sub _documented_bound_note
+{
+	my ($name) = @_;
+
+	(my $shown = $name) =~ s/^_+//;
+	diag("documented-only bound on '$shown' is not enforced (from POD); values outside it are not expected to die")
+		unless $_documented_bound_logged{$shown}++;
+}
+
 sub _generate_string_cases
 {
 	my ($arg_name, $spec, $mandatory_args, $properties_array_ref) = @_;
 
 	my @cases;
+
+	# A bound taken from POD sizes valid data; it does not promise that the
+	# routine rejects what lies outside it.  Such bounds are the exception,
+	# so the concession is reported.
+	my $bounds_checked = !$spec->{'_bounds_unverified'};
+	_documented_bound_note($arg_name) unless $bounds_checked;
 
 	if (defined $spec->{min}) {
 		my $len = $spec->{min};
@@ -1294,7 +1331,7 @@ sub _generate_string_cases
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'DIES' ) };
 				} elsif((!defined($spec->{max})) || ($spec->{max} >= 5)) {
 					push @cases, { %{$mandatory_args}, ( $arg_name => 'hello', _LINE => __LINE__, _STATUS => 'OK' ) };
-				} else {
+				} elsif($bounds_checked) {
 					push @cases,
 						{ %{$mandatory_args}, ( $arg_name => 'plugh', _LINE => __LINE__, _STATUS => 'DIES' ) },
 						{ %{$mandatory_args}, ( $arg_name => '     ', _LINE => __LINE__, _STATUS => 'DIES' ) };
@@ -1343,7 +1380,8 @@ sub _generate_string_cases
 					my $str = rand_str($count);
 					if($str =~ $re) {
 						if($count > $len) {
-							push @cases, { %{$mandatory_args}, ( $arg_name => $str, _LINE => __LINE__, _STATUS => 'DIES' ) };
+							# A documented max does not make a longer string an error.
+							push @cases, { %{$mandatory_args}, ( $arg_name => $str, _LINE => __LINE__, _STATUS => 'DIES' ) } if $bounds_checked;
 						} else {
 							push @cases, { %{$mandatory_args}, ( $arg_name => $str, _LINE => __LINE__ ) };
 						}
@@ -1354,14 +1392,14 @@ sub _generate_string_cases
 			} else {
 				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len - 1), _LINE => __LINE__ ) };	# just inside
 				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len), _LINE => __LINE__ ) };	# border
-				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len + 1), _LINE => __LINE__, _STATUS => 'DIES' ) }; # outside
+				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len + 1), _LINE => __LINE__, _STATUS => 'DIES' ) } if $bounds_checked; # outside
 			}
 		} elsif(defined($spec->{min}) && ($spec->{min} == $len)) {
-			if($len >= 2) {
+			if($len >= 2 && $bounds_checked) {
 				push @cases, { %{$mandatory_args}, ( $arg_name => ' ' x $len - 1, _LINE => __LINE__, _DESCRIPTION => 'max == min', _STATUS => 'DIES' ) };
 			}
 			push @cases, { %{$mandatory_args}, ( $arg_name => ' ' x $len, _LINE => __LINE__, _DESCRIPTION => 'max == min' ) };
-			push @cases, { %{$mandatory_args}, ( $arg_name => ' ' x $len + 1, _LINE => __LINE__, _DESCRIPTION => 'max == min', _STATUS => 'DIES' ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => ' ' x $len + 1, _LINE => __LINE__, _DESCRIPTION => 'max == min', _STATUS => 'DIES' ) } if $bounds_checked;
 		}
 	} elsif((!$spec->{matches}) && (!$spec->{memberof})) {
 		# TODO: send them if they match the regex
@@ -1373,7 +1411,7 @@ sub _generate_string_cases
 		}
 		if((!exists($spec->{min})) || ($spec->{min} <= 1)) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => "\x{FEFF}", _STATUS => 'OK', _LINE => __LINE__, _DESCRIPTION => 'Byte order marker' ) };
-		} else {
+		} elsif($bounds_checked) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => "\x{FEFF}", _STATUS => 'DIES', _LINE => __LINE__, _DESCRIPTION => 'Byte order marker' ) };
 		}
 	}
@@ -1399,10 +1437,10 @@ sub _generate_string_cases
 			my $len = $spec->{min};
 			if($len == 1) {
 				if($config{'test_empty'}) {
-					push @cases, { %{$mandatory_args}, ( $arg_name => '', _STATUS => 'DIES', _LINE => __LINE__ ) };
+					push @cases, { %{$mandatory_args}, ( $arg_name => '', _STATUS => 'DIES', _LINE => __LINE__ ) } if $bounds_checked;
 				}
 			} elsif($len > 0) {
-				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len - 1), _STATUS => 'DIES' ) };
+				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len - 1), _STATUS => 'DIES' ) } if $bounds_checked;
 			}
 			if((!defined($spec->{max})) || ($spec->{max} >= $len + 1)) {
 				push @cases,
@@ -1425,11 +1463,11 @@ sub _generate_string_cases
 			my $len = $spec->{max};
 			if((!defined($spec->{min})) || ($spec->{min} < ($len - 1))) {
 				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len - 1) ) };
-			} else {
+			} elsif($bounds_checked) {
 				push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len - 1), _STATUS => 'DIES' ) };
 			}
 			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len) ) };
-			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len + 1), _STATUS => 'DIES' ) };
+			push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($len + 1), _STATUS => 'DIES' ) } if $bounds_checked;
 		}
 	}
 
@@ -1740,12 +1778,13 @@ sub generate_tests
 				} elsif($type eq 'string') {
 					push @cases, @{_generate_string_cases($field, $spec, \%mandatory_args)};
 				} elsif ($type eq 'arrayref') {
+					_documented_bound_note($field) if $spec->{'_bounds_unverified'};
 					if (defined $spec->{min}) {
 						my $len = $spec->{min};
 						push @cases,
 							{ %mandatory_args, $field => [ (1) x ($len + 1) ] },	# just inside
 							{ %mandatory_args, $field => [ (1) x $len ] };	# border
-						push @cases, { %mandatory_args, $field => [ (1) x ($len - 1) ], _STATUS => ($spec->{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') } if $len > 0; # outside
+						push @cases, { %mandatory_args, $field => [ (1) x ($len - 1) ], _STATUS => 'DIES' } if($len > 0) && !$spec->{'_bounds_unverified'}; # outside
 					} else {
 						push @cases, { %mandatory_args, $field => [] } if($config{'test_empty'});	# No min, empty array should be allowable
 					}
@@ -1754,17 +1793,18 @@ sub generate_tests
 						push @cases,
 							{ %mandatory_args, $field => [ (1) x ($len - 1) ] },	# just inside
 							{ %mandatory_args, $field => [ (1) x $len ] },	# border
-							{ %mandatory_args, $field => [ (1) x ($len + 1) ], _STATUS => ($spec->{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') }; # outside
+							{ %mandatory_args, $field => [ (1) x ($len + 1) ], _STATUS => 'DIES' } unless $spec->{'_bounds_unverified'}; # outside
 					} elsif((defined $spec->{min}) && ($spec->{min} <= 3)) {
 						push @cases, { %mandatory_args, $field => [ 'first', undef, 'third' ], _DESCRIPTION => 'undef in an arrayref', _LINE => __LINE__ } if($config{test_undef});
 					}
 				} elsif ($type eq 'hashref') {
+					_documented_bound_note($field) if $spec->{'_bounds_unverified'};
 					if (defined $spec->{min}) {
 						my $len = $spec->{min};
 						push @cases,
 							{ %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. ($len + 1) } },
 							{ %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. $len } };
-						push @cases, { %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. ($len - 1) }, _STATUS => ($spec->{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') } if $len > 0;
+						push @cases, { %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. ($len - 1) }, _STATUS => 'DIES' } if($len > 0) && !$spec->{'_bounds_unverified'};
 					} else {
 						push @cases, { %mandatory_args, $field => {} } if($config{'test_empty'});	# No min, empty hash should be allowable
 					}
@@ -1773,7 +1813,7 @@ sub generate_tests
 						push @cases,
 							{ %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. ($len - 1) } },
 							{ %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. $len } },
-							{ %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. ($len + 1) }, _STATUS => ($spec->{'_bounds_unverified'} ? 'MAY_DIE' : 'DIES') };
+							{ %mandatory_args, $field => { map { "k$_" => 1 }, 1 .. ($len + 1) }, _STATUS => 'DIES' } unless $spec->{'_bounds_unverified'};
 					}
 				} elsif ($type eq 'boolean') {
 					push @cases, @{_generate_boolean_cases($field, $spec, \%mandatory_args)};
@@ -2110,24 +2150,6 @@ sub run_test
 					unlike($err, qr/unitialized/, "Test doesn't involve an uninitialized variable");
 				}
 				return;	# There should be no output to validate
-			} elsif($status eq 'MAY_DIE') {
-				# A bound taken from POD is a claim about valid input, not
-				# necessarily a check the routine makes (an empty array may
-				# be fine).  Either outcome is acceptable; a crash with a
-				# reference for an error is not.
-				my $err;
-				if($positions) {
-					[% IF position_code %]
-						eval { [% position_code %] };
-					[% ELSE %]
-						ok(0, 'position_code not defined');
-					[% END %]
-				} else {
-					eval { [% call_code %] };
-				}
-				$err = $@;
-				ok((!$err) || (!ref($err) && length($err)), sprintf($mess, 'dies or survives (documented bound)'));
-				return;
 			} elsif($status eq 'WARNS') {
 				warnings_exist { [% call_code %] } qr/./, sprintf($mess, 'warns');
 			} else {

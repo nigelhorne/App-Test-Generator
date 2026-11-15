@@ -4,12 +4,13 @@ use warnings;
 
 # ======================================================================
 # t/pod_bounds.t - a size bound that only the documentation states is a
-# claim to test, not a promise the routine has to keep.
+# hint for valid data, not a promise the routine has to keep.
 #
 # Lingua::EN::NameCase documents names => { type => 'arrayref', min => 1 }
-# while its ARGS section and code accept an empty array.  The harness must
-# not fail such a routine, but it must keep failing an ordinary schema that
-# says a bound is enforced.
+# while its ARGS section and code accept an empty array.  A POD string
+# minimum has the same problem.  The harness must not fail such a routine,
+# it must say that it tolerated the bound, and it must keep failing an
+# ordinary schema that says a bound is enforced.
 #
 # Fixtures are written here so the two behaviours stay distinguishable.
 # ======================================================================
@@ -33,9 +34,16 @@ ok(-f $generator, 'fuzz-harness-generator is where the test expects it') or BAIL
 my $dir = File::Temp::tempdir(CLEANUP => 1);
 my %module_file;
 
+sub _spec_block
+{
+	my ($line) = @_;
+
+	return "\t{\n\t\t$line,\n\t}";
+}
+
 sub _write_module
 {
-	my ($name, $body) = @_;
+	my ($name, $input_block, $output_type, $body) = @_;
 
 	my @parts = split(/::/, $name);
 	my $file = pop(@parts);
@@ -48,18 +56,17 @@ package $name;
 use strict;
 use warnings;
 use Carp qw(croak);
+use Scalar::Util qw(looks_like_number);
 
 =head2 tidy
 
 =head4 input
 
-	{
-		names => { type => 'arrayref', optional => 0, min => 1 },
-	}
+$input_block
 
 =head4 output
 
-	{ type => 'arrayref' }
+	{ type => '$output_type' }
 
 =cut
 
@@ -75,7 +82,11 @@ HEADER
 	$module_file{$name} = $path;
 }
 
-_write_module('Bounds::Accepts', <<'BODY');
+_write_module(
+	'Bounds::Accepts',
+	_spec_block("names => { type => 'arrayref', optional => 0, min => 1 }"),
+	'arrayref',
+	<<'BODY');
 sub tidy
 {
 	my ($names) = @_;
@@ -84,7 +95,11 @@ sub tidy
 }
 BODY
 
-_write_module('Bounds::Enforces', <<'BODY');
+_write_module(
+	'Bounds::Enforces',
+	_spec_block("names => { type => 'arrayref', optional => 0, min => 1 }"),
+	'arrayref',
+	<<'BODY');
 sub tidy
 {
 	my ($names) = @_;
@@ -92,6 +107,99 @@ sub tidy
 	croak('tidy: at least one name is required') unless @{$names};
 
 	return [ map { lc($_) } @{$names} ];
+}
+BODY
+
+# Accepts strings shorter than the documented minimum, like a routine that
+# only trims or upper-cases whatever it is handed.
+_write_module(
+	'Bounds::AcceptsString',
+	_spec_block("text => { type => 'string', optional => 0, min => 5 }"),
+	'string',
+	<<'BODY');
+sub tidy
+{
+	my $text = shift;
+
+	return uc($text);
+}
+BODY
+
+_write_module(
+	'Bounds::EnforcesString',
+	_spec_block("text => { type => 'string', optional => 0, min => 5 }"),
+	'string',
+	<<'BODY');
+sub tidy
+{
+	my $text = shift;
+
+	croak('tidy: at least five characters are required') unless length($text) >= 5;
+
+	return uc($text);
+}
+BODY
+
+# Accepts integers below the documented minimum, like a routine that only
+# doubles whatever it is handed.
+_write_module(
+	'Bounds::AcceptsInteger',
+	_spec_block("count => { type => 'integer', optional => 0, min => 5 }"),
+	'integer',
+	<<'BODY');
+sub tidy
+{
+	my $count = shift;
+
+	# Ignores the documented minimum, but still rejects non-integers.
+	croak('tidy: count must be an integer')
+		unless defined($count) && !ref($count) && looks_like_number($count) && int($count) == $count;
+
+	return $count * 2;
+}
+BODY
+
+# Ignores the documented numeric minimum, but still rejects non-numbers.
+_write_module(
+	'Bounds::AcceptsNumber',
+	_spec_block("ratio => { type => 'number', optional => 0, min => 5 }"),
+	'number',
+	<<'BODY');
+sub tidy
+{
+	my $ratio = shift;
+
+	croak('tidy: ratio must be a number')
+		unless defined($ratio) && !ref($ratio) && looks_like_number($ratio);
+
+	return $ratio * 2;
+}
+BODY
+
+# The minimum is stated only in prose, the way most POD documents it.
+_write_module(
+	'Bounds::ProseMin',
+	"\t" . 'C<$text> - string (at least 5 characters)',
+	'string',
+	<<'BODY');
+sub tidy
+{
+	my $text = shift;
+
+	return uc($text);
+}
+BODY
+
+_write_module(
+	'Bounds::ProseRange',
+	"\t" . 'C<$text> - string (3-50 chars)',
+	'string',
+	<<'BODY');
+sub tidy
+{
+	my $text = shift;
+
+	return uc($text);
 }
 BODY
 
@@ -140,6 +248,7 @@ subtest 'a routine that accepts fewer than the documented minimum still passes' 
 	my ($exit, $output) = _run_harness($yml, 'accepts');
 
 	is($exit, 0, 'harness passes') or diag($output);
+	like($output, qr/documented-only bound on 'names'/, 'the tolerated bound is logged');
 };
 
 subtest 'a routine that enforces the minimum also passes' => sub {
@@ -149,7 +258,102 @@ subtest 'a routine that enforces the minimum also passes' => sub {
 	is($exit, 0, 'harness passes') or diag($output);
 };
 
-subtest 'a hand-written bound is still required to die' => sub {
+subtest 'a documented string minimum is marked and tolerated' => sub {
+	my ($schema, $yml) = _extract('Bounds::AcceptsString');
+
+	is($schema->{input}{text}{min}, 5, 'the documented string bound is kept');
+	is($schema->{input}{text}{_bounds_unverified}, 1, 'and marked as a documentation claim');
+
+	my ($exit, $output) = _run_harness($yml, 'accepts_string');
+
+	is($exit, 0, 'a routine that ignores the documented minimum passes') or diag($output);
+	like($output, qr/documented-only bound on 'text'/, 'the tolerated string bound is logged');
+};
+
+subtest 'a routine that enforces the documented string minimum also passes' => sub {
+	my ($schema, $yml) = _extract('Bounds::EnforcesString');
+	my ($exit, $output) = _run_harness($yml, 'enforces_string');
+
+	is($exit, 0, 'harness passes') or diag($output);
+};
+
+subtest 'a documented integer minimum is tolerated' => sub {
+	my ($schema, $yml) = _extract('Bounds::AcceptsInteger');
+
+	is($schema->{input}{count}{min}, 5, 'the documented integer bound is kept');
+	is($schema->{input}{count}{_bounds_unverified}, 1, 'and marked as a documentation claim');
+
+	my ($exit, $output) = _run_harness($yml, 'accepts_integer');
+
+	is($exit, 0, 'a routine that ignores the documented minimum passes') or diag($output);
+	like($output, qr/documented-only bound on 'count'/, 'the tolerated integer bound is logged');
+};
+
+subtest 'a documented number minimum is tolerated' => sub {
+	my ($schema, $yml) = _extract('Bounds::AcceptsNumber');
+
+	is($schema->{input}{ratio}{min}, 5, 'the documented number bound is kept');
+	is($schema->{input}{ratio}{_bounds_unverified}, 1, 'and marked as a documentation claim');
+
+	my ($exit, $output) = _run_harness($yml, 'accepts_number');
+
+	is($exit, 0, 'a routine that ignores the documented number minimum passes') or diag($output);
+	like($output, qr/documented-only bound on 'ratio'/, 'the tolerated number bound is logged');
+};
+
+subtest 'a minimum stated in POD prose is tolerated' => sub {
+	my ($schema, $yml) = _extract('Bounds::ProseMin');
+
+	is($schema->{input}{text}{min}, 5, 'the prose minimum becomes a bound');
+	is($schema->{input}{text}{_bounds_unverified}, 1, 'and is marked as a documentation claim');
+
+	my ($exit, $output) = _run_harness($yml, 'prose_min');
+
+	is($exit, 0, 'a routine that ignores the prose minimum passes') or diag($output);
+	like($output, qr/document-only bound on 'text'|documented-only bound on 'text'/, 'the tolerated prose bound is logged');
+};
+
+subtest 'a range stated in POD prose is tolerated' => sub {
+	my ($schema, $yml) = _extract('Bounds::ProseRange');
+
+	is($schema->{input}{text}{min}, 3, 'the prose range minimum becomes a bound');
+	is($schema->{input}{text}{max}, 50, 'the prose range maximum becomes a bound');
+	is($schema->{input}{text}{_bounds_unverified}, 1, 'and both are marked as documentation claims');
+
+	my ($exit, $output) = _run_harness($yml, 'prose_range');
+
+	is($exit, 0, 'a routine that ignores the prose range passes') or diag($output);
+};
+
+subtest 'a hand-written integer bound is still required to die' => sub {
+	my ($schema, $yml) = _extract('Bounds::AcceptsInteger');
+
+	my $strict = File::Spec->catfile($dir, 'strict_integer.yml');
+	delete $schema->{input}{count}{_bounds_unverified};
+	DumpFile($strict, $schema);
+
+	my ($exit, $output) = _run_harness($strict, 'strict_integer');
+
+	isnt($exit, 0, 'harness fails when the routine ignores an integer bound it declares');
+	like($output, qr/not ok/, 'the failure is reported');
+};
+
+subtest 'a hand-written string bound is still required to die' => sub {
+	my ($schema, $yml) = _extract('Bounds::AcceptsString');
+
+	# Same schema without the mark, as a hand-written one would be.
+	my $strict = File::Spec->catfile($dir, 'strict_string.yml');
+	delete $schema->{input}{text}{_bounds_unverified};
+	DumpFile($strict, $schema);
+
+	my ($exit, $output) = _run_harness($strict, 'strict_string');
+
+	isnt($exit, 0, 'harness fails when the routine ignores a string bound it declares');
+	like($output, qr/not ok/, 'the failure is reported');
+	unlike($output, qr/documented-only bound/, 'no tolerance is logged without the mark');
+};
+
+subtest 'a hand-written arrayref bound is still required to die' => sub {
 	my ($schema, $yml) = _extract('Bounds::Accepts');
 
 	# Same schema without the mark, as a hand-written one would be.

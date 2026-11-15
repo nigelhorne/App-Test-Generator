@@ -4008,14 +4008,15 @@ sub _analyze_pod {
 				}
 				if ($spec =~ /\bmin\s*=>\s*(\d+)/i) {
 					$params{$name}{min} = $1 + 0;
-					# A documented size is a claim about valid input, not
-					# necessarily a check the routine makes: NameCase's
-					# spec says min => 1 and its code accepts [].  The
-					# harness tests the bound but accepts either outcome.
-					$params{$name}{_bounds_unverified} = 1;
 				}
 				if ($spec =~ /\bmax\s*=>\s*(\d+)/i) {
 					$params{$name}{max} = $1 + 0;
+				}
+				# A documented size is a claim about valid input, not a check
+				# the routine has been seen to make: NameCase's spec says
+				# min => 1 while its code accepts [].  The harness still uses
+				# the bound to build valid data, but generates no outside case.
+				if(exists($params{$name}{min}) || exists($params{$name}{max})) {
 					$params{$name}{_bounds_unverified} = 1;
 				}
 				if ($spec =~ /\bisa\s*=>\s*['"]([^'"]+)['"]/i) {
@@ -4026,8 +4027,8 @@ sub _analyze_pod {
 			# positional info from signature analysis is then not meaningful:
 			# it causes "param X missing position" errors when params are
 			# mixed.  A lone name may instead label the first positional
-			# argument, which _single_positional_pod_input decides once the
-			# body is known.
+			# argument, which _positional_pod_input decides once the body is
+			# known.
 			delete $params{$_}{position} for keys %params;
 		}
 	}
@@ -5257,7 +5258,8 @@ sub _validate_output {
 #             place by setting min and/or max keys.
 #
 # Side effects: Logs min/max values to stdout when
-#               verbose is set.
+#               verbose is set, and marks the bounds as
+#               unverified (documentation only).
 # --------------------------------------------------
 sub _parse_constraints {
 	my ($self, $param, $constraint) = @_;
@@ -5308,6 +5310,13 @@ sub _parse_constraints {
 	}
 	if(defined($param->{min})) {
 		$self->_log("  Set min to $param->{min}");
+	}
+
+	# These constraints come from prose ("3-50 chars", "at least 5"): they
+	# describe valid input rather than a check the code was seen to make, so
+	# the harness uses them as data hints and expects no croak outside them.
+	if(defined($param->{min}) || defined($param->{max})) {
+		$param->{_bounds_unverified} = 1;
 	}
 }
 
@@ -7198,8 +7207,7 @@ sub _positional_pod_input {
 
 	my @documented = grep { $pod->{$_}{_from_input_spec} } keys %$pod;
 	return undef unless @documented == 1;
-	return undef if $self->_reads_named_arguments($code);
-	return undef unless $self->_reads_positional_argument($code);
+	return undef unless $self->_argument_style($code) eq 'positional';
 
 	my ($name) = @documented;
 	$pod->{$name}{position} = 0;
@@ -7220,63 +7228,41 @@ sub _positional_pod_input {
 }
 
 # --------------------------------------------------
-# _reads_positional_argument
+# _argument_style
 #
-# Purpose:    Tell whether a subroutine uses its arguments positionally.
-#
-# Entry:      $code - the subroutine body as source text.
-#
-# Exit:       Returns 1 when the body reads a positional argument, else 0.
-#
-# Notes:      Deliberately conservative: a bare @_ forwarded to another
-#             routine is not evidence, so such a module keeps the named style
-#             it had before this heuristic existed.  An invocant shift is not
-#             an argument either.
-#
-# Side effects: None.
-# --------------------------------------------------
-sub _reads_positional_argument {
-	my ($self, $code) = @_;
-
-	return 0 unless defined $code;
-
-	return 1 if($code =~ /\$_\s*\[\s*\d+\s*\]/);
-	return 1 if($code =~ /\bmy\s+\$(?!self\b|class\b)\w+\s*=\s*shift\b/);
-	return 1 if($code =~ /\bmy\s*\((?!\s*\$(?:self|class)\s*\))[^)]*\)\s*=\s*\@_/s);
-
-	return 0;
-}
-
-# --------------------------------------------------
-# _reads_named_arguments
-#
-# Purpose:    Tell whether a subroutine reads its arguments as a hash.
+# Purpose:    Classify how a subroutine reads its arguments.
 #
 # Entry:      $code - the subroutine body as source text.
 #
-# Exit:       Returns 1 when the body reads an argument hash, else 0.
+# Exit:       'named' when the body reads an argument hash, 'positional'
+#             when it reads an argument by position, '' when neither shows.
 #
-# Notes:      $self->{...} is object state, not an argument, so it is
-#             removed before looking for hash dereferences.  A false
-#             positive only keeps the named style that was used before
-#             this check existed.
+# Notes:      $self->{...} is object state, not an argument, so it is removed
+#             before looking for hash dereferences.  '' is not 'positional':
+#             a wrapper that only forwards @_ proves nothing, so it keeps the
+#             named style these heuristics started from.  An invocant shift
+#             is not an argument.
 #
 # Side effects: None.
 # --------------------------------------------------
-sub _reads_named_arguments {
+sub _argument_style {
 	my ($self, $code) = @_;
 
-	return 0 unless defined $code;
+	return '' unless defined $code;
 
 	my $body = $code;
 	$body =~ s/\$self\s*->\s*\{[^}]*\}//g;
 
-	return 1 if($body =~ /\bmy\s+%\w+\s*=[^;]*\@_/s);
-	return 1 if($body =~ /\bmy\s*\(\s*[^)]*%\w+\s*\)\s*=\s*\@_/s);
-	return 1 if($body =~ /\$_\s*\[\s*\d+\s*\]\s*(?:->\s*)?\{/);
-	return 1 if($body =~ /\$\w+\s*->\s*\{/);
+	return 'named' if($body =~ /\bmy\s+%\w+\s*=[^;]*\@_/s);
+	return 'named' if($body =~ /\bmy\s*\(\s*[^)]*%\w+\s*\)\s*=\s*\@_/s);
+	return 'named' if($body =~ /\$_\s*\[\s*\d+\s*\]\s*(?:->\s*)?\{/);
+	return 'named' if($body =~ /\$\w+\s*->\s*\{/);
 
-	return 0;
+	return 'positional' if($body =~ /\$_\s*\[\s*\d+\s*\]/);
+	return 'positional' if($body =~ /\bmy\s+\$(?!self\b|class\b)\w+\s*=\s*shift\b/);
+	return 'positional' if($body =~ /\bmy\s*\((?!\s*\$(?:self|class)\s*\))[^)]*\)\s*=\s*\@_/s);
+
+	return '';
 }
 
 # --------------------------------------------------

@@ -995,11 +995,16 @@ should cause the harness to fail validation or croak.
 
 A bound that came only from L<extract-schemas> reading POD (marked
 C<_bounds_unverified> in the generated schema) is a claim about valid
-input, not necessarily a check the routine has been seen to make, so the
-harness accepts either outcome: a clean croak, or a normal return.  A
-bound written by hand in a schema is still required to die.  Without this,
-a routine whose POD says C<min =E<gt> 1> but which accepts an empty list
-failed every harness run.
+input, not a check the routine has been seen to make, so no case outside
+it is generated.  The bound still sizes the valid data that is generated.
+This applies to array and hash sizes, string lengths and numeric ranges
+alike, and to constraints parsed from POD prose (C<3-50>, C<at least 5>).
+A bound written by hand in a schema is still required to die outside it.
+Because
+tolerance reduces what the harness proves, every tolerated bound is
+reported with C<diag>, so a passing run never hides the concession.
+Without this, a routine whose POD says C<min =E<gt> 1> but which accepts
+an empty list failed every harness run.
 
 =back
 
