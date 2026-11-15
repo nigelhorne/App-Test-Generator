@@ -7210,7 +7210,9 @@ sub _positional_pod_input {
 	my $source = $code_params->{$name} ? $name
 		: (@code_names == 1 ? $code_names[0] : undef);
 
-	%$code_params = $source ? ($name => $code_params->{$source}) : {};
+	# Empty list, not {}: a hashref here would become a one-element list and
+	# land in the hash as a "HASH(0x...)" key.
+	%$code_params = $source ? ($name => $code_params->{$source}) : ();
 	%$pod = ($name => $pod->{$name});
 	$self->_log("  POD: single Input spec '$name' describes a positional argument");
 
@@ -7238,13 +7240,9 @@ sub _reads_positional_argument {
 
 	return 0 unless defined $code;
 
-	my $body = $code;
-	$body =~ s/\$self\s*->\s*\{[^}]*\}//g;
-	$body =~ s/\bmy\s+\$(?:self|class)\s*=\s*shift\b;//g;
-
-	return 1 if($body =~ /\$_\s*\[\s*\d+\s*\]/);
-	return 1 if($body =~ /\bmy\s*\$\w+\s*=\s*shift\b/);
-	return 1 if($body =~ /\bmy\s*\((?!\s*\$(?:self|class)\s*\))[^)]*\)\s*=\s*\@_/s);
+	return 1 if($code =~ /\$_\s*\[\s*\d+\s*\]/);
+	return 1 if($code =~ /\bmy\s+\$(?!self\b|class\b)\w+\s*=\s*shift\b/);
+	return 1 if($code =~ /\bmy\s*\((?!\s*\$(?:self|class)\s*\))[^)]*\)\s*=\s*\@_/s);
 
 	return 0;
 }
