@@ -2039,6 +2039,28 @@ sub _analyze_method {
 			$self->_merge_field_declarations($code_params, $fields);
 		}
 
+		# A single documented input parameter may be the whole argument
+		# list under another name, so the documented name describes a
+		# position and not a hash key.  Lingua::EN::NameCase::nc documents
+		# "name" but reads $_[0]; calling it as nc(name => ...) is two
+		# arguments, which the routine rejects, and NameCase documents
+		# "names" for the list it is handed.  Code that reads an argument
+		# hash keeps the named style.
+		if(my $only = $self->_single_positional_pod_input($pod_params, $code)) {
+			# The code analysis describes the same argument under whatever
+			# name the body gave it, so carry its facts (a directory tested
+			# with -d, for one) over to the documented name instead of
+			# dropping them.
+			my @code_names = sort {
+				($code_params->{$a}{position} // 999) <=> ($code_params->{$b}{position} // 999)
+			} keys %$code_params;
+			my $source = exists($code_params->{$only}) ? $only
+				: ((scalar(@code_names) == 1) ? $code_names[0] : undef);
+
+			$code_params = $source ? { $only => $code_params->{$source} } : {};
+			$pod_params = { $only => $pod_params->{$only} };
+		}
+
 		# Merge analyses
 		$schema->{input} = $self->_merge_parameter_analyses(
 			$pod_params,
@@ -3981,11 +4003,13 @@ sub _analyze_pod {
 			}
 		} elsif ($block =~ /\A\{/) {
 			# Named format: each 'name => {…}' entry maps directly by name.
+			my $spec_order = 0;
 			while ($block =~ /\b(\w+)\s*=>\s*\{([^}]*)\}/g) {
 				my ($name, $spec) = ($1, $2);
 				next if $name =~ /^(self|class|pkg|proto|klass)$/i;
 				$params{$name} //= { _source => 'pod' };
 				$params{$name}{_from_input_spec} = 1;
+				$params{$name}{_input_spec_order} = $spec_order++;
 				if (my $t = $self->_map_formal_input_type($spec)) {
 					$params{$name}{type} = $t;
 					$self->_log("  POD: $name type '$t' from =head Input (named)");
@@ -4011,9 +4035,12 @@ sub _analyze_pod {
 					$params{$name}{isa} = $1;
 				}
 			}
-			# A named-format Input spec signals a hash/named API.  Positional
-			# info from signature analysis is not meaningful here and causes
-			# "param X missing position" errors when params are mixed.
+			# Two or more documented names signal a hash/named API, and
+			# positional info from signature analysis is then not meaningful:
+			# it causes "param X missing position" errors when params are
+			# mixed.  A lone name may instead label the first positional
+			# argument, which _single_positional_pod_input decides once the
+			# body is known.
 			delete $params{$_}{position} for keys %params;
 		}
 	}
@@ -7157,6 +7184,73 @@ sub _analyze_parameter_validation {
 }
 
 # --------------------------------------------------
+# _single_positional_pod_input
+#
+# Purpose:    Decide whether a lone documented input parameter is really the
+#             first positional argument.
+#
+# Entry:      $pod - hashref of parameters from _analyze_pod.
+#             $code - the subroutine body as source text.
+#
+# Exit:       Returns the documented parameter name when it should be
+#             treated as position 0, otherwise undef.
+#
+# Notes:      Only a single documented name can be a positional argument
+#             wearing another name: with two or more names the module is
+#             describing a hash of arguments.  Code that reads such a hash
+#             (my %args = @_, $args->{...}, $_[0]{...}) keeps the named
+#             style even for one documented name.
+#
+# Side effects: Sets position 0 on the parameter it returns.
+# --------------------------------------------------
+sub _single_positional_pod_input {
+	my ($self, $pod, $code) = @_;
+
+	my @documented = grep { $pod->{$_}{_from_input_spec} } keys %$pod;
+	return undef unless @documented == 1;
+
+	return undef if $self->_reads_named_arguments($code);
+
+	my ($name) = @documented;
+	$pod->{$name}{position} = 0;
+	$self->_log("  POD: single Input spec '$name' describes a positional argument");
+
+	return $name;
+}
+
+# --------------------------------------------------
+# _reads_named_arguments
+#
+# Purpose:    Tell whether a subroutine reads its arguments as a hash.
+#
+# Entry:      $code - the subroutine body as source text.
+#
+# Exit:       Returns 1 when the body reads an argument hash, else 0.
+#
+# Notes:      $self->{...} is object state, not an argument, so it is
+#             removed before looking for hash dereferences.  A false
+#             positive only keeps the named style that was used before
+#             this check existed.
+#
+# Side effects: None.
+# --------------------------------------------------
+sub _reads_named_arguments {
+	my ($self, $code) = @_;
+
+	return 0 unless defined $code;
+
+	my $body = $code;
+	$body =~ s/\$self\s*->\s*\{[^}]*\}//g;
+
+	return 1 if($body =~ /\bmy\s+%\w+\s*=[^;]*\@_/s);
+	return 1 if($body =~ /\bmy\s*\(\s*[^)]*%\w+\s*\)\s*=\s*\@_/s);
+	return 1 if($body =~ /\$_\s*\[\s*\d+\s*\]\s*(?:->\s*)?\{/);
+	return 1 if($body =~ /\$\w+\s*->\s*\{/);
+
+	return 0;
+}
+
+# --------------------------------------------------
 # _merge_parameter_analyses
 #
 # Purpose:    Merge parameter information from POD,
@@ -7261,7 +7355,7 @@ sub _merge_parameter_analyses {
 		foreach my $param (sort { ($merged{$a}{position} || 999) <=> ($merged{$b}{position} || 999) } keys %merged) {
 			my $p = $merged{$param};
 			$self->_log("  MERGED $param: " .
-					'pos=' . ($p->{position} || 'none') .
+					'pos=' . (defined($p->{position}) ? $p->{position} : 'none') .
 					", type=" . ($p->{type} || 'none') .
 					", optional=" . (defined($p->{optional}) ? $p->{optional} : 'undef'));
 		}

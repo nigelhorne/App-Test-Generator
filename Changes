@@ -2,6 +2,9 @@ Revision history for App-Test-Generator
 
 0.49
 	[Bug fixes]
+	- A single documented input parameter is read as the first positional
+	  argument when the routine reads no hash of arguments (nc was called as
+	  nc(name => ...) and every harness case failed)
 	- Generated harnesses no longer report a leaked file descriptor when an
 	  object opens a file on first use and keeps it (e.g. a logger); a
 	  descriptor is reported when the same target is opened again
