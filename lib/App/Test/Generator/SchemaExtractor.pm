@@ -4165,9 +4165,14 @@ sub _analyze_pod {
 
 		# Check for optional/required in description.
 		# Use word boundaries to avoid matching "optionally" as "optional".
-		if ($desc =~ /\boptional\b/i) {
+		# Ignore code spans: a description that mentions the parameter name
+		# C<optional> (CoverageGuidedFuzzer's schema) is not saying the
+		# parameter itself is optional, and can still say "Required."
+		my $optionality_text = $desc;
+		$optionality_text =~ s/\b[CBIL]<[^>]*>//g;
+		if ($optionality_text =~ /\boptional\b/i) {
 			$params{$name}{optional} = 1;
-		} elsif ($desc =~ /required|mandatory/i) {
+		} elsif ($optionality_text =~ /\b(?:required|mandatory)\b/i) {
 			$params{$name}{optional} = 0;
 		}
 

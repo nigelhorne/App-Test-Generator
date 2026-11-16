@@ -1293,5 +1293,59 @@ END_PM
 		'the pattern body is written as a plain YAML string');
 };
 
+# ==================================================================
+# Regression: a code span naming another parameter must not decide
+# optionality.  CoverageGuidedFuzzer::new documents schema as Required,
+# but mentions the parameter C<optional> later in the same description;
+# the extractor read that as "optional" and the harness then omitted a
+# required constructor argument.
+# ==================================================================
+
+subtest 'a code span naming optional does not make a required parameter optional' => sub {
+	my $src = <<'END_PM';
+package OptionalNameModule;
+
+use Carp qw(croak);
+
+=head2 new
+
+Construct a new fuzzer.
+
+=head3 Arguments
+
+=over 4
+
+=item * C<schema>
+
+A hashref representing the parsed schema. Required.  Its keys include
+C<$optional> as well as C<$type> and C<$min>.
+
+=item * C<iterations>
+
+Number of iterations to run. Optional - defaults to 100.
+
+=back
+
+=cut
+
+sub new {
+	my ($class, %args) = @_;
+	croak 'schema required' unless $args{schema};
+	return bless { schema => $args{schema}, iterations => $args{iterations} }, $class;
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'OptionalNameModule.pm');
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	is($schemas->{new}{input}{schema}{optional}, 0,
+		'Required wins over a code span naming optional');
+	is($schemas->{new}{input}{iterations}{optional}, 1,
+		'a prose Optional still marks the parameter optional');
+};
+
 done_testing();
 
