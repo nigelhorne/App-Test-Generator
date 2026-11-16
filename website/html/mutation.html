@@ -214,6 +214,25 @@ mutation killed on the next run
 		improves without being written.
 	</p>
 
+	<h3 id="mutation-results">Feeding survivors straight into a harness</h3>
+	<p>
+		The same report can be handed to the harness generator, with no
+		intermediate schema file:
+	</p>
+<pre><code>test-generator-mutate --lib lib --tests t --json mutation.json
+fuzz-harness-generator --mutation-results mutation.json -o t/fuzz.t schema.yml
+</code></pre>
+	<p>
+		Each surviving numeric-boundary mutant in the schema's module is traced
+		to the comparison it mutated, and that comparison becomes a
+		<code>min</code> or <code>max</code> on the matching input field, so the
+		harness generates values either side of the boundary the suite missed.
+		A constraint already in the schema is never replaced, and survivors
+		that do not describe a numeric comparison are listed for review, since
+		they need a hand-written test. From Perl, pass
+		<code>mutation_results =&gt; $file</code> to <code>generate()</code>.
+	</p>
+
 	<div class="note">
 		<span class="note-title">A survivor is not always a bug</span>
 		<p>
@@ -233,7 +252,7 @@ mutation killed on the next run
 
 <footer class="site-footer">
 	<div class="wrap">
-		<p>App::Test::Generator 0.48 — Copyright 2025&ndash;2026 Nigel Horne. Released under the GNU General Public License, version 2.</p>
+		<p>App::Test::Generator 0.49 — Copyright 2025&ndash;2026 Nigel Horne. Released under the GNU General Public License, version 2.</p>
 		<p>
 			<a href="https://metacpan.org/dist/App-Test-Generator">MetaCPAN</a> ·
 			<a href="https://github.com/nigelhorne/App-Test-Generator">Source</a> ·

@@ -73,6 +73,8 @@
 	</div>
 <pre><code>fuzz-harness-generator [-r] [-o FILE] schema.yml
 fuzz-harness-generator --dry-run schema.yml
+fuzz-harness-generator --strict-documented -r schema.yml
+fuzz-harness-generator --mutation-results mutation.json -o t/fuzz.t schema.yml
 fuzz-harness-generator --replay-corpus DIR -o t/fuzz_replay.t
 </code></pre>
 	<p>
@@ -91,6 +93,8 @@ fuzz-harness-generator --replay-corpus DIR -o t/fuzz_replay.t
 				<tr><td><code>-r</code>, <code>--run</code></td><td>Run the generated harness with <code>prove</code> and report the outcome.</td></tr>
 				<tr><td><code>-o FILE</code></td><td>Write the harness to <code>FILE</code> instead of standard output.</td></tr>
 				<tr><td><code>--dry-run</code></td><td>Parse the schema and report what would be generated, without writing a test file.</td></tr>
+				<tr><td><code>--strict-documented</code></td><td>Make every contradiction of a POD-derived constraint — a bound, a <code>memberof</code> list or a <code>matches</code> pattern — a failing test. Without it the harness only reports them.</td></tr>
+				<tr><td><code>--mutation-results FILE</code></td><td>Read the report written by <code>test-generator-mutate --json</code> and turn each surviving numeric-boundary mutant in the schema's module into a <code>min</code> or <code>max</code> on the matching input field. Existing constraints are never replaced; survivors that need a hand-written test are listed.</td></tr>
 				<tr><td><code>--replay-corpus DIR|FILE</code></td><td>Emit a harness that replays a saved corpus — every recorded input, in a deterministic order — rather than fuzzing afresh.</td></tr>
 				<tr><td><code>-v</code>, <code>--verbose</code></td><td>More diagnostics on standard error.</td></tr>
 			</tbody>
@@ -318,7 +322,7 @@ instrument-modules lib/My/Module.pm
 
 <footer class="site-footer">
 	<div class="wrap">
-		<p>App::Test::Generator 0.48 — Copyright 2025&ndash;2026 Nigel Horne. Released under the GNU General Public License, version 2.</p>
+		<p>App::Test::Generator 0.49 — Copyright 2025&ndash;2026 Nigel Horne. Released under the GNU General Public License, version 2.</p>
 		<p>
 			<a href="https://metacpan.org/dist/App-Test-Generator">MetaCPAN</a> ·
 			<a href="https://github.com/nigelhorne/App-Test-Generator">Source</a> ·

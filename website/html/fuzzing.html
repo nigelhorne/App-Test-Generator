@@ -57,6 +57,7 @@
 		<li><strong>Input validation</strong> — each argument spec is re-expressed as a <code>Params::Validate::Strict</code> schema, so a case that should die is checked for dying for the right reason.</li>
 		<li><strong>Output validation</strong> — the return value goes through <code>Return::Set</code>, which is what makes "returns an integer" a testable claim.</li>
 		<li><strong>Side-effect checks</strong> — after every call the harness checks that the caller's globals (<code>$_</code>, <code>$/</code>, <code>$,</code>, <code>$;</code>), the working directory, <code>%ENV</code> and the warn and die handlers are unchanged, that no file was left behind and no file descriptor leaked, and that an accessor did not damage its object.</li>
+		<li><strong>Documentation checks</strong> — a constraint that came only from POD is probed from outside as well. A routine that rejects a value inside a documented bound, or accepts one outside a documented bound, member list or pattern, is recorded, and all such findings are reported at the end of the run. They fail the run only when the harness was generated with <code>--strict-documented</code>.</li>
 		<li><strong>Housekeeping</strong> — <code>srand</code> when a seed is set, an alarm-based timeout, and cleanup of files a routine writes into the working directory.</li>
 	</ol>
 
@@ -67,8 +68,9 @@ Result: PASS
 Files=1, Tests=118,  0 wallclock secs
 </code></pre>
 	<p>
-		If it fails, the TAP output names the case: the parameter, the value, and
-		whether it was expected to live or die. Turn the failing value into an
+		If it fails, the TAP output names the case: the parameter, the value,
+		whether it was expected to live or die, and the seed and input that were
+		sent, so the case can be replayed. Turn the failing value into an
 		<code>edge_cases</code> entry so it is retested forever, not just until
 		the next random seed.
 	</p>
@@ -225,7 +227,7 @@ ok 124 - positive property holds (1000 trials)
 
 <footer class="site-footer">
 	<div class="wrap">
-		<p>App::Test::Generator 0.48 — Copyright 2025&ndash;2026 Nigel Horne. Released under the GNU General Public License, version 2.</p>
+		<p>App::Test::Generator 0.49 — Copyright 2025&ndash;2026 Nigel Horne. Released under the GNU General Public License, version 2.</p>
 		<p>
 			<a href="https://metacpan.org/dist/App-Test-Generator">MetaCPAN</a> ·
 			<a href="https://github.com/nigelhorne/App-Test-Generator">Source</a> ·
