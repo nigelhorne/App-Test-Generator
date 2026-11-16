@@ -1,5 +1,19 @@
 Revision history for App-Test-Generator
 
+0.50
+	[Bug fixes]
+	- A constructor that needs a non-empty arrayref of live objects is no
+	  longer given an empty-array fixture.  Database::Join->new is the case:
+	  its new() schema now carries the skip reason "needs a non-empty arrayref
+	  of live objects in 'databases'", and its instance methods emit new: ~
+	  so generated harnesses skip them rather than build an object the
+	  constructor refuses
+	- A required => 1 flag in a formal =head4 Input POD spec is read as
+	  optional: 0, including bare-list specs with no outer braces.  This keeps
+	  POD authoritative over a validator that declares the same parameter
+	  optional, and generated harnesses now pass required constructor and
+	  method arguments instead of omitting them
+
 0.49	Mon Nov 16 10:59:07 AM EST 2026
 	[Enhancements]
 	- A matches pattern is written to schema YAML as a plain pattern string

@@ -1488,5 +1488,175 @@ END_PM
 		'a prose Optional still marks the parameter optional');
 };
 
+# ==================================================================
+# Regression: a constructor that needs a non-empty arrayref of live
+# objects cannot be built from YAML.  Database::Join->new requires one
+# or more Database::Abstraction instances and calls columns() on each;
+# the extractor used to emit new: { databases: [] }, so the harness
+# built an object the constructor refused and every instance method died.
+# ==================================================================
+
+subtest 'a constructor needing live objects is unbuildable' => sub {
+	my $src = <<'END_PM';
+package JoinModule;
+
+use Carp qw(croak);
+use Scalar::Util qw(blessed);
+
+=head2 new
+
+Build a join over one or more databases.
+
+=head3 API SPECIFICATION
+
+=head4 Input
+
+    {
+        databases   => { type => 'arrayref', required => 1 },
+        join_column => { type => 'string', optional => 1 },
+    }
+
+=cut
+
+sub new {
+	my ($class, %args) = @_;
+
+	croak 'At least one database object is required'
+		unless @{ $args{databases} };
+
+	for my $i (0 .. $#{ $args{databases} }) {
+		croak 'not a database object'
+			unless blessed($args{databases}[$i])
+			    && $args{databases}[$i]->can('columns');
+	}
+
+	return bless { dbs => $args{databases}, join_column => $args{join_column} }, $class;
+}
+
+=head2 count
+
+Return the number of databases.
+
+=cut
+
+sub count {
+	my ($self) = @_;
+	return scalar @{ $self->{dbs} };
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'JoinModule.pm');
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	is($schemas->{new}{input}{databases}{optional}, 0,
+		'required => 1 marks the arrayref required');
+	is($schemas->{new}{input}{join_column}{optional}, 1,
+		'optional => 1 is still honoured');
+	like($schemas->{new}{skip}, qr/non-empty arrayref of live objects/,
+		'new itself is reported as skipped, not fuzzed with an impossible value');
+	ok(exists($schemas->{count}{new}) && !ref($schemas->{count}{new}),
+		'the instance method gets new: ~ instead of an invalid constructor fixture')
+		or diag(explain($schemas->{count}{new}));
+};
+
+subtest 'required => 1 is read from a bare-list input spec' => sub {
+	my $src = <<'END_PM';
+package BareSpecModule;
+
+use Carp qw(croak);
+
+=head2 new
+
+=head3 API SPECIFICATION
+
+=head4 Input
+
+    databases   => { type => 'arrayref', required => 1 }
+    join_column => { type => 'string', optional => 1 }
+
+=cut
+
+sub new {
+	my ($class, %args) = @_;
+	croak 'databases is required' unless $args{databases};
+	return bless { %args }, $class;
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'BareSpecModule.pm');
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	is($schemas->{new}{input}{databases}{optional}, 0,
+		'a required => 1 flag in a bare list is honoured');
+};
+
+# ==================================================================
+# Regression: a module may declare a small helper package after the
+# main one (Database::Join::Catalog's error class).  Extraction used to
+# croak with "More than one package declaration found"; it now analyses
+# the primary package and ignores routines owned by later packages.
+# ==================================================================
+
+subtest 'a multi-package file is analysed as its primary package' => sub {
+	my $src = <<'END_PM';
+package MultiModule;
+
+use Carp qw(croak);
+
+=head2 answer
+
+Return a number.
+
+=cut
+
+sub answer {
+	return 42;
+}
+
+package MultiModule::Error;
+
+=head2 new
+
+Build an error object.
+
+=cut
+
+sub new {
+	my ($class, %args) = @_;
+	return bless { %args }, $class;
+}
+
+=head2 message
+
+Return the error message.
+
+=cut
+
+sub message {
+	my ($self) = @_;
+	return $self->{message};
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'MultiModule.pm');
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	ok(exists($schemas->{answer}), 'a routine from the primary package is extracted');
+	ok(!exists($schemas->{message}), 'a routine from the helper package is ignored');
+	ok(!exists($schemas->{new}), 'the helper package constructor is ignored');
+	is($schemas->{answer}{module}, 'MultiModule', 'schemas are attributed to the primary package');
+	like($schemas->{answer}{skip}, qr/multi-package file/,
+		'the file is skipped explicitly rather than aborting extraction');
+};
+
 done_testing();
 
