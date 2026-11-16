@@ -11,21 +11,23 @@ new:
   function: new
   input:
     cache_duration:
-      _source: pod
+      _source: input_spec
       optional: 1
       type: string
     config_file:
-      _source: pod
+      _note: Existing file
+      _source: input_spec
       optional: 1
+      semantic: existing_file
       type: string
     directory:
-      _source: pod
+      _source: input_spec
       optional: 1
       type: string
     logger:
-      _source: pod
+      _source: input_spec
       optional: 1
-      type: string
+      type: object
   module: Genealogy::Wills
   output:
     isa: Genealogy::Wills

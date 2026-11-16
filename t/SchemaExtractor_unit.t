@@ -1026,6 +1026,94 @@ END_PM
 		'a parsed file is not reduced to an existence-check fixture');
 };
 
+subtest 'a formal input spec is read when prose and comments come before it' => sub {
+	my $src = <<'END_PM';
+package ProseSpecModule;
+
+=head2 new
+
+=over 4
+
+=item * C<logger> (optional, object)
+
+An object used to write diagnostic messages.
+
+=back
+
+=head3 API SPECIFICATION
+
+=head4 input
+
+C<new()> normalizes its arguments.  The recognized parameters are:
+
+    # Accepted as a flat list or a hash reference.
+    {
+        directory => { type => 'string' },   # readable directory path
+        logger    => { type => 'object',
+                       can => [ 'info', 'error' ],
+                       optional => 1
+                     },
+    }
+
+=cut
+
+sub new {
+	my ($class, %args) = @_;
+	return bless { %args }, $class;
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src);
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	is($schemas->{new}{input}{logger}{type}, 'object',
+		'the type comes from the spec, not from the prose item');
+	is($schemas->{new}{input}{logger}{_source}, 'input_spec', 'and is marked as coming from the spec');
+	is($schemas->{new}{input}{directory}{type}, 'string', 'a parameter named only in the spec is found');
+};
+
+subtest 'config_file handed to Object::Configure needs an existing file' => sub {
+	my $src = <<'END_PM';
+package ConfiguredModule;
+
+=head2 new
+
+=head3 API SPECIFICATION
+
+=head4 input
+
+    {
+        config_file => { type => 'string', optional => 1 },
+        upload_dir  => { type => 'string', optional => 1 },
+    }
+
+=cut
+
+sub new {
+	my $class = shift;
+	my $params = { @_ };
+
+	$params = Object::Configure::configure($class, $params);
+	return bless { %{$params} }, $class;
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src);
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	ok(!exists($schemas->{new}{skip}), 'the constructor is not skipped');
+	is($schemas->{new}{input}{config_file}{semantic}, 'existing_file',
+		'config_file is declared to need an existing file');
+	isnt($schemas->{new}{input}{upload_dir}{semantic} // '', 'existing_file',
+		'another string parameter is left alone');
+};
+
 subtest 'a constructor that parses a copied-out file argument is skipped, and so are its methods' => sub {
 	my $src = <<'END_PM';
 package ResultsModule;

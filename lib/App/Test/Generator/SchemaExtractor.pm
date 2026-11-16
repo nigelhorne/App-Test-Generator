@@ -4236,6 +4236,9 @@ sub _analyze_pod {
 	if ($pod =~ /=head[34]\s+Input\b(.*?)(?==head|\z)/si) {
 		my $block = $1;
 		$block =~ s/\A\s+//;
+		# The spec may follow introductory prose and comment lines: start at
+		# the first line that opens the structure.
+		$block =~ s/\A.*?^[ \t]+(?=[\[\{])//ms unless($block =~ /\A[\[\{]/);
 
 		if ($block =~ /\A\[/) {
 			# Positional format: each {…} maps to the param at that array index.
@@ -9366,6 +9369,10 @@ sub _requires_input_file
 		my $tests_existence = ($body =~ /-[ef]\s+\$args\{\s*['"]?$p['"]?\s*\}/)
 			|| ($body =~ /-[ef]\s+\$$v\b/)
 			|| ($body =~ /-[ef]\s+\$self->\{\s*['"]?$p['"]?\s*\}/);
+		# Object::Configure reads the file its caller's config_file names and
+		# croaks when it is missing; that test is not in this body to be seen.
+		$tests_existence ||= ($param eq 'config_file')
+			&& ($body =~ /\bObject::Configure::configure\s*\(/);
 		next unless($tests_existence);
 
 		my $spec = $input->{$param};

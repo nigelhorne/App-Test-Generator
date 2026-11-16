@@ -143,6 +143,22 @@ Revision history for App-Test-Generator
 	- The per-case marker for a documented-constraint probe is
 	  `_DOCUMENTED_CONSTRAINTS`, renamed from `_DOCUMENTED_BOUND_PROBE`
 	  because it marks any documented constraint, not only a numeric bound
+	- A constructor that parses the file it is given (open(...) on the
+	  argument or on a local copy of it) is reported as skipped, and its
+	  instance methods get new: ~ instead of constructor arguments naming a
+	  file that does not exist
+	- An integer, float or boolean type that only the documentation declares
+	  no longer makes the harness expect a wrong-type value to die, as was
+	  already the case for strings, hashrefs and arrayrefs; a constructor
+	  that documents its arguments without validating them (CGI::Info::new)
+	  failed thousands of cases.  A hand-written schema stays strict
+	- A formal =head Input spec is read when introductory prose or comment
+	  lines come before its opening bracket; it was ignored, so the types
+	  fell back to the =item prose (Genealogy::Wills::new's logger became a
+	  string)
+	- A config_file parameter passed to Object::Configure::configure() is
+	  marked semantic => 'existing_file', because Object::Configure croaks
+	  on a file that does not exist
 
 0.48	Wed Nov 11 09:42:47 AM EST 2026
 	[Enhancements]
