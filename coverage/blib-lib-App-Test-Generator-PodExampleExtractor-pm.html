@@ -26,18 +26,25 @@ https://pjcj.net
 <table>
 <tr><th>line</th><th>stmt</th><th>bran</th><th>cond</th><th>sub</th><th>time</th><th>code</th></tr>
 <tr><td class="h">1</td><td></td><td></td><td></td><td></td><td></td><td class="s">package App::Test::Generator::PodExampleExtractor;</td></tr>
-<tr><td class="h">2</td><td colspan="6"></td></tr><tr><td class="h">3</td><td><div class="c3">8</div><div class="c3">8</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L3">8</a></div></td><td><div>89495</div><div>19</div></td><td class="s">use 5.036;</td></tr>
-<tr><td class="h">4</td><td><div class="c3">8</div><div class="c3">8</div><div class="c3">8</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L4">8</a></div></td><td><div>18</div><div>11</div><div>274</div></td><td class="s">use Carp qw(croak);</td></tr>
-<tr><td class="h">5</td><td><div class="c3">8</div><div class="c3">8</div><div class="c3">8</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L5">8</a></div></td><td><div>1148</div><div>19689</div><div>215</div></td><td class="s">use File::Slurp qw(read_file);</td></tr>
-<tr><td class="h">6</td><td><div class="c3">8</div><div class="c3">8</div><div class="c3">8</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L6">8</a></div></td><td><div>402</div><div>3232</div><div>5673</div></td><td class="s">use Readonly;</td></tr>
-<tr><td class="h">7</td><td colspan="6"></td></tr><tr><td class="h">8</td><td></td><td></td><td></td><td></td><td></td><td class="s">our $VERSION = &#39;0.47&#39;;</td></tr>
+<tr><td class="h">2</td><td colspan="6"></td></tr><tr><td class="h">3</td><td><div class="c3">8</div><div class="c3">8</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L3">8</a></div></td><td><div>93360</div><div>19</div></td><td class="s">use 5.036;</td></tr>
+<tr><td class="h">4</td><td><div class="c3">8</div><div class="c3">8</div><div class="c3">8</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L4">8</a></div></td><td><div>20</div><div>10</div><div>278</div></td><td class="s">use Carp qw(croak);</td></tr>
+<tr><td class="h">5</td><td><div class="c3">8</div><div class="c3">8</div><div class="c3">8</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L5">8</a></div></td><td><div>1210</div><div>20624</div><div>225</div></td><td class="s">use File::Slurp qw(read_file);</td></tr>
+<tr><td class="h">6</td><td><div class="c3">8</div><div class="c3">8</div><div class="c3">8</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L6">8</a></div></td><td><div>430</div><div>3383</div><div>6030</div></td><td class="s">use Readonly;</td></tr>
+<tr><td class="h">7</td><td colspan="6"></td></tr><tr><td class="h">8</td><td></td><td></td><td></td><td></td><td></td><td class="s">our $VERSION = &#39;0.48&#39;;</td></tr>
 <tr><td class="h">9</td><td colspan="6"></td></tr><tr><td class="h">10</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $ANNOTATION_RE =&gt; qr/\#\s*(?:=&gt;|returns?)\s*(.+?)\s*$/;</td></tr>
 <tr><td class="h">11</td><td></td><td></td><td></td><td></td><td></td><td class="s">Readonly my $VERBATIM_RE&nbsp;&nbsp;&nbsp;=&gt; qr/^[ \t]/;</td></tr>
-<tr><td class="h">12</td><td colspan="6"></td></tr><tr><td class="h">13 - 115</td><td colspan="5"></td><td class="s"><pre>=head1 NAME
+<tr><td class="h">12</td><td colspan="6"></td></tr><tr><td class="h">13</td><td></td><td></td><td></td><td></td><td></td><td class="s">=encoding utf8</td></tr>
+<tr><td class="h">14</td><td colspan="6"></td></tr><tr><td class="h">15 - 143</td><td colspan="5"></td><td class="s"><pre>=head1 NAME
 
 App::Test::Generator::PodExampleExtractor - Extract runnable code examples from a Perl module&#39;s POD
 
+=head1 VERSION
+
+Version 0.48
+
 =head1 SYNOPSIS
+
+Pattern 1: list every example found in a module.
 
 &nbsp;&nbsp;&nbsp;&nbsp;use App::Test::Generator::PodExampleExtractor;
 
@@ -49,6 +56,29 @@ App::Test::Generator::PodExampleExtractor - Extract runnable code examples from 
 &nbsp;&nbsp;&nbsp;&nbsp;for my $e (@$examples) {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;printf &quot;%-30s&nbsp;&nbsp;%s\n&quot;, $e-&gt;{label}, $e-&gt;{code};
 &nbsp;&nbsp;&nbsp;&nbsp;}
+
+Pattern 2: keep only the examples that say what they return.
+These are the ones that can be checked automatically.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my @checkable = grep { defined $_-&gt;{expected} } @{ $ex-&gt;extract() };
+
+&nbsp;&nbsp;&nbsp;&nbsp;for my $e (@checkable) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print &quot;Run:&nbsp;&nbsp;&nbsp;&nbsp;$e-&gt;{annotated_line}\n&quot;;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print &quot;Expect: $e-&gt;{expected}\n&quot;;
+&nbsp;&nbsp;&nbsp;&nbsp;}
+
+Pattern 3: count the examples in each documentation section.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my %count;
+&nbsp;&nbsp;&nbsp;&nbsp;$count{ $_-&gt;{section} }++ for @{ $ex-&gt;extract() };
+&nbsp;&nbsp;&nbsp;&nbsp;printf &quot;%-20s %d\n&quot;, $_, $count{$_} for sort keys %count;
+
+Pattern 4: handle a missing file without stopping the program.
+
+&nbsp;&nbsp;&nbsp;&nbsp;my $ex2 = eval {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;App::Test::Generator::PodExampleExtractor-&gt;new(file =&gt; $path);
+&nbsp;&nbsp;&nbsp;&nbsp;};
+&nbsp;&nbsp;&nbsp;&nbsp;warn &quot;Skipping $path: $@&quot; unless $ex2;
 
 =head1 DESCRIPTION
 
@@ -95,6 +125,8 @@ The file must exist on disk.
 A blessed C&lt;App::Test::Generator::PodExampleExtractor&gt; object.
 Croaks if C&lt;file&gt; is missing or does not exist.
 
+The file is not opened by C&lt;new&gt;.&nbsp;&nbsp;It is read each time you call C&lt;extract&gt;.
+
 =head3 EXAMPLE
 
 &nbsp;&nbsp;&nbsp;&nbsp;use App::Test::Generator::PodExampleExtractor;
@@ -118,7 +150,7 @@ C&lt;file&gt; was supplied but the path does not exist on disk.
 
 =back
 
-=head3 API specification
+=head3 API SPECIFICATION
 
 =head4 input
 
@@ -128,21 +160,16 @@ C&lt;file&gt; was supplied but the path does not exist on disk.
 
 &nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; OBJECT, isa =&gt; &#39;App::Test::Generator::PodExampleExtractor&#39; }
 
-=head3 FORMAL SPECIFICATION
-
-Pre:&nbsp;&nbsp;C&lt;defined file &acirc;&#136;&sect; -f file&gt;
-
-Post: C&lt;ref(result) eq &#39;App::Test::Generator::PodExampleExtractor&#39;&gt;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#136;&sect; C&lt;result-E&lt;gt&gt;{file} eq file&gt;
+The mathematical description is in L&lt;/FORMAL SPECIFICATION&gt;.
 
 =cut</pre></td></tr>
-<tr><td class="h">116</td><td colspan="6"></td></tr><tr><td class="h">117</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub new {</td></tr>
-<tr><td class="h">118</td><td><div class="c3">72</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L118">72</a></div></td><td><div>514791</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($class, %args) = @_;</td></tr>
-<tr><td class="h">119</td><td><div class="c3">72</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L119">100</a></div></td><td></td><td></td><td><div>157</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;file is required&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;unless defined $args{file};</td></tr>
-<tr><td class="h">120</td><td><div class="c3">67</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L120">100</a></div></td><td></td><td></td><td><div>482</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;File not found: $args{file}&quot; unless -f $args{file};</td></tr>
-<tr><td class="h">121</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>139</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return bless { file =&gt; $args{file} }, $class;</td></tr>
-<tr><td class="h">122</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">123</td><td colspan="6"></td></tr><tr><td class="h">124 - 196</td><td colspan="5"></td><td class="s"><pre>=head2 extract
+<tr><td class="h">144</td><td colspan="6"></td></tr><tr><td class="h">145</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub new {</td></tr>
+<tr><td class="h">146</td><td><div class="c3">74</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L146">74</a></div></td><td><div>558925</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($class, %args) = @_;</td></tr>
+<tr><td class="h">147</td><td><div class="c3">74</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L147">100</a></div></td><td></td><td></td><td><div>185</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &#39;file is required&#39;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;unless defined $args{file};</td></tr>
+<tr><td class="h">148</td><td><div class="c3">69</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L148">100</a></div></td><td></td><td></td><td><div>510</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;croak &quot;File not found: $args{file}&quot; unless -f $args{file};</td></tr>
+<tr><td class="h">149</td><td><div class="c3">63</div></td><td></td><td></td><td></td><td><div>145</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return bless { file =&gt; $args{file} }, $class;</td></tr>
+<tr><td class="h">150</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">151</td><td colspan="6"></td></tr><tr><td class="h">152 - 219</td><td colspan="5"></td><td class="s"><pre>=head2 extract
 
 Extract all runnable examples from the module&#39;s POD.
 
@@ -159,15 +186,15 @@ has the following keys:
 
 =over 4
 
-=item * C&lt;label&gt; &acirc;&#128;&#148; human-readable name for use as a test label (e.g. C&lt;&quot;SYNOPSIS example 1&quot;&gt;)
+=item * C&lt;label&gt; - human-readable name for use as a test label (e.g. C&lt;&quot;SYNOPSIS example 1&quot;&gt;)
 
-=item * C&lt;section&gt; &acirc;&#128;&#148; the POD section heading (C&lt;=head1&gt;/C&lt;=head2&gt; text) where the example was found
+=item * C&lt;section&gt; - the POD section heading (C&lt;=head1&gt;/C&lt;=head2&gt; text) where the example was found
 
-=item * C&lt;code&gt; &acirc;&#128;&#148; the raw code text, dedented.&nbsp;&nbsp;May be multi-line for verbatim blocks.
+=item * C&lt;code&gt; - the raw code text, dedented.&nbsp;&nbsp;May be multi-line for verbatim blocks.
 
-=item * C&lt;expected&gt; &acirc;&#128;&#148; the expected return value string from a C&lt;# returns value&gt; or C&lt;&lt; # =&gt; value &gt;&gt; annotation; C&lt;undef&gt; if not annotated.
+=item * C&lt;expected&gt; - the expected return value string from a C&lt;# returns value&gt; or C&lt;&lt; # =&gt; value &gt;&gt; annotation; C&lt;undef&gt; if not annotated.
 
-=item * C&lt;annotated_line&gt; &acirc;&#128;&#148; for annotated single-line examples, the bare expression with the annotation stripped; C&lt;undef&gt; for verbatim blocks.
+=item * C&lt;annotated_line&gt; - for annotated single-line examples, the bare expression with the annotation stripped; C&lt;undef&gt; for verbatim blocks.
 
 =back
 
@@ -189,13 +216,15 @@ has the following keys:
 
 =over 4
 
-=item C&lt;File not found: $path&gt; (raised by C&lt;File::Slurp::read_file&gt;)
+=item C&lt;read_file &#39;PATH&#39; - ...&gt; (raised by C&lt;File::Slurp::read_file&gt;)
 
-The source file disappeared between construction and the C&lt;extract&gt; call.
+The source file was removed, or became unreadable, between the call to
+C&lt;new&gt; and the call to C&lt;extract&gt;.&nbsp;&nbsp;The rest of the message is the reason
+given by the operating system.
 
 =back
 
-=head3 API specification
+=head3 API SPECIFICATION
 
 =head4 input
 
@@ -205,213 +234,206 @@ The source file disappeared between construction and the C&lt;extract&gt; call.
 
 &nbsp;&nbsp;&nbsp;&nbsp;{ type =&gt; ARRAYREF }
 
-=head3 FORMAL SPECIFICATION
-
-Post: C&lt;result&gt; is an arrayref where:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#136;&#128; e &acirc;&#136;&#136; result:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;C&lt;defined e-E&lt;gt&gt;{label}&gt;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#136;&sect; C&lt;defined e-E&lt;gt&gt;{section}&gt;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#136;&sect; C&lt;defined e-E&lt;gt&gt;{code}&gt;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#136;&sect; no two entries share the same C&lt;code&gt; value (deduplication)
+The mathematical description is in L&lt;/FORMAL SPECIFICATION&gt;.
 
 =cut</pre></td></tr>
-<tr><td class="h">197</td><td colspan="6"></td></tr><tr><td class="h">198</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub extract {</td></tr>
-<tr><td class="h">199</td><td><div class="c3">59</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L199">59</a></div></td><td><div>772</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $self = $_[0];</td></tr>
-<tr><td class="h">200</td><td colspan="6"></td></tr><tr><td class="h">201</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>160</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $text = read_file($self-&gt;{file}, err_mode =&gt; &#39;croak&#39;);</td></tr>
-<tr><td class="h">202</td><td colspan="6"></td></tr><tr><td class="h">203</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>3086</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @raw;</td></tr>
-<tr><td class="h">204</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>73</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @raw, _extract_synopsis_blocks($text);</td></tr>
-<tr><td class="h">205</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>72</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @raw, _extract_for_example_blocks($text);</td></tr>
-<tr><td class="h">206</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>61</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @raw, _extract_annotated_lines($text);</td></tr>
-<tr><td class="h">207</td><td colspan="6"></td></tr><tr><td class="h">208</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# deduplicate by code text</td></tr>
-<tr><td class="h">209</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>52</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my %seen;</td></tr>
-<tr><td class="h">210</td><td><div class="c3">59</div><div class="c3">76</div></td><td></td><td></td><td></td><td><div>57</div><div>131</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @unique = grep { !$seen{ $_-&gt;{code} }++ } @raw;</td></tr>
-<tr><td class="h">211</td><td colspan="6"></td></tr><tr><td class="h">212</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# assign numbered labels within each section</td></tr>
-<tr><td class="h">213</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>75</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my %section_count;</td></tr>
-<tr><td class="h">214</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>66</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for my $e (@unique) {</td></tr>
-<tr><td class="h">215</td><td><div class="c3">74</div></td><td></td><td></td><td></td><td><div>79</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $n = ++$section_count{ $e-&gt;{section} };</td></tr>
-<tr><td class="h">216</td><td><div class="c3">74</div></td><td></td><td></td><td></td><td><div>87</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$e-&gt;{label} = &quot;$e-&gt;{section} example $n&quot;;</td></tr>
-<tr><td class="h">217</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">218</td><td colspan="6"></td></tr><tr><td class="h">219</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>143</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return \@unique;</td></tr>
-<tr><td class="h">220</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">221</td><td colspan="6"></td></tr><tr><td class="h">222</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
-<tr><td class="h">223</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _extract_synopsis_blocks</td></tr>
-<tr><td class="h">224</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">225</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Extract verbatim (indented) paragraphs from</td></tr>
-<tr><td class="h">226</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=head1 SYNOPSIS and =head2 SYNOPSIS sections.</td></tr>
-<tr><td class="h">227</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">228</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$text - full module source including POD</td></tr>
-<tr><td class="h">229</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">230</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns a list of example hashrefs.</td></tr>
-<tr><td class="h">231</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
-<tr><td class="h">232</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _extract_synopsis_blocks {</td></tr>
-<tr><td class="h">233</td><td><div class="c3">59</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L233">59</a></div></td><td><div>49</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $text = $_[0];</td></tr>
-<tr><td class="h">234</td><td colspan="6"></td></tr><tr><td class="h">235</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>37</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @examples;</td></tr>
-<tr><td class="h">236</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>1536</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;while($text =~ /=head[12]\s+SYNOPSIS\s*\n(.*?)(?=\n=head|\n=cut|\z)/sg) {</td></tr>
-<tr><td class="h">237</td><td><div class="c3">29</div></td><td></td><td></td><td></td><td><div>55</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $block = $1;</td></tr>
-<tr><td class="h">238</td><td><div class="c3">29</div></td><td></td><td></td><td></td><td><div>52</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @examples, _verbatim_paragraphs($block, &#39;SYNOPSIS&#39;);</td></tr>
-<tr><td class="h">239</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">240</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>67</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return @examples;</td></tr>
-<tr><td class="h">241</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">242</td><td colspan="6"></td></tr><tr><td class="h">243</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
-<tr><td class="h">244</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _extract_for_example_blocks</td></tr>
-<tr><td class="h">245</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">246</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Extract code inside =for example begin / =for example end pairs.</td></tr>
+<tr><td class="h">220</td><td colspan="6"></td></tr><tr><td class="h">221</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub extract {</td></tr>
+<tr><td class="h">222</td><td><div class="c3">61</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L222">61</a></div></td><td><div>684</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $self = $_[0];</td></tr>
+<tr><td class="h">223</td><td colspan="6"></td></tr><tr><td class="h">224</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>162</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $text = read_file($self-&gt;{file}, err_mode =&gt; &#39;croak&#39;);</td></tr>
+<tr><td class="h">225</td><td colspan="6"></td></tr><tr><td class="h">226</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>3307</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @raw;</td></tr>
+<tr><td class="h">227</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>267</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @raw, _extract_synopsis_blocks($text);</td></tr>
+<tr><td class="h">228</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>80</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @raw, _extract_for_example_blocks($text);</td></tr>
+<tr><td class="h">229</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>74</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @raw, _extract_annotated_lines($text);</td></tr>
+<tr><td class="h">230</td><td colspan="6"></td></tr><tr><td class="h">231</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# deduplicate by code text</td></tr>
+<tr><td class="h">232</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>53</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my %seen;</td></tr>
+<tr><td class="h">233</td><td><div class="c3">61</div><div class="c3">98</div></td><td></td><td></td><td></td><td><div>73</div><div>179</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @unique = grep { !$seen{ $_-&gt;{code} }++ } @raw;</td></tr>
+<tr><td class="h">234</td><td colspan="6"></td></tr><tr><td class="h">235</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# assign numbered labels within each section</td></tr>
+<tr><td class="h">236</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>44</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my %section_count;</td></tr>
+<tr><td class="h">237</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>72</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for my $e (@unique) {</td></tr>
+<tr><td class="h">238</td><td><div class="c3">96</div></td><td></td><td></td><td></td><td><div>98</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $n = ++$section_count{ $e-&gt;{section} };</td></tr>
+<tr><td class="h">239</td><td><div class="c3">96</div></td><td></td><td></td><td></td><td><div>125</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$e-&gt;{label} = &quot;$e-&gt;{section} example $n&quot;;</td></tr>
+<tr><td class="h">240</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">241</td><td colspan="6"></td></tr><tr><td class="h">242</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>166</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return \@unique;</td></tr>
+<tr><td class="h">243</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">244</td><td colspan="6"></td></tr><tr><td class="h">245</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">246</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _extract_synopsis_blocks</td></tr>
 <tr><td class="h">247</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">248</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$text - full module source including POD</td></tr>
-<tr><td class="h">249</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">250</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns a list of example hashrefs.</td></tr>
-<tr><td class="h">251</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
-<tr><td class="h">252</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _extract_for_example_blocks {</td></tr>
-<tr><td class="h">253</td><td><div class="c3">59</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L253">59</a></div></td><td><div>41</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $text = $_[0];</td></tr>
-<tr><td class="h">254</td><td colspan="6"></td></tr><tr><td class="h">255</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>45</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @examples;</td></tr>
-<tr><td class="h">256</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>53</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $n = 0;</td></tr>
-<tr><td class="h">257</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>821</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;while($text =~ /=for\s+example\s+begin\s*\n(.*?)=for\s+example\s+end/sg) {</td></tr>
-<tr><td class="h">258</td><td><div class="c3">4</div></td><td></td><td></td><td></td><td><div>5</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $block = $1;</td></tr>
-<tr><td class="h">259</td><td><div class="c3">4</div></td><td></td><td></td><td></td><td><div>7</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @examples, _verbatim_paragraphs($block, &#39;=for example &#39; . ++$n);</td></tr>
-<tr><td class="h">260</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">261</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>60</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return @examples;</td></tr>
-<tr><td class="h">262</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">263</td><td colspan="6"></td></tr><tr><td class="h">264</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
-<tr><td class="h">265</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _extract_annotated_lines</td></tr>
-<tr><td class="h">266</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">267</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Find individual lines inside per-method docstrings that</td></tr>
-<tr><td class="h">268</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;carry a # returns / # =&gt; annotation.&nbsp;&nbsp;These are single-</td></tr>
-<tr><td class="h">269</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;call examples where the expected value is documented inline.</td></tr>
+<tr><td class="h">248</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Extract verbatim (indented) paragraphs from</td></tr>
+<tr><td class="h">249</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=head1 SYNOPSIS and =head2 SYNOPSIS sections.</td></tr>
+<tr><td class="h">250</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">251</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$text - full module source including POD</td></tr>
+<tr><td class="h">252</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">253</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns a list of example hashrefs.</td></tr>
+<tr><td class="h">254</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">255</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _extract_synopsis_blocks {</td></tr>
+<tr><td class="h">256</td><td><div class="c3">61</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L256">61</a></div></td><td><div>56</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $text = $_[0];</td></tr>
+<tr><td class="h">257</td><td colspan="6"></td></tr><tr><td class="h">258</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>48</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @examples;</td></tr>
+<tr><td class="h">259</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>1912</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;while($text =~ /=head[12]\s+SYNOPSIS\s*\n(.*?)(?=\n=head|\n=cut|\z)/sg) {</td></tr>
+<tr><td class="h">260</td><td><div class="c3">31</div></td><td></td><td></td><td></td><td><div>50</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $block = $1;</td></tr>
+<tr><td class="h">261</td><td><div class="c3">31</div></td><td></td><td></td><td></td><td><div>71</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @examples, _verbatim_paragraphs($block, &#39;SYNOPSIS&#39;);</td></tr>
+<tr><td class="h">262</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">263</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>78</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return @examples;</td></tr>
+<tr><td class="h">264</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">265</td><td colspan="6"></td></tr><tr><td class="h">266</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">267</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _extract_for_example_blocks</td></tr>
+<tr><td class="h">268</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">269</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Extract code inside =for example begin / =for example end pairs.</td></tr>
 <tr><td class="h">270</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
 <tr><td class="h">271</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$text - full module source including POD</td></tr>
 <tr><td class="h">272</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">273</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns a list of example hashrefs (each wrapping the</td></tr>
-<tr><td class="h">274</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;annotated line plus the leading context, if any).</td></tr>
-<tr><td class="h">275</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
-<tr><td class="h">276</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _extract_annotated_lines {</td></tr>
-<tr><td class="h">277</td><td><div class="c3">59</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L277">59</a></div></td><td><div>44</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $text = $_[0];</td></tr>
-<tr><td class="h">278</td><td colspan="6"></td></tr><tr><td class="h">279</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>42</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @examples;</td></tr>
-<tr><td class="h">280</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>47</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $section = &#39;UNKNOWN&#39;;</td></tr>
-<tr><td class="h">281</td><td colspan="6"></td></tr><tr><td class="h">282</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>2488</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for my $line (split /\n/, $text) {</td></tr>
-<tr><td class="h">283</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Track current POD section heading</td></tr>
-<tr><td class="h">284</td><td><div class="c3">30446</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L284">100</a></div></td><td></td><td></td><td><div>63066</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if($line =~ /^=head\d+\s+(.+)/) {</td></tr>
-<tr><td class="h">285</td><td><div class="c3">1077</div></td><td></td><td></td><td></td><td><div>798</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$section = $1;</td></tr>
-<tr><td class="h">286</td><td><div class="c3">1077</div></td><td></td><td></td><td></td><td><div>748</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$section =~ s/\s+$//;</td></tr>
-<tr><td class="h">287</td><td><div class="c3">1077</div></td><td></td><td></td><td></td><td><div>677</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next;</td></tr>
-<tr><td class="h">288</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">289</td><td colspan="6"></td></tr><tr><td class="h">290</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Annotated verbatim line inside POD</td></tr>
-<tr><td class="h">291</td><td><div class="c3">29369</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L291">100</a></div></td><td></td><td></td><td><div>21965</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next unless $line =~ $VERBATIM_RE;</td></tr>
-<tr><td class="h">292</td><td><div class="c3">14844</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L292">100</a></div></td><td></td><td></td><td><div>32002</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next unless $line =~ $ANNOTATION_RE;</td></tr>
-<tr><td class="h">293</td><td colspan="6"></td></tr><tr><td class="h">294</td><td><div class="c3">40</div></td><td></td><td></td><td></td><td><div>146</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $expected = $1;</td></tr>
-<tr><td class="h">295</td><td><div class="c3">40</div></td><td></td><td></td><td></td><td><div>66</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$expected&nbsp;&nbsp;&nbsp;&nbsp;=~ s/\s+$//;</td></tr>
-<tr><td class="h">296</td><td colspan="6"></td></tr><tr><td class="h">297</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Strip leading whitespace from code text</td></tr>
-<tr><td class="h">298</td><td><div class="c3">40</div></td><td></td><td></td><td></td><td><div>55</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(my $code = $line) =~ s/^[ \t]+//;</td></tr>
-<tr><td class="h">299</td><td colspan="6"></td></tr><tr><td class="h">300</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Strip the annotation comment from the code</td></tr>
-<tr><td class="h">301</td><td><div class="c3">40</div></td><td></td><td></td><td></td><td><div>90</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(my $code_only = $code) =~ s/\s*\#\s*(?:=&gt;|returns?)\s*.+$//;</td></tr>
-<tr><td class="h">302</td><td><div class="c3">40</div></td><td></td><td></td><td></td><td><div>44</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$code_only =~ s/\s+$//;</td></tr>
-<tr><td class="h">303</td><td colspan="6"></td></tr><tr><td class="h">304</td><td><div class="c3">40</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L304">100</a></div></td><td></td><td></td><td><div>40</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next unless length $code_only;</td></tr>
-<tr><td class="h">305</td><td colspan="6"></td></tr><tr><td class="h">306</td><td><div class="c3">24</div></td><td></td><td></td><td></td><td><div>54</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @examples, {</td></tr>
-<tr><td class="h">307</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;section&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $section,</td></tr>
-<tr><td class="h">308</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;code&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $code_only,</td></tr>
-<tr><td class="h">309</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;expected&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $expected,</td></tr>
-<tr><td class="h">310</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;annotated_line =&gt; $code_only,</td></tr>
-<tr><td class="h">311</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;};</td></tr>
-<tr><td class="h">312</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">313</td><td colspan="6"></td></tr><tr><td class="h">314</td><td><div class="c3">59</div></td><td></td><td></td><td></td><td><div>1116</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return @examples;</td></tr>
-<tr><td class="h">315</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">316</td><td colspan="6"></td></tr><tr><td class="h">317</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
-<tr><td class="h">318</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _verbatim_paragraphs</td></tr>
-<tr><td class="h">319</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">320</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Split a POD text block into its indented</td></tr>
-<tr><td class="h">321</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(verbatim) paragraphs and return example hashrefs.</td></tr>
-<tr><td class="h">322</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Paragraphs that contain no Perl-looking syntax</td></tr>
-<tr><td class="h">323</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(e.g. shell commands like &quot;prove -l t/foo.t&quot;) are</td></tr>
-<tr><td class="h">324</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;silently dropped &acirc;&#128;&#148; they would cause compile errors</td></tr>
-<tr><td class="h">325</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;under &quot;use strict&quot; in the generated test file.</td></tr>
-<tr><td class="h">326</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">327</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$block&nbsp;&nbsp;&nbsp;- text block to scan</td></tr>
-<tr><td class="h">328</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$section - label string for the containing section</td></tr>
-<tr><td class="h">329</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">330</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns a list of example hashrefs with no expected value.</td></tr>
-<tr><td class="h">331</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
-<tr><td class="h">332</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _verbatim_paragraphs {</td></tr>
-<tr><td class="h">333</td><td><div class="c3">33</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L333">33</a></div></td><td><div>42</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($block, $section) = @_;</td></tr>
-<tr><td class="h">334</td><td colspan="6"></td></tr><tr><td class="h">335</td><td><div class="c3">33</div></td><td></td><td></td><td></td><td><div>25</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @examples;</td></tr>
-<tr><td class="h">336</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @current;</td></tr>
-<tr><td class="h">337</td><td colspan="6"></td></tr><tr><td class="h">338</td><td><div class="c3">33</div></td><td></td><td></td><td></td><td><div>141</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for my $line (split /\n/, $block) {</td></tr>
-<tr><td class="h">339</td><td><div class="c3">1188</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L339">100</a></div></td><td><div class="c1"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--condition.html#L339">75</a></div></td><td></td><td><div>954</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if($line =~ $VERBATIM_RE || ($line =~ /\S/ &amp;&amp; @current)) {</td></tr>
-<tr><td class="h">340</td><td><div class="c3">1129</div></td><td></td><td></td><td></td><td><div>2671</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @current, $line;</td></tr>
-<tr><td class="h">341</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} else {</td></tr>
-<tr><td class="h">342</td><td><div class="c3">59</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L342">100</a></div></td><td></td><td></td><td><div>205</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(@current) {</td></tr>
-<tr><td class="h">343</td><td><div class="c3">32</div></td><td></td><td></td><td></td><td><div>67</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $code = _dedent(join(&quot;\n&quot;, @current));</td></tr>
-<tr><td class="h">344</td><td><div class="c3">32</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L344">100</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--condition.html#L344">67</a></div></td><td></td><td><div>43</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @examples, {</td></tr>
-<tr><td class="h">345</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;section&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $section,</td></tr>
-<tr><td class="h">346</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;code&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $code,</td></tr>
-<tr><td class="h">347</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;expected&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; undef,</td></tr>
-<tr><td class="h">348</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;annotated_line =&gt; undef,</td></tr>
-<tr><td class="h">349</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} if length($code) &amp;&amp; _looks_like_perl($code);</td></tr>
-<tr><td class="h">350</td><td><div class="c3">32</div></td><td></td><td></td><td></td><td><div>37</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@current = ();</td></tr>
-<tr><td class="h">351</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">352</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">353</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">354</td><td colspan="6"></td></tr><tr><td class="h">355</td><td><div class="c3">33</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L355">100</a></div></td><td></td><td></td><td><div>66</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(@current) {</td></tr>
-<tr><td class="h">356</td><td><div class="c3">31</div></td><td></td><td></td><td></td><td><div>98</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $code = _dedent(join(&quot;\n&quot;, @current));</td></tr>
-<tr><td class="h">357</td><td><div class="c3">31</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L357">100</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--condition.html#L357">67</a></div></td><td></td><td><div>55</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @examples, {</td></tr>
-<tr><td class="h">358</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;section&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $section,</td></tr>
-<tr><td class="h">359</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;code&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $code,</td></tr>
-<tr><td class="h">360</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;expected&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; undef,</td></tr>
-<tr><td class="h">361</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;annotated_line =&gt; undef,</td></tr>
-<tr><td class="h">362</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} if length($code) &amp;&amp; _looks_like_perl($code);</td></tr>
-<tr><td class="h">363</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">364</td><td colspan="6"></td></tr><tr><td class="h">365</td><td><div class="c3">33</div></td><td></td><td></td><td></td><td><div>283</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return @examples;</td></tr>
-<tr><td class="h">366</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">367</td><td colspan="6"></td></tr><tr><td class="h">368</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
-<tr><td class="h">369</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _dedent</td></tr>
-<tr><td class="h">370</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">371</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Remove the common leading whitespace from every line</td></tr>
-<tr><td class="h">372</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;of a verbatim block so relative indentation is kept</td></tr>
-<tr><td class="h">373</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(like Python&#39;s textwrap.dedent).</td></tr>
-<tr><td class="h">374</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">375</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$text - multi-line string</td></tr>
-<tr><td class="h">376</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">377</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns the dedented string with trailing whitespace removed.</td></tr>
-<tr><td class="h">378</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
-<tr><td class="h">379</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _dedent {</td></tr>
-<tr><td class="h">380</td><td><div class="c3">63</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L380">63</a></div></td><td><div>45</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $text = $_[0];</td></tr>
-<tr><td class="h">381</td><td><div class="c3">63</div></td><td></td><td></td><td></td><td><div>126</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @lines = split /\n/, $text;</td></tr>
-<tr><td class="h">382</td><td><div class="c3">63</div><div class="c3">1129</div></td><td></td><td></td><td></td><td><div>66</div><div>979</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @non_empty = grep { /\S/ } @lines;</td></tr>
-<tr><td class="h">383</td><td><div class="c3">63</div></td><td><div class="c0" title="-/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L383">50</a></div></td><td></td><td></td><td><div>71</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return &#39;&#39; unless @non_empty;</td></tr>
-<tr><td class="h">384</td><td><div class="c3">1122</div></td><td></td><td></td><td></td><td><div>626</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($min) = sort { $a &lt;=&gt; $b }</td></tr>
-<tr><td class="h">385</td><td><div class="c3">63</div><div class="c3">1129</div></td><td><div class="c0" title="T/-"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L385">50</a></div></td><td></td><td></td><td><div>67</div><div>1160</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;map&nbsp;&nbsp;{ /^([ \t]*)/ ? length($1) : 0 } @non_empty;</td></tr>
-<tr><td class="h">386</td><td><div class="c3">63</div></td><td></td><td></td><td></td><td><div>877</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s/^[ \t]{0,$min}// for @lines;</td></tr>
-<tr><td class="h">387</td><td><div class="c3">63</div></td><td></td><td></td><td></td><td><div>103</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $out = join(&quot;\n&quot;, @lines);</td></tr>
-<tr><td class="h">388</td><td><div class="c3">63</div></td><td></td><td></td><td></td><td><div>285</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$out =~ s/\s+$//;</td></tr>
-<tr><td class="h">389</td><td><div class="c3">63</div></td><td></td><td></td><td></td><td><div>148</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return $out;</td></tr>
-<tr><td class="h">390</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">391</td><td colspan="6"></td></tr><tr><td class="h">392</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
-<tr><td class="h">393</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _looks_like_perl</td></tr>
-<tr><td class="h">394</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">395</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Return true when a verbatim block contains at least one</td></tr>
-<tr><td class="h">396</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line that is recognisably Perl syntax.&nbsp;&nbsp;Used to skip</td></tr>
-<tr><td class="h">397</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;blocks of shell commands (e.g. &quot;prove -l t/foo.t&quot;) that</td></tr>
-<tr><td class="h">398</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;would cause compile errors under &quot;use strict&quot;.</td></tr>
+<tr><td class="h">273</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns a list of example hashrefs.</td></tr>
+<tr><td class="h">274</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">275</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _extract_for_example_blocks {</td></tr>
+<tr><td class="h">276</td><td><div class="c3">61</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L276">61</a></div></td><td><div>54</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $text = $_[0];</td></tr>
+<tr><td class="h">277</td><td colspan="6"></td></tr><tr><td class="h">278</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>72</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @examples;</td></tr>
+<tr><td class="h">279</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>48</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $n = 0;</td></tr>
+<tr><td class="h">280</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>1032</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;while($text =~ /=for\s+example\s+begin\s*\n(.*?)=for\s+example\s+end/sg) {</td></tr>
+<tr><td class="h">281</td><td><div class="c3">4</div></td><td></td><td></td><td></td><td><div>6</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $block = $1;</td></tr>
+<tr><td class="h">282</td><td><div class="c3">4</div></td><td></td><td></td><td></td><td><div>8</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @examples, _verbatim_paragraphs($block, &#39;=for example &#39; . ++$n);</td></tr>
+<tr><td class="h">283</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">284</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>61</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return @examples;</td></tr>
+<tr><td class="h">285</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">286</td><td colspan="6"></td></tr><tr><td class="h">287</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">288</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _extract_annotated_lines</td></tr>
+<tr><td class="h">289</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">290</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Find individual lines inside per-method docstrings that</td></tr>
+<tr><td class="h">291</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;carry a # returns / # =&gt; annotation.&nbsp;&nbsp;These are single-</td></tr>
+<tr><td class="h">292</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;call examples where the expected value is documented inline.</td></tr>
+<tr><td class="h">293</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">294</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$text - full module source including POD</td></tr>
+<tr><td class="h">295</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">296</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns a list of example hashrefs (each wrapping the</td></tr>
+<tr><td class="h">297</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;annotated line plus the leading context, if any).</td></tr>
+<tr><td class="h">298</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">299</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _extract_annotated_lines {</td></tr>
+<tr><td class="h">300</td><td><div class="c3">61</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L300">61</a></div></td><td><div>48</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $text = $_[0];</td></tr>
+<tr><td class="h">301</td><td colspan="6"></td></tr><tr><td class="h">302</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>43</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @examples;</td></tr>
+<tr><td class="h">303</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>51</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $section = &#39;UNKNOWN&#39;;</td></tr>
+<tr><td class="h">304</td><td colspan="6"></td></tr><tr><td class="h">305</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>2820</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for my $line (split /\n/, $text) {</td></tr>
+<tr><td class="h">306</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Track current POD section heading</td></tr>
+<tr><td class="h">307</td><td><div class="c3">34229</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L307">100</a></div></td><td></td><td></td><td><div>71511</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if($line =~ /^=head\d+\s+(.+)/) {</td></tr>
+<tr><td class="h">308</td><td><div class="c3">1129</div></td><td></td><td></td><td></td><td><div>788</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$section = $1;</td></tr>
+<tr><td class="h">309</td><td><div class="c3">1129</div></td><td></td><td></td><td></td><td><div>837</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$section =~ s/\s+$//;</td></tr>
+<tr><td class="h">310</td><td><div class="c3">1129</div></td><td></td><td></td><td></td><td><div>683</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next;</td></tr>
+<tr><td class="h">311</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">312</td><td colspan="6"></td></tr><tr><td class="h">313</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Annotated verbatim line inside POD</td></tr>
+<tr><td class="h">314</td><td><div class="c3">33100</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L314">100</a></div></td><td></td><td></td><td><div>25840</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next unless $line =~ $VERBATIM_RE;</td></tr>
+<tr><td class="h">315</td><td><div class="c3">16733</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L315">100</a></div></td><td></td><td></td><td><div>36570</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next unless $line =~ $ANNOTATION_RE;</td></tr>
+<tr><td class="h">316</td><td colspan="6"></td></tr><tr><td class="h">317</td><td><div class="c3">41</div></td><td></td><td></td><td></td><td><div>158</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $expected = $1;</td></tr>
+<tr><td class="h">318</td><td><div class="c3">41</div></td><td></td><td></td><td></td><td><div>54</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$expected&nbsp;&nbsp;&nbsp;&nbsp;=~ s/\s+$//;</td></tr>
+<tr><td class="h">319</td><td colspan="6"></td></tr><tr><td class="h">320</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Strip leading whitespace from code text</td></tr>
+<tr><td class="h">321</td><td><div class="c3">41</div></td><td></td><td></td><td></td><td><div>77</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(my $code = $line) =~ s/^[ \t]+//;</td></tr>
+<tr><td class="h">322</td><td colspan="6"></td></tr><tr><td class="h">323</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Strip the annotation comment from the code</td></tr>
+<tr><td class="h">324</td><td><div class="c3">41</div></td><td></td><td></td><td></td><td><div>104</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(my $code_only = $code) =~ s/\s*\#\s*(?:=&gt;|returns?)\s*.+$//;</td></tr>
+<tr><td class="h">325</td><td><div class="c3">41</div></td><td></td><td></td><td></td><td><div>44</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$code_only =~ s/\s+$//;</td></tr>
+<tr><td class="h">326</td><td colspan="6"></td></tr><tr><td class="h">327</td><td><div class="c3">41</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L327">100</a></div></td><td></td><td></td><td><div>49</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next unless length $code_only;</td></tr>
+<tr><td class="h">328</td><td colspan="6"></td></tr><tr><td class="h">329</td><td><div class="c3">25</div></td><td></td><td></td><td></td><td><div>52</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @examples, {</td></tr>
+<tr><td class="h">330</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;section&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $section,</td></tr>
+<tr><td class="h">331</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;code&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $code_only,</td></tr>
+<tr><td class="h">332</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;expected&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $expected,</td></tr>
+<tr><td class="h">333</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;annotated_line =&gt; $code_only,</td></tr>
+<tr><td class="h">334</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;};</td></tr>
+<tr><td class="h">335</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">336</td><td colspan="6"></td></tr><tr><td class="h">337</td><td><div class="c3">61</div></td><td></td><td></td><td></td><td><div>1347</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return @examples;</td></tr>
+<tr><td class="h">338</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">339</td><td colspan="6"></td></tr><tr><td class="h">340</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">341</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _verbatim_paragraphs</td></tr>
+<tr><td class="h">342</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">343</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Split a POD text block into its indented</td></tr>
+<tr><td class="h">344</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(verbatim) paragraphs and return example hashrefs.</td></tr>
+<tr><td class="h">345</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Paragraphs that contain no Perl-looking syntax</td></tr>
+<tr><td class="h">346</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(e.g. shell commands like &quot;prove -l t/foo.t&quot;) are</td></tr>
+<tr><td class="h">347</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;silently dropped &acirc;&#128;&#148; they would cause compile errors</td></tr>
+<tr><td class="h">348</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;under &quot;use strict&quot; in the generated test file.</td></tr>
+<tr><td class="h">349</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">350</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$block&nbsp;&nbsp;&nbsp;- text block to scan</td></tr>
+<tr><td class="h">351</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$section - label string for the containing section</td></tr>
+<tr><td class="h">352</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">353</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns a list of example hashrefs with no expected value.</td></tr>
+<tr><td class="h">354</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">355</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _verbatim_paragraphs {</td></tr>
+<tr><td class="h">356</td><td><div class="c3">35</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L356">35</a></div></td><td><div>53</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($block, $section) = @_;</td></tr>
+<tr><td class="h">357</td><td colspan="6"></td></tr><tr><td class="h">358</td><td><div class="c3">35</div></td><td></td><td></td><td></td><td><div>37</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @examples;</td></tr>
+<tr><td class="h">359</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @current;</td></tr>
+<tr><td class="h">360</td><td colspan="6"></td></tr><tr><td class="h">361</td><td><div class="c3">35</div></td><td></td><td></td><td></td><td><div>184</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for my $line (split /\n/, $block) {</td></tr>
+<tr><td class="h">362</td><td><div class="c3">1360</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L362">100</a></div></td><td><div class="c1"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--condition.html#L362">75</a></div></td><td></td><td><div>1120</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if($line =~ $VERBATIM_RE || ($line =~ /\S/ &amp;&amp; @current)) {</td></tr>
+<tr><td class="h">363</td><td><div class="c3">1230</div></td><td></td><td></td><td></td><td><div>2963</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @current, $line;</td></tr>
+<tr><td class="h">364</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} else {</td></tr>
+<tr><td class="h">365</td><td><div class="c3">130</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L365">100</a></div></td><td></td><td></td><td><div>451</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(@current) {</td></tr>
+<tr><td class="h">366</td><td><div class="c3">51</div></td><td></td><td></td><td></td><td><div>83</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $code = _dedent(join(&quot;\n&quot;, @current));</td></tr>
+<tr><td class="h">367</td><td><div class="c3">51</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L367">100</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--condition.html#L367">67</a></div></td><td></td><td><div>78</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @examples, {</td></tr>
+<tr><td class="h">368</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;section&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $section,</td></tr>
+<tr><td class="h">369</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;code&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $code,</td></tr>
+<tr><td class="h">370</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;expected&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; undef,</td></tr>
+<tr><td class="h">371</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;annotated_line =&gt; undef,</td></tr>
+<tr><td class="h">372</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} if length($code) &amp;&amp; _looks_like_perl($code);</td></tr>
+<tr><td class="h">373</td><td><div class="c3">51</div></td><td></td><td></td><td></td><td><div>71</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@current = ();</td></tr>
+<tr><td class="h">374</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">375</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">376</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">377</td><td colspan="6"></td></tr><tr><td class="h">378</td><td><div class="c3">35</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L378">100</a></div></td><td></td><td></td><td><div>92</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if(@current) {</td></tr>
+<tr><td class="h">379</td><td><div class="c3">33</div></td><td></td><td></td><td></td><td><div>101</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $code = _dedent(join(&quot;\n&quot;, @current));</td></tr>
+<tr><td class="h">380</td><td><div class="c3">33</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L380">100</a></div></td><td><div class="c0"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--condition.html#L380">67</a></div></td><td></td><td><div>79</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push @examples, {</td></tr>
+<tr><td class="h">381</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;section&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $section,</td></tr>
+<tr><td class="h">382</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;code&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; $code,</td></tr>
+<tr><td class="h">383</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;expected&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&gt; undef,</td></tr>
+<tr><td class="h">384</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;annotated_line =&gt; undef,</td></tr>
+<tr><td class="h">385</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} if length($code) &amp;&amp; _looks_like_perl($code);</td></tr>
+<tr><td class="h">386</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">387</td><td colspan="6"></td></tr><tr><td class="h">388</td><td><div class="c3">35</div></td><td></td><td></td><td></td><td><div>357</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return @examples;</td></tr>
+<tr><td class="h">389</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">390</td><td colspan="6"></td></tr><tr><td class="h">391</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">392</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _dedent</td></tr>
+<tr><td class="h">393</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">394</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Remove the common leading whitespace from every line</td></tr>
+<tr><td class="h">395</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;of a verbatim block so relative indentation is kept</td></tr>
+<tr><td class="h">396</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(like Python&#39;s textwrap.dedent).</td></tr>
+<tr><td class="h">397</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">398</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$text - multi-line string</td></tr>
 <tr><td class="h">399</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">400</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$code - dedented block text</td></tr>
-<tr><td class="h">401</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
-<tr><td class="h">402</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns 1 (Perl) or &#39;&#39; (not Perl).</td></tr>
-<tr><td class="h">403</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
-<tr><td class="h">404</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _looks_like_perl {</td></tr>
-<tr><td class="h">405</td><td><div class="c3">63</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L405">63</a></div></td><td><div>42</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $code = $_[0];</td></tr>
-<tr><td class="h">406</td><td><div class="c3">63</div></td><td></td><td></td><td></td><td><div>134</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for my $line (split /\n/, $code) {</td></tr>
-<tr><td class="h">407</td><td><div class="c3">76</div></td><td><div class="c0" title="-/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L407">50</a></div></td><td></td><td></td><td><div>90</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next unless $line =~ /\S/;&nbsp;&nbsp;&nbsp;&nbsp;# skip blank lines</td></tr>
-<tr><td class="h">408</td><td><div class="c3">76</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L408">100</a></div></td><td></td><td></td><td><div>88</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next if $line =~ /^\s*#/;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# skip comment-only lines</td></tr>
-<tr><td class="h">409</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Perl sigils</td></tr>
-<tr><td class="h">410</td><td><div class="c3">64</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L410">100</a></div></td><td></td><td></td><td><div>192</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 1 if $line =~ /[\$\@\%]/;</td></tr>
-<tr><td class="h">411</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Perl keywords at start of statement</td></tr>
-<tr><td class="h">412</td><td><div class="c3">29</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L412">100</a></div></td><td></td><td></td><td><div>82</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 1 if $line =~ /^\s*(?:my|our|local|use|require|no|package|sub|for(?:each)?|if|unless|while|until|return|die|croak|warn|print|say|eval|BEGIN|END|push|pop|shift|unshift|keys|values|grep|map|sort)\b/;</td></tr>
-<tr><td class="h">413</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Method call or package separator</td></tr>
-<tr><td class="h">414</td><td><div class="c3">15</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L414">100</a></div></td><td></td><td></td><td><div>36</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 1 if $line =~ /(?:-&gt;|::)/;</td></tr>
-<tr><td class="h">415</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Fat comma &acirc;&#128;&#148; a hash or argument list</td></tr>
-<tr><td class="h">416</td><td><div class="c3">12</div></td><td><div class="c0" title="-/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L416">50</a></div></td><td></td><td></td><td><div>16</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 1 if $line =~ /=&gt;/;</td></tr>
-<tr><td class="h">417</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
-<tr><td class="h">418</td><td><div class="c3">11</div></td><td></td><td></td><td></td><td><div>17</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return &#39;&#39;;</td></tr>
-<tr><td class="h">419</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
-<tr><td class="h">420</td><td colspan="6"></td></tr><tr><td class="h">421 - 495</td><td colspan="5"></td><td class="s"><pre>=head1 COMMON PITFALLS
+<tr><td class="h">400</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns the dedented string with trailing whitespace removed.</td></tr>
+<tr><td class="h">401</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">402</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _dedent {</td></tr>
+<tr><td class="h">403</td><td><div class="c3">84</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L403">84</a></div></td><td><div>68</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $text = $_[0];</td></tr>
+<tr><td class="h">404</td><td><div class="c3">84</div></td><td></td><td></td><td></td><td><div>154</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @lines = split /\n/, $text;</td></tr>
+<tr><td class="h">405</td><td><div class="c3">84</div><div class="c3">1230</div></td><td></td><td></td><td></td><td><div>77</div><div>1163</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my @non_empty = grep { /\S/ } @lines;</td></tr>
+<tr><td class="h">406</td><td><div class="c3">84</div></td><td><div class="c0" title="-/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L406">50</a></div></td><td></td><td></td><td><div>91</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return &#39;&#39; unless @non_empty;</td></tr>
+<tr><td class="h">407</td><td><div class="c3">1283</div></td><td></td><td></td><td></td><td><div>764</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my ($min) = sort { $a &lt;=&gt; $b }</td></tr>
+<tr><td class="h">408</td><td><div class="c3">84</div><div class="c3">1230</div></td><td><div class="c0" title="T/-"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L408">50</a></div></td><td></td><td></td><td><div>69</div><div>1388</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;map&nbsp;&nbsp;{ /^([ \t]*)/ ? length($1) : 0 } @non_empty;</td></tr>
+<tr><td class="h">409</td><td><div class="c3">84</div></td><td></td><td></td><td></td><td><div>1066</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s/^[ \t]{0,$min}// for @lines;</td></tr>
+<tr><td class="h">410</td><td><div class="c3">84</div></td><td></td><td></td><td></td><td><div>140</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $out = join(&quot;\n&quot;, @lines);</td></tr>
+<tr><td class="h">411</td><td><div class="c3">84</div></td><td></td><td></td><td></td><td><div>347</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$out =~ s/\s+$//;</td></tr>
+<tr><td class="h">412</td><td><div class="c3">84</div></td><td></td><td></td><td></td><td><div>209</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return $out;</td></tr>
+<tr><td class="h">413</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">414</td><td colspan="6"></td></tr><tr><td class="h">415</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">416</td><td></td><td></td><td></td><td></td><td></td><td class="s"># _looks_like_perl</td></tr>
+<tr><td class="h">417</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">418</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Purpose:&nbsp;&nbsp;&nbsp;&nbsp;Return true when a verbatim block contains at least one</td></tr>
+<tr><td class="h">419</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;line that is recognisably Perl syntax.&nbsp;&nbsp;Used to skip</td></tr>
+<tr><td class="h">420</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;blocks of shell commands (e.g. &quot;prove -l t/foo.t&quot;) that</td></tr>
+<tr><td class="h">421</td><td></td><td></td><td></td><td></td><td></td><td class="s">#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;would cause compile errors under &quot;use strict&quot;.</td></tr>
+<tr><td class="h">422</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">423</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Entry:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$code - dedented block text</td></tr>
+<tr><td class="h">424</td><td></td><td></td><td></td><td></td><td></td><td class="s">#</td></tr>
+<tr><td class="h">425</td><td></td><td></td><td></td><td></td><td></td><td class="s"># Exit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns 1 (Perl) or &#39;&#39; (not Perl).</td></tr>
+<tr><td class="h">426</td><td></td><td></td><td></td><td></td><td></td><td class="s"># --------------------------------------------------</td></tr>
+<tr><td class="h">427</td><td></td><td></td><td></td><td></td><td></td><td class="s">sub _looks_like_perl {</td></tr>
+<tr><td class="h">428</td><td><div class="c3">84</div></td><td></td><td></td><td><div class="c3"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--subroutine.html#L428">84</a></div></td><td><div>71</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;my $code = $_[0];</td></tr>
+<tr><td class="h">429</td><td><div class="c3">84</div></td><td></td><td></td><td></td><td><div>148</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for my $line (split /\n/, $code) {</td></tr>
+<tr><td class="h">430</td><td><div class="c3">100</div></td><td><div class="c0" title="-/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L430">50</a></div></td><td></td><td></td><td><div>126</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next unless $line =~ /\S/;&nbsp;&nbsp;&nbsp;&nbsp;# skip blank lines</td></tr>
+<tr><td class="h">431</td><td><div class="c3">100</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L431">100</a></div></td><td></td><td></td><td><div>116</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next if $line =~ /^\s*#/;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# skip comment-only lines</td></tr>
+<tr><td class="h">432</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Perl sigils</td></tr>
+<tr><td class="h">433</td><td><div class="c3">85</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L433">100</a></div></td><td></td><td></td><td><div>258</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 1 if $line =~ /[\$\@\%]/;</td></tr>
+<tr><td class="h">434</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Perl keywords at start of statement</td></tr>
+<tr><td class="h">435</td><td><div class="c3">32</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L435">100</a></div></td><td></td><td></td><td><div>119</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 1 if $line =~ /^\s*(?:my|our|local|use|require|no|package|sub|for(?:each)?|if|unless|while|until|return|die|croak|warn|print|say|eval|BEGIN|END|push|pop|shift|unshift|keys|values|grep|map|sort)\b/;</td></tr>
+<tr><td class="h">436</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Method call or package separator</td></tr>
+<tr><td class="h">437</td><td><div class="c3">15</div></td><td><div class="c3" title="T/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L437">100</a></div></td><td></td><td></td><td><div>35</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 1 if $line =~ /(?:-&gt;|::)/;</td></tr>
+<tr><td class="h">438</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Fat comma &acirc;&#128;&#148; a hash or argument list</td></tr>
+<tr><td class="h">439</td><td><div class="c3">12</div></td><td><div class="c0" title="-/F"><a href="blib-lib-App-Test-Generator-PodExampleExtractor-pm--branch.html#L439">50</a></div></td><td></td><td></td><td><div>18</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 1 if $line =~ /=&gt;/;</td></tr>
+<tr><td class="h">440</td><td></td><td></td><td></td><td></td><td></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}</td></tr>
+<tr><td class="h">441</td><td><div class="c3">11</div></td><td></td><td></td><td></td><td><div>16</div></td><td class="s">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return &#39;&#39;;</td></tr>
+<tr><td class="h">442</td><td></td><td></td><td></td><td></td><td></td><td class="s">}</td></tr>
+<tr><td class="h">443</td><td colspan="6"></td></tr><tr><td class="h">444 - 706</td><td colspan="5"></td><td class="s"><pre>=head1 COMMON PITFALLS
 
 =over 4
 
@@ -427,7 +449,7 @@ block, not a verbatim paragraph.
 
 The C&lt;# returns&gt; / C&lt;&lt; # =&gt; &gt;&gt; annotation is parsed as a line-level suffix.
 Multi-line calls spread across multiple lines will not pick up an annotation on
-the last line &acirc;&#128;&#148; only the last line is examined, and the call expression on
+the last line.&nbsp;&nbsp;Only the last line is examined, and the call expression on
 earlier lines is lost.
 
 =item C&lt;expected&gt; is always a raw string
@@ -440,6 +462,92 @@ emits C&lt;is($result, $expected)&gt; must handle quoting appropriately.
 
 Only C&lt;=head1 SYNOPSIS&gt; and C&lt;=head2 SYNOPSIS&gt; sections are scanned for
 verbatim blocks.&nbsp;&nbsp;Deeper heading levels are ignored.
+
+=item C&lt;new&gt; takes a list of pairs, not a hashref
+
+Write C&lt;&lt; new(file =&gt; $path) &gt;&gt;.&nbsp;&nbsp;If you write C&lt;&lt; new({ file =&gt; $path }) &gt;&gt;
+the file name is not seen, and C&lt;new&gt; croaks with C&lt;file is required&gt;.
+Any argument other than C&lt;file&gt; is ignored without a warning.
+
+=item How C&lt;undef&gt; is handled
+
+=over 4
+
+=item * C&lt;&lt; file =&gt; undef &gt;&gt; makes C&lt;new&gt; croak with C&lt;file is required&gt;.
+
+=item * C&lt;expected&gt; and C&lt;annotated_line&gt; are C&lt;undef&gt; for every example
+that came from a whole block.&nbsp;&nbsp;Always test them with C&lt;defined&gt; before
+you use them.
+
+=item * C&lt;label&gt;, C&lt;section&gt; and C&lt;code&gt; are never C&lt;undef&gt;.
+
+=item * A file with no examples gives an empty arrayref (C&lt;[]&gt;), never
+C&lt;undef&gt;.
+
+=back
+
+=item Annotated lines are searched for in the whole file, not only in POD
+
+Every indented line of the file is checked for a C&lt;# returns ...&gt; or
+C&lt;&lt; # =&gt; ... &gt;&gt; comment.&nbsp;&nbsp;This includes indented lines of ordinary Perl
+code.&nbsp;&nbsp;A code line such as
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return $total;&nbsp;&nbsp;&nbsp;&nbsp;# returns the sum
+
+is reported as an example with C&lt;expected&gt; set to C&lt;the sum&gt;.&nbsp;&nbsp;The
+C&lt;section&gt; of such an example is the last POD heading seen above it, or
+C&lt;UNKNOWN&gt; if there was none.&nbsp;&nbsp;Use a different wording in code comments
+if you do not want this.
+
+=item An annotated line inside a block is reported twice
+
+A line with an annotation that sits inside a SYNOPSIS block appears once
+as part of the whole block and once more by itself.&nbsp;&nbsp;The two entries have
+different C&lt;code&gt; text, so the duplicate check does not join them.
+
+=item Each call to C&lt;extract&gt; reads the file again
+
+The result is not stored in the object.&nbsp;&nbsp;Two calls give two separate
+arrayrefs.&nbsp;&nbsp;Changing one result does not change the other.&nbsp;&nbsp;If the file
+changed on disk between the calls, the results can be different.
+
+=back
+
+=head1 ENCODING
+
+The file is read as raw bytes.&nbsp;&nbsp;Nothing is decoded.
+
+=over 4
+
+=item * The C&lt;file&gt; argument
+
+The path is passed to the operating system unchanged.&nbsp;&nbsp;ASCII paths
+always work.&nbsp;&nbsp;For a path with non-ASCII characters, pass it as bytes in
+the encoding your file system uses (normally UTF-8).
+
+=item * File contents
+
+Any byte values are accepted.&nbsp;&nbsp;UTF-8 text, other non-ASCII text and
+emojis do not cause errors and are not damaged.&nbsp;&nbsp;All the markers this
+module looks for (C&lt;=head1&gt;, C&lt;=for example&gt;, C&lt;#&gt;, C&lt;&lt; =&gt; &gt;&gt;,
+C&lt;returns&gt;) are ASCII, so they are found correctly in a UTF-8 file.
+
+=item * Returned strings
+
+C&lt;section&gt;, C&lt;label&gt;, C&lt;code&gt;, C&lt;expected&gt; and C&lt;annotated_line&gt; are
+B&lt;byte&gt; strings.&nbsp;&nbsp;If the file is UTF-8, each non-ASCII character or emoji
+is still several separate bytes in the result.&nbsp;&nbsp;Call
+C&lt;Encode::decode(&#39;UTF-8&#39;, $string)&gt; if you need Perl character strings,
+for example before you measure a length or print through a UTF-8 handle.
+
+=item * The C&lt;=encoding&gt; line
+
+It is ignored.&nbsp;&nbsp;The module does not use it to convert anything.
+
+=item * Line endings
+
+Only C&lt;\n&gt; ends a line.&nbsp;&nbsp;A file with Windows line endings keeps a C&lt;\r&gt;
+inside multi-line C&lt;code&gt; values.
 
 =back
 
@@ -477,6 +585,108 @@ method docstring, only the first occurrence is kept.
 
 Nigel Horne, C&lt;&lt; &lt;njh at nigelhorne.com&gt; &gt;&gt;
 
+=head1 FORMAL SPECIFICATION
+
+This section describes each method in Z notation.&nbsp;&nbsp;It is for readers who
+want an exact, mathematical statement.&nbsp;&nbsp;You do not need it to use the module.
+
+How to read it: a name ending in C&lt;?&gt; is an input, a name ending in C&lt;!&gt; is
+an output, and a name ending in C&lt;&#39;&gt; is the value after the call.
+The symbol E&lt;0x039E&gt; before the state name means &quot;this call does not change
+the object&quot;.
+
+The state of an object is one value, the path given to C&lt;new&gt;:
+
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#140;&acirc;&#148;&#128; PodExampleExtractor &acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; file : PATH
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#156;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; file &acirc;&#137;&nbsp; undef
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#148;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#140;&acirc;&#148;&#128; Example &acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; section, label, code : STRING
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; expected, annotated_line : STRING &acirc;&#136;&ordf; { undef }
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#156;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; code &acirc;&#137;&nbsp; &#39;&#39;
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; expected = undef &acirc;&#135;&#148; annotated_line = undef
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; annotated_line &acirc;&#137;&nbsp; undef &acirc;&#135;&#146; annotated_line = code
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#148;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;
+
+=head2 new
+
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#140;&acirc;&#148;&#128; New &acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; PodExampleExtractor&acirc;&#128;&sup2;
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; file? : VALUE
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; result! : PodExampleExtractor
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#156;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; pre&nbsp;&nbsp;&nbsp;file? &acirc;&#137;&nbsp; undef &acirc;&#136;&sect; file? names an existing plain file
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; post&nbsp;&nbsp;file&acirc;&#128;&sup2; = file?
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result! = &Icirc;&cedil; PodExampleExtractor&acirc;&#128;&sup2;
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#148;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;
+
+&nbsp;&nbsp;&nbsp;&nbsp;file? = undef&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#135;&#146; croak &#39;file is required&#39;
+&nbsp;&nbsp;&nbsp;&nbsp;file? is not an existing file&nbsp;&nbsp;&acirc;&#135;&#146; croak &#39;File not found: &#39; &acirc;&#129;&#128; file?
+
+=head2 extract
+
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#140;&acirc;&#148;&#128; Extract &acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; &Icirc;&#158; PodExampleExtractor
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; result! : seq Example
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#156;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; pre&nbsp;&nbsp;&nbsp;file can be read
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130; post&nbsp;&nbsp;result! = synopsis blocks &acirc;&#129;&#128; &#39;for example&#39; blocks
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#129;&#128; annotated lines, with later copies of
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the same code removed
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#136;&#128; i, j : dom result! &acirc;&#128;&cent;
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i &acirc;&#137;&nbsp; j &acirc;&#135;&#146; result!(i).code &acirc;&#137;&nbsp; result!(j).code
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#136;&#128; e : ran result! &acirc;&#128;&cent; &acirc;&#136;&#131; n : &acirc;&#132;&#149;&acirc;&#130;&#129; &acirc;&#128;&cent;
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;e.label = e.section &acirc;&#129;&#128; &#39; example &#39; &acirc;&#129;&#128; n
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#136;&#128; i, j : dom result! &acirc;&#128;&cent;
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#130;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i &acirc;&#137;&nbsp; j &acirc;&#135;&#146; result!(i).label &acirc;&#137;&nbsp; result!(j).label
+&nbsp;&nbsp;&nbsp;&nbsp;&acirc;&#148;&#148;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;&acirc;&#148;&#128;
+
+&nbsp;&nbsp;&nbsp;&nbsp;file cannot be read&nbsp;&nbsp;&acirc;&#135;&#146; croak (message from File::Slurp)
+
+=head1 STATE DIAGRAM
+
+An object of this class has only one working state.&nbsp;&nbsp;It is created ready
+to use and it never changes afterwards.
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;new(file =&gt; undef)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;new(file =&gt; path that does not exist)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+------------------------------+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;action: croak, no object&nbsp;&nbsp;&nbsp;&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+-------------+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;NO OBJECT&nbsp;&nbsp;|-----------------------+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+-------------+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| new(file =&gt; existing file)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| action: remember the path (file is not read)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+-------------+&nbsp;&nbsp;&nbsp;extract()&nbsp;&nbsp;[file can be read]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|---------------------------------+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;READY&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;action: read the file,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;return a new list of examples |
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&lt;--------------------------------+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;extract()&nbsp;&nbsp;[file removed or
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;not readable]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|---------------------------------+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;action: croak, nothing changes|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&lt;--------------------------------+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+-------------+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| last reference goes away
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| action: Perl frees the object
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+-------------+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;GONE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+-------------+
+
+Side effects: C&lt;extract&gt; opens the file for reading and closes it again
+before it returns.&nbsp;&nbsp;No method writes to disk or prints anything.
+
 =head1 LICENCE AND COPYRIGHT
 
 Copyright 2026 Nigel Horne.
@@ -486,7 +696,7 @@ If you use it,
 please let me know.
 
 =cut</pre></td></tr>
-<tr><td class="h">496</td><td colspan="6"></td></tr><tr><td class="h">497</td><td></td><td></td><td></td><td></td><td></td><td class="s">1;</td></tr>
+<tr><td class="h">707</td><td colspan="6"></td></tr><tr><td class="h">708</td><td></td><td></td><td></td><td></td><td></td><td class="s">1;</td></tr>
 </table>
 </body>
 </html>

@@ -360,11 +360,11 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">   19: Readonly my $PENALTY_EXCEPTION_SWALLOW_STABILITY   =&gt; 20;
 </span><span class="">   20: Readonly my $BONUS_BOOLEAN_STABILITY               =&gt; 5;
 </span><span class="">   21: 
-</span><span class="">   22: our $VERSION = &#39;0.47&#39;;
+</span><span class="">   22: our $VERSION = &#39;0.48&#39;;
 </span><span class="">   23: 
 </span><span class="">   24: =head1 VERSION
 </span><span class="">   25: 
-</span><span class="">   26: Version 0.46
+</span><span class="">   26: Version 0.48
 </span><span class="">   27: 
 </span><span class="">   28: =head1 DESCRIPTION
 </span><span class="">   29: 
@@ -427,18 +427,18 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">   86: 
 </span><span class="">   87: =over 4
 </span><span class="">   88: 
-</span><span class="">   89: =item C&lt;_context_aware&gt; &acirc;&#128;&#148; true if the function returns differently in
+</span><span class="">   89: =item C&lt;_context_aware&gt; - true if the function returns differently in
 </span><span class="">   90: list vs scalar context.
 </span><span class="">   91: 
-</span><span class="">   92: =item C&lt;_returns_self&gt; &acirc;&#128;&#148; true if the function returns C&lt;$self&gt;.
+</span><span class="">   92: =item C&lt;_returns_self&gt; - true if the function returns C&lt;$self&gt;.
 </span><span class="">   93: 
-</span><span class="">   94: =item C&lt;type&gt; &acirc;&#128;&#148; the declared return type string e.g. C&lt;object&gt;,
+</span><span class="">   94: =item C&lt;type&gt; - the declared return type string e.g. C&lt;object&gt;,
 </span><span class="">   95: C&lt;boolean&gt;, C&lt;string&gt;.
 </span><span class="">   96: 
-</span><span class="">   97: =item C&lt;_error_handling&gt; &acirc;&#128;&#148; a hashref with boolean keys C&lt;implicit_undef&gt;,
+</span><span class="">   97: =item C&lt;_error_handling&gt; - a hashref with boolean keys C&lt;implicit_undef&gt;,
 </span><span class="">   98: C&lt;empty_list&gt;, and C&lt;exception_handling&gt;.
 </span><span class="">   99: 
-</span><span class="">  100: =item C&lt;_error_return&gt; &acirc;&#128;&#148; the value returned on error e.g. C&lt;undef&gt;.
+</span><span class="">  100: =item C&lt;_error_return&gt; - the value returned on error e.g. C&lt;undef&gt;.
 </span><span class="">  101: 
 </span><span class="">  102: =back
 </span><span class="">  103: 
@@ -450,12 +450,12 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  109: 
 </span><span class="">  110: =over 4
 </span><span class="">  111: 
-</span><span class="">  112: =item * C&lt;stability_score&gt; &acirc;&#128;&#148; integer in [0, 100]. Higher is more stable.
+</span><span class="">  112: =item * C&lt;stability_score&gt; - integer in [0, 100]. Higher is more stable.
 </span><span class="">  113: 
-</span><span class="">  114: =item * C&lt;consistency_score&gt; &acirc;&#128;&#148; integer in [0, 100]. Higher is more
+</span><span class="">  114: =item * C&lt;consistency_score&gt; - integer in [0, 100]. Higher is more
 </span><span class="">  115: consistent.
 </span><span class="">  116: 
-</span><span class="">  117: =item * C&lt;risk_flags&gt; &acirc;&#128;&#148; arrayref of string risk identifiers detected
+</span><span class="">  117: =item * C&lt;risk_flags&gt; - arrayref of string risk identifiers detected
 </span><span class="">  118: during analysis.
 </span><span class="">  119: 
 </span><span class="">  120: =back
@@ -466,7 +466,7 @@ Approximate LCSAJ segments: 23<br>
 </span><span class="">  125: risk pattern. A small bonus is applied to stability for boolean return
 </span><span class="">  126: types, but since C&lt;stability_score&gt; starts at 100 and is clamped to
 </span><span class="">  127: [0, 100] after all adjustments, this bonus is a no-op unless an earlier
-</span><span class="">  128: penalty has already reduced the score below 100 &acirc;&#128;&#148; for a boolean-returning
+</span><span class="">  128: penalty has already reduced the score below 100 - for a boolean-returning
 </span><span class="">  129: function with no other detected risk, C&lt;stability_score&gt; is unaffected
 </span><span class="">  130: by C&lt;$BONUS_BOOLEAN_STABILITY&gt; and remains 100.
 </span><span class="">  131: 

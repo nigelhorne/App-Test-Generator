@@ -343,16 +343,16 @@ Approximate LCSAJ segments: 21<br>
 </span><span class="">    2: 
 </span><span class="">    3: use strict;
 </span><span class="">    4: use warnings;
-</span><span class="">    5: use Carp qw(croak);
+</span><span class="">    5: use Carp qw(carp croak);
 </span><span class="">    6: use parent &#39;App::Test::Generator::Mutation::Base&#39;;
 </span><span class="">    7: use App::Test::Generator::Mutant;
 </span><span class="">    8: use PPI;
 </span><span class="">    9: 
-</span><span class="">   10: our $VERSION = &#39;0.47&#39;;
+</span><span class="">   10: our $VERSION = &#39;0.48&#39;;
 </span><span class="">   11: 
 </span><span class="">   12: =head1 VERSION
 </span><span class="">   13: 
-</span><span class="">   14: Version 0.47
+</span><span class="">   14: Version 0.48
 </span><span class="">   15: 
 </span><span class="">   16: =cut
 </span><span class="">   17: 
@@ -582,7 +582,7 @@ Approximate LCSAJ segments: 21<br>
 </span><span class="">  241: 			# If the Mutant construction fails, report clearly rather than
 </span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  242: 			# silently dropping the mutant from the results
 </span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  243: 			if($@ || !$mutant) {
-</span><span class="">  244: 				warn &quot;Failed to construct mutant $id: $@&quot; if $@;
+</span><span class="">  244: 				carp &quot;Failed to construct mutant $id: $@&quot; if $@;
 </span><span class="">  245: 				next;
 </span><span class="">  246: 			}
 </span><span class="">  247: 

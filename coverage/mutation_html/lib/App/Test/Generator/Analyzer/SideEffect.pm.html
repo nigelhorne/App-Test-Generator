@@ -374,11 +374,11 @@ Approximate LCSAJ segments: 13<br>
 </span><span class="">   33: # --------------------------------------------------
 </span><span class="">   34: use constant GLOBAL_PATTERN =&gt; qr/\$(?:GLOBAL|ENV|SIG|ARGV|_|!|0)\b|\$\/|%ENV\b|%SIG\b|\@ARGV\b/;
 </span><span class="">   35: 
-</span><span class="">   36: our $VERSION = &#39;0.47&#39;;
+</span><span class="">   36: our $VERSION = &#39;0.48&#39;;
 </span><span class="">   37: 
 </span><span class="">   38: =head1 VERSION
 </span><span class="">   39: 
-</span><span class="">   40: Version 0.47
+</span><span class="">   40: Version 0.48
 </span><span class="">   41: 
 </span><span class="">   42: =head1 DESCRIPTION
 </span><span class="">   43: 
@@ -448,18 +448,18 @@ Approximate LCSAJ segments: 13<br>
 </span><span class="">  107: 
 </span><span class="">  108: =over 4
 </span><span class="">  109: 
-</span><span class="">  110: =item * C&lt;mutates_self&gt; &acirc;&#128;&#148; 1 if the method assigns to C&lt;$self-E&lt;gt&gt;{field}&gt;.
+</span><span class="">  110: =item * C&lt;mutates_self&gt; - 1 if the method assigns to C&lt;$self-E&lt;gt&gt;{field}&gt;.
 </span><span class="">  111: 
-</span><span class="">  112: =item * C&lt;mutates_globals&gt; &acirc;&#128;&#148; 1 if the method modifies global variables.
+</span><span class="">  112: =item * C&lt;mutates_globals&gt; - 1 if the method modifies global variables.
 </span><span class="">  113: 
-</span><span class="">  114: =item * C&lt;performs_io&gt; &acirc;&#128;&#148; 1 if the method performs IO operations.
+</span><span class="">  114: =item * C&lt;performs_io&gt; - 1 if the method performs IO operations.
 </span><span class="">  115: 
-</span><span class="">  116: =item * C&lt;calls_external&gt; &acirc;&#128;&#148; 1 if the method calls external commands.
+</span><span class="">  116: =item * C&lt;calls_external&gt; - 1 if the method calls external commands.
 </span><span class="">  117: 
-</span><span class="">  118: =item * C&lt;mutation_fields&gt; &acirc;&#128;&#148; arrayref of C&lt;$self&gt; field names assigned
+</span><span class="">  118: =item * C&lt;mutation_fields&gt; - arrayref of C&lt;$self&gt; field names assigned
 </span><span class="">  119: to (deduplicated).
 </span><span class="">  120: 
-</span><span class="">  121: =item * C&lt;purity_level&gt; &acirc;&#128;&#148; one of C&lt;pure&gt;, C&lt;self_mutating&gt;, or
+</span><span class="">  121: =item * C&lt;purity_level&gt; - one of C&lt;pure&gt;, C&lt;self_mutating&gt;, or
 </span><span class="">  122: C&lt;impure&gt;.
 </span><span class="">  123: 
 </span><span class="">  124: =back
