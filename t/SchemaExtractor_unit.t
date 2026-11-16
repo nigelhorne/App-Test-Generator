@@ -1026,6 +1026,59 @@ END_PM
 		'a parsed file is not reduced to an existence-check fixture');
 };
 
+subtest 'a constructor that parses a copied-out file argument is skipped, and so are its methods' => sub {
+	my $src = <<'END_PM';
+package ResultsModule;
+
+use Carp qw(croak);
+
+=head2 new
+
+=head3 API SPECIFICATION
+
+=head4 input
+
+    { results_from => { type => 'any' } }
+
+=cut
+
+sub new {
+	my ($class, %args) = @_;
+	my $results = $args{results_from};
+	if(!ref($results)) {
+		croak "results_from '$results' does not exist" unless -f $results;
+		open(my $fh, '<', $results) or croak "Cannot read '$results': $!";
+		$results = do { local $/; <$fh> };
+		close($fh);
+	}
+	return bless { results => $results }, $class;
+}
+
+=head2 count
+
+Returns the number of results.
+
+=cut
+
+sub count {
+	my $self = shift;
+	return length($self->{results});
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src);
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	like($schemas->{new}{skip}, qr/needs an existing input file/,
+		'open(...) on a local copy of the argument is seen as reading the file');
+	ok(exists($schemas->{count}{new}) && !ref($schemas->{count}{new}),
+		'the instance method is not given constructor arguments')
+		or diag(explain($schemas->{count}{new}));
+};
+
 # ==================================================================
 # Regression: an =item description that continues on later lines.
 #

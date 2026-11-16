@@ -1621,6 +1621,19 @@ sub extract_all {
 		}
 	}
 
+	# A constructor that parses a file it is given cannot be built by the
+	# harness either, so its instance methods get new: ~ like any other
+	# unbuildable class.
+	if($schemas{new} && $schemas{new}{skip}) {
+		for my $method_name (keys %schemas) {
+			next if($method_name eq 'new');
+			my $schema = $schemas{$method_name};
+			next unless(exists($schema->{new}) && defined($schema->{new}));
+			$schema->{new} = $package_name;
+			$self->_log("  UNBUILDABLE: $method_name new: ~ ($package_name constructor needs an input file)");
+		}
+	}
+
 	# A routine whose whole body is `return $self->other(\@_)` has
 	# exactly other()'s input contract. CGI::Info::get_cookie is such a
 	# forwarder, and without this it looked like it took no parameters at all,
@@ -9338,13 +9351,20 @@ sub _requires_input_file
 	foreach my $param (sort keys %{$input}) {
 		my $p = quotemeta($param);
 
+		# The value is often copied out of %args under another name first.
+		my @names = ($p);
+		while($body =~ /\bmy\s+\$(\w+)\s*=\s*\$args\{\s*['"]?$p['"]?\s*\}\s*;/g) {
+			push @names, quotemeta($1) if($1 ne $param);
+		}
+		my $v = '(?:' . join('|', @names) . ')';
+
 		# A file whose contents are read, not merely tested for existence.
 		return 'needs an existing input file whose contents it parses'
-			if($body =~ /\b(?:PPI::Document->new|_load_schema|_slurp|read_file|slurp_file)\s*\(\s*\$$p\b/
-			   || $body =~ /\bopen\s+[^;]*['"]<[^;]*\$$p\b/);
+			if($body =~ /\b(?:PPI::Document->new|_load_schema|_slurp|read_file|slurp_file)\s*\(\s*\$$v\b/
+			   || $body =~ /\bopen\b\s*\(?[^;]*['"]<[^;]*\$$v\b/);
 
 		my $tests_existence = ($body =~ /-[ef]\s+\$args\{\s*['"]?$p['"]?\s*\}/)
-			|| ($body =~ /-[ef]\s+\$$p\b/)
+			|| ($body =~ /-[ef]\s+\$$v\b/)
 			|| ($body =~ /-[ef]\s+\$self->\{\s*['"]?$p['"]?\s*\}/);
 		next unless($tests_existence);
 
