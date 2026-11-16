@@ -4,7 +4,7 @@ App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Da
 
 ## Version
 
-Version 0.48
+Version 0.49
 
 ## Synopsis
 
@@ -1536,8 +1536,11 @@ Existing constraints are never replaced.  See
 ##### Output
 
 ```perl
-{ type => 'string' }
+{ type => 'boolean' }
 ```
+
+Always 1.  The test source itself is written to `output_file`, or printed
+on STDOUT when no output file is given; it is not returned.
 
 The mathematical description is in ["FORMAL SPECIFICATION"](#formal-specification).
 
@@ -1844,6 +1847,7 @@ no state schema.  `quote(v)` stands for the result of `perl_quote(v)`.
 │ schema_file? : STRING
 │ output_file? : STRING ∪ { undef }
 │ test : STRING
+│ result! : BOOLEAN
 ├───────────────────────────────────────────────────
 │ pre   schema_file? names a readable schema
 │       the schema defines function
@@ -1851,6 +1855,7 @@ no state schema.  `quote(v)` stands for the result of `perl_quote(v)`.
 │ post  test is a complete Perl test file for function
 │       output_file? ≠ undef ⇒ file output_file? holds test
 │       output_file? = undef ⇒ test is printed on STDOUT
+│       result! = 1
 └───────────────────────────────────────────────────
 
 no arguments                     ⇒ croak 'Usage: generate(...)'

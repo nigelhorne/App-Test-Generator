@@ -13,6 +13,10 @@ our $VERSION = '0.49';
 App::Test::Generator::Mutation::Feedback - Turn surviving mutants into boundary
 cases and schema constraints
 
+=head1 VERSION
+
+Version 0.49
+
 =head1 SYNOPSIS
 
     use App::Test::Generator::Mutation::Feedback;
@@ -100,6 +104,23 @@ Defaults to the current directory.
 A blessed hashref.  Croaks when C<mutation_results> is missing, unreadable or
 not valid JSON, and when no module file can be matched but C<module> is set.
 
+=head3 API SPECIFICATION
+
+=head4 input
+
+    {
+        mutation_results => { type => 'any' },
+        module           => { type => 'string', optional => 1 },
+        source_root      => { type => 'string', optional => 1 },
+    }
+
+C<mutation_results> is a file name or a hashref, so no single type is
+declared for it.
+
+=head4 output
+
+    { type => OBJECT, isa => 'App::Test::Generator::Mutation::Feedback' }
+
 =head2 survivors
 
 Return the survivors from the results, filtered to the configured module.
@@ -109,6 +130,16 @@ Return the survivors from the results, filtered to the configured module.
 =head3 Returns
 
 An arrayref of survivor hashrefs, in the order they appear in the results.
+
+=head3 API SPECIFICATION
+
+=head4 input
+
+    { self => { type => OBJECT, isa => 'App::Test::Generator::Mutation::Feedback' } }
+
+=head4 output
+
+    { type => ARRAYREF, items => { type => HASHREF } }
 
 =head2 proposals
 
@@ -144,6 +175,16 @@ proposals.
 
 =back
 
+=head3 API SPECIFICATION
+
+=head4 input
+
+    { self => { type => OBJECT, isa => 'App::Test::Generator::Mutation::Feedback' } }
+
+=head4 output
+
+    { type => ARRAYREF, items => { type => HASHREF } }
+
 =head2 apply_to_schema
 
 Merge constraint proposals into a schema.
@@ -170,6 +211,31 @@ for reporting.
 
 Constraints already present on the field are left alone, as are proposals
 whose parameter has no matching input field.
+
+=head3 API SPECIFICATION
+
+=head4 input
+
+    {
+        self   => { type => OBJECT, isa => 'App::Test::Generator::Mutation::Feedback' },
+        schema => { type => HASHREF },
+    }
+
+=head4 output
+
+    { type => ARRAYREF, items => { type => HASHREF } }
+
+=head1 AUTHOR
+
+Nigel Horne, C<< <njh at nigelhorne.com> >>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright 2026 Nigel Horne.
+
+Usage is subject to the terms of GPL2.
+If you use it,
+please let me know.
 
 =cut
 

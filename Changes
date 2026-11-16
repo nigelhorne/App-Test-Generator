@@ -43,8 +43,15 @@ Revision history for App-Test-Generator
 	  cases are built from the transform's input when it names fields, not from
 	  the top-level input.  One hand-written schema can therefore cover two
 	  call shapes, such as NameCase([...]) and NameCase('A', 'B')
+	- demo_extractor is no longer installed as a command; it is shipped as
+	  examples/demo_extractor
+	- The bug tracker in the distribution metadata is now GitHub issues
 
 	[Bug fixes]
+	- generate() is documented as returning 1, which is what it has always
+	  returned; the test source is written or printed, not returned
+	- Mutation::Feedback passes extract-schemas --strict-pod=fatal, and
+	  t/mutation_feedback.t is included in the distribution
 	- Pattern-generated strings honour a field's min/max length: the regex
 	  generator treats 'length' as a hint and can return a value the schema
 	  forbids, so generation retries inside the bounds and falls back rather

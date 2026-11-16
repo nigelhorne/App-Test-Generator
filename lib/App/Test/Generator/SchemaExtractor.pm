@@ -84,11 +84,11 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 
 =head1 VERSION
 
-Version 0.48
+Version 0.49
 
 =cut
 
-our $VERSION = '0.48';
+our $VERSION = '0.49';
 
 =head1 SYNOPSIS
 
@@ -8820,10 +8820,7 @@ sub _write_schema {
 
 	my $filename = "$self->{output_dir}/${method_name}.yml";
 
-	# Configure YAML::XS to not quote numeric strings, and sort map keys so
-	# repeated runs over the same module produce identical files.
 	local $YAML::XS::QuoteNumericStrings = 0;
-	local $YAML::XS::SortKeys = 1;
 
 	# Extract package name for module field
 	my $package_name = '';

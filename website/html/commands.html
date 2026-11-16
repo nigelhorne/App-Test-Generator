@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Commands — App::Test::Generator</title>
-<meta name="description" content="The ten App::Test::Generator commands: fuzz-harness-generator, extract-schemas, test-generator-mutate, test-generator-index, generate-test-dashboard, benchmark-generator, pod-example-tester, deploy-workflows, instrument-modules and demo_extractor.">
+<meta name="description" content="The nine App::Test::Generator commands: fuzz-harness-generator, extract-schemas, test-generator-mutate, test-generator-index, generate-test-dashboard, benchmark-generator, pod-example-tester, deploy-workflows and instrument-modules.">
 <link rel="canonical" href="commands.html">
 <meta name="theme-color" content="#fbfaf7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#12161b" media="(prefers-color-scheme: dark)">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="App::Test::Generator">
 <meta property="og:title" content="Commands — App::Test::Generator">
-<meta property="og:description" content="What each of the ten command-line tools does, and the options it takes.">
+<meta property="og:description" content="What each of the nine command-line tools does, and the options it takes.">
 <meta name="twitter:card" content="summary">
 <link rel="stylesheet" href="../css/site.css">
 </head>
@@ -43,7 +43,7 @@
 <main id="main" class="wrap">
 	<h1>Commands</h1>
 	<p class="lead">
-		Ten scripts, all installed by the distribution. Four carry the daily
+		Nine scripts, all installed by the distribution. Four carry the daily
 		workflow — generate, extract, mutate, report — and the rest are helpers
 		around them.
 	</p>
@@ -63,7 +63,6 @@
 				<tr><td><code>pod-example-tester</code></td><td>POD examples → round-trip test file.</td></tr>
 				<tr><td><code>deploy-workflows</code></td><td>Two GitHub Actions workflows → another repository.</td></tr>
 				<tr><td><code>instrument-modules</code></td><td>Writes the <code>.lcsaj.json</code> path definitions.</td></tr>
-				<tr><td><code>demo_extractor</code></td><td>Self-contained demonstration of schema extraction.</td></tr>
 			</tbody>
 		</table>
 	</div>
@@ -292,13 +291,14 @@ instrument-modules lib/My/Module.pm
 		<h2 id="demo_extractor">demo_extractor</h2>
 		<span class="tag">demo</span>
 	</div>
-<pre><code>demo_extractor
+<pre><code>perl examples/demo_extractor
 </code></pre>
 	<p>
 		Creates a temporary sample module, extracts its schemas, prints them, and
 		compares the result with the expected output. Useful as a tour of what
 		extraction can infer, and as a quick check that the extractor still
-		behaves after an upgrade.
+		behaves after an upgrade. It is an example shipped in the
+		distribution's <code>examples/</code> directory, not an installed command.
 	</p>
 
 	<h2>Exit codes</h2>

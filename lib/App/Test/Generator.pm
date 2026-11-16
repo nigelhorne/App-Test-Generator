@@ -3,13 +3,8 @@ package App::Test::Generator;
 # FIXME: SchemaExtractor does not strip comments before scanning for a sub's parameters,
 #	so a comment that quotes a parameter-declaration idiom is read as a real declaration
 #	and fails --strict-pod=fatal (seen in generate(); the comment there was reworded)
-# FIXME: generate() documents its output as a string but returns the result of print;
-#	either return the test source or change the =head4 Output spec (this alters the
-#	extracted schema, so check t/app.t)
 # FIXME: Schema extraction is not deterministic: SchemaExtractor::_build_schema_from_meta
 #	extracts its output type as hashref on some runs and string on others (hash order)
-# FIXME: bin/demo_extractor is installed through EXE_FILES; move it to examples/ and
-#	update Makefile.PL and MANIFEST
 # TODO: Test validator from Params::Validate::Strict 0.16
 # TODO: positional args - when config_undef is set, see what happens when not all args are given
 # TODO: The Dup and TER1/2/3 columns should be moved from the Mutation table
@@ -61,7 +56,7 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
-our $VERSION = '0.48';
+our $VERSION = '0.49';
 
 Readonly my $DEFAULT_ITERATIONS      => 30;
 Readonly my $DEFAULT_PROPERTY_TRIALS => 1000;
@@ -177,13 +172,15 @@ Readonly my $ENV_TEST_VERBOSE       => 'TEST_VERBOSE';
 Readonly my $ENV_GENERATOR_VERBOSE  => 'GENERATOR_VERBOSE';
 Readonly my $ENV_VALIDATE_LOAD      => 'GENERATOR_VALIDATE_LOAD';
 
+=encoding utf8
+
 =head1 NAME
 
 App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Dashboard for Perl modules
 
 =head1 VERSION
 
-Version 0.48
+Version 0.49
 
 =head1 SYNOPSIS
 
@@ -499,8 +496,6 @@ pipeline driver
 =item * L<bin/generate-test-dashboard> - Full pipeline runner
 
 =back
-
-=encoding utf8
 
 =head1 CONFIGURATION
 
@@ -1814,7 +1809,10 @@ L<App::Test::Generator::Mutation::Feedback>.
 
 =head4 Output
 
-    { type => 'string' }
+    { type => 'boolean' }
+
+Always 1.  The test source itself is written to C<output_file>, or printed
+on STDOUT when no output file is given; it is not returned.
 
 The mathematical description is in L</FORMAL SPECIFICATION>.
 
@@ -2518,6 +2516,8 @@ sub generate
 	} else {
 		print "$test\n";
 	}
+
+	return 1;
 }
 
 # --- Helpers for rendering data structures into Perl code for the generated test ---
@@ -5253,6 +5253,7 @@ no state schema.  C<quote(v)> stands for the result of C<perl_quote(v)>.
     │ schema_file? : STRING
     │ output_file? : STRING ∪ { undef }
     │ test : STRING
+    │ result! : BOOLEAN
     ├───────────────────────────────────────────────────
     │ pre   schema_file? names a readable schema
     │       the schema defines function
@@ -5260,6 +5261,7 @@ no state schema.  C<quote(v)> stands for the result of C<perl_quote(v)>.
     │ post  test is a complete Perl test file for function
     │       output_file? ≠ undef ⇒ file output_file? holds test
     │       output_file? = undef ⇒ test is printed on STDOUT
+    │       result! = 1
     └───────────────────────────────────────────────────
 
     no arguments                     ⇒ croak 'Usage: generate(...)'

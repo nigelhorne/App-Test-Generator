@@ -18,6 +18,10 @@ our @EXPORT_OK = qw(
 
 App::Test::Generator::Provenance - The allowed values of a schema parameter's C<_source> marker
 
+=head1 VERSION
+
+Version 0.49
+
 =head1 SYNOPSIS
 
     use App::Test::Generator::Provenance qw(
@@ -67,21 +71,74 @@ The six allowed marker values, exported on request.
 Returns the allowed marker values as a list.  Use it to validate a marker
 read from a schema.
 
+=head3 API SPECIFICATION
+
+=head4 input
+
+    {}
+
+=head4 output
+
+    {}
+
+A list of strings, not a reference.  No type is declared because the schema
+format has no type for a returned list.
+
 =head2 documented_sources
 
 Returns the markers that describe documentation rather than an enforced
 check: C<pod> and C<input_spec>.
+
+=head3 API SPECIFICATION
+
+=head4 input
+
+    {}
+
+=head4 output
+
+    {}
+
+A list of strings, not a reference.  No type is declared because the schema
+format has no type for a returned list.
 
 =head2 type_checks_source
 
 Returns the marker that says the routine checks types itself:
 C<validator>.
 
+=head3 API SPECIFICATION
+
+=head4 input
+
+    {}
+
+=head4 output
+
+    { type => SCALAR }
+
 =head2 source_is_valid
 
     $ok = source_is_valid($source);
 
 True when the marker is one of L</sources>.
+
+=head3 API SPECIFICATION
+
+=head4 input
+
+    {
+        source => { type => 'any', optional => 1 },
+    }
+
+An undefined value or a reference is never a marker and gives 0; nothing
+is thrown.
+
+=head4 output
+
+    { type => SCALAR }
+
+1 or 0.
 
 =head2 source_is_documented
 
@@ -90,11 +147,57 @@ True when the marker is one of L</sources>.
 True when the marker is one of L</documented_sources>.  An undefined or
 unknown marker is not documentation.
 
+=head3 API SPECIFICATION
+
+=head4 input
+
+    {
+        source => { type => 'any', optional => 1 },
+    }
+
+An undefined value or a reference is never a marker and gives 0; nothing
+is thrown.
+
+=head4 output
+
+    { type => SCALAR }
+
+1 or 0.
+
 =head2 source_checks_types
 
     $checked = source_checks_types($source);
 
 True when the marker is L</type_checks_source>.
+
+=head3 API SPECIFICATION
+
+=head4 input
+
+    {
+        source => { type => 'any', optional => 1 },
+    }
+
+An undefined value or a reference is never a marker and gives 0; nothing
+is thrown.
+
+=head4 output
+
+    { type => SCALAR }
+
+1 or 0.
+
+=head1 AUTHOR
+
+Nigel Horne, C<< <njh at nigelhorne.com> >>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright 2026 Nigel Horne.
+
+Usage is subject to the terms of GPL2.
+If you use it,
+please let me know.
 
 =cut
 
