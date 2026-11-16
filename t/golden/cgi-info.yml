@@ -84,7 +84,7 @@ cookie:
   input:
     cookie_name:
       _source: validator
-      matches: (?^u:^[!#-'*+\-.\^_`|~0-9A-Za-z]+$)
+      matches: ^[!#-'*+\-.\^_`|~0-9A-Za-z]+$
       min: 1
       type: string
   module: CGI::Info
@@ -133,7 +133,7 @@ get_cookie:
   input:
     cookie_name:
       _source: validator
-      matches: (?^u:^[!#-'*+\-.\^_`|~0-9A-Za-z]+$)
+      matches: ^[!#-'*+\-.\^_`|~0-9A-Za-z]+$
       min: 1
       type: string
   module: CGI::Info
@@ -308,6 +308,74 @@ new:
     test_security: 0
     test_undef: 0
   function: new
+  input:
+    allow:
+      _source: input_spec
+      optional: 1
+      type: hashref
+    allow_dtd:
+      _source: input_spec
+      optional: 1
+      type: boolean
+    auto_load:
+      _source: input_spec
+      optional: 1
+      type: boolean
+    cache:
+      _source: input_spec
+      optional: 1
+      type: object
+    carp_on_warn:
+      _source: input_spec
+      optional: 1
+      type: boolean
+    config_dirs:
+      _source: input_spec
+      optional: 1
+      type: arrayref
+    config_file:
+      _source: input_spec
+      optional: 1
+      type: string
+    dtd_warning_interval:
+      _constraint_source:
+        min: input_spec
+      _source: input_spec
+      min: 0
+      optional: 1
+      type: integer
+    logger:
+      _source: input_spec
+      optional: 1
+      type: object
+    max_body_size:
+      _source: input_spec
+      optional: 1
+      type: integer
+    max_nesting_depth:
+      _source: input_spec
+      optional: 1
+      type: integer
+    max_params:
+      _source: input_spec
+      optional: 1
+      type: integer
+    max_part_headers:
+      _source: input_spec
+      optional: 1
+      type: integer
+    max_parts:
+      _source: input_spec
+      optional: 1
+      type: integer
+    max_upload_size:
+      _source: input_spec
+      optional: 1
+      type: integer
+    upload_dir:
+      _source: input_spec
+      optional: 1
+      type: string
   module: CGI::Info
   output:
     isa: CGI::Info
@@ -332,7 +400,6 @@ param:
   new: {}
   output:
     _list_return: 2
-    type: array
 params:
   config:
     close_stdin: 1
@@ -350,7 +417,6 @@ params:
       exception_handling: 1
       type: string
     _list_return: 2
-    type: array
 protocol:
   config:
     close_stdin: 1

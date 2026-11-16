@@ -2,6 +2,37 @@ Revision history for App-Test-Generator
 
 0.49
 	[Enhancements]
+	- A matches pattern is written to schema YAML as a plain pattern string
+	  instead of a !!perl/regexp object, which a YAML consumer cannot read
+	  back; the golden schemas record the plain form
+	- A routine that only tests that an input path exists (-e/-f) is no longer
+	  skipped: its parameter is marked semantic => 'existing_file' and the
+	  harness creates a temporary file for it.  Only routines that read the
+	  file's contents stay skipped, with a reason that says so
+	- A parameter named only by a formal =head Input spec still gets the value
+	  list from its =item prose description (e.g. strict_pod's off/warn/fatal),
+	  which the harness needs to build valid data for it
+	- A pattern-constrained string field is never given the generator's fixed
+	  whitespace, newline or BOM samples as valid data, so a cookie-style
+	  validator is not failed by values its own pattern excludes;
+	  t/pattern_fixed_samples.t covers the CGI-Info cookie regression in the
+	  ATG suite as well as downstream
+	- Surviving mutation-testing results now feed back into harness generation:
+	  test-generator-mutate's JSON report can be passed to
+	  fuzz-harness-generator --mutation-results (or to generate() as
+	  mutation_results), where each surviving numeric-boundary mutant is
+	  traced to the comparison it mutated and becomes a min or max constraint
+	  on the matching input field.  The harness then generates values either
+	  side of the boundary the suite missed; existing constraints are never
+	  replaced and survivors that need a hand-written test are listed for
+	  review
+	- Regex-based string generation is deterministic and bounded: a schema's
+	  seed drives Data::Random::String::Matches through Perl's RNG, generation
+	  is limited by the new config setting 'regex_timeout' (default 5
+	  seconds), and a pattern that hangs or cannot be satisfied falls back to
+	  a fixed matching value or skips its cases with one report instead of
+	  failing the run.  A failing case now names the seed and the input that
+	  was sent, so it can be replayed
 	- The fuzz harness records a contradiction when a routine rejects a value
 	  inside a POD-derived bound or accepts one outside it, reports all such
 	  findings at the end of the run, and tolerates them by default
@@ -14,6 +45,10 @@ Revision history for App-Test-Generator
 	  call shapes, such as NameCase([...]) and NameCase('A', 'B')
 
 	[Bug fixes]
+	- Pattern-generated strings honour a field's min/max length: the regex
+	  generator treats 'length' as a hint and can return a value the schema
+	  forbids, so generation retries inside the bounds and falls back rather
+	  than producing data the declared maximum rejects
 	- Random integer, number and string inputs stay inside a declared maximum:
 	  max-only numerics are generated downwards from the bound, fixed valid
 	  samples are skipped when they exceed it, and Unicode strings are
@@ -40,7 +75,36 @@ Revision history for App-Test-Generator
 	  in: `croak ... unless length >= 5` and `croak ... if length < 5` both
 	  enforce min => 5.  The second form used to be read literally as
 	  max => 4, so a routine containing both forms produced min greater
-	  than max
+	  than max.  A comparison is only read this way when it is the whole
+	  guard condition: `croak ... if length($t) < 5 || $other` and
+	  `... if length($t) < 5 && $other` enforce no bound, since either
+	  operand alone can reject long text or accept short text
+	- An arrayref or hashref parameter can describe its elements with a nested
+	  `schema`: element specs carry their own type, bounds, member list and
+	  pattern, can nest again (array of arrays), and can build objects from
+	  `isa` or `can`.  A hashref schema without a type maps fixed key names to
+	  element schemas.  Generated valid data, boundary cases and mandatory
+	  argument fillers all use the element schema instead of homogeneous
+	  filler, and an invalid nested schema is rejected before generation
+	- A routine named `import` is generated as a class method call,
+	  Module->import(...), the way `use` invokes it, so a module that shifts
+	  its class name (Database::Abstraction) no longer dies when a no-input
+	  harness calls it with a flattened, empty argument list
+	- The allowed `_source` provenance markers live in one place,
+	  App::Test::Generator::Provenance.  SchemaExtractor emits only those
+	  values and the generated harness asks the same module which markers
+	  mean documentation and which mean the routine checks types, so the
+	  extractor and the harness cannot drift apart
+	- Documented member lists and patterns are now advisory probes like
+	  documented bounds: the outside value is tried, and a routine that
+	  accepts it is reported as accepting a value its POD says is invalid.
+	  Advisory runs only report; --strict-documented turns each finding into
+	  a failing test, exactly as it already did for bounds
+	- Provenance is tracked per constraint (`_constraint_source`), not only
+	  per parameter.  A minimum documented in POD and a maximum the code
+	  enforces on the same field stay separate decisions: the documented one
+	  sizes valid data and is tolerated, the enforced one is still a
+	  must-die check
 	- extract-schemas compares a =head3|4 Input spec's bounds with bounds
 	  inferred from code, so a formal min => 5 alongside an inferred max => 4
 	  is reported as a contradiction instead of being merged into an
@@ -69,6 +133,9 @@ Revision history for App-Test-Generator
 	  descriptor is reported when the same target is opened again
 	- Generated harnesses no longer expect a "directory" parameter to die on
 	  an empty string
+	- The per-case marker for a documented-constraint probe is
+	  `_DOCUMENTED_CONSTRAINTS`, renamed from `_DOCUMENTED_BOUND_PROBE`
+	  because it marks any documented constraint, not only a numeric bound
 
 0.48	Wed Nov 11 09:42:47 AM EST 2026
 	[Enhancements]

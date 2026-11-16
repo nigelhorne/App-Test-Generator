@@ -8,6 +8,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 
 use App::Test::Generator;
+use App::Test::Generator::Mutation::Feedback;
 use File::Spec;
 use File::Temp;
 use Getopt::Long qw(GetOptions);
@@ -26,6 +27,7 @@ fuzz-harness-generator - Generate fuzzing + corpus-based test harnesses from tes
 =head1 SYNOPSIS
 
   fuzz-harness-generator [-r] [--strict-documented] [-o output_file] input.yaml
+  fuzz-harness-generator --mutation-results mutation.json -o t/fuzz.t input.yaml
   fuzz-harness-generator --dry-run input.yaml
   fuzz-harness-generator --replay-corpus schemas/corpus/ -o t/fuzz_replay.t
   fuzz-harness-generator --replay-corpus schemas/corpus/translate.json -o t/fuzz_replay.t
@@ -69,8 +71,22 @@ C<fuzz-harness-generator -r t/conf/data_text_append.conf> will, therefore, dynam
 =item B<--strict-documented>
 
 Fail the generated harness when fuzzing finds a routine that contradicts a
-POD-derived bound.  By default such contradictions are recorded and reported
-at the end of the run but do not fail it.
+POD-derived constraint: a bound, a C<memberof> list or a C<matches> pattern.
+By default the harness runs in advisory mode: an outside value is still
+tried, and a routine that accepts it is reported as accepting a value its
+POD says is invalid, but the run does not fail.  This option makes each
+recorded contradiction a failing test.
+
+=item B<--mutation-results> FILE
+
+Feed surviving mutants back into harness generation.  FILE is the JSON report
+written by C<test-generator-mutate --json>.  A surviving numeric-boundary
+mutant is traced to the comparison it mutated, and that comparison becomes a
+C<min> or C<max> constraint on the matching input field, so the generated
+harness exercises the boundary the test suite missed.  Existing constraints
+are never replaced, and survivors that do not describe a numeric comparison
+are listed for review.  Only survivors belonging to the schema's C<module>
+are used.
 
 =item B<--replay-corpus> PATH
 
@@ -114,6 +130,7 @@ my $version;
 my $dry_run;
 my $replay_corpus;
 my $strict_documented;
+my $mutation_results;
 
 Getopt::Long::Configure('bundling');
 
@@ -124,6 +141,7 @@ GetOptions(
 	'output|o=s'      => \$outfile,
 	'run|r'           => \$run,
 	'strict-documented' => \$strict_documented,
+	'mutation-results=s' => \$mutation_results,
 	'verbose|v'       => \$verbose,
 	'version|V'       => \$version,
 	'replay-corpus|R=s' => \$replay_corpus,
@@ -200,7 +218,7 @@ if($run && !$outfile) {
 	my ($fh, $tmp) = File::Temp::tempfile();
 	close $fh;
 
-	_generate_harness($infile, $tmp, $strict_documented);
+	_generate_harness($infile, $tmp, $strict_documented, $mutation_results);
 
 	exit system($prove, '-l', $tmp) >> 8;
 }
@@ -210,7 +228,7 @@ if($dry_run) {
 	close $fh;
 
 	eval {
-		_generate_harness($infile, $tmp, $strict_documented);
+		_generate_harness($infile, $tmp, $strict_documented, $mutation_results);
 		1;
 	} or do {
 		die "Dry-run failed for $infile: $@";
@@ -223,7 +241,7 @@ if($dry_run) {
 	warn "Overwriting existing file: $outfile";
 }
 
-_generate_harness($infile, $outfile, $strict_documented);
+_generate_harness($infile, $outfile, $strict_documented, $mutation_results);
 
 if($outfile) {
 	chmod 0755, $outfile if($outfile =~ /\.(pl|cgi)$/);
@@ -247,17 +265,67 @@ exit 0;
 #             $outfile - where to write the harness.
 #             $strict  - true to fail on documented-bound
 #                        contradictions.
+#             $mutation_results - optional path to the JSON
+#                        written by test-generator-mutate;
+#                        surviving boundary mutants become
+#                        schema constraints, and what was
+#                        applied is summarised here.
 #
 # Exit:       Returns nothing; generate() may croak.
 # --------------------------------------------------
 sub _generate_harness {
-	my ($infile, $outfile, $strict) = @_;
+	my ($infile, $outfile, $strict, $mutation_results) = @_;
+
+	if(defined($mutation_results)) {
+		_report_mutation_feedback($infile, $mutation_results);
+	}
 
 	return App::Test::Generator->generate({
 		input_file => $infile,
 		output_file => $outfile,
 		strict_documented => $strict ? 1 : 0,
+		(defined($mutation_results) ? (mutation_results => $mutation_results) : ()),
 	});
+}
+
+# --------------------------------------------------
+# _report_mutation_feedback
+#
+# Print what the survivors propose before the harness is
+# written, so a run that adds no constraints says so.
+#
+# Entry:      $infile  - schema file.
+#             $mutation_results - mutation results JSON.
+#
+# Exit:       Returns nothing; reads both files.
+# --------------------------------------------------
+sub _report_mutation_feedback {
+	my ($infile, $mutation_results) = @_;
+
+	my $schema = LoadFile($infile);
+	my $feedback = App::Test::Generator::Mutation::Feedback->new(
+		mutation_results => $mutation_results,
+		(defined($schema->{module}) ? (module => $schema->{module}) : ()),
+	);
+
+	my $proposals = $feedback->proposals;
+	my $applied   = $feedback->apply_to_schema($schema);
+
+	printf "Mutation feedback: %d survivor(s), %d constraint(s) applied\n",
+		scalar(@{$proposals}), scalar(@{$applied});
+
+	foreach my $change (@{$applied}) {
+		printf "  %s: %s = %s (survivor %s)\n",
+			$change->{field}, $change->{constraint}, $change->{value},
+			$change->{survivor_id};
+	}
+
+	foreach my $proposal (@{$proposals}) {
+		next unless $proposal->{kind} eq 'manual';
+		printf "  manual: %s line %s - %s\n",
+			$proposal->{file}, $proposal->{line} // '?',
+			$proposal->{description} // $proposal->{survivor_id};
+	}
 }
 
 # ---------------------------------------------------------------------------

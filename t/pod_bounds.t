@@ -410,6 +410,40 @@ sub tidy
 }
 BODY
 
+# The documented set and pattern are enforced, so advisory probes die and
+# nothing is reported.
+_write_module(
+	'Bounds::EnforcesMemberof',
+	_spec_block("colour => { type => 'string', optional => 1, memberof => ['red', 'green'] }"),
+	'string',
+	<<'BODY');
+sub tidy
+{
+	my $colour = shift;
+
+	croak('tidy: colour must be red or green')
+		if defined($colour) && ($colour ne 'red') && ($colour ne 'green');
+
+	return defined($colour) ? uc($colour) : '';
+}
+BODY
+
+_write_module(
+	'Bounds::EnforcesMatches',
+	"\t" . 'C<$slug> - string, matches /^[a-z]+$/',
+	'string',
+	<<'BODY');
+sub tidy
+{
+	my $slug = shift;
+
+	croak('tidy: slug must be lowercase letters')
+		if defined($slug) && ($slug !~ /^[a-z]+$/);
+
+	return defined($slug) ? uc($slug) : '';
+}
+BODY
+
 # A documented set the code does not enforce.
 _write_module(
 	'Bounds::AcceptsMemberof',
@@ -421,6 +455,21 @@ sub tidy
 	my $colour = shift;
 
 	return defined($colour) ? uc($colour) : '';
+}
+BODY
+
+# Integers in a documented set: the same reporting applies to a numeric
+# allowed set, not only to strings.
+_write_module(
+	'Bounds::AcceptsIntegerMemberof',
+	_spec_block("level => { type => 'integer', optional => 1, memberof => [1, 2] }"),
+	'integer',
+	<<'BODY');
+sub pick
+{
+	my $level = shift;
+
+	return defined($level) ? $level : 0;
 }
 BODY
 
@@ -468,6 +517,38 @@ sub tidy
 }
 BODY
 
+# The documented minimum and the maximum the code enforces are separate
+# constraints: only the minimum is a documentation claim.
+_write_module(
+	'Bounds::MixedPodMinCodeMax',
+	_spec_block("text => { type => 'string', optional => 0, min => 5 }"),
+	'string',
+	<<'BODY');
+sub tidy
+{
+	my $text = shift;
+
+	croak('tidy: at most ten characters are allowed') if length($text) > 10;
+
+	return uc($text);
+}
+BODY
+
+_write_module(
+	'Bounds::MixedPodMaxCodeMin',
+	_spec_block("text => { type => 'string', optional => 0, max => 10 }"),
+	'string',
+	<<'BODY');
+sub tidy
+{
+	my $text = shift;
+
+	croak('tidy: at least five characters are required') unless length($text) >= 5;
+
+	return uc($text);
+}
+BODY
+
 sub _extract
 {
 	my ($module) = @_;
@@ -490,6 +571,16 @@ sub _note_count
 	my ($output) = @_;
 
 	return scalar(() = $output =~ /documented-only constraint/g);
+}
+
+# A hand-written schema carries no provenance: neither the field's _source
+# nor the per-constraint map that extraction adds.
+sub _make_hand_written
+{
+	my ($spec) = @_;
+
+	delete $spec->{_source};
+	delete $spec->{_constraint_source};
 }
 
 sub _run_harness
@@ -573,7 +664,7 @@ subtest 'a routine that rejects a documented-valid value is reported and tolerat
 	my ($exit, $output) = _run_harness($yml, 'enforces_string_stricter');
 
 	is($exit, 0, 'the contradiction does not fail a normal run') or diag($output);
-	like($output, qr/Documented-bound contradictions found by fuzzing/, 'the run reports its findings');
+	like($output, qr/Documented-constraint contradictions found by fuzzing/, 'the run reports its findings');
 	like($output, qr/routine rejected a value inside the documented bound on 'text' \(min 5\)/,
 		'the in-bound rejection is recorded against the POD bound');
 	like($output, qr/These contradictions are tolerated; use --strict-documented/,
@@ -611,7 +702,7 @@ subtest '--strict-documented turns a documented-bound contradiction into a failu
 	isnt($exit, 0, 'the strict run fails') or diag($output);
 	like($output, qr/not ok .*strict-documented: routine rejected a value inside the documented bound on 'text' \(min 5\)/,
 		'the recorded contradiction is a failing test');
-	like($output, qr/Documented-bound contradictions found by fuzzing/, 'the findings are still reported');
+	like($output, qr/Documented-constraint contradictions found by fuzzing/, 'the findings are still reported');
 };
 
 subtest 'a routine that enforces a longer documented string minimum passes' => sub {
@@ -734,7 +825,7 @@ subtest 'a hand-written string maximum is still required to die' => sub {
 	my ($schema, $yml) = _extract('Bounds::AcceptsStringMax');
 
 	my $strict = File::Spec->catfile($dir, 'strict_string_max.yml');
-	delete $schema->{input}{text}{_source};
+	_make_hand_written($schema->{input}{text});
 	DumpFile($strict, $schema);
 
 	my ($exit, $output) = _run_harness($strict, 'strict_string_max');
@@ -747,7 +838,7 @@ subtest 'a hand-written number maximum is still required to die' => sub {
 	my ($schema, $yml) = _extract('Bounds::AcceptsNumberMax');
 
 	my $strict = File::Spec->catfile($dir, 'strict_number_max.yml');
-	delete $schema->{input}{ratio}{_source};
+	_make_hand_written($schema->{input}{ratio});
 	DumpFile($strict, $schema);
 
 	my ($exit, $output) = _run_harness($strict, 'strict_number_max');
@@ -760,7 +851,7 @@ subtest 'a hand-written zero minimum is still required to die' => sub {
 	my ($schema, $yml) = _extract('Bounds::AcceptsStringRange');
 
 	my $strict = File::Spec->catfile($dir, 'strict_zero_min.yml');
-	delete $schema->{input}{text}{_source};
+	_make_hand_written($schema->{input}{text});
 	DumpFile($strict, $schema);
 
 	my ($exit, $output) = _run_harness($strict, 'strict_zero_min');
@@ -816,6 +907,8 @@ subtest 'a documented match pattern is tolerated' => sub {
 
 	is($exit, 0, 'a routine that ignores the documented pattern passes') or diag($output);
 	like($output, qr/documented-only constraint on 'slug'/, 'the tolerated pattern is logged');
+	like($output, qr/routine accepted a value that does not match the documented pattern on 'slug'/,
+		'the run reports that the routine accepts a value the POD says is invalid');
 };
 
 subtest 'a documented member list is tolerated' => sub {
@@ -828,13 +921,84 @@ subtest 'a documented member list is tolerated' => sub {
 
 	is($exit, 0, 'a routine that ignores the documented list passes') or diag($output);
 	like($output, qr/documented-only constraint on 'colour'/, 'the tolerated list is logged');
+	like($output, qr/routine accepted a value outside the documented memberof list on 'colour' \(one of: red, green\)/,
+		'the run reports the undocumented value it accepted');
+};
+
+subtest '--strict-documented fails on an accepted documented list value' => sub {
+	my ($schema, $yml) = _extract('Bounds::AcceptsMemberof');
+	my ($exit, $output) = _run_harness($yml, 'strict_documented_memberof', '--strict-documented');
+
+	isnt($exit, 0, 'the advisory finding becomes a failure when requested');
+	like($output, qr/not ok .*strict-documented: routine accepted a value outside the documented memberof list on 'colour'/,
+		'the failure names the documented list');
+};
+
+subtest 'a documented member list on an integer is tolerated' => sub {
+	my $schema = {
+		module   => 'Bounds::AcceptsIntegerMemberof',
+		function => 'pick',
+		input    => {
+			level => {
+				type     => 'integer',
+				optional => 0,
+				position => 0,
+				memberof => [1, 2],
+				_source  => 'pod',
+			},
+		},
+		output => { type => 'integer' },
+		config => {
+			test_empty     => 0,
+			test_nuls      => 0,
+			test_non_ascii => 0,
+			test_security  => 0,
+			test_undef     => 0,
+		},
+	};
+
+	my $yml = File::Spec->catfile($dir, 'documented_integer_memberof.yml');
+	DumpFile($yml, $schema);
+
+	my ($exit, $output) = _run_harness($yml, 'documented_integer_memberof');
+
+	is($exit, 0, 'a routine that ignores a documented integer set passes') or diag($output);
+	like($output, qr/documented-only constraint on 'level'/, 'the tolerated set is logged');
+	like($output, qr/routine accepted a value outside the documented memberof list on 'level' \(one of: 1, 2\)/,
+		'the run reports the integer it accepted outside the documented set');
+};
+
+subtest '--strict-documented fails on an accepted non-matching value' => sub {
+	my ($schema, $yml) = _extract('Bounds::AcceptsMatches');
+	my ($exit, $output) = _run_harness($yml, 'strict_documented_matches', '--strict-documented');
+
+	isnt($exit, 0, 'the advisory finding becomes a failure when requested');
+	like($output, qr/not ok .*strict-documented: routine accepted a value that does not match the documented pattern on 'slug'/,
+		'the failure names the documented pattern');
+};
+
+subtest 'a routine that enforces its documented constraints reports no acceptance' => sub {
+	foreach my $case (
+		[ 'Bounds::EnforcesMemberof', 'enforces_memberof' ],
+		[ 'Bounds::EnforcesMatches',  'enforces_matches' ],
+	) {
+		my ($module, $label) = @{$case};
+		my ($schema, $yml) = _extract($module);
+		my ($exit, $output) = _run_harness($yml, $label);
+
+		is($exit, 0, "$label: an enforced documented constraint passes") or diag($output);
+		unlike($output, qr/routine accepted a value outside the documented/,
+			"$label: no outside acceptance is reported");
+		unlike($output, qr/does not match the documented pattern/,
+			"$label: no pattern breach is reported");
+	}
 };
 
 subtest 'a hand-written match pattern is still required to die' => sub {
 	my ($schema, $yml) = _extract('Bounds::AcceptsMatches');
 
 	my $strict = File::Spec->catfile($dir, 'strict_matches.yml');
-	delete $schema->{input}{slug}{_source};
+	_make_hand_written($schema->{input}{slug});
 	DumpFile($strict, $schema);
 
 	my ($exit, $output) = _run_harness($strict, 'strict_matches');
@@ -847,7 +1011,7 @@ subtest 'a hand-written member list is still required to die' => sub {
 	my ($schema, $yml) = _extract('Bounds::AcceptsMemberof');
 
 	my $strict = File::Spec->catfile($dir, 'strict_memberof.yml');
-	delete $schema->{input}{colour}{_source};
+	_make_hand_written($schema->{input}{colour});
 	DumpFile($strict, $schema);
 
 	my ($exit, $output) = _run_harness($strict, 'strict_memberof');
@@ -860,7 +1024,7 @@ subtest 'a hand-written integer bound is still required to die' => sub {
 	my ($schema, $yml) = _extract('Bounds::AcceptsInteger');
 
 	my $strict = File::Spec->catfile($dir, 'strict_integer.yml');
-	delete $schema->{input}{count}{_source};
+	_make_hand_written($schema->{input}{count});
 	DumpFile($strict, $schema);
 
 	my ($exit, $output) = _run_harness($strict, 'strict_integer');
@@ -874,7 +1038,7 @@ subtest 'a hand-written string bound is still required to die' => sub {
 
 	# Same schema without the mark, as a hand-written one would be.
 	my $strict = File::Spec->catfile($dir, 'strict_string.yml');
-	delete $schema->{input}{text}{_source};
+	_make_hand_written($schema->{input}{text});
 	DumpFile($strict, $schema);
 
 	my ($exit, $output) = _run_harness($strict, 'strict_string');
@@ -889,7 +1053,7 @@ subtest 'a hand-written arrayref bound is still required to die' => sub {
 
 	# Same schema without the mark, as a hand-written one would be.
 	my $strict = File::Spec->catfile($dir, 'strict.yml');
-	delete $schema->{input}{names}{_source};
+	_make_hand_written($schema->{input}{names});
 	DumpFile($strict, $schema);
 
 	my ($exit, $output) = _run_harness($strict, 'strict');
@@ -938,7 +1102,7 @@ subtest 'random values respect a hand-written maximum' => sub {
 
 		my %scalar = %{$schema};
 		$scalar{input} = { $field => { %{$schema->{input}{$field}}, position => 0 } };
-		delete $scalar{input}{$field}{_source};
+		_make_hand_written($scalar{input}{$field});
 		my $file = File::Spec->catfile($dir, "$label.yml");
 		DumpFile($file, \%scalar);
 
@@ -946,6 +1110,92 @@ subtest 'random values respect a hand-written maximum' => sub {
 
 		is($exit, 0, "$label: random values stay at or below the declared maximum") or diag($output);
 	}
+};
+
+# ==================================================================
+# Per-constraint provenance
+#
+# A field may get its minimum from POD and its maximum from the code (or
+# the other way round).  The documented end is a hint for valid data; the
+# end the code enforces is a check.  One _source value per field cannot
+# express that, so the schema records provenance per constraint.
+# ==================================================================
+
+subtest 'a documented minimum does not make a code maximum tolerant' => sub {
+	my ($schema, $yml) = _extract('Bounds::MixedPodMinCodeMax');
+
+	is($schema->{input}{text}{min}, 5, 'the documented minimum is kept');
+	is($schema->{input}{text}{max}, 10, 'the maximum enforced by the code is kept');
+	is_deeply(
+		$schema->{input}{text}{_constraint_source},
+		{ min => 'input_spec', max => 'code' },
+		'each bound carries its own provenance'
+	);
+
+	my ($exit, $output) = _run_harness($yml, 'mixed_min_pod_max_code');
+	is($exit, 0, 'the routine passes the harness') or diag($output);
+	like($output, qr/documented-only constraint on 'text'/, 'the documented minimum is tolerated');
+};
+
+subtest 'a documented maximum does not make a code minimum tolerant' => sub {
+	my ($schema, $yml) = _extract('Bounds::MixedPodMaxCodeMin');
+
+	is_deeply(
+		$schema->{input}{text}{_constraint_source},
+		{ min => 'code', max => 'input_spec' },
+		'the code minimum and the documented maximum stay separate'
+	);
+
+	my ($exit, $output) = _run_harness($yml, 'mixed_max_pod_min_code');
+	is($exit, 0, 'the routine passes the harness') or diag($output);
+	like($output, qr/documented-only constraint on 'text'/, 'the documented maximum is tolerated');
+};
+
+subtest 'a code maximum stays strict beside a documented minimum' => sub {
+	my ($schema) = _extract('Bounds::AcceptsString');
+	my $field = $schema->{input}{text};
+
+	# The routine accepts any length; only the minimum is documented.
+	$field->{max} = 10;
+	$field->{_constraint_source} = { min => 'input_spec', max => 'code' };
+
+	my $strict = File::Spec->catfile($dir, 'mixed_strict_max.yml');
+	DumpFile($strict, $schema);
+	my ($exit, $output) = _run_harness($strict, 'mixed_strict_max');
+
+	isnt($exit, 0, 'harness fails when the routine accepts more than the code maximum') or diag($output);
+	like($output, qr/not ok/, 'the failure is reported');
+
+	# The same maximum claimed by the documentation is only a hint.
+	$field->{_constraint_source}{max} = 'input_spec';
+	my $tolerant = File::Spec->catfile($dir, 'mixed_tolerant_max.yml');
+	DumpFile($tolerant, $schema);
+	my ($exit2, $output2) = _run_harness($tolerant, 'mixed_tolerant_max');
+
+	is($exit2, 0, 'harness passes when the same maximum is only documented') or diag($output2);
+};
+
+subtest 'a code minimum stays strict beside a documented maximum' => sub {
+	my ($schema) = _extract('Bounds::AcceptsString');
+	my $field = $schema->{input}{text};
+
+	# The routine accepts any length; only the maximum is documented.
+	$field->{max} = 10;
+	$field->{_constraint_source} = { min => 'code', max => 'input_spec' };
+
+	my $strict = File::Spec->catfile($dir, 'mixed_strict_min.yml');
+	DumpFile($strict, $schema);
+	my ($exit, $output) = _run_harness($strict, 'mixed_strict_min');
+
+	isnt($exit, 0, 'harness fails when the routine accepts less than the code minimum') or diag($output);
+	like($output, qr/not ok/, 'the failure is reported');
+
+	$field->{_constraint_source}{min} = 'input_spec';
+	my $tolerant = File::Spec->catfile($dir, 'mixed_tolerant_min.yml');
+	DumpFile($tolerant, $schema);
+	my ($exit2, $output2) = _run_harness($tolerant, 'mixed_tolerant_min');
+
+	is($exit2, 0, 'harness passes when the same minimum is only documented') or diag($output2);
 };
 
 done_testing();

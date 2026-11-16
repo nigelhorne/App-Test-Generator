@@ -9,6 +9,10 @@ use App::Test::Generator::Analyzer::Complexity;
 use App::Test::Generator::Analyzer::Return;
 use App::Test::Generator::Analyzer::ReturnMeta;
 use App::Test::Generator::Analyzer::SideEffect;
+use App::Test::Generator::Provenance qw(
+	SOURCE_VALIDATOR SOURCE_INPUT_SPEC SOURCE_POD
+	SOURCE_CODE SOURCE_SIGNATURE SOURCE_FIELD
+);
 
 use Carp qw(carp croak);
 use PPI;
@@ -17,7 +21,7 @@ use File::Basename;
 use File::Path qw(make_path);
 use Params::Get;
 use Safe;
-use Scalar::Util qw(looks_like_number);
+use Scalar::Util qw(looks_like_number refaddr);
 use YAML::XS;
 use IPC::Open3;
 use JSON::MaybeXS qw(encode_json decode_json);
@@ -1102,7 +1106,9 @@ All modern Perl feature detection is optional and automatic:
 
 =item * Modern features are additive - they enhance rather than replace existing extraction
 
-=item * Each parameter carries one C<_source> value -- C<validator>, C<input_spec>, C<pod>, C<code>, C<signature> or C<field> -- which the harness uses for its type-checking and documentation-tolerance decisions
+=item * Each parameter carries one C<_source> value -- C<validator>, C<input_spec>, C<pod>, C<code>, C<signature> or C<field> -- which the harness uses for its type-checking decisions
+
+=item * Each constraint that can come from more than one place also carries its own provenance in C<_constraint_source>, a hashref keyed by C<min>, C<max>, C<memberof>, C<matches>, C<nomatch> and C<notmemberof>.  A minimum documented in POD and a maximum enforced by the code on the same field therefore stay separate decisions: the documented one is a hint for valid data, the enforced one is a check
 
 =back
 
@@ -1526,7 +1532,96 @@ sub extract_all {
 		}
 	}
 
-	# Third pass: a routine whose whole body is `return $self->other(\@_)` has
+	# Third pass: contracts the type inference cannot see in the signature.
+	# A routine can document behaviour in its body that changes what the
+	# harness may assert: an abstract method always dies, a routine returning
+	# a list must be called in list context, one that returns nothing has no
+	# output to validate, and a parameter checked against a pattern rejects
+	# values outside it.  A routine that reads a file it is given cannot be
+	# fuzzed with a synthesized value at all.
+	foreach my $method (@{$methods}) {
+		my $schema = $schemas{$method->{name}};
+		next unless($schema && ref($schema->{output}) eq 'HASH');
+		my $body = $method->{body} // '';
+
+		if($body =~ /\bcroak\b[^;\n]*must be implemented by subclass/) {
+			$schema->{output}{_STATUS} = 'DIES';
+		} elsif(($body =~ /\breturn\s+@\{/) && (($method->{pod} // '') =~ /\b(?:a\s+)?list\s+of\b|\breturns?\s+a\s+list\b/i)) {
+			# Called in scalar context a list return yields its count, so the
+			# harness has to capture the list.  Only when the POD says the
+			# routine returns a list, not an arrayref.
+			$schema->{output}{type} = 'array';
+		} elsif(($body =~ /\breturn\s*;/) && ($body !~ /\breturn\s+[^\s;]/)) {
+			# The routine returns nothing: say so, rather than omitting the
+			# type.  'void' is the documented way to describe that (see
+			# _detect_void_context), and the harness validates no return
+			# value for it.
+			$schema->{output}{type} = 'void';
+		} elsif($body =~ /\breturn\s+\\?[A-Z]\w*(?:::\w+)+(?:->)?\w*\s*\(/) {
+			# Delegated to another package: its result type is not visible here.
+			delete $schema->{output}{type};
+		}
+
+		if(my $skip = _requires_input_file($body, $schema->{input})) {
+			$schema->{skip} = $skip;
+		}
+
+		# A method that reads required keys out of a constructor hashref cannot
+		# be given a working object: the harness has no schema to put there.
+		if(ref($schema->{new}) eq 'HASH' && %{$schema->{new}}) {
+			foreach my $param (keys %{$schema->{new}}) {
+				my $p = quotemeta($param);
+				# Read directly, or through a local copy of the hashref.
+				my $reads_keys = ($body =~ /\$self->\{\s*['"]?$p['"]?\s*\}->\{/)
+					|| ($body =~ /my\s+\$(\w+)\s*=\s*\$self->\{\s*['"]?$p['"]?\s*\}/ && $body =~ /\$$1->\{/);
+				next unless($reads_keys && ($body =~ /\bcroak\b/));
+				$schema->{new} = $self->{_package_name} if($self->{_package_name});
+				last;
+			}
+		}
+
+		_next_parameter: foreach my $param_name (keys %{$schema->{input} // {}}) {
+			my $spec = $schema->{input}{$param_name};
+			next unless(ref($spec) eq 'HASH');
+			my $p = quotemeta($param_name);
+
+			if($body =~ /ref\(\s*\$args\{\s*['"]?$p['"]?\s*\}\s*\)\s*(?:ne|eq)\s*['"]CODE['"]/
+				|| $body =~ /\$args\{\s*['"]?$p['"]?\s*\}\s*->\s*\(/) {
+				$spec->{type} = 'coderef';
+				next _next_parameter;
+			}
+
+			# The value is checked against a file-level constant set: the module
+			# member list is the documented domain, e.g. add_evidence's category.
+			if($body =~ /my\s+\$(\w+)\s*=\s*\$args\{\s*['"]?$p['"]?\s*\}/) {
+				my $var = $1;
+				if($body =~ /[\$%](\w+)\s*\{\s*\$$var\s*\}/) {
+					my $const = $1;
+					my $source = $self->{_document} ? $self->{_document}->serialize : '';
+					if($source =~ /%$const\s*(?:=|=>)\s*.*?qw\s*[\(\{\[]([^\)\}\]]+)[\)\}\]]/s) {
+						my @values = split(' ', $1);
+						$spec->{memberof} = \@values if(@values);
+					}
+				}
+			}
+
+			# A routine that checks the value against a pattern and croaks is a
+			# validator for that parameter: values outside the pattern are
+			# documented to die, so the pattern belongs in the schema.
+			my $pattern;
+			if($body =~ /\$args\{\s*['"]?$p['"]?\s*\}\s*=~\s*\/([^\/\n]+)\//) {
+				$pattern = $1;
+			} elsif($body =~ /\$$p\b\s*=~\s*\/([^\/\n]+)\//) {
+				$pattern = $1;
+			}
+			if(defined($pattern) && ($body =~ /\bcroak\b[^;\n]*(?:not a valid|invalid)/i)) {
+				$spec->{matches} = $pattern;
+				$spec->{_source} = SOURCE_VALIDATOR;
+			}
+		}
+	}
+
+	# A routine whose whole body is `return $self->other(\@_)` has
 	# exactly other()'s input contract. CGI::Info::get_cookie is such a
 	# forwarder, and without this it looked like it took no parameters at all,
 	# so the harness called it with none and died on the required cookie_name.
@@ -1869,9 +1964,10 @@ sub _extract_class_methods {
 sub _extract_pod_before {
 	my ($self, $sub) = @_;
 
+	my $name = eval { $sub->can('name') ? $sub->name : undef };
 	my $pod = '';
 	my $current = $sub->previous_sibling();
-	my $seen_code = 0;
+	my $skipped_declaration = 0;
 	my $steps = 0;
 
 	# Walk backwards collecting POD.
@@ -1879,7 +1975,14 @@ sub _extract_pod_before {
 	# prevents class-level POD from being mistaken for method-specific POD.
 	while($current && $steps++ < $POD_WALK_LIMIT) {
 		if ($current->isa('PPI::Token::Pod')) {
-			$pod = $current->content() . $pod;
+			my $content = $current->content();
+			# A file-scoped declaration may sit between a routine's POD and
+			# its sub (Mutation::Feedback declares a regex constant there).
+			# Accept such a POD block only when it documents this routine.
+			if(!$skipped_declaration
+			   || (defined($name) && $content =~ /^=head[1-6]\s+\Q$name\E\b/m)) {
+				$pod = $content . $pod;
+			}
 			last;	# Only take the immediately adjacent pod block
 		} elsif ($current->isa('PPI::Token::Comment')) {
 			# Include comments that might contain parameter info
@@ -1892,11 +1995,55 @@ sub _extract_pod_before {
 			# Skip whitespace and separators
 		} elsif ($current->isa('PPI::Statement::Include')) {
 			# allow 'use strict', 'use warnings' between POD and sub
+		} elsif ($current->isa('PPI::Statement::Variable')
+			&& $current->content() =~ /\A\s*(?:my|our)\b/
+			&& $current->content() !~ /\bsub\b/) {
+			# A simple file-scoped declaration: the POD is still this
+			# routine's documentation.
+			$skipped_declaration = 1;
 		} else {
 			# Hit non-POD, non-whitespace - stop
 			last;
 		}
 		$current = $current->previous_sibling();
+	}
+
+	# A POD token can span several routines (and the module-level sections
+	# before the first one).  Keep the section that documents this routine,
+	# stopping at the next heading that belongs to another method.  Headings
+	# such as SYNOPSIS or NOTES belong to the routine and must be kept.
+	if($pod && defined($name) && $pod =~ /^=head([1-6])\s+\Q$name\E\b/m) {
+		my ($level, $start) = ($1, $-[0]);
+		my $section = substr($pod, $start);
+
+		my $method_names = {};
+		if(my $doc = eval { $sub->document }) {
+			$method_names = $self->{_pod_method_names}{refaddr($doc)} ||= do {
+				my %names;
+				my $subs = $doc->find('PPI::Statement::Sub');
+				for my $method (@{ $subs || [] }) {
+					my $method_name = eval { $method->name };
+					$names{$method_name} = 1 if defined($method_name);
+				}
+				\%names;
+			};
+		}
+
+		my $cut;
+		while($section =~ /^=head([1-6])\s+(.+?)\s*$/mg) {
+			my ($heading_level, $title) = ($1, $2);
+			next if($-[0] == 0);	# the routine's own heading
+			if($heading_level < $level
+			   || ($heading_level == $level && $method_names->{$title})) {
+				$cut = $-[0];
+				last;
+			}
+		}
+		if(defined($cut)) {
+			$section = substr($section, 0, $cut);
+			$section =~ s/\s+\z//;
+		}
+		$pod = $section;
 	}
 
 	return $pod;
@@ -2053,7 +2200,7 @@ sub _analyze_method {
 		# the validator schema so authors can tune test constraints (optional,
 		# memberof, matches) without altering the runtime validation call.
 		for my $name (keys %$pod_params) {
-			next unless ($pod_params->{$name}{_source} // '') eq 'input_spec';
+			next unless ($pod_params->{$name}{_source} // '') eq SOURCE_INPUT_SPEC;
 			my $pod_p = $pod_params->{$name};
 			$schema->{input}{$name} //= {};
 			$schema->{input}{$name}{optional}  = $pod_p->{optional}  if defined $pod_p->{optional};
@@ -2062,13 +2209,20 @@ sub _analyze_method {
 			$schema->{input}{$name}{type}      = $pod_p->{type}      if defined $pod_p->{type};
 			$schema->{input}{$name}{min}       = $pod_p->{min}       if defined $pod_p->{min};
 			$schema->{input}{$name}{max}       = $pod_p->{max}       if defined $pod_p->{max};
+
+			# These constraints are documented, even though the field's
+			# _source stays the type-checking marker (SOURCE_VALIDATOR).
+			for my $key (qw(min max memberof matches nomatch notmemberof)) {
+				next unless defined $pod_p->{$key};
+				$schema->{input}{$name}{_constraint_source}{$key} = SOURCE_INPUT_SPEC;
+			}
 		}
 
 		# Not every validator extractor fills in per-parameter provenance, so
 		# stamp the one source value here too.  The harness treats a
 		# 'validator' source as proof that the routine checks types; POD and
 		# code-derived sources describe intent only.
-		$schema->{input}{$_}{_source} //= 'validator' for keys %{$schema->{input}};
+		$schema->{input}{$_}{_source} //= SOURCE_VALIDATOR for keys %{$schema->{input}};
 	} else {
 		# Merge field declarations into code_params before merging analyses
 		if (keys %$fields) {
@@ -2587,6 +2741,18 @@ sub _detect_accessor_methods {
 
 				$self->_log("  Detected getter accessor for property: $property");
 
+				# A memoised property's initializer is the only evidence of
+				# what the getter returns:
+				#   $self->{proposals} //= [ map { ... } @{ $self->survivors } ];
+				# Without it the expression looks like a scalar, and the
+				# harness validates the returned arrayref as a string.
+				$schema->{output} ||= {};
+				if($code =~ /\$self\s*->\s*\{\s*['"]?\Q$property\E['"]?\s*\}\s*\/\/=\s*\[/) {
+					$schema->{output}{type} = 'arrayref';
+				} elsif($code =~ /\$self\s*->\s*\{\s*['"]?\Q$property\E['"]?\s*\}\s*\/\/=\s*\{/) {
+					$schema->{output}{type} = 'hashref';
+				}
+
 				$schema->{_confidence}{output} = {
 					level => 'high',
 					factors => ['Detected getter method'],
@@ -2926,7 +3092,7 @@ sub _extract_pvs_schema {
 					return {
 						input => $schema,
 						style => 'hash',
-						source => 'validator'
+						source => SOURCE_VALIDATOR
 					}
 				}
 			}
@@ -3003,7 +3169,7 @@ sub _extract_pv_schema {
 					return {
 						input => $schema,
 						style => 'hash',
-						source => 'validator'
+						source => SOURCE_VALIDATOR
 					}
 				}
 			}
@@ -3162,7 +3328,7 @@ sub _extract_moosex_params_schema
 					return {
 						input => $schema,
 						style => 'hash',
-						source => 'validator'
+						source => SOURCE_VALIDATOR
 					}
 				}
 			}
@@ -3297,7 +3463,7 @@ sub _normalize_validator_schema {
 		$input{$name} = {
 			%$spec,
 			optional => exists $spec->{optional} ? $spec->{optional} : 0,
-			_source => 'validator',
+			_source => SOURCE_VALIDATOR,
 			_type_confidence => 'high',
 		};
 	}
@@ -3713,7 +3879,7 @@ sub _build_schema_from_meta {
 		input  => $input,
 		output => $output,
 		style  => 'hash',
-		source => 'validator',
+		source => SOURCE_VALIDATOR,
 		_notes => \@notes,
 		_confidence => {
 			input => $confidence,
@@ -3812,7 +3978,7 @@ sub _analyze_pod {
 				# Skip common non-parameters
 				next if $name =~ /^(self|class|pkg|proto|klass|return|returns?)$/i;
 
-				$params{$name} ||= { _source => 'pod' };
+				$params{$name} ||= { _source => SOURCE_POD };
 
 				# If we haven't already assigned a position from the signature, use order in Parameters section
 				unless (exists $params{$name}{position}) {
@@ -3855,7 +4021,13 @@ sub _analyze_pod {
 				# Look for regex patterns
 				if ($desc && $desc =~ m{matches?\s+(/[^/]+/|qr/.+?/)}i) {
 					$params{$name}{matches} = $1;
-					$params{$name}{_source} = 'pod';	# documentation, not a check
+					$params{$name}{_source} = SOURCE_POD;	# documentation, not a check
+				}
+
+				if(my $values = $self->_prose_memberof($desc)) {
+					$params{$name}{memberof} = $values;
+					$params{$name}{_source} = SOURCE_POD;	# documentation, not a check
+					$self->_log("  POD: $name memberof from prose: " . join(', ', @{$values}));
 				}
 
 				$self->_log("  POD: Found parameter '$name' in parameters section, type=$type" .
@@ -3878,7 +4050,7 @@ sub _analyze_pod {
 		# Skip common words that aren't parameters
 		next if $name =~ /^(self|class|pkg|proto|klass|return|returns?)$/i;
 
-		$params{$name} ||= { _source => 'pod' };
+		$params{$name} ||= { _source => SOURCE_POD };
 
 		# Normalize type names
 		$type = 'integer' if $type eq 'int';
@@ -3909,12 +4081,38 @@ sub _analyze_pod {
 			}
 		}
 
+		if(my $values = $self->_prose_memberof($desc)) {
+			$params{$name}{memberof} = $values;
+			$params{$name}{_source} = SOURCE_POD;	# documentation, not a check
+			$self->_log("  POD: $name memberof from prose: " . join(', ', @{$values}));
+		}
+
 		$self->_log("  POD: Found parameter '$name' in the inline documentation, type=$type" .
 					($constraint ? " ($constraint)" : ''));
 	}
 
-	# Pattern 3: Parse =over /=item list (supports bullets and C<>)
-	while ($pod =~ /=item\s+(?:\*\s*)?(?:C<)?\$(\w+)\b(?:>)?\s*(?:-.*)?\n?(.*?)(?==item|\=back|\=head)/sig) {
+	# Pattern 3: Parse =over /=item list of arguments, e.g. `=item * C<$name>`.
+	# The sigil is required here: `=item * C<field>` without one usually
+	# documents a returned key or an internal field, not an argument.
+	#
+	# Inside an Arguments section the sigil is optional: some modules write
+	# `=item * C<mutation_results>` for a real argument.  Add the sigil for
+	# those items only, so a Returns list elsewhere still cannot name an
+	# argument.
+	my $item_pod = $pod;
+	$item_pod =~ s{
+		(?:^=head[2-6]\s+arguments?\b)
+		(.*?)
+		(?=^=head[1-6]\b|\z)
+	}{
+		my $section = $&;
+		$section =~ s{^=item(\s+\*\s*)C<\s*([A-Za-z_]\w*)\s*>}{
+			'=item' . $1 . 'C<$' . $2 . '>'
+		}gme;
+		$section;
+	}msgeix;
+
+	while ($item_pod =~ /=item\s+(?:\*\s*)?(?:C<)?\$(\w+)\b(?:>)?\s*(?:-.*)?\n?(.*?)(?==item|\=back|\=head)/sig) {
 		my $name = $1;
 		my $desc = $2;
 
@@ -3926,7 +4124,7 @@ sub _analyze_pod {
 		# Skip common non-parameters
 		next if $name =~ /^(self|class|pkg|proto|klass|return|returns?)$/i;
 
-		$params{$name} ||= { _source => 'pod' };
+		$params{$name} ||= { _source => SOURCE_POD };
 
 		# Explicit typed form only:
 		#	$param - type (constraints)
@@ -3958,6 +4156,10 @@ sub _analyze_pod {
 				$params{$name}{type} = 'number';
 			} elsif ($desc =~ /\b(bool|boolean)\b/i) {
 				$params{$name}{type} = 'boolean';
+			} elsif ($desc =~ /\bhashref\b/i) {
+				# "either a path or an already decoded hashref": the harness
+				# can build a hashref, so prefer it over the default string.
+				$params{$name}{type} = 'hashref';
 			}
 		}
 
@@ -3972,7 +4174,13 @@ sub _analyze_pod {
 		# Look for regex patterns
 		if ($desc =~ m{matches?\s+(/[^/]+/|qr/.+?/)}i) {
 			$params{$name}{matches} = $1;
-			$params{$name}{_source} = 'pod';	# documentation, not a check
+			$params{$name}{_source} = SOURCE_POD;	# documentation, not a check
+		}
+
+		if(my $values = $self->_prose_memberof($desc)) {
+			$params{$name}{memberof} = $values;
+			$params{$name}{_source} = SOURCE_POD;	# documentation, not a check
+			$self->_log("  POD: $name memberof from prose: " . join(', ', @{$values}));
 		}
 
 		$self->_log("  POD: Found parameter '$name' from =item list");
@@ -4019,7 +4227,7 @@ sub _analyze_pod {
 				my ($name) = grep { ($params{$_}{position} // -1) == $idx }
 				             keys %params;
 				if (defined $name) {
-					$params{$name}{_source} = 'input_spec';
+					$params{$name}{_source} = SOURCE_INPUT_SPEC;
 					if (my $t = $self->_map_formal_input_type($spec)) {
 						$params{$name}{type} = $t;
 						$self->_log("  POD: $name type '$t' from =head Input (positional $idx)");
@@ -4035,8 +4243,8 @@ sub _analyze_pod {
 			while ($block =~ /\b(\w+)\s*=>\s*\{([^}]*)\}/g) {
 				my ($name, $spec) = ($1, $2);
 				next if $name =~ /^(self|class|pkg|proto|klass)$/i;
-				$params{$name} //= { _source => 'input_spec' };
-				$params{$name}{_source} = 'input_spec';
+				$params{$name} //= { _source => SOURCE_INPUT_SPEC };
+				$params{$name}{_source} = SOURCE_INPUT_SPEC;
 				if (my $t = $self->_map_formal_input_type($spec)) {
 					$params{$name}{type} = $t;
 					$self->_log("  POD: $name type '$t' from =head Input (named)");
@@ -4053,7 +4261,7 @@ sub _analyze_pod {
 					if(@vals) {
 						$params{$name}{memberof} = \@vals;
 						# The list is documentation: the code may accept more.
-						$params{$name}{_source} = 'input_spec';
+						$params{$name}{_source} = SOURCE_INPUT_SPEC;
 					}
 				}
 				if ($spec =~ /\bmin\s*=>\s*(\d+)/i) {
@@ -4067,7 +4275,7 @@ sub _analyze_pod {
 				# min => 1 while its code accepts [].  The harness still uses
 				# the bound to build valid data, but generates no outside case.
 				if(exists($params{$name}{min}) || exists($params{$name}{max})) {
-					$params{$name}{_source} = 'input_spec';
+					$params{$name}{_source} = SOURCE_INPUT_SPEC;
 				}
 				if ($spec =~ /\bisa\s*=>\s*['"]([^'"]+)['"]/i) {
 					$params{$name}{isa} = $1;
@@ -4080,6 +4288,24 @@ sub _analyze_pod {
 			# argument, which _positional_pod_input decides once the body is
 			# known.
 			delete $params{$_}{position} for keys %params;
+		}
+	}
+
+	# Documented value lists in =item prose, e.g.
+	#	=item * C<$colour> - one of red, green or blue
+	# Run after the formal =head Input spec, which can be the only place a
+	# parameter is named (strict_pod is such a parameter): the prose list
+	# then still reaches it.  Only parameters already found are updated:
+	# a Returns section also uses =item, and its entries are outputs.
+	while ($pod =~ /=item\s+(?:\*\s*)?(?:C<\$?(\w+)>|\$(\w+))\s*-?\s*((?:[^\n]*\n)*?)(?==item|\=back|\=head)/gi) {
+		my ($name, $text) = ($1 // $2, $3);
+		next unless $params{$name};
+		next if defined($params{$name}{memberof});
+
+		if(my $values = $self->_prose_memberof($text)) {
+			$params{$name}{memberof} = $values;
+			$params{$name}{_source} = SOURCE_POD;	# documentation, not a check
+			$self->_log("  POD: $name memberof from prose: " . join(', ', @{$values}));
 		}
 	}
 
@@ -5291,6 +5517,63 @@ sub _validate_output {
 }
 
 # --------------------------------------------------
+# _prose_memberof
+#
+# Purpose:    Recognise a documented list of allowed values written as
+#             prose, such as "one of red, green or blue", "must be one
+#             of C<low>, C<moderate> or C<high>", "valid values are 1,
+#             5 and 111" or "either C<host> or C<port>".
+#             The list is documentation, not a check the routine was
+#             seen to make, so callers mark the parameter
+#             _source => 'pod': the harness uses the values as valid
+#             data and generates no must-die case outside the set.
+# Entry:      $text - a parameter description or constraint, possibly
+#                     containing POD formatting codes.
+# Exit:       Arrayref of the documented values, or undef when the text
+#             holds no recognisable list.  Every value must be a single
+#             token, so prose like "one of the four recognised keys set
+#             to a true value also adds ..." is not mistaken for a list.
+# --------------------------------------------------
+sub _prose_memberof {
+	my ($self, $text) = @_;
+
+	return undef unless defined($text) && length($text);
+
+	my $plain = $text;
+	$plain =~ s/\b[CLIB]<([^<>]*)>/$1/g;	# drop POD formatting
+	$plain =~ s/\bE<([^<>]*)>/$1/g;
+	$plain =~ s/\A\s+//;
+	$plain =~ s/\s+\z//;
+
+	my $list;
+	if($plain =~ /\b(?:one\s+of|valid\s+values?\s*(?:are|is)?\s*:?|allowed\s+values?\s*(?:are|is)?\s*:?|accepted\s+values?\s*(?:are|is)?\s*:?|permitted\s+values?\s*(?:are|is)?\s*:?)\s*(.+)$/i) {
+		$list = $1;
+	} elsif($plain =~ /\b(?:must\s+be\s+)?either\s+(.+)$/i) {
+		$list = $1;
+	} elsif($plain =~ /\b(?:also\s+)?accepts\s+the\s+strings?\s+(.+)$/i) {
+		# "Also accepts the strings off, warn, and fatal."
+		$list = $1;
+	} else {
+		return undef;
+	}
+
+	$list =~ s/\.(?:\s|\z).*\z//s;	# stop at the end of the sentence
+	$list =~ s/\s*\.\s*\z//;
+	$list =~ s/\s+\z//;
+
+	my @values = grep { length } split(/\s*,\s*(?:(?:and|or)\s+)?|\s+(?:and|or)\s+/i, $list);
+	return undef if(@values < 2 || @values > 20);
+
+	for my $value (@values) {
+		$value =~ s/\A\s+|\s+\z//g;
+		$value =~ s/\A['"]|['"]\z//g;
+		return undef unless $value =~ /\A[A-Za-z0-9_:.+-]+\z/;
+	}
+
+	return \@values;
+}
+
+# --------------------------------------------------
 # _parse_constraints
 #
 # Purpose:    Parse a constraint string extracted
@@ -5314,6 +5597,11 @@ sub _validate_output {
 # --------------------------------------------------
 sub _parse_constraints {
 	my ($self, $param, $constraint) = @_;
+
+	# A documented list of values, e.g. "(one of red, green)"
+	if(my $values = $self->_prose_memberof($constraint)) {
+		$param->{memberof} = $values;
+	}
 
 	# Range: "3-50" or "1-100 chars"
 	if ($constraint =~ /(\d+)\s*-\s*(\d+)/) {
@@ -5366,8 +5654,8 @@ sub _parse_constraints {
 	# These constraints come from prose ("3-50 chars", "at least 5"): they
 	# describe valid input rather than a check the code was seen to make, so
 	# the harness uses them as data hints and expects no croak outside them.
-	if(defined($param->{min}) || defined($param->{max})) {
-		$param->{_source} = 'pod';
+	if(defined($param->{min}) || defined($param->{max}) || $param->{memberof}) {
+		$param->{_source} = SOURCE_POD;
 	}
 }
 
@@ -5419,7 +5707,7 @@ sub _analyze_code {
 		while($code =~ /get_params\s*\(\s*['"](\w+)['"]/g) {
 			my $name = $1;
 			next if $name =~ /^(self|class|pkg|proto|klass)$/i;
-			$params{$name} //= { _source => 'code', position => $pos++ };
+			$params{$name} //= { _source => SOURCE_CODE, position => $pos++ };
 			$self->_log("  CODE: Found Params::Get parameter '$name'");
 		}
 	}
@@ -5884,8 +6172,9 @@ sub _detect_coderef_type {
 
 	return unless defined $param && $param =~ /^\w+$/;
 
-	# ref() check for CODE
-	if ($code =~ /ref\s*\(\s*\$$param\s*\)\s*eq\s*['"]CODE['"]/i) {
+	# ref() check for CODE, for a plain variable or a named argument
+	if ($code =~ /ref\s*\(\s*\$$param\s*\)\s*eq\s*['"]CODE['"]/i
+	    || $code =~ /ref\s*\(\s*\$args\{\s*['"]?$param['"]?\s*\}\s*\)\s*eq\s*['"]CODE['"]/i) {
 		$p->{type} = 'coderef';
 		$p->{semantic} = 'callback';
 		$self->_log("  ADVANCED: $param is coderef (ref check)");
@@ -6206,7 +6495,7 @@ sub _extract_parameters_from_signature {
 		while($code =~ /my\s+\$(\w+)\s*=\s*\$_\[(\d+)\]/g) {
 			my $name = $1;
 			next if $name =~ /^(self|class|pkg|proto|klass)$/i;
-			$params->{$name} //= { _source => 'code', optional => 1, position => $pos++ };
+			$params->{$name} //= { _source => SOURCE_CODE, optional => 1, position => $pos++ };
 			$self->_log("  CODE: Found direct-index parameter '\$$name' at \$_[$2]");
 		}
 		return;
@@ -6223,7 +6512,7 @@ sub _extract_parameters_from_signature {
 			next if $name =~ /^(self|class|pkg|proto|klass)$/i;
 
 			$params->{$name} //= {
-				_source => 'code',
+				_source => SOURCE_CODE,
 				optional => 1,
 			};
 
@@ -6241,7 +6530,7 @@ sub _extract_parameters_from_signature {
 		shift @shifts if @shifts && $shifts[0] =~ /^(self|class|pkg|proto|klass)$/i;
 		my $pos = 0;
 		foreach my $param (@shifts) {
-			$params->{$param} ||= { _source => 'code', optional => 1, position => $pos++ };
+			$params->{$param} ||= { _source => SOURCE_CODE, optional => 1, position => $pos++ };
 		}
 		return;
 	}
@@ -6253,7 +6542,7 @@ sub _extract_parameters_from_signature {
 		my $pos = 0;
 		foreach my $param (@param_names) {
 			next if $param =~ /^(self|class|pkg|proto|klass)$/i;
-			$params->{$param} ||= { _source => 'code', optional => 1, position => $pos++ };
+			$params->{$param} ||= { _source => SOURCE_CODE, optional => 1, position => $pos++ };
 		}
 	}
 
@@ -6378,7 +6667,7 @@ sub _parse_signature_parameter {
 	my ($self, $part, $position) = @_;
 
 	my %info = (
-		_source => 'signature',
+		_source => SOURCE_SIGNATURE,
 		position => $position,
 		optional => 0,
 	);
@@ -6687,7 +6976,7 @@ sub _extract_field_declarations {
 
 		my %field_info = (
 			name => $name,
-			_source => 'field'
+			_source => SOURCE_FIELD
 		);
 
 		# Check for :param attribute
@@ -6771,7 +7060,7 @@ sub _merge_field_declarations {
 		my $p = $params->{$param_name};
 
 		# Merge field information into parameter
-		$p->{_source} = 'field' unless $p->{_source};
+		$p->{_source} = SOURCE_FIELD unless $p->{_source};
 		$p->{field_name} = $field_name if $field_name ne $param_name;
 
 		if ($field->{_default}) {
@@ -7022,6 +7311,50 @@ sub _record_length_constraint {
 	}
 }
 
+# Return ($op, $value) when a guard condition is exactly one length
+# comparison, or an empty list when the comparison is only one operand of a
+# compound condition.  A compound condition enforces no bound of its own:
+# `croak ... if length($t) < 5 || $other` still croaks for long text when
+# $other is true, and `... if length($t) < 5 && $other` accepts short text
+# when $other is false.  Only a condition that is nothing but the comparison
+# makes the negation of that comparison a real constraint.
+sub _whole_condition_length_guard {
+	my ($self, $param, $condition) = @_;
+
+	$condition =~ s/^\s+//;
+	$condition =~ s/\s+$//;
+
+	# Drop balanced outer parentheses, as in `if (length($t) < 5)`.
+	while($condition =~ /^\((.*)\)$/s) {
+		my $inner = $1;
+		my $depth = 0;
+		my $balanced = 1;
+		foreach my $char (split(//, $inner)) {
+			if($char eq '(') {
+				$depth++;
+			} elsif($char eq ')') {
+				$depth--;
+				if($depth < 0) {
+					$balanced = 0;
+					last;
+				}
+			}
+		}
+		last unless $balanced && ($depth == 0);
+		$condition = $inner;
+		$condition =~ s/^\s+//;
+		$condition =~ s/\s+$//;
+	}
+
+	return unless $condition =~ /^length\s*\(\s*\$\Q$param\E\s*\)\s*([<>]=?)\s*(\d+|\$\w+)$/;
+
+	my ($op, $rhs) = ($1, $2);
+	my $val = $self->_length_constraint_value($rhs);
+	return unless defined $val;
+
+	return ($op, $val);
+}
+
 # --------------------------------------------------
 # _module_constants
 #
@@ -7112,12 +7445,12 @@ sub _analyze_parameter_constraints {
 	$p->{type} ||= 'string' if $code =~ /length\s*\(\s*\$$param\s*\)/;
 
 	my $postfix_guards = $code;
-	while ($postfix_guards =~ /\b(?:croak|die|confess)\b[^;]*?\b(if|unless)\b\s*(?:\(\s*)?length\s*\(\s*\$$param\s*\)\s*([<>]=?)\s*(\d+|\$\w+)/g) {
-		my ($guard, $op, $rhs) = ($1, $2, $3);
-		my $val = $self->_length_constraint_value($rhs);
-		next unless defined $val;
+	while ($postfix_guards =~ /\b(?:croak|die|confess)\b[^;{}]*?\b(if|unless)\b\s*([^;{}]+)/g) {
+		my ($guard, $condition) = ($1, $2);
+		my ($op, $val) = $self->_whole_condition_length_guard($param, $condition);
+		next unless defined $op;
 		$self->_record_length_constraint($p, $op, $val, ($guard eq 'if'));
-		$self->_log("  CODE: $param length constraint from $guard guard: $op $rhs");
+		$self->_log("  CODE: $param length constraint from $guard guard: $op $val");
 	}
 
 	my $block_guards = $code;
@@ -7282,7 +7615,7 @@ sub _analyze_parameter_validation {
 sub _positional_pod_input {
 	my ($self, $pod, $code_params, $code) = @_;
 
-	my @documented = grep { ($pod->{$_}{_source} // '') eq 'input_spec' } keys %$pod;
+	my @documented = grep { ($pod->{$_}{_source} // '') eq SOURCE_INPUT_SPEC } keys %$pod;
 	return undef unless @documented == 1;
 	return undef unless $self->_argument_style($code) eq 'positional';
 
@@ -7422,6 +7755,9 @@ sub _merge_parameter_analyses {
 
 	my %merged;
 
+	my @constraint_keys = qw(min max memberof matches nomatch notmemberof);
+	my %is_constraint = map { $_ => 1 } @constraint_keys;
+
 	# Start with all parameters from all sources
 	my %all_params = map { $_ => 1 } (keys %$pod, keys %$code, keys %$sig);
 
@@ -7445,7 +7781,15 @@ sub _merge_parameter_analyses {
 		# POD has highest priority for type info and explicit declarations
 		if ($pod->{$param}) {
 			%$p = (%$p, %{$pod->{$param}});
-			$p->{_source} //= 'pod';
+			$p->{_source} //= SOURCE_POD;
+
+			# Record which source each constraint came from, so a documented
+			# minimum does not make a maximum enforced by the code tolerant.
+			my $source = $pod->{$param}{_source} // SOURCE_POD;
+			for my $key (@constraint_keys) {
+				next unless exists($pod->{$param}{$key}) && defined($pod->{$param}{$key});
+				$p->{_constraint_source}{$key} //= $source;
+			}
 		}
 
 		# Code analysis adds concrete evidence (but doesn't override POD explicit types)
@@ -7456,7 +7800,7 @@ sub _merge_parameter_analyses {
 				# Formal input-spec declared this param without a type — author
 				# intentionally left it unconstrained; don't let code heuristics
 				# silently fill in a type that would cause wrong-type die tests.
-				next if $key eq 'type' && $pod->{$param} && ($pod->{$param}{_source} // '') eq 'input_spec' && !defined $pod->{$param}{type};
+				next if $key eq 'type' && $pod->{$param} && ($pod->{$param}{_source} // '') eq SOURCE_INPUT_SPEC && !defined $pod->{$param}{type};
 
 				# Only override if POD didn't provide this info or it's a stronger signal
 				my $from_pod = exists $pod->{$param};
@@ -7464,6 +7808,7 @@ sub _merge_parameter_analyses {
 				   ($key eq 'type' && $from_pod && $p->{type} eq 'string' &&
 				   $code->{$param}{$key} ne 'string')) {
 					$p->{$key} = $code->{$param}{$key};
+					$p->{_constraint_source}{$key} = SOURCE_CODE if $is_constraint{$key};
 				}
 			}
 			$p->{_source} //= $code->{$param}{_source};
@@ -7474,7 +7819,9 @@ sub _merge_parameter_analyses {
 			foreach my $key (keys %{$sig->{$param}}) {
 				next if $key eq '_source';
 				next if $key eq 'position';
-				$p->{$key} //= $sig->{$param}{$key};
+				next if defined($p->{$key});
+				$p->{$key} = $sig->{$param}{$key};
+				$p->{_constraint_source}{$key} = SOURCE_SIGNATURE if $is_constraint{$key};
 			}
 			$p->{_source} //= $sig->{$param}{_source};
 		}
@@ -8502,6 +8849,10 @@ sub _write_schema {
 		$output->{config}{check_files} = 0;
 	}
 
+	# The routine has a precondition no generated value can meet, so there is
+	# nothing meaningful to fuzz; the harness and all-fuzz report it skipped.
+	$output->{skip} = $schema->{skip} if($schema->{skip});
+
 	# Process input parameters with advanced type handling
 	if($schema->{'input'}) {
 		if(scalar(keys %{$schema->{'input'}})) {
@@ -8768,6 +9119,17 @@ sub _serialize_parameter_for_yaml {
 	# Provenance drives the harness's tolerance and type-check decisions.
 	$cleaned{_source} = $param->{_source} if defined($param->{_source}) && length($param->{_source});
 
+	# Per-constraint provenance: a documented minimum and a code-enforced
+	# maximum on the same field are separate decisions.
+	if(ref($param->{_constraint_source}) eq 'HASH') {
+		my %provenance;
+		foreach my $key (qw(min max memberof matches nomatch notmemberof)) {
+			my $source = $param->{_constraint_source}{$key};
+			$provenance{$key} = $source if defined($source) && length($source);
+		}
+		$cleaned{_constraint_source} = \%provenance if keys %provenance;
+	}
+
 	# Handle advanced type mappings
 	if(my $semantic = $param->{semantic}) {
 		if ($semantic eq 'datetime_object') {
@@ -8806,6 +9168,13 @@ sub _serialize_parameter_for_yaml {
 			$cleaned{type} = 'string';
 			$cleaned{matches} ||= '/^[\\w\\/.\\-_]+$/';
 			$cleaned{_note} = 'File path';
+		} elsif ($semantic eq 'existing_file') {
+			# The routine only tests that the file exists.  Any existing
+			# file satisfies that, so keep the semantic for the harness to
+			# supply a temporary file instead of guessing at a path.
+			$cleaned{type} = 'string';
+			$cleaned{semantic} = 'existing_file';
+			$cleaned{_note} = 'Existing file';
 		} elsif ($semantic eq 'directory') {
 			# The value must name an existing directory.  No pattern can
 			# express that and any generated path would fail the -d test,
@@ -8823,7 +9192,7 @@ sub _serialize_parameter_for_yaml {
 			# If the formal input spec explicitly declared a different type, honour
 			# it — the enum values from code analysis are regex-internal alternates
 			# (e.g. numeric format variants) that are meaningless as string choices.
-			if (($param->{_source} // '') eq 'input_spec' && defined $param->{type} && $param->{type} ne 'string') {
+			if (($param->{_source} // '') eq SOURCE_INPUT_SPEC && defined $param->{type} && $param->{type} ne 'string') {
 				# Formal spec wins; suppress spurious regex-derived enum.
 				delete $cleaned{enum};
 			} else {
@@ -8841,7 +9210,7 @@ sub _serialize_parameter_for_yaml {
 	# is not already being output (avoids the "has both" validation error).
 	# Also suppress when the formal input spec declared a non-string type —
 	# the enum values are regex-internal alternates, not valid string members.
-	my $formal_non_string = (($param->{_source} // '') eq 'input_spec') && defined $param->{type} && $param->{type} ne 'string';
+	my $formal_non_string = (($param->{_source} // '') eq SOURCE_INPUT_SPEC) && defined $param->{type} && $param->{type} ne 'string';
 	if($param->{enum} && ref($param->{enum}) eq 'ARRAY' && !$cleaned{enum} && !$formal_non_string) {
 		$cleaned{memberof} = $param->{enum};
 	}
@@ -8862,22 +9231,30 @@ sub _serialize_parameter_for_yaml {
 	# Patterns harvested from source or POD arrive as slash-delimited
 	# literals ('/^abc$/').  Consumers compile what they are given with
 	# qr//, which would take the delimiters to be part of the pattern, so
-	# no generated string could ever match.  Hand them a compiled Regexp.
+	# store the pattern body.  It stays a plain string: a compiled Regexp
+	# is written to YAML as a !!perl/regexp object that a YAML consumer
+	# cannot read back, and the schema is a data file.
 	if(defined(my $pattern = $cleaned{matches})) {
-		if(!ref($pattern)) {
+		if((builtin::reftype($pattern) // '') eq 'REGEXP') {
+			# Some extraction paths hand over a compiled pattern, possibly a
+			# blessed subclass (e.g. a regexp from a Safe compartment).
+			my ($body) = re::regexp_pattern($pattern);
+			$cleaned{matches} = $body if defined($body);
+		} elsif(!ref($pattern)) {
 			(my $body = $pattern) =~ s{^/(.+)/$}{$1}s;
 			my $compiled = eval { qr/$body/ };
 			if($@) {
 				$self->_log("  invalid matches pattern '$pattern': $@");
 			} else {
-				$cleaned{matches} = $compiled;
+				$cleaned{matches} = $body;
 			}
 		}
 	}
 
-	# Remove internal fields.  The directory semantic is kept: the harness
-	# needs it to supply a path that exists.
-	delete $cleaned{semantic} unless(($cleaned{semantic} // '') eq 'directory');
+	# Remove internal fields.  The directory and existing-file semantics are
+	# kept: the harness needs them to supply a path that exists.
+	delete $cleaned{semantic}
+		unless(($cleaned{semantic} // '') =~ /^(?:directory|existing_file)$/);
 
 	return \%cleaned;
 }
@@ -8938,6 +9315,43 @@ sub _format_relationship {
 #
 # Exit:       Hashref of {param => value} or undef.
 # --------------------------------------------------
+
+# A parameter whose value the routine reads from disk is a precondition, not an
+# argument the harness can make up.  Two cases are distinguishable:
+#
+#   * the routine only tests that the file exists (`-e`/`-f`) and keeps the
+#     path, as a constructor validating its argument does.  Any existing file
+#     will do, so the parameter is marked semantic => 'existing_file' and the
+#     harness supplies a real temporary file.
+#   * the routine parses or slurps the file's contents.  No synthesized or
+#     empty fixture can satisfy that, so the routine is reported as skipped
+#     rather than failed on a call it could never make correctly.
+sub _requires_input_file
+{
+	my ($body, $input) = @_;
+
+	return undef unless(ref($input) eq 'HASH');
+	return undef unless(defined($body) && length($body));
+
+	foreach my $param (sort keys %{$input}) {
+		my $p = quotemeta($param);
+
+		# A file whose contents are read, not merely tested for existence.
+		return 'needs an existing input file whose contents it parses'
+			if($body =~ /\b(?:PPI::Document->new|_load_schema|_slurp|read_file|slurp_file)\s*\(\s*\$$p\b/
+			   || $body =~ /\bopen\s+[^;]*['"]<[^;]*\$$p\b/);
+
+		my $tests_existence = ($body =~ /-[ef]\s+\$args\{\s*['"]?$p['"]?\s*\}/)
+			|| ($body =~ /-[ef]\s+\$$p\b/)
+			|| ($body =~ /-[ef]\s+\$self->\{\s*['"]?$p['"]?\s*\}/);
+		next unless($tests_existence);
+
+		my $spec = $input->{$param};
+		$spec->{semantic} = 'existing_file' if(ref($spec) eq 'HASH');
+	}
+
+	return undef;
+}
 
 # True when the constructor refuses to build the package itself.  Two idioms
 # are recognised: an explicit abstract-class check (Class::Abstract and
@@ -10305,7 +10719,7 @@ sub _validate_pod_code_agreement {
 		# legitimately disagree.  Its bounds are still checked below, because a
 		# formal minimum and a code maximum that do not overlap leave the merged
 		# schema with no valid value.
-		unless(($pod->{_source} // '') eq 'input_spec') {
+		unless(($pod->{_source} // '') eq SOURCE_INPUT_SPEC) {
 			# Check if parameter exists in both
 			if (exists $pod_params->{$param} && !exists $code_params->{$param}) {
 				push @errors, "Parameter '\$$param' documented in POD but not found in code signature";

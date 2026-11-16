@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Test::Most;
 use Test::Mockingbird;
+use App::Test::Generator::Provenance qw(source_is_valid);
 use File::Temp qw(tempdir);
 use File::Spec;
 
@@ -672,6 +673,624 @@ subtest '_write_schema emits check_files: 0 for a documented file writer' => sub
 	};
 
 	like($yaml, qr/^  check_files: 0$/m, 'check_files is off for the generated schema');
+};
+
+# ==================================================================
+# Documented value lists in prose
+#
+# A parameter documented as "one of red, green or blue" has a
+# documented set of valid values.  That is a statement about valid
+# input, not a check the routine was seen to make, so the parameter
+# is marked _source => 'pod' and the harness tolerates values outside
+# the set.  Ordinary prose containing "one of" must not be mistaken
+# for a list.
+# ==================================================================
+
+subtest '_analyze_pod reads a documented value list from prose' => sub {
+	my $src = <<'END_PM';
+package ProseModule;
+
+=head2 paint
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$colour>
+
+string, one of red, green or blue
+
+=item * C<$level>
+
+integer, must be one of C<1>, C<5> or C<111>
+
+=item * C<$mode>
+
+string; valid values are C<fast>, C<safe> and C<tiny>
+
+=item * C<$switch>
+
+string, either C<on> or C<off>
+
+=item * C<$words>
+
+string, one of the four recognised keys set to a true value also adds
+
+=back
+
+=cut
+
+sub paint {
+	my ($self, %args) = @_;
+	return join(' ', map { $args{$_} // '' } qw(colour level mode switch words));
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src);
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	my $input = $schemas->{paint}{input};
+	is_deeply($input->{colour}{memberof}, [qw(red green blue)],
+		'"one of red, green or blue" sets the documented values');
+	is($input->{colour}{_source}, 'pod',
+		'a prose list is documentation, not a validator');
+	is_deeply($input->{level}{memberof}, [qw(1 5 111)],
+		'"must be one of" with C<> codes sets the values');
+	is_deeply($input->{mode}{memberof}, [qw(fast safe tiny)],
+		'"valid values are" sets the values');
+	is_deeply($input->{switch}{memberof}, [qw(on off)],
+		'"either X or Y" sets the values');
+	ok(!exists $input->{words}{memberof},
+		'ordinary prose containing "one of" is not a list');
+};
+
+# ==================================================================
+# Regression: a compound length guard enforces nothing.
+#
+# `croak ... if length($text) < 5 || $other` still croaks for long text
+# when $other is true, and `... if length($text) < 5 && $other` accepts
+# short text when $other is false.  In both cases the whole condition does
+# not require a length of 5, so the extractor must not turn the comparison
+# into a min (and thereby into a promise the routine does not keep).
+# ==================================================================
+
+subtest 'a compound length guard yields no inferred bound' => sub {
+	my $src = <<'END_PM';
+package TestModule;
+
+=head2 guard_or
+
+=head4 input
+
+	{
+		text => { type => 'string', optional => 0 },
+		other => { type => 'boolean', optional => 0 },
+	}
+
+=head4 output
+
+	{ type => 'string' }
+
+=cut
+
+sub guard_or {
+	my ($self, $text, $other) = @_;
+	croak('too short') if length($text) < 5 || $other;
+	return $text;
+}
+
+=head2 guard_and
+
+=head4 input
+
+	{
+		text => { type => 'string', optional => 0 },
+		other => { type => 'boolean', optional => 0 },
+	}
+
+=head4 output
+
+	{ type => 'string' }
+
+=cut
+
+sub guard_and {
+	my ($self, $text, $other) = @_;
+	croak('too short') if length($text) < 5 && $other;
+	return $text;
+}
+
+=head2 guard_simple
+
+=head4 input
+
+	{ text => { type => 'string', optional => 0 } }
+
+=head4 output
+
+	{ type => 'string' }
+
+=cut
+
+sub guard_simple {
+	my ($self, $text) = @_;
+	croak('too short') if length($text) < 5;
+	return $text;
+}
+
+=head2 guard_unless
+
+=head4 input
+
+	{ text => { type => 'string', optional => 0 } }
+
+=head4 output
+
+	{ type => 'string' }
+
+=cut
+
+sub guard_unless {
+	my ($self, $text) = @_;
+	croak('too short') unless length($text) >= 5;
+	return $text;
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src);
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	foreach my $function (qw(guard_or guard_and)) {
+		my $text = $schemas->{$function}{input}{text};
+		ok(!exists($text->{min}), "$function: the || / && comparison is not a minimum");
+		ok(!exists($text->{max}), "$function: the || / && comparison is not a maximum");
+		is($text->{type}, 'string', "$function: length() still marks the field as a string");
+	}
+
+	is($schemas->{guard_simple}{input}{text}{min}, 5,
+		'an inverted whole-condition `if` guard still yields its bound');
+	is($schemas->{guard_unless}{input}{text}{min}, 5,
+		'a whole-condition `unless` guard still yields its bound');
+};
+
+# ==================================================================
+# Provenance regression: every extracted parameter says where its type
+# came from, and the removed flags cannot come back.
+#
+# _bounds_unverified, _type_checked and _from_input_spec were replaced by
+# _source and _constraint_source.  A stale flag would be silently ignored
+# by the harness, so extraction must never emit one again.
+# ==================================================================
+
+my @REMOVED_PROVENANCE = qw(_bounds_unverified _type_checked _from_input_spec);
+
+sub _removed_provenance_paths
+{
+	my ($value, $path) = @_;
+
+	$path //= '';
+	return () unless ref($value);
+	if(ref($value) eq 'HASH') {
+		my @found;
+		foreach my $key (sort keys %{$value}) {
+			my $here = length($path) ? "$path.$key" : $key;
+			push @found, $here if grep { $_ eq $key } @REMOVED_PROVENANCE;
+			push @found, _removed_provenance_paths($value->{$key}, $here);
+		}
+		return @found;
+	}
+	if(ref($value) eq 'ARRAY') {
+		return map { _removed_provenance_paths($value->[$_], "$path\[$_]") } 0 .. $#{$value};
+	}
+	return ();
+}
+
+subtest 'extracted parameters carry _source and no removed provenance flags' => sub {
+	my $src = <<'END_PM';
+package ProvenanceModule;
+
+=head2 combine
+
+=head4 input
+
+	{ text => { type => 'string', optional => 0 }, count => { type => 'integer', optional => 1, min => 1 } }
+
+=head4 output
+
+	{ type => 'string' }
+
+=cut
+
+sub combine {
+	my ($self, %args) = @_;
+	croak('combine: text is required') unless defined $args{text};
+	return $args{text} x ($args{count} // 1);
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src);
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	my $input = $schemas->{combine}{input};
+	is_deeply([sort keys %{$input}], [qw(count text)], 'both documented parameters are extracted');
+
+	foreach my $name (sort keys %{$input}) {
+		my $spec = $input->{$name};
+		ok(exists($spec->{_source}), "$name carries a _source");
+		ok(source_is_valid($spec->{_source}), "$name has a recognised provenance value");
+	}
+
+	my @stale = _removed_provenance_paths($schemas);
+	is_deeply(\@stale, [], 'no removed provenance flag is emitted anywhere in the schema');
+};
+
+# ==================================================================
+# Input files
+#
+# A routine that only tests that a path exists (-e/-f) can be called
+# with any real file, so the schema marks the parameter
+# semantic => 'existing_file' and the harness supplies a temporary
+# file.  A routine that reads the file's contents cannot be satisfied
+# that way and stays skipped, with a reason that says why.
+# ==================================================================
+
+subtest 'a file-existence check gets an existing-file fixture, not a skip' => sub {
+	my $src = <<'END_PM';
+package ExistsModule;
+
+use Carp qw(croak);
+
+=head2 new
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$file>
+
+Path to the module.
+
+=back
+
+=cut
+
+sub new {
+	my ($class, %args) = @_;
+	croak('file required') unless defined $args{file};
+	croak("file '$args{file}' does not exist") unless -f $args{file};
+	return bless { file => $args{file} }, $class;
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src);
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	ok(!exists($schemas->{new}{skip}), 'the constructor is not skipped');
+	is($schemas->{new}{input}{file}{semantic}, 'existing_file',
+		'the path parameter is declared to need an existing file');
+};
+
+subtest 'a routine that parses file contents keeps a skip saying why' => sub {
+	my $src = <<'END_PM';
+package SlurpModule;
+
+use Carp qw(croak);
+
+=head2 load
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$file>
+
+Path to the file to read.
+
+=back
+
+=cut
+
+sub load {
+	my ($class, %args) = @_;
+	my $file = $args{file};
+	croak('file required') unless defined $file;
+	open my $fh, '<', $file or croak("cannot read $file: $!");
+	local $/;
+	my $text = <$fh>;
+	close $fh;
+	return $text;
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src);
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	like($schemas->{load}{skip}, qr/contents it parses/,
+		'the skip says the routine parses the file contents');
+	ok(!exists($schemas->{load}{input}{file}{semantic}),
+		'a parsed file is not reduced to an existence-check fixture');
+};
+
+# ==================================================================
+# Regression: an =item description that continues on later lines.
+#
+# /s makes `.` match newlines, so a greedy `-.*` in the =item pattern
+# consumed everything up to the last =back/=head in the POD.  That hid
+# every later parameter (strict_pod among them) and the documented
+# value list in their descriptions.
+# ==================================================================
+
+subtest 'a value list in a multi-line =item description is read' => sub {
+	my $src = <<'END_PM';
+package ProseModule;
+
+=head2 configure
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$mode>
+
+Controls validation. C<0> disables it. Also accepts
+the strings C<off>, C<warn>, and C<fatal>. Optional, default 0.
+
+=item * C<$other>
+
+string, required
+
+=back
+
+=cut
+
+sub configure {
+	my ($self, %args) = @_;
+	return $args{mode} // 'off';
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src);
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	my $input = $schemas->{configure}{input};
+	is_deeply($input->{mode}{memberof}, [qw(off warn fatal)],
+		'the continuation-line value list is read');
+	ok(exists($input->{other}),
+		'an =item after the multi-line description is still extracted');
+};
+
+# ==================================================================
+# Detections that the type inference cannot see in a signature.
+#
+# A callback is often only recognised when it is invoked or has ref()
+# checked through $args{...}; a value checked against a module-level
+# constant has that constant's values as its domain; an abstract method
+# always dies; and a routine that returns a list must be called in list
+# context, but only when the POD says it returns a list rather than an
+# arrayref.
+# ==================================================================
+
+subtest 'coderef detection through $args{...}' => sub {
+	my $src = <<'END_PM';
+package CallbackModule;
+
+=head2 map_values
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$callback>
+
+Called for each value.
+
+=item * C<$values>
+
+The values.
+
+=back
+
+=cut
+
+sub map_values {
+	my ($self, %args) = @_;
+	return [ map { $args{callback}->($_) } @{ $args{values} } ];
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src);
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	is($schemas->{map_values}{input}{callback}{type}, 'coderef',
+		'a callback invoked through $args{...} is a coderef');
+};
+
+subtest 'memberof from a module-level constant' => sub {
+	my $src = <<'END_PM';
+package ConstantModule;
+
+use Carp qw(croak);
+
+my %CATEGORIES = map { $_ => 1 } qw(alpha beta gamma);
+
+=head2 add
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$category>
+
+=back
+
+=cut
+
+sub add {
+	my ($self, %args) = @_;
+	my $category = $args{category};
+	croak "bad category" unless $CATEGORIES{$category};
+	return $category;
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src);
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	is_deeply($schemas->{add}{input}{category}{memberof},
+		[qw(alpha beta gamma)],
+		'the constant the value is checked against supplies the member list');
+};
+
+subtest 'an abstract method is marked DIES' => sub {
+	my $src = <<'END_PM';
+package AbstractModule;
+
+use Carp qw(croak);
+
+=head2 process
+
+=cut
+
+sub process {
+	my ($self, %args) = @_;
+	croak(__PACKAGE__, '::process must be implemented by subclass');
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src);
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	is($schemas->{process}{output}{_STATUS}, 'DIES',
+		'a method that must be implemented by a subclass always dies');
+};
+
+subtest 'the list-return POD rule needs the POD to say list' => sub {
+	my $src = <<'END_PM';
+package ListModule;
+
+=head2 names
+
+Returns a list of names.
+
+=cut
+
+sub names {
+	my ($self) = @_;
+	return @{ $self->{names} };
+}
+
+=head2 name_ref
+
+Returns an arrayref of names.
+
+=cut
+
+sub name_ref {
+	my ($self) = @_;
+	return @{ $self->{names} };
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src);
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	is($schemas->{names}{output}{type}, 'array',
+		'"returns a list" makes the output an array (list context)');
+	is($schemas->{name_ref}{output}{type}, 'arrayref',
+		'an arrayref return is not turned into a list return');
+};
+
+# ==================================================================
+# Regression: a matches pattern must stay a data-file string.
+#
+# The extractor used to compile the pattern and hand the Regexp to the
+# YAML writer, which produced a !!perl/regexp object that a YAML
+# consumer cannot read back.  Emitter::Perl's package-name check is the
+# case that exposed it.
+# ==================================================================
+
+subtest 'a matches pattern is written to YAML as a plain string' => sub {
+	my $src = <<'END_PM';
+package PackageCheck;
+
+use Carp qw(croak);
+
+=head2 new
+
+=head3 Arguments
+
+=over 4
+
+=item * C<$package>
+
+The Perl package name of the module under test.
+
+=back
+
+=cut
+
+sub new {
+	my ($class, %args) = @_;
+	croak "package '$args{package}' is not a valid Perl package name"
+		unless $args{package} =~ /^[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*\z/;
+	return bless { package => $args{package} }, $class;
+}
+
+1;
+END_PM
+
+	my ($pm, $tmpdir) = _make_pm($src, 'PackageCheck.pm');
+	my $out = File::Spec->catdir($tmpdir, 'schemas');
+	mkdir $out or die $!;
+	my $e = App::Test::Generator::SchemaExtractor->new(
+		input_file => $pm,
+		output_dir => $out,
+	);
+	my $schemas = $e->extract_all(no_write => 0);
+
+	my $matches = $schemas->{new}{input}{package}{matches};
+	is($matches, '^[A-Za-z_]\w*(?:::[A-Za-z_]\w*)*\z',
+		'the in-memory pattern is the plain pattern body');
+	ok(!ref($matches), 'the in-memory pattern is not a Regexp object');
+
+	my $yaml = do {
+		open my $fh, '<', File::Spec->catfile($out, 'new.yml') or die $!;
+		local $/;
+		<$fh>;
+	};
+	unlike($yaml, qr/!!perl\/regexp/, 'no !!perl/regexp tag is written');
+	like($yaml, qr/^    matches: \^\[A-Za-z_\]/m,
+		'the pattern body is written as a plain YAML string');
 };
 
 done_testing();

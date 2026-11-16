@@ -12,12 +12,12 @@ lookup_dxcc:
   input:
     callsign:
       _source: validator
-      matches: (?^u:^([A-Z0-9]{1,3})([0-9])([A-Z]{1,4})$)
+      matches: ^([A-Z0-9]{1,3})([0-9])([A-Z]{1,4})$
       min: 3
       type: string
   module: Ham::DXCC::Lookup
   output:
-    type: string
+    type: hashref
 run:
   config:
     close_stdin: 1
