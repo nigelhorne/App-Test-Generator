@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Test::Most;
+use IPC::Open3 ();
 use Test::Mockingbird;
 use Test::Returns;
 use Test::Memory::Cycle;
@@ -3806,8 +3807,8 @@ subtest 'SchemaExtractor::_compile_signature_isolated: empty stdout and empty st
 	# Test::Builder subtest boundary, killing the test process with exit 255.
 	#
 	# Strategy: mock open3 in the consuming namespace so the "child" returns
-	# empty filehandles without spawning a real process.  waitpid($$, 0) on
-	# our own PID returns -1 immediately (not our child), which is harmless.
+	# empty filehandles; the PID is a real child that has already exited (see
+	# _exited_child_pid).
 
 	my $e = bless { allow_signature_exec => 1, verbose => 0 }, 'App::Test::Generator::SchemaExtractor';
 
@@ -3820,7 +3821,7 @@ subtest 'SchemaExtractor::_compile_signature_isolated: empty stdout and empty st
 		$_[0] = do { open my $fh, '>', \my $buf; $fh };	# writable stdin for child
 		$_[1] = $fake_rdr;					# stdout: empty
 		$_[2] = $fake_err;					# stderr: empty
-		return $$;						# our own PID → waitpid returns -1 quickly
+		return _exited_child_pid();
 	};
 
 	my $result;
@@ -3848,7 +3849,7 @@ subtest 'SchemaExtractor::_compile_signature_isolated: non-JSON stdout -> return
 		$_[0] = do { open my $fh, '>', \my $buf; $fh };
 		$_[1] = $fake_rdr;
 		$_[2] = $fake_err;
-		return $$;
+		return _exited_child_pid();
 	};
 
 	my $result;
@@ -4250,5 +4251,14 @@ subtest 'CoverageGuidedFuzzer::minimize_corpus - return shape and idempotent con
 
 	done_testing();
 };
+
+# The code under test waits for the PID its open3 returns.  A mock must hand
+# back a real child: on Windows waitpid on a non-child (such as $$) opens
+# that process and waits for it to exit, which never happens for ourselves.
+sub _exited_child_pid {
+	my $pid = IPC::Open3::open3(my $in, my $out, undef, $^X, q{-e}, q{1});
+	close $in;
+	return $pid;
+}
 
 done_testing();
