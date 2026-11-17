@@ -21,7 +21,7 @@ use File::Basename;
 use File::Path qw(make_path);
 use Params::Get;
 use Safe;
-use Scalar::Util qw(looks_like_number refaddr);
+use Scalar::Util qw(looks_like_number refaddr reftype);
 use YAML::XS;
 use IPC::Open3;
 use JSON::MaybeXS qw(encode_json decode_json);
@@ -9349,7 +9349,7 @@ sub _serialize_parameter_for_yaml {
 	# is written to YAML as a !!perl/regexp object that a YAML consumer
 	# cannot read back, and the schema is a data file.
 	if(defined(my $pattern = $cleaned{matches})) {
-		if((builtin::reftype($pattern) // '') eq 'REGEXP') {
+		if((reftype($pattern) // '') eq 'REGEXP') {
 			# Some extraction paths hand over a compiled pattern, possibly a
 			# blessed subclass (e.g. a regexp from a Safe compartment).
 			my ($body) = re::regexp_pattern($pattern);
