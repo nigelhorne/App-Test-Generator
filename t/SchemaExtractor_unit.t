@@ -1658,5 +1658,78 @@ END_PM
 		'the file is skipped explicitly rather than aborting extraction');
 };
 
+# ==================================================================
+# Regression: a required => 1 inside a nested properties map belongs to
+# the property, not to the parameter, and an explicit optional => 1 on the
+# parameter is never overridden by it.
+# ==================================================================
+
+subtest 'a nested required flag does not make its parent required' => sub {
+	my $src = <<'END_PM';
+package NestedSpec;
+
+=head2 run
+
+=head3 API SPECIFICATION
+
+=head4 input
+
+  {
+    opts => { type => 'hashref', optional => 1, properties => { x => { type => 'string', required => 1 } } },
+    cfg => { type => 'hashref', properties => { y => { required => 1 } } },
+  }
+
+=cut
+
+sub run {
+	my ($class, %args) = @_;
+	return $args{opts};
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'NestedSpec.pm');
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+	my $input = $schemas->{run}{input};
+
+	is($input->{opts}{optional}, 1, 'an explicit optional => 1 is kept');
+	ok(!exists($input->{x}) && !exists($input->{y}),
+		'nested property names are not promoted to parameters');
+};
+
+subtest 'only top-level entries of a bare-list spec are read' => sub {
+	my @entries = App::Test::Generator::SchemaExtractor::_top_level_hash_entries(
+		"a => { required => 1, properties => { b => { required => 1 } } }\nc => { optional => 1 }"
+	);
+	is_deeply([ map { $_->[0] } @entries ], [ 'a', 'c' ], 'nested names are skipped');
+	is(App::Test::Generator::SchemaExtractor::_spec_optionality($entries[0][1]), 0,
+		'the top-level required flag is read');
+	is(App::Test::Generator::SchemaExtractor::_spec_optionality(
+		"type => 'string', optional => 1, required => 1"), 1,
+		'an explicit optional wins over required');
+	is(App::Test::Generator::SchemaExtractor::_spec_optionality(
+		"type => 'hashref', properties => { x => { required => 1 "), undef,
+		'a truncated nested required flag is ignored');
+};
+
+subtest 'a field whose name only starts with the parameter is not matched' => sub {
+	my $body = <<'END_BODY';
+sub new {
+	my ($class, %args) = @_;
+	my $self = bless { %args }, $class;
+	$self->{databases_count}[0]->foo;
+	return $self;
+}
+END_BODY
+	my $schema = { input => { databases => { type => 'arrayref', optional => 0 } } };
+	ok(!App::Test::Generator::SchemaExtractor::_constructor_requires_live_objects($body, $schema),
+		'$self->{databases_count} is not $self->{databases}');
+	$body =~ s/databases_count/databases/;
+	like(App::Test::Generator::SchemaExtractor::_constructor_requires_live_objects($body, $schema),
+		qr/live objects in 'databases'/, 'the exact field is still matched');
+};
+
 done_testing();
 

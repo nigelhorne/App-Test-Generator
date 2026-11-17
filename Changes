@@ -1,6 +1,15 @@
 Revision history for App-Test-Generator
 
-0.50
+0.50	Tue Nov 17 01:13:22 PM EST 2026
+	[Enhancements]
+	- extract-schemas no longer dies with "More than one package declaration
+	  found" on a file that declares a helper package (such as a small error
+	  class) after the main one.  The first package is analysed, routines
+	  owned by later packages are ignored, and every schema from the file
+	  carries a skip reason so generated harnesses do not run against it;
+	  extract-schemas prints a note on stderr when this happens.  Perl 5.38
+	  class blocks are not detected in such a file
+
 	[Bug fixes]
 	- A constructor that needs a non-empty arrayref of live objects is no
 	  longer given an empty-array fixture.  Database::Join->new is the case:
@@ -12,7 +21,9 @@ Revision history for App-Test-Generator
 	  optional: 0, including bare-list specs with no outer braces.  This keeps
 	  POD authoritative over a validator that declares the same parameter
 	  optional, and generated harnesses now pass required constructor and
-	  method arguments instead of omitting them
+	  method arguments instead of omitting them.  An explicit optional flag
+	  wins over required, and a required flag inside a nested properties
+	  map applies to that property, not to its parent parameter
 
 0.49	Mon Nov 16 10:59:07 AM EST 2026
 	[Enhancements]

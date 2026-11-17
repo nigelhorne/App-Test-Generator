@@ -84,11 +84,11 @@ App::Test::Generator::SchemaExtractor - Extract test schemas from Perl modules
 
 =head1 VERSION
 
-Version 0.49
+Version 0.50
 
 =cut
 
-our $VERSION = '0.49';
+our $VERSION = '0.50';
 
 =head1 SYNOPSIS
 
@@ -123,6 +123,10 @@ Parses embedded documentation to extract:
   - Method signatures with positional parameters
   - Return value specifications from "Returns:" sections
   - Constraints (ranges, patterns, required/optional status)
+    (in a formal C<=head4 Input> spec, C<required =E<gt> 1> means
+    C<optional: 0> and an explicit C<optional> flag wins; a bare list of
+    C<name =E<gt> { ... }> entries with no outer braces contributes only
+    its top-level C<required> flags)
   - Semantic type detection (email, URL, filename)
 
 =item * B<Code Pattern Detection>
@@ -242,6 +246,13 @@ Recognizes singleton patterns through multiple signals: method names like C<inst
 =item * B<Constructor Parameter Analysis>
 
 Examines C<new> methods to determine required and optional parameters, validation requirements, and default values. This enables test generators to provide appropriate constructor arguments when object instantiation is needed.
+
+A constructor that rejects an empty arrayref, or calls methods on (or
+checks C<blessed> on) the elements of a required arrayref parameter, needs
+live objects that a YAML fixture cannot hold.  Its C<new> schema gets a
+C<skip> reason such as C<needs a non-empty arrayref of live objects in
+'databases'>, and its instance methods are emitted with C<new: ~> so
+harnesses skip them.
 
 =item * B<Inheritance Relationship Handling>
 
@@ -364,7 +375,9 @@ documentation following consistent patterns.
 Only the first package in a file is analysed.  A file that declares
 additional packages, such as a small error class, is still extracted, but
 its schemas carry a C<skip> reason so generated harnesses are not run
-against it.
+against it.  Perl 5.38 C<class> blocks are not detected in such a file:
+the C<class>/C<method> scan reads the whole source, so it runs only when
+the file declares at most one C<package>.
 
 =back
 
@@ -1770,7 +1783,7 @@ sub _extract_package_name {
 	$self->{_package_name} //= $pkgs->[0]->namespace();
 	if(@$pkgs > 1) {
 		$self->{_multiple_packages} = 1;
-		$self->_log("  Multiple packages; analyzing $pkgs->[0]->namespace() only");
+		$self->_log("  Multiple packages; analyzing " . $pkgs->[0]->namespace() . " only");
 	}
 	return $pkgs->[0]->namespace();
 }
@@ -4317,10 +4330,8 @@ sub _analyze_pod {
 						$params{$name}{type} = $t;
 						$self->_log("  POD: $name type '$t' from =head Input (positional $idx)");
 					}
-					if ($spec =~ /\boptional\s*=>\s*(0|1)/i) {
-						$params{$name}{optional} = $1 + 0;
-					} elsif ($spec =~ /\brequired\s*=>\s*(0|1)/i) {
-						$params{$name}{optional} = 1 - ($1 + 0);
+					if(defined(my $opt = _spec_optionality($spec))) {
+						$params{$name}{optional} = $opt;
 					}
 				}
 				$idx++;
@@ -4336,10 +4347,8 @@ sub _analyze_pod {
 					$params{$name}{type} = $t;
 					$self->_log("  POD: $name type '$t' from =head Input (named)");
 				}
-				if ($spec =~ /\boptional\s*=>\s*(0|1)/i) {
-					$params{$name}{optional} = $1 + 0;
-				} elsif ($spec =~ /\brequired\s*=>\s*(0|1)/i) {
-					$params{$name}{optional} = 1 - ($1 + 0);
+				if(defined(my $opt = _spec_optionality($spec))) {
+					$params{$name}{optional} = $opt;
 				}
 				if ($spec =~ /\bmemberof\s*=>\s*\[([^\]]*)\]/i) {
 					my $list_str = $1;
@@ -4383,13 +4392,19 @@ sub _analyze_pod {
 		# outer braces, as Database::Join's new() has.  Parsing the whole bare
 		# list would read unrelated examples in the block, so only the
 		# unambiguous required flag is taken from it; the parameter itself is
-		# described by the validator, signature or prose.
-		while ($block =~ /\b(\w+)\s*=>\s*\{([^}]*)\}/g) {
-			my ($bare_name, $bare_spec) = ($1, $2);
-			next if $bare_name =~ /^(self|class|pkg|proto|klass)$/i;
-			next unless $bare_spec =~ /\brequired\s*=>\s*(0|1)/i;
-			$params{$bare_name} //= { _source => SOURCE_INPUT_SPEC };
-			$params{$bare_name}{optional} = 1 - ($1 + 0);
+		# described by the validator, signature or prose.  A structured spec
+		# was read above, and only top-level entries count: a nested
+		# properties entry's required flag belongs to that property.
+		unless($block =~ /\A[\[\{]/) {
+			for my $entry (_top_level_hash_entries($block)) {
+				my ($bare_name, $bare_spec) = @{$entry};
+				next if $bare_name =~ /^(self|class|pkg|proto|klass)$/i;
+				my $own = _own_spec_text($bare_spec);
+				next unless $own =~ /\brequired\s*=>\s*(0|1)/i;
+				next if $own =~ /\boptional\s*=>\s*(?:0|1)/i;
+				$params{$bare_name} //= { _source => SOURCE_INPUT_SPEC };
+				$params{$bare_name}{optional} = 1 - ($1 + 0);
+			}
 		}
 	}
 
@@ -9463,6 +9478,63 @@ sub _requires_input_file
 	return undef;
 }
 
+# The part of a formal-spec entry that describes the entry itself, without
+# any nested { ... } such as a properties map.  The named and positional
+# parsers capture up to the first closing brace, so an unbalanced trailing
+# nested opening is dropped as well.
+sub _own_spec_text
+{
+	my $spec = $_[0] // '';
+
+	1 while($spec =~ s/\{[^{}]*\}//g);
+	$spec =~ s/\{.*\z//s;
+
+	return $spec;
+}
+
+# The optional flag a formal-spec entry gives its own parameter: 0 or 1, or
+# undef when it says nothing.  An explicit optional wins over required.
+sub _spec_optionality
+{
+	my $own = _own_spec_text($_[0]);
+
+	return $1 + 0 if($own =~ /\boptional\s*=>\s*(0|1)/i);
+	return 1 - $1 if($own =~ /\brequired\s*=>\s*(0|1)/i);
+	return undef;
+}
+
+# The name => { ... } entries at brace depth 0 of a bare-list spec, as
+# [ name, body ] pairs with the body's nested braces intact.
+sub _top_level_hash_entries
+{
+	my $text = $_[0];
+
+	my (@entries, $pending, $name, $start);
+	my $depth = 0;
+	while($text =~ /\b(\w+)\s*=>\s*(?=\{)|([{}])/g) {
+		if(defined($1)) {
+			$pending = $1 if($depth == 0);
+			next;
+		}
+		if($2 eq '{') {
+			if(($depth == 0) && defined($pending)) {
+				($name, $start) = ($pending, pos($text));
+			}
+			undef $pending;
+			$depth++;
+			next;
+		}
+		next unless($depth > 0);
+		$depth--;
+		if(($depth == 0) && defined($name)) {
+			push @entries, [ $name, substr($text, $start, pos($text) - 1 - $start) ];
+			undef $name;
+		}
+	}
+
+	return @entries;
+}
+
 # True when a required arrayref constructor parameter is not a list of
 # values but a list of live objects: the constructor rejects an empty list,
 # calls methods on the elements, or checks that they are blessed.  A YAML
@@ -9491,15 +9563,15 @@ sub _constructor_requires_live_objects
 		next unless(($type eq 'arrayref') || ($type eq 'array'));
 
 		my $p = quotemeta($param);
-		my $field = qr/\$\w+(?:->\{|\{)\s*['"]?$p['"]?\s*\}?/;
+		my $field = qr/\$\w+(?:->)?\{\s*['"]?$p['"]?\s*\}/;
 
 		# `croak ... unless @{ $p->{databases} }`.
 		my $empty_guard = ($content =~ /\bcroak\b[^;]*?\bunless\b[^;]*?\@\{\s*$field\s*\}/s);
 
 		# An element is blessed or has a method called on it.
 		my $elements_are_objects =
-			   ($content =~ /$field\s*\[\s*[^\]]+\s*\]\s*->\s*\w+/)
-			|| ($content =~ /\bblessed\s*\(\s*$field\s*\[\s*[^\]]+\s*\]\s*\)/);
+			   ($content =~ /$field\s*(?:->\s*)?\[\s*[^\]]+\s*\]\s*->\s*\w+/)
+			|| ($content =~ /\bblessed\s*\(\s*$field\s*(?:->\s*)?\[\s*[^\]]+\s*\]\s*\)/);
 
 		next unless($empty_guard || $elements_are_objects);
 
