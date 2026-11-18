@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Test::Most;
+use Config;
 use IPC::Open3 ();
 use Test::Mockingbird;
 use Test::Returns;
@@ -3165,7 +3166,7 @@ subtest 'Devel::App::Test::Generator::LCSAJ::Runtime - BEGIN-time LCSAJ_TARGETS 
 	# so it is exercised by loading a fresh copy of the module in a child
 	# process with the env var pre-set, then reading back %TARGET -- a
 	# single bounded perl -e invocation, not a recursive test/prove run
-	my $targets = '/build/blib/lib/Foo.pm:/home/user/proj/lib/Bar.pm:' . "\n";
+	my $targets = join($Config{path_sep}, '/build/blib/lib/Foo.pm', '/home/user/proj/lib/Bar.pm', "\n");
 	local $ENV{LCSAJ_TARGETS} = $targets;
 
 	# List-form system() under capture_merged(), not qx{}/backticks --
@@ -3185,6 +3186,24 @@ subtest 'Devel::App::Test::Generator::LCSAJ::Runtime - BEGIN-time LCSAJ_TARGETS 
 		'lib/Bar.pm,lib/Foo.pm',
 		'LCSAJ_TARGETS entries are normalised (blib/lib and lib stripped) and stray trailing newlines are removed'
 	);
+};
+
+subtest 'Devel::App::Test::Generator::LCSAJ::Runtime - Windows separators' => sub {
+	my $norm = \&Devel::App::Test::Generator::LCSAJ::Runtime::_normalize;
+	is($norm->('D:\\a\\proj\\blib\\lib\\Foo\\Bar.pm'), 'lib/Foo/Bar.pm', 'backslashed blib path');
+	is($norm->('C:\\proj\\lib\\Foo.pm'), 'lib/Foo.pm', 'backslashed lib path');
+	is($norm->('C:/proj\\lib/Foo\\Bar.pm'), 'lib/Foo/Bar.pm', 'mixed separators');
+	is($norm->('/home/user/proj/lib/Foo.pm'), 'lib/Foo.pm', 'Unix path unchanged');
+
+	# No drive letters: on Unix path_sep is ':' and would split them
+	local $ENV{LCSAJ_TARGETS} = join($Config{path_sep}, '\\a\\proj\\blib\\lib\\Foo.pm', '\\proj\\lib\\Bar\\Baz.pm');
+	my @inc_args = map { ('-I', $_) } @INC;
+	my $code = 'print join(q{,}, sort keys %Devel::App::Test::Generator::LCSAJ::Runtime::TARGET)';
+	my ($output, $exit) = capture_merged {
+		system($^X, @inc_args, '-MDevel::App::Test::Generator::LCSAJ::Runtime', '-e', $code);
+	};
+	is($exit, 0, 'the child process exits cleanly') or diag($output);
+	is($output, 'lib/Bar/Baz.pm,lib/Foo.pm', 'backslashed LCSAJ_TARGETS entries are normalised');
 };
 
 # Clear %HITS so this module's END block (_write_results) does not write

@@ -16,6 +16,10 @@ Revision history for App-Test-Generator
 	  relied on abs_path, which does not follow links on Windows, so a link
 	  pointing out of the report directory was not caught there
 	- No "builtin::reftype is experimental" warning on Perl 5.36 and 5.38
+	- LCSAJ_TARGETS is separated by the platform path separator (";" on
+	  Windows) rather than ":", which split every absolute Windows path at
+	  its drive letter so test-generator-mutate recorded no LCSAJ hits there.
+	  Backslashed Windows paths are normalised to lib/... as well
 	- A constructor that needs a non-empty arrayref of live objects is no
 	  longer given an empty-array fixture.  Database::Join->new is the case:
 	  its new() schema now carries the skip reason "needs a non-empty arrayref

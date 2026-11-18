@@ -16,6 +16,7 @@ use warnings;
 # ======================================================================
 
 use Test::Most;
+use Config;
 use Cwd qw(abs_path);
 use File::Path qw(make_path);
 use File::Spec;
@@ -553,11 +554,11 @@ sub _extract
 {
 	my ($module) = @_;
 
-	my $out = File::Spec->catdir($dir, 'schemas', $module);
+	my $out = File::Spec->catdir($dir, 'schemas', $module =~ s{::}{-}gr);
 	make_path($out);
 
 	my ($stdout, $stderr) = ('', '');
-	local $ENV{PERL5LIB} = join(':', $lib, File::Spec->catdir($dir, 'lib'), $ENV{PERL5LIB} // '');
+	local $ENV{PERL5LIB} = join($Config{path_sep}, $lib, File::Spec->catdir($dir, 'lib'), $ENV{PERL5LIB} // '');
 	run3([$^X, "-I$lib", $script, '--output-dir', $out, $module_file{$module}], \undef, \$stdout, \$stderr);
 	is($? >> 8, 0, "$module: extract-schemas succeeded")
 		or diag("stdout:\n$stdout\nstderr:\n$stderr");
@@ -589,7 +590,7 @@ sub _run_harness
 
 	my $test_file = File::Spec->catfile($dir, "$label.t");
 	my ($stdout, $stderr) = ('', '');
-	local $ENV{PERL5LIB} = join(':', $lib, File::Spec->catdir($dir, 'lib'), $ENV{PERL5LIB} // '');
+	local $ENV{PERL5LIB} = join($Config{path_sep}, $lib, File::Spec->catdir($dir, 'lib'), $ENV{PERL5LIB} // '');
 	run3([$^X, "-I$lib", $generator, @generator_args, $schema_file, '-o', $test_file], \undef, \$stdout, \$stderr);
 	is($? >> 8, 0, "$label: harness generated") or diag("stdout:\n$stdout\nstderr:\n$stderr");
 
