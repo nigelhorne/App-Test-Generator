@@ -16,6 +16,11 @@ Revision history for App-Test-Generator
 	  relied on abs_path, which does not follow links on Windows, so a link
 	  pointing out of the report directory was not caught there
 	- No "builtin::reftype is experimental" warning on Perl 5.36 and 5.38
+	- A routine whose only argument is mandatory and has a memberof list now
+	  gets that list's test cases (each member, and a value outside it).
+	  Before, it got a single case, and for a number that case was a random
+	  value, so a routine enforcing the list failed and a documented-only
+	  list was checked only by chance
 	- LCSAJ_TARGETS is separated by the platform path separator (";" on
 	  Windows) rather than ":", which split every absolute Windows path at
 	  its drive letter so test-generator-mutate recorded no LCSAJ hits there.
