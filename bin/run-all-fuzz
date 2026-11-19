@@ -4,28 +4,38 @@
 # App-Test-Generator working tree.
 #
 # Usage:
-#   ./run-all-fuzz.sh
+#   run-all-fuzz
 #
-# Exits 0 only when every suite passes.  On failure, the failing suites'
-# output is printed and the full logs are kept.
+# When run from a checkout of this distribution the workspace is its parent
+# directory; when run from an installed copy the current directory is
+# searched instead.  Exits 0 only when every suite passes.  On failure, the
+# failing suites' output is printed and the full logs are kept.
 
 set -u
 
-root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-atg="$root/App-Test-Generator"
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
-if [[ ! -d "$atg/lib" ]]; then
-	printf 'error: App-Test-Generator not found at %s\n' "$atg" >&2
-	exit 2
+# Prefer the checkout this script lives in; fall back to an installed copy.
+if [[ -f "$script_dir/../lib/App/Test/Generator.pm" ]]; then
+	atg=$(cd -- "$script_dir/.." && pwd)
+	root=$(dirname -- "$atg")
+else
+	root=$(pwd)
+	atg=''
+	if [[ -f "$root/App-Test-Generator/lib/App/Test/Generator.pm" ]]; then
+		atg="$root/App-Test-Generator"
+	fi
 fi
 
 # Use the working tree, not whatever App::Test::Generator is installed.
 export EXTENDED_TESTING=1
-export PERL5LIB="$atg/lib${PERL5LIB:+:$PERL5LIB}"
-export PATH="$atg/bin:$PATH"
+if [[ -n "$atg" ]]; then
+	export PERL5LIB="$atg/lib${PERL5LIB:+:$PERL5LIB}"
+	export PATH="$atg/bin:$PATH"
+fi
 
 mapfile -t tests < <(
-	find "$root" -mindepth 3 -maxdepth 3 -type f -path '*/t/all-fuzz.t' -print \
+	find "$root" -maxdepth 3 -type f -path '*/t/all-fuzz.t' -print \
 		| sort
 )
 
@@ -38,16 +48,18 @@ logs=$(mktemp -d "${TMPDIR:-/tmp}/all-fuzz.XXXXXX") || exit 2
 
 pids=()
 names=()
+n=0
 for test in "${tests[@]}"; do
 	dir=${test%/t/all-fuzz.t}
-	name=${dir##*/}
-	names+=("$name")
+	name=$(basename -- "$(cd -- "$dir" && pwd)")
+	n=$((n + 1))
+	names[n]=$name
 
 	(
 		cd "$dir" || exit 2
-		prove -Ilib t/all-fuzz.t >"$logs/$name.log" 2>&1
+		prove -Ilib t/all-fuzz.t >"$logs/$n.log" 2>&1
 		rc=$?
-		printf '%s\n' "$rc" >"$logs/$name.status"
+		printf '%s\n' "$rc" >"$logs/$n.status"
 		exit "$rc"
 	) &
 	pids+=("$!")
@@ -57,24 +69,30 @@ for pid in "${pids[@]}"; do
 	wait "$pid" || true
 done
 
-printf '\nall-fuzz results (ATG: %s)\n' "$atg"
+printf '\nall-fuzz results (workspace: %s)\n' "$root"
+if [[ -n "$atg" ]]; then
+	printf 'App-Test-Generator: %s\n' "$atg"
+fi
 printf '%s\n' '----------------------------------------'
 
 failures=()
-for name in "${names[@]}"; do
-	rc=$(cat "$logs/$name.status" 2>/dev/null || printf '2')
+for i in $(seq 1 "$n"); do
+	name=${names[i]}
+	rc=$(cat "$logs/$i.status" 2>/dev/null || printf '2')
 	if [[ "$rc" == 0 ]]; then
 		printf 'PASS  %s\n' "$name"
 	else
 		printf 'FAIL  %s (exit %s)\n' "$name" "$rc"
-		failures+=("$name")
+		failures+=("$i:$name")
 	fi
 done
 
 if ((${#failures[@]})); then
-	for name in "${failures[@]}"; do
+	for entry in "${failures[@]}"; do
+		i=${entry%%:*}
+		name=${entry#*:}
 		printf '\n===== %s =====\n' "$name"
-		tail -n 40 "$logs/$name.log"
+		tail -n 40 "$logs/$i.log"
 	done
 	printf '\nFull logs kept in %s\n' "$logs"
 	exit 1
