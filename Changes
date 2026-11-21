@@ -105,7 +105,13 @@ Revision history for App-Test-Generator
 	  spec string` documents a string, not an "any"
 	- A parameter the POD calls the SQLite file's contents is a byte string
 	  (semantic C<bytes>): the harness passes octets instead of text and makes
-	  no byte-order-marker probe, which a byte-oriented write rejects
+	  no byte-order-marker probe, which a byte-oriented write rejects.  The
+	  generator registers C<bytes> among its semantic types, so a schema
+	  carrying it no longer carps "Unknown semantic type 'bytes'" and its
+	  property test draws octets rather than falling back to a text string.
+	  The fuzzer's own case generator draws octets for it too, instead of
+	  warning that the semantic type is unhandled and keeping the text
+	  filler it had built for every other case
 	- Semantic test cases were generated for every semantic type as though it
 	  were a Unix timestamp (the comparison against 'unix_timestamp' was
 	  missing), so a string parameter was expected to die on 2147483648 and

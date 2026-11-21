@@ -489,6 +489,28 @@ sub _random_string_for_spec
 	return rand_str();
 }
 
+# A byte string is data, not text: draw arbitrary octets so the high bytes a
+# text generator never produces are exercised too.
+sub rand_bytes
+{
+	my $len = shift // int(rand(10)) + 1;
+
+	return '' if($len <= 0);
+
+	return join('', map { pack('C', int(rand(256))) } 1 .. $len);
+}
+
+# As _random_string_for_spec(), but for a semantic => 'bytes' parameter: the
+# value honours the declared length and holds octets rather than characters.
+sub _random_bytes_for_spec
+{
+	my ($spec) = @_;
+
+	my $len = $spec->{min} // $spec->{max};
+	return rand_bytes($len) if defined($len);
+	return rand_bytes();
+}
+
 # Choose a random number inside the declared bounds.  A max-only spec is
 # reached from the fixed max boundary, never from an unbounded random value,
 # so a routine that enforces the maximum is not sent a value above it.
@@ -923,7 +945,12 @@ sub fuzz_inputs
 				local $config{'test_undef'} = 0;
 				local $config{'test_nuls'} = 0;
 				local $config{'test_empty'} = 0;
-				if($spec->{'matches'}) {
+				if(($spec->{'semantic'} // '') eq 'bytes') {
+					# Every other case is built on this filler, so it must be a
+					# byte string as well: handing a routine that reads octets a
+					# text value failed the case for the wrong reason.
+					$mandatory_strings{$field} = _random_bytes_for_spec($spec);
+				} elsif($spec->{'matches'}) {
 					# The field's declared length is what a validator will
 					# enforce, so the shared value must honour it too.
 					$mandatory_strings{$field} = _random_string_matching(
@@ -2444,7 +2471,11 @@ sub generate_tests
 					next unless defined($generated);
 					$case_input{$field} = $generated;
 				} elsif(my $semantic = $spec->{'semantic'}) {
-					if($semantic eq 'email') {
+					if($semantic eq 'bytes') {
+						# A byte string holds octets, not characters: leaving the
+						# text filler in place never exercised a high byte.
+						$case_input{$field} = _random_bytes_for_spec($spec);
+					} elsif($semantic eq 'email') {
 						$case_input{$field} = rand_email($spec->{'max'} // $spec->{'min'});
 					} else {
 						diag(__LINE__, ": TODO: handle semantic type '$semantic'");

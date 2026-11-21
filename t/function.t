@@ -885,7 +885,7 @@ subtest '_get_semantic_generators' => sub {
 	my @expected = qw(
 		email url uuid phone_us phone_e164 ipv4 ipv6
 		username slug hex_color iso_date iso_datetime
-		semver jwt json base64 md5 sha256 unix_timestamp
+		semver jwt json base64 md5 sha256 unix_timestamp bytes
 	);
 	for my $type (@expected) {
 		ok(exists $generators->{$type}, "$type generator present");

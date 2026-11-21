@@ -742,7 +742,7 @@ subtest '_schema_to_lectrotest_generator() returns undef for invalid float range
 subtest '_get_semantic_generators() returns hashref with expected keys' => sub {
 	my $gens = _get_semantic_generators();
 	ok(ref($gens) eq 'HASH', 'returns hashref');
-	for my $key (qw(email url uuid ipv4 username iso_date unix_timestamp)) {
+	for my $key (qw(email url uuid ipv4 username iso_date unix_timestamp bytes)) {
 		ok(exists $gens->{$key}, "$key generator present");
 	}
 };
@@ -848,6 +848,23 @@ subtest '_validate_input_semantics() passes for known semantic type' => sub {
 		},
 		'known semantic type lives',
 	);
+};
+
+subtest '_validate_input_semantics() accepts the bytes semantic type' => sub {
+	my @warnings;
+	local $SIG{__WARN__} = sub { push @warnings, @_ };
+	_validate_input_semantics({
+		input => { contents => { type => 'string', semantic => 'bytes' } }
+	});
+	is(scalar(grep { /Unknown semantic type/ } @warnings), 0,
+		'a byte string is a known semantic type');
+};
+
+subtest '_schema_to_lectrotest_generator() draws octets for bytes' => sub {
+	my $code = _schema_to_lectrotest_generator(
+		'contents', { type => 'string', semantic => 'bytes' });
+	like($code, qr/contents <- Gen \{.*pack\('C'/,
+		'a bytes parameter gets the octet generator');
 };
 
 subtest '_validate_input_semantics() carps for unknown semantic type' => sub {

@@ -1027,6 +1027,13 @@ other fuzz testing support for C<semantic> entries is being developed.
 
 =item * C<sha256> - SHA-256 hashes (64 hex chars)
 
+=item * C<bytes> - Byte strings (arbitrary octets, not text)
+
+The property test draws octets rather than characters.  A byte string holds
+data, not a document, so no text-oriented case applies to it;
+L<App::Test::Generator::SchemaExtractor> sets this for a parameter that is a
+file's contents (`$bytes`, `blob`, "raw bytes").
+
 =item * C<directory> - The path of an existing, writable directory
 
 The harness creates a temporary directory and passes its path, because no
@@ -4293,6 +4300,14 @@ sub _get_semantic_generators {
 				}
 			},
 			description => 'SHA-256 hashes (64 hex characters)',
+		}, bytes => {
+			code => q{
+				Gen {
+					my $len = 1 + int(rand(32));
+					join('', map { pack('C', int(rand(256))) } 1..$len);
+				}
+			},
+			description => 'Byte strings (arbitrary octets, not text)',
 		}, directory => {
 			code => q{
 				Gen {
