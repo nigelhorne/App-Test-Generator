@@ -179,6 +179,9 @@ foreach my $field (keys %input) {
 	$spec->{'memberof'} = [ File::Temp::tempdir(CLEANUP => 1) ];
 	delete $spec->{$_} for qw(matches min max semantic);
 	$spec->{'_directory'} = 1;
+	# The list is a harness fixture, not a documented domain: there is no
+	# outside value to expect a death from.
+	$spec->{'_fixture'} = 1;
 }
 
 # A parameter the routine tests with -e or -f must name an existing file.
@@ -196,6 +199,7 @@ foreach my $field (keys %input) {
 	# run neither calls it a documented-only constraint nor tolerates a value
 	# outside it.
 	$spec->{'_constraint_source'} = { %{ $spec->{'_constraint_source'} || {} }, memberof => 'existing_file' };
+	$spec->{'_fixture'} = 1;
 	delete $spec->{$_} for qw(matches min max semantic);
 }
 
@@ -929,7 +933,13 @@ sub fuzz_inputs
 					my @set = @{$spec->{memberof}};
 					$mandatory_strings{$field} = $set[-1];
 				} else {
-					$mandatory_strings{$field} = rand_ascii_str($spec->{max} // $spec->{min});
+					# Every case is built on this filler, so it has to satisfy
+					# what the schema states: an empty one made every case of an
+					# argument the code refuses when empty die for that reason
+					# instead of the one under test.
+					$mandatory_strings{$field} = rand_ascii_str($spec->{max} // $spec->{min} // 8);
+					$mandatory_strings{$field} = 'value'
+						if $spec->{'_not_empty'} && !length($mandatory_strings{$field});
 				}
 			} elsif($spec->{'type'} eq 'object') {
 				my $method = $spec->{'can'};
@@ -1117,7 +1127,7 @@ sub fuzz_inputs
 
 				# --- semantic ---
 				if(defined(my $semantic = $spec->{'semantic'})) {
-					if(defined(my $semantic = $spec->{'semantic'})) {
+					if($semantic eq 'unix_timestamp') {
 						push @cases, { %mandatory_args, ( -1, _STATUS => 'DIES' ) },
 							{ %mandatory_args, ( $arg_name => 0 ) },
 							{ %mandatory_args, ( $arg_name => 1 ) },
@@ -1125,6 +1135,13 @@ sub fuzz_inputs
 							{ %mandatory_args, ( $arg_name => 2147483647 ) },
 							{ %mandatory_args, ( 45.67, _STATUS => 'DIES', _DESCRIPTION => 'UNIX timestamp should not be a float' ) },
 							{ %mandatory_args, ( $arg_name => 2147483648, _STATUS => 'DIES' ) };
+					} elsif($semantic eq 'bytes') {
+						# A byte string holds arbitrary octets, not text: high bytes
+						# are valid data, and nothing about them is a document
+						# violation.
+						push @cases,
+							{ %mandatory_args, ( $arg_name => "\x00\x01\xfe\xff" ) },
+							{ %mandatory_args, ( $arg_name => join('', map { chr } 0 .. 255) ) };
 					} elsif($semantic eq 'email') {
 						push @cases,
 							{ %mandatory_args, ( $arg_name => 'user@example.com' ) },
@@ -1685,6 +1702,11 @@ sub _memberof_cases
 	my @set = @{$spec->{memberof}};
 	my @cases = map { { %{$mandatory_args}, ( $arg_name => $_ ) } } @set;
 
+	# The harness injected this list itself (a temporary file or directory
+	# the routine's -e/-f/-d test needs), so it is not the routine's domain
+	# and a value outside it is not an error the routine promised to reject.
+	return @cases if($spec->{'_fixture'});
+
 	my $type = $spec->{type} // 'string';
 	my $outside = ($type =~ /^(?:integer|number|float)$/)
 		? (sort { $a <=> $b } @set)[-1] + 1
@@ -2062,9 +2084,9 @@ sub _documented_lives_ok(&$)
 
 # The DIES counterpart of _documented_lives_ok: a case that should die but
 # survives fails and names the seed and input, so the run can be replayed.
-sub _dies_with_context(&$)
+sub _dies_with_context(&$;$)
 {
-	my ($code, $name) = @_;
+	my ($code, $name, $allow_undef) = @_;
 
 	local $@;
 	my $died = !eval { $code->(); 1 };
@@ -2074,6 +2096,11 @@ sub _dies_with_context(&$)
 		pass($name);
 		return $err;
 	}
+
+	# A routine whose contract reports invalid input by returning undef is
+	# not also required to croak, so the caller records the tolerance with
+	# its own pass rather than this call failing the case here.
+	return if($allow_undef);
 
 	fail($name);
 	diag(_failure_context($_current_input));
@@ -2202,7 +2229,10 @@ sub _generate_string_cases
 	} elsif(!$spec->{matches} && !$spec->{nomatch} && !$spec->{'_directory'}) {
 		my $long = defined($spec->{min}) ? (($spec->{min} + 1) * 1_000) : 65_536;
 		push @cases, { %{$mandatory_args}, ( $arg_name => rand_str($long), _LINE => __LINE__ ) };
-		push @cases, { %{$mandatory_args}, ( $arg_name => "\x{FEFF}", _STATUS => 'OK', _LINE => __LINE__, _DESCRIPTION => 'Byte order marker' ) };
+		# A byte string is not text: a wide character is not a value the
+		# routine was asked to accept, so it gets no BOM probe.
+		push @cases, { %{$mandatory_args}, ( $arg_name => "\x{FEFF}", _STATUS => 'OK', _LINE => __LINE__, _DESCRIPTION => 'Byte order marker' ) }
+			unless (($spec->{'semantic'} // '') eq 'bytes');
 	}
 
 	# A directory parameter gets no '' case: routines commonly read an empty
@@ -2211,8 +2241,12 @@ sub _generate_string_cases
 	# is not assumed to match it.
 	if(!$spec->{'_directory'} && !defined($spec->{min}) && !defined($spec->{matches})
 		&& (!defined($spec->{max}) || ($spec->{max} > 0))) {
-		push @cases, { %{$mandatory_args}, ( $arg_name => '', _NAME => $arg_name, _LINE => __LINE__ ) }
-			if $config{'test_empty'};
+		if($config{'test_empty'}) {
+			# An empty value the code refuses is an error, not a survival case.
+			push @cases, { %{$mandatory_args}, ( $arg_name => '',
+				($spec->{_not_empty} ? (_STATUS => 'DIES') : (_NAME => $arg_name)),
+				_LINE => __LINE__ ) };
+		}
 	}
 
 	if(!$spec->{'_directory'} && !defined($spec->{min}) && !defined($spec->{max})
@@ -2419,7 +2453,15 @@ sub generate_tests
 					$case_input{$field} = _random_string_for_spec($spec);
 					if($config{'test_empty'} && !defined($spec->{min}) && (!defined($spec->{max}) || $spec->{max} > 0)) {
 						push @cases, { _input => {%case_input}, status => 'OK' } if(keys %case_input);
+						my $non_empty = $case_input{$field};
 						$case_input{$field} = '';
+						if($spec->{'_not_empty'}) {
+							# An empty value the code refuses is an error, not a
+							# survival case.  Leave the field non-empty for the
+							# shared push below, which expects a clean return.
+							push @cases, { _input => {%case_input}, _STATUS => 'DIES', _LINE => __LINE__ };
+							$case_input{$field} = $non_empty;
+						}
 					}
 				}
 			} elsif ($type eq 'integer') {
@@ -2800,6 +2842,13 @@ sub run_test
 	}
 
 	my $status = delete $case->{'_STATUS'} || $output->{'_STATUS'};
+	# A routine whose contract reports invalid input by returning undef is
+	# not also required to croak: a generated case that expects a death
+	# accepts that documented signal instead.
+	my $undef_error = (ref($output) eq 'HASH')
+		&& ((($output->{'_error_return'} // '') eq 'undef')
+			|| (ref($output->{'_error_handling'}) eq 'HASH'
+				&& $output->{'_error_handling'}{'undef_on_error'}));
 	my $line = delete $case->{'_LINE'};
 	my %ENV_before = %ENV;
 	my $cwd_before = Cwd::getcwd();
@@ -2820,20 +2869,27 @@ sub run_test
 				if($positions) {
 					[% IF position_code %]
 						if(defined($name)) {
-							$err = _dies_with_context { [% position_code %] } sprintf($mess, "dies (position test) - $name (status = DIES)");
+							$err = _dies_with_context { [% position_code %] } sprintf($mess, "dies (position test) - $name (status = DIES)"), $undef_error;
 						} else {
-							$err = _dies_with_context { [% position_code %] } sprintf($mess, 'dies (position test, status = DIES)');
+							$err = _dies_with_context { [% position_code %] } sprintf($mess, 'dies (position test, status = DIES)'), $undef_error;
 						}
 					[% ELSE %]
 						ok(0, 'dies: position_code not defined');
 					[% END %]
 				} else {
-					$err = _dies_with_context { [% call_code %] } sprintf($mess, 'dies');
+					$err = _dies_with_context { [% call_code %] } sprintf($mess, 'dies'), $undef_error;
 					ok(!defined($result));
+				}
+				if(!defined($err) && $undef_error) {
+					pass(sprintf($mess, 'reports invalid input as undef (status = DIES)'));
+					return;
 				}
 				ok(defined($err));
 				ok(length($err));
-				ok(!ref($err));
+				# autodie and exception classes die with a blessed object that
+				# stringifies to its message; a bare reference is the only error
+				# that carries nothing to report.
+				ok(!ref($err) || Scalar::Util::blessed($err));
 				if(defined($name)) {
 					unlike($err, qr/unitialized/, "$name doesn't involve an uninitialized variable");
 				} else {
@@ -2950,7 +3006,15 @@ sub run_test
 			require Data::Dumper;
 			diag('result: ', Data::Dumper::Dumper($result));
 		}
-		returns_ok($result, $output, 'output validates');
+		if(($output->{type} // '') eq 'boolean') {
+			# Perl has no boolean type: a routine documented to return a
+			# boolean may return 1 or '' (defined() returns ''), and the
+			# contract is truthiness.  What it must not return is a
+			# reference, which is what a strict 0/1 check was rejecting.
+			ok(!ref($result), 'output is a boolean');
+		} else {
+			returns_ok($result, $output, 'output validates');
+		}
 		if(((!defined($status)) || ($status eq 'OK')) && defined($result)) {
 			is(
 				Unicode::Normalize::NFC($result),
@@ -3041,6 +3105,11 @@ sub _globals_changed
 sub _filtered_env
 {
 	my %env = %{ shift() };
+
+	# An environment variable set to undef is unset: perl removes it from
+	# %ENV, so it must not look like a change from a variable that was
+	# never there.
+	delete @env{ grep { !defined($env{$_}) } keys %env };
 
 	if($^O eq 'MSWin32') {
 		delete @env{

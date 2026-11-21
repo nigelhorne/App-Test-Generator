@@ -879,6 +879,15 @@ To ensure C<new()> is called with no arguments, you still need to define new, th
 
   new:
 
+=head3 C<$invocant>
+
+The word C<class> when the routine is a class method: the harness calls
+C<Module-E<gt>routine(...)> instead of C<Module::routine(...)>.  With C<new>
+set the routine is called on the object C<new> builds, and without an
+C<invocant> it is called as a plain function.
+
+  invocant: class
+
 =head3 C<%cases>
 
 An optional Perl static corpus, when the output is a simple string (expected => [ args... ]).
@@ -1829,7 +1838,7 @@ sub generate
 	my $class = (ref($_[0]) ne 'HASH') ? shift : undef;
 	my ($schema_file, $test_file, $schema);
 	# Globals loaded from the user's conf (all optional except function maybe)
-	my ($module, $function, $new, $yaml_cases);
+	my ($module, $function, $new, $yaml_cases, $invocant);
 	my ($seed, $iterations);
 	my $strict_documented = 0;
 
@@ -1896,6 +1905,7 @@ sub generate
 	if(exists($schema->{new})) {
 		$new = defined($schema->{'new'}) ? $schema->{new} : '_UNDEF';
 	}
+	$invocant = $schema->{invocant} if(exists($schema->{invocant}) && defined($schema->{invocant}));
 	$yaml_cases = $schema->{yaml_cases} if(exists($schema->{yaml_cases}));
 	$seed = $schema->{seed} if(exists($schema->{seed}));
 	$iterations = $schema->{iterations} if(exists($schema->{iterations}));
@@ -2266,7 +2276,9 @@ sub generate
 		# `import` is a class method: `use Module` calls Module->import(...).
 		# Some modules (Database::Abstraction) take the class as their first
 		# argument, so a plain Module::import() with no named arguments dies.
-		if(($function eq 'new') || ($function eq 'import')) {
+		# A documented $class invocant (or new/import) is called on the class
+		# itself; without one the routine is a plain function of the module.
+		if(($function eq 'new') || ($function eq 'import') || (defined($invocant) && ($invocant eq 'class') && !defined($new))) {
 			if($has_positions) {
 				$position_code = "\$result = (scalar(\@alist) == 1) ? ${module}\->$function(\$alist[0]) : (scalar(\@alist) == 0) ? ${module}\->$function() : ${module}\->$function(\@alist);";
 			} else {
@@ -3524,6 +3536,31 @@ The mathematical description is in L</FORMAL SPECIFICATION>.
 
 =cut
 
+# --------------------------------------------------
+# _render_arg_value
+#
+# Purpose:    Render one constructor argument.  A marked path is replaced by a
+#             temporary file or directory the generated test makes at run time,
+#             so a constructor documented to take a directory can be called as
+#             its POD says instead of being left unbuilt.
+#
+# Entry:      $value - the schema value for the argument.
+#
+# Exit:       Perl source for the argument.
+# --------------------------------------------------
+sub _render_arg_value
+{
+	my ($value) = @_;
+
+	if(ref($value) eq 'HASH' && ($value->{'_path'} // '') =~ /^(?:file|directory)$/) {
+		return '(do { require File::Temp; File::Temp::tempdir(CLEANUP => 1) })'
+			if $value->{'_path'} eq 'directory';
+		return '(do { require File::Temp; my ($_fh, $_path) = File::Temp::tempfile(UNLINK => 1); close $_fh; $_path })';
+	}
+
+	return perl_quote($value);
+}
+
 sub render_args_hash {
 	my $href = $_[0];
 
@@ -3533,7 +3570,7 @@ sub render_args_hash {
 	# Sort keys for deterministic output across runs — important for
 	# generated test files that are committed to version control
 	my @pairs = map {
-		perl_quote($_) . ' => ' . perl_quote($href->{$_})
+		perl_quote($_) . ' => ' . _render_arg_value($href->{$_})
 	} sort keys %{$href};
 
 	return join(', ', @pairs);

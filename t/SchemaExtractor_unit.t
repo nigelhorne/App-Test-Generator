@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Test::Most;
 use Test::Mockingbird;
+use App::Test::Generator ();
 use App::Test::Generator::Provenance qw(source_is_valid);
 use File::Temp qw(tempdir);
 use File::Spec;
@@ -1730,6 +1731,517 @@ END_BODY
 	like(App::Test::Generator::SchemaExtractor::_constructor_requires_live_objects($body, $schema),
 		qr/live objects in 'databases'/, 'the exact field is still matched');
 };
+
+# ==================================================================
+# Regression: an Input section written as a table -- one `name : type`
+# or `$name SCALAR` line per parameter -- states each type, its bounds
+# and the invocant, and the extractor must use them instead of guessing
+# from the code (Database::BI documents every routine this way).
+# ==================================================================
+
+subtest 'a documented input table supplies types, bounds and the invocant' => sub {
+	my $src = <<'END_PM';
+package TableSpec;
+
+=head2 point_key
+
+=head3 API SPECIFICATION
+
+=head4 INPUT
+
+  lat : number  -90 .. 90
+  lon : number  -180 .. 180
+  level : string  optional, default 'county'
+
+=head4 OUTPUT
+
+    SCALAR   the key
+
+=cut
+
+sub point_key {
+	my ($class, $lat, $lon) = @_;
+	return;
+}
+
+=head2 json_lists
+
+=head3 API SPECIFICATION
+
+=head4 INPUT
+
+    $class   SCALAR   the class (called as a class method)
+    $path    SCALAR   a readable .json file
+
+=head4 OUTPUT
+
+    ARRAYREF of HASHREF
+
+=cut
+
+sub json_lists {
+	my ($class, $path) = @_;
+	my ($text, $data) = _json_read($path);
+	return [];
+}
+
+sub _json_read {
+	my ($path) = @_;
+	open(my $fh, '<', $path) or return '';
+	local $/;
+	return <$fh>;
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'TableSpec.pm');
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	my $point = $schemas->{point_key}{input};
+	is($point->{lat}{type}, 'number', 'a column table gives the documented type');
+	is($point->{lat}{min}, -90, 'the documented lower bound is kept');
+	is($point->{lat}{max}, 90, 'the documented upper bound is kept');
+	is($point->{lat}{_source}, 'input_spec', 'the type is marked as documented');
+	is($point->{level}{optional}, 1, "an entry with a default is optional");
+	ok(!exists($schemas->{point_key}{invocant}), 'a positional routine is not a class method');
+
+	my $json = $schemas->{json_lists};
+	is($json->{input}{path}{type}, 'string', 'a SCALAR path stays a string');
+	ok(!exists($json->{input}{path}{isa}),
+		'a call such as _json_read($path) does not make its argument a filehandle');
+	is($json->{input}{path}{semantic}, 'existing_file',
+		'a readable file is a precondition the harness supplies');
+	ok(!exists($json->{input}{class}), 'the documented $class is not a parameter');
+	is($json->{invocant}, 'class', 'a documented $class makes the routine a class method');
+};
+
+subtest 'a helper block after the subs, method holders and variable regexes' => sub {
+	my $src = <<'END_PM';
+package LaterModule;
+
+my $EXT_RE = qr/\.json\z/i;
+
+sub helper_date {
+	my ($val, $pattern) = @_;
+	return undef unless defined $val && defined $pattern;
+	return undef if ref $pattern;
+	return '2026-01-15';
+}
+
+sub keep_ext {
+	my ($path) = @_;
+	return 0 unless defined $path;
+	return 1 if $path =~ $EXT_RE;
+	return 0;
+}
+
+sub refresh {
+	my ($cache) = @_;
+	return $cache->get('key');
+}
+
+sub keeper {
+	my ($blob) = @_;
+	die 'blob is required' unless defined $blob && length $blob;
+	return $blob;
+}
+
+=head2 Date handling (standalone helpers)
+
+    helper_date($value, $pattern) -> ISO string or undef
+
+Returns undef when the value does not match the pattern.
+
+=head3 API SPECIFICATION
+
+=head4 INPUT
+
+	$value     # string
+	$pattern   # one of the accepted date patterns
+
+=head4 OUTPUT
+
+	'string' | undef
+
+=cut
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'LaterModule.pm');
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	my $date = $schemas->{helper_date}{input};
+	is($date->{value}{type}, 'string', 'a later block documenting the routine is read');
+	is($date->{value}{_source}, 'input_spec', 'the table marks the argument as documented');
+	is($date->{value}{position}, 0, 'the table gives the first argument its position');
+	is($date->{pattern}{position}, 1, 'the table keeps the argument order');
+	is($date->{pattern}{type}, 'string', 'an unrecognised description still names a string');
+	ok(!exists($date->{val}),
+		'the code variable for a documented positional slot is not a second argument');
+
+	my $keep = $schemas->{keep_ext}{input}{path};
+	ok(!exists($keep->{matches}),
+		'a pattern held in a variable is not recorded as the regex');
+
+	my $refresh = $schemas->{refresh}{input}{cache};
+	is($refresh->{type}, 'object', 'an argument called as a method holder is an object');
+	is($refresh->{optional}, 0, 'a method call on it cannot be omitted');
+
+	my $keeper = $schemas->{keeper}{input}{blob};
+	is($keeper->{_not_empty}, 1, 'an argument the code refuses when empty is marked so');
+	is($keeper->{optional}, 0, 'and it is required');
+};
+
+subtest 'a constructor with live dependencies, and the preconditions the POD states' => sub {
+	my $src = <<'END_PM';
+package Stateful;
+
+use Params::Get ();
+use Params::Validate::Strict qw(validate_strict);
+
+sub new {
+	my $class = shift;
+	my $args = validate_strict(
+		schema => {
+			cache => { type => 'object', optional => 1, default => undef },
+			level => { type => 'string', optional => 1, default => 'county' },
+		},
+		input => Params::Get::get_params(undef, \@_),
+	);
+	my $self = bless { %{$args} }, $class;
+	$self->{'_level'} = $args->{'level'};
+	return $self;
+}
+
+sub level_of {
+	my ($self, $country) = @_;
+	return $self->{'_level'};
+}
+
+=head2 ranks
+
+  ranks : hashref of { country code => place rank }
+
+Croaks on a key that is not a two-letter code.
+
+=cut
+
+sub ranks {
+	my (undef, $ranks) = @_;
+	my %checked = %{$ranks};
+	return \%checked;
+}
+
+=head2 numeric_text
+
+Returns the text when it holds a digit, else undef.
+
+=cut
+
+sub numeric_text {
+	my ($text) = @_;
+	return undef unless defined $text;
+	return $text =~ /[0-9%]/ ? $text : undef;
+}
+
+=head2 cache_dir_for
+
+=head4 INPUT
+
+    $model_dir => string, required; an existing directory
+
+=cut
+
+sub cache_dir_for {
+	my (undef, $model_dir) = @_;
+	croak 'not a directory' unless -d $model_dir;
+	return 1;
+}
+
+=head2 connect
+
+=head4 INPUT
+
+    $server    SCALAR string     the name of the server, for messages
+    $settings  HASHREF           { database, host?, username?, password? }
+
+=cut
+
+sub connect {
+	my ($class, $server, $settings) = @_;
+	return 1;
+}
+
+=head2 report
+
+=head4 INPUT
+
+    \%models  => hashref, required;  the existing model store
+    \@columns arrayref of names      # required; one or more
+    $suffix   => string, optional;   added at the end
+
+=cut
+
+sub report {
+	my ($models, $columns, $suffix) = @_;
+	return \%models;
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'Stateful.pm');
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	is($schemas->{new}{input}{cache}{type}, 'object',
+		'the validator gives the constructor its object parameter');
+	ok(!exists($schemas->{new}{accessor}),
+		'a constructor that stores one field is not read as an accessor');
+	like($schemas->{new}{skip} // '', qr/live 'cache' object/,
+		'a constructor needing an unmockable object is reported as skipped');
+	is($schemas->{level_of}{new}, 'Stateful',
+		'its instance methods are left unbuildable rather than failed');
+
+	like($schemas->{ranks}{skip} // '', qr/hashref in the shape/,
+		'a hashref whose POD states its shape is a precondition');
+	is($schemas->{ranks}{output}{type}, 'hashref',
+		'a return of \\%hash is typed as a hashref');
+
+	is($schemas->{numeric_text}{output}{type}, 'string',
+		'a / and a % inside a regex literal are not read as arithmetic');
+	unlike($schemas->{numeric_text}{input}{text}{type} // '', qr/number/,
+		'and the argument is not typed from them either');
+
+	is($schemas->{cache_dir_for}{input}{model_dir}{semantic}, 'directory',
+		'an existing directory in the POD is marked for a temporary one');
+	is($schemas->{cache_dir_for}{input}{model_dir}{optional}, 0,
+		'and the row keeps its required status');
+
+	like($schemas->{connect}{skip} // '', qr/live database/,
+		'settings naming a database and password need a live server');
+
+	is($schemas->{report}{input}{models}{type}, 'hashref',
+		'a \\%name => hashref row is read from the POD table');
+	is($schemas->{report}{input}{models}{optional}, 0, 'and its required status');
+	is($schemas->{report}{input}{columns}{type}, 'arrayref',
+		'a \\@name arrayref row is read too');
+	is($schemas->{report}{input}{columns}{min}, 1,
+		'"one or more" is a size floor');
+	is($schemas->{report}{input}{suffix}{optional}, 1,
+		'a $name => string, optional row stays optional');
+};
+
+subtest 'a trailing POD block, and text that looks like an operator' => sub {
+	# The subs come first and the POD block after them, as Database::BI::Extract
+	# writes its file: the section headed with the routine's name documents it.
+	my $src = <<'END_PM';
+package Trailing;
+
+use Carp qw(croak);
+
+sub put {
+	my ($self, $spec, $mtime, $size, $bytes) = @_;
+	croak 'sqlite_bytes are required' unless defined $bytes && length $bytes;
+	return $self->{'dir'} . '/' . $spec;
+}
+
+sub note {
+	my $key = shift;
+	my %notes = (
+		pop_delta => 'Period-over-period change in the sum',
+		top_mover => 'Largest period-over-period change',
+	);
+	return $notes{$key} // $key;
+}
+
+sub stamp {
+	my ($epoch) = @_;
+	my @tm = gmtime(defined $epoch ? $epoch : time);
+	return sprintf '%04d-%02d-%02dT%02d:%02d:%02dZ', $tm[5] + 1900, $tm[4] + 1, $tm[3], $tm[2], $tm[1], $tm[0];
+}
+
+sub spec_key {
+	my ($spec) = @_;
+	return $spec unless defined $spec && $spec =~ m{\Apath:(?!/\.\./)([^\n]+)\z};
+	return $spec unless -e $1;
+	return "path:$1";
+}
+
+sub new {
+	my ($class, %args) = @_;
+	return bless { dir => $args{'model_dir'} }, $class;
+}
+
+=head2 new
+
+=head4 INPUT
+
+	model_dir => 'string',   # the folder the extracts live under
+
+=cut
+
+=head2 put
+
+=head4 INPUT
+
+	$spec, $mtime, $size   # as for path
+	$bytes                 # required; the SQLite file's contents
+
+=cut
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'Trailing.pm');
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	my $put = $schemas->{put};
+	is($put->{input}{spec}{_source}, 'input_spec',
+		'a section headed with the routine name documents it after the subs');
+	is($put->{input}{spec}{position}, 0, 'a row naming several parameters gives each a position');
+	is($put->{input}{mtime}{position}, 1, 'in call order');
+	is($put->{input}{size}{position}, 2, 'and all of them');
+	is($put->{input}{bytes}{semantic}, 'bytes',
+		"the SQLite file's contents is a byte string");
+
+	is($schemas->{note}{input}{key}{type}, 'string',
+		'a hyphen in a string literal does not make the argument a number');
+	is($schemas->{note}{input}{key}{type}, 'string',
+		'and // is a defined-or, not a division');
+	is($schemas->{stamp}{output}{type}, 'string',
+		'sprintf returns text, whatever its arguments add up to');
+	is($schemas->{spec_key}{output}{type}, 'string',
+		'-e is a file test, not a subtraction');
+
+	is(ref($put->{new}), 'HASH', 'the constructor can be built for an instance method');
+	is($put->{new}{model_dir}{_path}, 'directory',
+		'its directory argument is marked for a temporary directory');
+	like(App::Test::Generator::render_args_hash($put->{new}), qr/File::Temp::tempdir/,
+		'which the generated test makes at run time');
+};
+
+subtest 'defined-or and arrows are not arithmetic, and table rows keep their routine' => sub {
+	my $src = <<'END_PM';
+package OutTypes;
+
+sub count_or_default {
+	my ($self, $row) = @_;
+	return $self->{'count'} // 0;
+}
+
+sub label_or_default {
+	my ($row) = @_;
+	return $row->{'label'} // 'none';
+}
+
+sub tally {
+	my ($self, $row) = @_;
+	return $self->{'n'} - 1;
+}
+
+sub compile_pattern {
+	my ($pattern) = @_;
+	return qr/$pattern/;
+}
+
+=head2 Pattern helpers
+
+=head4 INPUT
+
+    compile_pattern: $pattern   # string, the pattern to compile
+    other_helper: $extra        # string, the text to measure
+
+=cut
+
+sub other_helper {
+	my ($extra) = @_;
+	return length $extra;
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'OutTypes.pm');
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	# A defined-or is not a division: `$x // 0` returns $x, not a number.
+	unlike($schemas->{count_or_default}{output}{type} // '', qr/^(?:number|integer)$/,
+		'`// 0` does not type a method-call return as a number');
+	unlike($schemas->{label_or_default}{output}{type} // '', qr/^(?:number|integer)$/,
+		'nor a hash element return');
+	# The rule must not hide arithmetic that is there.
+	is($schemas->{tally}{output}{type}, 'number',
+		'but a subtraction is still arithmetic');
+
+	# One POD block documents several helpers, each row prefixed with the
+	# routine it belongs to: a routine reads its own row and no other.
+	is($schemas->{other_helper}{input}{extra}{_source}, 'input_spec',
+		"a row prefixed with the routine's name documents its own parameter");
+	ok(!exists($schemas->{other_helper}{input}{pattern}),
+		"another routine's row is not other_helper's parameter");
+	is($schemas->{compile_pattern}{input}{pattern}{_source}, 'code',
+		'the routine above the block is documented by its code, not the table');
+	ok(!exists($schemas->{compile_pattern}{input}{extra}),
+		"and does not borrow the table's rows");
+};
+
+	subtest 'an Input section written as a Perl hash documents its outer keys' => sub {
+		my $src = <<'END_PM';
+package HashInput;
+
+=head2 plan_thing
+
+=head3 API specification
+
+=head4 input
+
+    {
+        self     => { type => OBJECT,  isa  => 'HashInput' },
+        schema   => { type => HASHREF, optional => 1 },
+        strategy => { type => HASHREF, optional => 0 },
+    }
+
+Valid and invalid input, by partition:
+
+=over 4
+
+=item Argument count
+
+Valid: 0 or 1.  Invalid: 2 or more.
+
+=back
+
+=cut
+
+sub plan_thing {
+	my ($self, $schema, $strategy) = @_;
+	die 'strategy must be a hashref' unless ref($strategy) eq 'HASH';
+	return {};
+}
+
+1;
+END_PM
+
+		my ($pm) = _make_pm($src, 'HashInput.pm');
+		my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+		my $schemas = $e->extract_all(no_write => 1);
+		my $input = $schemas->{plan_thing}{input};
+
+		is_deeply([ sort keys %{$input} ], [ qw(schema strategy) ],
+			'only the hash\'s outer keys are parameters');
+		is($input->{schema}{type}, 'hashref', 'an inner type word types the parameter');
+		ok($input->{schema}{optional}, 'and its optional flag is read');
+		ok(!$input->{strategy}{optional}, 'including an explicit optional => 0');
+		ok(!exists($input->{Valid}) && !exists($input->{type}),
+			'prose and inner keys are not parameters');
+	};
 
 done_testing();
 
