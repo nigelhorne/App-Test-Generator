@@ -2826,7 +2826,9 @@ sub _validate_element_spec {
 		if(($element->{type} eq 'object') && !defined($element->{isa}) && !defined($element->{can}));
 
 	if(($element->{type} eq 'arrayref') || ($element->{type} eq 'array')) {
-		_validate_element_spec($element->{schema}, $param, 0) if defined($element->{schema});
+		# An array's elements can be hashes with fixed keys, just as a
+		# hashref's values can: a type-less schema maps key names to specs.
+		_validate_element_spec($element->{schema}, $param, 1) if defined($element->{schema});
 	} elsif($element->{type} eq 'hashref') {
 		_validate_element_spec($element->{schema}, $param, 1) if defined($element->{schema});
 	}
@@ -2863,7 +2865,7 @@ sub _validate_input_params {
 				unless _valid_type($spec->{type});
 
 			if(($spec->{type} eq 'arrayref') || ($spec->{type} eq 'array')) {
-				_validate_element_spec($spec->{schema}, $param, 0) if defined($spec->{schema});
+				_validate_element_spec($spec->{schema}, $param, 1) if defined($spec->{schema});
 			} elsif($spec->{type} eq 'hashref') {
 				_validate_element_spec($spec->{schema}, $param, 1) if defined($spec->{schema});
 			}
@@ -3565,7 +3567,31 @@ sub _render_arg_value
 		return '(do { require File::Temp; my ($_fh, $_path) = File::Temp::tempfile(UNLINK => 1); close $_fh; $_path })';
 	}
 
+	# Render element by element: an element may be an object stand-in, which
+	# perl_quote() would emit as the marker hashref rather than build.
+	if(ref($value) eq 'ARRAY') {
+		return '[ ' . join(', ', map { _render_arg_value($_) } @{$value}) . ' ]';
+	}
+
+	if(ref($value) eq 'HASH' && ref($value->{'_stub'}) eq 'HASH') {
+		return '_build_stub_object(' . _render_stub_spec($value->{'_stub'}) . ')';
+	}
+
 	return perl_quote($value);
+}
+
+# A stub description as Perl source, keys sorted so the generated file is
+# deterministic.  Values are scalars, arrayrefs or hashrefs of them.
+sub _render_stub_spec
+{
+	my ($spec) = @_;
+
+	my @methods = map {
+		perl_quote($_) . ' => ' . perl_quote($spec->{methods}{$_})
+	} sort keys %{ $spec->{methods} // {} };
+
+	return '{ isa => ' . perl_quote($spec->{isa})
+		. ', methods => { ' . join(', ', @methods) . ' } }';
 }
 
 sub render_args_hash {

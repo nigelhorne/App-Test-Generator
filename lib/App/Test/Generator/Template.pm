@@ -554,6 +554,11 @@ sub _random_value_for_spec
 			my $str = _random_string_matching($re, _length_bounds($spec));
 			return $str if defined($str);
 		}
+		# A documented list of values is the domain: any member is valid, and
+		# a generated string outside it is not.
+		if(_has_memberof($spec)) {
+			return _pick_from($spec->{memberof});
+		}
 		return _random_string_for_spec($spec, 'test_value');
 	}
 	return _random_number_for_spec($spec, 1) if($type eq 'integer');
@@ -579,7 +584,23 @@ sub _random_array_for_spec
 	$len = int($len);
 	$len = 0 if($len < 0);
 
+	# A constructor that refuses an empty list of live objects documents a
+	# minimum of one, and the stand-in is the only element it accepts.
+	my $stub = $spec->{_stub_elements};
+	if(ref($stub) eq 'HASH') {
+		# An empty list is a real value here: it is the below-minimum case a
+		# routine that demands a non-empty list must reject.  Only the
+		# elements are fixed, not the count.
+		return [] if($len == 0);
+		return [ map { _build_stub_object($stub) } 1 .. $len ];
+	}
+
 	my $element = $spec->{schema};
+	# A schema that maps key names to element schemas describes a hash whose
+	# keys are fixed; _random_hash_for_spec() is the builder for that shape.
+	if((ref($element) eq 'HASH') && !exists($element->{type})) {
+		return [ map { _random_hash_for_spec({ schema => $element }) } 1 .. $len ];
+	}
 	return [ map { _random_value_for_spec($element) } 1 .. $len ];
 }
 
@@ -638,6 +659,55 @@ sub _random_object_for_spec
 
 	carp('cannot build object element: give a class with a no-argument constructor as isa, or a method name as can');
 	return undef;
+}
+
+# A stable text key for a stub description, so one package serves every
+# identical description.  No serialisation module is needed: a harness for a
+# plain function should not carry a dependency it never uses.
+sub _stub_key
+{
+	my ($value) = @_;
+
+	return 'undef' unless defined($value);
+	return 'a[' . join(',', map { _stub_key($_) } @{$value}) . ']' if ref($value) eq 'ARRAY';
+	return 'h{' . join(',', map { $_ . '=' . _stub_key($value->{$_}) } sort keys %{$value}) . '}' if ref($value) eq 'HASH';
+	return "$value";
+}
+
+# Build a stand-in for an object a constructor calls methods on.  The schema
+# names the base class (from the constructor's POD) and the canned result of
+# each method, so the stand-in passes the constructor's isa/blessed checks
+# and answers the calls it makes.  One package is defined per distinct
+# description; every call returns a fresh instance.
+my %_stub_packages;
+sub _build_stub_object
+{
+	my ($spec) = @_;
+
+	my $isa     = $spec->{isa};
+	my $methods = $spec->{methods} // {};
+
+	eval "require $isa; 1" or die "cannot stub $isa: $@";
+
+	my $key = _stub_key([ $isa, [ map { [ $_, $methods->{$_} ] } sort keys %{$methods} ] ]);
+
+	my $pkg = $_stub_packages{$key};
+	if(!defined($pkg)) {
+		$pkg = 'App::Test::Generator::Stub::' . scalar(keys %_stub_packages);
+		no strict 'refs';
+		@{"${pkg}::ISA"} = ($isa);
+		for my $name (keys %{$methods}) {
+			my $canned = $methods->{$name};
+			*{"${pkg}::$name"} = sub {
+				my $value = $canned;
+				return ref($value) eq 'ARRAY' ? [ @{$value} ]
+					: ref($value) eq 'HASH' ? { %{$value} } : $value;
+			};
+		}
+		$_stub_packages{$key} = $pkg;
+	}
+
+	return bless({}, $pkg);
 }
 
 #####################################################

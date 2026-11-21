@@ -2243,5 +2243,268 @@ END_PM
 			'prose and inner keys are not parameters');
 	};
 
+subtest 'a documented stand-in for a constructor argument, and argument shapes' => sub {
+	my $src = <<'END_PM';
+package Joinish;
+
+use Carp qw(carp croak);
+use Params::Get ();
+use Params::Validate::Strict qw(validate_strict);
+
+sub new {
+	my ($class, @args) = @_;
+	my $args = validate_strict(
+		schema => {
+			databases         => { type => 'arrayref', required => 1 },
+			join_column       => { type => 'string', optional => 1, default => 'entry' },
+			filters           => { type => 'hashref', optional => 1 },
+			mandatory_filters => { type => 'arrayref', optional => 1 },
+		},
+		input => Params::Get::get_params(undef, @args),
+	);
+	croak 'databases is required' unless @{ $args->{databases} };
+	my $cols = $args->{databases}[0]->columns();
+	croak 'join_column is absent' unless grep { $_ eq $args->{join_column} } @{$cols};
+	return bless { %{$args} }, $class;
+}
+
+sub rows {
+	my $self = shift;
+	return $self->{_rows} // [];
+}
+
+=head2 aggregate
+
+=head4 Input
+
+    measures : arrayref, required; one or more
+    by       : arrayref, optional
+
+=cut
+
+sub aggregate {
+	my ($self, @args) = @_;
+	my $p = Params::Get::get_params(undef, @args) // {};
+	croak 'measures is required' unless ref($p->{measures}) eq 'ARRAY';
+	return [];
+}
+
+=head2 selectall_arrayref
+
+=head4 Output
+
+    Arrayref of hashrefs, one per row
+
+=cut
+
+sub selectall_arrayref {
+	my ($self, @args) = @_;
+	return [];
+}
+
+=head2 selectall_hashref
+
+Deprecated alias of selectall_arrayref.
+
+=cut
+
+sub selectall_hashref {
+	my $self = shift;
+	carp 'selectall_hashref is deprecated';
+	return $self->selectall_arrayref(@_);
+}
+
+=head2 new
+
+=head4 Input
+
+    databases         => { type => 'arrayref', required => 1 }
+                        # One or more subclass of C<Database::Abstraction> objects.
+
+    join_column       => { type => 'string', optional => 1, default => 'entry' }
+                        # The column shared by every database.
+
+    filters           => { type => 'hashref', optional => 1 }
+                        # Zero-based database index => criteria hashref.
+
+    mandatory_filters => { type => 'arrayref', optional => 1 }
+                        # Arrayref of {col, op, val} predicate hashrefs.
+                        # Each predicate must supply:
+                        #   col -- a column name present in the merged view
+                        #   op  -- one of: eq, ne, lt, lte, gt, gte, like, contains
+                        #   val -- the comparison value (plain scalar)
+
+=cut
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'Joinish.pm');
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+
+	ok(!$schemas->{new}{skip}, 'the constructor builds with a documented stand-in');
+	my $stub = $schemas->{new}{input}{databases}{_stub_elements};
+	is($stub->{isa}, 'Database::Abstraction', 'the stub is the class the POD names');
+	is_deeply($stub->{methods}{columns}, [ 'entry' ],
+		'and publishes the documented join column');
+	is($schemas->{new}{input}{databases}{min}, 1, 'the constructor needs at least one');
+	is_deeply($schemas->{new}{input}{join_column}{memberof}, [ 'entry' ],
+		'the join column is the one the stub advertises, as a fixture');
+	is($schemas->{new}{input}{join_column}{_constraint_source}{memberof}, 'fixture',
+		'so a value outside it is not called a documented error');
+	is($schemas->{new}{input}{filters}{schema}{type}, 'hashref',
+		'a hashref documented as index => criteria hashref holds hashrefs');
+	is_deeply($schemas->{new}{input}{mandatory_filters}{schema}{op}{memberof},
+		[ qw(eq ne lt lte gt gte like contains) ],
+		'an arrayref of fixed-key hashrefs gets the documented element shape');
+	is($schemas->{new}{input}{mandatory_filters}{schema}{col}{memberof}[0], 'entry',
+		'and its column is one the stand-in publishes');
+
+	ok(!exists($schemas->{aggregate}{input}{measures}{position}),
+		'a routine taking @args gets its documented names, not call positions');
+	is(ref($schemas->{rows}{new}), 'HASH', 'the instance methods build from the stand-in');
+	is(ref($schemas->{rows}{new}{databases}[0]{_stub}), 'HASH',
+		'and their constructor argument carries it');
+
+	is($schemas->{selectall_hashref}{output}{type}, 'arrayref',
+		'a deprecated forwarding alias returns what it forwards to');
+};
+
+subtest 'types quoted in an Input hash dump' => sub {
+	my $src = <<'END_PM';
+package Quoted;
+
+use strict;
+use warnings;
+
+=head2 build
+
+=head4 Input
+
+	{
+	    insights => 'arrayref',  # optional; insight hashrefs
+	    spec_key => 'string',    # optional; bookkeeping only
+	    row_count => 'integer',  # optional; rows analysed (default 0)
+	    use_ai   => 'boolean',   # optional; ask for prose
+	    config   => 'hashref',   # optional; settings
+	    allowed  => 'coderef',   # optional; asked before each call
+	}
+
+=cut
+
+sub build {
+	my (%args) = @_;
+	return { ok => 1 };
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'Quoted.pm');
+	my $schemas = App::Test::Generator::SchemaExtractor->new(input_file => $pm)->extract_all(no_write => 1);
+	my $input = $schemas->{build}{input};
+
+	is($input->{insights}{type}, 'arrayref', 'a quoted hash-dump value types its parameter');
+	is($input->{spec_key}{type}, 'string', 'the other rows keep their quoted types');
+	is($input->{row_count}{type}, 'integer', 'an integer row is an integer');
+	is($input->{use_ai}{type}, 'boolean', 'a boolean row is a boolean');
+	is($input->{config}{type}, 'hashref', 'a hashref row is a hashref');
+	is($input->{allowed}{type}, 'coderef', 'a coderef row is a coderef');
+	ok($input->{insights}{optional}, 'the comment still marks the row optional');
+};
+
+subtest 'an arrayref documented as insight hashrefs holds hashes' => sub {
+	my $src = <<'END_PM';
+package Mixed;
+
+use strict;
+use warnings;
+
+=head2 build
+
+=head4 Input
+
+	{
+	    password => 'string',   # required; not empty
+	    rounds   => 'integer',  # optional, 10_000 to 100_000_000
+	    insights => 'arrayref', # optional; insight hashrefs
+	}
+
+=cut
+
+sub build {
+	my ($password, %opts) = @_;
+	return { password => $password };
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'Mixed.pm');
+	my $schemas = App::Test::Generator::SchemaExtractor->new(input_file => $pm)->extract_all(no_write => 1);
+	my $input = $schemas->{build}{input};
+
+	is($input->{insights}{type}, 'arrayref', 'the quoted type still types the parameter');
+	is($input->{insights}{schema}{type}, 'hashref',
+		'an arrayref documented as insight hashrefs holds hashes');
+};
+
+subtest 'a documented output shape led by an adverb and an article' => sub {
+	my $src = <<'END_PM';
+package Shape;
+
+use strict;
+use warnings;
+
+=head2 rows
+
+=head4 Output
+
+Always an arrayref of hashrefs (never C<undef>).
+
+=cut
+
+sub rows {
+	my $self = shift;
+	return [];
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'Shape.pm');
+	my $schemas = App::Test::Generator::SchemaExtractor->new(input_file => $pm)->extract_all(no_write => 1);
+
+	is($schemas->{rows}{output}{type}, 'arrayref',
+		'"Always an arrayref of hashrefs" documents an arrayref return');
+};
+
+subtest 'a guarded undef return does not type the success value' => sub {
+	my $src = <<'END_PM';
+package Guarded;
+
+use strict;
+use warnings;
+
+sub span {
+	my ($interval) = @_;
+	return undef unless defined $interval && length $interval;
+	my $n = 1;
+	return undef if $n < 1;
+	return { n => $n, unit => 'm' };
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'Guarded.pm');
+	my $schemas = App::Test::Generator::SchemaExtractor->new(input_file => $pm)->extract_all(no_write => 1);
+	my $output = $schemas->{span}{output};
+
+	is($output->{type}, 'hashref', 'the record the routine returns on success is its type');
+	is($output->{_error_return}, 'undef', 'and the guards are the documented error return');
+};
+
 done_testing();
 

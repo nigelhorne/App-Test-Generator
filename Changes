@@ -131,6 +131,42 @@ Revision history for App-Test-Generator
 	  is a hashref whose POD states the shape of the whole value ("hashref
 	  of { country code => place rank }", "the existing model store"),
 	  which a generated hash of arbitrary keys cannot satisfy
+	- SchemaExtractor builds a stand-in for a constructor's documented
+	  object list, so the class's instance methods are fuzzed instead of
+	  skipped: the base class comes from the POD ("subclass of
+	  C<Database::Abstraction>") and the canned answers from the join
+	  column's documented default.  The stand-in publishes only that
+	  column, so the constructor's join_column check has a valid fixture
+	  and a documented predicate's column names one
+	- Documented argument shapes are read from the Input spec: "Arrayref
+	  of {col, op, val} predicate hashrefs" fixes the element keys and the
+	  "op -- one of: ..." list their domain, while a hashref documented as
+	  "index => criteria hashref" holds hashrefs rather than strings
+	- A routine taking a variadic list or an argument hash keeps its
+	  documented parameter names instead of turning table row order into
+	  call positions, and a deprecated forwarding alias takes its target's
+	  documented return type
+	- A routine that materialises the object's SQLite cache keeps that
+	  handle open for the next query by design, so the generated harness no
+	  longer reports it as a leaked file descriptor
+	- A type written quoted in an Input hash dump (`insights => 'arrayref'`,
+	  as Database::BI::Summary documents its arguments) types that argument;
+	  the quote was stripped only to recognise the row, so every such
+	  parameter fell back to a string and Summary::generate was fuzzed with
+	  a string where it reads an arrayref
+	- A guarded undef return (`return undef unless ...`) is the routine's
+	  error return, not the type of a successful value: a routine whose
+	  success value is a hashref now reports hashref, so
+	  Database::BI::Calc::span_interval is checked against the record its
+	  POD documents instead of a string
+	- An arrayref documented as holding hashrefs ("insight hashrefs" on
+	  Database::BI::Summary's insights) is fuzzed with hashes rather than
+	  the strings an unshaped arrayref gets, so the routine that reads
+	  `$_->{kind}` from each insight is not handed a string
+	- A documented output shape led by an adverb and an article ("Always an
+	  arrayref of hashrefs", Database::Join::aggregate) is read as the
+	  container: the article after "Always" stopped the shape matching, so
+	  the aggregate's arrayref was checked as a string
 
 	[ Enhancements ]
 	- Added bin/run-all-fuzz

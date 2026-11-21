@@ -278,4 +278,23 @@ subtest 'the case generator draws octets for a bytes parameter' => sub {
 		'a declared maximum sets the length');
 };
 
+subtest 'a stub element list can still be empty for a below-minimum case' => sub {
+	my $template = ${ App::Test::Generator::Template->get_data_section('test.tt') };
+	my ($src) = $template =~ /(sub _random_array_for_spec\b.*?\n\}\n)/s;
+	ok($src, 'extracted _random_array_for_spec from test.tt');
+
+	package Template::StubSandbox;
+	our $built = 0;
+	sub _build_stub_object { $built++; return bless {}, 'Template::StubSandbox::Fake' }
+	eval $src; ## no critic
+	die "failed to eval _random_array_for_spec: $@" if $@;
+	package main;
+
+	my $spec = { type => 'arrayref', _stub_elements => { isa => 'Database::Abstraction' } };
+	is_deeply(Template::StubSandbox::_random_array_for_spec($spec, 0), [],
+		'an empty list is a real value, not a silently raised minimum');
+	is(scalar @{ Template::StubSandbox::_random_array_for_spec($spec, 2) }, 2,
+		'and the requested number of stand-ins is built');
+};
+
 done_testing();

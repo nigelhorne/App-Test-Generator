@@ -1520,7 +1520,18 @@ sub extract_all {
 	# Enrichable: new: {} (no-arg ctor) or new: {hash} (with args).
 	# Unenrichable (coderef/object params): leave new: as the package-name string
 	# so _write_schema still emits new: ~ and self-fuzz.t keeps skipping those.
+	# An arrayref of live objects can be stood in for when the constructor's
+	# POD names the class the elements must be: see _constructor_object_stubs().
+	my $object_stubs = {};
 	if (exists $schemas{new}) {
+		my ($new_method) = grep { $_->{name} eq 'new' } @{$methods};
+		$object_stubs = _constructor_object_stubs(
+			$schemas{new},
+			$new_method ? $new_method->{pod} : undef,
+			$ctor_body,
+		);
+		$self->_log('  STUB: stood in for ' . join(', ', sort keys %{$object_stubs})) if %{$object_stubs};
+
 		my $ctor_args = $self->_ctor_representative_args($schemas{new});
 		if (defined $ctor_args) {
 			for my $method_name (keys %schemas) {
@@ -1541,8 +1552,8 @@ sub extract_all {
 	# instance methods new: ~ as well.
 	if($ctor_body && $schemas{new}
 	   && (my $reason = _constructor_requires_live_objects($ctor_body, $schemas{new}))) {
-		$schemas{new}{skip} = $reason;
-		$self->_log("  UNBUILDABLE: new: $reason");
+		$schemas{new}{skip} = $reason unless %{$object_stubs};
+		$self->_log("  UNBUILDABLE: new: $reason") unless %{$object_stubs};
 	}
 
 	# A constructor whose input includes an object it will call methods on,
@@ -1556,8 +1567,11 @@ sub extract_all {
 	# failing the object construction at every call.
 	if($ctor_body && $schemas{new}
 	   && (my $reason = _constructor_needs_live_dependencies($schemas{new}))) {
-		$schemas{new}{skip} //= $reason;
-		$self->_log("  UNBUILDABLE: new: $reason");
+		# A stand-in for the documented object list makes the constructor
+		# buildable: the objects it cannot stand in for are optional, so a
+		# call that omits them is valid.
+		$schemas{new}{skip} //= $reason unless %{$object_stubs};
+		$self->_log("  UNBUILDABLE: new: $reason") unless %{$object_stubs};
 	}
 
 	# A constructor can refuse to build the package itself: an abstract base
@@ -1591,6 +1605,15 @@ sub extract_all {
 		next unless($schema && ref($schema->{output}) eq 'HASH');
 		my $body = $method->{body} // '';
 
+		# A routine that takes a variadic list or an argument hash receives its
+		# documentation as named arguments: a table row's order is not a call
+		# order for it.  Database::Join::aggregate forwards @args to get_params,
+		# and calling it positionally tested the argument count instead of the
+		# documented keys.
+		if($body =~ /\bmy\s*\([^)]*[\@%]\w+\s*\)\s*=\s*\@_/ || $body =~ /\bmy\s+%\w+\s*=\s*\@_/) {
+			delete $schema->{input}{$_}{position} for keys %{ $schema->{input} // {} };
+		}
+
 		if($body =~ /\bcroak\b[^;\n]*must be implemented by subclass/) {
 			$schema->{output}{_STATUS} = 'DIES';
 		} elsif(($body =~ /\breturn\s+@\{/) && (($method->{pod} // '') =~ /\b(?:a\s+)?list\s+of\b|\breturns?\s+a\s+list\b/i)) {
@@ -1607,6 +1630,28 @@ sub extract_all {
 		} elsif($body =~ /\breturn\s+\\?[A-Z]\w*(?:::\w+)+(?:->)?\w*\s*\(/) {
 			# Delegated to another package: its result type is not visible here.
 			delete $schema->{output}{type};
+		}
+
+		# A routine that only croaks is unsupported by design: every call is
+		# an error, so the harness expects a death for each one.  Database::Join
+			# documents query(), group_by() and execute() that way.
+		if(_always_croaks($body)) {
+			$schema->{output} = { _STATUS => 'DIES' };
+		}
+
+		# A routine that hands a database handle back to its caller leaves a
+		# descriptor open on purpose, so the check that nothing leaked does
+		# not apply (the harness reads config 'check_fds').
+		if($body =~ /\breturn\s*\{[^}]*\bdbh\s*=>/s) {
+			$schema->{_analysis}{side_effects}{keeps_fd} = 1;
+		}
+
+		# A routine that materialises the object's SQLite cache keeps that
+		# handle open on the object for the next query (Database::Join's
+		# GROUP BY path).  It is cached state, cleaned up when the object
+		# goes away, not a descriptor the call forgot.
+		if($body =~ /\b_sqlite_\w+|\bsqlite_cache\b/) {
+			$schema->{_analysis}{side_effects}{keeps_fd} = 1;
 		}
 
 		if(my $skip = _requires_input_file($body, $schema->{input})) {
@@ -1709,11 +1754,21 @@ sub extract_all {
 		my $target = $delegates{$method_name};
 		next if $method_name eq $target;
 		my $target_schema = $schemas{$target};
-		next unless $target_schema && ref($target_schema->{input}) eq 'HASH'
-			&& scalar(keys %{$target_schema->{input}});
+		next unless $target_schema;
 
 		my $schema = $schemas{$method_name};
 		next unless $schema;
+
+		# The forwarded call's result is this routine's result, so the
+		# documented output type is the target's too (selectall_hashref is a
+		# deprecated alias of selectall_arrayref), whether or not the target
+		# takes arguments.
+		if(ref($target_schema->{output}) eq 'HASH' && %{$target_schema->{output}}) {
+			$schema->{output} = { %{$target_schema->{output}} };
+		}
+
+		next unless ref($target_schema->{input}) eq 'HASH'
+			&& scalar(keys %{$target_schema->{input}});
 		next if ref($schema->{input}) eq 'HASH' && scalar(keys %{$schema->{input}});
 
 		$schema->{input} = {
@@ -1777,7 +1832,9 @@ sub _delegated_method {
 	(my $body = $code) =~ s/\A\s*sub\s+\w+\s*//;
 	$body =~ s/\s+/ /g;
 
-	return $body =~ /\A\{ (?:my \$self = shift; )?return \$self->(\w+)\(\s*\\\@_\s*\); \}\z/ ? $1 : undef;
+	# A deprecated alias warns first, then forwards; the warning does not
+	# change what the routine returns (Database::Join::selectall_hashref).
+	return $body =~ /\A\{ (?:my \$self = shift; )?(?:carp\s+(?:'[^']*'|"[^"]*")\s*; )?return \$self->(\w+)\(\s*\\?\@_\s*\); \}\z/ ? $1 : undef;
 }
 
 # --------------------------------------------------
@@ -2411,6 +2468,9 @@ sub _analyze_method {
 			$schema->{input}{$name}{type}      = $pod_p->{type}      if defined $pod_p->{type};
 			$schema->{input}{$name}{min}       = $pod_p->{min}       if defined $pod_p->{min};
 			$schema->{input}{$name}{max}       = $pod_p->{max}       if defined $pod_p->{max};
+			# A documented element or value shape is structural, not a
+			# constraint the validator states.
+			$schema->{input}{$name}{schema}    = $pod_p->{schema}    if ref($pod_p->{schema}) eq 'HASH';
 
 			# These constraints are documented, even though the field's
 			# _source stays the type-checking marker (SOURCE_VALIDATOR).
@@ -4531,6 +4591,13 @@ sub _analyze_pod {
 				next if $own =~ /\boptional\s*=>\s*(?:0|1)/i;
 				$params{$bare_name} //= { _source => SOURCE_INPUT_SPEC };
 				$params{$bare_name}{optional} = 1 - ($1 + 0);
+
+				# The comment lines under the entry describe its shape.
+				my ($desc) = $block =~ /(?:^|\n)[ \t]*\Q$bare_name\E\s*=>[^\n]*(?:\n[ \t]+[^\n#][^\n]*)*\n((?:[ \t]*#[^\n]*(?:\n|\z))+)/;
+				my ($bare_type) = $own =~ /\btype\s*=>\s*'?(\w+)/;
+				if(my $shape = _pod_nested_input_shape($bare_type // '', $desc)) {
+					$params{$bare_name}{schema} = $shape;
+				}
 			}
 		}
 	}
@@ -4759,11 +4826,56 @@ sub _pod_input_hash_fields {
 	my ($body) = @_;
 
 	my %fields;
-	while($body =~ /(\w+)\s*=>\s*'?([A-Za-z0-9_:.]+)'?/g) {
+	# Keys are often quoted ('type' => 'boolean'), so the quote before =>
+	# belongs to the key.
+	while($body =~ /'?(\w+)'?\s*=>\s*'?([A-Za-z0-9_:.]+)'?/g) {
 		$fields{$1} = $2;
+	}
+	# An enum names the documented values; the bare-word scan above cannot
+	# read the list, so record it separately.
+	if($body =~ /\benum\s*=>\s*\[([^\]]*)\]/) {
+		my @values = $1 =~ /['"]([^'"]+)['"]/g;
+		$fields{enum} = \@values if(@values);
 	}
 
 	return \%fields;
+}
+
+# The shape of a documented nested argument, read from the comment lines
+# under its Input entry: "Arrayref of {col, op, val} predicate hashrefs" is
+# an array of hashes with those keys, and "index => criteria hashref" is a
+# hash whose values are hashes.  A type-less element spec maps key names to
+# their specs, which is how the harness builds a fixed-key hash.
+sub _pod_nested_input_shape {
+	my ($type, $desc) = @_;
+
+	return undef unless(defined($type) && length($type));
+	return undef unless(defined($desc) && !ref($desc) && length($desc));
+
+	if(($type eq 'arrayref') && $desc =~ /\bof\s+\{([^}]+)\}/i) {
+		my %element;
+		for my $key ($1 =~ /(\w+)/g) {
+			my %spec = (type => 'string');
+			# "op -- one of: eq, ne, ..." is the documented domain.
+			if($desc =~ /\b\Q$key\E\s*--\s*one\s+of:\s*([^\n]+)/i) {
+				my @values = map { s/\A\s+|\s+\z//gr } split /,/, $1;
+				$spec{memberof} = \@values if(@values);
+			}
+			$element{$key} = \%spec;
+		}
+		return { %element } if(%element);
+	}
+
+	# "Arrayref of insight hashrefs" (Database::BI::Summary's insights) holds
+	# hashes, not the strings a bare arrayref would otherwise be given.
+	if(($type eq 'arrayref') && $desc =~ /\bhashrefs?\b/i) {
+		return { type => 'hashref' };
+	}
+
+	return { type => 'hashref' }
+		if(($type eq 'hashref') && $desc =~ /=>\s*\w+\s+hashref\b/i);
+
+	return undef;
 }
 
 sub _apply_pod_input_table {
@@ -4820,11 +4932,25 @@ sub _apply_pod_input_table {
 			$p->{optional} = ($fields->{optional} ? 1 : 0);
 			$p->{isa} = $fields->{isa}
 				if defined($fields->{isa}) && $fields->{isa} !~ /\Aundef\z/i;
+			# The documented values are the domain: a generated string outside
+			# them is an error the routine promises to reject.
+			$p->{memberof} = $fields->{enum}
+				if ref($fields->{enum}) eq 'ARRAY' && @{$fields->{enum}};
 			$p->{min} = $fields->{min} + 0
 				if defined($fields->{min}) && $fields->{min} =~ /\A-?\d/;
 			$p->{max} = $fields->{max} + 0
 				if defined($fields->{max}) && $fields->{max} =~ /\A-?\d/;
 			$p->{_source} = SOURCE_INPUT_SPEC;
+
+			# The comment lines under the row describe the documented shape.
+			# "Arrayref of {col, op, val} predicate hashrefs" fixes the element
+			# keys (Database::Join::new's mandatory_filters), and a hashref
+			# documented as "index => criteria hashref" holds hashrefs rather
+			# than the strings a bare hashref would otherwise be given.
+			my ($desc) = $block =~ /(?:^|\n)[ \t]*\Q$name\E\s*=>[^\n]*\n((?:[ \t]*#[^\n]*(?:\n|\z))+)/;
+			if(my $shape = _pod_nested_input_shape($p->{type}, $desc)) {
+				$p->{schema} = $shape;
+			}
 
 			$self->_log('  POD: ' . $name . ' type '
 				. (defined($p->{type}) ? "'$p->{type}'" : '(none)')
@@ -4836,6 +4962,7 @@ sub _apply_pod_input_table {
 	}
 
 	my @found;
+	my %row_text;
 
 	# The table lists the arguments in call order, so it gives their positions.
 	my $position = 0;
@@ -4868,6 +4995,13 @@ sub _apply_pod_input_table {
 		# skipped, leaving those parameters to the inferred code types.
 		} elsif($line =~ /^\s{0,8}\\?[\$\@%]?(\w+)\s*(?::|=>)\s*(\S.*)$/) {
 			($name, $spec) = ($1, $2);
+			# A prose line can look like a row ("Effect: on the array
+			# backend ..."); only a value that begins with a documented type
+			# declares an argument.  A type can be written quoted
+			# ("'string',") or with a sigil first.
+			(my $first = $spec) =~ s/\A['"]//;
+			($first) = $first =~ /\A([A-Za-z]+)/;
+			next unless(defined($first) && exists($types{lc($first)}));
 		} elsif($line =~ /^\s{0,8}\\?[\$\@%](\w+)\s+(SCALAR|ARRAYREF|HASHREF|CODEREF|CODE|OBJECT|GLOB)\b\s*,?\s*(.*)$/i) {
 			($name, $spec) = ($1, "$2 $3");
 		} elsif($line =~ /^\s*\\?[\$\@%](\w+)\s+#\s*(\S.*)$/) {
@@ -4887,7 +5021,10 @@ sub _apply_pod_input_table {
 
 		next if $name =~ /^(?:self|class|pkg|proto|klass|returns?)$/i;
 
-		my ($type_word) = $spec =~ /\A([A-Za-z]+)/;
+		# A quoted type ('arrayref',) is written the same way as a bare one:
+		# the quote belongs to the value, not to the type's name.
+		(my $typed_spec = $spec) =~ s/\A['"]//;
+		my ($type_word) = $typed_spec =~ /\A([A-Za-z]+)/;
 		my $type;
 		if($prose) {
 			# In a comment the first word is prose, not a type: `$spec # any
@@ -4908,6 +5045,13 @@ sub _apply_pod_input_table {
 		$p->{position} = $position++ unless defined $p->{position};
 		$p->{type} = $type if defined($type);
 		$p->{_source} = SOURCE_INPUT_SPEC;
+		$row_text{$name} = $spec;
+
+		# The row's own comment describes the documented shape: an arrayref
+		# of "insight hashrefs" holds hashes rather than strings.
+		if(my $shape = _pod_nested_input_shape($type, $spec)) {
+			$p->{schema} = $shape;
+		}
 
 		if($spec =~ /\boptional\b/i || $spec =~ /\bdefault\b/i) {
 			$p->{optional} = 1;
@@ -4918,7 +5062,7 @@ sub _apply_pod_input_table {
 		# `one or more` is a size floor, not a spelling: an empty list is
 		# the documented error, so say so rather than letting the harness
 		# treat [] as a legal value.
-		if(defined($type) && $type eq 'arrayref' && $spec =~ /\bone\s+or\s+more\b/i) {
+		if(defined($type) && $type eq 'arrayref' && $spec =~ /\b(?:one\s+or\s+more|non-empty)\b/i) {
 			$p->{min} = 1;
 		}
 
@@ -4958,6 +5102,76 @@ sub _apply_pod_input_table {
 		$self->_log('  POD: ' . $name . ' type ' . (defined($type) ? "'$type'" : '(none)')
 			. ' from the Input table');
 		push @found, $name;
+	}
+
+	# A nested "Measure hashref keys:" block documents the shape of the
+	# hashrefs an arrayref argument holds.  Without it the harness invents a
+	# string element, which the routine rightly rejects; with it the
+	# documented keys, their allowed values and their patterns are what the
+	# harness builds.
+	if($block =~ /^(\w+)\s+hashref\s+keys\s*:\s*\n(.*?)(?=\n\s*\n|\z)/msi) {
+		my ($kind, $rows) = ($1, $2);
+		my (%element, %alternation);
+		for my $line (split /\n/, $rows) {
+			next unless($line =~ /^\s{0,8}(\w+)\s*=>\s*(\S.*)$/);
+			my ($key, $text) = ($1, $2);
+			# A key another key's description makes conditional on the
+			# function ("required for all functions except bare count") is
+			# left out: the element is built for the function that needs no
+			# further column.
+			next if($text =~ /\brequired\b[^;]*\bexcept\b/i);
+			my %spec = (type => 'string');
+			if($text =~ /\(([^)]*\|[^)]*)\)/) {
+				my @values = map { s/\A\s+|\s+\z//gr } split /\|/, $1;
+				$spec{memberof} = \@values if(@values);
+				$alternation{$key} = \@values;
+			}
+			if($text =~ /match(?:es)?\s+C?<\s*\/(.*?)\/\s*>/) {
+				$spec{matches} = $1;
+			}
+			$element{$key} = \%spec;
+		}
+
+		# The description says which listed function needs no further key;
+		# build the element for that one.
+		if(my ($except) = $rows =~ /\bexcept\s+(?:bare\s+)?(\w+)/i) {
+			for my $key (keys %alternation) {
+				next unless(grep { $_ eq $except } @{$alternation{$key}});
+				$element{$key}{memberof} = [ $except ];
+			}
+		}
+
+		if(%element) {
+			for my $name (keys %{$params}) {
+				my $p = $params->{$name};
+				next unless(($p->{_source} // '') eq SOURCE_INPUT_SPEC);
+				next unless((($p->{type} // '') =~ /^array/));
+				next unless(defined($row_text{$name})
+					&& $row_text{$name} =~ /arrayref\s+of\s+\Q$kind\E\s+hashrefs/i);
+				$p->{schema} = { %element };
+			}
+		}
+	}
+
+	# A section documenting "Reserved keys extracted before the rest is treated
+	# as WHERE criteria" describes a variadic named API (Database::Join's
+	# aggregate): only the key it marks required is required, and an optional
+	# reference it gives no element shape for cannot be built validly, so it
+	# is left out rather than fuzzed with invented contents.
+	if($block =~ /\bReserved keys\b/i) {
+		for my $name (keys %{$params}) {
+			my $p = $params->{$name};
+			next unless(($p->{_source} // '') eq SOURCE_INPUT_SPEC);
+
+			$p->{optional} = 1 unless(defined($p->{optional}) && !$p->{optional});
+
+			my $type = $p->{type} // '';
+			next unless(($type eq 'arrayref') || ($type eq 'array') || ($type eq 'hashref'));
+			next if(ref($p->{schema}) eq 'HASH');
+			next if(ref($p->{memberof}) eq 'ARRAY' && @{$p->{memberof}});
+
+			delete $params->{$name} if($p->{optional});
+		}
 	}
 
 	return scalar @found;
@@ -5079,6 +5293,14 @@ sub _analyze_output_from_pod {
 					$output->{type} = 'hashref';
 					$self->_log("  OUTPUT: type 'hashref' from =head4 Output record notation");
 				}
+			} elsif($block =~ /\A(?:(?:Always|Usually)\s+)?(?:An?\s+)?(Hashref|Hash|Arrayref|Array|List)(?=\s*(?:of\b|:|\(|\[|\.|;|,|\z))/i) {
+				# A documented shape such as "Hashref: column_name => {...}",
+				# "Arrayref of hashrefs" or "Always an arrayref of hashrefs"
+				# names the container first.  "The hash string." names a
+				# string, so an article alone does not make it a container.
+				my $word = lc($1);
+				$output->{type} = ($word =~ /^array|^list/) ? 'arrayref' : 'hashref';
+				$self->_log("  OUTPUT: type '$output->{type}' from =head4 Output shape");
 			}
 		}
 
@@ -5387,7 +5609,9 @@ sub _analyze_output_from_code
 					# its arguments contain: sprintf '%02d:%02d', $h, $m is a
 					# timestamp string, not a number.
 					$return_types{string} += 2;
-				} elsif ($ret eq 'undef') {
+				} elsif ($ret =~ /\Aundef\b/) {
+					# `return undef unless $id` is an undef return with a guard,
+					# the same error return as a bare `return undef`.
 					$return_types{undef}++;
 				} elsif ($ret =~ /^\[/) {
 				# Data structures
@@ -5469,7 +5693,17 @@ sub _analyze_output_from_code
 
 			# Determine most common return type
 			if (keys %return_types) {
-				my ($most_common) = sort { $return_types{$b} <=> $return_types{$a} } keys %return_types;
+				# The undef paths are the documented error return
+				# (_error_return), not the type of a successful value: a
+				# routine returning a record or undef returns a record when
+				# it succeeds, however many guards send it back undef.
+				my %value_types = %return_types;
+				delete $value_types{undef} if(keys(%value_types) > 1);
+				# A tie is broken by name so the same code always yields the
+				# same schema: hash order is randomised per process, and
+				# Geo::Coder::Free::geocode_many alternated between string and
+				# hashref in successive runs.
+				my ($most_common) = sort { $value_types{$b} <=> $value_types{$a} || $a cmp $b } keys %value_types;
 				# Prefer integer over scalar if numeric returns dominate
 				if ($return_types{integer} && (!$return_types{string})) {
 					if (!$output->{type} || $output->{type} eq 'scalar') {
@@ -9522,6 +9756,11 @@ sub _write_schema {
 	if($schema->{_analysis}{side_effects}{writes_file}) {
 		$output->{config}{check_files} = 0;
 	}
+	# A routine that returns a database handle keeps a descriptor open by
+	# design; the harness is told not to call that a leak.
+	if($schema->{_analysis}{side_effects}{keeps_fd}) {
+		$output->{config}{check_fds} = 0;
+	}
 
 	# The routine has a precondition no generated value can meet, so there is
 	# nothing meaningful to fuzz; the harness and all-fuzz report it skipped.
@@ -9887,6 +10126,17 @@ sub _serialize_parameter_for_yaml {
 		}
 	}
 
+	# The harness injected this value itself (a stub's advertised column), so
+	# it is a fixture rather than a documented domain: no outside value is
+	# expected to be an error.
+	$cleaned{_fixture} = 1 if($param->{_fixture});
+
+	# The element shape of an arrayref of hashrefs, read from the POD's nested
+	# key block: a YAML scalar cannot describe it.
+	if(ref($param->{schema}) eq 'HASH') {
+		$cleaned{schema} = $param->{schema};
+	}
+
 	# Handle memberof even if not marked with semantic.
 	# enum and memberof are mutually exclusive — only set memberof when enum
 	# is not already being output (avoids the "has both" validation error).
@@ -9931,6 +10181,12 @@ sub _serialize_parameter_for_yaml {
 				$cleaned{matches} = $body;
 			}
 		}
+	}
+
+	# A stand-in for an arrayref of live objects: the harness has to build
+	# one, and a YAML scalar cannot describe it.
+	if(ref($param->{_stub_elements}) eq 'HASH') {
+		$cleaned{_stub_elements} = $param->{_stub_elements};
 	}
 
 	# Remove internal fields.  The directory and existing-file semantics are
@@ -10139,16 +10395,22 @@ sub _constructor_needs_live_dependencies
 	return undef;
 }
 
-sub _constructor_requires_live_objects
+# The required arrayref constructor parameters whose elements are live
+# objects, with the reason each one is: the constructor rejects an empty
+# list, calls a method on an element, or checks that an element is blessed.
+# The names matter as well as the reasons, because a stand-in can be supplied
+# for every such parameter when the POD says what the elements are.
+sub _constructor_live_object_param_reasons
 {
 	my ($body, $ctor_schema) = @_;
 
 	my $content = ref($body) ? eval { $body->content } : $body;
-	return undef unless(defined($content) && length($content));
+	return () unless(defined($content) && length($content));
 
 	my $input = $ctor_schema->{input};
-	return undef unless(ref($input) eq 'HASH');
+	return () unless(ref($input) eq 'HASH');
 
+	my %reasons;
 	for my $param (sort keys %$input) {
 		my $spec = $input->{$param};
 		next unless(ref($spec) eq 'HASH');
@@ -10170,12 +10432,126 @@ sub _constructor_requires_live_objects
 
 		next unless($empty_guard || $elements_are_objects);
 
-		return $empty_guard
+		$reasons{$param} = $empty_guard
 			? "needs a non-empty arrayref of live objects in '$param'"
 			: "needs live objects in '$param'";
 	}
 
+	return %reasons;
+}
+
+sub _constructor_requires_live_objects
+{
+	my ($body, $ctor_schema) = @_;
+
+	my %reasons = _constructor_live_object_param_reasons($body, $ctor_schema);
+	return undef unless(%reasons);
+
+	my ($param) = sort keys %reasons;
+	return $reasons{$param};
+}
+
+# The class the POD says a constructor's object elements must be, e.g.
+# "Each element of C<databases> must be an already-instantiated subclass of
+# C<Database::Abstraction>".  Reading it from the documentation keeps the
+# stand-in the harness builds tied to what the constructor promises rather
+# than to a class name guessed from the code.
+sub _pod_constructor_element_class
+{
+	my ($pod) = @_;
+
+	return undef unless(defined($pod) && length($pod));
+
+	return $1 if($pod =~ /\bsubclass(?:es)?\s+of\s+(?:C<)?([A-Z]\w*(?:::\w+)+)/);
+	return $1 if($pod =~ /\bisa\s*\(\s*['\"]?([A-Z]\w*(?:::\w+)+)/);
+	return $1 if($pod =~ /\binstances?\s+of\s+(?:C<)?([A-Z]\w*(?:::\w+)+)/);
+
 	return undef;
+}
+
+# Teach the harness to stand an object in for a constructor argument that
+# YAML cannot hold.  Database::Join->new requires a non-empty list of live
+# Database::Abstraction objects: nothing a generated file can name gives it
+# one, so every instance method used to be skipped.  The POD names the base
+# class, and the documented join_column default names the column the
+# constructor checks for, so a stub that answers the DA methods the
+# constructor calls can be built: it is blessed into a package inheriting
+# from the documented class and answers columns(), schema() and
+# selectall_arrayref().
+#
+# Only the Database::Abstraction interface is stubbed: those are the methods
+# the canned answers describe.  Anything else keeps the skip.
+sub _constructor_object_stubs
+{
+	my ($ctor_schema, $pod, $body) = @_;
+
+	my %reasons = _constructor_live_object_param_reasons($body, $ctor_schema);
+	return {} unless(%reasons);
+
+	my $base = _pod_constructor_element_class($pod);
+	return {} unless(defined($base) && ($base eq 'Database::Abstraction'));
+
+	my $input = $ctor_schema->{input} // {};
+	my $join_column = (ref($input->{join_column}) eq 'HASH')
+		? $input->{join_column}{default} : undef;
+	return {} unless(defined($join_column) && !ref($join_column) && length($join_column));
+
+	my %stubs;
+	for my $param (sort keys %reasons) {
+		# The constructor's own `croak ... unless @{ $p->{$param} }` documents
+		# that the list must not be empty.
+		$input->{$param}{min} = 1;
+		my $stub = {
+			isa => $base,
+			methods => {
+				columns => [ $join_column ],
+				schema => {},
+				selectall_arrayref => [],
+			},
+		};
+		$input->{$param}{_stub_elements} = $stub;
+		$stubs{$param} = $stub;
+	}
+
+	# The stand-in advertises only the join column, so that is the only value
+	# its columns() reports and the only one the constructor's check accepts.
+	# The list is a harness fixture, not a documented domain: every other
+	# string is absent from every stub database and rightly croaks, so only
+	# the fixture value is exercised.
+	if(ref($input->{join_column}) eq 'HASH') {
+		$input->{join_column}{memberof} = [ $join_column ];
+		$input->{join_column}{_constraint_source}{memberof} = 'fixture';
+		$input->{join_column}{_fixture} = 1;
+	}
+
+	# A documented predicate's column must exist in the merged view too, and
+	# the only column the stand-in publishes is the join column
+	# (Database::Join::new's mandatory_filters).
+	for my $param (keys %$input) {
+		my $element = $input->{$param}{schema};
+		next unless(ref($element) eq 'HASH' && ref($element->{col}) eq 'HASH');
+		next if(ref($element->{col}{memberof}) eq 'ARRAY' && @{$element->{col}{memberof}});
+		$element->{col}{memberof} = [ $join_column ];
+		$element->{col}{_constraint_source}{memberof} = 'fixture';
+		$element->{col}{_fixture} = 1;
+	}
+
+	return \%stubs;
+}
+
+# True when the routine's whole body is a croak, with nothing but simple
+# assignments before it: such a method exists only to report that the
+# operation is unsupported, and every call is expected to die.
+sub _always_croaks
+{
+	my ($body) = @_;
+
+	my $code = $body // '';
+	$code =~ s/#[^\n]*//g;
+	$code =~ s/\A\s*sub\s+\w+\s*\{//;
+	$code =~ s/\}\s*\z//;
+
+	return ($code =~ /\A\s*(?:my\s+[^;]+;\s*)*croak\b[^;]*;\s*\z/s) ? 1 : 0;
 }
 
 # True when the constructor refuses to build the package itself.  Two idioms
@@ -10230,6 +10606,12 @@ sub _ctor_representative_args {
 		}
 		if ($param_name =~ /(?:dir|path)/i) {
 			$args{$param_name} = { '_path' => 'directory' };
+			next;
+		}
+		# A list of live objects the POD describes: the harness builds a
+		# stand-in for each element instead of an empty arrayref.
+		if (ref($spec->{_stub_elements}) eq 'HASH') {
+			$args{$param_name} = [ { '_stub' => $spec->{_stub_elements} } ];
 			next;
 		}
 		my $type = $spec->{type} // 'string';
