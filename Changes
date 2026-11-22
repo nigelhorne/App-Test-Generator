@@ -19,11 +19,31 @@ Revision history for App-Test-Generator
 	  as the password, so no empty or NUL-terminated password was ever tried
 	- SchemaExtractor reads a documented numeric range written with words
 	  (`10_000 to 100_000_000 (default 200_000)`) as min/max, and records
-	  the documented default as the new C<sample_max>: valid data is
-	  generated only up to it while C<max> stays the documented bound.  A
-	  PBKDF2 round count is fuzzed at its default rather than at a maximum
-	  that takes minutes per call, and the harness no longer expects
-	  out-of-range values such as 66 to be accepted
+	  the documented default as the new C<sample_max> when the maximum is at
+	  least ten times it: valid data is generated only up to the default
+	  while C<max> stays the documented bound.  A PBKDF2 round count is
+	  fuzzed at its default rather than at a maximum that takes minutes per
+	  call, while an ordinary bounded option (a port, 1 to 65535 with
+	  default 8080) is still generated across its whole range, and the
+	  harness no longer expects out-of-range values such as 66 to be
+	  accepted
+	- App::Test::Generator::CoverageGuidedFuzzer honours the new C<sample_max>
+	  schema key: generated integers and numbers stop at it while C<max>
+	  stays the bound a value is validated against, so a work factor such as
+	  a PBKDF2 round count is fuzzed at its documented default rather than at
+	  a maximum that takes minutes per call.  A mutated number is kept out of
+	  the band between C<sample_max> and C<max>: a value that would land there
+	  becomes C<max + 1> and is refused cheaply, so repeated doubling cannot
+	  creep up into the slow band and record a timeout as a bug.  A mixed-call
+	  schema is called with its single positional argument; the trailing named
+	  options are not built and stay at their defaults
+	- App::Test::Generator::BenchmarkGenerator passes a parameter without a
+	  position after the positional arguments as a `name => value` pair, so a
+	  mixed-call routine is timed as `first(5, option => 42)` instead of with
+	  the option dropped (a required option used to kill every iteration),
+	  and it caps the numeric value it chooses at C<sample_max>, so a work
+	  factor is timed at its default rather than at a maximum that takes
+	  minutes per call
 	- SchemaExtractor reads a =head4 Input section written as a table, one
 	  `name : type` or `$name SCALAR` line per parameter (Database::BI
 	  documents every routine that way): each type is recorded as

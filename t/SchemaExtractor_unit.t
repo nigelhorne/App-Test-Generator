@@ -2638,5 +2638,46 @@ END_PM
 		'the default caps the data generated for a work factor');
 };
 
+subtest 'a bounded numeric option is generated across its whole range' => sub {
+	my $src = <<'END_PM';
+package Ported;
+
+use strict;
+use warnings;
+
+=head2 listen
+
+=head3 API SPECIFICATION
+
+=head4 INPUT
+
+    port: integer, optional, 1 to 65535 (default 8080)
+
+=head4 OUTPUT
+
+    { type => 'string' }
+
+=cut
+
+sub listen {
+	my (%opts) = @_;
+	my $port = $opts{port} // 8080;
+	die 'port out of range' unless $port >= 1 && $port <= 65535;
+	return "listening on $port";
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'Ported.pm');
+	my $schemas = App::Test::Generator::SchemaExtractor->new(input_file => $pm)->extract_all(no_write => 1);
+	my $input = $schemas->{listen}{input};
+
+	is($input->{port}{max}, 65_535, 'the documented maximum is kept');
+	is($input->{port}{default}, 8080, 'the documented default is recorded');
+	ok(!exists($input->{port}{sample_max}),
+		'the default does not cap an option whose maximum is close to it');
+};
+
 done_testing();
 

@@ -5133,16 +5133,22 @@ sub _apply_pod_input_table {
 		}
 
 		# The documented default is the value the routine is meant to run
-		# with, so it is the highest value the harness generates as valid
-		# data: a work factor near the documented maximum (a PBKDF2 round
-		# count) can take minutes per call, which no fuzz run can afford.
-		# max stays the documented bound, so a value above it is still probed.
+		# with, so a maximum far above it is a work factor: a PBKDF2 round
+		# count near the documented maximum can take minutes per call, which
+		# no fuzz run can afford.  Only then does the default cap the valid
+		# data; an ordinary bounded option (a port, 1 to 65535 with default
+		# 8080) must still be generated across its whole range, so the cap
+		# needs the maximum to be at least ten times the default (and a
+		# positive default, so a flag whose default is 0 is not pinned at 0).
+		# max stays the documented bound either way, so a value above it is
+		# still probed.
 		if(defined($type) && ($type =~ /\A(?:integer|number)\z/)
 		   && $spec =~ /\bdefault\b\s*\(?\s*(-?\d[\d_]*)/i) {
 			my $default = _undigitised($1);
 			$p->{default} = $default;
 			$p->{sample_max} = $default
-				if defined($p->{max}) && ($default < $p->{max})
+				if defined($p->{max}) && ($default > 0)
+					&& ($p->{max} >= 10 * $default)
 					&& (!defined($p->{min}) || ($default >= $p->{min}));
 		}
 
