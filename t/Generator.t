@@ -526,6 +526,58 @@ subtest '_validate_input_positions() passes valid positions' => sub {
 	);
 };
 
+subtest '_validate_input_positions() accepts a trailing named option' => sub {
+	lives_ok(
+		sub {
+			_validate_input_positions({
+				input => {
+					message  => { type => 'string',  position => 0 },
+					priority => { type => 'integer', named => 1, optional => 1 },
+				}
+			})
+		},
+		'a parameter after the positional arguments may be named',
+	);
+};
+
+subtest '_validate_input_params() checks the sampling ceiling' => sub {
+	lives_ok(
+		sub {
+			_validate_input_params({
+				input => {
+					rounds => {
+						type       => 'integer',
+						min        => 10_000,
+						max        => 100_000_000,
+						sample_max => 200_000,
+					},
+				}
+			})
+		},
+		'a sample_max inside the documented range lives',
+	);
+
+	throws_ok(
+		sub {
+			_validate_input_params({
+				input => { rounds => { type => 'integer', min => 1, max => 9, sample_max => 10 } }
+			})
+		},
+		qr/above max/,
+		'a sample_max above max croaks',
+	);
+
+	throws_ok(
+		sub {
+			_validate_input_params({
+				input => { rounds => { type => 'integer', min => 1, max => 9, sample_max => 0 } }
+			})
+		},
+		qr/below min/,
+		'a sample_max below min croaks',
+	);
+};
+
 # ------------------------------------------------------------------
 # _normalize_config — normalise boolean strings in config hash
 # ------------------------------------------------------------------

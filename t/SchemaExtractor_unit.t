@@ -8,6 +8,7 @@ use App::Test::Generator ();
 use App::Test::Generator::Provenance qw(source_is_valid);
 use File::Temp qw(tempdir);
 use File::Spec;
+use YAML::XS qw(LoadFile);
 
 # Black-box unit tests for App::Test::Generator::SchemaExtractor.
 # Tests each public function according to its POD API specification.
@@ -2504,6 +2505,137 @@ END_PM
 
 	is($output->{type}, 'hashref', 'the record the routine returns on success is its type');
 	is($output->{_error_return}, 'undef', 'and the guards are the documented error return');
+};
+
+subtest 'only a documented cache handle turns the fd check off' => sub {
+	my $src = <<'END_PM';
+package Cacheish;
+
+use strict;
+use warnings;
+
+=head2 dbi_source
+
+Return the handle of the cache file so a parent can attach it.
+
+=head3 API SPECIFICATION
+
+=head4 Output
+
+    { dbh => $dbh, table => '_result' }
+
+=cut
+
+sub dbi_source {
+	my ($self) = @_;
+	return { dbh => $self->{_sqlite_cache}{dbh}, table => '_result' };
+}
+
+=head2 count
+
+Count the rows of the cached join tables.
+
+=head3 API SPECIFICATION
+
+=head4 Output
+
+    { type => 'integer' }
+
+=cut
+
+sub count {
+	my ($self, @args) = @_;
+	return $self->_sqlite_join({}, count_only => 1);
+}
+
+=head2 add_database
+
+Add a source to the join.
+
+=head3 API SPECIFICATION
+
+=head4 Output
+
+    { type => 'object' }
+
+=cut
+
+sub add_database {
+	my ($self, $db) = @_;
+	if(my $old = delete $self->{_sqlite_cache}) {
+		eval { $old->{dbh}->disconnect } if $old->{dbh};
+	}
+	$self->{_db_cols} = undef;
+	return $self;
+}
+
+1;
+END_PM
+
+	my ($pm, $tmpdir) = _make_pm($src, 'Cacheish.pm');
+	my $out = File::Spec->catdir($tmpdir, 'out');
+	App::Test::Generator::SchemaExtractor->new(input_file => $pm, output_dir => $out)->extract_all();
+
+	my $dbi_source = LoadFile(File::Spec->catfile($out, 'dbi_source.yml'));
+	is($dbi_source->{config}{check_fds}, 0,
+		'a returned handle that the POD documents as dbh turns the fd check off');
+
+	my $count = LoadFile(File::Spec->catfile($out, 'count.yml'));
+	is($count->{config}{check_fds}, 0,
+		'a query against the documented cache keeps the handle it builds');
+
+	my $add_database = LoadFile(File::Spec->catfile($out, 'add_database.yml'));
+	ok(!exists($add_database->{config}{check_fds}),
+		'invalidating the cache holds nothing, so its calls stay checked');
+};
+
+subtest 'a positional argument followed by named options is a mixed call' => sub {
+	my $src = <<'END_PM';
+package MixedSig;
+
+use strict;
+use warnings;
+
+=head2 hash_it
+
+=head3 API SPECIFICATION
+
+=head4 INPUT
+
+    $password: string, required, not empty
+    rounds:    integer, optional, 10_000 to 100_000_000 (default 200_000).
+               Domains: 10_000, 10_001, 99_999_999 and 100_000_000 are accepted.
+
+=head4 OUTPUT
+
+    { type => 'string' }
+
+=cut
+
+sub hash_it {
+	my ($password, %opts) = @_;
+	die 'password required' unless defined($password) && !ref($password) && length($password);
+	my $rounds = $opts{rounds} // 200_000;
+	die 'rounds out of range' unless $rounds >= 10_000 && $rounds <= 100_000_000;
+	return "$password/$rounds";
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'MixedSig.pm');
+	my $schemas = App::Test::Generator::SchemaExtractor->new(input_file => $pm)->extract_all(no_write => 1);
+	my $input = $schemas->{hash_it}{input};
+
+	is($input->{password}{position}, 0, 'the leading scalar keeps position 0');
+	is($input->{password}{named} // 0, 0, 'and is not a named option');
+	ok(!exists($input->{rounds}{position}), 'the option after the slurpy has no position');
+	is($input->{rounds}{named}, 1, 'it is passed by name after the positional arguments');
+	is($input->{rounds}{min}, 10_000, 'a range written with words is a documented minimum');
+	is($input->{rounds}{max}, 100_000_000, 'and a documented maximum');
+	is($input->{rounds}{default}, 200_000, 'the documented default is recorded');
+	is($input->{rounds}{sample_max}, 200_000,
+		'the default caps the data generated for a work factor');
 };
 
 done_testing();

@@ -951,7 +951,7 @@ B<Example:>
 
     # Extracts:
     # $file: position 0, required
-    # %options: position 1, optional, slurpy hash
+    # %options: named: 1, optional, slurpy hash
 
 =head3 Type Constraints in Signatures (Perl 5.36+)
 
@@ -1609,9 +1609,37 @@ sub extract_all {
 		# documentation as named arguments: a table row's order is not a call
 		# order for it.  Database::Join::aggregate forwards @args to get_params,
 		# and calling it positionally tested the argument count instead of the
-		# documented keys.
-		if($body =~ /\bmy\s*\([^)]*[\@%]\w+\s*\)\s*=\s*\@_/ || $body =~ /\bmy\s+%\w+\s*=\s*\@_/) {
-			delete $schema->{input}{$_}{position} for keys %{ $schema->{input} // {} };
+		# documented keys.  Scalar arguments before the slurpy are positional
+		# (`my ($password, %opts) = @_`), and the documentation after them
+		# describes the named options passed after those arguments, as
+		# Database::BI::Password::hash_password does.
+		# A plain positional signature has no slurpy and keeps every
+		# position: only the arguments left over after a slurpy are named.
+		if($body =~ /\bmy\s*(?:\(([^)]*)\)|(%\w+))\s*=\s*\@_/s) {
+			my $declared = $1;
+			if(!defined($declared) || ($declared =~ /[\@%]\w+/)) {
+				my @prefix;
+				for my $decl (split(/\s*,\s*/, $declared // '')) {
+					last if($decl =~ /^\s*[\@%]/);
+					push @prefix, $1 if($decl =~ /^\s*\$(?!self\b|class\b)(\w+)/);
+				}
+
+				# Keep the leading scalars positional (by name where the merge
+				# found one, by position otherwise) and say that every remaining
+				# documented name is a named option after them.
+				my %keep = map { $prefix[$_] => $_ } 0 .. $#prefix;
+				for my $param (keys %{ $schema->{input} // {} }) {
+					my $spec = $schema->{input}{$param};
+					my $pos = exists($keep{$param}) ? delete($keep{$param}) : $spec->{position};
+					if(defined($pos) && ($pos < @prefix)) {
+						$spec->{position} = $pos;
+						delete $spec->{named};
+					} else {
+						delete $spec->{position};
+						$spec->{named} = 1 if @prefix;
+					}
+				}
+			}
 		}
 
 		if($body =~ /\bcroak\b[^;\n]*must be implemented by subclass/) {
@@ -1639,18 +1667,11 @@ sub extract_all {
 			$schema->{output} = { _STATUS => 'DIES' };
 		}
 
-		# A routine that hands a database handle back to its caller leaves a
-		# descriptor open on purpose, so the check that nothing leaked does
-		# not apply (the harness reads config 'check_fds').
-		if($body =~ /\breturn\s*\{[^}]*\bdbh\s*=>/s) {
-			$schema->{_analysis}{side_effects}{keeps_fd} = 1;
-		}
-
-		# A routine that materialises the object's SQLite cache keeps that
-		# handle open on the object for the next query (Database::Join's
-		# GROUP BY path).  It is cached state, cleaned up when the object
-		# goes away, not a descriptor the call forgot.
-		if($body =~ /\b_sqlite_\w+|\bsqlite_cache\b/) {
+		# A routine that hands a database handle back to its caller, or leaves
+		# it on the object's SQLite cache for the next call, holds a
+		# descriptor on purpose, so the check that nothing leaked does not
+		# apply (the harness reads config 'check_fds').
+		if(_keeps_database_handle($body, $method->{pod} // '')) {
 			$schema->{_analysis}{side_effects}{keeps_fd} = 1;
 		}
 
@@ -4878,6 +4899,16 @@ sub _pod_nested_input_shape {
 	return undef;
 }
 
+# `10_000` is the number 10000 written for a reader, not a string with
+# underscores in it.
+sub _undigitised {
+	my ($number) = @_;
+
+	return undef unless defined($number);
+	$number =~ s/_//g;
+	return $number + 0;
+}
+
 sub _apply_pod_input_table {
 	my ($self, $block, $params, $routine) = @_;
 
@@ -5093,6 +5124,26 @@ sub _apply_pod_input_table {
 		if($spec =~ /(-?\d+(?:\.\d+)?)\s*\.\.\s*(-?\d+(?:\.\d+)?)/) {
 			$p->{min} = $1 + 0;
 			$p->{max} = $2 + 0;
+		# Or with words, as Database::BI::Password documents `rounds`:
+		# `10_000 to 100_000_000 (default 200_000)`.  An underscore is a
+		# digit separator, not part of the value.
+		} elsif($spec =~ /(-?\d[\d_]*)\s+to\s+(-?\d[\d_]*)/) {
+			$p->{min} = _undigitised($1);
+			$p->{max} = _undigitised($2);
+		}
+
+		# The documented default is the value the routine is meant to run
+		# with, so it is the highest value the harness generates as valid
+		# data: a work factor near the documented maximum (a PBKDF2 round
+		# count) can take minutes per call, which no fuzz run can afford.
+		# max stays the documented bound, so a value above it is still probed.
+		if(defined($type) && ($type =~ /\A(?:integer|number)\z/)
+		   && $spec =~ /\bdefault\b\s*\(?\s*(-?\d[\d_]*)/i) {
+			my $default = _undigitised($1);
+			$p->{default} = $default;
+			$p->{sample_max} = $default
+				if defined($p->{max}) && ($default < $p->{max})
+					&& (!defined($p->{min}) || ($default >= $p->{min}));
 		}
 
 		if(my $values = $self->_prose_memberof($spec)) {
@@ -9787,14 +9838,16 @@ sub _write_schema {
 				$output->{'input'}{$param_name} = $cleaned_param;
 			}
 
-			# If some params have positions and others don't, treat the whole
-			# input as a named (hash) API and strip all positions.  Mixed
-			# position state arises when a named-API method also happens to
-			# have a Params::Get positional-key call alongside =head4 Input
-			# named-block params that carry no position.
+			# If some params have positions and others neither a position nor
+			# named: 1, treat the whole input as a named (hash) API and strip
+			# all positions.  Such mixed state arises when a named-API method
+			# also happens to have a Params::Get positional-key call alongside
+			# =head4 Input named-block params that carry no position.  A param
+			# marked named: 1 is deliberate: it is an option after the
+			# positional arguments, and the two kinds are fuzzed together.
 			my @with_pos    = grep { defined $output->{input}{$_}{position} } sort keys %{$output->{input}};
 			my @without_pos = grep { !defined $output->{input}{$_}{position} } sort keys %{$output->{input}};
-			if (@with_pos && @without_pos) {
+			if (@with_pos && grep { !$output->{input}{$_}{named} } @without_pos) {
 				delete $output->{input}{$_}{position} for @with_pos;
 			}
 		} else {
@@ -10028,7 +10081,7 @@ sub _serialize_parameter_for_yaml {
 	my %cleaned;
 
 	# Copy basic fields that App::Test::Generator expects
-	foreach my $field (qw(type position optional min max matches default _not_empty)) {
+	foreach my $field (qw(type position named optional min max sample_max matches default _not_empty)) {
 		$cleaned{$field} = $param->{$field} if defined $param->{$field};
 	}
 
@@ -10537,6 +10590,53 @@ sub _constructor_object_stubs
 	}
 
 	return \%stubs;
+}
+
+# --------------------------------------------------
+# _keeps_database_handle
+#
+# Purpose:    Decide whether a call keeps a database handle open on purpose,
+#             so the harness's "no file descriptors leaked" check can be off.
+#
+# Entry:      $body - the subroutine source text.
+#             $pod  - the routine's POD text ('' when it has none).
+#
+# Exit:       Returns 1 when the call holds a descriptor rather than leaking
+#             one, 0 otherwise.
+#
+# Notes:      Three documented shapes, each narrow.  A handle returned to the
+#             caller needs the POD to document C<dbh> (Database::Join's
+#             dbi_source).  A routine that queries the documented SQLite
+#             cache goes through the cache path, whose first call builds the
+#             cache and keeps the handle on the object (count and aggregate
+#             document "the cached join tables" / "the existing SQLite
+#             cache").  Storing the handle on the object is retention in
+#             itself, so it needs no inference (the cache builder).
+#             Invalidation is not retention: Database::Join::add_database
+#             deletes and disconnects the cache and documents no cache, so
+#             its calls stay checked.
+#
+# Side effects: None.
+# --------------------------------------------------
+sub _keeps_database_handle
+{
+	my ($body, $pod) = @_;
+
+	return 0 unless defined($body);
+
+	# A handle handed to the caller, as the POD's output documents it.
+	return 1 if(($body =~ /\breturn\s*\{[^}]*\bdbh\s*=>/s) && ($pod =~ /\bdbh\b/));
+
+	# The cache builder stores the handle on the object for the next call.
+	return 1 if(($body =~ /\$self\s*->\s*\{_sqlite_cache\}\s*=\s*\{/s)
+		&& ($body =~ /\bdbh\s*=>/));
+
+	# A routine that queries the documented SQLite cache reaches it through
+	# the cache path, whose first call builds it and keeps the handle.
+	return 1 if(($pod =~ /\b(?:SQLite\s+)?cache/i)
+		&& ($body =~ /\$self\s*->\s*(?:_build_sqlite_cache|_sqlite_join|_sqlite_aggregate)\s*\(/));
+
+	return 0;
 }
 
 # True when the routine's whole body is a croak, with nothing but simple

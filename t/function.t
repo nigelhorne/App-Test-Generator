@@ -674,6 +674,17 @@ subtest '_validate_input_positions' => sub {
 		})
 	} 'valid contiguous positions';
 
+	# A parameter after the positional arguments is a named option, and
+	# says so with named: 1 (sub f { my ($x, %opts) = @_ }).
+	lives_ok {
+		$fn->({
+			input => {
+				a => { type => 'string', position => 0 },
+				b => { type => 'string', named   => 1 },
+			}
+		})
+	} 'a trailing named option lives';
+
 	# Duplicate position numbers always croak
 	throws_ok {
 		$fn->({
@@ -684,7 +695,8 @@ subtest '_validate_input_positions' => sub {
 		})
 	} qr/Duplicate position/, 'duplicate positions croak';
 
-	# If any param has a position, all must have one — missing one croaks
+	# A parameter with neither a position nor named: 1 is a forgotten one —
+	# calling it by name would test nothing.
 	throws_ok {
 		$fn->({
 			input => {

@@ -592,6 +592,40 @@ For routines with more than one named parameter, use the C<position> keyword.
   output:
     type: number
 
+A routine can take positional arguments followed by named options, as
+C<< sub publish { my ($message, %opts) = @_ } >> does.  Give the leading
+arguments their positions and mark every trailing option C<named: 1>:
+
+  input:
+    message:
+      type: string
+      position: 0
+    priority:
+      type: integer
+      optional: 1
+      named: 1
+
+  # publish($message, priority => $priority)
+
+A parameter in a schema that declares positions must say which it is: a
+missing position on a parameter without C<named: 1> is an error, not a
+second call shape.
+
+A numeric parameter can document a range whose top end this harness cannot
+afford to reach: a count of hashing rounds costs time in proportion to the
+value, so one call at the documented maximum can take minutes.  C<sample_max>
+limits the valid data that is generated while C<max> stays the documented
+bound, so a value above C<max> is still probed (and refused cheaply):
+
+  input:
+    rounds:
+      type: integer
+      named: 1
+      optional: 1
+      min: 10_000
+      max: 100_000_000
+      sample_max: 200_000
+
 The keyword C<undef> is used to indicate that the C<function> takes no arguments.
 
 =head3 C<%output> - output param types for L<Return::Set> checking
@@ -2853,6 +2887,17 @@ sub _validate_input_params {
 
 		my $spec = $schema->{input}{$param};
 
+		# A sampling ceiling is not a second maximum: it must sit inside
+		# the documented range, or generated data would not be valid.
+		if(ref($spec) eq 'HASH' && defined($spec->{sample_max})) {
+			croak("sample_max for parameter '$param' must be a non-negative number")
+				unless !ref($spec->{sample_max}) && ($spec->{sample_max} =~ /\A\d+(?:\.\d+)?\z/);
+			croak("sample_max for parameter '$param' is above max")
+				if defined($spec->{max}) && ($spec->{sample_max} > $spec->{max});
+			croak("sample_max for parameter '$param' is below min")
+				if defined($spec->{min}) && ($spec->{sample_max} < $spec->{min});
+		}
+
 		# Validate the type field — required for all parameters
 		if(ref($spec)) {
 			croak("Missing type for parameter '$param'")
@@ -2917,14 +2962,17 @@ sub _validate_input_positions {
 		$positions{$pos} = $param;
 	}
 
-	# If any param has a position, all params must have one
+	# If any param has a position, the rest are named options passed after
+	# the positional arguments (sub f { my ($x, %opts) = @_ }), and each must
+	# say so: an omission is otherwise a forgotten position, which would be
+	# called by name and test nothing.
 	if($has_positions) {
 		for my $param (keys %{$schema->{input}}) {
 			my $spec = $schema->{input}{$param};
-			unless(ref($spec) eq 'HASH' && defined($spec->{position})) {
-				croak "Parameter '$param' missing position " .
-					'(all params must have positions if any do)';
-			}
+			next if(ref($spec) eq 'HASH' && defined($spec->{position}));
+			croak "Parameter '$param' missing position " .
+				'(give it one, or named: 1 for a trailing named option)'
+				unless(ref($spec) eq 'HASH' && $spec->{named});
 		}
 
 		# Check for gaps — positions must be a contiguous sequence
@@ -4076,12 +4124,14 @@ sub _generate_transform_properties {
 		my @args;
 		if(_has_positions($input_spec)) {
 			# Sort fields by declared position so the generated
-			# call passes arguments in the correct order
+			# call passes arguments in the correct order, then pass
+			# the named options as name/value pairs after them
 			my @sorted = sort {
 				$input_spec->{$a}{position} <=>
 				$input_spec->{$b}{position}
-			} keys %{$input_spec};
-			@args = map { "\$$_" } @sorted;
+			} grep { defined $input_spec->{$_}{position} } keys %{$input_spec};
+			my @named = grep { !defined $input_spec->{$_}{position} } @var_names;
+			@args = (map { "\$$_" } @sorted, map { "'$_' => \$$_" } @named);
 		} else {
 			# No positions — use alphabetical order from @var_names
 			@args = map { "\$$_" } @var_names;
@@ -5184,8 +5234,10 @@ sub _process_custom_properties {
 			my @var_names = sort keys %{$input_spec};
 			my @args;
 			if(_has_positions($input_spec)) {
-				my @sorted = sort { $input_spec->{$a}{'position'} <=> $input_spec->{$b}{'position'} } @var_names;
-				@args = map { "\$$_" } @sorted;
+				my @sorted = sort { $input_spec->{$a}{'position'} <=> $input_spec->{$b}{'position'} }
+					grep { defined $input_spec->{$_}{'position'} } @var_names;
+				my @named = grep { !defined $input_spec->{$_}{'position'} } @var_names;
+				@args = (map { "\$$_" } @sorted, map { "'$_' => \$$_" } @named);
 			} else {
 				@args = map { "\$$_" } @var_names;
 			}

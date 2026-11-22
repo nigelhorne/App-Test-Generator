@@ -519,7 +519,10 @@ sub _random_number_for_spec
 	my ($spec, $integer) = @_;
 
 	my $min = $spec->{min};
-	my $max = $spec->{max};
+	# Generated data stops at sample_max: the documented maximum is the bound
+	# a value is checked against, not necessarily a value this run can afford
+	# to compute (a count of hashing rounds, say).
+	my $max = $spec->{sample_max} // $spec->{max};
 
 	if(defined($min) && defined($max)) {
 		return $integer
@@ -1100,7 +1103,7 @@ sub fuzz_inputs
 			}
 			foreach my $field(keys %input) {
 				next if($field =~ /^_/);	# Ignore comments
-				if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'memberof', 'position'))) {
+				if(!grep({ $_ eq $field } ('type', 'min', 'max', 'sample_max', 'optional', 'matches', 'can', 'memberof', 'position', 'named'))) {
 					carp "unhandled schema keyword '$field'; skipping";
 					next;
 				}
@@ -1127,7 +1130,7 @@ sub fuzz_inputs
 				}
 				foreach my $field(keys %{$spec}) {
 					next if($field =~ /^_/);	# Ignore comments
-					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'memberof', 'position', 'isa'))) {
+					if(!grep({ $_ eq $field } ('type', 'min', 'max', 'sample_max', 'optional', 'matches', 'can', 'memberof', 'position', 'named', 'isa'))) {
 						diag(__LINE__, ": TODO: handle schema keyword '$field'");
 					}
 				}
@@ -1487,10 +1490,13 @@ sub _generate_integer_cases {
 
 	if (defined $spec->{max}) {
 		my $max = $spec->{max};
-		push @cases, { %{$mandatory_args}, ( $arg_name => $max - 1 ) }
-			if(!defined($spec->{min}) || (($max - 1) >= $spec->{min}));
-		push @cases, { %{$mandatory_args}, ( $arg_name => $max ) }
-			if(!defined($spec->{min}) || ($max >= $spec->{min}));
+		# Valid data stops at the sampling ceiling; the documented bound
+		# still decides what counts as outside.
+		my $sampled = $spec->{sample_max} // $max;
+		push @cases, { %{$mandatory_args}, ( $arg_name => $sampled - 1 ) }
+			if(!defined($spec->{min}) || (($sampled - 1) >= $spec->{min}));
+		push @cases, { %{$mandatory_args}, ( $arg_name => $sampled ) }
+			if(!defined($spec->{min}) || ($sampled >= $spec->{min}));
 		if($max_strict) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => $max + 1, _STATUS => 'DIES' ) };
 		} else {
@@ -1581,10 +1587,11 @@ sub _generate_float_cases {
 	}
 	if (defined $spec->{max}) {
 		my $max = $spec->{max};
-		push @cases, { %{$mandatory_args}, ( $arg_name => $max - 0.000001 ) }
-			if(!defined($spec->{min}) || (($max - 0.000001) >= $spec->{min}));
-		push @cases, { %{$mandatory_args}, ( $arg_name => $max ) }
-			if(!defined($spec->{min}) || ($max >= $spec->{min}));
+		my $sampled = $spec->{sample_max} // $max;
+		push @cases, { %{$mandatory_args}, ( $arg_name => $sampled - 0.000001 ) }
+			if(!defined($spec->{min}) || (($sampled - 0.000001) >= $spec->{min}));
+		push @cases, { %{$mandatory_args}, ( $arg_name => $sampled ) }
+			if(!defined($spec->{min}) || ($sampled >= $spec->{min}));
 		if($max_strict) {
 			push @cases, { %{$mandatory_args}, ( $arg_name => $max + 0.000001, _STATUS => 'DIES' ) };
 		} else {
@@ -2497,7 +2504,7 @@ sub generate_tests
 		_note_documented_constraint($field, $spec);
 		foreach my $field(keys %{$spec}) {
 			next if($field =~ /^_/);	# Ignore comments
-			if(!grep({ $_ eq $field } ('type', 'min', 'max', 'optional', 'matches', 'can', 'position', 'memberof', 'semantic', 'isa'))) {
+			if(!grep({ $_ eq $field } ('type', 'min', 'max', 'sample_max', 'optional', 'matches', 'can', 'position', 'named', 'memberof', 'semantic', 'isa'))) {
 				carp "unhandled schema keyword '$field'; skipping";
 				next;
 			}
@@ -2824,12 +2831,19 @@ sub populate_positions
 		my $spec = $input->{$arg} || {};
 		if(((ref($spec)) eq 'HASH') && defined($spec->{'position'})) {
 			$rc->{$arg} = $spec->{'position'};
-		} else {
-			if($rc) {
-				::diag("$arg is missing a position parameter in its schema");
-			}
-			return;	# All must be defined
 		}
+	}
+
+	return unless $rc;	# A named API has no positions
+
+	# A parameter after the positional arguments is a named option, and has
+	# to say so (named: 1): anything else is a forgotten position, which the
+	# named call would silently turn into a key whose value is a string.
+	foreach my $arg (keys %{$input}) {
+		my $spec = $input->{$arg} || {};
+		next if((ref($spec)) eq 'HASH') && (defined($spec->{'position'}) || $spec->{'named'});
+		::diag("$arg is missing a position parameter in its schema (or named: 1)");
+		return;
 	}
 
 	return $rc;
@@ -2870,6 +2884,7 @@ sub run_test
 	my $result;
 	my $mess;
 	my @alist = ();
+	my $named_options = 0;
 
 	# Snapshots for the documented-bound check must be taken before the
 	# argument list below deletes values from $input.
@@ -2894,11 +2909,15 @@ sub run_test
 		$alist[0] = $input if($positions && (scalar(keys %{$positions}) == 1));
 	} elsif(defined($input)) {
 		if($positions) {
-			# Positional args
+			# Positional args, then the named options that follow them
+			# (`sub f { my ($x, %opts) = @_ }` is called f($x, key => value))
+			my @named;
 			foreach my $key (keys %{$input}) {
 				if(($key ne '_STATUS') && ($key ne '_NAME') && ($key ne '_LINE') && ($key ne '_PROPERTIES') && ($key ne '_DESCRIPTION')) {
 					if(exists($positions->{$key})) {
 						$alist[$positions->{$key}] = delete $input->{$key};
+					} elsif(ref($input{$key}) eq 'HASH' && $input{$key}{'named'}) {
+						push @named, $key => delete $input->{$key};
 					} else {
 						diag("Lost position number for $key");
 					}
@@ -2913,6 +2932,8 @@ sub run_test
 			my $last_def = -1;
 			for my $i (0..$#alist) { $last_def = $i if defined $alist[$i] }
 			@alist = $last_def >= 0 ? @alist[0..$last_def] : ();
+			push @alist, @named if @named;
+			$named_options = scalar(@named) ? 1 : 0;
 			$input = join(', ', @alist);
 		} else {
 			# Named args
@@ -3035,8 +3056,10 @@ sub run_test
 				carp 'unhandled properties in test case; continuing' if(scalar keys %{$properties});
 				_documented_lives_ok { [% position_code %] } sprintf($mess, 'survives (position test)');
 
-				# An extra argument should be ignored, except for getsetters, so only test if there's more than one arg
-				if(scalar(@alist) > 1) {
+				# An extra argument should be ignored, except for getsetters, so only test if there's more than one arg.
+				# A named option hash is not positional: a stray bare value
+				# would become a hash key with an undef value instead.
+				if(scalar(@alist) > 1 && !$named_options) {
 					push(@alist, 'foo');
 					_documented_lives_ok { [% position_code %] } sprintf($mess, 'survives (position test, with extra argument)');
 				}

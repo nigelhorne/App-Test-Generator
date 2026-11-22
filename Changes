@@ -2,6 +2,28 @@ Revision history for App-Test-Generator
 
 0.52
 	[Bug fixes]
+	- The harness's "no file descriptors leaked" check is turned off only for
+	  a call that holds a database handle on purpose, and the documentation
+	  has to say which: a handle returned to the caller that the POD
+	  documents as C<dbh>, a query against the documented SQLite cache
+	  (whose first call builds the cache and keeps the handle on the
+	  object), or the cache builder that stores it.  A routine that merely
+	  mentions the cache no longer qualifies, so Database::Join::add_database
+	  - which disconnects the cache and holds nothing - keeps the check
+	- A routine that takes positional arguments followed by named options
+	  (`my ($password, %opts) = @_`) is now fuzzed with that call shape: the
+	  schema gives the leading arguments their `position` and marks the rest
+	  `named: 1`, and the harness passes them after the positional ones.
+	  Passing every argument by name made
+	  Database::BI::Password::hash_password read the literal key 'password'
+	  as the password, so no empty or NUL-terminated password was ever tried
+	- SchemaExtractor reads a documented numeric range written with words
+	  (`10_000 to 100_000_000 (default 200_000)`) as min/max, and records
+	  the documented default as the new C<sample_max>: valid data is
+	  generated only up to it while C<max> stays the documented bound.  A
+	  PBKDF2 round count is fuzzed at its default rather than at a maximum
+	  that takes minutes per call, and the harness no longer expects
+	  out-of-range values such as 66 to be accepted
 	- SchemaExtractor reads a =head4 Input section written as a table, one
 	  `name : type` or `$name SCALAR` line per parameter (Database::BI
 	  documents every routine that way): each type is recorded as
