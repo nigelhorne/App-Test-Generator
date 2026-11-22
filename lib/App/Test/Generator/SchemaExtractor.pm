@@ -1603,7 +1603,9 @@ sub extract_all {
 	foreach my $method (@{$methods}) {
 		my $schema = $schemas{$method->{name}};
 		next unless($schema && ref($schema->{output}) eq 'HASH');
-		my $body = $method->{body} // '';
+		# A comment is prose, not code: an example signature written in one
+		# must not change how the routine is called.
+		my $body = _strip_comments($method->{body} // '', $method->{node});
 
 		# A routine that takes a variadic list or an argument hash receives its
 		# documentation as named arguments: a table row's order is not a call
@@ -4769,6 +4771,38 @@ sub _strip_literals {
 }
 
 # --------------------------------------------------
+# _strip_comments
+#
+# Purpose:    Remove Perl comments from a code fragment before it is scanned
+#             for parameters.  A comment may quote an example signature;
+#             reading it as code invents parameters the routine does not take
+#             (an example in extract_all() once added $password to its schema).
+#
+# Entry:      $code - source fragment (a method body).
+#             $node - optional PPI node for the same code.  When given, its
+#                     token stream is used, so a '#' inside a quoted string
+#                     is kept.
+#
+# Exit:       The fragment with each comment removed.  Undef is treated as an
+#             empty fragment.
+# --------------------------------------------------
+sub _strip_comments {
+	my ($code, $node) = @_;
+
+	return '' unless defined($code);
+
+	if($node && $node->can('tokens')) {
+		return join '', map {
+			$_->isa('PPI::Token::Comment') ? '' : $_->content
+		} $node->tokens;
+	}
+
+	# No PPI node (a synthesized class method): fall back to line comments.
+	$code =~ s/[ \t]*\#[^\n]*//g;
+	return $code;
+}
+
+# --------------------------------------------------
 # _pod_input_prose_type
 #
 # Purpose:    Name the type a one-line description of an input value gives,
@@ -6603,6 +6637,10 @@ sub _parse_constraints {
 # --------------------------------------------------
 sub _analyze_code {
 	my ($self, $code, $method) = @_;
+
+	# A comment is prose, not code.  A signature shown in an example comment
+	# (extract_all's # my ($password, %opts) = @_) must not become a parameter.
+	$code = _strip_comments($code, $method->{node});
 
 	my %params;
 

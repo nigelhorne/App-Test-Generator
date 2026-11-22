@@ -2679,5 +2679,44 @@ END_PM
 		'the default does not cap an option whose maximum is close to it');
 };
 
+subtest 'an example signature in a comment is not a parameter' => sub {
+	my $src = <<'END_PM';
+package Commented;
+
+use strict;
+use warnings;
+
+=head2 collect
+
+Collect the options.
+
+=cut
+
+sub collect {
+	my $self = shift;
+	my $params = Params::Get::get_params(undef, @_) || {};
+
+	# The comment below used to be read as this routine's signature:
+	# my ($password, %opts) = @_;
+	return $params;
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'Commented.pm');
+	my $schemas = eval {
+		App::Test::Generator::SchemaExtractor->new(
+			input_file => $pm,
+			strict_pod => 'fatal',
+		)->extract_all(no_write => 1);
+	};
+	is($@, '', 'the comment does not cause a strict-POD disagreement');
+	ok($schemas, 'schemas extracted');
+	my $input = $schemas->{collect}{input};
+	ok(!exists $input->{password}, 'a name only in the comment is not a parameter');
+	ok(!exists $input->{opts}, 'the slurpy in the comment is not a parameter');
+};
+
 done_testing();
 

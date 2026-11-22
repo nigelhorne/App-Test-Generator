@@ -2,6 +2,10 @@ Revision history for App-Test-Generator
 
 0.52
 	[Bug fixes]
+	- A signature-like example in a comment is no longer read as code.
+	  SchemaExtractor took `# my ($password, %opts) = @_;` in extract_all's
+	  own comment for that routine's parameters, so t/app.t's strict-POD
+	  self-test failed on an undocumented $password
 	- The harness's "no file descriptors leaked" check is turned off only for
 	  a call that holds a database handle on purpose, and the documentation
 	  has to say which: a handle returned to the caller that the POD
