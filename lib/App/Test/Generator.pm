@@ -56,7 +56,7 @@ use Exporter 'import';
 
 our @EXPORT_OK = qw(generate);
 
-our $VERSION = '0.51';
+our $VERSION = '0.52';
 
 Readonly my $DEFAULT_ITERATIONS      => 30;
 Readonly my $DEFAULT_PROPERTY_TRIALS => 1000;
@@ -180,7 +180,7 @@ App::Test::Generator - Fuzz Testing, Mutation Testing, LCSAJ Metrics and Test Da
 
 =head1 VERSION
 
-Version 0.51
+Version 0.52
 
 =head1 SYNOPSIS
 

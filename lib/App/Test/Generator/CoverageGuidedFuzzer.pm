@@ -58,7 +58,7 @@ Readonly my @COVER_CRITERIA => qw(branch condition);
 
 Readonly my $SOFT_BUG_WARNING_RE => qr/uninitialized|undefined|blessed|invalid/i;
 
-our $VERSION = '0.51';
+our $VERSION = '0.52';
 
 =encoding utf8
 
@@ -68,7 +68,7 @@ App::Test::Generator::CoverageGuidedFuzzer - AFL-style coverage-guided fuzzing f
 
 =head1 VERSION
 
-Version 0.51
+Version 0.52
 
 =head1 SYNOPSIS
 
