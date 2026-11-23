@@ -26,6 +26,8 @@ fuzz-harness-generator -r t/conf/abs.yml
 
 # Attempt to create a formal definition from a routine package, then run tests against that formal definition
 # This is the Holy Grail of test generation, a set of tests is automatically created directly from the source code,
+# See also [t/all-fuzz.t](t/all-fuzz.t), which aims to be a file you can drop in to any
+# distribution and have it automatically fuzz test your CPAN module.
 extract-schemas lib/App/Test/Generator/Sample/Module.pm && fuzz-harness-generator -r schemas/greet.yml
 
 # Fuzz a module and keep the corpus bounded: trim to the minimum subset that still covers every branch
