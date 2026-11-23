@@ -1336,7 +1336,7 @@ sub fuzz_inputs
 					# it actually is one.
 					my $float_input = $case_input + 0.1;
 					push @cases, { _input => $float_input, _STATUS => 'DIES', _LINE => __LINE__ }
-						if(($float_input != int($float_input)) && !_spec_type_is_documented(\%input));
+						if(($float_input != int($float_input)) && _spec_type_is_enforced(\%input));
 				} elsif(($type eq 'number') || ($type eq 'float')) {
 					$case_input = _random_number_for_spec(\%input, 0);
 				} elsif($type eq 'boolean') {
@@ -1444,7 +1444,7 @@ sub _generate_integer_cases {
 	[% IF module %]
 		# Send wrong data type - builtins aren't good at checking this
 		push @cases,
-			_spec_type_is_documented($spec) ? () : (
+			_spec_type_is_enforced($spec) ? (
 			{ %{$mandatory_args}, ( $arg_name => "test string in integer field $arg_name", _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => 3.14, _STATUS => 'DIES' ) },	# Float
@@ -1452,7 +1452,7 @@ sub _generate_integer_cases {
 			{ %{$mandatory_args}, ( $arg_name => \42, _STATUS => 'DIES' ) },	# Scalar ref
 			{ %{$mandatory_args}, ( $arg_name => *STDOUT, _STATUS => 'DIES' ) },	# Global variable
 			{ %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) }
-			);
+			) : ();
 	[% END %]
 
 	# min/max numeric boundaries
@@ -1547,7 +1547,7 @@ sub _generate_float_cases {
 	[% IF module %]
 		# Send wrong data type - builtins aren't good at checking this
 		push @cases,
-			_spec_type_is_documented($spec) ? () : (
+			_spec_type_is_enforced($spec) ? (
 			{ %{$mandatory_args}, ( $arg_name => "test string in float field $arg_name", _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => {}, _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => \42.1, _STATUS => 'DIES' ) },	# Scalar ref
@@ -1555,7 +1555,7 @@ sub _generate_float_cases {
 			# cannot assume they die
 			# { %{$mandatory_args}, ( $arg_name => "NaN", _STATUS => 'DIES' ) },
 			{ %{$mandatory_args}, ( $arg_name => [], _STATUS => 'DIES', _LINE => __LINE__ ) }
-			);
+			) : ();
 	[% END %]
 
 	# min/max numeric boundaries
@@ -1657,12 +1657,12 @@ sub _generate_boolean_cases {
 			{ %{$mandatory_args}, ( $arg_name => 2, _STATUS => 'DIES' ) },	# invalid boolean
 			{ %{$mandatory_args}, ( $arg_name => bless({}, 'Evil::Class'), _STATUS => 'DIES', _LINE => __LINE__ ) },
 			{ %{$mandatory_args}, ( $arg_name => [ 1 ], _STATUS => 'DIES' ) }	# invalid boolean
-		) unless(_spec_type_is_documented($spec));
+		) if(_spec_type_is_enforced($spec));
 	}
 
 	push @cases, { %{$mandatory_args}, ( $arg_name => undef, _STATUS => 'DIES' ) } if($config{'test_undef'});
 	push @cases, { %{$mandatory_args}, ( $arg_name => "\0", _STATUS => 'DIES' ) }
-		if($config{'test_nuls'} && !_spec_type_is_documented($spec));
+		if($config{'test_nuls'} && _spec_type_is_enforced($spec));
 
 	return \@cases;
 }
@@ -1702,13 +1702,16 @@ sub _spec_checks_types
 	return _spec_source($_[0]) eq $type_checks_source;
 }
 
-# A scalar type that only the documentation declares (POD or an input spec)
-# is intent, as it is for strings and references: the routine was not seen
-# to reject anything else, so no wrong-type value is expected to die.  A
-# hand-written schema carries no marker and stays strict.
-sub _spec_type_is_documented
+# Whether the routine's own checks reject a value of the wrong type.  A
+# hand-written schema carries no marker and keeps that expectation; a type
+# the extractor inferred only from the code, a signature or a field
+# declaration says the parameter exists, not that anything else dies.
+sub _spec_type_is_enforced
 {
-	return $documented_sources{_spec_source($_[0])} ? 1 : 0;
+	my $source = _spec_source($_[0]);
+
+	return 1 unless defined($source) && length($source);
+	return ($source eq $type_checks_source) ? 1 : 0;
 }
 
 # A documented string or numeric bound sizes the valid data.  Some cases are
@@ -2586,14 +2589,14 @@ sub generate_tests
 					# of the parameter's type.
 					push @cases,
 						# If it's takes an integer, a float should die
-						(($float_input == int($float_input)) || _spec_type_is_documented($spec)) ? () : ({ %case_input, ($field => $float_input), _STATUS => 'DIES', _LINE => __LINE__ }),
+						(($float_input == int($float_input)) || !_spec_type_is_enforced($spec)) ? () : ({ %case_input, ($field => $float_input), _STATUS => 'DIES', _LINE => __LINE__ }),
 						# Integers passed as a string
 						{ %case_input, ($field => "007"), _STATUS => 'OK', _LINE => __LINE__ },
 						# Not integer literals to Perl's number parser, so they must be
 						# rejected; they were previously expected to survive, which no
 						# validator that uses looks_like_number (Params::Validate::Strict
 						# included) can satisfy
-						_spec_type_is_documented($spec) ? () : (
+						!_spec_type_is_enforced($spec) ? () : (
 							{ %case_input, ($field => "0x10"), _STATUS => 'DIES', _LINE => __LINE__ },
 							{ %case_input, ($field => "1_000"), _STATUS => 'DIES', _LINE => __LINE__ },
 						);

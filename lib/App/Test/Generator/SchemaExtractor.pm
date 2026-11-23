@@ -1740,16 +1740,77 @@ sub extract_all {
 				}
 			}
 
-			# A routine that checks the value against a pattern and croaks is a
-			# validator for that parameter: values outside the pattern are
-			# documented to die, so the pattern belongs in the schema.
+			# A routine that accepts a value by matching it against patterns and
+			# croaks when none of them match is a validator for that parameter:
+			# the union of the patterns is the accepted domain, so a value
+			# outside it is expected to die.  parse_zone's UTC, local and
+			# offset alternatives are three such patterns.
+			my @accepted;
+			my @subjects = (
+				qr/\$$p\b/,
+				qr/\$args\{\s*['"]?$p['"]?\s*\}/,
+			);
+			foreach my $subject (@subjects) {
+				while($body =~ /$subject\s*=~\s*\/([^\/\n]+)\//g) {
+					my $pattern = $1;
+					my $at = $-[0];
+					my $from = rindex($body, ';', $at);
+					$from = 0 if($from < 0);
+					my $prefix = substr($body, $from, $at - $from);
+					# Only a pattern that guards a returned value (or a croak
+					# unless it matches) says the value is accepted.  A test
+					# used for anything else, such as deciding whether to append
+					# a word, describes no domain.  `return X unless match`
+					# returns for every value that does NOT match, so there the
+					# pattern names a rejection, not an accepted domain.
+					my $accepts = $prefix =~ /\breturn\b[^;]*\bunless\b/
+						? 0
+						: ($prefix =~ /\breturn\b/ || $prefix =~ /\b(?:croak|die|confess)\b[^;]*\bunless\b/);
+					if(!$accepts && ($prefix =~ /\bif\s*\([^;{}]*$/)) {
+						# A block opened by an if whose condition is the match,
+						# e.g. `if (my ($s, $h) = $spec =~ /.../) { return ... }`.
+						my $brace = index($body, '{', $+[0]);
+						if($brace >= 0) {
+							my $close = index($body, "\n\t}", $brace);
+							my $block = substr($body, $brace,
+								(($close >= 0) ? $close - $brace : 400));
+							$accepts = ($block =~ /\breturn\b/) ? 1 : 0;
+						}
+					}
+					next unless($accepts);
+					# A pattern in a croak's own condition names a rejected
+					# value, not an accepted one.
+					next if($prefix =~ /\b(?:croak|die|confess)\b[^;]*\bif\b/);
+					if(!_pattern_is_self_contained($pattern)) {
+						$self->_log("  CODE: $param_name matches '$pattern', which depends on run-time variables; not recorded");
+						next;
+					}
+					push @accepted, $pattern;
+				}
+			}
+
+			my $croaks_about_param = 0;
+			foreach my $subject (@subjects) {
+				next unless($body =~ /\b(?:croak|die|confess)\b[^;]*$subject/s);
+				$croaks_about_param = 1;
+				last;
+			}
+
 			my $pattern;
 			if($body =~ /\$args\{\s*['"]?$p['"]?\s*\}\s*=~\s*\/([^\/\n]+)\//) {
 				$pattern = $1;
 			} elsif($body =~ /\$$p\b\s*=~\s*\/([^\/\n]+)\//) {
 				$pattern = $1;
 			}
-			if(defined($pattern) && ($body =~ /\bcroak\b[^;\n]*(?:not a valid|invalid)/i)) {
+			if(@accepted && $croaks_about_param) {
+				my %seen;
+				@accepted = grep { !$seen{$_}++ } @accepted;
+				$spec->{matches} = (@accepted == 1)
+					? $accepted[0]
+					: join('|', map { "(?:$_)" } @accepted);
+				$spec->{_source} = SOURCE_VALIDATOR;
+			} elsif(defined($pattern) && _pattern_is_self_contained($pattern)
+				&& ($body =~ /\bcroak\b[^;\n]*(?:not a valid|invalid)/i)) {
 				$spec->{matches} = $pattern;
 				$spec->{_source} = SOURCE_VALIDATOR;
 			}
@@ -5677,6 +5738,7 @@ sub _analyze_output_from_code
 				$return_types{$output->{'type'}} += 3;	# Add weighting to what's already been found
 			}
 			my $min;
+			my $time_list;
 			foreach my $ret (@return_statements) {
 				$ret =~ s/^\s+|\s+$//g;
 
@@ -5704,6 +5766,12 @@ sub _analyze_output_from_code
 					# `return undef unless $id` is an undef return with a guard,
 					# the same error return as a bare `return undef`.
 					$return_types{undef}++;
+				} elsif ($self->_returns_time_list($ret)) {
+					# localtime and gmtime give the nine-element time list in
+					# list context; the arithmetic in their argument does not
+					# make the return a number.
+					$return_types{array} += 2;
+					$time_list = 1;
 				} elsif ($ret =~ /^\[/) {
 				# Data structures
 					$return_types{arrayref}++;
@@ -5818,6 +5886,13 @@ sub _analyze_output_from_code
 					}
 
 					$self->_log("  OUTPUT: Inferred type from code: $most_common");
+				}
+
+				if($time_list && ($output->{type} // '') eq 'array') {
+					# 'number': a time field can be negative (a fixed offset
+					# before the epoch), and Params::Validate::Strict reads
+					# the '-' of an integer element as a non-digit.
+					$output->{element_type} = 'number';
 				}
 			}
 
@@ -6027,6 +6102,30 @@ sub _detect_list_context {
 			}
 		}
 	}
+}
+
+# --------------------------------------------------
+# _returns_time_list
+#
+# Purpose:    Decide whether a return expression
+#             gives the nine-element list built by
+#             localtime or gmtime, rather than a
+#             scalar derived from one.
+#
+# Entry:      $ret - a return expression.
+#
+# Exit:       Returns true when the whole
+#             expression, or the arm of a ternary
+#             that ends it, is a localtime/gmtime
+#             call.
+# --------------------------------------------------
+sub _returns_time_list {
+	my ($self, $ret) = @_;
+
+	return 0 unless defined($ret);
+	return 0 unless $ret =~ /(?:\A|[?:])\s*\(*\s*(?:localtime|gmtime)\s*\(/;
+
+	return $ret =~ /(?:localtime|gmtime)\s*\([^()]*\)\s*\)*\s*\z/ ? 1 : 0;
 }
 
 # --------------------------------------------------
@@ -6990,21 +7089,25 @@ sub _detect_datetime_type {
 		return;
 	}
 
+	# ISO 8601 date pattern.  Checked before the looser date-string match
+	# below, which would otherwise claim a full datetime first.
+	if ($code =~ /\$$param\s*=~\s*\/([^\/]+)\//) {
+		my $regex = $1;
+		if ($self->_looks_like_iso8601_regex($regex)) {
+			$p->{type} = 'string';
+			$p->{semantic} = 'iso8601_string';
+			$p->{matches} = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?$/';
+			$self->_log("  ADVANCED: $param validated as ISO 8601 datetime");
+			return;
+		}
+	}
+
 	# String date/time patterns via regex matching
 	if ($code =~ /\$$param\s*=~\s*\/.*?\\d\{4\}.*?\\d\{2\}.*?\\d\{2\}/) {
 		$p->{type} = 'string';
 		$p->{semantic} = 'date_string';
 		$p->{format} = 'YYYY-MM-DD or similar';
 		$self->_log("  ADVANCED: $param validated as date string pattern");
-		return;
-	}
-
-	# ISO 8601 date pattern
-	if ($code =~ /\$$param\s*=~\s*\/.*?[Tt].*?[Zz].*?\//) {
-		$p->{type} = 'string';
-		$p->{semantic} = 'iso8601_string';
-		$p->{matches} = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z?$/';
-		$self->_log("  ADVANCED: $param validated as ISO 8601 datetime");
 		return;
 	}
 
@@ -7027,6 +7130,34 @@ sub _detect_datetime_type {
 		$self->_log("  ADVANCED: $param is parsed as datetime");
 		return;
 	}
+}
+
+# --------------------------------------------------
+# _looks_like_iso8601_regex
+#
+# Purpose:    Decide whether a regex body names an
+#             ISO 8601 datetime rather than merely
+#             containing the letters t and z, which
+#             a timezone alternation such as
+#             /\A(?:utc|gmt|z)\z/i also does.
+#
+# Entry:      $regex - regex body without its
+#                      delimiters.
+#
+# Exit:       Returns true when the body spells out
+#             a year, month and day before the time
+#             separator.
+# --------------------------------------------------
+sub _looks_like_iso8601_regex {
+	my ($self, $regex) = @_;
+
+	return 0 unless defined $regex && $regex =~ /[Tt]/ && $regex =~ /[Zz]/;
+
+	my $digit = qr/(?:\\d|\[0-9\])/;
+	my $year  = qr/(?:$digit\s*\{\s*4\s*\}|$digit$digit$digit$digit)/;
+	my $short = qr/(?:$digit\s*\{\s*[12]\s*\}|$digit$digit)/;
+
+	return $regex =~ /$year[^A-Za-z]{0,3}$short[^A-Za-z]{0,3}$short/ ? 1 : 0;
 }
 
 # --------------------------------------------------
@@ -8462,11 +8593,43 @@ sub _analyze_parameter_constraints {
 			# The pattern lives in a variable whose value is not in the
 			# schema, and the harness would emit that name as a regex.
 			$self->_log("  CODE: $param matches $variable, a pattern held in a variable; not recorded");
+		} elsif(!_pattern_is_self_contained($body)) {
+			$self->_log("  CODE: $param matches '$body', which depends on run-time variables; not recorded");
 		} else {
 			$p->{matches} = "/$body/";
 			$self->_log("  CODE: $param matches pattern: $p->{matches}");
 		}
 	}
+}
+
+# --------------------------------------------------
+# _pattern_is_self_contained
+#
+# Purpose:    Decide whether a regex taken from the
+#             source text still means the same thing
+#             once the harness compiles it from a
+#             string.
+#
+# Entry:      $pattern - regex body as written in the
+#                        source.
+#
+# Exit:       Returns true when the pattern stands
+#             alone.  \Q and \E are handled by the
+#             regex lexer, so they quote nothing when
+#             the pattern arrives as an interpolated
+#             string; a pattern interpolating a
+#             variable depends on a value no schema
+#             carries (q_wrap's delimiter loop uses
+#             /\Q$l\E|\Q$r\E/).
+# --------------------------------------------------
+sub _pattern_is_self_contained {
+	my ($pattern) = @_;
+
+	return 0 unless defined($pattern) && length($pattern);
+	return 0 if $pattern =~ /\\[QE]/;
+	return 0 if $pattern =~ /(?<!\\)[\$\@]\w/;
+
+	return 1;
 }
 
 # --------------------------------------------------

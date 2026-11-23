@@ -2127,6 +2127,52 @@ END_PM
 		'which the generated test makes at run time');
 };
 
+subtest 'localtime and gmtime returns are a list of numbers' => sub {
+	my $src = <<'END_PM';
+package ZoneWall;
+
+our $ZONE;
+
+=head2 zone_wall($epoch)
+
+Returns the wall clock as localtime does.
+
+=cut
+
+sub zone_wall {
+	my ($epoch) = @_;
+	return ($ZONE && $ZONE->{kind} eq 'fixed')
+		? gmtime($epoch + $ZONE->{offset})
+		: localtime($epoch);
+}
+
+=head2 clock($epoch)
+
+Returns one field of the wall clock.
+
+=cut
+
+sub clock {
+	my ($epoch) = @_;
+	return scalar localtime($epoch);
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'ZoneWall.pm');
+	my $schemas = App::Test::Generator::SchemaExtractor->new(input_file => $pm)->extract_all(no_write => 1);
+
+	is($schemas->{zone_wall}{output}{type}, 'array',
+		'a localtime/gmtime return is the nine-element time list');
+	is($schemas->{zone_wall}{output}{element_type}, 'number',
+		'whose elements are numbers');
+	is($schemas->{zone_wall}{input}{epoch}{type}, 'number',
+		'the epoch argument stays a number');
+	isnt($schemas->{clock}{output}{type}, 'array',
+		'a scalar localtime stays a single value');
+};
+
 subtest 'defined-or and arrows are not arithmetic, and table rows keep their routine' => sub {
 	my $src = <<'END_PM';
 package OutTypes;

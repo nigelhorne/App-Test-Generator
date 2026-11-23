@@ -213,6 +213,32 @@ Revision history for App-Test-Generator
 	  arrayref of hashrefs", Database::Join::aggregate) is read as the
 	  container: the article after "Always" stopped the shape matching, so
 	  the aggregate's arrayref was checked as a string
+	- SchemaExtractor reads a return of C<localtime> or C<gmtime> as the
+	  nine-element time list it is in list context, with
+	  C<element_type: number>, rather than as a number because of the
+	  arithmetic in its argument.  Database::BI::Util::zone_wall returns a
+	  clock reading that the harness checked as a number
+	- SchemaExtractor reads a regex as an ISO 8601 datetime only when it
+	  spells out a date before the time separator.  Any regex that merely
+	  contained a t and a z qualified, so Database::BI::Util::parse_zone's
+	  C</\A(?:utc|gmt|z)\z/i> (the t of utc, the z of gmt|z) was given an
+	  ISO 8601 C<matches> constraint and every zone it refuses was fuzzed
+	  as valid input
+	- SchemaExtractor joins every pattern a routine accepts a parameter by
+	  into one C<matches> domain.  Only the first was kept, so
+	  Database::BI::Util::parse_zone's C<local> and offset forms were
+	  missing and the fuzzer expected the values it croaks on to survive
+	- The harness expects a wrong-typed number to die only when the
+	  routine's own validator checks the type.  A type inferred from the
+	  code is not a check, so Database::BI::Util::zone_wall's C<$epoch> -
+	  only ever passed to C<localtime> - failed 720 cases for the wrong
+	  types it never promised to reject
+	- A pattern built from the routine's own variables is not a constraint on
+	  the parameter.  q_wrap's delimiter loop matches C</\Q$l\E|\Q$r\E/>,
+	  whose C<\Q>/C<\E> quote nothing once compiled from a string and whose
+	  C<$l>/C<$r> are loop lexicals the schema does not carry, so the
+	  generated harness failed to compile.  A C<return> guarded by
+	  C<unless> also no longer counts as accepting the value it matches
 
 	[ Enhancements ]
 	- Added bin/run-all-fuzz
