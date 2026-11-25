@@ -2049,6 +2049,7 @@ package Floor;
 
     columns : arrayref of names (at least one)
     notes   : arrayref of strings (one or more)
+    mods    : arrayref of strings (non-empty)
     extra   : arrayref of strings (at least one), optional
 
 =cut
@@ -2070,6 +2071,8 @@ END_PM
 	is($input->{columns}{optional}, 0, 'and the list cannot be left out');
 	is($input->{notes}{min}, 1, '"one or more" keeps its size floor');
 	is($input->{notes}{optional}, 0, 'and is required in the same way');
+	is($input->{mods}{min}, 1, '"non-empty" is the same size floor');
+	is($input->{mods}{optional}, 0, 'and is required in the same way');
 	is($input->{extra}{min}, 1, 'an optional list still keeps the floor');
 	is($input->{extra}{optional}, 1, 'but keeps the optional flag the row states');
 };
