@@ -2037,6 +2037,43 @@ END_PM
 		'a $name => string, optional row stays optional');
 };
 
+subtest '"at least one" is the same size floor as "one or more"' => sub {
+	my $src = <<'END_PM';
+package Floor;
+
+=head2 report
+
+=head3 API SPECIFICATION
+
+=head4 INPUT
+
+    columns : arrayref of names (at least one)
+    notes   : arrayref of strings (one or more)
+    extra   : arrayref of strings (at least one), optional
+
+=cut
+
+sub report {
+	my ($columns, $notes, $extra) = @_;
+	return 1;
+}
+
+1;
+END_PM
+
+	my ($pm) = _make_pm($src, 'Floor.pm');
+	my $e = App::Test::Generator::SchemaExtractor->new(input_file => $pm);
+	my $schemas = $e->extract_all(no_write => 1);
+	my $input = $schemas->{report}{input};
+
+	is($input->{columns}{min}, 1, '"at least one" is a size floor');
+	is($input->{columns}{optional}, 0, 'and the list cannot be left out');
+	is($input->{notes}{min}, 1, '"one or more" keeps its size floor');
+	is($input->{notes}{optional}, 0, 'and is required in the same way');
+	is($input->{extra}{min}, 1, 'an optional list still keeps the floor');
+	is($input->{extra}{optional}, 1, 'but keeps the optional flag the row states');
+};
+
 subtest 'a trailing POD block, and text that looks like an operator' => sub {
 	# The subs come first and the POD block after them, as Database::BI::Extract
 	# writes its file: the section headed with the routine's name documents it.

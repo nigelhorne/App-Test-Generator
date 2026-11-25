@@ -5185,11 +5185,14 @@ sub _apply_pod_input_table {
 			$p->{optional} = 0;
 		}
 
-		# `one or more` is a size floor, not a spelling: an empty list is
-		# the documented error, so say so rather than letting the harness
-		# treat [] as a legal value.
-		if(defined($type) && $type eq 'arrayref' && $spec =~ /\b(?:one\s+or\s+more|non-empty)\b/i) {
+		# `one or more` and `at least one` state the same size floor: an
+		# empty list is the documented error, so say so rather than letting
+		# the harness treat [] as a legal value.  A list that must hold at
+		# least one element cannot be left out either, so it is required
+		# unless the row itself says optional.
+		if(defined($type) && $type eq 'arrayref' && $spec =~ /\b(?:one\s+or\s+more|at\s+least\s+one|non-empty)\b/i) {
 			$p->{min} = 1;
+			$p->{optional} = 0 unless defined $p->{optional};
 		}
 
 		# "a readable .json file" is a precondition on the path: the harness

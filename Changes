@@ -1,5 +1,14 @@
 Revision history for App-Test-Generator
 
+0.53
+	[Bug fixes]
+	- An arrayref documented as "at least one" is read the same as "one or
+	  more": a minimum length of one, and the argument is required, because
+	  a list that must hold an element cannot be left out either.  Only
+	  "one or more" was read, and neither wording made the list required,
+	  so Database::BI::Pdf::table_pdf was fuzzed without its columns and
+	  croaked instead of rendering
+
 0.52	Sun Nov 22 09:01:22 PM EST 2026
 	[Bug fixes]
 	- A signature-like example in a comment is no longer read as code.
